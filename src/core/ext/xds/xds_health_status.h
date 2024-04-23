@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_HEALTH_STATUS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/resolver/endpoint_addresses.h"
 
@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-class XdsHealthStatus {
+class XdsHealthStatus final {
  public:
   enum HealthStatus { kUnknown, kHealthy, kDraining };
 
@@ -56,7 +56,7 @@ class XdsHealthStatus {
   HealthStatus status_;
 };
 
-class XdsHealthStatusSet {
+class XdsHealthStatusSet final {
  public:
   XdsHealthStatusSet() = default;
 

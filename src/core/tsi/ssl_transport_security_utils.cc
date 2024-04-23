@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
 #include <openssl/crypto.h>
@@ -27,6 +25,8 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -259,12 +259,19 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
+    gpr_log(GPR_DEBUG, "Could not public key from certificate.");
     EVP_PKEY_free(ikey);
     return false;
   }
-  bool ret = X509_CRL_verify(crl, ikey) == 1;
+  int ret = X509_CRL_verify(crl, ikey);
+  if (ret < 0) {
+    gpr_log(GPR_DEBUG,
+            "There was an unexpected problem checking the CRL signature.");
+  } else if (ret == 0) {
+    gpr_log(GPR_DEBUG, "CRL failed verification.");
+  }
   EVP_PKEY_free(ikey);
-  return ret;
+  return ret == 1;
 }
 
 bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {

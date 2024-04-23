@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
 #include <stdint.h>
@@ -26,6 +24,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
@@ -179,7 +178,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   return absl::OkStatus();
 }
 
-void FileWatcherAuthorizationPolicyProvider::Orphan() {
+void FileWatcherAuthorizationPolicyProvider::Orphaned() {
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   if (refresh_thread_ != nullptr) {
     refresh_thread_->Join();

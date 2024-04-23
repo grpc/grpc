@@ -37,6 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
@@ -46,7 +47,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -63,7 +63,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -71,6 +70,7 @@
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/service_config/service_config.h"
 
 //
 // Client channel filter
@@ -101,7 +101,7 @@
 
 namespace grpc_core {
 
-class ClientChannelFilter {
+class ClientChannelFilter final {
  public:
   static const grpc_channel_filter kFilterVtableWithPromises;
   static const grpc_channel_filter kFilterVtableWithoutPromises;
@@ -184,7 +184,8 @@ class ClientChannelFilter {
 
   // Represents a pending connectivity callback from an external caller
   // via grpc_client_channel_watch_connectivity_state().
-  class ExternalConnectivityWatcher : public ConnectivityStateWatcherInterface {
+  class ExternalConnectivityWatcher final
+      : public ConnectivityStateWatcherInterface {
    public:
     ExternalConnectivityWatcher(ClientChannelFilter* chand,
                                 grpc_polling_entity pollent,
@@ -469,7 +470,7 @@ class ClientChannelFilter::LoadBalancedCall
   grpc_call_context_element* const call_context_;
 };
 
-class ClientChannelFilter::FilterBasedLoadBalancedCall
+class ClientChannelFilter::FilterBasedLoadBalancedCall final
     : public ClientChannelFilter::LoadBalancedCall {
  public:
   // If on_call_destruction_complete is non-null, then it will be
@@ -595,7 +596,7 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
 };
 
-class ClientChannelFilter::PromiseBasedLoadBalancedCall
+class ClientChannelFilter::PromiseBasedLoadBalancedCall final
     : public ClientChannelFilter::LoadBalancedCall {
  public:
   PromiseBasedLoadBalancedCall(ClientChannelFilter* chand,

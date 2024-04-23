@@ -22,15 +22,16 @@ class FakeStatsClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<FakeStatsClientFilter> Create(
+  explicit FakeStatsClientFilter(
+      FakeClientCallTracerFactory* fake_client_call_tracer_factory);
+
+  static absl::StatusOr<std::unique_ptr<FakeStatsClientFilter>> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  explicit FakeStatsClientFilter(
-      FakeClientCallTracerFactory* fake_client_call_tracer_factory);
   FakeClientCallTracerFactory* const fake_client_call_tracer_factory_;
 };
 
@@ -38,13 +39,15 @@ const grpc_channel_filter FakeStatsClientFilter::kFilter =
     MakePromiseBasedFilter<FakeStatsClientFilter, FilterEndpoint::kClient>(
         "fake_stats_client");
 
-absl::StatusOr<FakeStatsClientFilter> FakeStatsClientFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+absl::StatusOr<std::unique_ptr<FakeStatsClientFilter>>
+FakeStatsClientFilter::Create(const ChannelArgs& args,
+                              ChannelFilter::Args /*filter_args*/) {
   auto* fake_client_call_tracer_factory =
       args.GetPointer<FakeClientCallTracerFactory>(
           GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY);
   GPR_ASSERT(fake_client_call_tracer_factory != nullptr);
-  return FakeStatsClientFilter(fake_client_call_tracer_factory);
+  return std::make_unique<FakeStatsClientFilter>(
+      fake_client_call_tracer_factory);
 }
 
 ArenaPromise<ServerMetadataHandle> FakeStatsClientFilter::MakeCallPromise(
@@ -107,7 +110,7 @@ std::shared_ptr<FakeStatsPlugin> MakeStatsPluginForTarget(
     absl::string_view target_suffix) {
   return FakeStatsPluginBuilder()
       .SetChannelFilter(
-          [target_suffix](const StatsPlugin::ChannelScope& scope) {
+          [target_suffix](const experimental::StatsPluginChannelScope& scope) {
             return absl::EndsWith(scope.target(), target_suffix);
           })
       .BuildAndRegister();
@@ -122,17 +125,17 @@ namespace {
 
 template <typename HandleType>
 absl::optional<HandleType> FindInstrument(
-    const absl::flat_hash_map<
-        absl::string_view,
-        GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>& instruments,
+    const std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+        instruments,
     absl::string_view name, GlobalInstrumentsRegistry::ValueType value_type,
     GlobalInstrumentsRegistry::InstrumentType instrument_type) {
-  auto it = instruments.find(name);
-  if (it != instruments.end() && it->second.value_type == value_type &&
-      it->second.instrument_type == instrument_type) {
-    HandleType handle;
-    handle.index = it->second.index;
-    return handle;
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name && descriptor.value_type == value_type &&
+        descriptor.instrument_type == instrument_type) {
+      HandleType handle;
+      handle.index = descriptor.index;
+      return handle;
+    }
   }
   return absl::nullopt;
 }
@@ -175,24 +178,6 @@ GlobalInstrumentsRegistryTestPeer::FindDoubleHistogramHandleByName(
       GlobalInstrumentsRegistry::InstrumentType::kHistogram);
 }
 
-absl::optional<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>
-GlobalInstrumentsRegistryTestPeer::FindInt64GaugeHandleByName(
-    absl::string_view name) {
-  return FindInstrument<GlobalInstrumentsRegistry::GlobalInt64GaugeHandle>(
-      GlobalInstrumentsRegistry::GetInstrumentList(), name,
-      GlobalInstrumentsRegistry::ValueType::kInt64,
-      GlobalInstrumentsRegistry::InstrumentType::kGauge);
-}
-
-absl::optional<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>
-GlobalInstrumentsRegistryTestPeer::FindDoubleGaugeHandleByName(
-    absl::string_view name) {
-  return FindInstrument<GlobalInstrumentsRegistry::GlobalDoubleGaugeHandle>(
-      GlobalInstrumentsRegistry::GetInstrumentList(), name,
-      GlobalInstrumentsRegistry::ValueType::kDouble,
-      GlobalInstrumentsRegistry::InstrumentType::kGauge);
-}
-
 absl::optional<GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle>
 GlobalInstrumentsRegistryTestPeer::FindCallbackInt64GaugeHandleByName(
     absl::string_view name) {
@@ -216,9 +201,11 @@ GlobalInstrumentsRegistryTestPeer::FindCallbackDoubleGaugeHandleByName(
 GlobalInstrumentsRegistry::GlobalInstrumentDescriptor*
 GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
     absl::string_view name) {
-  auto& instruments = GlobalInstrumentsRegistry::GetInstrumentList();
-  auto it = instruments.find(name);
-  if (it != instruments.end()) return &it->second;
+  for (auto& descriptor : GlobalInstrumentsRegistry::GetInstrumentList()) {
+    if (descriptor.name == name) {
+      return &descriptor;
+    }
+  }
   return nullptr;
 }
 

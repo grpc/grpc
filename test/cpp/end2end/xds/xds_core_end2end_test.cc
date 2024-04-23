@@ -27,6 +27,7 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"
+#include "test/core/util/fake_stats_plugin.h"
 #include "test/core/util/resolve_localhost_ip46.h"
 #include "test/core/util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -324,7 +325,7 @@ TEST_P(GlobalXdsClientTest, InvalidListenerStillExistsIfPreviouslyCached) {
 class TimeoutTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"",
+    InitClient(MakeBootstrapBuilder(), /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/2000);
   }
 };
@@ -644,7 +645,7 @@ TEST_P(XdsFederationTest, FederationTargetNoAuthorityWithResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
   builder.AddAuthority(
       kAuthority, absl::StrCat("localhost:", authority_balancer_->port()),
@@ -698,7 +699,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityDefaultResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()));
   InitClient(builder);
@@ -767,7 +768,7 @@ TEST_P(XdsFederationTest, FederationTargetAuthorityWithResourceTemplate) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -823,7 +824,7 @@ TEST_P(XdsFederationTest, TargetUriAuthorityUnknown) {
   const char* kNewListenerTemplate =
       "xdstp://xds.example.com/envoy.config.listener.v3.Listener/"
       "client/%s?psm_project_id=1234";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.AddAuthority(
       kAuthority, absl::StrCat("localhost:", grpc_pick_unused_port_or_die()),
       kNewListenerTemplate);
@@ -854,7 +855,7 @@ TEST_P(XdsFederationTest, RdsResourceNameAuthorityUnknown) {
   const char* kNewRouteConfigName =
       "xdstp://xds.unknown.com/envoy.config.route.v3.RouteConfiguration/"
       "new_route_config_name";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -900,7 +901,7 @@ TEST_P(XdsFederationTest, CdsResourceNameAuthorityUnknown) {
   const char* kNewClusterName =
       "xdstp://xds.unknown.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -952,7 +953,7 @@ TEST_P(XdsFederationTest, EdsResourceNameAuthorityUnknown) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "cluster_name";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -1019,7 +1020,7 @@ TEST_P(XdsFederationTest, FederationServer) {
   const char* kNewClusterName =
       "xdstp://xds.example.com/envoy.config.cluster.v3.Cluster/"
       "new_cluster_name";
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.SetClientDefaultListenerResourceNameTemplate(kNewListenerTemplate);
   builder.SetServerListenerResourceNameTemplate(kNewServerListenerTemplate);
   builder.AddAuthority(
@@ -1069,6 +1070,219 @@ TEST_P(XdsFederationTest, FederationServer) {
                                      ServerHcmAccessor());
   }
   WaitForAllBackends(DEBUG_LOCATION);
+}
+
+//
+// XdsMetricsTest - tests xDS metrics
+//
+
+class XdsMetricsTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {
+    stats_plugin_ = grpc_core::FakeStatsPluginBuilder()
+                        .UseDisabledByDefaultMetrics(true)
+                        .BuildAndRegister();
+    InitClient();
+  }
+
+  std::shared_ptr<grpc_core::FakeStatsPlugin> stats_plugin_;
+};
+
+// Runs with RDS so that we know all resource types work properly.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsMetricsTest,
+    ::testing::Values(XdsTestType().set_enable_rds_testing()),
+    &XdsTestType::Name);
+
+TEST_P(XdsMetricsTest, MetricDefinitionResourceUpdatesValid) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.xds_client.resource_updates_valid");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.resource_updates_valid");
+  EXPECT_EQ(descriptor->unit, "{resource}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server",
+                                     "grpc.xds.resource_type"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricDefinitionResourceUpdatesInvalid) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.xds_client.resource_updates_invalid");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.resource_updates_invalid");
+  EXPECT_EQ(descriptor->unit, "{resource}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server",
+                                     "grpc.xds.resource_type"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricDefinitionServerFailure) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.xds_client.server_failure");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(descriptor->instrument_type,
+            grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.server_failure");
+  EXPECT_EQ(descriptor->unit, "{failure}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricDefinitionConnected) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.xds_client.connected");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64);
+  EXPECT_EQ(
+      descriptor->instrument_type,
+      grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.connected");
+  EXPECT_EQ(descriptor->unit, "{bool}");
+  EXPECT_THAT(descriptor->label_keys,
+              ::testing::ElementsAre("grpc.target", "grpc.xds.server"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricDefinitionResources) {
+  const auto* descriptor =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.xds_client.resources");
+  ASSERT_NE(descriptor, nullptr);
+  EXPECT_EQ(descriptor->value_type,
+            grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64);
+  EXPECT_EQ(
+      descriptor->instrument_type,
+      grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+  EXPECT_EQ(descriptor->enable_by_default, false);
+  EXPECT_EQ(descriptor->name, "grpc.xds_client.resources");
+  EXPECT_EQ(descriptor->unit, "{resource}");
+  EXPECT_THAT(
+      descriptor->label_keys,
+      ::testing::ElementsAre("grpc.target", "grpc.xds.authority",
+                             "grpc.xds.resource_type", "grpc.xds.cache_state"));
+  EXPECT_THAT(descriptor->optional_label_keys, ::testing::ElementsAre());
+}
+
+TEST_P(XdsMetricsTest, MetricValues) {
+  const auto kMetricResourceUpdatesValid =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName(
+              "grpc.xds_client.resource_updates_valid")
+              .value();
+  const auto kMetricResourceUpdatesInvalid =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName(
+              "grpc.xds_client.resource_updates_invalid")
+              .value();
+  const auto kMetricServerFailure =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindUInt64CounterHandleByName("grpc.xds_client.server_failure")
+              .value();
+  const auto kMetricConnected =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindCallbackInt64GaugeHandleByName("grpc.xds_client.connected")
+              .value();
+  const auto kMetricResources =
+      grpc_core::GlobalInstrumentsRegistryTestPeer::
+          FindCallbackInt64GaugeHandleByName("grpc.xds_client.resources")
+              .value();
+  const std::string kTarget = absl::StrCat("xds:", kServerName);
+  const std::string kXdsServer = absl::StrCat("localhost:", balancer_->port());
+  CreateAndStartBackends(1, /*xds_enabled=*/true);
+  EdsResourceArgs args =
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendOk(DEBUG_LOCATION);
+  stats_plugin_->TriggerCallbacks();
+  // Check client metrics.
+  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
+                                                   {kTarget, kXdsServer}, {}),
+              ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricServerFailure,
+                                             {kTarget, kXdsServer}, {}),
+              absl::nullopt);
+  for (absl::string_view type_url :
+       {"envoy.config.listener.v3.Listener",
+        "envoy.config.route.v3.RouteConfiguration",
+        "envoy.config.cluster.v3.Cluster",
+        "envoy.config.endpoint.v3.ClusterLoadAssignment"}) {
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesValid,
+                                       {kTarget, kXdsServer, type_url}, {}),
+        ::testing::Optional(1));
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesInvalid,
+                                       {kTarget, kXdsServer, type_url}, {}),
+        ::testing::Optional(0));
+    EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+                    kMetricResources, {kTarget, "#old", type_url, "acked"}, {}),
+                ::testing::Optional(1));
+  }
+  // Check server metrics.
+  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
+                                                   {"#server", kXdsServer}, {}),
+              ::testing::Optional(1));
+  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricServerFailure,
+                                             {"#server", kXdsServer}, {}),
+              absl::nullopt);
+  for (absl::string_view type_url :
+       {"envoy.config.listener.v3.Listener",
+        "envoy.config.route.v3.RouteConfiguration"}) {
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesValid,
+                                       {"#server", kXdsServer, type_url}, {}),
+        ::testing::Optional(1));
+    EXPECT_THAT(
+        stats_plugin_->GetCounterValue(kMetricResourceUpdatesInvalid,
+                                       {"#server", kXdsServer, type_url}, {}),
+        ::testing::Optional(0));
+    EXPECT_THAT(
+        stats_plugin_->GetCallbackGaugeValue(
+            kMetricResources, {"#server", "#old", type_url, "acked"}, {}),
+        ::testing::Optional(1));
+  }
+  // Shut down balancer and wait for metrics to show the failure.
+  balancer_->Shutdown();
+  for (const char* target : {kTarget.c_str(), "#server"}) {
+    const absl::Time deadline =
+        absl::Now() + absl::Seconds(5 * grpc_test_slowdown_factor());
+    while (true) {
+      auto value = stats_plugin_->GetCounterValue(kMetricServerFailure,
+                                                  {target, kXdsServer}, {});
+      if (value.has_value()) {
+        EXPECT_EQ(1, *value);
+        break;
+      }
+      ASSERT_LE(absl::Now(), deadline);
+      absl::SleepFor(absl::Seconds(1));
+    }
+    stats_plugin_->TriggerCallbacks();
+    EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
+                                                     {target, kXdsServer}, {}),
+                ::testing::Optional(0));
+  }
 }
 
 //
@@ -1165,7 +1379,7 @@ TEST_P(XdsFederationLoadReportingTest, FederationMultipleLoadReportingTest) {
       "cluster_name";
   const size_t kNumRpcsToDefaultBalancer = 5;
   const size_t kNumRpcsToAuthorityBalancer = 10;
-  XdsBootstrapBuilder builder;
+  XdsBootstrapBuilder builder = MakeBootstrapBuilder();
   builder.AddAuthority(kAuthority,
                        absl::StrCat("localhost:", authority_balancer_->port()),
                        kNewListenerTemplate);
@@ -1276,11 +1490,11 @@ TEST_P(XdsFederationLoadReportingTest, SameServerInAuthorityAndTopLevel) {
   const char* kNewEdsServiceName =
       "xdstp://xds.example.com/envoy.config.endpoint.v3.ClusterLoadAssignment/"
       "edsservice_name";
-  XdsBootstrapBuilder builder;
   std::string xds_server =
       absl::StrCat("localhost:", authority_balancer_->port());
+  XdsBootstrapBuilder builder;
+  builder.SetServers({xds_server});
   builder.AddAuthority(kAuthority, xds_server);
-  builder.SetDefaultServer(xds_server);
   InitClient(builder);
   CreateAndStartBackends(1);
   authority_balancer_->lrs_service()->set_send_all_clusters(true);
@@ -1349,7 +1563,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
 
 // Tests that secure naming check passes if target name is expected.
 TEST_P(SecureNamingTest, TargetNameIsExpected) {
-  InitClient(XdsBootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
+  InitClient(MakeBootstrapBuilder(), /*lb_expected_authority=*/"localhost:%d");
   CreateAndStartBackends(4);
   EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -1361,7 +1575,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   GTEST_FLAG_SET(death_test_style, "threadsafe");
-  InitClient(XdsBootstrapBuilder(),
+  InitClient(MakeBootstrapBuilder(),
              /*lb_expected_authority=*/"incorrect_server_name");
   CreateAndStartBackends(4);
   EdsResourceArgs args({

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 #define GRPC_SRC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <iosfwd>
@@ -29,7 +27,10 @@
 
 #include "absl/hash/hash.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/down_cast.h"
 
 namespace grpc_core {
 
@@ -159,7 +160,7 @@ class RefCountedPtr {
   template <typename Y,
             std::enable_if_t<std::is_base_of<T, Y>::value, bool> = true>
   RefCountedPtr<Y> TakeAsSubclass() {
-    return RefCountedPtr<Y>(static_cast<Y*>(release()));
+    return RefCountedPtr<Y>(DownCast<Y*>(release()));
   }
 
   template <typename Y,

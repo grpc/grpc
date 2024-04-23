@@ -37,14 +37,14 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/channelz/channel_trace.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -328,7 +328,7 @@ void SubchannelCall::IncrementRefCount(const DebugLocation& /*location*/,
 // Subchannel::ConnectedSubchannelStateWatcher
 //
 
-class Subchannel::ConnectedSubchannelStateWatcher
+class Subchannel::ConnectedSubchannelStateWatcher final
     : public AsyncConnectivityStateWatcherInterface {
  public:
   // Must be instantiated while holding c->mu.
@@ -619,7 +619,7 @@ void Subchannel::ResetBackoff() {
   work_serializer_.DrainQueue();
 }
 
-void Subchannel::Orphan() {
+void Subchannel::Orphaned() {
   // The subchannel_pool is only used once here in this subchannel, so the
   // access can be outside of the lock.
   if (subchannel_pool_ != nullptr) {

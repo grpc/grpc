@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_RESOLVER_REGISTRY_H
 #define GRPC_SRC_CORE_RESOLVER_RESOLVER_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <string>
@@ -26,16 +24,18 @@
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 
-class ResolverRegistry {
+class ResolverRegistry final {
  private:
   // Forward declaration needed to use this in Builder.
   struct State {
@@ -47,7 +47,7 @@ class ResolverRegistry {
   /// Methods used to create and populate the ResolverRegistry.
   /// NOT THREAD SAFE -- to be used only during global gRPC
   /// initialization and shutdown.
-  class Builder {
+  class Builder final {
    public:
     Builder();
 

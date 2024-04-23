@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 
 #include <string.h>
@@ -41,9 +39,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/load_balancing/address_filtering.h"
-#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -60,6 +57,8 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/address_filtering.h"
+#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
@@ -83,7 +82,7 @@ constexpr absl::string_view kWeightedTarget = "weighted_target_experimental";
 constexpr Duration kChildRetentionInterval = Duration::Minutes(15);
 
 // Config for weighted_target LB policy.
-class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
+class WeightedTargetLbConfig final : public LoadBalancingPolicy::Config {
  public:
   struct ChildConfig {
     uint32_t weight;
@@ -115,7 +114,7 @@ class WeightedTargetLbConfig : public LoadBalancingPolicy::Config {
 };
 
 // weighted_target LB policy.
-class WeightedTargetLb : public LoadBalancingPolicy {
+class WeightedTargetLb final : public LoadBalancingPolicy {
  public:
   explicit WeightedTargetLb(Args args);
 
@@ -127,7 +126,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
  private:
   // Picks a child using stateless WRR and then delegates to that
   // child's picker.
-  class WeightedPicker : public SubchannelPicker {
+  class WeightedPicker final : public SubchannelPicker {
    public:
     // Maintains a weighted list of pickers from each child that is in
     // ready state. The first element in the pair represents the end of a
@@ -151,7 +150,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
   };
 
   // Each WeightedChild holds a ref to its parent WeightedTargetLb.
-  class WeightedChild : public InternallyRefCounted<WeightedChild> {
+  class WeightedChild final : public InternallyRefCounted<WeightedChild> {
    public:
     WeightedChild(RefCountedPtr<WeightedTargetLb> weighted_target_policy,
                   const std::string& name);
@@ -173,7 +172,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelPicker> picker() const { return picker_; }
 
    private:
-    class Helper : public DelegatingChannelControlHelper {
+    class Helper final : public DelegatingChannelControlHelper {
      public:
       explicit Helper(RefCountedPtr<WeightedChild> weighted_child)
           : weighted_child_(std::move(weighted_child)) {}
@@ -193,7 +192,7 @@ class WeightedTargetLb : public LoadBalancingPolicy {
       RefCountedPtr<WeightedChild> weighted_child_;
     };
 
-    class DelayedRemovalTimer
+    class DelayedRemovalTimer final
         : public InternallyRefCounted<DelayedRemovalTimer> {
      public:
       explicit DelayedRemovalTimer(RefCountedPtr<WeightedChild> weighted_child);
@@ -732,7 +731,7 @@ const JsonLoaderInterface* WeightedTargetLbConfig::JsonLoader(const JsonArgs&) {
   return loader;
 }
 
-class WeightedTargetLbFactory : public LoadBalancingPolicyFactory {
+class WeightedTargetLbFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

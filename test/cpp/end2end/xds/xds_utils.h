@@ -39,11 +39,8 @@ class XdsBootstrapBuilder {
     ignore_resource_deletion_ = true;
     return *this;
   }
-  // If ignore_if_set is true, sets the default server only if it has
-  // not already been set.
-  XdsBootstrapBuilder& SetDefaultServer(const std::string& server,
-                                        bool ignore_if_set = false) {
-    if (!ignore_if_set || top_server_.empty()) top_server_ = server;
+  XdsBootstrapBuilder& SetServers(absl::Span<const absl::string_view> servers) {
+    servers_ = std::vector<std::string>(servers.begin(), servers.end());
     return *this;
   }
   XdsBootstrapBuilder& SetXdsChannelCredentials(const std::string& type) {
@@ -65,7 +62,15 @@ class XdsBootstrapBuilder {
   XdsBootstrapBuilder& AddAuthority(
       const std::string& authority, const std::string& server = "",
       const std::string& client_listener_resource_name_template = "") {
-    authorities_[authority] = {server, client_listener_resource_name_template};
+    return AddAuthority(authority,
+                        server.empty() ? std::vector<std::string>()
+                                       : std::vector<std::string>({server}),
+                        client_listener_resource_name_template);
+  }
+  XdsBootstrapBuilder& AddAuthority(
+      const std::string& authority, const std::vector<std::string>& servers,
+      const std::string& client_listener_resource_name_template = "") {
+    authorities_[authority] = {servers, client_listener_resource_name_template};
     return *this;
   }
   XdsBootstrapBuilder& SetServerListenerResourceNameTemplate(
@@ -83,17 +88,17 @@ class XdsBootstrapBuilder {
     std::string plugin_config;
   };
   struct AuthorityInfo {
-    std::string server;
+    std::vector<std::string> servers;
     std::string client_listener_resource_name_template;
   };
 
-  std::string MakeXdsServersText(absl::string_view server_uri);
+  std::string MakeXdsServersText(absl::Span<const std::string> server_uris);
   std::string MakeNodeText();
   std::string MakeCertificateProviderText();
   std::string MakeAuthorityText();
 
   bool ignore_resource_deletion_ = false;
-  std::string top_server_;
+  std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
   std::string client_default_listener_resource_name_template_;
   std::map<std::string /*key*/, PluginInfo> plugins_;

@@ -32,6 +32,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -245,7 +246,7 @@ class FakeCertificateProviderFactory
       absl::string_view name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
-    GPR_ASSERT(cert_data_map != nullptr);
+    CHECK_NE(cert_data_map, nullptr);
   }
 
   absl::string_view name() const override { return name_; }
@@ -262,7 +263,7 @@ class FakeCertificateProviderFactory
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
       /*config*/) override {
-    GPR_ASSERT(cert_data_map_ != nullptr);
+    CHECK_NE(cert_data_map_, nullptr);
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         cert_data_map_->Get());
   }
@@ -279,7 +280,7 @@ FakeCertificateProvider::CertDataMapWrapper* g_fake2_cert_data_map = nullptr;
 class XdsSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    XdsBootstrapBuilder builder;
+    XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;
@@ -799,7 +800,8 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
-  void DoSetUp(XdsBootstrapBuilder builder = XdsBootstrapBuilder()) {
+  void DoSetUp(
+      const absl::optional<XdsBootstrapBuilder>& builder = absl::nullopt) {
     InitClient(builder);
     CreateBackends(1, /*xds_enabled=*/true);
     EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -814,7 +816,7 @@ TEST_P(XdsEnabledServerTest, Basic) {
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
-  DoSetUp(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
+  DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   backends_[0]->Start();
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
@@ -908,7 +910,7 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    XdsBootstrapBuilder builder;
+    XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;
@@ -1004,7 +1006,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    GPR_ASSERT(channel_creds.get() != nullptr);
+    CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -1025,7 +1027,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    GPR_ASSERT(channel_creds.get() != nullptr);
+    CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 

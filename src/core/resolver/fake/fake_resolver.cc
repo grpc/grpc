@@ -17,8 +17,6 @@
 // This is similar to the sockaddr resolver, except that it supports a
 // bunch of query args that are useful for dependency injection in tests.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/fake/fake_resolver.h"
 
 #include <memory>
@@ -28,6 +26,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -35,14 +34,14 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/resolver/resolver_factory.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/resolver/resolver_factory.h"
 
 namespace grpc_core {
 
 // This cannot be in an anonymous namespace, because it is a friend of
 // FakeResolverResponseGenerator.
-class FakeResolver : public Resolver {
+class FakeResolver final : public Resolver {
  public:
   explicit FakeResolver(ResolverArgs args);
 
@@ -232,7 +231,7 @@ const grpc_arg_pointer_vtable
 
 namespace {
 
-class FakeResolverFactory : public ResolverFactory {
+class FakeResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "fake"; }
 

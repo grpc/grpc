@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SETTINGS_METADATA_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SETTINGS_METADATA_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -35,7 +35,7 @@ struct SettingsMetadata {
   absl::optional<std::string> connection_id;
   absl::optional<uint32_t> alignment;
 
-  Arena::PoolPtr<grpc_metadata_batch> ToMetadataBatch(Arena* arena);
+  Arena::PoolPtr<grpc_metadata_batch> ToMetadataBatch();
   static absl::StatusOr<SettingsMetadata> FromMetadataBatch(
       const grpc_metadata_batch& batch);
 };

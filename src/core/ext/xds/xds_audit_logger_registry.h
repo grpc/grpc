@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 
 #include "absl/strings/string_view.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -33,7 +33,7 @@ namespace grpc_core {
 
 // A registry that maintains a set of converters that are able to map xDS
 // RBAC audit logger configuration to gRPC's JSON format.
-class XdsAuditLoggerRegistry {
+class XdsAuditLoggerRegistry final {
  public:
   class ConfigFactory {
    public:

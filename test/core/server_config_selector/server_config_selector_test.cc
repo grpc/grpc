@@ -36,7 +36,7 @@ class TestServerConfigSelectorProvider : public ServerConfigSelectorProvider {
     return absl::UnavailableError("Test ServerConfigSelector");
   }
 
-  void Orphan() override {}
+  void Orphaned() override {}
 
   void CancelWatch() override {}
 };

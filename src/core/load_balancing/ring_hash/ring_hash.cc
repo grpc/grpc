@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 
 #include <inttypes.h>
@@ -41,9 +39,9 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/load_balancing/pick_first/pick_first.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -67,6 +65,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/load_balancing/pick_first/pick_first.h"
 #include "src/core/resolver/endpoint_addresses.h"
 
 namespace grpc_core {
@@ -114,7 +113,7 @@ namespace {
 
 constexpr absl::string_view kRingHash = "ring_hash_experimental";
 
-class RingHashLbConfig : public LoadBalancingPolicy::Config {
+class RingHashLbConfig final : public LoadBalancingPolicy::Config {
  public:
   RingHashLbConfig(size_t min_ring_size, size_t max_ring_size)
       : min_ring_size_(min_ring_size), max_ring_size_(max_ring_size) {}
@@ -133,7 +132,7 @@ class RingHashLbConfig : public LoadBalancingPolicy::Config {
 
 constexpr size_t kRingSizeCapDefault = 4096;
 
-class RingHash : public LoadBalancingPolicy {
+class RingHash final : public LoadBalancingPolicy {
  public:
   explicit RingHash(Args args);
 
@@ -144,7 +143,7 @@ class RingHash : public LoadBalancingPolicy {
 
  private:
   // A ring computed based on a config and address list.
-  class Ring : public RefCounted<Ring> {
+  class Ring final : public RefCounted<Ring> {
    public:
     struct RingEntry {
       uint64_t hash;
@@ -160,7 +159,7 @@ class RingHash : public LoadBalancingPolicy {
   };
 
   // State for a particular endpoint.  Delegates to a pick_first child policy.
-  class RingHashEndpoint : public InternallyRefCounted<RingHashEndpoint> {
+  class RingHashEndpoint final : public InternallyRefCounted<RingHashEndpoint> {
    public:
     // index is the index into RingHash::endpoints_ of this endpoint.
     RingHashEndpoint(RefCountedPtr<RingHash> ring_hash, size_t index)
@@ -216,7 +215,7 @@ class RingHash : public LoadBalancingPolicy {
     RefCountedPtr<SubchannelPicker> picker_;
   };
 
-  class Picker : public SubchannelPicker {
+  class Picker final : public SubchannelPicker {
    public:
     explicit Picker(RefCountedPtr<RingHash> ring_hash)
         : ring_hash_(std::move(ring_hash)),
@@ -232,7 +231,7 @@ class RingHash : public LoadBalancingPolicy {
    private:
     // A fire-and-forget class that schedules endpoint connection attempts
     // on the control plane WorkSerializer.
-    class EndpointConnectionAttempter {
+    class EndpointConnectionAttempter final {
      public:
       EndpointConnectionAttempter(RefCountedPtr<RingHash> ring_hash,
                                   RefCountedPtr<RingHashEndpoint> endpoint)
@@ -462,7 +461,7 @@ RingHash::Ring::Ring(RingHash* ring_hash, RingHashLbConfig* config) {
 // RingHash::RingHashEndpoint::Helper
 //
 
-class RingHash::RingHashEndpoint::Helper
+class RingHash::RingHashEndpoint::Helper final
     : public LoadBalancingPolicy::DelegatingChannelControlHelper {
  public:
   explicit Helper(RefCountedPtr<RingHashEndpoint> endpoint)
@@ -849,7 +848,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
 // factory
 //
 
-class RingHashFactory : public LoadBalancingPolicyFactory {
+class RingHashFactory final : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {

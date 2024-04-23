@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/server.h"
 
 #include <inttypes.h>
@@ -44,12 +42,13 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channel_trace.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -233,7 +232,8 @@ struct Server::RequestedCall {
     data.registered.optional_payload = optional_payload;
   }
 
-  void Complete(NextResult<MessageHandle> payload, ClientMetadata& md) {
+  template <typename OptionalPayload>
+  void Complete(OptionalPayload payload, ClientMetadata& md) {
     Timestamp deadline = GetContext<CallContext>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
@@ -1302,9 +1302,10 @@ Server::ChannelData::~ChannelData() {
 Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
 
 absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
-    ClientMetadata& client_initial_metadata, Arena* arena) {
-  SetRegisteredMethodOnMetadata(client_initial_metadata);
-  auto call = MakeServerCall(server_.get(), channel_.get(), arena);
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  SetRegisteredMethodOnMetadata(*client_initial_metadata);
+  auto call = MakeServerCall(std::move(client_initial_metadata), server_.get(),
+                             channel_.get(), arena);
   InitCall(call);
   return CallInitiator(std::move(call));
 }
@@ -1330,13 +1331,10 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     ++accept_stream_types;
     op->set_accept_stream = true;
     op->set_accept_stream_fn = AcceptStream;
-    if (IsRegisteredMethodLookupInTransportEnabled()) {
-      op->set_registered_method_matcher_fn = [](void* arg,
-                                                ClientMetadata* metadata) {
-        static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(
-            *metadata);
-      };
-    }
+    op->set_registered_method_matcher_fn = [](void* arg,
+                                              ClientMetadata* metadata) {
+      static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(*metadata);
+    };
     op->set_accept_stream_user_data = this;
   }
   if (transport->server_transport() != nullptr) {
@@ -1431,10 +1429,10 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
   call->SpawnGuarded("request_matcher", [this, call]() {
     return TrySeq(
         // Wait for initial metadata to pass through all filters
-        Map(call->client_initial_metadata().receiver.Next(),
-            [](NextResult<ClientMetadataHandle> md)
+        Map(call->PullClientInitialMetadata(),
+            [](ValueOrFailure<ClientMetadataHandle> md)
                 -> absl::StatusOr<ClientMetadataHandle> {
-              if (!md.has_value()) {
+              if (!md.ok()) {
                 return absl::InternalError("Missing metadata");
               }
               if (!md.value()->get_pointer(HttpPathMetadata())) {
@@ -1460,24 +1458,19 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           }
           auto maybe_read_first_message = If(
               payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-              [call]() {
-                return call->client_to_server_messages().receiver.Next();
-              },
-              []() -> NextResult<MessageHandle> {
-                return NextResult<MessageHandle>();
+              [call]() { return call->PullClientToServerMessage(); },
+              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
+                return ValueOrFailure<absl::optional<MessageHandle>>(
+                    absl::nullopt);
               });
           return TryJoin<absl::StatusOr>(
-              Map(std::move(maybe_read_first_message),
-                  [](NextResult<MessageHandle> n) {
-                    return ValueOrFailure<NextResult<MessageHandle>>{
-                        std::move(n)};
-                  }),
-              rm->MatchRequest(cq_idx()), [md = std::move(md)]() mutable {
+              std::move(maybe_read_first_message), rm->MatchRequest(cq_idx()),
+              [md = std::move(md)]() mutable {
                 return ValueOrFailure<ClientMetadataHandle>(std::move(md));
               });
         },
         // Publish call to cq
-        [](std::tuple<NextResult<MessageHandle>,
+        [](std::tuple<absl::optional<MessageHandle>,
                       RequestMatcherInterface::MatchResult,
                       ClientMetadataHandle>
                r) {
@@ -1527,15 +1520,9 @@ ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
   }
   // Find request matcher.
   RequestMatcherInterface* matcher;
-  RegisteredMethod* rm = nullptr;
-  if (IsRegisteredMethodLookupInTransportEnabled()) {
-    rm = static_cast<RegisteredMethod*>(
-        call_args.client_initial_metadata->get(GrpcRegisteredMethod())
-            .value_or(nullptr));
-  } else {
-    rm = chand->GetRegisteredMethod(host_ptr->as_string_view(),
-                                    path_ptr->as_string_view());
-  }
+  RegisteredMethod* rm = static_cast<RegisteredMethod*>(
+      call_args.client_initial_metadata->get(GrpcRegisteredMethod())
+          .value_or(nullptr));
   ArenaPromise<absl::StatusOr<NextResult<MessageHandle>>>
       maybe_read_first_message([] { return NextResult<MessageHandle>(); });
   if (rm != nullptr) {
@@ -1760,7 +1747,6 @@ void Server::CallData::KillZombie() {
 
 // If this changes, change MakeCallPromise too.
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   if (server_->ShutdownCalled()) {
     state_.store(CallState::ZOMBIED, std::memory_order_relaxed);
     KillZombie();
@@ -1771,15 +1757,8 @@ void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   grpc_server_register_method_payload_handling payload_handling =
       GRPC_SRM_PAYLOAD_NONE;
   if (path_.has_value() && host_.has_value()) {
-    RegisteredMethod* rm;
-    if (IsRegisteredMethodLookupInTransportEnabled()) {
-      rm = static_cast<RegisteredMethod*>(
-          recv_initial_metadata_->get(GrpcRegisteredMethod())
-              .value_or(nullptr));
-    } else {
-      rm = chand->GetRegisteredMethod(host_->as_string_view(),
-                                      path_->as_string_view());
-    }
+    RegisteredMethod* rm = static_cast<RegisteredMethod*>(
+        recv_initial_metadata_->get(GrpcRegisteredMethod()).value_or(nullptr));
     if (rm != nullptr) {
       matcher_ = rm->matcher.get();
       payload_handling = rm->payload_handling;

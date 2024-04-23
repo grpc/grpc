@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 
 #include "absl/status/status.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
@@ -32,7 +32,7 @@
 #else
 #include <sys/socket.h>
 #include <sys/un.h>
-#endif // GPR_WINDOWS
+#endif  // GPR_WINDOWS
 
 #include <memory>
 #include <utility>
@@ -49,15 +49,15 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 namespace {
 
-class BinderResolver : public Resolver {
+class BinderResolver final : public Resolver {
  public:
   BinderResolver(EndpointAddressesList addresses, ResolverArgs args)
       : result_handler_(std::move(args.result_handler)),
@@ -80,7 +80,7 @@ class BinderResolver : public Resolver {
   ChannelArgs channel_args_;
 };
 
-class BinderResolverFactory : public ResolverFactory {
+class BinderResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "binder"; }
 

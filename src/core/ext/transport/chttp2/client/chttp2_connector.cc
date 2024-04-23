@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
 #include <stdint.h>
@@ -37,8 +35,10 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/connector.h"
@@ -47,7 +47,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -314,12 +313,7 @@ absl::StatusOr<OrphanablePtr<Channel>> CreateChannel(const char* target,
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return absl::InvalidArgumentError("channel target is NULL");
   }
-  // Add channel arg containing the server URI.
-  std::string canonical_target =
-      CoreConfiguration::Get().resolver_registry().AddDefaultPrefixIfNeeded(
-          target);
-  return ChannelCreate(target, args.Set(GRPC_ARG_SERVER_URI, canonical_target),
-                       GRPC_CLIENT_CHANNEL, nullptr);
+  return ChannelCreate(target, args, GRPC_CLIENT_CHANNEL, nullptr);
 }
 
 }  // namespace

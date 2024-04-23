@@ -28,6 +28,7 @@ grpc_cc_library(
     hdrs = ["test_service_impl.h"],
     external_deps = [
         "gtest",
+        "absl/log:check",
         "absl/synchronization",
     ],
     deps = [
@@ -62,6 +63,9 @@ grpc_cc_library(
     testonly = True,
     srcs = ["connection_attempt_injector.cc"],
     hdrs = ["connection_attempt_injector.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "//:grpc",
     ],
@@ -73,6 +77,7 @@ grpc_cc_library(
     srcs = ["interceptors_util.cc"],
     hdrs = ["interceptors_util.h"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     deps = [
@@ -100,6 +105,7 @@ grpc_cc_test(
     name = "async_end2end_test",
     srcs = ["async_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     shard_count = 10,
@@ -127,6 +133,7 @@ grpc_cc_test(
         ":client_crash_test_server",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -154,6 +161,7 @@ grpc_cc_test(
         ":client_crash_test_server",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -223,6 +231,7 @@ grpc_cc_test(
     name = "client_callback_end2end_test",
     srcs = ["client_callback_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -263,6 +272,7 @@ grpc_cc_test(
     name = "client_interceptors_end2end_test",
     srcs = ["client_interceptors_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -284,6 +294,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     linkstatic = True,
@@ -314,6 +325,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     # TODO(yulin-liang): The test is not able to load the certificate files on
@@ -364,7 +376,6 @@ grpc_cc_test(
     tags = [
         "cpp_end2end_test",
         "no_test_ios",
-        "surface_registered_method_lookup",
     ],
     deps = [
         ":end2end_test_lib",
@@ -436,6 +447,7 @@ grpc_cc_test(
     name = "hybrid_end2end_test",
     srcs = ["hybrid_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -456,6 +468,7 @@ grpc_cc_test(
     name = "raw_end2end_test",
     srcs = ["raw_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -496,6 +509,7 @@ grpc_cc_test(
     name = "nonblocking_test",
     srcs = ["nonblocking_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -514,6 +528,7 @@ grpc_cc_test(
     name = "client_lb_end2end_test",
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     flaky = True,  # TODO(b/151315347)
@@ -548,8 +563,9 @@ grpc_cc_test(
     name = "rls_end2end_test",
     srcs = ["rls_end2end_test.cc"],
     external_deps = [
-        "gtest",
+        "absl/log:check",
         "absl/types:optional",
+        "gtest",
     ],
     flaky = True,
     tags = [
@@ -580,6 +596,7 @@ grpc_cc_test(
     name = "service_config_end2end_test",
     srcs = ["service_config_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -601,6 +618,7 @@ grpc_cc_test(
     name = "grpclb_end2end_test",
     srcs = ["grpclb_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
@@ -677,6 +695,7 @@ grpc_cc_test(
         ":server_crash_test_client",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -702,6 +721,7 @@ grpc_cc_binary(
     srcs = ["server_crash_test_client.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "gtest",
     ],
     deps = [
@@ -785,6 +805,7 @@ grpc_cc_test(
     name = "shutdown_test",
     srcs = ["shutdown_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -850,6 +871,7 @@ grpc_cc_test(
     name = "cfstream_test",
     srcs = ["cfstream_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -878,6 +900,7 @@ grpc_cc_test(
     name = "message_allocator_end2end_test",
     srcs = ["message_allocator_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -898,6 +921,7 @@ grpc_cc_test(
     name = "context_allocator_end2end_test",
     srcs = ["context_allocator_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -918,6 +942,7 @@ grpc_cc_test(
     name = "port_sharing_end2end_test",
     srcs = ["port_sharing_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -988,6 +1013,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -1030,7 +1056,9 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
+        "//src/core:grpc_fake_credentials",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
@@ -1102,6 +1130,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["crl_provider_test"],

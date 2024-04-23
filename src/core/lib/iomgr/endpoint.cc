@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/endpoint.h"
+
+#include <grpc/support/port_platform.h>
 
 grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
 

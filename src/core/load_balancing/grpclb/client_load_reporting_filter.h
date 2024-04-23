@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -30,17 +30,30 @@
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
-class ClientLoadReportingFilter : public ChannelFilter {
+
+class ClientLoadReportingFilter final
+    : public ImplementChannelFilter<ClientLoadReportingFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientLoadReportingFilter> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args);
+  class Call {
+   public:
+    void OnClientInitialMetadata(ClientMetadata& client_initial_metadata);
+    void OnServerInitialMetadata(ServerMetadata& server_initial_metadata);
+    void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata);
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnFinalize;
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
+   private:
+    RefCountedPtr<GrpcLbClientStats> client_stats_;
+    bool saw_initial_metadata_ = false;
+  };
+
+  static absl::StatusOr<std::unique_ptr<ClientLoadReportingFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
 };
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_CLIENT_LOAD_REPORTING_FILTER_H

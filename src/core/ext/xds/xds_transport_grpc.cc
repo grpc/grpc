@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_transport_grpc.h"
 
 #include <string.h>
@@ -36,6 +34,7 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -227,7 +226,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 // GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 //
 
-class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
+class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(

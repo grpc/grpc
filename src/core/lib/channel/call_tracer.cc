@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/call_tracer.h"
 
 #include <memory>
@@ -25,6 +23,7 @@
 #include <vector>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/promise/context.h"
@@ -151,11 +150,10 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
       return nullptr;
     }
-    void AddOptionalLabels(
-        OptionalLabelComponent component,
-        std::shared_ptr<std::map<std::string, std::string>> labels) override {
+    void SetOptionalLabel(OptionalLabelKey key,
+                          RefCountedStringValue value) override {
       for (auto* tracer : tracers_) {
-        tracer->AddOptionalLabels(component, labels);
+        tracer->SetOptionalLabel(key, value);
       }
     }
     std::string TraceId() override { return tracers_[0]->TraceId(); }

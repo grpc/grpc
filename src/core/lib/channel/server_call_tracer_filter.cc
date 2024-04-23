@@ -14,13 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
+#include "src/core/lib/channel/server_call_tracer_filter.h"
 
 #include <functional>
+#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -47,7 +50,7 @@ class ServerCallTracerFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerCallTracerFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServerCallTracerFilter>> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/);
 
   class Call {
@@ -96,14 +99,16 @@ const grpc_channel_filter ServerCallTracerFilter::kFilter =
                            kFilterExaminesServerInitialMetadata>(
         "server_call_tracer");
 
-absl::StatusOr<ServerCallTracerFilter> ServerCallTracerFilter::Create(
-    const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
-  return ServerCallTracerFilter();
+absl::StatusOr<std::unique_ptr<ServerCallTracerFilter>>
+ServerCallTracerFilter::Create(const ChannelArgs& /*args*/,
+                               ChannelFilter::Args /*filter_args*/) {
+  return std::make_unique<ServerCallTracerFilter>();
 }
 
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
+  if (IsChaoticGoodEnabled()) return;
   builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
       GRPC_SERVER_CHANNEL);
 }

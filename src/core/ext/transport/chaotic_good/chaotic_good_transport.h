@@ -15,9 +15,12 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CHAOTIC_GOOD_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CHAOTIC_GOOD_TRANSPORT_H
 
-#include <grpc/support/port_platform.h>
+#include <cstdint>
+#include <utility>
 
 #include "absl/random/random.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -43,7 +46,12 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
       : control_endpoint_(std::move(control_endpoint)),
         data_endpoint_(std::move(data_endpoint)),
         encoder_(std::move(hpack_encoder)),
-        parser_(std::move(hpack_parser)) {}
+        parser_(std::move(hpack_parser)) {
+    // Enable RxMemoryAlignment and RPC receive coalescing after the transport
+    // setup is complete. At this point all the settings frames should have
+    // been read.
+    data_endpoint_.EnforceRxMemoryAlignmentAndCoalescing();
+  }
 
   auto WriteFrame(const FrameInterface& frame) {
     auto buffers = frame.Serialize(&encoder_);
@@ -82,25 +90,25 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           return If(
               frame_header.ok(),
               [this, &frame_header] {
-                const uint32_t message_padding = std::exchange(
-                    last_message_padding_, frame_header->message_padding);
+                const uint32_t message_padding = frame_header->message_padding;
                 const uint32_t message_length = frame_header->message_length;
                 return Map(
                     TryJoin<absl::StatusOr>(
                         control_endpoint_.Read(frame_header->GetFrameLength()),
-                        TrySeq(data_endpoint_.Read(message_padding),
-                               [this, message_length]() {
-                                 return data_endpoint_.Read(message_length);
-                               })),
-                    [frame_header = *frame_header](
+                        data_endpoint_.Read(message_length + message_padding)),
+                    [frame_header = *frame_header, message_padding](
                         absl::StatusOr<std::tuple<SliceBuffer, SliceBuffer>>
                             buffers)
                         -> absl::StatusOr<std::tuple<FrameHeader, BufferPair>> {
                       if (!buffers.ok()) return buffers.status();
+                      SliceBuffer data_read = std::move(std::get<1>(*buffers));
+                      if (message_padding > 0) {
+                        data_read.RemoveLastNBytesNoInline(message_padding);
+                      }
                       return std::tuple<FrameHeader, BufferPair>(
                           frame_header,
                           BufferPair{std::move(std::get<0>(*buffers)),
-                                     std::move(std::get<1>(*buffers))});
+                                     std::move(data_read)});
                     });
               },
               [&frame_header]() {
@@ -127,7 +135,6 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
  private:
   PromiseEndpoint control_endpoint_;
   PromiseEndpoint data_endpoint_;
-  uint32_t last_message_padding_ = 0;
   HPackCompressor encoder_;
   HPackParser parser_;
   absl::BitGen bitgen_;

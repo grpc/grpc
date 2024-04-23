@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/server/csds/csds.h"
 
 #include <string>
@@ -27,6 +25,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/slice.h>
 

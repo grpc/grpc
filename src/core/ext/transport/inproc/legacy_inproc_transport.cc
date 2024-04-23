@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 
 #include <stddef.h>
@@ -41,11 +39,12 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -268,18 +267,18 @@ struct inproc_stream {
   grpc_stream_refcount* refs;
   grpc_core::Arena* arena;
 
-  grpc_metadata_batch to_read_initial_md{arena};
+  grpc_metadata_batch to_read_initial_md;
   bool to_read_initial_md_filled = false;
-  grpc_metadata_batch to_read_trailing_md{arena};
+  grpc_metadata_batch to_read_trailing_md;
   bool to_read_trailing_md_filled = false;
   bool ops_needed = false;
   // Write buffer used only during gap at init time when client-side
   // stream is set up but server side stream is not yet set up
-  grpc_metadata_batch write_buffer_initial_md{arena};
+  grpc_metadata_batch write_buffer_initial_md;
   bool write_buffer_initial_md_filled = false;
   grpc_core::Timestamp write_buffer_deadline =
       grpc_core::Timestamp::InfFuture();
-  grpc_metadata_batch write_buffer_trailing_md{arena};
+  grpc_metadata_batch write_buffer_trailing_md;
   bool write_buffer_trailing_md_filled = false;
   grpc_error_handle write_buffer_cancel_error;
 
@@ -457,7 +456,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     // Send trailing md to the other side indicating cancellation
     s->trailing_md_sent = true;
 
-    grpc_metadata_batch fake_md(s->arena);
+    grpc_metadata_batch fake_md;
     inproc_stream* other = s->other_side;
     grpc_metadata_batch* dest = (other == nullptr)
                                     ? &s->write_buffer_trailing_md
@@ -480,7 +479,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     if (!s->t->is_client) {
       // If this is a server, provide initial metadata with a path and
       // authority since it expects that as well as no error yet
-      grpc_metadata_batch fake_md(s->arena);
+      grpc_metadata_batch fake_md;
       fake_md.Set(grpc_core::HttpPathMetadata(),
                   grpc_core::Slice::FromStaticString("/"));
       fake_md.Set(grpc_core::HttpAuthorityMetadata(),
@@ -903,7 +902,7 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
     // already have
     s->trailing_md_sent = true;
 
-    grpc_metadata_batch cancel_md(s->arena);
+    grpc_metadata_batch cancel_md;
 
     grpc_metadata_batch* dest = (other == nullptr)
                                     ? &s->write_buffer_trailing_md

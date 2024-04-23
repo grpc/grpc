@@ -11,11 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
 #include <errno.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
@@ -45,6 +45,7 @@
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
@@ -72,7 +73,7 @@ EventEngine::ResolvedAddress MakeAddr4(const uint8_t* data, size_t data_len) {
       const_cast<sockaddr*>(resolved_addr4.address()));
   memset(&resolved_addr4, 0, sizeof(resolved_addr4));
   addr4->sin_family = AF_INET;
-  GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
+  CHECK_EQ(data_len, sizeof(addr4->sin_addr.s_addr));
   memcpy(&addr4->sin_addr.s_addr, data, data_len);
   addr4->sin_port = htons(12345);
   return EventEngine::ResolvedAddress(
@@ -86,7 +87,7 @@ EventEngine::ResolvedAddress MakeAddr6(const uint8_t* data, size_t data_len) {
       const_cast<sockaddr*>(resolved_addr6.address()));
   memset(&resolved_addr6, 0, sizeof(resolved_addr6));
   addr6->sin6_family = AF_INET6;
-  GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
+  CHECK_EQ(data_len, sizeof(addr6->sin6_addr.s6_addr));
   memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
   addr6->sin6_port = htons(12345);
   return EventEngine::ResolvedAddress(
@@ -311,6 +312,21 @@ TEST(TcpSocketUtilsTest, SockAddrPortTest) {
   // Ensure the string description reflects the updated port values.
   EXPECT_EQ(ResolvedAddressToNormalizedString(wild4).value(), "0.0.0.0:21");
   EXPECT_EQ(ResolvedAddressToNormalizedString(wild6).value(), "[::]:22");
+}
+
+TEST(TcpSocketUtilsTest, MaybeGetWildcardPortFromAddress) {
+  EventEngine::ResolvedAddress wild4 = ResolvedAddressMakeWild4(20);
+  EventEngine::ResolvedAddress wild6 = ResolvedAddressMakeWild6(20);
+  auto v4_port = MaybeGetWildcardPortFromAddress(wild4);
+  ASSERT_TRUE(v4_port.has_value());
+  auto v6_port = MaybeGetWildcardPortFromAddress(wild6);
+  ASSERT_TRUE(v6_port.has_value());
+  wild4 = MakeAddr4(kIPv4, sizeof(kIPv4));
+  v4_port = MaybeGetWildcardPortFromAddress(wild4);
+  ASSERT_FALSE(v4_port.has_value());
+  wild6 = MakeAddr6(kMapped, sizeof(kMapped));
+  v6_port = MaybeGetWildcardPortFromAddress(wild6);
+  ASSERT_FALSE(v6_port.has_value());
 }
 
 }  // namespace experimental

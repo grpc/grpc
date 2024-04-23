@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
 #include <cstdint>
@@ -30,6 +28,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -103,14 +102,12 @@ auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
             },
             []() -> StatusFlag { return Success{}; });
       },
-      [call_handler, trailers = std::move(frame.trailers)]() mutable {
-        return If(
-            trailers != nullptr,
-            [&call_handler, &trailers]() mutable {
-              return call_handler.PushServerTrailingMetadata(
-                  std::move(trailers));
-            },
-            []() -> StatusFlag { return Success{}; });
+      [call_handler,
+       trailers = std::move(frame.trailers)]() mutable -> StatusFlag {
+        if (trailers != nullptr) {
+          call_handler.PushServerTrailingMetadata(std::move(trailers));
+        }
+        return Success{};
       });
   // Wrap the actual sequence with something that owns the call handler so that
   // its lifetime extends until the push completes.
@@ -224,7 +221,7 @@ void ChaoticGoodClientTransport::AbortWithError() {
   for (const auto& pair : stream_map) {
     auto call_handler = pair.second;
     call_handler.SpawnInfallible("cancel", [call_handler]() mutable {
-      call_handler.Cancel(ServerMetadataFromStatus(
+      call_handler.PushServerTrailingMetadata(ServerMetadataFromStatus(
           absl::UnavailableError("Transport closed.")));
       return Empty{};
     });
@@ -301,6 +298,10 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
     const uint32_t stream_id = MakeStream(call_handler);
     return Map(CallOutboundLoop(stream_id, call_handler),
                [stream_id, this](absl::Status result) {
+                 if (grpc_chaotic_good_trace.enabled()) {
+                   gpr_log(GPR_INFO, "CHAOTIC_GOOD: Call %d finished with %s",
+                           stream_id, result.ToString().c_str());
+                 }
                  if (!result.ok()) {
                    CancelFrame frame;
                    frame.stream_id = stream_id;

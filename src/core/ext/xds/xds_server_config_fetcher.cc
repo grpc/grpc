@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 #include <algorithm>
@@ -40,11 +38,13 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
 #include "src/core/ext/filters/server_config_selector/server_config_selector_filter.h"
@@ -94,14 +94,12 @@ namespace {
 
 using ReadDelayHandle = XdsClient::ReadDelayHandle;
 
-constexpr absl::string_view kServerXdsClientKey = "#server";
-
 TraceFlag grpc_xds_server_config_fetcher_trace(false,
                                                "xds_server_config_fetcher");
 
 // A server config fetcher that fetches the information for configuring server
 // listeners from the xDS control plane.
-class XdsServerConfigFetcher : public grpc_server_config_fetcher {
+class XdsServerConfigFetcher final : public grpc_server_config_fetcher {
  public:
   XdsServerConfigFetcher(RefCountedPtr<GrpcXdsClient> xds_client,
                          grpc_server_xds_status_notifier notifier);
@@ -142,7 +140,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
 // continues to be used. If there isn't any previous good update or if the
 // update received was a fatal error (resource does not exist), the server
 // listener is made to stop listening.
-class XdsServerConfigFetcher::ListenerWatcher
+class XdsServerConfigFetcher::ListenerWatcher final
     : public XdsListenerResourceType::WatcherInterface {
  public:
   ListenerWatcher(RefCountedPtr<GrpcXdsClient> xds_client,
@@ -202,7 +200,7 @@ class XdsServerConfigFetcher::ListenerWatcher
 // appropriate filter chain from the xDS Listener resource and injects channel
 // args that configure the right mTLS certs and cause the right set of HTTP
 // filters to be injected.
-class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
+class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager final
     : public grpc_server_config_fetcher::ConnectionManager {
  public:
   FilterChainMatchManager(RefCountedPtr<GrpcXdsClient> xds_client,
@@ -216,8 +214,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
 
   absl::StatusOr<ChannelArgs> UpdateChannelArgsForConnection(
       const ChannelArgs& args, grpc_endpoint* tcp) override;
-
-  void Orphan() override;
 
   // Invoked by ListenerWatcher to start fetching referenced RDS resources.
   void StartRdsWatch(RefCountedPtr<ListenerWatcher> listener_watcher)
@@ -248,6 +244,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
   absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
   CreateOrGetXdsCertificateProviderFromFilterChainData(
       const XdsListenerResource::FilterChainData* filter_chain);
+  void Orphaned() override;
 
   // Helper functions invoked by RouteConfigWatcher when there are updates to
   // RDS resources.
@@ -283,7 +280,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager
 // with the latest updates and new connections do not need to wait for the RDS
 // resources to be fetched.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    RouteConfigWatcher : public XdsRouteConfigResourceType::WatcherInterface {
+    RouteConfigWatcher final
+    : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   RouteConfigWatcher(
       std::string resource_name,
@@ -319,7 +317,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // DynamicXdsServerConfigSelectorProvider to parse the RDS update and get
 // per-call configuration based on incoming metadata.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    XdsServerConfigSelector : public ServerConfigSelector {
+    XdsServerConfigSelector final : public ServerConfigSelector {
  public:
   static absl::StatusOr<RefCountedPtr<XdsServerConfigSelector>> Create(
       const XdsHttpFilterRegistry& http_filter_registry,
@@ -343,7 +341,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       RefCountedPtr<ServiceConfig> method_config;
     };
 
-    class RouteListIterator : public XdsRouting::RouteListIterator {
+    class RouteListIterator final : public XdsRouting::RouteListIterator {
      public:
       explicit RouteListIterator(const std::vector<Route>* routes)
           : routes_(routes) {}
@@ -363,7 +361,8 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     std::vector<Route> routes;
   };
 
-  class VirtualHostListIterator : public XdsRouting::VirtualHostListIterator {
+  class VirtualHostListIterator final
+      : public XdsRouting::VirtualHostListIterator {
    public:
     explicit VirtualHostListIterator(
         const std::vector<VirtualHost>* virtual_hosts)
@@ -386,7 +385,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // An XdsServerConfigSelectorProvider implementation for when the
 // RouteConfiguration is available inline.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    StaticXdsServerConfigSelectorProvider
+    StaticXdsServerConfigSelectorProvider final
     : public ServerConfigSelectorProvider {
  public:
   StaticXdsServerConfigSelectorProvider(
@@ -417,11 +416,11 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
         static_resource_.value(), http_filters_);
   }
 
-  void Orphan() override {}
-
   void CancelWatch() override { watcher_.reset(); }
 
  private:
+  void Orphaned() override {}
+
   RefCountedPtr<GrpcXdsClient> xds_client_;
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>>
       static_resource_;
@@ -437,7 +436,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // An XdsServerConfigSelectorProvider implementation for when the
 // RouteConfiguration is to be fetched separately via RDS.
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider
+    DynamicXdsServerConfigSelectorProvider final
     : public ServerConfigSelectorProvider {
  public:
   DynamicXdsServerConfigSelectorProvider(
@@ -451,8 +450,6 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     xds_client_.reset(DEBUG_LOCATION, "DynamicXdsServerConfigSelectorProvider");
   }
 
-  void Orphan() override;
-
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override;
@@ -461,6 +458,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
  private:
   class RouteConfigWatcher;
 
+  void Orphaned() override;
   void OnRouteConfigChanged(
       std::shared_ptr<const XdsRouteConfigResource> rds_update);
   void OnError(absl::Status status);
@@ -484,7 +482,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 // A watcher implementation for updating the RDS resource used by
 // DynamicXdsServerConfigSelectorProvider
 class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider::RouteConfigWatcher
+    DynamicXdsServerConfigSelectorProvider::RouteConfigWatcher final
     : public XdsRouteConfigResourceType::WatcherInterface {
  public:
   explicit RouteConfigWatcher(
@@ -785,7 +783,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    Orphan() {
+    Orphaned() {
   MutexLock lock(&mu_);
   // Cancel the RDS watches to clear up the weak refs
   for (const auto& entry : rds_map_) {
@@ -1283,7 +1281,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 }
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
-    DynamicXdsServerConfigSelectorProvider::Orphan() {
+    DynamicXdsServerConfigSelectorProvider::Orphaned() {
   XdsRouteConfigResourceType::CancelWatch(xds_client_.get(), resource_name_,
                                           route_config_watcher_,
                                           false /* delay_unsubscription */);
@@ -1374,7 +1372,8 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       "update=%p, user_data=%p}, args=%p)",
       3, (notifier.on_serving_status_update, notifier.user_data, args));
   auto xds_client = grpc_core::GrpcXdsClient::GetOrCreate(
-      grpc_core::kServerXdsClientKey, channel_args, "XdsServerConfigFetcher");
+      grpc_core::GrpcXdsClient::kServerKey, channel_args,
+      "XdsServerConfigFetcher");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             xds_client.status().ToString().c_str());

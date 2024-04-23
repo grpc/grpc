@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice_buffer.h"
 
 #include <string.h>
@@ -28,6 +26,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -324,9 +323,13 @@ void grpc_slice_buffer_move_into(grpc_slice_buffer* src,
   src->length = 0;
 }
 
-template <bool incref>
+template <bool incref, bool allow_inline>
 static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
                                               grpc_slice_buffer* dst) {
+  if (n == 0) {
+    return;
+  }
+
   GPR_ASSERT(src->length >= n);
   if (src->length == n) {
     grpc_slice_buffer_move_into(src, dst);
@@ -346,14 +349,28 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
       grpc_slice_buffer_add(dst, slice);
       break;
     } else if (incref) {  // n < slice_len
-      grpc_slice_buffer_undo_take_first(
-          src, grpc_slice_split_tail_maybe_ref(&slice, n, GRPC_SLICE_REF_BOTH));
+      if (allow_inline) {
+        grpc_slice_buffer_undo_take_first(
+            src,
+            grpc_slice_split_tail_maybe_ref(&slice, n, GRPC_SLICE_REF_BOTH));
+      } else {
+        grpc_slice_buffer_undo_take_first(
+            src, grpc_slice_split_tail_maybe_ref_no_inline(
+                     &slice, n, GRPC_SLICE_REF_BOTH));
+      }
       GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == n);
       grpc_slice_buffer_add(dst, slice);
       break;
     } else {  // n < slice_len
-      grpc_slice_buffer_undo_take_first(
-          src, grpc_slice_split_tail_maybe_ref(&slice, n, GRPC_SLICE_REF_TAIL));
+      if (allow_inline) {
+        grpc_slice_buffer_undo_take_first(
+            src,
+            grpc_slice_split_tail_maybe_ref(&slice, n, GRPC_SLICE_REF_TAIL));
+      } else {
+        grpc_slice_buffer_undo_take_first(
+            src, grpc_slice_split_tail_maybe_ref_no_inline(
+                     &slice, n, GRPC_SLICE_REF_TAIL));
+      }
       GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == n);
       grpc_slice_buffer_add_indexed(dst, slice);
       break;
@@ -364,14 +381,19 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
   GPR_ASSERT(src->count > 0);
 }
 
+void grpc_slice_buffer_move_first_no_inline(grpc_slice_buffer* src, size_t n,
+                                            grpc_slice_buffer* dst) {
+  slice_buffer_move_first_maybe_ref<true, false>(src, n, dst);
+}
+
 void grpc_slice_buffer_move_first(grpc_slice_buffer* src, size_t n,
                                   grpc_slice_buffer* dst) {
-  slice_buffer_move_first_maybe_ref<true>(src, n, dst);
+  slice_buffer_move_first_maybe_ref<true, true>(src, n, dst);
 }
 
 void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer* src, size_t n,
                                          grpc_slice_buffer* dst) {
-  slice_buffer_move_first_maybe_ref<false>(src, n, dst);
+  slice_buffer_move_first_maybe_ref<false, true>(src, n, dst);
 }
 
 void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
@@ -417,9 +439,9 @@ void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
     n -= slice_len;
   }
 }
-
-void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
-                                grpc_slice_buffer* garbage) {
+template <bool allow_inline>
+void grpc_slice_buffer_trim_end_impl(grpc_slice_buffer* sb, size_t n,
+                                     grpc_slice_buffer* garbage) {
   GPR_ASSERT(n <= sb->length);
   sb->length -= n;
   for (;;) {
@@ -427,7 +449,12 @@ void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
     grpc_slice slice = sb->slices[idx];
     size_t slice_len = GRPC_SLICE_LENGTH(slice);
     if (slice_len > n) {
-      sb->slices[idx] = grpc_slice_split_head(&slice, slice_len - n);
+      if (allow_inline) {
+        sb->slices[idx] = grpc_slice_split_head(&slice, slice_len - n);
+      } else {
+        sb->slices[idx] =
+            grpc_slice_split_head_no_inline(&slice, slice_len - n);
+      }
       if (garbage) {
         grpc_slice_buffer_add_indexed(garbage, slice);
       } else {
@@ -452,6 +479,16 @@ void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
       sb->count = idx;
     }
   }
+}
+
+void grpc_slice_buffer_trim_end_no_inline(grpc_slice_buffer* sb, size_t n,
+                                          grpc_slice_buffer* garbage) {
+  return grpc_slice_buffer_trim_end_impl<false>(sb, n, garbage);
+}
+
+void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
+                                grpc_slice_buffer* garbage) {
+  return grpc_slice_buffer_trim_end_impl<true>(sb, n, garbage);
 }
 
 grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {

@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
 #include <atomic>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/promise.h"
@@ -83,7 +83,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                             "inproc transport disconnected");
   }
 
-  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadata& md) {
+  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadataHandle md) {
     switch (state_.load(std::memory_order_acquire)) {
       case ConnectionState::kInitial:
         return absl::InternalError(
@@ -93,7 +93,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       case ConnectionState::kReady:
         break;
     }
-    return acceptor_->CreateCall(md, acceptor_->CreateArena());
+    return acceptor_->CreateCall(std::move(md), acceptor_->CreateArena());
   }
 
  private:
@@ -116,10 +116,10 @@ class InprocClientTransport final : public Transport, public ClientTransport {
         TrySeq(call_handler.PullClientInitialMetadata(),
                [server_transport = server_transport_,
                 call_handler](ClientMetadataHandle md) {
-                 auto call_initiator = server_transport->AcceptCall(*md);
+                 auto call_initiator =
+                     server_transport->AcceptCall(std::move(md));
                  if (!call_initiator.ok()) return call_initiator.status();
-                 ForwardCall(call_handler, std::move(*call_initiator),
-                             std::move(md));
+                 ForwardCall(call_handler, std::move(*call_initiator));
                  return absl::OkStatus();
                }));
   }

@@ -19,13 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
 #define GRPC_SRC_CORE_LIB_IOMGR_CLOSURE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <assert.h>
 #include <stdbool.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"

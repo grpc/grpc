@@ -35,13 +35,13 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/core/service_config/service_config_parser.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/service_config/service_config_parser.h"
 
 namespace grpc_core {
 namespace internal {
 
-class ClientChannelGlobalParsedConfig
+class ClientChannelGlobalParsedConfig final
     : public ServiceConfigParser::ParsedConfig {
  public:
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config() const {
@@ -72,7 +72,7 @@ class ClientChannelGlobalParsedConfig
   HealthCheckConfig health_check_config_;
 };
 
-class ClientChannelMethodParsedConfig
+class ClientChannelMethodParsedConfig final
     : public ServiceConfigParser::ParsedConfig {
  public:
   Duration timeout() const { return timeout_; }
@@ -86,7 +86,8 @@ class ClientChannelMethodParsedConfig
   absl::optional<bool> wait_for_ready_;
 };
 
-class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {
+class ClientChannelServiceConfigParser final
+    : public ServiceConfigParser::Parser {
  public:
   absl::string_view name() const override { return parser_name(); }
 

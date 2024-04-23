@@ -36,9 +36,9 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/service_config/service_config.h"
 
 // Channel arg key for ConfigSelector.
 #define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
@@ -90,7 +90,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.
-class DefaultConfigSelector : public ConfigSelector {
+class DefaultConfigSelector final : public ConfigSelector {
  public:
   explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
       : service_config_(std::move(service_config)) {

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 #define GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stdbool.h>
 
@@ -29,6 +27,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"

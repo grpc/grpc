@@ -25,8 +25,8 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/end2end_tests.h"

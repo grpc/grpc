@@ -37,8 +37,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -49,6 +47,8 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
 // Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,
@@ -70,7 +70,7 @@ namespace {
 // c-ares should read, it must do so by calling SetWSAError() on the
 // WSAErrorContext instance passed to it. A WSAErrorContext must only be
 // instantiated at the top of the virtual socket function callstack.
-class WSAErrorContext {
+class WSAErrorContext final {
  public:
   explicit WSAErrorContext(){};
 
@@ -99,7 +99,7 @@ class WSAErrorContext {
 // from c-ares and are used with the grpc windows poller, and it, e.g.,
 // manufactures virtual socket error codes when it e.g. needs to tell the c-ares
 // library to wait for an async read.
-class GrpcPolledFdWindows : public GrpcPolledFd {
+class GrpcPolledFdWindows final : public GrpcPolledFd {
  public:
   enum WriteState {
     WRITE_IDLE,
@@ -694,7 +694,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
   absl::AnyInvocable<void()> on_shutdown_locked_;
 };
 
-class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
+class GrpcPolledFdFactoryWindows final : public GrpcPolledFdFactory {
  public:
   explicit GrpcPolledFdFactoryWindows(Mutex* mu) : mu_(mu) {}
 

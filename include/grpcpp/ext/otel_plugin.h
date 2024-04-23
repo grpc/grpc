@@ -19,8 +19,6 @@
 #ifndef GRPCPP_EXT_OTEL_PLUGIN_H
 #define GRPCPP_EXT_OTEL_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,10 +29,14 @@
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+
 namespace grpc {
 
 namespace internal {
 class OpenTelemetryPluginBuilderImpl;
+class OpenTelemetryPlugin;
 }  // namespace internal
 
 class OpenTelemetryPluginOption {
@@ -57,6 +59,8 @@ class OpenTelemetryPluginOption {
 /// grpc.server.call.rcvd_total_compressed_message_size
 class OpenTelemetryPluginBuilder {
  public:
+  using ChannelScope = grpc_core::experimental::StatsPluginChannelScope;
+
   /// Metrics
   static constexpr absl::string_view kClientAttemptStartedInstrumentName =
       "grpc.client.attempt.started";
@@ -100,12 +104,27 @@ class OpenTelemetryPluginBuilder {
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
+  // Methods to manipulate which instruments are enabled in the OpenTelemetry
+  // Stats Plugin.
+  OpenTelemetryPluginBuilder& EnableMetrics(
+      absl::Span<const absl::string_view> metric_names);
+  OpenTelemetryPluginBuilder& DisableMetrics(
+      absl::Span<const absl::string_view> metric_names);
+  OpenTelemetryPluginBuilder& DisableAllMetrics();
   /// Add a plugin option to add to the opentelemetry plugin being built. At
   /// present, this type is an opaque type. Ownership of \a option is
   /// transferred when `AddPluginOption` is invoked. A maximum of 64 plugin
   /// options can be added.
   OpenTelemetryPluginBuilder& AddPluginOption(
       std::unique_ptr<OpenTelemetryPluginOption> option);
+  /// Records \a optional_label_key on all metrics that provide it.
+  OpenTelemetryPluginBuilder& AddOptionalLabel(
+      absl::string_view optional_label_key);
+  /// Set scope filter to choose which channels are recorded by this plugin.
+  /// Server-side recording remains unaffected.
+  OpenTelemetryPluginBuilder& SetChannelScopeFilter(
+      absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
+          channel_scope_filter);
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
   absl::Status BuildAndRegisterGlobal();

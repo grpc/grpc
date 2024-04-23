@@ -31,7 +31,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 
-#include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -65,7 +64,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel final : public RefCounted<ConnectedSubchannel> {
  public:
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const ChannelArgs& args,
@@ -96,7 +95,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 };
 
 // Implements the interface of RefCounted<>.
-class SubchannelCall {
+class SubchannelCall final {
  public:
   struct Args {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
@@ -166,7 +165,7 @@ class SubchannelCall {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel : public DualRefCounted<Subchannel> {
+class Subchannel final : public DualRefCounted<Subchannel> {
  public:
   // TODO(roth): Once we remove pollset_set, consider whether this can
   // just use the normal AsyncConnectivityStateWatcherInterface API.
@@ -250,9 +249,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // Resets the connection backoff of the subchannel.
   void ResetBackoff() ABSL_LOCKS_EXCLUDED(mu_);
 
-  // Tears down any existing connection, and arranges for destruction
-  void Orphan() override ABSL_LOCKS_EXCLUDED(mu_);
-
   // Access to data producer map.
   // We do not hold refs to the data producer; the implementation is
   // expected to register itself upon construction and remove itself
@@ -277,9 +273,12 @@ class Subchannel : public DualRefCounted<Subchannel> {
   }
 
  private:
+  // Tears down any existing connection, and arranges for destruction
+  void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
+
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.
-  class ConnectivityStateWatcherList {
+  class ConnectivityStateWatcherList final {
    public:
     explicit ConnectivityStateWatcherList(Subchannel* subchannel)
         : subchannel_(subchannel) {}
