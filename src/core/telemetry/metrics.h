@@ -212,13 +212,14 @@ class GlobalInstrumentsRegistry {
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
 
+  static std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
+  GetInstrumentList();
+
  private:
   friend class GlobalInstrumentsRegistryTestPeer;
 
   GlobalInstrumentsRegistry() = delete;
 
-  static std::vector<GlobalInstrumentsRegistry::GlobalInstrumentDescriptor>&
-  GetInstrumentList();
   static InstrumentID RegisterInstrument(
       ValueType value_type, InstrumentType instrument_type,
       absl::string_view name, absl::string_view description,
