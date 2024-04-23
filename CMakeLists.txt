@@ -7397,6 +7397,7 @@ target_include_directories(aws_request_signer_test
 target_link_libraries(aws_request_signer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -15807,6 +15808,7 @@ target_include_directories(grpc_tls_certificate_distributor_test
 target_link_libraries(grpc_tls_certificate_distributor_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -15858,6 +15860,7 @@ target_include_directories(grpc_tls_certificate_provider_test
 target_link_libraries(grpc_tls_certificate_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -31284,6 +31287,7 @@ target_include_directories(tls_security_connector_test
 target_link_libraries(tls_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 

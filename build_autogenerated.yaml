@@ -5775,6 +5775,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: backend_metrics_lb_policy_test
   gtest: true
@@ -10697,6 +10698,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: grpc_tls_certificate_provider_test
   gtest: true
@@ -10727,6 +10729,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: grpc_tls_certificate_verifier_test
   gtest: true
@@ -19560,6 +19563,7 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: too_many_pings_test
   gtest: true
