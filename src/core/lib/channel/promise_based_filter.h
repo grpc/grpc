@@ -93,8 +93,8 @@ class ChannelFilter {
     // type signature from interception_chain.h, which means that we need a way
     // of constructing this object without naming it ===> implicit construction.
     // TODO(ctiller): remove this once we're fully on call-v3
-    // NOLINTNEXTLINE(runtime/explicit)
-    Args(size_t instance_id) : impl_(V3Based{instance_id}) {}
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    explicit Args(size_t instance_id) : impl_(V3Based{instance_id}) {}
 
     ABSL_DEPRECATED("Direct access to channel stack is deprecated")
     grpc_channel_stack* channel_stack() const {

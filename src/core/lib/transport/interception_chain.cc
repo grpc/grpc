@@ -83,8 +83,8 @@ class TerminalInterceptor final : public UnstartedCallDestination {
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
     unstarted_call_handler.SpawnGuarded(
         "start_call",
-        Map(interception_chain_detail::HijackCall(
-                std::move(unstarted_call_handler), destination_, stack_),
+        Map(interception_chain_detail::HijackCall(unstarted_call_handler,
+                                                  destination_, stack_),
             [](ValueOrFailure<HijackedCall> hijacked_call) -> StatusFlag {
               if (!hijacked_call.ok()) return Failure{};
               ForwardCall(hijacked_call.value().original_call_handler(),
