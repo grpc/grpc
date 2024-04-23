@@ -45,7 +45,7 @@ cdef class Server:
     self.is_shutting_down = False
     self.is_shutdown = False
     self.c_server = NULL
-    self.registered_methods = {}  # Mapping[str, RegisteredMethod]
+    self.registered_methods = {}  # Mapping[bytes, RegisteredMethod]
     cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
     cdef grpc_server_xds_status_notifier notifier
@@ -133,6 +133,9 @@ cdef class Server:
 
   def register_method(self, str fully_qualified_method):
     method_bytes = str_to_bytes(fully_qualified_method)
+    if method_bytes in self.registered_methods.keys():
+      # Ignore already registered method
+      return
     cdef RegisteredMethod registered_method = RegisteredMethod(method_bytes, <uintptr_t>self.c_server)
     self.registered_methods[method_bytes] = registered_method
 

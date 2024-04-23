@@ -24,7 +24,7 @@ cdef class Server:
   # TODO(https://github.com/grpc/grpc/issues/15662): Elide this.
   cdef list references
   cdef list registered_completion_queues
-  cdef dict registered_methods # Mapping[str, RegisteredMethod]
+  cdef dict registered_methods # Mapping[bytes, RegisteredMethod]
 
   cdef _c_shutdown(self, CompletionQueue queue, tag)
   cdef _c_request_unregistered_call(self,
