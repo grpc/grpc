@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -429,8 +430,7 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
-  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) ==
-             ARES_SUCCESS);
+  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
 void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }

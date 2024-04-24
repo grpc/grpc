@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -104,7 +105,7 @@ int main(int argc, char** argv) {
   int result = 0;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
     CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
-                    .empty());
+               .empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
     auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");

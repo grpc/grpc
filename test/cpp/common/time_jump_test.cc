@@ -25,6 +25,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/time/time.h"
 
 #include <grpc/grpc.h>
@@ -128,8 +129,7 @@ TEST_P(TimeJumpTest, TimedWait) {
     gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout,
             elapsed_ms);
     CHECK_EQ(timedout, 1);
-    CHECK(1 ==
-               gpr_time_similar(gpr_time_sub(after, before),
+    CHECK(1 == gpr_time_similar(gpr_time_sub(after, before),
                                 gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
                                 gpr_time_from_millis(50, GPR_TIMESPAN)));
 
