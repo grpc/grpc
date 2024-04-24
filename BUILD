@@ -1796,7 +1796,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
-        "//src/core:call_size_estimator",
+        "//src/core:call_arena_allocator",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",

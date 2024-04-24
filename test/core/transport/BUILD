@@ -36,6 +36,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "interception_chain_test",
+    srcs = ["interception_chain_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_base",
+        "//src/core:interception_chain",
+        "//src/core:resource_quota",
+        "//test/core/promise:poll_matcher",
+    ],
+)
+
+grpc_cc_test(
     name = "call_filters_test",
     srcs = ["call_filters_test.cc"],
     external_deps = [
@@ -46,6 +63,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:call_filters",
+        "//test/core/promise:poll_matcher",
     ],
 )
 
