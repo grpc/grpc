@@ -20,6 +20,7 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
@@ -85,9 +86,9 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                   grpc_core::CqVerifier::tag(1), nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
 
   {
     response_generator->WaitForResolverSet(
@@ -105,9 +106,9 @@ void run_test(bool wait_for_ready) {
 
   gpr_log(GPR_INFO, "call status: %d", status);
   if (wait_for_ready) {
-    GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_slice_unref(details);

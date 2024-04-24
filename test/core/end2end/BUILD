@@ -27,6 +27,7 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/strings",
         "absl/strings:str_format",
         "absl/types:variant",
@@ -118,6 +119,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/random",
@@ -200,6 +202,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -264,6 +267,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/strings",
         "absl/types:optional",
         "gtest",
@@ -496,6 +500,7 @@ grpc_core_end2end_test(name = "write_buffering_at_end")
 grpc_cc_test(
     name = "bad_server_response_test",
     srcs = ["bad_server_response_test.cc"],
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         "cq_verifier",
@@ -518,6 +523,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "connection_refused_test",
     srcs = ["connection_refused_test.cc"],
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         "cq_verifier",
@@ -534,6 +540,7 @@ grpc_cc_test(
     name = "dualstack_socket_test",
     srcs = ["dualstack_socket_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -557,6 +564,7 @@ grpc_cc_test(
     name = "goaway_server_test",
     srcs = ["goaway_server_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -588,6 +596,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "invalid_call_argument_test",
     srcs = ["invalid_call_argument_test.cc"],
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         "cq_verifier",
@@ -613,6 +622,7 @@ grpc_cc_test(
     name = "no_server_test",
     srcs = ["no_server_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/time",
@@ -641,6 +651,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/strings",
@@ -682,6 +693,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/types:optional",
         "gtest",
     ],
@@ -712,6 +724,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/types:optional",
         "gtest",
     ],

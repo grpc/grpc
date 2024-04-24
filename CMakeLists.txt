@@ -6431,6 +6431,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alts_concurrent_connectivity_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++
     grpc_test_util
   )
@@ -7607,6 +7608,7 @@ target_include_directories(bad_server_response_test
 target_link_libraries(bad_server_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -7662,6 +7664,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(bad_ssl_alpn_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc_test_util
   )
 
@@ -7718,6 +7721,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(bad_ssl_cert_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc_test_util
   )
 
@@ -9038,6 +9042,7 @@ target_include_directories(cancel_ares_query_test
 target_link_libraries(cancel_ares_query_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -11440,6 +11445,7 @@ target_include_directories(connection_refused_test
 target_link_libraries(connection_refused_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -12410,6 +12416,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(dualstack_socket_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc_test_util
   )
 
@@ -14829,6 +14836,7 @@ target_include_directories(goaway_server_test
 target_link_libraries(goaway_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -16353,6 +16361,7 @@ target_include_directories(h2_ssl_session_reuse_test
 target_link_libraries(h2_ssl_session_reuse_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -16396,6 +16405,7 @@ target_include_directories(h2_tls_peer_property_external_verifier_test
 target_link_libraries(h2_tls_peer_property_external_verifier_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -18008,6 +18018,7 @@ target_include_directories(invalid_call_argument_test
 target_link_libraries(invalid_call_argument_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -18506,6 +18517,7 @@ target_include_directories(lame_client_test
 target_link_libraries(lame_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -20321,6 +20333,7 @@ target_include_directories(no_server_test
 target_link_libraries(no_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
