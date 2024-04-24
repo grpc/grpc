@@ -5437,7 +5437,6 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -5492,7 +5491,6 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: alts_grpc_record_protocol_test
   gtest: true
@@ -5778,7 +5776,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: backend_metrics_lb_policy_test
   gtest: true
@@ -5883,7 +5880,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: bad_ssl_alpn_test
   gtest: true
@@ -5919,7 +5915,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -5959,7 +5954,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -5978,7 +5972,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: badreq_bad_client_test
   gtest: true
@@ -5993,7 +5986,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: basic_work_queue_test
   gtest: true
@@ -6889,7 +6881,6 @@ targets:
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: cancel_before_invoke_test
@@ -8256,7 +8247,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: connection_refused_test
   gtest: true
@@ -8269,7 +8259,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: connectivity_state_test
   gtest: true
@@ -8455,7 +8444,6 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -8688,7 +8676,6 @@ targets:
   - test/core/end2end/dualstack_socket_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -8707,7 +8694,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: empty_batch_test
   gtest: true
@@ -9451,7 +9437,6 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: fd_posix_test
   gtest: true
@@ -10227,7 +10212,6 @@ targets:
   - test/core/end2end/goaway_server_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: google_c2p_resolver_test
   gtest: true
@@ -10663,7 +10647,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: grpc_tls_certificate_provider_test
   gtest: true
@@ -10694,7 +10677,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: grpc_tls_certificate_verifier_test
   gtest: true
@@ -10916,7 +10898,6 @@ targets:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: h2_tls_peer_property_external_verifier_test
   gtest: true
@@ -10929,7 +10910,6 @@ targets:
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: handle_tests
   gtest: true
@@ -10971,7 +10951,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: headers_bad_client_test
   gtest: true
@@ -10986,7 +10965,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: health_service_end2end_test
   gtest: true
@@ -11485,7 +11463,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: inproc_test
   gtest: true
@@ -11770,7 +11747,6 @@ targets:
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: invoke_large_request_test
   gtest: true
@@ -12048,7 +12024,6 @@ targets:
   - test/core/surface/lame_client_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: large_metadata_test
   gtest: true
@@ -13146,7 +13121,6 @@ targets:
   - test/core/end2end/no_server_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: nonblocking_test
   gtest: true
@@ -13317,7 +13291,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: outlier_detection_lb_config_parser_test
   gtest: true
@@ -17502,7 +17475,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: server_request_call_test
   gtest: true
@@ -17970,7 +17942,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: simple_request_test
   gtest: true
@@ -18180,7 +18151,6 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -18197,7 +18167,6 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -18912,7 +18881,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: test_core_security_ssl_credentials_test
   gtest: true
@@ -19428,7 +19396,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: too_many_pings_test
   gtest: true
@@ -19737,7 +19704,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: uri_parser_test
   gtest: true
@@ -19901,7 +19867,6 @@ targets:
   - test/core/end2end/cq_verifier.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: windows_endpoint_test
   gtest: true
