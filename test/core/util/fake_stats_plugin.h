@@ -411,6 +411,28 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::TriggerCallbacks(): END", this);
   }
+  absl::optional<int64_t> GetCallbackGaugeValue(
+      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&callback_mu_);
+    auto iter = int64_callback_gauges_.find(handle.index);
+    if (iter == int64_callback_gauges_.end()) {
+      return absl::nullopt;
+    }
+    return iter->second.GetValue(label_values, optional_values);
+  }
+  absl::optional<double> GetCallbackGaugeValue(
+      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) {
+    MutexLock lock(&callback_mu_);
+    auto iter = double_callback_gauges_.find(handle.index);
+    if (iter == double_callback_gauges_.end()) {
+      return absl::nullopt;
+    }
+    return iter->second.GetValue(label_values, optional_values);
+  }
   template <template <typename, typename, std::size_t, std::size_t>
             class MagicHandleType,
             typename ValueType, typename InstrumentType, std::size_t M,
