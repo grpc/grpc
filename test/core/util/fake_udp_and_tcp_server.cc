@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
@@ -307,8 +308,7 @@ void FakeUdpAndTcpServer::RunServerLoop() {
       if (r == FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket) {
         it = peers.erase(it);
       } else {
-        CHECK(r ==
-                   FakeUdpAndTcpServer::ProcessReadResult::kContinueReading);
+        CHECK(r == FakeUdpAndTcpServer::ProcessReadResult::kContinueReading);
         it++;
       }
     }

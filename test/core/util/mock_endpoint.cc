@@ -18,6 +18,7 @@
 
 #include "test/core/util/mock_endpoint.h"
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 

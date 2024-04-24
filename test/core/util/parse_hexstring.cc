@@ -21,6 +21,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 

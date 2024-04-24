@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/slice.h>
@@ -60,8 +61,7 @@ void TmpFile::RewriteFile(absl::string_view data) {
 std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   char* name = nullptr;
   FILE* file_descriptor = gpr_tmpfile("test", &name);
-  CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) ==
-             data.size());
+  CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) == data.size());
   CHECK_EQ(fclose(file_descriptor), 0);
   CHECK_NE(file_descriptor, nullptr);
   CHECK_NE(name, nullptr);

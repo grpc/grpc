@@ -81,6 +81,7 @@ grpc_cc_library(
         "tracer_util.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -118,6 +119,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -218,6 +220,7 @@ grpc_cc_library(
     srcs = ["fuzzer_corpus_test.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "gtest",
     ],
     linkstatic = True,
@@ -298,6 +301,7 @@ grpc_cc_library(
     srcs = ["test_lb_policies.cc"],
     hdrs = ["test_lb_policies.h"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -336,6 +340,7 @@ grpc_cc_library(
     srcs = ["fake_udp_and_tcp_server.cc"],
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -500,6 +505,7 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/types:optional",

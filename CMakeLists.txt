@@ -2840,6 +2840,7 @@ target_link_libraries(grpc_test_util
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
+  absl::check
   grpc
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -6124,6 +6125,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
     grpc++_test_config
@@ -6243,6 +6245,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alarm_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -7109,7 +7112,6 @@ target_include_directories(async_end2end_test
 target_link_libraries(async_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -7452,7 +7454,6 @@ target_include_directories(backend_metrics_lb_policy_test
 target_link_libraries(backend_metrics_lb_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
   grpc++_test_config
@@ -7558,7 +7559,6 @@ target_include_directories(bad_ping_test
 target_link_libraries(bad_ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8035,7 +8035,6 @@ target_include_directories(binary_metadata_test
 target_link_libraries(binary_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8141,7 +8140,6 @@ target_include_directories(binder_server_test
 target_link_libraries(binder_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -8479,7 +8477,6 @@ target_include_directories(call_creds_test
 target_link_libraries(call_creds_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8685,7 +8682,6 @@ target_include_directories(call_host_override_test
 target_link_libraries(call_host_override_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8792,7 +8788,6 @@ target_include_directories(cancel_after_accept_test
 target_link_libraries(cancel_after_accept_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8856,7 +8851,6 @@ target_include_directories(cancel_after_client_done_test
 target_link_libraries(cancel_after_client_done_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8920,7 +8914,6 @@ target_include_directories(cancel_after_invoke_test
 target_link_libraries(cancel_after_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8984,7 +8977,6 @@ target_include_directories(cancel_after_round_trip_test
 target_link_libraries(cancel_after_round_trip_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9095,7 +9087,6 @@ target_include_directories(cancel_before_invoke_test
 target_link_libraries(cancel_before_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9201,7 +9192,6 @@ target_include_directories(cancel_in_a_vacuum_test
 target_link_libraries(cancel_in_a_vacuum_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9265,7 +9255,6 @@ target_include_directories(cancel_with_status_test
 target_link_libraries(cancel_with_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9535,7 +9524,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(cf_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -9585,7 +9573,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(cf_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -9647,7 +9634,6 @@ target_include_directories(cfstream_test
 target_link_libraries(cfstream_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -10065,7 +10051,6 @@ target_include_directories(channelz_service_test
 target_link_libraries(channelz_service_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpcpp_channelz
   grpc++_test_util
 )
@@ -10371,7 +10356,6 @@ target_include_directories(client_auth_filter_test
 target_link_libraries(client_auth_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10421,7 +10405,6 @@ target_include_directories(client_authority_filter_test
 target_link_libraries(client_authority_filter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -10484,7 +10467,6 @@ target_include_directories(client_callback_end2end_test
 target_link_libraries(client_callback_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -10740,7 +10722,6 @@ target_include_directories(client_interceptors_end2end_test
 target_link_libraries(client_interceptors_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -10813,7 +10794,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_lb_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -10920,7 +10900,6 @@ target_include_directories(client_streaming_test
 target_link_libraries(client_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -11260,7 +11239,6 @@ target_include_directories(compressed_payload_test
 target_link_libraries(compressed_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -11546,7 +11524,6 @@ target_include_directories(connectivity_test
 target_link_libraries(connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -11609,7 +11586,6 @@ target_include_directories(context_allocator_end2end_test
 target_link_libraries(context_allocator_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -11829,7 +11805,6 @@ target_include_directories(crl_provider_test
 target_link_libraries(crl_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -11978,7 +11953,6 @@ target_include_directories(default_host_test
 target_link_libraries(default_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -12041,7 +12015,6 @@ target_include_directories(delegating_channel_test
 target_link_libraries(delegating_channel_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -12188,7 +12161,6 @@ target_include_directories(disappearing_server_test
 target_link_libraries(disappearing_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -12509,7 +12481,6 @@ target_include_directories(empty_batch_test
 target_link_libraries(empty_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -12575,7 +12546,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(end2end_binder_transport_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -12641,7 +12611,6 @@ target_include_directories(end2end_test
 
 target_link_libraries(end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++_test
   grpc++_test_util
 )
@@ -13892,7 +13861,6 @@ target_include_directories(filter_causes_close_test
 target_link_libraries(filter_causes_close_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -13956,7 +13924,6 @@ target_include_directories(filter_context_test
 target_link_libraries(filter_context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -14020,7 +13987,6 @@ target_include_directories(filter_init_fails_test
 target_link_libraries(filter_init_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -14071,7 +14037,6 @@ target_include_directories(filter_test_test
 target_link_libraries(filter_test_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
@@ -14135,7 +14100,6 @@ target_include_directories(filtered_metadata_test
 target_link_libraries(filtered_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -14198,7 +14162,6 @@ target_include_directories(flaky_network_test
 target_link_libraries(flaky_network_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -14662,7 +14625,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fuzzing_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
@@ -14712,7 +14674,6 @@ target_include_directories(fuzzing_event_engine_unittest
 target_link_libraries(fuzzing_event_engine_unittest
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -14925,7 +14886,6 @@ target_include_directories(graceful_server_shutdown_test
 target_link_libraries(graceful_server_shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -14971,7 +14931,6 @@ target_include_directories(graceful_shutdown_test
 target_link_libraries(graceful_shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -15231,7 +15190,6 @@ target_include_directories(grpc_authz_end2end_test
 target_link_libraries(grpc_authz_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc++_test_util
 )
@@ -15294,7 +15252,6 @@ target_include_directories(grpc_authz_test
 target_link_libraries(grpc_authz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -16056,7 +16013,6 @@ target_include_directories(grpc_tls_crl_provider_test
 target_link_libraries(grpc_tls_crl_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -16175,7 +16131,6 @@ target_include_directories(grpclb_api_test
 target_link_libraries(grpclb_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -16245,7 +16200,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(grpclb_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_config
     grpc++_test_util
   )
@@ -16298,7 +16252,6 @@ target_include_directories(h2_ssl_cert_test
 target_link_libraries(h2_ssl_cert_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -16629,7 +16582,6 @@ target_include_directories(health_service_end2end_test
 target_link_libraries(health_service_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -16691,7 +16643,6 @@ target_include_directories(high_initial_seqno_test
 target_link_libraries(high_initial_seqno_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -17001,7 +16952,6 @@ target_include_directories(hpack_size_test
 target_link_libraries(hpack_size_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -17054,7 +17004,6 @@ target_include_directories(http2_client
 
 target_link_libraries(http2_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -17159,7 +17108,6 @@ target_include_directories(http2_stats_test
 target_link_libraries(http2_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -17362,7 +17310,6 @@ target_include_directories(hybrid_end2end_test
 target_link_libraries(hybrid_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -17612,7 +17559,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(inproc_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
@@ -17894,7 +17840,6 @@ target_include_directories(interop_client
 
 target_link_libraries(interop_client
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -17949,7 +17894,6 @@ target_include_directories(interop_server
 
 target_link_libraries(interop_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -18055,7 +17999,6 @@ target_include_directories(invoke_large_request_test
 target_link_libraries(invoke_large_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -18102,7 +18045,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   target_link_libraries(iocp_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -18446,7 +18388,6 @@ target_include_directories(keepalive_timeout_test
 target_link_libraries(keepalive_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -18553,7 +18494,6 @@ target_include_directories(large_metadata_test
 target_link_libraries(large_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19225,7 +19165,6 @@ target_include_directories(max_concurrent_streams_test
 target_link_libraries(max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19289,7 +19228,6 @@ target_include_directories(max_connection_age_test
 target_link_libraries(max_connection_age_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19353,7 +19291,6 @@ target_include_directories(max_connection_idle_test
 target_link_libraries(max_connection_idle_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19417,7 +19354,6 @@ target_include_directories(max_message_length_test
 target_link_libraries(max_message_length_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19566,7 +19502,6 @@ target_include_directories(message_allocator_end2end_test
 target_link_libraries(message_allocator_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -20101,7 +20036,6 @@ target_include_directories(negative_deadline_test
 target_link_libraries(negative_deadline_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20197,7 +20131,6 @@ target_include_directories(no_logging_test
 target_link_libraries(no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20261,7 +20194,6 @@ target_include_directories(no_op_test
 target_link_libraries(no_op_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20366,7 +20298,6 @@ target_include_directories(nonblocking_test
 target_link_libraries(nonblocking_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -20544,7 +20475,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(oracle_event_engine_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -20738,7 +20668,6 @@ target_include_directories(otel_plugin_test
 target_link_libraries(otel_plugin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   opentelemetry-cpp::api
   opentelemetry-cpp::metrics
   grpc++_test_util
@@ -20875,7 +20804,6 @@ target_include_directories(outlier_detection_test
 target_link_libraries(outlier_detection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -21195,7 +21123,6 @@ target_include_directories(payload_test
 target_link_libraries(payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -21363,7 +21290,6 @@ target_include_directories(pick_first_test
 target_link_libraries(pick_first_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -21570,7 +21496,6 @@ target_include_directories(ping_pong_streaming_test
 target_link_libraries(ping_pong_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -21685,7 +21610,6 @@ target_include_directories(ping_test
 target_link_libraries(ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -21831,7 +21755,6 @@ target_include_directories(port_sharing_end2end_test
 target_link_libraries(port_sharing_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -21879,7 +21802,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_endpoint_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -21971,7 +21893,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_connect_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -22024,7 +21945,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_native_dns_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -22080,7 +22000,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -22579,7 +22498,6 @@ target_include_directories(proto_server_reflection_test
 target_link_libraries(proto_server_reflection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_reflection
   grpc++_test_util
 )
@@ -22686,7 +22604,6 @@ target_include_directories(proxy_auth_test
 target_link_libraries(proxy_auth_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -22768,7 +22685,6 @@ target_include_directories(qps_json_driver
 
 target_link_libraries(qps_json_driver
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -22841,7 +22757,6 @@ target_include_directories(qps_worker
 
 target_link_libraries(qps_worker
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -23026,7 +22941,6 @@ target_include_directories(raw_end2end_test
 target_link_libraries(raw_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -23266,7 +23180,6 @@ target_include_directories(registered_call_test
 target_link_libraries(registered_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -23312,7 +23225,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(remove_stream_from_stalled_lists_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -23375,7 +23287,6 @@ target_include_directories(request_with_flags_test
 target_link_libraries(request_with_flags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -23439,7 +23350,6 @@ target_include_directories(request_with_payload_test
 target_link_libraries(request_with_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -23774,7 +23684,6 @@ target_include_directories(resource_quota_server_test
 target_link_libraries(resource_quota_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -23880,7 +23789,6 @@ target_include_directories(retry_cancel_after_first_attempt_starts_test
 target_link_libraries(retry_cancel_after_first_attempt_starts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -23944,7 +23852,6 @@ target_include_directories(retry_cancel_during_delay_test
 target_link_libraries(retry_cancel_during_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24008,7 +23915,6 @@ target_include_directories(retry_cancel_with_multiple_send_batches_test
 target_link_libraries(retry_cancel_with_multiple_send_batches_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24072,7 +23978,6 @@ target_include_directories(retry_cancellation_test
 target_link_libraries(retry_cancellation_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24136,7 +24041,6 @@ target_include_directories(retry_disabled_test
 target_link_libraries(retry_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24200,7 +24104,6 @@ target_include_directories(retry_exceeds_buffer_size_in_delay_test
 target_link_libraries(retry_exceeds_buffer_size_in_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24264,7 +24167,6 @@ target_include_directories(retry_exceeds_buffer_size_in_initial_batch_test
 target_link_libraries(retry_exceeds_buffer_size_in_initial_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24328,7 +24230,6 @@ target_include_directories(retry_exceeds_buffer_size_in_subsequent_batch_test
 target_link_libraries(retry_exceeds_buffer_size_in_subsequent_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24392,7 +24293,6 @@ target_include_directories(retry_lb_drop_test
 target_link_libraries(retry_lb_drop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24456,7 +24356,6 @@ target_include_directories(retry_lb_fail_test
 target_link_libraries(retry_lb_fail_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24520,7 +24419,6 @@ target_include_directories(retry_non_retriable_status_before_trailers_test
 target_link_libraries(retry_non_retriable_status_before_trailers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24584,7 +24482,6 @@ target_include_directories(retry_non_retriable_status_test
 target_link_libraries(retry_non_retriable_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24648,7 +24545,6 @@ target_include_directories(retry_per_attempt_recv_timeout_on_last_attempt_test
 target_link_libraries(retry_per_attempt_recv_timeout_on_last_attempt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24712,7 +24608,6 @@ target_include_directories(retry_per_attempt_recv_timeout_test
 target_link_libraries(retry_per_attempt_recv_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24776,7 +24671,6 @@ target_include_directories(retry_recv_initial_metadata_test
 target_link_libraries(retry_recv_initial_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24840,7 +24734,6 @@ target_include_directories(retry_recv_message_replay_test
 target_link_libraries(retry_recv_message_replay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24904,7 +24797,6 @@ target_include_directories(retry_recv_message_test
 target_link_libraries(retry_recv_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24968,7 +24860,6 @@ target_include_directories(retry_recv_trailing_metadata_error_test
 target_link_libraries(retry_recv_trailing_metadata_error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25032,7 +24923,6 @@ target_include_directories(retry_send_initial_metadata_refs_test
 target_link_libraries(retry_send_initial_metadata_refs_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25096,7 +24986,6 @@ target_include_directories(retry_send_op_fails_test
 target_link_libraries(retry_send_op_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25160,7 +25049,6 @@ target_include_directories(retry_send_recv_batch_test
 target_link_libraries(retry_send_recv_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25224,7 +25112,6 @@ target_include_directories(retry_server_pushback_delay_test
 target_link_libraries(retry_server_pushback_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25288,7 +25175,6 @@ target_include_directories(retry_server_pushback_disabled_test
 target_link_libraries(retry_server_pushback_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25394,7 +25280,6 @@ target_include_directories(retry_streaming_after_commit_test
 target_link_libraries(retry_streaming_after_commit_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25458,7 +25343,6 @@ target_include_directories(retry_streaming_succeeds_before_replay_finished_test
 target_link_libraries(retry_streaming_succeeds_before_replay_finished_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25522,7 +25406,6 @@ target_include_directories(retry_streaming_test
 target_link_libraries(retry_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25586,7 +25469,6 @@ target_include_directories(retry_test
 target_link_libraries(retry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25692,7 +25574,6 @@ target_include_directories(retry_throttled_test
 target_link_libraries(retry_throttled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25756,7 +25637,6 @@ target_include_directories(retry_too_many_attempts_test
 target_link_libraries(retry_too_many_attempts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25820,7 +25700,6 @@ target_include_directories(retry_transparent_goaway_test
 target_link_libraries(retry_transparent_goaway_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25884,7 +25763,6 @@ target_include_directories(retry_transparent_max_concurrent_streams_test
 target_link_libraries(retry_transparent_max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25948,7 +25826,6 @@ target_include_directories(retry_transparent_not_sent_on_wire_test
 target_link_libraries(retry_transparent_not_sent_on_wire_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26012,7 +25889,6 @@ target_include_directories(retry_unref_before_finish_test
 target_link_libraries(retry_unref_before_finish_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26076,7 +25952,6 @@ target_include_directories(retry_unref_before_recv_test
 target_link_libraries(retry_unref_before_recv_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26127,7 +26002,6 @@ target_include_directories(ring_hash_test
 target_link_libraries(ring_hash_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -26200,7 +26074,6 @@ target_include_directories(rls_end2end_test
 target_link_libraries(rls_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -26292,7 +26165,6 @@ target_include_directories(round_robin_test
 target_link_libraries(round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -26633,7 +26505,6 @@ target_include_directories(server_builder_plugin_test
 target_link_libraries(server_builder_plugin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -26703,6 +26574,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -26774,6 +26646,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -27065,7 +26938,6 @@ target_include_directories(server_finishes_request_test
 target_link_libraries(server_finishes_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -27129,7 +27001,6 @@ target_include_directories(server_interceptors_end2end_test
 target_link_libraries(server_interceptors_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -27243,6 +27114,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_request_call_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -27351,7 +27223,6 @@ target_include_directories(server_streaming_test
 target_link_libraries(server_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -27460,7 +27331,6 @@ target_include_directories(service_config_end2end_test
 target_link_libraries(service_config_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -27554,7 +27424,6 @@ target_include_directories(settings_timeout_test
 target_link_libraries(settings_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -27616,7 +27485,6 @@ target_include_directories(shutdown_finishes_calls_test
 target_link_libraries(shutdown_finishes_calls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -27680,7 +27548,6 @@ target_include_directories(shutdown_finishes_tags_test
 target_link_libraries(shutdown_finishes_tags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -27746,7 +27613,6 @@ target_include_directories(shutdown_test
 target_link_libraries(shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -27808,7 +27674,6 @@ target_include_directories(simple_delayed_request_test
 target_link_libraries(simple_delayed_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -27872,7 +27737,6 @@ target_include_directories(simple_metadata_test
 target_link_libraries(simple_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -27980,7 +27844,6 @@ target_include_directories(simple_request_test
 target_link_libraries(simple_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -28846,7 +28709,6 @@ target_include_directories(stream_leak_with_queued_flow_control_update_test
 target_link_libraries(stream_leak_with_queued_flow_control_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -28908,7 +28770,6 @@ target_include_directories(streaming_error_response_test
 target_link_libraries(streaming_error_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -29028,7 +28889,6 @@ target_include_directories(streams_not_seen_test
 target_link_libraries(streams_not_seen_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -29581,7 +29441,6 @@ target_include_directories(test_core_channel_channelz_test
 target_link_libraries(test_core_channel_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -29644,7 +29503,6 @@ target_include_directories(test_core_end2end_channelz_test
 target_link_libraries(test_core_end2end_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -30178,7 +30036,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(test_core_transport_test_suite_chaotic_good_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     ${_gRPC_PROTOBUF_LIBRARIES}
     grpc_test_util
   )
@@ -30286,7 +30143,6 @@ target_include_directories(test_cpp_end2end_ssl_credentials_test
 target_link_libraries(test_cpp_end2end_ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -30759,7 +30615,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(thready_posix_event_engine_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -30910,7 +30765,6 @@ target_include_directories(timeout_before_request_call_test
 target_link_libraries(timeout_before_request_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -31155,7 +31009,6 @@ target_include_directories(tls_credentials_test
 target_link_libraries(tls_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -31215,7 +31068,6 @@ target_include_directories(tls_key_export_test
 target_link_libraries(tls_key_export_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -31311,7 +31163,6 @@ target_include_directories(too_many_pings_test
 target_link_libraries(too_many_pings_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_config
   grpc++_test_util
 )
@@ -31356,7 +31207,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(traced_buffer_list_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -31419,7 +31269,6 @@ target_include_directories(trailing_metadata_test
 target_link_libraries(trailing_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -32205,7 +32054,6 @@ target_include_directories(weighted_round_robin_test
 target_link_libraries(weighted_round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -32251,7 +32099,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   target_link_libraries(win_socket_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -32341,7 +32188,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
   target_link_libraries(windows_endpoint_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -32603,7 +32449,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(work_serializer_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -32666,7 +32511,6 @@ target_include_directories(write_buffering_at_end_test
 target_link_libraries(write_buffering_at_end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -32730,7 +32574,6 @@ target_include_directories(write_buffering_test
 target_link_libraries(write_buffering_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -32852,7 +32695,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(writes_per_rpc_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++
     grpc_test_util
   )
@@ -33281,7 +33123,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_cluster_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -33577,7 +33418,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_cluster_type_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -33839,7 +33679,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_core_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -33901,7 +33740,6 @@ target_include_directories(xds_credentials_end2end_test
 target_link_libraries(xds_credentials_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_test_util
 )
 
@@ -34135,7 +33973,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_csds_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -34331,7 +34168,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_config
     grpc++_test_util
   )
@@ -34571,7 +34407,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_fallback_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -34754,7 +34589,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_fault_injection_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -35331,7 +35165,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_outlier_detection_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -35518,7 +35351,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_override_host_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -35610,7 +35442,6 @@ target_include_directories(xds_override_host_test
 target_link_libraries(xds_override_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -35794,7 +35625,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_pick_first_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -35974,7 +35804,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_ring_hash_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -36158,7 +35987,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_rls_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -36463,7 +36291,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_routing_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 
@@ -36540,7 +36367,6 @@ target_include_directories(xds_stats_watcher_test
 target_link_libraries(xds_stats_watcher_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_reflection
   grpcpp_channelz
   grpc_test_util
@@ -36726,7 +36552,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(xds_wrr_end2end_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_test_util
   )
 

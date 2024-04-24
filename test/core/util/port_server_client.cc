@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
@@ -199,8 +200,8 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
   CHECK(response);
   CHECK_EQ(response->status, 200);
   for (i = 0; i < response->body_length; i++) {
-    CHECK(response->body[i] >= '0' );
-CHECK( response->body[i] <= '9');
+    CHECK(response->body[i] >= '0');
+    CHECK(response->body[i] <= '9');
     port = port * 10 + response->body[i] - '0';
   }
   CHECK(port > 1024);
