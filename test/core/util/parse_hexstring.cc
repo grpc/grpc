@@ -37,7 +37,7 @@ Slice ParseHexstring(absl::string_view hexstring) {
     nibbles += (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
   }
 
-  CHECK_EQ((nibbles & 1), 0);
+  CHECK_EQ((nibbles & 1), 0u);
 
   slice = grpc_slice_malloc(nibbles / 2);
   out = GRPC_SLICE_START_PTR(slice);
