@@ -14,6 +14,8 @@
 
 #include "test/core/util/fake_stats_plugin.h"
 
+#include "absl/log/check.h"
+
 #include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
