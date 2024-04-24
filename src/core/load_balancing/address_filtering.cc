@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/address_filtering.h"
 
 #include <stddef.h>
@@ -23,6 +21,8 @@
 #include <utility>
 
 #include "absl/functional/function_ref.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

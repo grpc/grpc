@@ -14,13 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 
 #include <set>
 
 #include "absl/strings/str_join.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/config/core_configuration.h"

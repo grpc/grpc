@@ -37,8 +37,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
-#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -49,6 +47,8 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
 // Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,

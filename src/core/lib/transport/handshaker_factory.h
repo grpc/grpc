@@ -58,6 +58,22 @@ class HandshakerFactory {
     // Handshakers that are responsible for post connect security handshakes.
     // Applicable for both Client and Server handshakers.
     kSecurityHandshakers,
+    // TEMPORARY HACK -- DO NOT USE
+    // Currently, handshakers that need to hijack the endpoint's fd and
+    // exit early (which generally run at priority kSecurityHandshakers)
+    // need to call grpc_tcp_destroy_and_release_fd(), which asserts
+    // that the endpoint is an iomgr endpoint.  If another handshaker
+    // has wrapped the endpoint before then, this assertion fails.  So
+    // for now, we introduce a new priority here for handshakers that
+    // need to wrap the endpoint, to make sure that they run after
+    // handshakers that hijack the fd and exit early.
+    // TODO(hork): As part of migrating to the EventEngine endpoint API,
+    // remove this priority.  In the EE API, handshakers that want to
+    // hijack the fd will do so via the query interface, so we can just
+    // have any wrapper endpoints forward query interfaces to the wrapped
+    // endpoint, so that it's not a problem if the endpoint is wrapped
+    // before a handshaker needs to hijack the fd.
+    kTemporaryHackDoNotUseEndpointWrappingHandshakers,
   };
 
   virtual void AddHandshakers(const ChannelArgs& args,

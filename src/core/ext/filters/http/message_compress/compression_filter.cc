@@ -72,14 +72,14 @@ const grpc_channel_filter ServerCompressionFilter::kFilter =
                                kFilterExaminesInboundMessages |
                                kFilterExaminesOutboundMessages>("compression");
 
-absl::StatusOr<ClientCompressionFilter> ClientCompressionFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ClientCompressionFilter(args);
+absl::StatusOr<std::unique_ptr<ClientCompressionFilter>>
+ClientCompressionFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ClientCompressionFilter>(args);
 }
 
-absl::StatusOr<ServerCompressionFilter> ServerCompressionFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ServerCompressionFilter(args);
+absl::StatusOr<std::unique_ptr<ServerCompressionFilter>>
+ServerCompressionFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ServerCompressionFilter>(args);
 }
 
 ChannelCompression::ChannelCompression(const ChannelArgs& args)

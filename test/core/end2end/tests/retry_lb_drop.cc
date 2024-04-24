@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -106,7 +107,7 @@ CORE_END2END_TEST(RetryTest, RetryLbDrop) {
     RegisterTestPickArgsLoadBalancingPolicy(
         builder,
         [](const PickArgsSeen& pick_args) {
-          GPR_ASSERT(g_pick_args_vector != nullptr);
+          CHECK_NE(g_pick_args_vector, nullptr);
           g_pick_args_vector->push_back(pick_args);
         },
         kDropPolicyName);
