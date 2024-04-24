@@ -313,6 +313,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             registered_method,
         )
 
+    def save_registered_method(self, method_name: bytes) -> None:
+        self._registered_methods.add(method_name)
+
 
 def _start_open_telemetry_observability(
     otel_o11y: OpenTelemetryObservability,

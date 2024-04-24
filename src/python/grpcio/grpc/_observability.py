@@ -61,7 +61,6 @@ class ObservabilityPlugin(
 
     _tracing_enabled: bool = False
     _stats_enabled: bool = False
-    _registered_methods: Set[bytes] = set()
 
     @abc.abstractmethod
     def create_client_call_tracer(
@@ -178,7 +177,7 @@ class ObservabilityPlugin(
         """
         self._stats_enabled = enable
 
-    def save_registered_method(self, method_name: bytes):
+    def save_registered_method(self, method_name: bytes) -> None:
         """Saves the method name to registered_method list.
 
         When exporting metrics, method name for unregistered methods will be replaced
@@ -187,7 +186,7 @@ class ObservabilityPlugin(
         Args:
           method_name: The method name in bytes.
         """
-        self._registered_methods.add(method_name)
+        raise NotImplementedError()
 
     @property
     def tracing_enabled(self) -> bool:
