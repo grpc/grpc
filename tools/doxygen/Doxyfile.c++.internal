@@ -928,7 +928,6 @@ include/grpc/impl/grpc_types.h \
 include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
-include/grpc/passive_listener.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -1041,7 +1040,6 @@ include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
-include/grpcpp/passive_listener.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \
@@ -1085,10 +1083,14 @@ include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
+src/core/channelz/channel_trace.cc \
+src/core/channelz/channel_trace.h \
+src/core/channelz/channelz.cc \
+src/core/channelz/channelz.h \
+src/core/channelz/channelz_registry.cc \
+src/core/channelz/channelz_registry.h \
 src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
-src/core/client_channel/client_channel_channelz.cc \
-src/core/client_channel/client_channel_channelz.h \
 src/core/client_channel/client_channel_factory.cc \
 src/core/client_channel/client_channel_factory.h \
 src/core/client_channel/client_channel_filter.cc \
@@ -2151,12 +2153,6 @@ src/core/lib/channel/channel_stack_builder_impl.cc \
 src/core/lib/channel/channel_stack_builder_impl.h \
 src/core/lib/channel/channel_stack_trace.cc \
 src/core/lib/channel/channel_stack_trace.h \
-src/core/lib/channel/channel_trace.cc \
-src/core/lib/channel/channel_trace.h \
-src/core/lib/channel/channelz.cc \
-src/core/lib/channel/channelz.h \
-src/core/lib/channel/channelz_registry.cc \
-src/core/lib/channel/channelz_registry.h \
 src/core/lib/channel/connected_channel.cc \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \

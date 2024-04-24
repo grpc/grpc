@@ -19,7 +19,7 @@ load(
     "grpc_package",
 )
 
-grpc_package(name = "test/core/client_channel/lb_policy")
+grpc_package(name = "test/core/load_balancing")
 
 licenses(["notice"])
 

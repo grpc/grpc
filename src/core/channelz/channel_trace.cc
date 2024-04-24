@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/channel_trace.h"
+#include "src/core/channelz/channel_trace.h"
 
 #include <memory>
 #include <utility>
@@ -27,7 +27,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"

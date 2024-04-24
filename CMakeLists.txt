@@ -1448,7 +1448,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx tcp_server_posix_test)
   endif()
   add_dependencies(buildtests_cxx tcp_socket_utils_test)
-  add_dependencies(buildtests_cxx test_core_channel_channelz_test)
+  add_dependencies(buildtests_cxx test_core_channelz_channelz_test)
   add_dependencies(buildtests_cxx test_core_end2end_channelz_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
@@ -1819,8 +1819,10 @@ endif()
 
 
 add_library(grpc
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
@@ -2245,9 +2247,6 @@ add_library(grpc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
@@ -2742,7 +2741,6 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
-  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -2917,8 +2915,10 @@ endif()
 endif()
 
 add_library(grpc_unsecure
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/client_channel/backup_poller.cc
-  src/core/client_channel/client_channel_channelz.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
@@ -3012,9 +3012,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
@@ -3445,7 +3442,6 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
-  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -4315,7 +4311,6 @@ foreach(_hdr
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
-  include/grpcpp/passive_listener.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5056,7 +5051,6 @@ foreach(_hdr
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
-  include/grpcpp/passive_listener.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5117,6 +5111,9 @@ endif()
 
 
 add_library(grpc_authorization_provider
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -5132,9 +5129,6 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
@@ -5506,7 +5500,6 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
-  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -5904,7 +5897,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(static_stride_scheduler_benchmark
     src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
-    test/core/client_channel/lb_policy/static_stride_scheduler_benchmark.cc
+    test/core/load_balancing/static_stride_scheduler_benchmark.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -6614,6 +6607,7 @@ target_include_directories(alts_frame_protector_test
 target_link_libraries(alts_frame_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -7404,6 +7398,7 @@ target_include_directories(aws_request_signer_test
 target_link_libraries(aws_request_signer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -8060,7 +8055,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(binder_resolver_test
-  test/core/client_channel/resolvers/binder_resolver_test.cc
+  test/core/resolver/binder_resolver_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9938,7 +9933,7 @@ add_executable(channel_trace_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
-  test/core/channel/channel_trace_test.cc
+  test/core/channelz/channel_trace_test.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
 if(WIN32 AND MSVC)
@@ -9983,7 +9978,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(channelz_registry_test
-  test/core/channel/channelz_registry_test.cc
+  test/core/channelz/channelz_registry_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11891,6 +11886,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(crl_ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc_test_util
   )
 
@@ -12216,7 +12212,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(dns_resolver_cooldown_test
-  test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  test/core/resolver/dns_resolver_cooldown_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12258,7 +12254,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(dns_resolver_test
-  test/core/client_channel/resolvers/dns_resolver_test.cc
+  test/core/resolver/dns_resolver_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13678,7 +13674,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_resolver_test
-  test/core/client_channel/resolvers/fake_resolver_test.cc
+  test/core/resolver/fake_resolver_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -13755,6 +13751,7 @@ target_include_directories(fake_transport_security_test
 target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -14848,7 +14845,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(google_c2p_resolver_test
-  test/core/client_channel/resolvers/google_c2p_resolver_test.cc
+  test/core/resolver/google_c2p_resolver_test.cc
   test/core/util/fake_udp_and_tcp_server.cc
 )
 if(WIN32 AND MSVC)
@@ -15819,6 +15816,7 @@ target_include_directories(grpc_tls_certificate_distributor_test
 target_link_libraries(grpc_tls_certificate_distributor_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -15870,6 +15868,7 @@ target_include_directories(grpc_tls_certificate_provider_test
 target_link_libraries(grpc_tls_certificate_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -17194,7 +17193,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http_proxy_mapper_test
-  test/core/client_channel/http_proxy_mapper_test.cc
+  test/core/handshake/http_proxy_mapper_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20822,7 +20821,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(outlier_detection_lb_config_parser_test
-  test/core/client_channel/lb_policy/outlier_detection_lb_config_parser_test.cc
+  test/core/load_balancing/outlier_detection_lb_config_parser_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20868,9 +20867,9 @@ add_executable(outlier_detection_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/client_channel/lb_policy/outlier_detection_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/outlier_detection_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21355,9 +21354,9 @@ add_executable(pick_first_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/client_channel/lb_policy/pick_first_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/pick_first_test.cc
   test/core/util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
@@ -26120,9 +26119,9 @@ add_executable(ring_hash_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/client_channel/lb_policy/ring_hash_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/ring_hash_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26239,7 +26238,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(rls_lb_config_parser_test
-  test/core/client_channel/lb_policy/rls_lb_config_parser_test.cc
+  test/core/load_balancing/rls_lb_config_parser_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26285,9 +26284,9 @@ add_executable(round_robin_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/client_channel/lb_policy/round_robin_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/round_robin_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26688,7 +26687,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-    test/core/event_engine/event_engine_test_utils.cc
     test/core/util/cmdline.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
@@ -26733,7 +26731,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
   )
@@ -28196,7 +28193,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sockaddr_resolver_test
-  test/core/client_channel/resolvers/sockaddr_resolver_test.cc
+  test/core/resolver/sockaddr_resolver_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28443,6 +28440,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc_test_util
   )
 
@@ -28488,6 +28486,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ssl_transport_security_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
+    absl::check
     grpc_test_util
   )
 
@@ -28584,7 +28583,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(static_stride_scheduler_test
   src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
-  test/core/client_channel/lb_policy/static_stride_scheduler_test.cc
+  test/core/load_balancing/static_stride_scheduler_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29572,18 +29571,18 @@ target_link_libraries(tcp_socket_utils_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_core_channel_channelz_test
+add_executable(test_core_channelz_channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
-  test/core/channel/channelz_test.cc
+  test/core/channelz/channelz_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/cpp/util/channel_trace_proto_helper.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_channel_channelz_test
+    target_compile_definitions(test_core_channelz_channelz_test
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
@@ -29591,8 +29590,8 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-target_compile_features(test_core_channel_channelz_test PUBLIC cxx_std_14)
-target_include_directories(test_core_channel_channelz_test
+target_compile_features(test_core_channelz_channelz_test PUBLIC cxx_std_14)
+target_include_directories(test_core_channelz_channelz_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -29611,7 +29610,7 @@ target_include_directories(test_core_channel_channelz_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(test_core_channel_channelz_test
+target_link_libraries(test_core_channelz_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::check
@@ -31301,6 +31300,7 @@ target_include_directories(tls_security_connector_test
 target_link_libraries(tls_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   grpc_test_util
 )
 
@@ -32156,7 +32156,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(weighted_round_robin_config_test
-  test/core/client_channel/lb_policy/weighted_round_robin_config_test.cc
+  test/core/load_balancing/weighted_round_robin_config_test.cc
   test/core/util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
@@ -32203,9 +32203,9 @@ add_executable(weighted_round_robin_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/client_channel/lb_policy/weighted_round_robin_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/weighted_round_robin_test.cc
   test/core/util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
@@ -35564,7 +35564,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_override_host_lb_config_parser_test
-  test/core/client_channel/lb_policy/xds_override_host_lb_config_parser_test.cc
+  test/core/load_balancing/xds_override_host_lb_config_parser_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -35610,9 +35610,9 @@ add_executable(xds_override_host_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  test/core/client_channel/lb_policy/xds_override_host_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/load_balancing/xds_override_host_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

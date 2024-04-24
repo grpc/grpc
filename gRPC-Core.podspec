@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20240116.1'
+  abseil_version = '~> 1.20240116.2'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -167,7 +167,6 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/propagation_bits.h',
                       'include/grpc/impl/slice_type.h',
                       'include/grpc/load_reporting.h',
-                      'include/grpc/passive_listener.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -234,10 +233,14 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
-    ss.source_files = 'src/core/client_channel/backup_poller.cc',
+    ss.source_files = 'src/core/channelz/channel_trace.cc',
+                      'src/core/channelz/channel_trace.h',
+                      'src/core/channelz/channelz.cc',
+                      'src/core/channelz/channelz.h',
+                      'src/core/channelz/channelz_registry.cc',
+                      'src/core/channelz/channelz_registry.h',
+                      'src/core/client_channel/backup_poller.cc',
                       'src/core/client_channel/backup_poller.h',
-                      'src/core/client_channel/client_channel_channelz.cc',
-                      'src/core/client_channel/client_channel_channelz.h',
                       'src/core/client_channel/client_channel_factory.cc',
                       'src/core/client_channel/client_channel_factory.h',
                       'src/core/client_channel/client_channel_filter.cc',
@@ -1261,12 +1264,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack_builder_impl.h',
                       'src/core/lib/channel/channel_stack_trace.cc',
                       'src/core/lib/channel/channel_stack_trace.h',
-                      'src/core/lib/channel/channel_trace.cc',
-                      'src/core/lib/channel/channel_trace.h',
-                      'src/core/lib/channel/channelz.cc',
-                      'src/core/lib/channel/channelz.h',
-                      'src/core/lib/channel/channelz_registry.cc',
-                      'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/connected_channel.cc',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
@@ -2352,8 +2349,10 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.c',
                       'third_party/zlib/zutil.h'
-    ss.private_header_files = 'src/core/client_channel/backup_poller.h',
-                              'src/core/client_channel/client_channel_channelz.h',
+    ss.private_header_files = 'src/core/channelz/channel_trace.h',
+                              'src/core/channelz/channelz.h',
+                              'src/core/channelz/channelz_registry.h',
+                              'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
                               'src/core/client_channel/client_channel_internal.h',
@@ -2953,9 +2952,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_stack_builder_impl.h',
                               'src/core/lib/channel/channel_stack_trace.h',
-                              'src/core/lib/channel/channel_trace.h',
-                              'src/core/lib/channel/channelz.h',
-                              'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
                               'src/core/lib/channel/metrics.h',
