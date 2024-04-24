@@ -22,6 +22,8 @@
 #include <iostream>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>

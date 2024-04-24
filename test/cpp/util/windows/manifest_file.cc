@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"

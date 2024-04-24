@@ -19,6 +19,7 @@
 #include "test/cpp/util/create_test_channel.h"
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
