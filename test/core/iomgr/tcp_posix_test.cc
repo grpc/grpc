@@ -36,6 +36,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -172,8 +174,7 @@ static void read_cb(void* user_data, grpc_error_handle error) {
   gpr_log(GPR_INFO, "Read %" PRIuPTR " bytes of %" PRIuPTR, read_bytes,
           state->target_read_bytes);
   if (state->read_bytes >= state->target_read_bytes) {
-    CHECK(
-        GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
+    CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
   } else {
     gpr_mu_unlock(g_mu);
@@ -233,8 +234,8 @@ static void read_test(size_t num_bytes, size_t slice_size,
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
@@ -297,8 +298,8 @@ static void large_read_test(size_t slice_size, int min_progress_size) {
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
@@ -453,8 +454,8 @@ static void write_test(size_t num_bytes, size_t slice_size) {
     if (state.write_done) {
       break;
     }
-    CHECK(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     exec_ctx.Flush();
     gpr_mu_lock(g_mu);
@@ -531,8 +532,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
             grpc_event_engine::experimental::ChannelArgsEndpointConfig(
                 grpc_core::ChannelArgs::FromC(&args))),
         "test");
-    CHECK(grpc_tcp_fd(ep) == sv[1] );
-CHECK_GE( sv[1], 0);
+    CHECK(grpc_tcp_fd(ep) == sv[1]);
+    CHECK_GE(sv[1], 0);
   }
   grpc_endpoint_add_to_pollset(ep, g_pollset);
 
@@ -552,8 +553,8 @@ CHECK_GE( sv[1], 0);
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_log(GPR_DEBUG, "wakeup: read=%" PRIdPTR " target=%" PRIdPTR,
             state.read_bytes, state.target_read_bytes);
     gpr_mu_unlock(g_mu);
