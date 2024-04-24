@@ -59,8 +59,8 @@
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/http/httpcli_test_util.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 

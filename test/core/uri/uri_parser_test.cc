@@ -24,7 +24,7 @@
 
 #include <grpc/grpc.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using ::testing::ContainerEq;
 using ::testing::Contains;

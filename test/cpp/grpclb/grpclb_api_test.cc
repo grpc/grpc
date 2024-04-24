@@ -29,7 +29,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/load_balancing/grpclb/load_balancer_api.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace {

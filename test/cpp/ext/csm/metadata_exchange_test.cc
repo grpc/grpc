@@ -35,7 +35,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/cpp/ext/csm/csm_observability.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
 

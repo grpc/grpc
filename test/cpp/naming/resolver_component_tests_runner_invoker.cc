@@ -41,8 +41,8 @@
 #endif
 
 #include "src/core/lib/gprpp/env.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 #ifdef GPR_WINDOWS

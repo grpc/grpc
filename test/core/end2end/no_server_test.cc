@@ -42,7 +42,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 void run_test(bool wait_for_ready) {
   gpr_log(GPR_INFO, "TEST: wait_for_ready=%d", wait_for_ready);

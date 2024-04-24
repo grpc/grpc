@@ -55,7 +55,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/iomgr/endpoint_tests.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;

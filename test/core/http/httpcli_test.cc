@@ -51,9 +51,9 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "test/core/http/httpcli_test_util.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 

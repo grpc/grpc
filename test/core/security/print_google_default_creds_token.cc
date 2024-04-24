@@ -34,7 +34,7 @@
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "test/core/util/cmdline.h"
+#include "test/core/test_util/cmdline.h"
 
 typedef struct {
   gpr_mu* mu;

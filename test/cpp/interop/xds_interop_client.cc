@@ -51,7 +51,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
 #include "test/cpp/interop/xds_stats_watcher.h"
 #include "test/cpp/util/test_config.h"

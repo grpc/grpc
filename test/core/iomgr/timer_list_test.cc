@@ -30,8 +30,8 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tracer_util.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tracer_util.h"
 
 #define MAX_CB 30
 

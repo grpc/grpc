@@ -20,7 +20,7 @@
 #define GRPC_TEST_CPP_QPS_HISTOGRAM_H
 
 #include "src/proto/grpc/testing/stats.pb.h"
-#include "test/core/util/histogram.h"
+#include "test/core/test_util/histogram.h"
 
 namespace grpc {
 namespace testing {

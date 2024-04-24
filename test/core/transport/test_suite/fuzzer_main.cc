@@ -25,11 +25,11 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/transport/test_suite/fixture.h"
 #include "test/core/transport/test_suite/fuzzer.pb.h"
 #include "test/core/transport/test_suite/test.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/proto_bit_gen.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}

@@ -44,8 +44,8 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/histogram.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/histogram.h"
 
 typedef struct fd_pair {
   int read_fd;

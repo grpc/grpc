@@ -38,7 +38,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/reconnect_server.h"
+#include "test/core/test_util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(int32_t, control_port, 0, "Server port for controlling the server.");
