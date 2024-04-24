@@ -17,6 +17,7 @@
 
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
@@ -410,23 +411,35 @@ class FakeStatsPlugin : public StatsPlugin {
     }
     gpr_log(GPR_INFO, "FakeStatsPlugin[%p]::TriggerCallbacks(): END", this);
   }
+  template <template <typename, typename, std::size_t, std::size_t>
+            class MagicHandleType,
+            typename ValueType, typename InstrumentType, std::size_t M,
+            std::size_t N,
+            typename = typename std::enable_if<
+                std::is_same<ValueType, int64_t>::value>::type>
   absl::optional<int64_t> GetCallbackGaugeValue(
-      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
+      MagicHandleType<ValueType, InstrumentType, M, N> handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&callback_mu_);
-    auto iter = int64_callback_gauges_.find(handle.index);
+    auto iter = int64_callback_gauges_.find(handle.convert().index);
     if (iter == int64_callback_gauges_.end()) {
       return absl::nullopt;
     }
     return iter->second.GetValue(label_values, optional_values);
   }
+  template <
+      template <typename, typename, std::size_t, std::size_t>
+      class MagicHandleType,
+      typename ValueType, typename InstrumentType, std::size_t M, std::size_t N,
+      typename =
+          typename std::enable_if<std::is_same<ValueType, double>::value>::type>
   absl::optional<double> GetCallbackGaugeValue(
-      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
+      MagicHandleType<ValueType, InstrumentType, M, N> handle,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) {
     MutexLock lock(&callback_mu_);
-    auto iter = double_callback_gauges_.find(handle.index);
+    auto iter = double_callback_gauges_.find(handle.convert().index);
     if (iter == double_callback_gauges_.end()) {
       return absl::nullopt;
     }

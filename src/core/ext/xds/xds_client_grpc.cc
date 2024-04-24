@@ -99,20 +99,20 @@ const auto kMetricResourceUpdatesValid =
         "EXPERIMENTAL.  A counter of resources received that were considered "
         "valid.  The counter will be incremented even for resources that "
         "have not changed.",
-        "{resource}",
-        {kMetricLabelTarget, kMetricLabelXdsServer,
-         kMetricLabelXdsResourceType},
-        {}, false);
+        "{resource}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelXdsServer,
+                kMetricLabelXdsResourceType)
+        .Build();
 
 const auto kMetricResourceUpdatesInvalid =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.xds_client.resource_updates_invalid",
         "EXPERIMENTAL.  A counter of resources received that were considered "
         "invalid.",
-        "{resource}",
-        {kMetricLabelTarget, kMetricLabelXdsServer,
-         kMetricLabelXdsResourceType},
-        {}, false);
+        "{resource}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelXdsServer,
+                kMetricLabelXdsResourceType)
+        .Build();
 
 const auto kMetricServerFailure =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -121,7 +121,9 @@ const auto kMetricServerFailure =
         "unhealthy.  A server goes unhealthy when we have a connectivity "
         "failure or when the ADS stream fails without seeing a response "
         "message, as per gRFC A57.",
-        "{failure}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
+        "{failure}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelXdsServer)
+        .Build();
 
 const auto kMetricConnected =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
@@ -132,15 +134,17 @@ const auto kMetricConnected =
         "ADS stream fails without seeing a response message, as per gRFC "
         "A57.  It will be set to 1 when we receive the first response on "
         "an ADS stream.",
-        "{bool}", {kMetricLabelTarget, kMetricLabelXdsServer}, {}, false);
+        "{bool}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelXdsServer)
+        .Build();
 
 const auto kMetricResources =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.xds_client.resources", "EXPERIMENTAL.  Number of xDS resources.",
-        "{resource}",
-        {kMetricLabelTarget, kMetricLabelXdsAuthority,
-         kMetricLabelXdsResourceType, kMetricLabelXdsCacheState},
-        {}, false);
+        "{resource}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelXdsAuthority,
+                kMetricLabelXdsResourceType, kMetricLabelXdsCacheState)
+        .Build();
 
 }  // namespace
 
@@ -167,7 +171,7 @@ class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
 
   void ReportServerFailure(absl::string_view xds_server) override {
     xds_client_.stats_plugin_group_.AddCounter(
-        kMetricServerFailure, 1, {xds_client_.key_, xds_server}, {});
+        kMetricServerFailure, 1ul, {xds_client_.key_, xds_server}, {});
   }
 
  private:
@@ -313,10 +317,10 @@ GrpcXdsClient::GrpcXdsClient(
               .certificate_providers())),
       stats_plugin_group_(GetStatsPluginGroupForKey(key_)),
       registered_metric_callback_(stats_plugin_group_.RegisterCallback(
-          [this](CallbackMetricReporter& reporter) {
+          [this](CallbackMetricReporterWrapper& reporter) {
             ReportCallbackMetrics(reporter);
           },
-          {kMetricConnected, kMetricResources})) {}
+          {kMetricConnected.convert(), kMetricResources.convert()})) {}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
@@ -380,16 +384,18 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
   return grpc_slice_from_cpp_string(std::string(output, output_length));
 }
 
-void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
+void GrpcXdsClient::ReportCallbackMetrics(
+    CallbackMetricReporterWrapper& reporter) {
   MutexLock lock(mu());
   ReportResourceCounts([&](const ResourceCountLabels& labels, uint64_t count) {
     reporter.Report(
-        kMetricResources, count,
+        kMetricResources, static_cast<int64_t>(count),
         {key_, labels.xds_authority, labels.resource_type, labels.cache_state},
         {});
   });
   ReportServerConnections([&](absl::string_view xds_server, bool connected) {
-    reporter.Report(kMetricConnected, connected, {key_, xds_server}, {});
+    reporter.Report(kMetricConnected, static_cast<int64_t>(connected),
+                    {key_, xds_server}, {});
   });
 }
 
