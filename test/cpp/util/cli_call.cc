@@ -115,7 +115,7 @@ bool CliCall::Read(std::string* response,
     return false;
   }
   std::vector<grpc::Slice> slices;
-  CHECK_OK(recv_buffer.Dump(&slices));
+  CHECK(recv_buffer.Dump(&slices).ok());
 
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
@@ -198,7 +198,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   }
 
   std::vector<grpc::Slice> slices;
-  CHECK_OK(recv_buffer.Dump(&slices));
+  CHECK(recv_buffer.Dump(&slices).ok());
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
     response->append(reinterpret_cast<const char*>(slices[i].begin()),
