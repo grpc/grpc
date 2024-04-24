@@ -798,7 +798,7 @@ class ParameterizedClientInterceptorsEnd2endTest
   void SendRPC(const std::shared_ptr<Channel>& channel) {
     switch (GetParam().rpc_type()) {
       case RPCType::kSyncUnary:
-        MakeCallPair(channel);
+        MakeCall(channel);
         break;
       case RPCType::kSyncClientStreaming:
         MakeClientStreamingCall(channel);
@@ -880,7 +880,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   creators.push_back(std::make_unique<HijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, nullptr, args, std::move(creators));
-  MakeCallPair(channel);
+  MakeCall(channel);
 }
 
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
@@ -900,7 +900,7 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
-  MakeCallPair(channel);
+  MakeCall(channel);
   // Make sure only 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
@@ -913,7 +913,7 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
   creators.push_back(std::make_unique<HijackingInterceptorFactory>());
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
-  MakeCallPair(channel);
+  MakeCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
 }
 
@@ -938,7 +938,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
 
-  MakeCallPair(channel, StubOptions("TestSuffixForStats"));
+  MakeCall(channel, StubOptions("TestSuffixForStats"));
   // Make sure all interceptors were run once, since the hijacking interceptor
   // makes an RPC on the intercepted channel
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 12);
@@ -1199,7 +1199,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, PhonyGlobalInterceptor) {
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
-  MakeCallPair(channel);
+  MakeCall(channel);
   // Make sure all 20 phony interceptors were run with the global interceptor
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 21);
   experimental::TestOnlyResetGlobalClientInterceptorFactory();
@@ -1222,7 +1222,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
-  MakeCallPair(channel);
+  MakeCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
@@ -1246,7 +1246,7 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
-  MakeCallPair(channel);
+  MakeCall(channel);
   // Make sure all 20 phony interceptors were run
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
   experimental::TestOnlyResetGlobalClientInterceptorFactory();

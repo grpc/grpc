@@ -114,7 +114,7 @@ class FilterTestBase : public ::testing::Test {
       impl_->initial_arena_size = size;
     }
 
-    Call MakeCallPair();
+    Call MakeCall();
 
    protected:
     explicit Channel(std::unique_ptr<ChannelFilter> filter,

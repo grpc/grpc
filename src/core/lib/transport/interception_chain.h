@@ -34,7 +34,7 @@ class InterceptionChainBuilder;
 // call object above us, the processed metadata from any filters/interceptors
 // above us, and also create new CallInterceptor objects that will be handled
 // below.
-class HijackedCall {
+class HijackedCall final {
  public:
   HijackedCall(ClientMetadataHandle metadata,
                RefCountedPtr<UnstartedCallDestination> destination,

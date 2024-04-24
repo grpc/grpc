@@ -132,7 +132,7 @@ using AddServerInitialMetadataFilterTest =
 
 TEST_F(NoOpFilterTest, NoOp) {}
 
-TEST_F(NoOpFilterTest, MakeCallPair) {
+TEST_F(NoOpFilterTest, MakeCall) {
   Call call(MakeChannel(ChannelArgs()).value());
 }
 

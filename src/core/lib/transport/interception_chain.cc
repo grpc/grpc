@@ -103,22 +103,21 @@ class TerminalInterceptor final : public UnstartedCallDestination {
 // InterceptionChain::Builder
 
 void InterceptionChainBuilder::AddInterceptor(
-    absl::StatusOr<RefCountedPtr<Interceptor>> maybe_interceptor) {
+    absl::StatusOr<RefCountedPtr<Interceptor>> interceptor) {
   if (!status_.ok()) return;
-  if (!maybe_interceptor.ok()) {
-    status_ = maybe_interceptor.status();
+  if (!interceptor.ok()) {
+    status_ = interceptor.status();
     return;
   }
-  auto interceptor = std::move(maybe_interceptor.value());
-  interceptor->filter_stack_ = MakeFilterStack();
+  (*interceptor)->filter_stack_ = MakeFilterStack();
   if (top_interceptor_ == nullptr) {
-    top_interceptor_ = std::move(interceptor);
+    top_interceptor_ = std::move(*interceptor);
   } else {
     Interceptor* previous = top_interceptor_.get();
     while (previous->wrapped_destination_ != nullptr) {
       previous = DownCast<Interceptor*>(previous->wrapped_destination_.get());
     }
-    previous->wrapped_destination_ = std::move(interceptor);
+    previous->wrapped_destination_ = std::move(*interceptor);
   }
 }
 
@@ -128,32 +127,30 @@ InterceptionChainBuilder::Build(FinalDestination final_destination) {
   // Build the final UnstartedCallDestination in the chain - what we do here
   // depends on both the type of the final destination and the filters we have
   // that haven't been captured into an Interceptor yet.
-  absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> terminator = Match(
+  RefCountedPtr<UnstartedCallDestination> terminator = Match(
       final_destination,
       [this](RefCountedPtr<UnstartedCallDestination> final_destination)
-          -> absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> {
+          -> RefCountedPtr<UnstartedCallDestination> {
         if (stack_builder_.has_value()) {
-          // TODO(ctiller): consider interjecting a hijacker here
           return MakeRefCounted<TerminalInterceptor>(MakeFilterStack(),
                                                      final_destination);
         }
         return final_destination;
       },
       [this](RefCountedPtr<CallDestination> final_destination)
-          -> absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> {
+          -> RefCountedPtr<UnstartedCallDestination> {
         return MakeRefCounted<CallStarter>(MakeFilterStack(),
                                            std::move(final_destination));
       });
-  if (!terminator.ok()) return terminator.status();
   // Now append the terminator to the interceptor chain.
   if (top_interceptor_ == nullptr) {
-    return std::move(terminator.value());
+    return std::move(terminator);
   }
   Interceptor* previous = top_interceptor_.get();
   while (previous->wrapped_destination_ != nullptr) {
     previous = DownCast<Interceptor*>(previous->wrapped_destination_.get());
   }
-  previous->wrapped_destination_ = std::move(terminator.value());
+  previous->wrapped_destination_ = std::move(terminator);
   return std::move(top_interceptor_);
 }
 
