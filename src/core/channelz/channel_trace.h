@@ -97,8 +97,7 @@ class ChannelTrace {
 
     // Constructor for a TraceEvent that does not reverence a different
     // channel.
-    TraceEvent(Severity severity, const grpc_slice& data)
-        : TraceEvent(severity, data, nullptr) {}
+    TraceEvent(Severity severity, const grpc_slice& data);
 
     ~TraceEvent();
 

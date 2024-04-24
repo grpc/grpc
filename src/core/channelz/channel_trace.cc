@@ -48,6 +48,9 @@ ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data,
       memory_usage_(sizeof(TraceEvent) + grpc_slice_memory_usage(data)),
       referenced_entity_(std::move(referenced_entity)) {}
 
+ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data)
+    : TraceEvent(severity, data, nullptr) {}
+
 ChannelTrace::TraceEvent::~TraceEvent() { CSliceUnref(data_); }
 
 namespace {
