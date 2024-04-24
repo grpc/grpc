@@ -2127,6 +2127,7 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
+  - absl/log:check
   - grpc_unsecure
 - name: grpc_unsecure
   build: all
@@ -3620,7 +3621,6 @@ libs:
   - test/core/util/tracer_util.cc
   - test/cpp/microbenchmarks/helpers.cc
   deps:
-  - absl/log:check
   - benchmark
   - grpc++_unsecure
   - grpc_test_util_unsecure
@@ -5309,7 +5309,6 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -5365,7 +5364,6 @@ targets:
   - test/cpp/common/alarm_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -17278,7 +17276,6 @@ targets:
   - test/cpp/server/server_builder_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -17318,7 +17315,6 @@ targets:
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -17509,7 +17505,6 @@ targets:
   - test/cpp/server/server_request_call_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:

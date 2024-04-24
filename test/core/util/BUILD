@@ -165,6 +165,7 @@ grpc_cc_library(
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
     external_deps = [
         "absl/debugging:failure_signal_handler",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
