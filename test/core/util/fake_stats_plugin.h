@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {
 
@@ -59,12 +60,12 @@ void RegisterFakeStatsPlugin();
 class FakeClientCallTracer : public ClientCallTracer {
  public:
   class FakeClientCallAttemptTracer
-      : public ClientCallTracer::CallAttemptTracer {
+      : public ClientCallTracer::CallAttemptTracer,
+        public RefCounted<FakeClientCallAttemptTracer> {
    public:
     explicit FakeClientCallAttemptTracer(
         std::vector<std::string>* annotation_logger)
         : annotation_logger_(annotation_logger) {}
-    ~FakeClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
         grpc_metadata_batch* /*send_initial_metadata*/) override {}
     void RecordSendTrailingMetadata(
@@ -83,7 +84,7 @@ class FakeClientCallTracer : public ClientCallTracer {
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* /*transport_stream_stats*/)
         override {}
-    void RecordEnd(const gpr_timespec& /*latency*/) override {}
+    void RecordEnd(const gpr_timespec& /*latency*/) override { Unref(); }
     void RecordAnnotation(absl::string_view annotation) override {
       annotation_logger_->push_back(std::string(annotation));
     }
@@ -113,9 +114,10 @@ class FakeClientCallTracer : public ClientCallTracer {
       : annotation_logger_(annotation_logger) {}
   ~FakeClientCallTracer() override {}
   CallAttemptTracer* StartNewAttempt(bool /*is_transparent_retry*/) override {
-    call_attempt_tracers_.emplace_back(
-        new FakeClientCallAttemptTracer(annotation_logger_));
-    return call_attempt_tracers_.back().get();
+    auto call_attempt_tracer =
+        MakeRefCounted<FakeClientCallAttemptTracer>(annotation_logger_);
+    call_attempt_tracers_.emplace_back(call_attempt_tracer);
+    return call_attempt_tracer.release();  // Released in RecordEnd().
   }
 
   void RecordAnnotation(absl::string_view annotation) override {
@@ -132,8 +134,7 @@ class FakeClientCallTracer : public ClientCallTracer {
 
  private:
   std::vector<std::string>* annotation_logger_;
-  std::vector<std::unique_ptr<FakeClientCallAttemptTracer>>
-      call_attempt_tracers_;
+  std::vector<RefCountedPtr<FakeClientCallAttemptTracer>> call_attempt_tracers_;
 };
 
 #define GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY \

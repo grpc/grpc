@@ -58,7 +58,7 @@ static gpr_timespec now_impl(gpr_clock_type clock) {
     return ts;
   }
   CHECK_GE(ts.tv_nsec, 0);
-  CHECK(ts.tv_nsec < GPR_NS_PER_SEC);
+  CHECK_LT(ts.tv_nsec, GPR_NS_PER_SEC);
   gpr_mu_lock(&g_mu);
   ts.tv_sec += g_time_shift_sec;
   ts.tv_nsec += g_time_shift_nsec;
@@ -126,7 +126,7 @@ TEST(TimespecTest, GrpcNegativeMillisToTimespec) {
           .as_timespec(GPR_CLOCK_MONOTONIC);
   CHECK(ts.tv_sec = -2);
   CHECK(ts.tv_nsec = 5e8);
-  CHECK(ts.clock_type == GPR_CLOCK_MONOTONIC);
+  CHECK_EQ(ts.clock_type, GPR_CLOCK_MONOTONIC);
 }
 
 class TimeChangeTest : public ::testing::Test {

@@ -243,7 +243,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     virtual ~ServerThread() {
       // Shutdown should be called manually. Shutdown calls virtual methods and
       // can't be called from the base class destructor.
-      GPR_ASSERT(!running_);
+      CHECK(!running_);
     }
 
     void Start();

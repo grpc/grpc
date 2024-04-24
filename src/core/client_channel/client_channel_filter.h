@@ -37,6 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
@@ -46,7 +47,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -63,7 +63,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -71,6 +70,7 @@
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/service_config/service_config.h"
 
 //
 // Client channel filter
