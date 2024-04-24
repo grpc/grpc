@@ -1036,7 +1036,7 @@ bool InteropClient::DoOrcaOob() {
       stream(serviceStub_.Get()->FullDuplexCall(&context));
   auto stream_cleanup = absl::MakeCleanup([&]() {
     CHECK(stream->WritesDone());
-    CHECK_OK(stream->Finish());
+    CHECK(stream->Finish().ok());
   });
   {
     StreamingOutputCallRequest request;

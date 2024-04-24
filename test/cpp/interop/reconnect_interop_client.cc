@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
   ClientContext stop_context;
   ReconnectInfo response;
   Status stop_status = control_stub->Stop(&stop_context, Empty(), &response);
-  CHECK_OK(stop_status);
+  CHECK(stop_status.ok());
   CHECK(response.passed() == true);
   gpr_log(GPR_INFO, "Passed");
   return 0;
