@@ -14,7 +14,7 @@
 
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -37,7 +37,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:directory_reader",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -56,7 +56,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -71,7 +71,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -171,7 +171,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -186,7 +186,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -199,7 +199,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:orphanable",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -212,7 +212,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//src/core:ref_counted",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -225,7 +225,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//src/core:dual_ref_counted",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -241,7 +241,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:dual_ref_counted",
         "//src/core:ref_counted",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -254,7 +254,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -270,7 +270,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -285,7 +285,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -300,7 +300,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -345,7 +345,7 @@ grpc_proto_fuzzer(
     deps = [
         "//src/core:chunked_vector",
         "//src/core:resource_quota",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -417,7 +417,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -430,7 +430,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//src/core:validation_errors",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -457,7 +457,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:load_file",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -472,6 +472,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:uuid_v4",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

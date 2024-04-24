@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 licenses(["notice"])
 
 grpc_package(
-    name = "test/core/util",
+    name = "test/core/test_util",
     visibility = "public",
 )
 

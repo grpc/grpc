@@ -29,7 +29,7 @@ grpc_cc_test(
         "//:endpoint_addresses",
         "//:parse_address",
         "//:sockaddr_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -44,7 +44,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:grpc_resolver_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -56,7 +56,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -70,7 +70,7 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -82,7 +82,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -96,7 +96,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_resolver_fake",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -112,8 +112,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//test/core/util:fake_udp_and_tcp_server",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_udp_and_tcp_server",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )

@@ -40,7 +40,7 @@ def grpc_fuzzer(name, corpus, owner = "grpc", srcs = [], tags = [], external_dep
         tags = tags + ["grpc-fuzzer", "no-cache"],
         deps = deps + select({
             "//:grpc_build_fuzzers": [],
-            "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
+            "//conditions:default": ["//test/core/test_util:fuzzer_corpus_test"],
         }),
         data = data + native.glob([corpus + "/**"]),
         external_deps = external_deps + [
@@ -96,7 +96,7 @@ def grpc_proto_fuzzer(name, corpus, proto, owner = "grpc", proto_deps = [], exte
         tags = tags + ["grpc-fuzzer", "no-cache"],
         deps = deps + select({
             "//:grpc_build_fuzzers": [],
-            "//conditions:default": ["//test/core/util:fuzzer_corpus_test"],
+            "//conditions:default": ["//test/core/test_util:fuzzer_corpus_test"],
         }),
         data = data + native.glob([corpus + "/**"]),
         external_deps = external_deps,

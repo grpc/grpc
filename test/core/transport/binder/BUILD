@@ -50,7 +50,7 @@ grpc_cc_test(
     deps = [
         ":mock_objects",
         "//:grpc++_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -68,7 +68,7 @@ grpc_cc_test(
     deps = [
         ":mock_objects",
         "//:grpc++_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -85,7 +85,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -109,7 +109,7 @@ grpc_cc_test(
         ":mock_objects",
         "//:grpc",
         "//:grpc++_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -128,6 +128,6 @@ grpc_cc_test(
         ":mock_objects",
         "//:grpc",
         "//:grpc++_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

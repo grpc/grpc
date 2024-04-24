@@ -34,8 +34,8 @@ def grpc_bad_ssl_tests():
         srcs = ["server_common.cc"],
         hdrs = ["server_common.h"],
         deps = [
-            "//test/core/util:grpc_test_util",
-            "//test/core/util:grpc_test_util_base",
+            "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:grpc_test_util_base",
             "//:grpc",
         ],
     )
@@ -57,8 +57,8 @@ def grpc_bad_ssl_tests():
                 "//src/core/tsi/test_creds:server1.pem",
             ],
             deps = [
-                "//test/core/util:grpc_test_util",
-                "//test/core/util:grpc_test_util_base",
+                "//test/core/test_util:grpc_test_util",
+                "//test/core/test_util:grpc_test_util_base",
                 "//:gpr",
                 "//:grpc",
                 "//:subprocess",
