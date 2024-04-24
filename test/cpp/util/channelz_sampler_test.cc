@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
