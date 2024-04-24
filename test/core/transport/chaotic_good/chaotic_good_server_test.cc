@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "gmock/gmock.h"

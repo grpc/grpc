@@ -14,6 +14,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "gmock/gmock.h"
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"

@@ -16,6 +16,8 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
