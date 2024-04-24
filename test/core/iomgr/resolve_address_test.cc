@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/strings/match.h"
 
 #include <grpc/grpc.h>

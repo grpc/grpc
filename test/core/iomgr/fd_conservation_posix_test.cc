@@ -18,6 +18,8 @@
 
 #include <sys/resource.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 

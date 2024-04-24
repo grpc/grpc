@@ -33,6 +33,7 @@
 #include "absl/base/attributes.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
@@ -107,8 +108,7 @@ static void send_initial_metadata_unary(void* tag) {
   metadata_ops[0].data.send_initial_metadata.count = 0;
 
   CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                                   metadata_ops, 1, tag,
-                                                   nullptr));
+                                              metadata_ops, 1, tag, nullptr));
 }
 
 static void send_status(void* tag) {
@@ -119,8 +119,7 @@ static void send_status(void* tag) {
   status_op.data.send_status_from_server.status_details = &details;
 
   CHECK(GRPC_CALL_OK == grpc_call_start_batch((*(fling_call*)tag).call,
-                                                   &status_op, 1, tag,
-                                                   nullptr));
+                                              &status_op, 1, tag, nullptr));
 }
 
 static void send_snapshot(void* tag, MemStats* snapshot) {
@@ -153,8 +152,8 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
   op++;
 
   CHECK(GRPC_CALL_OK ==
-             grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
-                                   (size_t)(op - snapshot_ops), tag, nullptr));
+        grpc_call_start_batch((*(fling_call*)tag).call, snapshot_ops,
+                              (size_t)(op - snapshot_ops), tag, nullptr));
 }
 // We have some sort of deadlock, so let's not exit gracefully for now.
 // When that is resolved, please remove the #include <unistd.h> above.
@@ -257,10 +256,10 @@ int main(int argc, char** argv) {
 
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
-      CHECK(grpc_completion_queue_pluck(
-                     shutdown_cq, tag(1000),
-                     grpc_timeout_seconds_to_deadline(5), nullptr)
-                     .type == GRPC_OP_COMPLETE);
+      CHECK(grpc_completion_queue_pluck(shutdown_cq, tag(1000),
+                                        grpc_timeout_seconds_to_deadline(5),
+                                        nullptr)
+                .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;

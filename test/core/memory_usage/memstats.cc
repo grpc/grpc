@@ -19,6 +19,7 @@
 #include <fstream>
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>

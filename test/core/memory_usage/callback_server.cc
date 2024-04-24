@@ -24,6 +24,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>

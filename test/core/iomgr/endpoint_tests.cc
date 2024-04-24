@@ -22,6 +22,8 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -274,8 +276,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker* worker = nullptr;
     CHECK(grpc_core::Timestamp::Now() < deadline);
-    CHECK(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_core::ExecCtx::Get()->Flush();
@@ -302,8 +304,8 @@ static void wait_for_fail_count(int* fail_count, int want_fail_count) {
   while (grpc_core::Timestamp::Now() < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = nullptr;
-    CHECK(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
