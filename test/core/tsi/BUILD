@@ -83,8 +83,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/tsi:transport_security_test_lib",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/tsi:transport_security_test_lib",
     ],
 )
 

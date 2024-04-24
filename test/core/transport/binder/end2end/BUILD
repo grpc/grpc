@@ -111,8 +111,8 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//:grpc++_binder",
-        "//test/core/transport/binder/end2end:fake_binder",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/transport/binder/end2end:fake_binder",
         "//test/cpp/end2end:test_service_impl",
     ],
 )

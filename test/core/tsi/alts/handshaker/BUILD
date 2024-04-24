@@ -94,8 +94,8 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:slice",
         "//test/core/end2end:cq_verifier",
-        "//test/core/tsi/alts/fake_handshaker:fake_handshaker_lib",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/tsi/alts/fake_handshaker:fake_handshaker_lib",
     ],
 )
