@@ -21,6 +21,8 @@
 #include <cstdint>
 #include <limits>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
