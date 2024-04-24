@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef POLL_MATCHER_H
-#define POLL_MATCHER_H
+#ifndef GRPC_TEST_CORE_PROMISE_POLL_MATCHER_H
+#define GRPC_TEST_CORE_PROMISE_POLL_MATCHER_H
 
 #include "gmock/gmock.h"
 
@@ -57,4 +57,4 @@ MATCHER_P(IsReady, value, "") {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_PROMISE_POLL_MATCHER_H
