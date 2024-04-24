@@ -81,7 +81,10 @@ grpc_cc_test(
     srcs = [
         "alts_concurrent_connectivity_test.cc",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     flaky = True,
     language = "C++",
     # TODO(apolcyn): make the fake TCP server used in this

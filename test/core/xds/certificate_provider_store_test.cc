@@ -23,6 +23,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>

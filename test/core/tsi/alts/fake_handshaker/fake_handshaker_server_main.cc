@@ -18,6 +18,7 @@
 #include <sstream>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/impl/service_type.h>

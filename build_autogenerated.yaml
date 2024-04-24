@@ -5435,6 +5435,7 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -7420,6 +7421,7 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   uses_polling: false
 - name: cf_engine_test
@@ -8470,6 +8472,7 @@ targets:
   - test/core/tsi/transport_security_test_lib.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -18220,6 +18223,7 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc_test_util
 - name: socket_utils_test
   gtest: true
@@ -20544,6 +20548,7 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -21151,6 +21156,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util

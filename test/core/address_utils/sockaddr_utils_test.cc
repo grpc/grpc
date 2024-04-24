@@ -42,6 +42,8 @@
 
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"

@@ -31,6 +31,7 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
@@ -143,7 +144,7 @@ class TestServer {
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
     CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
-                                          server_creds));
+                                     server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
