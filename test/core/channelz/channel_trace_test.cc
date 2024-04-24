@@ -326,12 +326,11 @@ TEST(ChannelTracerTest, ThreadSafety) {
   absl::Notification done;
   std::vector<std::unique_ptr<std::thread>> threads;
   for (size_t i = 0; i < 10; ++i) {
-    threads.push_back(std::make_unique<std::thread>(
-        [&]() {
-          do {
-            AddSimpleTrace(&tracer);
-          } while (!done.HasBeenNotified());
-        }));
+    threads.push_back(std::make_unique<std::thread>([&]() {
+      do {
+        AddSimpleTrace(&tracer);
+      } while (!done.HasBeenNotified());
+    }));
   }
   for (size_t i = 0; i < 10; ++i) {
     tracer.RenderJson();
