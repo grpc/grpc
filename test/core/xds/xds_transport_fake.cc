@@ -282,7 +282,7 @@ FakeXdsTransportFactory::Create(
     absl::Status* /*status*/) {
   MutexLock lock(&mu_);
   auto& entry = transport_map_[server.Key()];
-  CHECK_EQ(entry, nullptr);
+  CHECK(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
       RefAsSubclass<FakeXdsTransportFactory>(), server,
       std::move(on_connectivity_failure), auto_complete_messages_from_client_,
