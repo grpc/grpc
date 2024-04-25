@@ -18,6 +18,7 @@
 
 #include "test/core/util/mock_endpoint.h"
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -153,7 +154,7 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice)) {
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
-  GPR_ASSERT(!m->put_reads_done);
+  CHECK(!m->put_reads_done);
   if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, absl::OkStatus());
