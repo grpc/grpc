@@ -21,6 +21,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
@@ -35,7 +37,7 @@ Slice ParseHexstring(absl::string_view hexstring) {
     nibbles += (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
   }
 
-  GPR_ASSERT((nibbles & 1) == 0);
+  CHECK_EQ((nibbles & 1), 0u);
 
   slice = grpc_slice_malloc(nibbles / 2);
   out = GRPC_SLICE_START_PTR(slice);
