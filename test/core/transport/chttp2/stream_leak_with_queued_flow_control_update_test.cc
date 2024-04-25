@@ -80,7 +80,7 @@ class TestServer {
     grpc_call* call;
     grpc_call_error error = grpc_server_request_call(
         server_, &call, &call_details, &request_metadata_recv, cq_, cq_, tag);
-    CHECK(error == GRPC_CALL_OK);
+    CHECK_EQ(error, GRPC_CALL_OK);
     grpc_event event = grpc_completion_queue_next(
         cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     CHECK(event.type == GRPC_OP_COMPLETE);
@@ -112,7 +112,7 @@ class TestServer {
     op++;
     error = grpc_call_start_batch(call, ops, static_cast<size_t>(op - ops), tag,
                                   nullptr);
-    CHECK(error == GRPC_CALL_OK);
+    CHECK_EQ(error, GRPC_CALL_OK);
     event = grpc_completion_queue_next(cq_, gpr_inf_future(GPR_CLOCK_REALTIME),
                                        nullptr);
     CHECK(event.type == GRPC_OP_COMPLETE);

@@ -116,6 +116,7 @@ grpc_cc_test(
     name = "parsed_metadata_test",
     srcs = ["parsed_metadata_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
