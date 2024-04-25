@@ -90,7 +90,7 @@ grpc_histogram* grpc_histogram_create(double resolution,
   h->max_seen = 0.0;
   h->num_buckets = bucket_for_unchecked(h, max_bucket_start) + 1;
   CHECK_GT(h->num_buckets, 1);
-  CHECK(h->num_buckets < 100000000);
+  CHECK(h->num_buckets < 100000000ul);
   h->buckets =
       static_cast<uint32_t*>(gpr_zalloc(sizeof(uint32_t) * h->num_buckets));
   return h;
