@@ -76,8 +76,8 @@ const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
-  CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1);
-  CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1);
+  CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
+  CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
