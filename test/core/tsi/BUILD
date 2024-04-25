@@ -26,6 +26,7 @@ grpc_cc_library(
     srcs = ["transport_security_test_lib.cc"],
     hdrs = ["transport_security_test_lib.h"],
     external_deps = [
+        "absl/log:check",
         "libssl",
         "libcrypto",
     ],

@@ -49,13 +49,12 @@
 /// \see https://github.com/grpc/grpc/blob/master/doc/load-balancing.md for the
 /// high level design and details.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/grpclb/grpclb.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -93,11 +92,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"

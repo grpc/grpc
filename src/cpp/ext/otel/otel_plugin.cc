@@ -104,7 +104,7 @@ class OpenTelemetryPlugin::NPCMetricsKeyValueIterable
                        bool(opentelemetry::nostd::string_view,
                             opentelemetry::common::AttributeValue)>
                            callback) const noexcept override {
-    for (size_t i = 0; i < label_keys_.size(); i++) {
+    for (size_t i = 0; i < label_keys_.size(); ++i) {
       if (!callback(AbslStrViewToOpenTelemetryStrView(label_keys_[i]),
                     AbslStrViewToOpenTelemetryStrView(label_values_[i]))) {
         return false;

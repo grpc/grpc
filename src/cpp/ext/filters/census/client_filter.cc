@@ -84,11 +84,13 @@ const grpc_channel_filter OpenCensusClientFilter::kFilter =
                                       grpc_core::FilterEndpoint::kClient, 0>(
         "opencensus_client");
 
-absl::StatusOr<OpenCensusClientFilter> OpenCensusClientFilter::Create(
-    const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
+absl::StatusOr<std::unique_ptr<OpenCensusClientFilter>>
+OpenCensusClientFilter::Create(const grpc_core::ChannelArgs& args,
+                               ChannelFilter::Args /*filter_args*/) {
   bool observability_enabled =
       args.GetInt(GRPC_ARG_ENABLE_OBSERVABILITY).value_or(true);
-  return OpenCensusClientFilter(/*tracing_enabled=*/observability_enabled);
+  return std::make_unique<OpenCensusClientFilter>(
+      /*tracing_enabled=*/observability_enabled);
 }
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>

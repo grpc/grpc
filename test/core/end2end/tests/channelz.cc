@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 
 #include <string>
 

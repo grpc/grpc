@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
 #include "src/libfuzzer/libfuzzer_macro.h"

@@ -119,11 +119,13 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
         grpc_endpoint_shutdown(args_.endpoint, error);
         grpc_endpoint_destroy(args_.endpoint);
         args_.endpoint = nullptr;
-        args_.args = ChannelArgs();
+      }
+      if (args_.read_buffer != nullptr) {
         grpc_slice_buffer_destroy(args_.read_buffer);
         gpr_free(args_.read_buffer);
         args_.read_buffer = nullptr;
       }
+      args_.args = ChannelArgs();
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
       gpr_log(GPR_INFO,
