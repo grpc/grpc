@@ -41,6 +41,9 @@ grpc_cc_library(
     testonly = True,
     srcs = ["fake_handshaker_server.cc"],
     hdrs = ["fake_handshaker_server.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "C++",
     deps = [
         "handshaker_proto",
