@@ -4052,6 +4052,7 @@ libs:
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
   deps:
+  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: grpc++_unsecure
@@ -5644,7 +5645,6 @@ targets:
   - test/cpp/end2end/async_end2end_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: auth_context_test
   gtest: true
@@ -6135,7 +6135,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: binder_transport_test
   gtest: true
@@ -6901,7 +6900,6 @@ targets:
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: cancel_before_invoke_test
@@ -7490,7 +7488,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: channel_args_test
   gtest: true
@@ -7620,7 +7617,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpcpp_channelz
   - grpc++_test_util
 - name: check_gcp_environment_linux_test
@@ -7890,7 +7886,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: client_channel_service_config_test
   gtest: true
@@ -7962,7 +7957,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: client_lb_end2end_test
   gtest: true
@@ -7987,7 +7981,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -8406,7 +8399,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: context_test
   gtest: true
@@ -8471,7 +8463,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: crl_ssl_transport_security_test
   gtest: true
@@ -8579,7 +8570,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: destroy_grpclb_channel_with_active_connect_stress_test
   gtest: true
@@ -8825,7 +8815,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -8848,7 +8837,6 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - absl/log:check
   - grpc++_test
   - grpc++_test_util
 - name: endpoint_addresses_test
@@ -9826,7 +9814,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: flow_control_test
   gtest: true
@@ -10484,7 +10471,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_authorization_provider
   - grpc++_test_util
 - name: grpc_authz_test
@@ -10584,6 +10570,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - absl/log:check
   - grpc++
   - protoc
   - grpc++_test_config
@@ -10898,7 +10885,6 @@ targets:
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: grpclb_end2end_test
   gtest: true
@@ -10919,7 +10905,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -11060,7 +11045,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: high_initial_seqno_test
   gtest: true
@@ -11337,7 +11321,6 @@ targets:
   - src/proto/grpc/testing/test.proto
   - test/cpp/interop/http2_client.cc
   deps:
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: http2_settings_test
@@ -11478,7 +11461,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: idle_filter_state_test
   gtest: true
@@ -12393,7 +12375,6 @@ targets:
   - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
   deps:
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
@@ -12411,7 +12392,6 @@ targets:
   - test/cpp/interop/interop_server_bootstrap.cc
   - test/cpp/interop/server_helper.cc
   deps:
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: invalid_call_argument_test
@@ -13416,7 +13396,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: message_compress_test
   gtest: true
@@ -13828,7 +13807,6 @@ targets:
   - test/cpp/end2end/nonblocking_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: notification_test
   gtest: true
@@ -13971,7 +13949,6 @@ targets:
   - test/cpp/ext/otel/otel_test_library.cc
   deps:
   - gtest
-  - absl/log:check
   - opentelemetry-cpp::api
   - opentelemetry-cpp::metrics
   - grpc++_test_util
@@ -14575,7 +14552,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: posix_endpoint_test
   gtest: true
@@ -14657,7 +14633,6 @@ targets:
   - test/cpp/util/windows/manifest_file.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -14691,7 +14666,6 @@ targets:
   - test/cpp/util/windows/manifest_file.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -14882,7 +14856,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_reflection
   - grpc++_test_util
 - name: proto_utils_test
@@ -15001,7 +14974,6 @@ targets:
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
   deps:
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: qps_worker
@@ -15035,7 +15007,6 @@ targets:
   - test/cpp/qps/usage_timer.cc
   - test/cpp/qps/worker.cc
   deps:
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: query_extensions_test
@@ -15095,7 +15066,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: rbac_service_config_parser_test
   gtest: true
@@ -17837,7 +17807,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: rls_lb_config_parser_test
@@ -18003,7 +17972,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: server_builder_test
   gtest: true
@@ -18220,7 +18188,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: server_registered_method_bad_client_test
   gtest: true
@@ -18382,7 +18349,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: service_config_test
   gtest: true
@@ -18567,7 +18533,6 @@ targets:
   - test/cpp/end2end/shutdown_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: simple_delayed_request_test
   gtest: true
@@ -19790,7 +19755,6 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: test_cpp_ext_chaotic_good_test
   gtest: true
@@ -20136,7 +20100,6 @@ targets:
   - test/cpp/end2end/tls_credentials_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: tls_key_export_test
   gtest: true
@@ -20151,7 +20114,6 @@ targets:
   - test/cpp/end2end/tls_key_export_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: tls_security_connector_test
   gtest: true
@@ -20196,7 +20158,6 @@ targets:
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: traced_buffer_list_test
@@ -21140,6 +21101,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21244,7 +21206,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21337,7 +21298,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21372,6 +21332,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21431,7 +21392,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21452,7 +21412,6 @@ targets:
   - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
 - name: xds_credentials_test
   gtest: true
@@ -21539,7 +21498,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21605,7 +21563,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -21683,7 +21640,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21743,7 +21699,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21791,6 +21746,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21833,6 +21789,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21880,6 +21837,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21938,7 +21896,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -21999,7 +21956,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -22091,7 +22047,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -22152,7 +22107,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -22214,7 +22168,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -22259,6 +22212,7 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -22317,7 +22271,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
@@ -22407,7 +22360,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_util
   platforms:
   - linux
