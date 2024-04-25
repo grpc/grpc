@@ -15,7 +15,9 @@
 // limitations under the License.
 //
 //
+#include "absl/log/check.h"
 
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -53,10 +55,10 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
       static_cast<grpc_core::HandshakerArgs*>(arg);
   struct handshake_state* state =
       static_cast<struct handshake_state*>(args->user_data);
-  GPR_ASSERT(state->done_callback_called == false);
+  CHECK(state->done_callback_called == false);
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -85,7 +87,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(grpc_core::ChannelArgs());
-    GPR_ASSERT(sc != nullptr);
+    CHECK(sc != nullptr);
     grpc_core::Timestamp deadline =
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
@@ -109,7 +111,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                              GRPC_ERROR_CREATE("Explicit close"));
       grpc_core::ExecCtx::Get()->Flush();
     }
-    GPR_ASSERT(state.done_callback_called);
+    CHECK(state.done_callback_called);
 
     sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);

@@ -35,6 +35,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>

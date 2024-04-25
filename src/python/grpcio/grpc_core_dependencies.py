@@ -15,8 +15,10 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'src/core/channelz/channel_trace.cc',
+    'src/core/channelz/channelz.cc',
+    'src/core/channelz/channelz_registry.cc',
     'src/core/client_channel/backup_poller.cc',
-    'src/core/client_channel/client_channel_channelz.cc',
     'src/core/client_channel/client_channel_factory.cc',
     'src/core/client_channel/client_channel_filter.cc',
     'src/core/client_channel/client_channel_plugin.cc',
@@ -441,9 +443,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/channel/channel_stack_builder.cc',
     'src/core/lib/channel/channel_stack_builder_impl.cc',
     'src/core/lib/channel/channel_stack_trace.cc',
-    'src/core/lib/channel/channel_trace.cc',
-    'src/core/lib/channel/channelz.cc',
-    'src/core/lib/channel/channelz_registry.cc',
     'src/core/lib/channel/connected_channel.cc',
     'src/core/lib/channel/metrics.cc',
     'src/core/lib/channel/promise_based_filter.cc',
@@ -756,9 +755,9 @@ CORE_SOURCE_FILES = [
     'src/core/lib/surface/wait_for_cq_end_op.cc',
     'src/core/lib/transport/batch_builder.cc',
     'src/core/lib/transport/bdp_estimator.cc',
+    'src/core/lib/transport/call_arena_allocator.cc',
     'src/core/lib/transport/call_filters.cc',
     'src/core/lib/transport/call_final_info.cc',
-    'src/core/lib/transport/call_size_estimator.cc',
     'src/core/lib/transport/call_spine.cc',
     'src/core/lib/transport/connectivity_state.cc',
     'src/core/lib/transport/endpoint_info_handshaker.cc',

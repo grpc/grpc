@@ -102,7 +102,7 @@ GPRAPI void gpr_assertion_failed(const char* filename, int line,
 #ifndef NDEBUG
 #define GPR_DEBUG_ASSERT(x) GPR_ASSERT(x)
 #else
-#define GPR_DEBUG_ASSERT(x)
+#define GPR_DEBUG_ASSERT(x) GPR_ASSERT(true || (x))
 #endif
 
 #ifdef __cplusplus

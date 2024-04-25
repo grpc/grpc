@@ -35,8 +35,8 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
-#include "src/core/service_config/service_config_parser.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/service_config/service_config_parser.h"
 
 namespace grpc_core {
 namespace internal {

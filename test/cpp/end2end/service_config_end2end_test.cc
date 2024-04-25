@@ -175,7 +175,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK(lb_uri.ok());
+      CHECK_OK(lb_uri);
       grpc_resolved_address address;
       CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, grpc_core::ChannelArgs());

@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
@@ -86,7 +87,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
     EXPECT_EQ(server_message.payload(), "hello world");
     num_messages_received++;
   }
-  GPR_ASSERT(num_messages_received == num_messages);
+  CHECK_EQ(num_messages_received, num_messages);
   if (!seen_status) {
     test.Expect(1, true);
     test.Step();

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 
 #include <stdlib.h>
 
@@ -30,6 +30,7 @@
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -38,8 +39,8 @@
 #include <grpc/support/json.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/notification.h"

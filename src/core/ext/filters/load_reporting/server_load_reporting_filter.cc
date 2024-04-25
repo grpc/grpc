@@ -76,10 +76,11 @@ const NoInterceptor ServerLoadReportingFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerLoadReportingFilter::Call::OnClientToServerMessage;
 const NoInterceptor ServerLoadReportingFilter::Call::OnServerToClientMessage;
 
-absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
-    const ChannelArgs& channel_args, ChannelFilter::Args) {
+absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>>
+ServerLoadReportingFilter::Create(const ChannelArgs& channel_args,
+                                  ChannelFilter::Args) {
   // Find and record the peer_identity.
-  ServerLoadReportingFilter filter;
+  auto filter = std::make_unique<ServerLoadReportingFilter>();
   const auto* auth_context = channel_args.GetObject<grpc_auth_context>();
   if (auth_context != nullptr &&
       grpc_auth_context_peer_is_authenticated(auth_context)) {
@@ -88,7 +89,7 @@ absl::StatusOr<ServerLoadReportingFilter> ServerLoadReportingFilter::Create(
     const grpc_auth_property* auth_property =
         grpc_auth_property_iterator_next(&auth_it);
     if (auth_property != nullptr) {
-      filter.peer_identity_ =
+      filter->peer_identity_ =
           std::string(auth_property->value, auth_property->value_length);
     }
   }

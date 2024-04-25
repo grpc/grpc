@@ -39,7 +39,7 @@ class ServerLoadReportingFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerLoadReportingFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 
   // Getters.
