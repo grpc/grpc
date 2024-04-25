@@ -4794,7 +4794,6 @@ target_include_directories(grpc++_test_util
 )
 target_link_libraries(grpc++_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -33106,7 +33105,6 @@ target_include_directories(xds_audit_logger_registry_test
 target_link_libraries(xds_audit_logger_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -33805,7 +33803,6 @@ target_include_directories(xds_common_types_test
 target_link_libraries(xds_common_types_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -35025,7 +35022,6 @@ target_include_directories(xds_http_filters_test
 target_link_libraries(xds_http_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -35144,7 +35140,6 @@ target_include_directories(xds_lb_policy_registry_test
 target_link_libraries(xds_lb_policy_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -35287,7 +35282,6 @@ target_include_directories(xds_listener_resource_type_test
 target_link_libraries(xds_listener_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -36414,7 +36408,6 @@ target_include_directories(xds_route_config_resource_type_test
 target_link_libraries(xds_route_config_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
