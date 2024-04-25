@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,20 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -eo pipefail
 
-# Config file for the internal CI (in protobuf text format)
+# Constants
+readonly GRPC_LANGUAGE="python"
+readonly GITHUB_REPOSITORY_NAME="grpc"
+readonly TEST_DRIVER_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/${TEST_DRIVER_REPO_OWNER:-grpc}/psm-interop/${TEST_DRIVER_BRANCH:-main}/.kokoro/psm_interop_kokoro_lib.sh"
+readonly BUILD_SCRIPT_DIR="$(dirname "$0")"
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/psm-interop-test-python.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "artifacts/**/*sponge_log.xml"
-    regex: "artifacts/**/*.log"
-    strip_prefix: "artifacts"
-  }
-}
-env_vars {
-  key: "PSM_TEST_SUITE"
-  value: "csm"
-}
+echo "Sourcing test driver install script from: ${TEST_DRIVER_INSTALL_SCRIPT_URL}"
+source /dev/stdin <<< "$(curl -s "${TEST_DRIVER_INSTALL_SCRIPT_URL}")"
+psm::run "${PSM_TEST_SUITE}"
