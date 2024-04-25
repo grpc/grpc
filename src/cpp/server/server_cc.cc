@@ -1042,8 +1042,8 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
 bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
-    CHECK(service->server_ == nullptr &&
-          "Can only register an asynchronous service against one server.");
+    CHECK_EQ(service->server_, nullptr)
+        << "Can only register an asynchronous service against one server.";
     service->server_ = this;
   }
 
@@ -1100,16 +1100,16 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
 }
 
 void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
-  CHECK(service->server_ == nullptr &&
-        "Can only register an async generic service against one server.");
+  CHECK_EQ(service->server_, nullptr)
+      << "Can only register an async generic service against one server.";
   service->server_ = this;
   has_async_generic_service_ = true;
 }
 
 void Server::RegisterCallbackGenericService(
     grpc::CallbackGenericService* service) {
-  CHECK(service->server_ == nullptr &&
-        "Can only register a callback generic service against one server.");
+  CHECK_EQ(service->server_, nullptr)
+      << "Can only register a callback generic service against one server.";
   service->server_ = this;
   has_callback_generic_service_ = true;
   generic_handler_.reset(service->Handler());

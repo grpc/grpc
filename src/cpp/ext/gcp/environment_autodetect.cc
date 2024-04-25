@@ -331,7 +331,7 @@ EnvironmentAutoDetect* g_autodetect = nullptr;
 }  // namespace
 
 void EnvironmentAutoDetect::Create(std::string project_id) {
-  CHECK(g_autodetect == nullptr);
+  CHECK_EQ(g_autodetect, nullptr);
   CHECK(!project_id.empty());
 
   g_autodetect = new EnvironmentAutoDetect(project_id);

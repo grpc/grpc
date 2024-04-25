@@ -22,6 +22,8 @@
 
 #include <google/protobuf/repeated_ptr_field.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/support/status.h>

@@ -206,7 +206,7 @@ OpenTelemetryPluginBuilderImpl::SetServerSelector(
 OpenTelemetryPluginBuilderImpl& OpenTelemetryPluginBuilderImpl::AddPluginOption(
     std::unique_ptr<InternalOpenTelemetryPluginOption> option) {
   // We allow a limit of 64 plugin options to be registered at this time.
-  CHECK(plugin_options_.size() < 64);
+  CHECK_LT(plugin_options_.size(), 64u);
   plugin_options_.push_back(std::move(option));
   return *this;
 }
