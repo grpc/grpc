@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -263,7 +264,7 @@ NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
                       size_t start_index, size_t curr,
                       google_protobuf_Struct* decoded_metadata,
                       upb_Arena* arena) {
-  DCHECK(curr >= start_index);
+  DCHECK_GE(curr, start_index);
   const size_t index = curr - start_index;
   if (index >= attributes.size()) return absl::nullopt;
   const auto& attribute = attributes[index];
