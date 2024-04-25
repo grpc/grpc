@@ -284,7 +284,8 @@ class FakeStatsPlugin : public StatsPlugin {
     // GlobalInstrumentsRegistry everytime a metric is recorded. But this is not
     // a concern for now.
     gpr_log(GPR_INFO,
-            "FakeStatsPlugin[%p]::AddCounter(index=%u, value=(uint64)%lu, "
+            "FakeStatsPlugin[%p]::AddCounter(index=%u, value=(uint64)%" PRIu64
+            ", "
             "label_values={%s}, optional_label_values={%s}",
             this, handle.index, value,
             absl::StrJoin(label_values, ", ").c_str(),
@@ -313,12 +314,13 @@ class FakeStatsPlugin : public StatsPlugin {
       GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override {
-    gpr_log(GPR_INFO,
-            "FakeStatsPlugin[%p]::RecordHistogram(index=%u, value=(uint64)%lu, "
-            "label_values={%s}, optional_label_values={%s}",
-            this, handle.index, value,
-            absl::StrJoin(label_values, ", ").c_str(),
-            absl::StrJoin(optional_values, ", ").c_str());
+    gpr_log(
+        GPR_INFO,
+        "FakeStatsPlugin[%p]::RecordHistogram(index=%u, value=(uint64)%" PRIu64
+        ", "
+        "label_values={%s}, optional_label_values={%s}",
+        this, handle.index, value, absl::StrJoin(label_values, ", ").c_str(),
+        absl::StrJoin(optional_values, ", ").c_str());
     MutexLock lock(&mu_);
     auto iter = uint64_histograms_.find(handle.index);
     if (iter == uint64_histograms_.end()) return;
@@ -479,7 +481,8 @@ class FakeStatsPlugin : public StatsPlugin {
         absl::Span<const absl::string_view> optional_values) override {
       gpr_log(GPR_INFO,
               "FakeStatsPlugin[%p]::Reporter::Report(index=%u, "
-              "value=(uint64)%ld, label_values={%s}, "
+              "value=(int64_t)%" PRId64
+              ", label_values={%s}, "
               "optional_label_values={%s}",
               this, handle.index, value,
               absl::StrJoin(label_values, ", ").c_str(),

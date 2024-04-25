@@ -222,13 +222,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
       StatsPluginChannelScope(kDomain3To4, ""));
   auto callback1 = group1.RegisterCallback(
       [&](CallbackMetricReporterWrapper& reporter) {
-        reporter.Report(int64_gauge_handle, 1l, kLabelValues,
+        reporter.Report(int64_gauge_handle, int64_t(1), kLabelValues,
                         kOptionalLabelValues);
       },
       {int64_gauge_handle.convert()});
   auto callback2 = group1.RegisterCallback(
       [&](CallbackMetricReporterWrapper& reporter) {
-        reporter.Report(int64_gauge_handle, 2l, kLabelValues2,
+        reporter.Report(int64_gauge_handle, int64_t(2), kLabelValues2,
                         kOptionalLabelValues);
       },
       {int64_gauge_handle.convert()});
@@ -283,13 +283,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
       StatsPluginChannelScope(kDomain2To4, ""));
   callback1 = group2.RegisterCallback(
       [&](CallbackMetricReporterWrapper& reporter) {
-        reporter.Report(int64_gauge_handle, 3l, kLabelValues,
+        reporter.Report(int64_gauge_handle, int64_t(3), kLabelValues,
                         kOptionalLabelValues);
       },
       {int64_gauge_handle.convert()});
   callback2 = group2.RegisterCallback(
       [&](CallbackMetricReporterWrapper& reporter) {
-        reporter.Report(int64_gauge_handle, 4l, kLabelValues2,
+        reporter.Report(int64_gauge_handle, int64_t(4), kLabelValues2,
                         kOptionalLabelValues);
       },
       {int64_gauge_handle.convert()});
@@ -344,13 +344,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
       StatsPluginChannelScope(kDomain1To4, ""));
   callback1 = group3.RegisterCallback(
       [&](CallbackMetricReporterWrapper& reporter) {
-        reporter.Report(int64_gauge_handle, 5l, kLabelValues,
+        reporter.Report(int64_gauge_handle, int64_t(5), kLabelValues,
                         kOptionalLabelValues);
       },
       {int64_gauge_handle.convert()});
   callback2 = group3.RegisterCallback(
       [&](CallbackMetricReporterWrapper& reporter) {
-        reporter.Report(int64_gauge_handle, 6l, kLabelValues2,
+        reporter.Report(int64_gauge_handle, int64_t(6), kLabelValues2,
                         kOptionalLabelValues);
       },
       {int64_gauge_handle.convert()});
