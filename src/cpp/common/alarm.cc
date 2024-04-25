@@ -20,6 +20,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>

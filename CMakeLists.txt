@@ -109,6 +109,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_bind_front
   absl_bits
   absl_charset
+  absl_check
   absl_city
   absl_civil_time
   absl_cleanup
@@ -169,6 +170,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_entry
   absl_log_globals
   absl_log_internal_append_truncated
+  absl_log_internal_check_impl
+  absl_log_internal_check_op
   absl_log_internal_conditions
   absl_log_internal_config
   absl_log_internal_fnmatch
@@ -4021,7 +4024,6 @@ target_include_directories(benchmark_helpers
 )
 target_link_libraries(benchmark_helpers
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   ${_gRPC_BENCHMARK_LIBRARIES}
   grpc++_unsecure
   grpc_test_util_unsecure
@@ -4145,6 +4147,7 @@ target_include_directories(grpc++
 )
 target_link_libraries(grpc++
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc
   ${_gRPC_PROTOBUF_LIBRARIES}
 )
@@ -4793,7 +4796,6 @@ target_include_directories(grpc++_test_util
 )
 target_link_libraries(grpc++_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -4887,6 +4889,7 @@ target_include_directories(grpc++_unsecure
 )
 target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
 )
@@ -6434,7 +6437,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alts_concurrent_connectivity_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++
     grpc_test_util
   )
@@ -7458,7 +7460,6 @@ target_include_directories(backend_metrics_lb_policy_test
 target_link_libraries(backend_metrics_lb_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
   grpc++_test_config
@@ -8259,6 +8260,7 @@ target_include_directories(binder_transport_test
 target_link_libraries(binder_transport_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -12797,6 +12799,7 @@ target_include_directories(endpoint_binder_pool_test
 target_link_libraries(endpoint_binder_pool_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -13655,6 +13658,7 @@ target_include_directories(fake_binder_test
 target_link_libraries(fake_binder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -15392,7 +15396,6 @@ target_include_directories(grpc_cli
 
 target_link_libraries(grpc_cli
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_config
@@ -29882,7 +29885,6 @@ target_include_directories(test_core_channelz_channelz_test
 target_link_libraries(test_core_channelz_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -31911,6 +31913,7 @@ target_include_directories(transport_stream_receiver_test
 target_link_libraries(transport_stream_receiver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -32751,6 +32754,7 @@ target_include_directories(wire_reader_test
 target_link_libraries(wire_reader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -32859,6 +32863,7 @@ target_include_directories(wire_writer_test
 target_link_libraries(wire_writer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -33153,7 +33158,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(writes_per_rpc_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++
     grpc_test_util
   )
@@ -33264,7 +33268,6 @@ target_include_directories(xds_audit_logger_registry_test
 target_link_libraries(xds_audit_logger_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -33963,7 +33966,6 @@ target_include_directories(xds_common_types_test
 target_link_libraries(xds_common_types_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -35183,7 +35185,6 @@ target_include_directories(xds_http_filters_test
 target_link_libraries(xds_http_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -35302,7 +35303,6 @@ target_include_directories(xds_lb_policy_registry_test
 target_link_libraries(xds_lb_policy_registry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -35445,7 +35445,6 @@ target_include_directories(xds_listener_resource_type_test
 target_link_libraries(xds_listener_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -36573,7 +36572,6 @@ target_include_directories(xds_route_config_resource_type_test
 target_link_libraries(xds_route_config_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc_test_util
@@ -36833,7 +36831,6 @@ target_include_directories(xds_stats_watcher_test
 target_link_libraries(xds_stats_watcher_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++_reflection
   grpcpp_channelz
   grpc_test_util
@@ -37124,7 +37121,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
@@ -37135,7 +37132,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"

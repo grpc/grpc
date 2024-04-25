@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -330,8 +331,8 @@ EnvironmentAutoDetect* g_autodetect = nullptr;
 }  // namespace
 
 void EnvironmentAutoDetect::Create(std::string project_id) {
-  CHECK(g_autodetect == nullptr );
-CHECK( !project_id.empty());
+  CHECK(g_autodetect == nullptr);
+  CHECK(!project_id.empty());
 
   g_autodetect = new EnvironmentAutoDetect(project_id);
 }

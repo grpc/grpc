@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -106,9 +107,8 @@ OpenCensusClientFilter::MakeCallPromise(
               call_context, path != nullptr ? path->Ref() : grpc_core::Slice(),
               grpc_core::GetContext<grpc_core::Arena>(),
               OpenCensusTracingEnabled() && tracing_enabled_);
-  DCHECK(
-      call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
-      nullptr);
+  DCHECK(call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
+         nullptr);
   call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
   call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy = nullptr;
   return next_promise_factory(std::move(call_args));

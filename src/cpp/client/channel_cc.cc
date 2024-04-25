@@ -23,6 +23,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/slice.h>

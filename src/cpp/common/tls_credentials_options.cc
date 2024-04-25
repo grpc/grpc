@@ -19,6 +19,8 @@
 #include <memory>
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>

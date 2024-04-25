@@ -21,6 +21,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/byte_buffer.h>
@@ -50,7 +52,7 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
   CHECK(type ==
-             ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
+        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>

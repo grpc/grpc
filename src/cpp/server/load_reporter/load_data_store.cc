@@ -26,6 +26,8 @@
 #include <set>
 #include <unordered_map>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -87,10 +89,10 @@ LoadRecordKey::LoadRecordKey(const std::string& client_ip_and_token,
     : user_id_(std::move(user_id)) {
   CHECK_GE(client_ip_and_token.size(), 2);
   int ip_hex_size;
-  CHECK(sscanf(client_ip_and_token.substr(0, 2).c_str(), "%d",
-                    &ip_hex_size) == 1);
+  CHECK(sscanf(client_ip_and_token.substr(0, 2).c_str(), "%d", &ip_hex_size) ==
+        1);
   CHECK(ip_hex_size == 0 || ip_hex_size == kIpv4AddressLength ||
-             ip_hex_size == kIpv6AddressLength);
+        ip_hex_size == kIpv6AddressLength);
   size_t cur_pos = 2;
   client_ip_hex_ = client_ip_and_token.substr(cur_pos, ip_hex_size);
   cur_pos += ip_hex_size;
@@ -160,8 +162,8 @@ void PerBalancerStore::MergeRow(const LoadRecordKey& key,
   // store is resumed, we still have a correct value of
   // num_calls_in_progress_.
   CHECK(static_cast<int64_t>(num_calls_in_progress_) +
-                 value.GetNumCallsInProgressDelta() >=
-             0);
+            value.GetNumCallsInProgressDelta() >=
+        0);
   num_calls_in_progress_ += value.GetNumCallsInProgressDelta();
 }
 
@@ -212,9 +214,9 @@ void PerHostStore::ReportStreamClosed(const std::string& lb_id) {
   auto it_store_for_gone_lb = per_balancer_stores_.find(lb_id);
   CHECK(it_store_for_gone_lb != per_balancer_stores_.end());
   // Remove this closed stream from our records.
-  CHECK(UnorderedMapOfSetEraseKeyValue(
-      load_key_to_receiving_lb_ids_, it_store_for_gone_lb->second->load_key(),
-      lb_id));
+  CHECK(UnorderedMapOfSetEraseKeyValue(load_key_to_receiving_lb_ids_,
+                                       it_store_for_gone_lb->second->load_key(),
+                                       lb_id));
   std::set<PerBalancerStore*> orphaned_stores =
       UnorderedMapOfSetExtract(assigned_stores_, lb_id);
   // The stores that were assigned to this balancer are orphaned now. They

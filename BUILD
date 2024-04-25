@@ -1183,7 +1183,10 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/client/secure_credentials.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings"
+    ],
     language = "c++",
     deps = [
         "exec_ctx",
@@ -1210,6 +1213,9 @@ grpc_cc_library(
         "include/grpcpp/xds_server_builder.h",
     ],
     visibility = ["@grpc:xds"],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "channel_arg_names",
         "gpr",
@@ -1230,6 +1236,7 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/synchronization",
     ],
@@ -2110,6 +2117,9 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_data_store.h",
     ],
     language = "c++",
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "gpr",
         "gpr_platform",
@@ -2167,6 +2177,7 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporter_async_service_impl.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/memory",
         "protobuf_headers",
     ],
@@ -2208,6 +2219,7 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporter.h",
     ],
     external_deps = [
+        "absl/log:check",
         "opencensus-stats",
         "opencensus-tags",
         "protobuf_headers",
@@ -2416,6 +2428,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2498,6 +2511,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2676,6 +2690,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/strings",
         "absl/time",
         "absl/types:optional",
@@ -2834,6 +2849,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/base:endian",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

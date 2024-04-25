@@ -3619,7 +3619,6 @@ libs:
   - test/core/util/tracer_util.cc
   - test/cpp/microbenchmarks/helpers.cc
   deps:
-  - absl/log:check
   - benchmark
   - grpc++_unsecure
   - grpc_test_util_unsecure
@@ -3936,6 +3935,7 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/log:check
   - grpc
   - protobuf
   baselib: true
@@ -4052,7 +4052,6 @@ libs:
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
   deps:
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: grpc++_unsecure
@@ -4310,6 +4309,7 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/log:check
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -5436,7 +5436,6 @@ targets:
   - test/core/util/fake_udp_and_tcp_server.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -5794,7 +5793,6 @@ targets:
   - test/cpp/interop/backend_metrics_lb_policy_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
   - grpc++_test_config
@@ -6241,6 +6239,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -8954,6 +8953,7 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -9448,6 +9448,7 @@ targets:
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -10566,7 +10567,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/log:check
   - grpc++
   - protoc
   - grpc++_test_config
@@ -19388,7 +19388,6 @@ targets:
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_core_end2end_channelz_test
@@ -20355,6 +20354,7 @@ targets:
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20738,6 +20738,7 @@ targets:
   - test/core/transport/binder/wire_reader_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20847,6 +20848,7 @@ targets:
   - test/core/transport/binder/wire_writer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -21050,7 +21052,6 @@ targets:
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -21092,7 +21093,6 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21323,7 +21323,6 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21737,7 +21736,6 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21780,7 +21778,6 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -21828,7 +21825,6 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -22203,7 +22199,6 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - protoc
   - grpc_test_util
@@ -22290,7 +22285,6 @@ targets:
   - test/cpp/interop/xds_stats_watcher_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util

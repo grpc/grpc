@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/compression.h>

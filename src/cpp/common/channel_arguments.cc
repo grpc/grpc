@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>

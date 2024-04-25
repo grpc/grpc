@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
@@ -240,10 +241,9 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
   CHECK(grpc_server_request_registered_call(
-                 server_->server(), registered_method, &call_,
-                 &context_->deadline_, context_->client_metadata_.arr(),
-                 payload, call_cq_->cq(), notification_cq->cq(),
-                 this) == GRPC_CALL_OK);
+            server_->server(), registered_method, &call_, &context_->deadline_,
+            context_->client_metadata_.arr(), payload, call_cq_->cq(),
+            notification_cq->cq(), this) == GRPC_CALL_OK);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -290,9 +290,9 @@ void ServerInterface::GenericAsyncRequest::IssueRequest() {
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
   CHECK(grpc_server_request_call(server_->server(), &call_, &call_details_,
-                                      context_->client_metadata_.arr(),
-                                      call_cq_->cq(), notification_cq_->cq(),
-                                      this) == GRPC_CALL_OK);
+                                 context_->client_metadata_.arr(),
+                                 call_cq_->cq(), notification_cq_->cq(),
+                                 this) == GRPC_CALL_OK);
 }
 
 namespace {
@@ -1043,7 +1043,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
     CHECK(service->server_ == nullptr &&
-               "Can only register an asynchronous service against one server.");
+          "Can only register an asynchronous service against one server.");
     service->server_ = this;
   }
 
@@ -1101,16 +1101,15 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
 
 void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
   CHECK(service->server_ == nullptr &&
-             "Can only register an async generic service against one server.");
+        "Can only register an async generic service against one server.");
   service->server_ = this;
   has_async_generic_service_ = true;
 }
 
 void Server::RegisterCallbackGenericService(
     grpc::CallbackGenericService* service) {
-  CHECK(
-      service->server_ == nullptr &&
-      "Can only register a callback generic service against one server.");
+  CHECK(service->server_ == nullptr &&
+        "Can only register a callback generic service against one server.");
   service->server_ = this;
   has_callback_generic_service_ = true;
   generic_handler_.reset(service->Handler());

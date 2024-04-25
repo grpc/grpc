@@ -23,6 +23,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
