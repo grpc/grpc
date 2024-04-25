@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests of grpc_reflection.v1alpha.reflection."""
 
+import os
 import unittest
 
 from google.protobuf.descriptor_pool import DescriptorPool
@@ -44,7 +45,10 @@ class ReflectionClientTest(unittest.TestCase):
             test_pb2.DESCRIPTOR.services_by_name["TestService"].full_name,
             reflection.SERVICE_NAME,
         )
+        # This reflection service should be the only one tested in this case.
         reflection.enable_server_reflection(self._SERVICE_NAMES, self._server)
+        # Use this env var to disable the refection service added by default in g3.
+        os.environ["DISABLE_REFLECTION_IN_TESTS"] = "true"
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
