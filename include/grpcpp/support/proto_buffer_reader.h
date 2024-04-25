@@ -87,7 +87,7 @@ class ProtoBufferReader : public grpc::protobuf::io::ZeroCopyInputStream {
     }
     *data = GRPC_SLICE_START_PTR(*slice_);
     // On win x64, int is only 32bit
-    CHECK_LE(GRPC_SLICE_LENGTH(*slice_) ,static_cast<size_t>(INT_MAX));
+    CHECK_LE(GRPC_SLICE_LENGTH(*slice_), static_cast<size_t>(INT_MAX));
     byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(*slice_));
     return true;
   }
