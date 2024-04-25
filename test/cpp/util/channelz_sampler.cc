@@ -27,6 +27,7 @@
 #include <string>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "google/protobuf/text_format.h"
@@ -134,7 +135,7 @@ class ChannelzSampler final {
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "GetChannelRPC failed: %s",
               get_channel_context.debug_error_string().c_str());
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     return get_channel_response.channel();
   }
@@ -153,7 +154,7 @@ class ChannelzSampler final {
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "GetSubchannelRPC failed: %s",
               get_subchannel_context.debug_error_string().c_str());
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     return get_subchannel_response.subchannel();
   }
@@ -171,7 +172,7 @@ class ChannelzSampler final {
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "GetSocketRPC failed: %s",
               get_socket_context.debug_error_string().c_str());
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     return get_socket_response.socket();
   }
@@ -300,7 +301,7 @@ class ChannelzSampler final {
               "Wrong user credential type: %s. Allowed credential types: "
               "INSECURE_CREDENTIALS, ssl, alts, google_default_credentials.",
               custom_credentials_type.c_str());
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     std::shared_ptr<grpc::Channel> channel =
         CreateChannel(server_address, channel_creds);
@@ -333,7 +334,7 @@ class ChannelzSampler final {
                   static_cast<int>(server_start_id),
                   get_servers_context.debug_error_string().c_str());
         }
-        GPR_ASSERT(0);
+        CHECK(0);
       }
       for (const auto& _server : get_servers_response.server()) {
         all_servers_.push_back(_server);
@@ -388,7 +389,7 @@ class ChannelzSampler final {
                 "GetTopChannelsRequest.channel_start_id=%d failed: %s",
                 static_cast<int>(channel_start_id),
                 get_top_channels_context.debug_error_string().c_str());
-        GPR_ASSERT(0);
+        CHECK(0);
       }
       for (const auto& _topchannel : get_top_channels_response.channel()) {
         top_channels_.push_back(_topchannel);
