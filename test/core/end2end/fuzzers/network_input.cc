@@ -507,8 +507,7 @@ Duration ScheduleConnection(
                 (q.slices.Length() * event_engine->max_delay_write()).count()));
   }
   delay += Duration::Milliseconds(network_input.connect_delay_ms()) +
-                                  Duration::Milliseconds(
-                                      network_input.connect_timeout_ms());
+           Duration::Milliseconds(network_input.connect_timeout_ms());
   event_engine->RunAfterExactly(
       Duration::Milliseconds(network_input.connect_delay_ms()),
       [event_engine, channel_args,
