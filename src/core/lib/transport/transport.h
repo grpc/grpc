@@ -559,7 +559,7 @@ class ServerTransport {
     // Create a call at the server (or fail)
     // arena must have been previously allocated by CreateArena()
     virtual absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) = 0;
+        ClientMetadataHandle client_initial_metadata, Arena* arena) = 0;
 
    protected:
     ~Acceptor() = default;

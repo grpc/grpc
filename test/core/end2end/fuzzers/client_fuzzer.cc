@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
@@ -73,7 +74,7 @@ class ClientFuzzer final : public BasicFuzzer {
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { GPR_ASSERT(channel_ == nullptr); }
+  ~ClientFuzzer() { CHECK_EQ(channel_, nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {

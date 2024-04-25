@@ -34,6 +34,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -121,9 +122,9 @@ const grpc_channel_filter BackendMetricFilter::kFilter =
     MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>(
         "backend_metric");
 
-absl::StatusOr<BackendMetricFilter> BackendMetricFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args) {
-  return BackendMetricFilter();
+absl::StatusOr<std::unique_ptr<BackendMetricFilter>>
+BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
+  return std::make_unique<BackendMetricFilter>();
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {

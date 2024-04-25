@@ -95,42 +95,36 @@ const grpc_channel_filter* PromiseTracingFilterFor(
               },
               /* init_call: */
               [](grpc_channel_element* elem, CallSpineInterface* call) {
+                auto* c = DownCast<PipeBasedCallSpine*>(call);
                 auto* source_filter =
                     static_cast<const DerivedFilter*>(elem->filter)->filter;
-                call->client_initial_metadata().receiver.InterceptAndMap(
+                c->client_initial_metadata().receiver.InterceptAndMap(
                     [source_filter](ClientMetadataHandle md) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnClientInitialMetadata: %s",
                               GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, md->DebugString().c_str());
                       return md;
                     });
-                call->client_to_server_messages().receiver.InterceptAndMap(
+                c->client_to_server_messages().receiver.InterceptAndMap(
                     [source_filter](MessageHandle msg) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnClientToServerMessage: %s",
                               GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, msg->DebugString().c_str());
                       return msg;
                     });
-                call->server_initial_metadata().sender.InterceptAndMap(
+                c->server_initial_metadata().sender.InterceptAndMap(
                     [source_filter](ServerMetadataHandle md) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnServerInitialMetadata: %s",
                               GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, md->DebugString().c_str());
                       return md;
                     });
-                call->server_to_client_messages().sender.InterceptAndMap(
+                c->server_to_client_messages().sender.InterceptAndMap(
                     [source_filter](MessageHandle msg) {
                       gpr_log(GPR_DEBUG, "%s[%s] OnServerToClientMessage: %s",
                               GetContext<Activity>()->DebugTag().c_str(),
                               source_filter->name, msg->DebugString().c_str());
                       return msg;
-                    });
-                call->server_trailing_metadata().sender.InterceptAndMap(
-                    [source_filter](ServerMetadataHandle md) {
-                      gpr_log(GPR_DEBUG, "%s[%s] OnServerTrailingMetadata: %s",
-                              GetContext<Activity>()->DebugTag().c_str(),
-                              source_filter->name, md->DebugString().c_str());
-                      return md;
                     });
               },
               grpc_channel_next_op,
