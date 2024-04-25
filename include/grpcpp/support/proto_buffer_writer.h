@@ -107,7 +107,7 @@ class ProtoBufferWriter : public grpc::protobuf::io::ZeroCopyOutputStream {
     }
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
-    CHECK(GRPC_SLICE_LENGTH(slice_) <= static_cast<size_t>(INT_MAX);
+    CHECK(GRPC_SLICE_LENGTH(slice_) <= static_cast<size_t>(INT_MAX));
     byte_count_ += * size = static_cast<int>(GRPC_SLICE_LENGTH(slice_));
     // Using grpc_slice_buffer_add could modify slice_ and merge it with the
     // previous slice. Therefore, use grpc_slice_buffer_add_indexed method to
