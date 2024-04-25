@@ -94,6 +94,7 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   attempt_tracer->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
+  attempt_tracer->RecordEnd(gpr_timespec());
 }
 
 TEST_F(CallTracerTest, BasicServerCallTracerTest) {

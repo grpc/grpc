@@ -33,6 +33,7 @@
 #include "absl/synchronization/notification.h"
 #include "absl/types/span.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -708,7 +709,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK(lb_uri.ok());
+      CHECK_OK(lb_uri);
       grpc_resolved_address address;
       CHECK(grpc_parse_uri(*lb_uri, &address));
       grpc_core::ChannelArgs args;
@@ -729,7 +730,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses = std::move(backends);
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json);
-    CHECK(result.service_config.ok());
+    CHECK_OK(result.service_config);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancers));
     response_generator_->SetResponseSynchronously(std::move(result));

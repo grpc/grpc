@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <grpc/credentials.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

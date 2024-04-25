@@ -26,6 +26,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
@@ -212,12 +213,13 @@ ServerAuthFilter::ServerAuthFilter(
     RefCountedPtr<grpc_auth_context> auth_context)
     : server_credentials_(server_credentials), auth_context_(auth_context) {}
 
-absl::StatusOr<ServerAuthFilter> ServerAuthFilter::Create(
+absl::StatusOr<std::unique_ptr<ServerAuthFilter>> ServerAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
   GPR_ASSERT(auth_context != nullptr);
   auto creds = args.GetObjectRef<grpc_server_credentials>();
-  return ServerAuthFilter(std::move(creds), std::move(auth_context));
+  return std::make_unique<ServerAuthFilter>(std::move(creds),
+                                            std::move(auth_context));
 }
 
 }  // namespace grpc_core
