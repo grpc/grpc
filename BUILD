@@ -824,6 +824,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
+    visibility = ["@grpc:gpr_public_hdrs"],
 )
 
 grpc_cc_library(
@@ -886,6 +887,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
+    visibility = ["@grpc:grpc_public_hdrs"],
     deps = [
         "channel_arg_names",
         "gpr_public_hdrs",
@@ -905,7 +907,7 @@ grpc_cc_library(
         "avoid_dep",
         "nofixdeps",
     ],
-    visibility = ["@grpc:public"],
+    visibility = ["@grpc:grpc++_public_hdrs"],
     deps = [
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
@@ -1349,14 +1351,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channelz",
     srcs = [
-        "//src/core:lib/channel/channel_trace.cc",
-        "//src/core:lib/channel/channelz.cc",
-        "//src/core:lib/channel/channelz_registry.cc",
+        "//src/core:channelz/channel_trace.cc",
+        "//src/core:channelz/channelz.cc",
+        "//src/core:channelz/channelz_registry.cc",
     ],
     hdrs = [
-        "//src/core:lib/channel/channel_trace.h",
-        "//src/core:lib/channel/channelz.h",
-        "//src/core:lib/channel/channelz_registry.h",
+        "//src/core:channelz/channel_trace.h",
+        "//src/core:channelz/channelz.h",
+        "//src/core:channelz/channelz_registry.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1799,7 +1801,7 @@ grpc_cc_library(
         "stats",
         "//src/core:arena",
         "//src/core:call",
-        "//src/core:call_size_estimator",
+        "//src/core:call_arena_allocator",
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
@@ -3454,7 +3456,6 @@ grpc_cc_library(
         "xds_orca_service_upb",
         "xds_orca_upb",
         "//src/core:backend_metric_parser",
-        "//src/core:client_channel_channelz",
         "//src/core:closure",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
@@ -3587,7 +3588,6 @@ grpc_cc_library(
         "//src/core:channel_stack_builder_impl",
         "//src/core:channel_stack_type",
         "//src/core:client_channel_backup_poller",
-        "//src/core:client_channel_channelz",
         "//src/core:client_channel_internal_header",
         "//src/core:client_channel_service_config",
         "//src/core:closure",

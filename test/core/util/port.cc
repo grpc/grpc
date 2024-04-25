@@ -23,6 +23,8 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -49,7 +51,7 @@ static int free_chosen_port_locked(int port) {
   // freed.
   for (i = 0; i < num_chosen_ports; i++) {
     if (chosen_ports[i] == port) {
-      GPR_ASSERT(found == 0);
+      CHECK_EQ(found, 0);
       found = 1;
       found_at = i;
     }
@@ -110,7 +112,7 @@ static int grpc_pick_unused_port_or_die_impl(void) {
 static void grpc_recycle_unused_port_impl(int port) {
   gpr_once_init(&g_default_port_picker_init, init_default_port_picker);
   grpc_core::MutexLock lock(g_default_port_picker_mu);
-  GPR_ASSERT(free_chosen_port_locked(port));
+  CHECK(free_chosen_port_locked(port));
 }
 
 namespace {
@@ -131,7 +133,7 @@ void grpc_recycle_unused_port(int port) {
 
 grpc_pick_port_functions grpc_set_pick_port_functions(
     grpc_pick_port_functions new_functions) {
-  GPR_ASSERT(new_functions.pick_unused_port_or_die_fn != nullptr);
-  GPR_ASSERT(new_functions.recycle_unused_port_fn != nullptr);
+  CHECK_NE(new_functions.pick_unused_port_or_die_fn, nullptr);
+  CHECK_NE(new_functions.recycle_unused_port_fn, nullptr);
   return std::exchange(functions(), new_functions);
 }

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/channelz_registry.h"
+#include "src/core/channelz/channelz_registry.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -30,7 +30,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"

@@ -39,6 +39,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/call_size_estimator.h"
 #include "src/core/lib/transport/transport.h"
 

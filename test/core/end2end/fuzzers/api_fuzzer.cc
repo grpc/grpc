@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
@@ -92,8 +93,7 @@ static void finish_resolve(addr_req r) {
   if (0 == strcmp(r.addr, "server")) {
     *r.addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address fake_resolved_address;
-    GPR_ASSERT(
-        grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
+    CHECK(grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
     (*r.addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done, absl::OkStatus());
@@ -231,7 +231,7 @@ grpc_ares_request* my_dns_lookup_ares(
 }
 
 static void my_cancel_ares_request(grpc_ares_request* request) {
-  GPR_ASSERT(request == nullptr);
+  CHECK_EQ(request, nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -404,13 +404,13 @@ ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
-  GPR_ASSERT(channel_ == nullptr);
-  GPR_ASSERT(server_ == nullptr);
+  CHECK_EQ(channel_, nullptr);
+  CHECK_EQ(server_, nullptr);
 }
 
 ApiFuzzer::~ApiFuzzer() {
-  GPR_ASSERT(channel_ == nullptr);
-  GPR_ASSERT(server_ == nullptr);
+  CHECK_EQ(channel_, nullptr);
+  CHECK_EQ(server_, nullptr);
 }
 
 void ApiFuzzer::Tick() {
@@ -458,7 +458,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
                             creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
   }
-  GPR_ASSERT(channel_ != nullptr);
+  CHECK_NE(channel_, nullptr);
   channel_force_delete_ = false;
   return Result::kComplete;
 }
@@ -473,7 +473,7 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
         create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
-    GPR_ASSERT(server_ != nullptr);
+    CHECK_NE(server_, nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     for (const auto& http2_port : create_server.http2_ports()) {
       auto* creds = ReadServerCreds(http2_port.server_creds());

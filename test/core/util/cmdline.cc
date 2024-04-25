@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -90,7 +91,7 @@ static void add_arg(gpr_cmdline* cl, const char* name, const char* help,
   arg* a;
 
   for (a = cl->args; a; a = a->next) {
-    GPR_ASSERT(0 != strcmp(a->name, name));
+    CHECK_NE(strcmp(a->name, name), 0);
   }
 
   a = static_cast<arg*>(gpr_zalloc(sizeof(arg)));
@@ -120,8 +121,8 @@ void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name, const char* help,
 void gpr_cmdline_on_extra_arg(
     gpr_cmdline* cl, const char* name, const char* help,
     void (*on_extra_arg)(void* user_data, const char* arg), void* user_data) {
-  GPR_ASSERT(!cl->extra_arg);
-  GPR_ASSERT(on_extra_arg);
+  CHECK(!cl->extra_arg);
+  CHECK(on_extra_arg);
 
   cl->extra_arg = on_extra_arg;
   cl->extra_arg_user_data = user_data;
@@ -203,7 +204,7 @@ static int value_state(gpr_cmdline* cl, char* str) {
   long intval;
   char* end;
 
-  GPR_ASSERT(cl->cur_arg);
+  CHECK(cl->cur_arg);
 
   switch (cl->cur_arg->type) {
     case ARGTYPE_INT:
@@ -309,7 +310,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
 int gpr_cmdline_parse(gpr_cmdline* cl, int argc, char** argv) {
   int i;
 
-  GPR_ASSERT(argc >= 1);
+  CHECK_GE(argc, 1);
   cl->argv0 = argv[0];
 
   for (i = 1; i < argc; i++) {

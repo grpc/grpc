@@ -95,24 +95,14 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
   });
 }
 
-ClientMetadata& UnstartedCallHandler::UnprocessedClientInitialMetadata() {
-  return *spine_->call_filters().unprocessed_client_initial_metadata();
-}
-
-CallHandler UnstartedCallHandler::StartCall(
-    RefCountedPtr<CallFilters::Stack> stack) {
-  GPR_DEBUG_ASSERT(GetContext<Activity>() == spine_.get());
-  spine_->call_filters().SetStack(std::move(stack));
-  return CallHandler(std::move(spine_));
-}
-
 CallInitiatorAndUnstartedHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-    CallSizeEstimator* call_size_estimator_if_arena_is_owned) {
-  auto spine =
-      CallSpine::Create(std::move(client_initial_metadata), event_engine, arena,
-                        call_size_estimator_if_arena_is_owned, nullptr);
+    RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned,
+    grpc_call_context_element* legacy_context) {
+  auto spine = CallSpine::Create(
+      std::move(client_initial_metadata), event_engine, arena,
+      std::move(call_arena_allocator_if_arena_is_owned), legacy_context);
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 

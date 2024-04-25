@@ -225,7 +225,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '1.20240116.1'
+    abseil_version = '~> 1.20240116.2'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -260,9 +260,11 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/types/variant', abseil_version
     ss.dependency 'abseil/utility/utility', abseil_version
 
-    ss.source_files = 'src/core/client_channel/backup_poller.h',
+    ss.source_files = 'src/core/channelz/channel_trace.h',
+                      'src/core/channelz/channelz.h',
+                      'src/core/channelz/channelz_registry.h',
+                      'src/core/client_channel/backup_poller.h',
                       'src/core/client_channel/client_channel.h',
-                      'src/core/client_channel/client_channel_channelz.h',
                       'src/core/client_channel/client_channel_factory.h',
                       'src/core/client_channel/client_channel_filter.h',
                       'src/core/client_channel/client_channel_internal.h',
@@ -901,9 +903,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack_builder.h',
                       'src/core/lib/channel/channel_stack_builder_impl.h',
                       'src/core/lib/channel/channel_stack_trace.h',
-                      'src/core/lib/channel/channel_trace.h',
-                      'src/core/lib/channel/channelz.h',
-                      'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/context.h',
                       'src/core/lib/channel/metrics.h',
                       'src/core/lib/channel/promise_based_filter.h',
@@ -1242,10 +1241,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/wait_for_cq_end_op.h',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_arena_allocator.h',
                       'src/core/lib/transport/call_destination.h',
                       'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.h',
-                      'src/core/lib/transport/call_size_estimator.h',
                       'src/core/lib/transport/call_spine.h',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/custom_metadata.h',
@@ -1552,9 +1551,11 @@ Pod::Spec.new do |s|
                       'third_party/zlib/zlib.h',
                       'third_party/zlib/zutil.h'
 
-    ss.private_header_files = 'src/core/client_channel/backup_poller.h',
+    ss.private_header_files = 'src/core/channelz/channel_trace.h',
+                              'src/core/channelz/channelz.h',
+                              'src/core/channelz/channelz_registry.h',
+                              'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel.h',
-                              'src/core/client_channel/client_channel_channelz.h',
                               'src/core/client_channel/client_channel_factory.h',
                               'src/core/client_channel/client_channel_filter.h',
                               'src/core/client_channel/client_channel_internal.h',
@@ -2175,9 +2176,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_stack_builder_impl.h',
                               'src/core/lib/channel/channel_stack_trace.h',
-                              'src/core/lib/channel/channel_trace.h',
-                              'src/core/lib/channel/channelz.h',
-                              'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/context.h',
                               'src/core/lib/channel/metrics.h',
                               'src/core/lib/channel/promise_based_filter.h',
@@ -2516,10 +2514,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_arena_allocator.h',
                               'src/core/lib/transport/call_destination.h',
                               'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
-                              'src/core/lib/transport/call_size_estimator.h',
                               'src/core/lib/transport/call_spine.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/custom_metadata.h',

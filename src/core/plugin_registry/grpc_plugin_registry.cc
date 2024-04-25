@@ -16,9 +16,8 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/server_call_tracer_filter.h"
 #include "src/core/lib/config/core_configuration.h"

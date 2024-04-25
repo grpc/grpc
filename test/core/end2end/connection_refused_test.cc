@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -60,7 +62,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   // if using service config, create channel args
   grpc_channel_args* args = nullptr;
   if (use_service_config) {
-    GPR_ASSERT(wait_for_ready);
+    CHECK(wait_for_ready);
     grpc_arg arg;
     arg.type = GRPC_ARG_STRING;
     arg.key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
@@ -106,17 +108,17 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                   grpc_core::CqVerifier::tag(1), nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
   // verify that all tags get completed
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
   if (wait_for_ready) {
-    GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_completion_queue_shutdown(cq);

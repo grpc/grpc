@@ -13,14 +13,14 @@
 // limitations under the License.
 #ifndef GRPC_SRC_CORE_RESOLVER_DNS_EVENT_ENGINE_EVENT_ENGINE_CLIENT_CHANNEL_RESOLVER_H
 #define GRPC_SRC_CORE_RESOLVER_DNS_EVENT_ENGINE_EVENT_ENGINE_CLIENT_CHANNEL_RESOLVER_H
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
 

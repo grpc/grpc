@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/interception_chain.h"
 
-#include "call_destination.h"
+#include <cstddef>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/match.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
+std::atomic<size_t> InterceptionChainBuilder::next_filter_id_{0};
+
 ///////////////////////////////////////////////////////////////////////////////
 // HijackedCall
-
-namespace interception_chain_detail {
 
 CallInitiator HijackedCall::MakeCall() {
   auto metadata = Arena::MakePooled<ClientMetadata>();
@@ -38,13 +39,12 @@ CallInitiator HijackedCall::MakeCall() {
 
 CallInitiator HijackedCall::MakeCallWithMetadata(
     ClientMetadataHandle metadata) {
-  auto call =
-      grpc_core::MakeCallPair(std::move(metadata), call_handler_.event_engine(),
-                              call_handler_.arena(), nullptr);
-  destination_->StartCall(std::move(call.unstarted_handler));
+  auto call = MakeCallPair(std::move(metadata), call_handler_.event_engine(),
+                           call_handler_.arena(), nullptr,
+                           call_handler_.legacy_context());
+  destination_->StartCall(std::move(call.handler));
   return std::move(call.initiator);
 }
-}  // namespace interception_chain_detail
 
 namespace {
 class CallStarter final : public UnstartedCallDestination {
@@ -53,7 +53,7 @@ class CallStarter final : public UnstartedCallDestination {
               RefCountedPtr<CallDestination> destination)
       : stack_(std::move(stack)), destination_(std::move(destination)) {}
 
-  void Orphan() override {
+  void Orphaned() override {
     stack_.reset();
     destination_.reset();
   }
@@ -74,7 +74,7 @@ class TerminalInterceptor final : public UnstartedCallDestination {
       RefCountedPtr<UnstartedCallDestination> destination)
       : stack_(std::move(stack)), destination_(std::move(destination)) {}
 
-  void Orphan() override {
+  void Orphaned() override {
     stack_.reset();
     destination_.reset();
   }
@@ -82,10 +82,9 @@ class TerminalInterceptor final : public UnstartedCallDestination {
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
     unstarted_call_handler.SpawnGuarded(
         "start_call",
-        Map(interception_chain_detail::HijackCall(
-                std::move(unstarted_call_handler), destination_, stack_),
-            [](ValueOrFailure<interception_chain_detail::HijackedCall>
-                   hijacked_call) -> StatusFlag {
+        Map(interception_chain_detail::HijackCall(unstarted_call_handler,
+                                                  destination_, stack_),
+            [](ValueOrFailure<HijackedCall> hijacked_call) -> StatusFlag {
               if (!hijacked_call.ok()) return Failure{};
               ForwardCall(hijacked_call.value().original_call_handler(),
                           hijacked_call.value().MakeLastCall());
@@ -103,22 +102,21 @@ class TerminalInterceptor final : public UnstartedCallDestination {
 // InterceptionChain::Builder
 
 void InterceptionChainBuilder::AddInterceptor(
-    absl::StatusOr<RefCountedPtr<Interceptor>> maybe_interceptor) {
+    absl::StatusOr<RefCountedPtr<Interceptor>> interceptor) {
   if (!status_.ok()) return;
-  if (!maybe_interceptor.ok()) {
-    status_ = maybe_interceptor.status();
+  if (!interceptor.ok()) {
+    status_ = interceptor.status();
     return;
   }
-  auto interceptor = std::move(maybe_interceptor.value());
-  interceptor->filter_stack_ = MakeFilterStack();
+  (*interceptor)->filter_stack_ = MakeFilterStack();
   if (top_interceptor_ == nullptr) {
-    top_interceptor_ = std::move(interceptor);
+    top_interceptor_ = std::move(*interceptor);
   } else {
     Interceptor* previous = top_interceptor_.get();
     while (previous->wrapped_destination_ != nullptr) {
-      previous = down_cast<Interceptor*>(previous->wrapped_destination_.get());
+      previous = DownCast<Interceptor*>(previous->wrapped_destination_.get());
     }
-    previous->wrapped_destination_ = std::move(interceptor);
+    previous->wrapped_destination_ = std::move(*interceptor);
   }
 }
 
@@ -128,32 +126,30 @@ InterceptionChainBuilder::Build(FinalDestination final_destination) {
   // Build the final UnstartedCallDestination in the chain - what we do here
   // depends on both the type of the final destination and the filters we have
   // that haven't been captured into an Interceptor yet.
-  absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> terminator = Match(
+  RefCountedPtr<UnstartedCallDestination> terminator = Match(
       final_destination,
       [this](RefCountedPtr<UnstartedCallDestination> final_destination)
-          -> absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> {
+          -> RefCountedPtr<UnstartedCallDestination> {
         if (stack_builder_.has_value()) {
-          // TODO(ctiller): consider interjecting a hijacker here
           return MakeRefCounted<TerminalInterceptor>(MakeFilterStack(),
                                                      final_destination);
         }
         return final_destination;
       },
       [this](RefCountedPtr<CallDestination> final_destination)
-          -> absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> {
+          -> RefCountedPtr<UnstartedCallDestination> {
         return MakeRefCounted<CallStarter>(MakeFilterStack(),
                                            std::move(final_destination));
       });
-  if (!terminator.ok()) return terminator.status();
   // Now append the terminator to the interceptor chain.
   if (top_interceptor_ == nullptr) {
-    return std::move(terminator.value());
+    return std::move(terminator);
   }
   Interceptor* previous = top_interceptor_.get();
   while (previous->wrapped_destination_ != nullptr) {
-    previous = down_cast<Interceptor*>(previous->wrapped_destination_.get());
+    previous = DownCast<Interceptor*>(previous->wrapped_destination_.get());
   }
-  previous->wrapped_destination_ = std::move(terminator.value());
+  previous->wrapped_destination_ = std::move(terminator);
   return std::move(top_interceptor_);
 }
 

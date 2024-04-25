@@ -48,6 +48,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -77,12 +78,21 @@ class ChannelFilter {
   class Args {
    public:
     Args() : Args(nullptr, nullptr) {}
-    explicit Args(grpc_channel_stack* channel_stack,
-                  grpc_channel_element* channel_element)
-        : channel_stack_(channel_stack), channel_element_(channel_element) {}
+    Args(grpc_channel_stack* channel_stack,
+         grpc_channel_element* channel_element)
+        : impl_(ChannelStackBased{channel_stack, channel_element}) {}
+    // While we're moving to call-v3 we need to have access to
+    // grpc_channel_stack & friends here. That means that we can't rely on this
+    // type signature from interception_chain.h, which means that we need a way
+    // of constructing this object without naming it ===> implicit construction.
+    // TODO(ctiller): remove this once we're fully on call-v3
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    Args(size_t instance_id) : impl_(V3Based{instance_id}) {}
 
     ABSL_DEPRECATED("Direct access to channel stack is deprecated")
-    grpc_channel_stack* channel_stack() const { return channel_stack_; }
+    grpc_channel_stack* channel_stack() const {
+      return absl::get<ChannelStackBased>(impl_).channel_stack;
+    }
 
     // Get the instance id of this filter.
     // This id is unique amongst all filters /of the same type/ and densely
@@ -92,14 +102,29 @@ class ChannelFilter {
     // This is useful for filters that need to store per-instance data in a
     // parallel data structure.
     size_t instance_id() const {
-      return grpc_channel_stack_filter_instance_number(channel_stack_,
-                                                       channel_element_);
+      return Match(
+          impl_,
+          [](const ChannelStackBased& cs) {
+            return grpc_channel_stack_filter_instance_number(
+                cs.channel_stack, cs.channel_element);
+          },
+          [](const V3Based& v3) { return v3.instance_id; });
     }
 
    private:
     friend class ChannelFilter;
-    grpc_channel_stack* channel_stack_;
-    grpc_channel_element* channel_element_;
+
+    struct ChannelStackBased {
+      grpc_channel_stack* channel_stack;
+      grpc_channel_element* channel_element;
+    };
+
+    struct V3Based {
+      size_t instance_id;
+    };
+
+    using Impl = absl::variant<ChannelStackBased, V3Based>;
+    Impl impl_;
   };
 
   // Perform post-initialization step (if any).

@@ -21,38 +21,12 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {
 namespace {
-
-MATCHER(IsPending, "") {
-  if (arg.ready()) {
-    *result_listener << "is ready";
-    return false;
-  }
-  return true;
-}
-
-MATCHER(IsReady, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  return true;
-}
-
-MATCHER_P(IsReady, value, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  if (arg.value() != value) {
-    *result_listener << "is " << ::testing::PrintToString(arg.value());
-    return false;
-  }
-  return true;
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Mutate metadata by annotating that it passed through a filter "x"
@@ -60,6 +34,39 @@ MATCHER_P(IsReady, value, "") {
 void AnnotatePassedThrough(ClientMetadata& md, int x) {
   md.Append(absl::StrCat("passed-through-", x), Slice::FromCopiedString("true"),
             [](absl::string_view, const Slice&) { Crash("unreachable"); });
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// CreationLog helps us reason about filter creation order by logging a small
+// record of each filter's creation.
+
+struct CreationLogEntry {
+  size_t filter_instance_id;
+  size_t type_tag;
+
+  bool operator==(const CreationLogEntry& other) const {
+    return filter_instance_id == other.filter_instance_id &&
+           type_tag == other.type_tag;
+  }
+
+  friend std::ostream& operator<<(std::ostream& os,
+                                  const CreationLogEntry& entry) {
+    return os << "{filter_instance_id=" << entry.filter_instance_id
+              << ", type_tag=" << entry.type_tag << "}";
+  }
+};
+
+struct CreationLog {
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return "creation_log"; }
+  std::vector<CreationLogEntry> entries;
+};
+
+void MaybeLogCreation(const ChannelArgs& channel_args,
+                      ChannelFilter::Args filter_args, size_t type_tag) {
+  auto* log = channel_args.GetPointer<CreationLog>("creation_log");
+  if (log == nullptr) return;
+  log->entries.push_back(CreationLogEntry{filter_args.instance_id(), type_tag});
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -81,7 +88,8 @@ class TestFilter {
   };
 
   static absl::StatusOr<std::unique_ptr<TestFilter<I>>> Create(
-      const ChannelArgs& args) {
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    MaybeLogCreation(channel_args, filter_args, I);
     return std::make_unique<TestFilter<I>>();
   }
 
@@ -117,7 +125,8 @@ class FailsToInstantiateFilter {
   };
 
   static absl::StatusOr<std::unique_ptr<FailsToInstantiateFilter<I>>> Create(
-      const ChannelArgs& args) {
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    MaybeLogCreation(channel_args, filter_args, I);
     return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
   }
 };
@@ -143,11 +152,13 @@ class TestConsumingInterceptor final : public Interceptor {
  public:
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
     Consume(std::move(unstarted_call_handler))
-        .Cancel(ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
+        .PushServerTrailingMetadata(
+            ServerMetadataFromStatus(absl::InternalError("👊 consumed")));
   }
-  void Orphan() override {}
+  void Orphaned() override {}
   static absl::StatusOr<RefCountedPtr<TestConsumingInterceptor<I>>> Create(
-      const ChannelArgs& args) {
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    MaybeLogCreation(channel_args, filter_args, I);
     return MakeRefCounted<TestConsumingInterceptor<I>>();
   }
 };
@@ -161,9 +172,10 @@ class TestFailingInterceptor final : public Interceptor {
   void StartCall(UnstartedCallHandler unstarted_call_handler) override {
     Crash("unreachable");
   }
-  void Orphan() override {}
+  void Orphaned() override {}
   static absl::StatusOr<RefCountedPtr<TestFailingInterceptor<I>>> Create(
-      const ChannelArgs& args) {
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    MaybeLogCreation(channel_args, filter_args, I);
     return absl::InternalError(absl::StrCat("👊 failed to instantiate ", I));
   }
 };
@@ -186,9 +198,10 @@ class TestHijackingInterceptor final : public Interceptor {
                      });
         });
   }
-  void Orphan() override {}
+  void Orphaned() override {}
   static absl::StatusOr<RefCountedPtr<TestHijackingInterceptor<I>>> Create(
-      const ChannelArgs& args) {
+      const ChannelArgs& channel_args, ChannelFilter::Args filter_args) {
+    MaybeLogCreation(channel_args, filter_args, I);
     return MakeRefCounted<TestHijackingInterceptor<I>>();
   }
 };
@@ -211,14 +224,14 @@ class InterceptionChainTest : public ::testing::Test {
 
   // Run a call through a UnstartedCallDestination until it's complete.
   FinishedCall RunCall(UnstartedCallDestination* destination) {
-    auto* arena = Arena::Create(1024, &memory_allocator_);
-    auto call =
-        MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr, arena, true);
+    auto* arena = call_arena_allocator_->MakeArena();
+    auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
+                             arena, call_arena_allocator_, nullptr);
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
           gpr_log(GPR_INFO, "👊 start call");
-          destination->StartCall(std::move(call.unstarted_handler));
+          destination->StartCall(std::move(call.handler));
           return Map(call.initiator.PullServerTrailingMetadata(),
                      [&trailing_md](ServerMetadataHandle md) {
                        trailing_md = std::move(md);
@@ -242,11 +255,11 @@ class InterceptionChainTest : public ::testing::Test {
       metadata_ = Arena::MakePooled<ClientMetadata>();
       *metadata_ =
           unstarted_call_handler.UnprocessedClientInitialMetadata().Copy();
-      unstarted_call_handler.Cancel(
+      unstarted_call_handler.PushServerTrailingMetadata(
           ServerMetadataFromStatus(absl::InternalError("👊 cancelled")));
     }
 
-    void Orphan() override {}
+    void Orphaned() override {}
 
     ClientMetadataHandle TakeMetadata() { return std::move(metadata_); }
 
@@ -254,8 +267,11 @@ class InterceptionChainTest : public ::testing::Test {
     ClientMetadataHandle metadata_;
   };
   RefCountedPtr<Destination> destination_ = MakeRefCounted<Destination>();
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test"),
+          1024);
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -356,6 +372,27 @@ TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
   EXPECT_EQ(r.status().message(), "👊 failed to instantiate 2");
+}
+
+TEST_F(InterceptionChainTest, CreationOrderCorrect) {
+  CreationLog log;
+  auto r = InterceptionChainBuilder(ChannelArgs().SetObject(&log))
+               .Add<TestFilter<1>>()
+               .Add<TestFilter<2>>()
+               .Add<TestFilter<3>>()
+               .Add<TestConsumingInterceptor<4>>()
+               .Add<TestFilter<1>>()
+               .Add<TestFilter<2>>()
+               .Add<TestFilter<3>>()
+               .Add<TestConsumingInterceptor<4>>()
+               .Add<TestFilter<1>>()
+               .Build(destination());
+  EXPECT_THAT(log.entries, ::testing::ElementsAre(
+                               CreationLogEntry{0, 1}, CreationLogEntry{0, 2},
+                               CreationLogEntry{0, 3}, CreationLogEntry{0, 4},
+                               CreationLogEntry{1, 1}, CreationLogEntry{1, 2},
+                               CreationLogEntry{1, 3}, CreationLogEntry{1, 4},
+                               CreationLogEntry{2, 1}));
 }
 
 }  // namespace

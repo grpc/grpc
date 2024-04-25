@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -66,7 +67,7 @@ class ServerFuzzer final : public BasicFuzzer {
     }
   }
 
-  ~ServerFuzzer() { GPR_ASSERT(server_ == nullptr); }
+  ~ServerFuzzer() { CHECK_EQ(server_, nullptr); }
 
  private:
   Result CreateChannel(
@@ -103,7 +104,7 @@ void RunServerFuzzer(
     ForceEnableExperiment("event_engine_listener", true);
     return 42;
   }();
-  GPR_ASSERT(once == 42);  // avoid unused variable warning
+  CHECK_EQ(once, 42);  // avoid unused variable warning
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());

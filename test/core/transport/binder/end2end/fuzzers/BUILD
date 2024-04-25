@@ -35,6 +35,7 @@ grpc_proto_library(
 grpc_cc_library(
     name = "fuzzer_utils",
     srcs = ["fuzzer_utils.cc"],
+    external_deps = ["absl/log:check"],
     language = "c++",
     public_hdrs = ["fuzzer_utils.h"],
     deps = [
@@ -53,6 +54,7 @@ grpc_proto_fuzzer(
         "client_fuzzer.cc",
     ],
     corpus = "binder_transport_client_fuzzer_corpus",
+    external_deps = ["absl/log:check"],
     owner = "binder",
     proto = "client.proto",
     tags = [
@@ -76,6 +78,7 @@ grpc_proto_fuzzer(
         "server_fuzzer.cc",
     ],
     corpus = "binder_transport_server_fuzzer_corpus",
+    external_deps = ["absl/log:check"],
     owner = "binder",
     proto = "server.proto",
     tags = [

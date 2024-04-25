@@ -155,6 +155,10 @@ struct CallConstructor<FilterType,
 // Only one pointer can be set.
 template <typename T>
 struct ResultOr {
+  ResultOr(T ok, ServerMetadataHandle error)
+      : ok(std::move(ok)), error(std::move(error)) {
+    GPR_ASSERT((this->ok == nullptr) ^ (this->error == nullptr));
+  }
   T ok;
   ServerMetadataHandle error;
 };
@@ -1310,44 +1314,6 @@ class CallFilters {
     filters_detail::StackData data_;
   };
 
-  class NextMessage {
-   public:
-    NextMessage() : has_value_(false), cancelled_(false) {}
-    explicit NextMessage(MessageHandle value)
-        : has_value_(true), value_(std::move(value)) {}
-    explicit NextMessage(bool cancelled)
-        : has_value_(false), cancelled_(cancelled) {}
-    NextMessage(const NextMessage&) = delete;
-    NextMessage& operator=(const NextMessage&) = delete;
-    NextMessage(NextMessage&& other) noexcept = default;
-    NextMessage& operator=(NextMessage&& other) = default;
-
-    using value_type = MessageHandle;
-
-    void reset() {
-      has_value_ = false;
-      cancelled_ = false;
-      value_.reset();
-    }
-    bool has_value() const { return has_value_; }
-    const MessageHandle& value() const {
-      GPR_DEBUG_ASSERT(has_value_);
-      return value_;
-    }
-    MessageHandle& value() {
-      GPR_DEBUG_ASSERT(has_value_);
-      return value_;
-    }
-    const MessageHandle& operator*() const { return value(); }
-    MessageHandle& operator*() { return value(); }
-    bool cancelled() const { return !has_value_ && cancelled_; }
-
-   private:
-    bool has_value_;
-    bool cancelled_;
-    MessageHandle value_;
-  };
-
   explicit CallFilters(ClientMetadataHandle client_initial_metadata);
   ~CallFilters();
 
@@ -1422,12 +1388,21 @@ class CallFilters {
      public:
       Push(CallFilters* filters, T x)
           : filters_(filters), value_(std::move(x)) {
+        GPR_ASSERT(value_ != nullptr);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "BeginPush[%p|%p]: %s", &state(), this,
+                  state().DebugString().c_str());
+        }
+        GPR_ASSERT(push_slot() == nullptr);
         state().BeginPush();
         push_slot() = this;
       }
       ~Push() {
         if (filters_ != nullptr) {
-          state().DropPush();
+          if (value_ != nullptr) {
+            state().DropPush();
+          }
+          GPR_ASSERT(push_slot() == this);
           push_slot() = nullptr;
         }
       }
@@ -1445,9 +1420,49 @@ class CallFilters {
 
       Push& operator=(Push&&) = delete;
 
-      Poll<StatusFlag> operator()() { return state().PollPush(); }
+      Poll<StatusFlag> operator()() {
+        if (value_ == nullptr) {
+          GPR_ASSERT(filters_ == nullptr);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+            gpr_log(GPR_INFO, "Push[|%p]: already done", this);
+          }
+          return Success{};
+        }
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "Push[%p|%p]: %s", &state(), this,
+                  state().DebugString().c_str());
+        }
+        auto r = state().PollPush();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          if (r.pending()) {
+            gpr_log(GPR_INFO, "Push[%p|%p]: pending; %s", &state(), this,
+                    state().DebugString().c_str());
+          } else if (r.value().ok()) {
+            gpr_log(GPR_INFO, "Push[%p|%p]: success; %s", &state(), this,
+                    state().DebugString().c_str());
+          } else {
+            gpr_log(GPR_INFO, "Push[%p|%p]: failure; %s", &state(), this,
+                    state().DebugString().c_str());
+          }
+        }
+        if (r.ready()) {
+          push_slot() = nullptr;
+          filters_ = nullptr;
+        }
+        return r;
+      }
 
-      T TakeValue() { return std::move(value_); }
+      T TakeValue() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "Push[%p|%p]: take value; %s", &state(), this,
+                  state().DebugString().c_str());
+        }
+        GPR_ASSERT(value_ != nullptr);
+        GPR_ASSERT(filters_ != nullptr);
+        push_slot() = nullptr;
+        filters_ = nullptr;
+        return std::move(value_);
+      }
 
       absl::string_view DebugString() const {
         return value_ != nullptr ? " (not pulled)" : "";
@@ -1485,6 +1500,10 @@ class CallFilters {
       PullMaybe& operator=(PullMaybe&&) = delete;
 
       Poll<ValueOrFailure<absl::optional<T>>> operator()() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMaybe[%p|%p]: %s executor:%d", &state(), this,
+                  state().DebugString().c_str(), executor_.IsRunning());
+        }
         if (executor_.IsRunning()) {
           auto c = state().PollClosed();
           if (c.ready() && c.value()) {
@@ -1544,23 +1563,36 @@ class CallFilters {
             executor_(std::move(other.executor_)) {}
       PullMessage& operator=(PullMessage&&) = delete;
 
-      Poll<NextMessage> operator()() {
+      Poll<ValueOrFailure<absl::optional<MessageHandle>>> operator()() {
+        GPR_ASSERT(filters_ != nullptr);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMessage[%p|%p]: %s executor:%d", &state(),
+                  this, state().DebugString().c_str(), executor_.IsRunning());
+        }
         if (executor_.IsRunning()) {
           auto c = state().PollClosed();
           if (c.ready() && c.value()) {
             filters_->CancelDueToFailedPipeOperation();
-            return NextMessage(true);
+            return Failure{};
           }
           return FinishOperationExecutor(executor_.Step(filters_->call_data_));
         }
         auto p = state().PollPull();
         auto* r = p.value_if_ready();
-        if (r == nullptr) return Pending{};
+        if (r == nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+            gpr_log(GPR_INFO, "PullMessage[%p] pending: %s executor:%d",
+                    &state(), state().DebugString().c_str(),
+                    executor_.IsRunning());
+          }
+          return Pending{};
+        }
         if (!r->ok()) {
           filters_->CancelDueToFailedPipeOperation();
-          return NextMessage(true);
+          return Failure{};
         }
-        if (!**r) return NextMessage(false);
+        if (!**r) return absl::nullopt;
+        GPR_ASSERT(filters_ != nullptr);
         return FinishOperationExecutor(executor_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
       }
@@ -1573,15 +1605,19 @@ class CallFilters {
         return &(filters_->stack_->data_.*layout_ptr);
       }
 
-      Poll<NextMessage> FinishOperationExecutor(
-          Poll<filters_detail::ResultOr<T>> p) {
+      Poll<ValueOrFailure<absl::optional<MessageHandle>>>
+      FinishOperationExecutor(Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
         GPR_DEBUG_ASSERT(!executor_.IsRunning());
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMessage[%p|%p] executor done: %s", &state(),
+                  this, state().DebugString().c_str());
+        }
         state().AckPull();
-        if (r->ok != nullptr) return NextMessage(std::move(r->ok));
+        if (r->ok != nullptr) return std::move(r->ok);
         filters_->PushServerTrailingMetadata(std::move(r->error));
-        return NextMessage(true);
+        return Failure{};
       }
 
       CallFilters* filters_;
@@ -1693,8 +1729,21 @@ class CallFilters {
         return std::move(filters_->server_trailing_metadata_);
       }
       // Otherwise we need to process it through all the filters.
-      return executor_.Start(&filters_->stack_->data_.server_trailing_metadata,
-                             std::move(filters_->server_trailing_metadata_),
+      auto r = executor_.Start(
+          &filters_->stack_->data_.server_trailing_metadata,
+          std::move(filters_->server_trailing_metadata_), filters_->call_data_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        if (r.pending()) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_);
+        } else {
+          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_,
+                  r.value()->DebugString().c_str());
+        }
+      }
+      return r;
     }
 
    private:
