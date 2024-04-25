@@ -100,7 +100,7 @@ class ServerRpcInfo {
   // Runs interceptor at pos \a pos.
   void RunInterceptor(
       experimental::InterceptorBatchMethods* interceptor_methods, size_t pos) {
-    GPR_ASSERT(pos < interceptors_.size());
+    CHECK_LT(pos, interceptors_.size());
     interceptors_[pos]->Intercept(interceptor_methods);
   }
 

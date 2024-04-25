@@ -105,7 +105,7 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
   ReleasableMutexLock& operator=(const ReleasableMutexLock&) = delete;
 
   void Release() ABSL_UNLOCK_FUNCTION() {
-    GPR_DEBUG_ASSERT(!released_);
+    DCHECK(!released_);
     released_ = true;
     mu_->Unlock();
   }

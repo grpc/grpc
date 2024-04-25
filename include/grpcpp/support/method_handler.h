@@ -57,7 +57,7 @@ template <class Callable>
 template <class ResponseType>
 void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
                            ResponseType* rsp, grpc::Status& status) {
-  GPR_ASSERT(!param.server_context->sent_initial_metadata_);
+  CHECK(!param.server_context->sent_initial_metadata_);
   grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata,
                             grpc::internal::CallOpSendMessage,
                             grpc::internal::CallOpServerSendStatus>

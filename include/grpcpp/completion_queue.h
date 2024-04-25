@@ -323,7 +323,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
       bool ok = ev.success != 0;
       void* ignored = tag;
       if (tag->FinalizeResult(&ignored, &ok)) {
-        GPR_ASSERT(ignored == tag);
+        CHECK(ignored == tag);
         return ok;
       }
     }
@@ -344,7 +344,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
     bool ok = ev.success != 0;
     void* ignored = tag;
     // the tag must be swallowed if using TryPluck
-    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    CHECK(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Performs a single polling pluck on \a tag. Calls tag->FinalizeResult if
@@ -361,7 +361,7 @@ class CompletionQueue : private grpc::internal::GrpcLibrary {
 
     bool ok = ev.success != 0;
     void* ignored = tag;
-    GPR_ASSERT(!tag->FinalizeResult(&ignored, &ok));
+    CHECK(!tag->FinalizeResult(&ignored, &ok));
   }
 
   /// Manage state of avalanching operations : completion queue tags that

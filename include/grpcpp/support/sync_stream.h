@@ -184,7 +184,7 @@ class ClientReader final : public ClientReaderInterface<R> {
   ///   the server will be accessible through the \a ClientContext used to
   ///   construct this object.
   void WaitForInitialMetadata() override {
-    GPR_ASSERT(!context_->initial_metadata_received_);
+    CHECK(!context_->initial_metadata_received_);
 
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
@@ -230,7 +230,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
-    GPR_ASSERT(cq_.Pluck(&ops));
+    CHECK(cq_.Pluck(&ops));
     return status;
   }
 
@@ -259,7 +259,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    GPR_ASSERT(ops.SendMessagePtr(&request).ok());
+    CHECK(ops.SendMessagePtr(&request).ok());
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
@@ -306,7 +306,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   ///   Once complete, the initial metadata read from the server will be
   ///   accessible through the \a ClientContext used to construct this object.
   void WaitForInitialMetadata() {
-    GPR_ASSERT(!context_->initial_metadata_received_);
+    CHECK(!context_->initial_metadata_received_);
 
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
@@ -364,7 +364,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     }
     finish_ops_.ClientRecvStatus(context_, &status);
     call_.PerformOps(&finish_ops_);
-    GPR_ASSERT(cq_.Pluck(&finish_ops_));
+    CHECK(cq_.Pluck(&finish_ops_));
     return status;
   }
 
@@ -455,7 +455,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   /// Once complete, the initial metadata read from the server will be
   /// accessible through the \a ClientContext used to construct this object.
   void WaitForInitialMetadata() override {
-    GPR_ASSERT(!context_->initial_metadata_received_);
+    CHECK(!context_->initial_metadata_received_);
 
     grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata> ops;
     ops.RecvInitialMetadata(context_);
@@ -536,7 +536,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
     grpc::Status status;
     ops.ClientRecvStatus(context_, &status);
     call_.PerformOps(&ops);
-    GPR_ASSERT(cq_.Pluck(&ops));
+    CHECK(cq_.Pluck(&ops));
     return status;
   }
 
@@ -583,7 +583,7 @@ class ServerReader final : public ServerReaderInterface<R> {
   /// for semantics. Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
   void SendInitialMetadata() override {
-    GPR_ASSERT(!ctx_->sent_initial_metadata_);
+    CHECK(!ctx_->sent_initial_metadata_);
 
     grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(&ctx_->initial_metadata_,
@@ -640,7 +640,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
   /// Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
   void SendInitialMetadata() override {
-    GPR_ASSERT(!ctx_->sent_initial_metadata_);
+    CHECK(!ctx_->sent_initial_metadata_);
 
     grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(&ctx_->initial_metadata_,
@@ -713,7 +713,7 @@ class ServerReaderWriterBody final {
       : call_(call), ctx_(ctx) {}
 
   void SendInitialMetadata() {
-    GPR_ASSERT(!ctx_->sent_initial_metadata_);
+    CHECK(!ctx_->sent_initial_metadata_);
 
     grpc::internal::CallOpSet<grpc::internal::CallOpSendInitialMetadata> ops;
     ops.SendInitialMetadata(&ctx_->initial_metadata_,

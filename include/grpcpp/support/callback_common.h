@@ -71,7 +71,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    GPR_ASSERT(size == sizeof(CallbackWithStatusTag));
+    CHECK_EQ(size, sizeof(CallbackWithStatusTag));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -79,7 +79,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_ASSERT(false); }
+  static void operator delete(void*, void*) { CHECK(false); }
 
   CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops)
@@ -118,7 +118,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
       // The tag was swallowed
       return;
     }
-    GPR_ASSERT(ignored == ops_);
+    CHECK(ignored == ops_);
 
     // Last use of func_ or status_, so ok to move them out
     auto func = std::move(func_);
@@ -137,7 +137,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    GPR_ASSERT(size == sizeof(CallbackWithSuccessTag));
+    CHECK_EQ(size, sizeof(CallbackWithSuccessTag));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -145,7 +145,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { GPR_ASSERT(false); }
+  static void operator delete(void*, void*) { CHECK(false); }
 
   CallbackWithSuccessTag() : call_(nullptr) {}
 
@@ -162,7 +162,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
   // callbacks.
   void Set(grpc_call* call, std::function<void(bool)> f,
            CompletionQueueTag* ops, bool can_inline) {
-    GPR_ASSERT(call_ == nullptr);
+    CHECK_EQ(call_, nullptr);
     grpc_call_ref(call);
     call_ = call;
     func_ = std::move(f);
@@ -208,7 +208,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
 #endif
     bool do_callback = ops_->FinalizeResult(&ignored, &ok);
 #ifndef NDEBUG
-    GPR_DEBUG_ASSERT(ignored == ops);
+    DCHECK(ignored == ops);
 #endif
 
     if (do_callback) {

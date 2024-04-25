@@ -246,7 +246,7 @@ class ClientContext {
   /// \return A multimap of initial metadata key-value pairs from the server.
   const std::multimap<grpc::string_ref, grpc::string_ref>&
   GetServerInitialMetadata() const {
-    GPR_ASSERT(initial_metadata_received_);
+    CHECK(initial_metadata_received_);
     return *recv_initial_metadata_.map();
   }
 

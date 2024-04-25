@@ -318,7 +318,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    GPR_ASSERT(method);
+    CHECK(method);
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);
   }
@@ -329,7 +329,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq,
                         void* tag) {
-    GPR_ASSERT(method);
+    CHECK(method);
     new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
                               notification_cq, tag);
   }
