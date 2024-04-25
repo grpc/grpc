@@ -7408,7 +7408,6 @@ targets:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   uses_polling: false
 - name: cf_engine_test
@@ -18675,7 +18674,6 @@ targets:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: socket_utils_test
   gtest: true
@@ -20979,7 +20977,6 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
-  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false

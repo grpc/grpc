@@ -9482,7 +9482,6 @@ target_include_directories(certificate_provider_store_test
 target_link_libraries(certificate_provider_store_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -28403,7 +28402,6 @@ target_include_directories(sockaddr_utils_test
 target_link_libraries(sockaddr_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -33249,7 +33247,6 @@ target_include_directories(xds_client_test
 target_link_libraries(xds_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
