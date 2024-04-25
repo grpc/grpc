@@ -6232,7 +6232,6 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   deps:
   - gtest
-  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -8922,7 +8921,6 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   deps:
   - gtest
-  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -9417,7 +9415,6 @@ targets:
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
   - gtest
-  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20209,7 +20206,6 @@ targets:
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
   - gtest
-  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20588,7 +20584,6 @@ targets:
   - test/core/transport/binder/wire_reader_test.cc
   deps:
   - gtest
-  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20698,7 +20693,6 @@ targets:
   - test/core/transport/binder/wire_writer_test.cc
   deps:
   - gtest
-  - absl/log:check
   - protobuf
   - grpc_test_util
   uses_polling: false
