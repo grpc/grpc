@@ -65,10 +65,10 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     GRPC_CQ_INTERNAL_REF(cq->cq(), "alarm");
     cq_ = cq->cq();
     tag_ = tag;
-    GPR_ASSERT(grpc_cq_begin_op(cq_, this));
+    CHECK(grpc_cq_begin_op(cq_, this));
     Ref();
-    GPR_ASSERT(cq_armed_.exchange(true) == false);
-    GPR_ASSERT(!callback_armed_.load());
+    CHECK(cq_armed_.exchange(true) == false);
+    CHECK(!callback_armed_.load());
     cq_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),
@@ -79,8 +79,8 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
     // Don't use any CQ at all. Instead just use the timer to fire the function
     callback_ = std::move(f);
     Ref();
-    GPR_ASSERT(callback_armed_.exchange(true) == false);
-    GPR_ASSERT(!cq_armed_.load());
+    CHECK(callback_armed_.exchange(true) == false);
+    CHECK(!cq_armed_.load());
     callback_timer_handle_ = event_engine_->RunAfter(
         grpc_core::Timestamp::FromTimespecRoundUp(deadline) -
             grpc_core::ExecCtx::Get()->Now(),

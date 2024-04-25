@@ -68,7 +68,7 @@ ThreadManager::ThreadManager(const char*, grpc_resource_quota* resource_quota,
 ThreadManager::~ThreadManager() {
   {
     grpc_core::MutexLock lock(&mu_);
-    GPR_ASSERT(num_threads_ == 0);
+    CHECK_EQ(num_threads_, 0);
   }
 
   CleanupCompletedThreads();
@@ -142,7 +142,7 @@ void ThreadManager::Initialize() {
 
   for (int i = 0; i < min_pollers_; i++) {
     WorkerThread* worker = new WorkerThread(this);
-    GPR_ASSERT(worker->created());  // Must be able to create the minimum
+    CHECK(worker->created());  // Must be able to create the minimum
     worker->Start();
   }
 }

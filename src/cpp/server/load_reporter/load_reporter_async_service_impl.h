@@ -81,8 +81,8 @@ class LoadReporterAsyncServiceImpl
     CallableTag(HandlerFunction func,
                 std::shared_ptr<ReportLoadHandler> handler)
         : handler_function_(std::move(func)), handler_(std::move(handler)) {
-      GPR_ASSERT(handler_function_ != nullptr);
-      GPR_ASSERT(handler_ != nullptr);
+      CHECK_NE(handler_function_, nullptr);
+      CHECK_NE(handler_, nullptr);
     }
 
     // Runs the tag. This should be called only once. The handler is no longer

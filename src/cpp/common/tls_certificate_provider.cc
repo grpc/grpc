@@ -28,7 +28,7 @@ namespace experimental {
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     const std::string& root_certificate,
     const std::vector<IdentityKeyCertPair>& identity_key_cert_pairs) {
-  GPR_ASSERT(!root_certificate.empty() || !identity_key_cert_pairs.empty());
+  CHECK(!root_certificate.empty() || !identity_key_cert_pairs.empty());
   grpc_tls_identity_pairs* pairs_core = grpc_tls_identity_pairs_create();
   for (const IdentityKeyCertPair& pair : identity_key_cert_pairs) {
     grpc_tls_identity_pairs_add_pair(pairs_core, pair.private_key.c_str(),
@@ -36,7 +36,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
   }
   c_provider_ = grpc_tls_certificate_provider_static_data_create(
       root_certificate.c_str(), pairs_core);
-  GPR_ASSERT(c_provider_ != nullptr);
+  CHECK_NE(c_provider_, nullptr);
 };
 
 StaticDataCertificateProvider::~StaticDataCertificateProvider() {
@@ -50,7 +50,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
   c_provider_ = grpc_tls_certificate_provider_file_watcher_create(
       private_key_path.c_str(), identity_certificate_path.c_str(),
       root_cert_path.c_str(), refresh_interval_sec);
-  GPR_ASSERT(c_provider_ != nullptr);
+  CHECK_NE(c_provider_, nullptr);
 };
 
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {

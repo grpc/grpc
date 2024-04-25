@@ -45,7 +45,7 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
   for (const auto& a : other.args_) {
     grpc_arg ap;
     ap.type = a.type;
-    GPR_ASSERT(list_it_src->c_str() == a.key);
+    CHECK(list_it_src->c_str() == a.key);
     ap.key = const_cast<char*>(list_it_dst->c_str());
     ++list_it_src;
     ++list_it_dst;
@@ -54,7 +54,7 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
         ap.value.integer = a.value.integer;
         break;
       case GRPC_ARG_STRING:
-        GPR_ASSERT(list_it_src->c_str() == a.value.string);
+        CHECK(list_it_src->c_str() == a.value.string);
         ap.value.string = const_cast<char*>(list_it_dst->c_str());
         ++list_it_src;
         ++list_it_dst;
@@ -101,7 +101,7 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   for (auto& arg : args_) {
     if (arg.type == mutator_arg.type &&
         std::string(arg.key) == std::string(mutator_arg.key)) {
-      GPR_ASSERT(!replaced);
+      CHECK(!replaced);
       arg.value.pointer.vtable->destroy(arg.value.pointer.p);
       arg.value.pointer = mutator_arg.value.pointer;
       replaced = true;
@@ -130,7 +130,7 @@ void ChannelArguments::SetUserAgentPrefix(
     ++strings_it;
     if (arg.type == GRPC_ARG_STRING) {
       if (std::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
-        GPR_ASSERT(arg.value.string == strings_it->c_str());
+        CHECK(arg.value.string == strings_it->c_str());
         *(strings_it) = user_agent_prefix + " " + arg.value.string;
         arg.value.string = const_cast<char*>(strings_it->c_str());
         replaced = true;

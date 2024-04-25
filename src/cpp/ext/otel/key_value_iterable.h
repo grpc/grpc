@@ -101,7 +101,7 @@ class OpenTelemetryPlugin::KeyValueIterable
     }
     // Add per-call optional labels
     if (!optional_labels_.empty()) {
-      GPR_ASSERT(
+      CHECK(
           optional_labels_.size() ==
           static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
                                   OptionalLabelKey::kSize));

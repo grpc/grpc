@@ -207,7 +207,7 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
   void* tag = nullptr;
   NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  GPR_ASSERT(tag == nullptr);
+  CHECK_EQ(tag, nullptr);
   return ok;
 }
 
