@@ -569,7 +569,7 @@ class FilterStackTransport : public Transport {
                              grpc_closure* then_schedule_closure) = 0;
 
  protected:
-  ~FilterStackTransport() = default;
+  ~FilterStackTransport() override = default;
 };
 
 class ClientTransport : public Transport {
@@ -577,7 +577,7 @@ class ClientTransport : public Transport {
   virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
-  ~ClientTransport() = default;
+  ~ClientTransport() override = default;
 };
 
 class ServerTransport : public Transport {
@@ -602,7 +602,7 @@ class ServerTransport : public Transport {
   virtual void SetAcceptor(Acceptor* acceptor) = 0;
 
  protected:
-  ~ServerTransport() = default;
+  ~ServerTransport() override = default;
 };
 
 }  // namespace grpc_core
