@@ -272,7 +272,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
     if (start) {
       StartCallInternal(tag);
     } else {
-      CHECK_EQ(tag, nullptr);
+      CHECK(tag == nullptr);
     }
   }
 
@@ -437,7 +437,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     if (start) {
       StartCallInternal(tag);
     } else {
-      CHECK_EQ(tag, nullptr);
+      CHECK(tag == nullptr);
     }
   }
 
@@ -608,7 +608,7 @@ class ClientAsyncReaderWriter final
     if (start) {
       StartCallInternal(tag);
     } else {
-      CHECK_EQ(tag, nullptr);
+      CHECK(tag == nullptr);
     }
   }
 
