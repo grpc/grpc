@@ -101,7 +101,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
       (*current_data)++;
     }
   }
-  CHECK_EQ(num_bytes_left, 0);
+  CHECK_EQ(num_bytes_left, 0u);
   return slices;
 }
 
