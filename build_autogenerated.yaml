@@ -6898,7 +6898,6 @@ targets:
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_test_config
   - grpc++_test_util
 - name: cancel_before_invoke_test
