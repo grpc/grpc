@@ -127,7 +127,7 @@ TEST(ChannelStackTest, CreateChannelStack) {
       nullptr,                            // server_transport_data
       nullptr,                            // context
       path,                               // path
-      gpr_get_cycle_counter(),            // start_time
+      grpc_core::Timestamp::Now(),        // start_time
       grpc_core::Timestamp::InfFuture(),  // deadline
       nullptr,                            // arena
       nullptr,                            // call_combiner
