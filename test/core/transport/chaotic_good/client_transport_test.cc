@@ -15,6 +15,7 @@
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <initializer_list>
 #include <memory>
@@ -78,12 +79,15 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
     bool has_message = (i < num_messages);
     return If(
         has_message,
-        Seq(initiator.PushMessage(Arena::MakePooled<Message>(
-                SliceBuffer(Slice::FromCopiedString(std::to_string(i))), 0)),
-            [&i]() -> LoopCtl<absl::Status> {
-              ++i;
-              return Continue();
-            }),
+        [initiator, &i]() mutable {
+          return Seq(
+              initiator.PushMessage(Arena::MakePooled<Message>(
+                  SliceBuffer(Slice::FromCopiedString(std::to_string(i))), 0)),
+              [&i]() -> LoopCtl<absl::Status> {
+                ++i;
+                return Continue();
+              });
+        },
         [initiator]() mutable -> LoopCtl<absl::Status> {
           initiator.FinishSends();
           return absl::OkStatus();
@@ -115,8 +119,7 @@ TEST_F(TransportTest, AddOneStream) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call = MakeCall(TestInitialMetadata(), event_engine().get(),
-                       Arena::Create(1024, memory_allocator()), true);
+  auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
@@ -202,8 +205,7 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call = MakeCall(TestInitialMetadata(), event_engine().get(),
-                       Arena::Create(8192, memory_allocator()), true);
+  auto call = MakeCall(TestInitialMetadata());
   transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
