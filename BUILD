@@ -1185,7 +1185,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/strings"
+        "absl/strings",
     ],
     language = "c++",
     deps = [
@@ -1208,14 +1208,14 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/server/secure_server_credentials.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpcpp/xds_server_builder.h",
     ],
     visibility = ["@grpc:xds"],
-    external_deps = [
-        "absl/log:check",
-    ],
     deps = [
         "channel_arg_names",
         "gpr",
@@ -2116,10 +2116,10 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/constants.h",
         "src/cpp/server/load_reporter/load_data_store.h",
     ],
-    language = "c++",
     external_deps = [
         "absl/log:check",
     ],
+    language = "c++",
     deps = [
         "gpr",
         "gpr_platform",
