@@ -20,6 +20,15 @@ licenses(["notice"])
 grpc_package(name = "test/core/promise")
 
 grpc_cc_library(
+    name = "poll_matcher",
+    testonly = True,
+    hdrs = ["poll_matcher.h"],
+    external_deps = ["gtest"],
+    visibility = ["//test/core:__subpackages__"],
+    deps = ["//src/core:poll"],
+)
+
+grpc_cc_library(
     name = "test_wakeup_schedulers",
     testonly = True,
     hdrs = ["test_wakeup_schedulers.h"],
@@ -496,6 +505,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//src/core:loop",
         "//src/core:map",
         "//src/core:notification",

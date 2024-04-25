@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SIZE_ESTIMATOR_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SIZE_ESTIMATOR_H
+#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
+#define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
 
 #include <stddef.h>
 
 #include <atomic>
+#include <cstddef>
 
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 
 namespace grpc_core {
 
@@ -47,6 +52,22 @@ class CallSizeEstimator {
   std::atomic<size_t> call_size_estimate_;
 };
 
+class CallArenaAllocator : public RefCounted<CallArenaAllocator> {
+ public:
+  CallArenaAllocator(MemoryAllocator allocator, size_t initial_size)
+      : allocator_(std::move(allocator)), call_size_estimator_(initial_size) {}
+
+  Arena* MakeArena() {
+    return Arena::Create(call_size_estimator_.CallSizeEstimate(), &allocator_);
+  }
+
+  void Destroy(Arena* arena) { arena->Destroy(); }
+
+ private:
+  MemoryAllocator allocator_;
+  CallSizeEstimator call_size_estimator_;
+};
+
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SIZE_ESTIMATOR_H
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_ARENA_ALLOCATOR_H
