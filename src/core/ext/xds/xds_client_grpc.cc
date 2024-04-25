@@ -171,7 +171,7 @@ class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
 
   void ReportServerFailure(absl::string_view xds_server) override {
     xds_client_.stats_plugin_group_.AddCounter(
-        kMetricServerFailure, 1ul, {xds_client_.key_, xds_server}, {});
+        kMetricServerFailure, uint64_t(1), {xds_client_.key_, xds_server}, {});
   }
 
  private:

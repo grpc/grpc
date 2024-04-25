@@ -1124,7 +1124,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
   }
   auto& stats_plugins =
       lb_policy_->channel_control_helper()->GetStatsPluginGroup();
-  stats_plugins.AddCounter(kMetricFailedPicks, 1ul,
+  stats_plugins.AddCounter(kMetricFailedPicks, uint64_t(1),
                            {lb_policy_->channel_control_helper()->GetTarget(),
                             config_->lookup_service()},
                            {});
@@ -2244,7 +2244,7 @@ void RlsLb::MaybeExportPickCount(
   if (pick_result_string.empty()) return;  // Don't report queued picks.
   auto& stats_plugins = channel_control_helper()->GetStatsPluginGroup();
   stats_plugins.AddCounter(
-      handle, 1ul,
+      handle, uint64_t(1),
       {channel_control_helper()->GetTarget(), config_->lookup_service(), target,
        pick_result_string},
       {});

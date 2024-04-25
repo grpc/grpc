@@ -656,7 +656,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
       gpr_log(GPR_INFO, "[WRR %p picker %p] no scheduler, falling back to RR",
               wrr_.get(), this);
     }
-    stats_plugins.AddCounter(kMetricRrFallback, 1ul,
+    stats_plugins.AddCounter(kMetricRrFallback, uint64_t(1),
                              {wrr_->channel_control_helper()->GetTarget()},
                              {wrr_->locality_name_});
   }

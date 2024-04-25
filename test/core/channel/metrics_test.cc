@@ -54,15 +54,15 @@ TEST_F(MetricsTest, UInt64Counter) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, ""))
-      .AddCounter(uint64_counter_handle, 1ul, kLabelValues,
+      .AddCounter(uint64_counter_handle, uint64_t(1), kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, ""))
-      .AddCounter(uint64_counter_handle, 2ul, kLabelValues,
+      .AddCounter(uint64_counter_handle, uint64_t(2), kLabelValues,
                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, ""))
-      .AddCounter(uint64_counter_handle, 3ul, kLabelValues,
+      .AddCounter(uint64_counter_handle, uint64_t(3), kLabelValues,
                   kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetCounterValue(uint64_counter_handle.convert(),
                                        kLabelValues, kOptionalLabelValues),
@@ -134,15 +134,15 @@ TEST_F(MetricsTest, UInt64Histogram) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, ""))
-      .RecordHistogram(uint64_histogram_handle, 1ul, kLabelValues,
+      .RecordHistogram(uint64_histogram_handle, uint64_t(1), kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, ""))
-      .RecordHistogram(uint64_histogram_handle, 2ul, kLabelValues,
+      .RecordHistogram(uint64_histogram_handle, uint64_t(2), kLabelValues,
                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, ""))
-      .RecordHistogram(uint64_histogram_handle, 3ul, kLabelValues,
+      .RecordHistogram(uint64_histogram_handle, uint64_t(3), kLabelValues,
                        kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetHistogramValue(uint64_histogram_handle.convert(),
                                          kLabelValues, kOptionalLabelValues),

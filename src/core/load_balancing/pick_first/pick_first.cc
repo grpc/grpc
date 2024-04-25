@@ -736,7 +736,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
     auto& stats_plugins =
         pick_first_->channel_control_helper()->GetStatsPluginGroup();
     stats_plugins.AddCounter(
-        kMetricConnectionAttemptsSucceeded, 1ul,
+        kMetricConnectionAttemptsSucceeded, uint64_t(1),
         {pick_first_->channel_control_helper()->GetTarget()}, {});
   }
   // Drop our pointer to subchannel_data_, so that we know not to
@@ -782,7 +782,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   // connection.  Report the failure.
   auto& stats_plugins =
       pick_first_->channel_control_helper()->GetStatsPluginGroup();
-  stats_plugins.AddCounter(kMetricDisconnections, 1ul,
+  stats_plugins.AddCounter(kMetricDisconnections, uint64_t(1),
                            {pick_first_->channel_control_helper()->GetTarget()},
                            {});
   // Report IDLE.
@@ -882,7 +882,7 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     auto& stats_plugins = subchannel_list_->policy_->channel_control_helper()
                               ->GetStatsPluginGroup();
     stats_plugins.AddCounter(
-        kMetricConnectionAttemptsFailed, 1ul,
+        kMetricConnectionAttemptsFailed, uint64_t(1),
         {subchannel_list_->policy_->channel_control_helper()->GetTarget()}, {});
   }
   // Otherwise, process connectivity state change.
@@ -1690,7 +1690,7 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // Any state change is considered to be a failure of the existing
     // connection.
     stats_plugins.AddCounter(
-        kMetricDisconnections, 1ul,
+        kMetricDisconnections, uint64_t(1),
         {subchannel_list_->policy_->channel_control_helper()->GetTarget()}, {});
     // TODO(roth): We could check the connectivity states of all the
     // subchannels here, just in case one of them happens to be READY,
@@ -1749,7 +1749,7 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
     // existing connection already in state READY.
     if (old_state == GRPC_CHANNEL_CONNECTING) {
       stats_plugins.AddCounter(
-          kMetricConnectionAttemptsSucceeded, 1ul,
+          kMetricConnectionAttemptsSucceeded, uint64_t(1),
           {subchannel_list_->policy_->channel_control_helper()->GetTarget()},
           {});
     }
@@ -1782,7 +1782,7 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   // reports TF is a connection attempt failure.
   if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     stats_plugins.AddCounter(
-        kMetricConnectionAttemptsFailed, 1ul,
+        kMetricConnectionAttemptsFailed, uint64_t(1),
         {subchannel_list_->policy_->channel_control_helper()->GetTarget()}, {});
   }
   // Otherwise, process connectivity state change.
