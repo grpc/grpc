@@ -110,7 +110,7 @@ void DefaultHealthCheckService::UnregisterWatch(
 
 DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService() {
-  CHECK_EQ(impl_, nullptr);
+  CHECK(impl_ == nullptr);
   impl_ = std::make_unique<HealthCheckServiceImpl>(this);
   return impl_.get();
 }
