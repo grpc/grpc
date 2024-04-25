@@ -72,7 +72,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
         engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
     // Get slice from request.
     Slice slice;
-    CHECK_OK(request_buffer->DumpToSingleSlice(&slice));
+    CHECK(request_buffer->DumpToSingleSlice(&slice).ok());
     // Parse request proto.
     upb::Arena arena;
     xds_service_orca_v3_OrcaLoadReportRequest* request =
