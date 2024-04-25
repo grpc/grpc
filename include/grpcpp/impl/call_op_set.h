@@ -23,6 +23,8 @@
 #include <map>
 #include <memory>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>

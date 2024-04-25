@@ -21,6 +21,7 @@
 
 #include <type_traits>
 
+#include "absl/log/check.h"
 #include "absl/strings/cord.h"
 
 #include <grpc/byte_buffer.h>

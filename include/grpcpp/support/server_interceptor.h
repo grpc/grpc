@@ -22,6 +22,8 @@
 #include <atomic>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/interceptor.h>

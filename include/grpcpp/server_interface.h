@@ -19,6 +19,8 @@
 #ifndef GRPCPP_SERVER_INTERFACE_H
 #define GRPCPP_SERVER_INTERFACE_H
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>

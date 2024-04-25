@@ -38,6 +38,8 @@
 #include <memory>
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/support/log.h>

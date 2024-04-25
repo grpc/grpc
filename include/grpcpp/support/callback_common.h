@@ -21,6 +21,8 @@
 
 #include <functional>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>

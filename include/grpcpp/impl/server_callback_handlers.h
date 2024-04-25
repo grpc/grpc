@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 #define GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpc/support/log.h>

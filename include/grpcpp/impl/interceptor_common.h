@@ -22,6 +22,8 @@
 #include <array>
 #include <functional>
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>

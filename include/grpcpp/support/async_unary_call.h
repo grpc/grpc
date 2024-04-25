@@ -19,6 +19,8 @@
 #ifndef GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H
 #define GRPCPP_SUPPORT_ASYNC_UNARY_CALL_H
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/client_context.h>

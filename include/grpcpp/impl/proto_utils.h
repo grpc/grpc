@@ -21,6 +21,8 @@
 
 #include <type_traits>
 
+#include "absl/log/check.h"
+
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>

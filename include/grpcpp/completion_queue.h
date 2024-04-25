@@ -34,6 +34,8 @@
 
 #include <list>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>

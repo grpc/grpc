@@ -27,6 +27,7 @@
 
 #include <mutex>
 
+#include "absl/log/check.h"
 #include "absl/synchronization/mutex.h"
 
 #include <grpc/support/log.h>

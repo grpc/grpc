@@ -22,6 +22,8 @@
 #include <atomic>
 #include <functional>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpc/support/log.h>
