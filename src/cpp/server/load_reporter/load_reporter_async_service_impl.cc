@@ -36,7 +36,7 @@ namespace grpc {
 namespace load_reporter {
 
 void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
-  CHECK_NE(handler_function_, nullptr);
+  CHECK(handler_function_ != nullptr);
   CHECK_NE(handler_, nullptr);
   handler_function_(std::move(handler_), ok);
 }
