@@ -26,6 +26,7 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -176,7 +177,7 @@ CredentialsProvider* GetCredentialsProvider() {
 
 void SetCredentialsProvider(CredentialsProvider* provider) {
   // For now, forbids overriding provider.
-  GPR_ASSERT(g_provider == nullptr);
+  CHECK_EQ(g_provider, nullptr);
   g_provider = provider;
 }
 
