@@ -241,7 +241,7 @@ g_stands_for = "giggle"  # @unused
 
 core_version = "40.0.0"  # @unused
 
-version = "1.63.0-pre2"  # @unused
+version = "1.63.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
