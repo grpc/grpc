@@ -88,13 +88,12 @@ cdef class Server:
     cpython.Py_INCREF(request_call_tag)
     cdef cpython.PyObject *c_request_call_tag = <cpython.PyObject *>request_call_tag
     cdef RegisteredMethod registered_method = self.registered_methods[method]
-    # Note: Set timeout to _GPR_INF_FUTURE because we don't know when this registered method will be called.
     # optional_payload is set to NULL because we use GRPC_SRM_PAYLOAD_NONE for all method.
     cdef grpc_call_error c_call_error = GRPC_CALL_OK
     with nogil:
       c_call_error = grpc_server_request_registered_call(
           self.c_server, registered_method.c_registered_method, &request_call_tag.call.c_call,
-          &_GPR_INF_FUTURE,
+          &request_call_tag.call_details.c_details.deadline,
           &request_call_tag.c_invocation_metadata,
           NULL,
           call_queue.c_completion_queue, server_queue.c_completion_queue,
