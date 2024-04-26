@@ -32,6 +32,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -167,7 +168,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
-  GPR_ASSERT(http_request_ == nullptr);
+  CHECK_EQ(http_request_, nullptr);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (url_.scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(

@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -111,7 +112,7 @@ void grpc_server_credentials::set_auth_metadata_processor(
 
 void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
-  GPR_DEBUG_ASSERT(creds != nullptr);
+  DCHECK_NE(creds, nullptr);
   creds->set_auth_metadata_processor(processor);
 }
 

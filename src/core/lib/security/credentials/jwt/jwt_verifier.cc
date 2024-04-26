@@ -49,6 +49,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -313,7 +314,7 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
   gpr_timespec skewed_now;
   int audience_ok;
 
-  GPR_ASSERT(claims != nullptr);
+  CHECK_NE(claims, nullptr);
 
   skewed_now =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
@@ -459,7 +460,7 @@ static EVP_PKEY* extract_pkey_from_x509(const char* x509_str) {
   EVP_PKEY* result = nullptr;
   BIO* bio = BIO_new(BIO_s_mem());
   size_t len = strlen(x509_str);
-  GPR_ASSERT(len < INT_MAX);
+  CHECK_LT(len, INT_MAX);
   BIO_write(bio, x509_str, static_cast<int>(len));
   x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
   if (x509 == nullptr) {
@@ -530,8 +531,8 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   BIGNUM* tmp_e = nullptr;
   Json::Object::const_iterator it;
 
-  GPR_ASSERT(json.type() == Json::Type::kObject);
-  GPR_ASSERT(kty != nullptr);
+  CHECK(json.type() == Json::Type::kObject);
+  CHECK_NE(kty, nullptr);
   if (strcmp(kty, "RSA") != 0) {
     gpr_log(GPR_ERROR, "Unsupported key type %s.", kty);
     goto end;
@@ -658,7 +659,7 @@ static int verify_jwt_signature(EVP_PKEY* key, const char* alg,
   const EVP_MD* md = evp_md_from_alg(alg);
   int result = 0;
 
-  GPR_ASSERT(md != nullptr);  // Checked before.
+  CHECK_NE(md, nullptr);  // Checked before.
   if (md_ctx == nullptr) {
     gpr_log(GPR_ERROR, "Could not create EVP_MD_CTX.");
     goto end;
@@ -797,7 +798,7 @@ static email_key_mapping* verifier_get_mapping(grpc_jwt_verifier* v,
 static void verifier_put_mapping(grpc_jwt_verifier* v, const char* email_domain,
                                  const char* key_url_prefix) {
   email_key_mapping* mapping = verifier_get_mapping(v, email_domain);
-  GPR_ASSERT(v->num_mappings < v->allocated_mappings);
+  CHECK(v->num_mappings < v->allocated_mappings);
   if (mapping != nullptr) {
     gpr_free(mapping->key_url_prefix);
     mapping->key_url_prefix = gpr_strdup(key_url_prefix);
@@ -806,7 +807,7 @@ static void verifier_put_mapping(grpc_jwt_verifier* v, const char* email_domain,
   v->mappings[v->num_mappings].email_domain = gpr_strdup(email_domain);
   v->mappings[v->num_mappings].key_url_prefix = gpr_strdup(key_url_prefix);
   v->num_mappings++;
-  GPR_ASSERT(v->num_mappings <= v->allocated_mappings);
+  CHECK(v->num_mappings <= v->allocated_mappings);
 }
 
 // Very non-sophisticated way to detect an email address. Should be good
@@ -818,7 +819,7 @@ const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   if (*email_domain == '\0') return nullptr;
   const char* dot = strrchr(email_domain, '.');
   if (dot == nullptr || dot == email_domain) return email_domain;
-  GPR_ASSERT(dot > email_domain);
+  CHECK(dot > email_domain);
   // There may be a subdomain, we just want the domain.
   dot = static_cast<const char*>(
       gpr_memrchr(email_domain, '.', static_cast<size_t>(dot - email_domain)));
@@ -839,7 +840,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   char* path;
   absl::StatusOr<grpc_core::URI> uri;
 
-  GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
+  CHECK(ctx != nullptr && ctx->header != nullptr &&
              ctx->claims != nullptr);
   iss = ctx->claims->iss;
   if (ctx->header->kid == nullptr) {
@@ -859,7 +860,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   email_domain = grpc_jwt_issuer_email_domain(iss);
   if (email_domain != nullptr) {
     email_key_mapping* mapping;
-    GPR_ASSERT(ctx->verifier != nullptr);
+    CHECK_NE(ctx->verifier, nullptr);
     mapping = verifier_get_mapping(ctx->verifier, email_domain);
     if (mapping == nullptr) {
       gpr_log(GPR_ERROR, "Missing mapping for issuer email.");
@@ -926,7 +927,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   Json json;
   std::string signature_str;
 
-  GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr &&
+  CHECK(verifier != nullptr && jwt != nullptr && audience != nullptr &&
              cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;

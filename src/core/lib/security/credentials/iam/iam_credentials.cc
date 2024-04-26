@@ -26,6 +26,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -73,9 +74,9 @@ grpc_call_credentials* grpc_google_iam_credentials_create(
       "grpc_iam_credentials_create(token=%s, authority_selector=%s, "
       "reserved=%p)",
       3, (token, authority_selector, reserved));
-  GPR_ASSERT(reserved == nullptr);
-  GPR_ASSERT(token != nullptr);
-  GPR_ASSERT(authority_selector != nullptr);
+  CHECK_EQ(reserved, nullptr);
+  CHECK_NE(token, nullptr);
+  CHECK_NE(authority_selector, nullptr);
   return grpc_core::MakeRefCounted<grpc_google_iam_credentials>(
              token, authority_selector)
       .release();

@@ -28,6 +28,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -65,7 +66,7 @@ struct grpc_tls_certificate_provider
   // be reused when two different `grpc_tls_certificate_provider` objects are
   // used but they compare as equal (assuming other channel args match).
   int Compare(const grpc_tls_certificate_provider* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

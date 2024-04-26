@@ -22,6 +22,7 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -79,7 +80,7 @@ XdsCertificateVerifier::XdsCertificateVerifier(
 bool XdsCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {
-  GPR_ASSERT(request != nullptr);
+  CHECK_NE(request, nullptr);
   if (!XdsVerifySubjectAlternativeNames(
           request->peer_info.san_names.uri_names,
           request->peer_info.san_names.uri_names_size,
@@ -165,7 +166,7 @@ XdsCredentials::create_security_connector(
                                                         target_name, args);
     }
   }
-  GPR_ASSERT(fallback_credentials_ != nullptr);
+  CHECK_NE(fallback_credentials_, nullptr);
   return fallback_credentials_->create_security_connector(std::move(call_creds),
                                                           target_name, args);
 }
@@ -216,12 +217,12 @@ UniqueTypeName XdsServerCredentials::Type() {
 
 grpc_channel_credentials* grpc_xds_credentials_create(
     grpc_channel_credentials* fallback_credentials) {
-  GPR_ASSERT(fallback_credentials != nullptr);
+  CHECK_NE(fallback_credentials, nullptr);
   return new grpc_core::XdsCredentials(fallback_credentials->Ref());
 }
 
 grpc_server_credentials* grpc_xds_server_credentials_create(
     grpc_server_credentials* fallback_credentials) {
-  GPR_ASSERT(fallback_credentials != nullptr);
+  CHECK_NE(fallback_credentials, nullptr);
   return new grpc_core::XdsServerCredentials(fallback_credentials->Ref());
 }

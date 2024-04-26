@@ -33,6 +33,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -228,8 +229,8 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
 void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
     grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
-    GPR_ASSERT(request->hdr_count == 0);
-    GPR_ASSERT(request->hdrs == nullptr);
+    CHECK_EQ(request->hdr_count, 0);
+    CHECK_EQ(request->hdrs, nullptr);
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
     headers[0].key = gpr_strdup("x-aws-ec2-metadata-token");
