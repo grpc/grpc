@@ -22,6 +22,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -112,7 +113,7 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
   ReleasableMutexLock& operator=(const ReleasableMutexLock&) = delete;
 
   void Release() ABSL_UNLOCK_FUNCTION() {
-    GPR_DEBUG_ASSERT(!released_);
+    DCHECK(!released_);
     released_ = true;
     mu_->Unlock();
   }
@@ -178,13 +179,13 @@ class ABSL_SCOPED_LOCKABLE LockableAndReleasableMutexLock {
       const LockableAndReleasableMutexLock&) = delete;
 
   void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
-    GPR_DEBUG_ASSERT(released_);
+    DCHECK(released_);
     mu_->Lock();
     released_ = false;
   }
 
   void Release() ABSL_UNLOCK_FUNCTION() {
-    GPR_DEBUG_ASSERT(!released_);
+    DCHECK(!released_);
     released_ = true;
     mu_->Unlock();
   }

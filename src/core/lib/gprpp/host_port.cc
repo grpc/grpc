@@ -23,6 +23,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -92,8 +93,10 @@ bool SplitHostPort(absl::string_view name, absl::string_view* host,
 
 bool SplitHostPort(absl::string_view name, std::string* host,
                    std::string* port) {
-  GPR_DEBUG_ASSERT(host != nullptr && host->empty());
-  GPR_DEBUG_ASSERT(port != nullptr && port->empty());
+  DCHECK(host != nullptr );
+CHECK( host->empty());
+  DCHECK(port != nullptr );
+CHECK( port->empty());
   absl::string_view host_view;
   absl::string_view port_view;
   bool has_port;

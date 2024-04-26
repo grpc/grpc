@@ -23,6 +23,7 @@
 #include <cassert>
 #include <cinttypes>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -164,7 +165,7 @@ class RefCount {
       gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR, trace, this,
               prior, prior - 1);
     }
-    GPR_DEBUG_ASSERT(prior > 0);
+    DCHECK_GT(prior, 0);
 #endif
     return prior == 1;
   }
@@ -182,7 +183,7 @@ class RefCount {
               trace, this, location.file(), location.line(), prior, prior - 1,
               reason);
     }
-    GPR_DEBUG_ASSERT(prior > 0);
+    DCHECK_GT(prior, 0);
 #else
     // Avoid unused-parameter warnings for debug-only parameters
     (void)location;

@@ -32,6 +32,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
@@ -88,7 +89,7 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
     // don't use gpr_malloc as we may cause an infinite recursion with
     // the profiling code
     thd_arg* info = static_cast<thd_arg*>(malloc(sizeof(*info)));
-    GPR_ASSERT(info != nullptr);
+    CHECK_NE(info, nullptr);
     info->thread = this;
     info->body = thd_body;
     info->arg = arg;
@@ -99,18 +100,18 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
       Fork::IncThreadCount();
     }
 
-    GPR_ASSERT(pthread_attr_init(&attr) == 0);
+    CHECK_EQ(pthread_attr_init(&attr), 0);
     if (options.joinable()) {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
+      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
                  0);
     } else {
-      GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
+      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
                  0);
     }
 
     if (options.stack_size() != 0) {
       size_t stack_size = MinValidStackSize(options.stack_size());
-      GPR_ASSERT(pthread_attr_setstacksize(&attr, stack_size) == 0);
+      CHECK_EQ(pthread_attr_setstacksize(&attr, stack_size), 0);
     }
 
     int pthread_create_err = pthread_create(
@@ -154,7 +155,7 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
         info);
     *success = (pthread_create_err == 0);
 
-    GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
+    CHECK_EQ(pthread_attr_destroy(&attr), 0);
 
     if (!(*success)) {
       gpr_log(GPR_ERROR, "pthread_create failed: %s",

@@ -34,6 +34,7 @@
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -153,7 +154,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
   while (buf.size() - cur >= sizeof(uint32_t)) {
     size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
     cur += sizeof(uint32_t);
-    GPR_ASSERT(buf.size() - cur >= msg_size);
+    CHECK(buf.size() - cur >= msg_size);
     google_rpc_Status* msg =
         google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
     cur += msg_size;
