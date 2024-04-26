@@ -27,6 +27,7 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 
@@ -83,7 +84,7 @@ static void on_alarm(void* acp, grpc_error_handle /* error */) {
 static void on_connect(void* acp, grpc_error_handle error) {
   async_connect* ac = (async_connect*)acp;
   grpc_endpoint** ep = ac->endpoint;
-  GPR_ASSERT(*ep == NULL);
+  CHECK(*ep == NULL);
   grpc_closure* on_done = ac->on_done;
 
   gpr_mu_lock(&ac->mu);
@@ -102,7 +103,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
       BOOL wsa_success =
           WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
                                  &transfered_bytes, FALSE, &flags);
-      GPR_ASSERT(transfered_bytes == 0);
+      CHECK_EQ(transfered_bytes, 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
@@ -243,7 +244,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   return 0;
 
 failure:
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   grpc_error_handle final_error = grpc_error_set_str(
       GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
       grpc_core::StatusStrProperty::kTargetAddress,

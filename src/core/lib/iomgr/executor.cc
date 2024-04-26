@@ -22,6 +22,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -146,7 +147,7 @@ void Executor::SetThreading(bool threading) {
       return;
     }
 
-    GPR_ASSERT(num_threads_ == 0);
+    CHECK_EQ(num_threads_, 0);
     gpr_atm_rel_store(&num_threads_, 1);
     thd_state_ = static_cast<ThreadState*>(
         gpr_zalloc(sizeof(ThreadState) * max_threads_));
@@ -370,7 +371,7 @@ void Executor::InitAll() {
 
   // Return if Executor::InitAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] != nullptr) {
-    GPR_ASSERT(executors[static_cast<size_t>(ExecutorType::RESOLVER)] !=
+    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] !=
                nullptr);
     return;
   }
@@ -397,7 +398,7 @@ void Executor::ShutdownAll() {
 
   // Return if Executor:SshutdownAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] == nullptr) {
-    GPR_ASSERT(executors[static_cast<size_t>(ExecutorType::RESOLVER)] ==
+    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] ==
                nullptr);
     return;
   }
@@ -426,7 +427,7 @@ void Executor::ShutdownAll() {
 }
 
 bool Executor::IsThreaded(ExecutorType executor_type) {
-  GPR_ASSERT(executor_type < ExecutorType::NUM_EXECUTORS);
+  CHECK(executor_type < ExecutorType::NUM_EXECUTORS);
   return executors[static_cast<size_t>(executor_type)]->IsThreaded();
 }
 

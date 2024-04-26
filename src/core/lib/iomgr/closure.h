@@ -23,6 +23,7 @@
 #include <stdbool.h>
 
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -297,7 +298,7 @@ class Closure {
               closure, closure->file_created, closure->line_created,
               location.file(), location.line());
     }
-    GPR_ASSERT(closure->cb != nullptr);
+    CHECK_NE(closure->cb, nullptr);
 #endif
     closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG

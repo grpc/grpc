@@ -26,6 +26,7 @@
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -431,7 +432,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
-  GPR_DEBUG_ASSERT(ee_endpoint != nullptr);
+  DCHECK_NE(ee_endpoint, nullptr);
   auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
   return wrapper->GetGrpcEndpoint();
 }
