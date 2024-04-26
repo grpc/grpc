@@ -21,6 +21,7 @@
 #include <vector>
 
 #include <grpc/event_engine/memory_allocator.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/chunked_vector.h"
@@ -46,15 +47,15 @@ struct Comparison {
 
   // Check that both chunked and std are equivalent.
   void AssertOk() const {
-    GPR_ASSERT(std.size() == chunked.size());
+    CHECK(std.size() == chunked.size());
     auto it_chunked = chunked.cbegin();
     auto it_std = std.cbegin();
     while (it_std != std.cend()) {
-      GPR_ASSERT(**it_std == **it_chunked);
+      CHECK(**it_std == **it_chunked);
       ++it_chunked;
       ++it_std;
     }
-    GPR_ASSERT(it_chunked == chunked.cend());
+    CHECK(it_chunked == chunked.cend());
   }
 };
 

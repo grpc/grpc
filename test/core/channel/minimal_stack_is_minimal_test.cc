@@ -40,6 +40,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -95,7 +96,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
   builder.SetTarget("foo.test.google.fr");
   {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+    CHECK(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         &builder));
   }
 

@@ -23,6 +23,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -34,7 +35,7 @@ using ::grpc_core::SliceBuffer;
 static constexpr int kNewSliceLength = 100;
 
 Slice MakeSlice(size_t len) {
-  GPR_ASSERT(len > 0);
+  CHECK_GT(len, 0);
   unsigned char* contents = static_cast<unsigned char*>(gpr_malloc(len));
   memset(contents, 'a', len);
   return Slice(grpc_slice_new(contents, len, gpr_free));

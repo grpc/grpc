@@ -23,6 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -38,9 +39,9 @@ namespace {
 
 grpc_resolved_address MakeAddress(absl::string_view address_uri) {
   auto uri = URI::Parse(address_uri);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_resolved_address address;
-  GPR_ASSERT(grpc_parse_uri(*uri, &address));
+  CHECK(grpc_parse_uri(*uri, &address));
   return address;
 }
 
