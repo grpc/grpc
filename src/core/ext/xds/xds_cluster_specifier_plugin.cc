@@ -29,6 +29,7 @@
 #include "upb/mem/arena.hpp"
 
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -91,7 +92,7 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   auto json = JsonParse(reinterpret_cast<char*>(buf));
-  GPR_ASSERT(json.ok());
+  CHECK(json.ok());
   return Json::FromArray({Json::FromObject(
       {{"rls_experimental",
         Json::FromObject({

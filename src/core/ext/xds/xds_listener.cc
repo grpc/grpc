@@ -43,6 +43,7 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/text/encode.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -873,7 +874,7 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  GPR_ASSERT(static_cast<unsigned int>(
+  CHECK(static_cast<unsigned int>(
                  filter_chain.filter_chain_match.source_type) < 3);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
