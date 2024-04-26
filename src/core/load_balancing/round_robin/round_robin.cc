@@ -72,7 +72,8 @@ class RoundRobin final : public LoadBalancingPolicy {
    public:
     RoundRobinEndpointList(RefCountedPtr<RoundRobin> round_robin,
                            EndpointAddressesIterator* endpoints,
-                           const ChannelArgs& args)
+                           const ChannelArgs& args,
+                           std::vector<std::string>* errors)
         : EndpointList(std::move(round_robin),
                        GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)
                            ? "RoundRobinEndpointList"
@@ -80,9 +81,15 @@ class RoundRobin final : public LoadBalancingPolicy {
       Init(endpoints, args,
            [&](RefCountedPtr<EndpointList> endpoint_list,
                const EndpointAddresses& addresses, const ChannelArgs& args) {
-             return MakeOrphanable<RoundRobinEndpoint>(
+             absl::Status status;
+             auto endpoint = MakeOrphanable<RoundRobinEndpoint>(
                  std::move(endpoint_list), addresses, args,
-                 policy<RoundRobin>()->work_serializer());
+                 policy<RoundRobin>()->work_serializer(), &status);
+             if (!status.ok()) {
+               errors->emplace_back(absl::StrCat(
+                   "endpoint ", addresses.ToString(), ": ", status.ToString()));
+             }
+             return endpoint;
            });
     }
 
@@ -92,9 +99,10 @@ class RoundRobin final : public LoadBalancingPolicy {
       RoundRobinEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                          const EndpointAddresses& addresses,
                          const ChannelArgs& args,
-                         std::shared_ptr<WorkSerializer> work_serializer)
+                         std::shared_ptr<WorkSerializer> work_serializer,
+                         absl::Status* status)
           : Endpoint(std::move(endpoint_list)) {
-        Init(addresses, args, std::move(work_serializer));
+        *status = Init(addresses, args, std::move(work_serializer));
       }
 
      private:
@@ -255,9 +263,10 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[RR %p] replacing previous pending child list %p", this,
             latest_pending_endpoint_list_.get());
   }
+  std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<RoundRobinEndpointList>(
       RefAsSubclass<RoundRobin>(DEBUG_LOCATION, "RoundRobinEndpointList"),
-      addresses, args.args);
+      addresses, args.args, &errors);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -280,6 +289,10 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   // endpoint_list_.
   if (endpoint_list_ == nullptr) {
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
+  }
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
   }
   return absl::OkStatus();
 }

@@ -53,7 +53,8 @@ class MyEndpointList : public EndpointList {
  public:
   MyEndpointList(RefCountedPtr<MyLbPolicy> lb_policy,
                  EndpointAddressesIterator* endpoints,
-                 const ChannelArgs& args)
+                 const ChannelArgs& args,
+                 std::vector<std::string>* errors)
       : EndpointList(std::move(lb_policy),
                      GRPC_TRACE_FLAG_ENABLED(grpc_my_tracer)
                          ? "MyEndpointList"
@@ -61,9 +62,12 @@ class MyEndpointList : public EndpointList {
     Init(endpoints, args,
          [&](RefCountedPtr<MyEndpointList> endpoint_list,
              const EndpointAddresses& addresses, const ChannelArgs& args) {
-           return MakeOrphanable<MyEndpoint>(
+           absl::Status status;
+           auto endpoint = MakeOrphanable<MyEndpoint>(
                std::move(endpoint_list), addresses, args,
-               policy<MyLbPolicy>()->work_serializer());
+               policy<MyLbPolicy>()->work_serializer(), &status);
+           if (!error.empty()) errors->push_back(status.ToString());
+           return endpoint;
          });
   }
 
@@ -72,9 +76,10 @@ class MyEndpointList : public EndpointList {
    public:
     MyEndpoint(RefCountedPtr<MyEndpointList> endpoint_list,
                const EndpointAddresses& address, const ChannelArgs& args,
-               std::shared_ptr<WorkSerializer> work_serializer)
+               std::shared_ptr<WorkSerializer> work_serializer,
+               absl::Status* status)
         : Endpoint(std::move(endpoint_list)) {
-      Init(addresses, args, std::move(work_serializer));
+      *status = Init(addresses, args, std::move(work_serializer));
     }
 
    private:
@@ -120,8 +125,9 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
     explicit Endpoint(RefCountedPtr<EndpointList> endpoint_list)
         : endpoint_list_(std::move(endpoint_list)) {}
 
-    void Init(const EndpointAddresses& addresses, const ChannelArgs& args,
-              std::shared_ptr<WorkSerializer> work_serializer);
+    absl::Status Init(const EndpointAddresses& addresses,
+                      const ChannelArgs& args,
+                      std::shared_ptr<WorkSerializer> work_serializer);
 
     // Templated for convenience, to provide a short-hand for
     // down-casting in the caller.
