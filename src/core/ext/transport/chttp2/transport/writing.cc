@@ -601,21 +601,17 @@ class StreamWriteContext {
 
     template <typename Which>
     void Encode(Which which, const typename Which::ValueType& value) {
-      trailing_md_->Set(which, value);
+      if (Which::kTransferOnTrailersOnly) {
+        trailing_md_->Set(which, value);
+      }
     }
 
     template <typename Which>
     void Encode(Which which, const grpc_core::Slice& value) {
-      trailing_md_->Set(which, value.Ref());
+      if (Which::kTransferOnTrailersOnly) {
+        trailing_md_->Set(which, value.Ref());
+      }
     }
-
-    // There's no benefit to sending over "grpc-encoding" and
-    // "grpc-accept-encoding" in trailers.
-    void Encode(grpc_core::GrpcEncodingMetadata,
-                const grpc_core::GrpcEncodingMetadata::ValueType&) {}
-
-    void Encode(grpc_core::GrpcAcceptEncodingMetadata,
-                const grpc_core::GrpcAcceptEncodingMetadata::ValueType&) {}
 
    private:
     grpc_metadata_batch* trailing_md_;
