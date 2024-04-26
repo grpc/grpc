@@ -65,10 +65,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_peer_metadata_hack =
-    "On a trailers-only response, peer_metadata is copied from headers to "
-    "trailers.";
-const char* const additional_constraints_peer_metadata_hack = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -131,6 +127,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
+const char* const description_transfer_headers_to_trailers =
+    "On a trailers-only response, copy most gRPC headers to trailers.";
+const char* const additional_constraints_transfer_headers_to_trailers = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -179,8 +178,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"peer_metadata_hack", description_peer_metadata_hack,
-     additional_constraints_peer_metadata_hack, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -213,6 +210,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
+    {"transfer_headers_to_trailers", description_transfer_headers_to_trailers,
+     additional_constraints_transfer_headers_to_trailers, nullptr, 0, true,
+     true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -271,10 +271,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_peer_metadata_hack =
-    "On a trailers-only response, peer_metadata is copied from headers to "
-    "trailers.";
-const char* const additional_constraints_peer_metadata_hack = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -337,6 +333,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
+const char* const description_transfer_headers_to_trailers =
+    "On a trailers-only response, copy most gRPC headers to trailers.";
+const char* const additional_constraints_transfer_headers_to_trailers = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -385,8 +384,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"peer_metadata_hack", description_peer_metadata_hack,
-     additional_constraints_peer_metadata_hack, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -419,6 +416,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
+    {"transfer_headers_to_trailers", description_transfer_headers_to_trailers,
+     additional_constraints_transfer_headers_to_trailers, nullptr, 0, true,
+     true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -477,10 +477,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_peer_metadata_hack =
-    "On a trailers-only response, peer_metadata is copied from headers to "
-    "trailers.";
-const char* const additional_constraints_peer_metadata_hack = "{}";
 const char* const description_peer_state_based_framing =
     "If set, the max sizes of frames sent to lower layers is controlled based "
     "on the peer's memory pressure which is reflected in its max http2 frame "
@@ -543,6 +539,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
+const char* const description_transfer_headers_to_trailers =
+    "On a trailers-only response, copy most gRPC headers to trailers.";
+const char* const additional_constraints_transfer_headers_to_trailers = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -591,8 +590,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"peer_metadata_hack", description_peer_metadata_hack,
-     additional_constraints_peer_metadata_hack, nullptr, 0, true, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pending_queue_cap", description_pending_queue_cap,
@@ -625,6 +622,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
+    {"transfer_headers_to_trailers", description_transfer_headers_to_trailers,
+     additional_constraints_transfer_headers_to_trailers, nullptr, 0, true,
+     true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,

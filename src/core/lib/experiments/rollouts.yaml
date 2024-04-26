@@ -85,8 +85,6 @@
   default: false
 - name: monitoring_experiment
   default: true
-- name: peer_metadata_hack
-  default: true
 - name: peer_state_based_framing
   default: false
 - name: pending_queue_cap
@@ -111,6 +109,8 @@
 - name: tcp_rcv_lowat
   default: false
 - name: trace_record_callops
+  default: true
+- name: transfer_headers_to_trailers
   default: true
 - name: unconstrained_max_quota_buffer_size
   default: false

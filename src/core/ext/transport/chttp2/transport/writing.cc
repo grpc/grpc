@@ -562,19 +562,15 @@ class StreamWriteContext {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, t_->outbuf.c_slice_buffer());
     } else {
-      if (send_status_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
-                                        *send_status_);
-      }
-      if (send_content_type_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::ContentTypeMetadata(),
-                                        *send_content_type_);
-      }
-      // TODO(yashykt): This special casing is ugly.
-      if (grpc_core::IsPeerMetadataHackEnabled() &&
-          peer_metadata_.has_value()) {
-        s_->send_trailing_metadata->Set(grpc_core::XEnvoyPeerMetadata(),
-                                        *std::move(peer_metadata_));
+      if (!grpc_core::IsTransferHeadersToTrailersEnabled()) {
+        if (send_status_.has_value()) {
+          s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
+                                          *send_status_);
+        }
+        if (send_content_type_.has_value()) {
+          s_->send_trailing_metadata->Set(grpc_core::ContentTypeMetadata(),
+                                          *send_content_type_);
+        }
       }
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
@@ -595,17 +591,50 @@ class StreamWriteContext {
   bool stream_became_writable() { return stream_became_writable_; }
 
  private:
+  class HeaderToTrailersMetadataEncoder {
+   public:
+    explicit HeaderToTrailersMetadataEncoder(grpc_metadata_batch* trailing_md)
+        : trailing_md_(trailing_md) {}
+
+    // Non-grpc metadata should not be transferred.
+    void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
+
+    template <typename Which>
+    void Encode(Which which, const typename Which::ValueType& value) {
+      trailing_md_->Set(which, value);
+    }
+
+    template <typename Which>
+    void Encode(Which which, const grpc_core::Slice& value) {
+      trailing_md_->Set(which, value.Ref());
+    }
+
+    // There's no benefit to sending over "grpc-encoding" and
+    // "grpc-accept-encoding" in trailers.
+    void Encode(grpc_core::GrpcEncodingMetadata,
+                const grpc_core::GrpcEncodingMetadata::ValueType&) {}
+
+    void Encode(grpc_core::GrpcAcceptEncodingMetadata,
+                const grpc_core::GrpcAcceptEncodingMetadata::ValueType&) {}
+
+   private:
+    grpc_metadata_batch* trailing_md_;
+  };
+
   void ConvertInitialMetadataToTrailingMetadata() {
     GRPC_CHTTP2_IF_TRACING(
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
-    // When sending Trailers-Only, we need to move the :status and
-    // content-type headers to the trailers.
-    send_status_ =
-        s_->send_initial_metadata->get(grpc_core::HttpStatusMetadata());
-    send_content_type_ =
-        s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
-    peer_metadata_ =
-        s_->send_initial_metadata->Take(grpc_core::XEnvoyPeerMetadata());
+    // When sending Trailers-Only, we need to move metadata from headers to
+    // trailers.
+    if (grpc_core::IsTransferHeadersToTrailersEnabled()) {
+      HeaderToTrailersMetadataEncoder encoder(s_->send_trailing_metadata);
+      s_->send_initial_metadata->Encode(&encoder);
+    } else {
+      send_status_ =
+          s_->send_initial_metadata->get(grpc_core::HttpStatusMetadata());
+      send_content_type_ =
+          s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
+    }
   }
 
   void SentLastFrame() {

@@ -131,13 +131,6 @@
   expiry: 2024/06/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
-- name: peer_metadata_hack
-  description:
-    On a trailers-only response, peer_metadata is copied from headers to
-    trailers.
-  expiry: 2024/09/30
-  owner: yashkt@google.com
-  test_tags: []
 - name: peer_state_based_framing
   description:
     If set, the max sizes of frames sent to lower layers is controlled based
@@ -221,6 +214,12 @@
   description: Enables tracing of call batch initiation and completion.
   expiry: 2024/08/01
   owner: vigneshbabu@google.com
+  test_tags: []
+- name: transfer_headers_to_trailers
+  description:
+    On a trailers-only response, copy most gRPC headers to trailers.
+  expiry: 2024/09/30
+  owner: yashkt@google.com
   test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator

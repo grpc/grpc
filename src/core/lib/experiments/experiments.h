@@ -73,8 +73,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
-inline bool IsPeerMetadataHackEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -91,6 +89,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
+inline bool IsTransferHeadersToTrailersEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
@@ -114,8 +114,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
-inline bool IsPeerMetadataHackEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -132,6 +130,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
+inline bool IsTransferHeadersToTrailersEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
@@ -156,8 +156,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
-inline bool IsPeerMetadataHackEnabled() { return true; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
 inline bool IsPendingQueueCapEnabled() { return true; }
@@ -174,6 +172,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
+inline bool IsTransferHeadersToTrailersEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
@@ -196,7 +196,6 @@ enum ExperimentIds {
   kExperimentIdKeepaliveServerFix,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
-  kExperimentIdPeerMetadataHack,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPendingQueueCap,
   kExperimentIdPickFirstNew,
@@ -210,6 +209,7 @@ enum ExperimentIds {
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
   kExperimentIdTraceRecordCallops,
+  kExperimentIdTransferHeadersToTrailers,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
@@ -267,10 +267,6 @@ inline bool IsMonitoringExperimentEnabled() {
 inline bool IsMultipingEnabled() {
   return IsExperimentEnabled(kExperimentIdMultiping);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PEER_METADATA_HACK
-inline bool IsPeerMetadataHackEnabled() {
-  return IsExperimentEnabled(kExperimentIdPeerMetadataHack);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() {
   return IsExperimentEnabled(kExperimentIdPeerStateBasedFraming);
@@ -322,6 +318,10 @@ inline bool IsTcpRcvLowatEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() {
   return IsExperimentEnabled(kExperimentIdTraceRecordCallops);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
+inline bool IsTransferHeadersToTrailersEnabled() {
+  return IsExperimentEnabled(kExperimentIdTransferHeadersToTrailers);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
