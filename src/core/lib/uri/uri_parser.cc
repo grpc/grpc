@@ -35,6 +35,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/strip.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -141,7 +142,7 @@ std::string PercentEncode(absl::string_view str,
   for (char c : str) {
     if (!is_allowed_char(c)) {
       std::string hex = absl::BytesToHexString(absl::string_view(&c, 1));
-      GPR_ASSERT(hex.size() == 2);
+      CHECK_EQ(hex.size(), 2);
       // BytesToHexString() returns lower case, but
       // https://datatracker.ietf.org/doc/html/rfc3986#section-6.2.2.1 says
       // to prefer upper-case.
