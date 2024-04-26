@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -97,14 +98,14 @@ class DefaultConfigSelector final : public ConfigSelector {
     // The client channel code ensures that this will never be null.
     // If neither the resolver nor the client application provide a
     // config, a default empty config will be used.
-    GPR_DEBUG_ASSERT(service_config_ != nullptr);
+    DCHECK_NE(service_config_, nullptr);
   }
 
   const char* name() const override { return "default"; }
 
   absl::Status GetCallConfig(GetCallConfigArgs args) override {
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
-    GPR_ASSERT(path != nullptr);
+    CHECK_NE(path, nullptr);
     auto* parsed_method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
     args.service_config_call_data->SetServiceConfig(service_config_,

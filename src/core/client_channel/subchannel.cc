@@ -35,6 +35,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/channelz/channel_trace.h"
@@ -148,7 +149,7 @@ ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
           [self = Ref()](ServerMetadataHandle metadata) {
             channelz::SubchannelNode* channelz_subchannel =
                 self->channelz_subchannel();
-            GPR_ASSERT(channelz_subchannel != nullptr);
+            CHECK_NE(channelz_subchannel, nullptr);
             if (metadata->get(GrpcStatusMetadata())
                     .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
               channelz_subchannel->RecordCallFailed();
@@ -160,7 +161,7 @@ ArenaPromise<ServerMetadataHandle> ConnectedSubchannel::MakeCallPromise(
       [self = Ref()]() {
         channelz::SubchannelNode* channelz_subchannel =
             self->channelz_subchannel();
-        GPR_ASSERT(channelz_subchannel != nullptr);
+        CHECK_NE(channelz_subchannel, nullptr);
         channelz_subchannel->RecordCallFailed();
       });
 }
@@ -219,8 +220,8 @@ grpc_call_stack* SubchannelCall::GetCallStack() {
 }
 
 void SubchannelCall::SetAfterCallStackDestroy(grpc_closure* closure) {
-  GPR_ASSERT(after_call_stack_destroy_ == nullptr);
-  GPR_ASSERT(closure != nullptr);
+  CHECK_EQ(after_call_stack_destroy_, nullptr);
+  CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 
@@ -275,7 +276,7 @@ void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     this, grpc_schedule_on_exec_ctx);
   // save some state needed for the interception callback.
-  GPR_ASSERT(recv_trailing_metadata_ == nullptr);
+  CHECK_EQ(recv_trailing_metadata_, nullptr);
   recv_trailing_metadata_ =
       batch->payload->recv_trailing_metadata.recv_trailing_metadata;
   original_recv_trailing_metadata_ =
@@ -301,12 +302,12 @@ void GetCallStatus(grpc_status_code* status, Timestamp deadline,
 void SubchannelCall::RecvTrailingMetadataReady(void* arg,
                                                grpc_error_handle error) {
   SubchannelCall* call = static_cast<SubchannelCall*>(arg);
-  GPR_ASSERT(call->recv_trailing_metadata_ != nullptr);
+  CHECK_NE(call->recv_trailing_metadata_, nullptr);
   grpc_status_code status = GRPC_STATUS_OK;
   GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_, error);
   channelz::SubchannelNode* channelz_subchannel =
       call->connected_subchannel_->channelz_subchannel();
-  GPR_ASSERT(channelz_subchannel != nullptr);
+  CHECK_NE(channelz_subchannel, nullptr);
   if (status == GRPC_STATUS_OK) {
     channelz_subchannel->RecordCallSucceeded();
   } else {
@@ -520,7 +521,7 @@ RefCountedPtr<Subchannel> Subchannel::Create(
     const grpc_resolved_address& address, const ChannelArgs& args) {
   SubchannelKey key(address, args);
   auto* subchannel_pool = args.GetObject<SubchannelPoolInterface>();
-  GPR_ASSERT(subchannel_pool != nullptr);
+  CHECK_NE(subchannel_pool, nullptr);
   RefCountedPtr<Subchannel> c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
     return c;
@@ -628,7 +629,7 @@ void Subchannel::Orphaned() {
   }
   {
     MutexLock lock(&mu_);
-    GPR_ASSERT(!shutdown_);
+    CHECK(!shutdown_);
     shutdown_ = true;
     connector_.reset();
     connected_subchannel_.reset();

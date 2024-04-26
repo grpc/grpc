@@ -28,6 +28,7 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -355,8 +356,8 @@ void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
 
 std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                             intptr_t max_results) {
-  GPR_ASSERT(start_socket_id >= 0);
-  GPR_ASSERT(max_results >= 0);
+  CHECK_GE(start_socket_id, 0);
+  CHECK_GE(max_results, 0);
   // If user does not set max_results, we choose 500.
   size_t pagination_limit = max_results == 0 ? 500 : max_results;
   Json::Object object;

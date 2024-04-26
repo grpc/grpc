@@ -26,6 +26,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -56,9 +57,9 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
-  GPR_ASSERT(uuid >= 1);
+  CHECK_GE(uuid, 1);
   MutexLock lock(&mu_);
-  GPR_ASSERT(uuid <= uuid_generator_);
+  CHECK(uuid <= uuid_generator_);
   node_map_.erase(uuid);
 }
 
