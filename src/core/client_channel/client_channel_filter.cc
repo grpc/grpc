@@ -924,7 +924,7 @@ ClientChannelFilter::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   {
     MutexLock lock(&chand_->external_watchers_mu_);
     // Will be deleted when the watch is complete.
-    CHECK_EQ(chand->external_watchers_[on_complete], nullptr);
+    CHECK(chand->external_watchers_[on_complete] == nullptr);
     // Store a ref to the watcher in the external_watchers_ map.
     chand->external_watchers_[on_complete] =
         RefAsSubclass<ExternalConnectivityWatcher>(
@@ -1730,7 +1730,7 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
   }
   RefCountedPtr<DynamicFilters> dynamic_filters =
       DynamicFilters::Create(new_args, std::move(filters));
-  CHECK_NE(dynamic_filters, nullptr);
+  CHECK(dynamic_filters != nullptr);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
@@ -2959,7 +2959,7 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
-  CHECK_EQ(connected_subchannel_, nullptr);
+  CHECK(connected_subchannel_ == nullptr);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
@@ -2979,7 +2979,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
                   "chand=%p lb_call=%p: LB pick succeeded: subchannel=%p",
                   chand_, this, complete_pick->subchannel.get());
         }
-        CHECK_NE(complete_pick->subchannel, nullptr);
+        CHECK(complete_pick->subchannel != nullptr);
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.
         SubchannelWrapper* subchannel =
