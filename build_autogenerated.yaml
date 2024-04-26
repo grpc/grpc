@@ -5142,7 +5142,6 @@ targets:
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
   deps:
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -5313,7 +5312,6 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -6278,7 +6276,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: byte_buffer_test
   gtest: true
@@ -8990,7 +8987,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: env_test
   gtest: true
@@ -9048,7 +9044,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   uses_polling: false
 - name: error_utils_test
@@ -15316,7 +15311,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   - grpc++_test_config
 - name: resolve_address_using_native_resolver_posix_test
@@ -15386,7 +15380,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   - grpc++_test_config
 - name: resource_quota_end2end_stress_test
@@ -17767,7 +17760,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: security_connector_test
   gtest: true
@@ -18713,7 +18705,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19193,7 +19184,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19595,7 +19585,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_cpp_end2end_ssl_credentials_test
@@ -19663,7 +19652,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_cpp_util_slice_test
@@ -19795,7 +19783,6 @@ targets:
   - test/cpp/common/time_jump_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -19928,7 +19915,6 @@ targets:
   - test/cpp/common/timer_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: tls_certificate_verifier_test
