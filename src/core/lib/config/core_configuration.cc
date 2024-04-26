@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -49,7 +50,7 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
 
 void CoreConfiguration::RegisterBuilder(
     absl::AnyInvocable<void(Builder*)> builder) {
-  GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr &&
+  CHECK(config_.load(std::memory_order_relaxed) == nullptr &&
              "CoreConfiguration was already instantiated before builder "
              "registration was completed");
   RegisteredBuilder* n = new RegisteredBuilder();
@@ -58,7 +59,7 @@ void CoreConfiguration::RegisterBuilder(
   while (!builders_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel,
                                           std::memory_order_relaxed)) {
   }
-  GPR_ASSERT(config_.load(std::memory_order_relaxed) == nullptr &&
+  CHECK(config_.load(std::memory_order_relaxed) == nullptr &&
              "CoreConfiguration was already instantiated before builder "
              "registration was completed");
 }

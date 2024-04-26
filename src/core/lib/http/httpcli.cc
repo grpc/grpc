@@ -30,6 +30,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -183,7 +184,7 @@ HttpRequest::HttpRequest(
   GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
                     ContinueDoneWriteAfterScheduleOnExecCtx, this,
                     grpc_schedule_on_exec_ctx);
-  GPR_ASSERT(pollent);
+  CHECK(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
 }
 
@@ -216,7 +217,7 @@ void HttpRequest::Start() {
 void HttpRequest::Orphan() {
   {
     MutexLock lock(&mu_);
-    GPR_ASSERT(!cancelled_);
+    CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (dns_request_handle_.has_value() &&

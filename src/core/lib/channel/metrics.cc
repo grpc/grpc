@@ -46,7 +46,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Counter(
     }
   }
   uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  CHECK(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = ValueType::kUInt64;
   descriptor.instrument_type = InstrumentType::kCounter;
@@ -78,7 +78,7 @@ GlobalInstrumentsRegistry::RegisterDoubleCounter(
     }
   }
   uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  CHECK(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = ValueType::kDouble;
   descriptor.instrument_type = InstrumentType::kCounter;
@@ -110,7 +110,7 @@ GlobalInstrumentsRegistry::RegisterUInt64Histogram(
     }
   }
   uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  CHECK(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = ValueType::kUInt64;
   descriptor.instrument_type = InstrumentType::kHistogram;
@@ -142,7 +142,7 @@ GlobalInstrumentsRegistry::RegisterDoubleHistogram(
     }
   }
   uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  CHECK(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = ValueType::kDouble;
   descriptor.instrument_type = InstrumentType::kHistogram;
@@ -174,7 +174,7 @@ GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
     }
   }
   uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  CHECK(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = ValueType::kInt64;
   descriptor.instrument_type = InstrumentType::kCallbackGauge;
@@ -206,7 +206,7 @@ GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
     }
   }
   uint32_t index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  CHECK(index < std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = ValueType::kDouble;
   descriptor.instrument_type = InstrumentType::kCallbackGauge;

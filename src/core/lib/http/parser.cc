@@ -25,6 +25,7 @@
 #include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -177,7 +178,7 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
   grpc_http_header hdr = {nullptr, nullptr};
   grpc_error_handle error;
 
-  GPR_ASSERT(cur != end);
+  CHECK(cur != end);
 
   if (*cur == ' ' || *cur == '\t') {
     error = GRPC_ERROR_CREATE("Continued header lines not supported yet");
@@ -191,14 +192,14 @@ static grpc_error_handle add_header(grpc_http_parser* parser) {
     error = GRPC_ERROR_CREATE("Didn't find ':' in header string");
     goto done;
   }
-  GPR_ASSERT(cur >= beg);
+  CHECK(cur >= beg);
   hdr.key = buf2str(beg, static_cast<size_t>(cur - beg));
   cur++;  // skip :
 
   while (cur != end && (*cur == ' ' || *cur == '\t')) {
     cur++;
   }
-  GPR_ASSERT((size_t)(end - cur) >= parser->cur_line_end_length);
+  CHECK((size_t)(end - cur) >= parser->cur_line_end_length);
   size = static_cast<size_t>(end - cur) - parser->cur_line_end_length;
   if ((size != 0) && (cur[size - 1] == '\r')) {
     size--;

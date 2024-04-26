@@ -45,6 +45,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
@@ -284,7 +285,7 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   char* host_end =
       static_cast<char*>(gpr_memrchr(host.c_str(), '%', host.size()));
   if (host_end != nullptr) {
-    GPR_ASSERT(host_end >= host.c_str());
+    CHECK(host_end >= host.c_str());
     char host_without_scope[GRPC_INET6_ADDRSTRLEN + 1];
     size_t host_without_scope_len =
         static_cast<size_t>(host_end - host.c_str());

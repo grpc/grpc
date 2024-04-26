@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -146,7 +147,7 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
          j++) {
       // Require that we can check dependent requirements with a linear sweep
       // (implies the experiments generator must DAG sort the experiments)
-      GPR_ASSERT(g_experiment_metadata[i].required_experiments[j] < i);
+      CHECK(g_experiment_metadata[i].required_experiments[j] < i);
       if (!experiments
                .enabled[g_experiment_metadata[i].required_experiments[j]]) {
         experiments.enabled[i] = false;
@@ -244,11 +245,11 @@ void PrintExperimentsList() {
 }
 
 void ForceEnableExperiment(absl::string_view experiment, bool enable) {
-  GPR_ASSERT(Loaded()->load(std::memory_order_relaxed) == false);
+  CHECK(Loaded()->load(std::memory_order_relaxed) == false);
   for (size_t i = 0; i < kNumExperiments; i++) {
     if (g_experiment_metadata[i].name != experiment) continue;
     if (ForcedExperiments()[i].forced) {
-      GPR_ASSERT(ForcedExperiments()[i].value == enable);
+      CHECK(ForcedExperiments()[i].value == enable);
     } else {
       ForcedExperiments()[i].forced = true;
       ForcedExperiments()[i].value = enable;

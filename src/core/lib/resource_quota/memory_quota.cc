@@ -252,7 +252,7 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
-  GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
+  CHECK(free_bytes_.load(std::memory_order_acquire) +
                  sizeof(GrpcMemoryAllocatorImpl) ==
              taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
@@ -265,7 +265,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
       reclamation_handles[kNumReclamationPasses];
   {
     MutexLock lock(&reclaimer_mu_);
-    GPR_ASSERT(!shutdown_);
+    CHECK(!shutdown_);
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
@@ -277,8 +277,8 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
 size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   // Validate request - performed here so we don't bloat the generated code with
   // inlined asserts.
-  GPR_ASSERT(request.min() <= request.max());
-  GPR_ASSERT(request.max() <= MemoryRequest::max_allowed_size());
+  CHECK(request.min() <= request.max());
+  CHECK(request.max() <= MemoryRequest::max_allowed_size());
   size_t old_free = free_bytes_.load(std::memory_order_relaxed);
 
   while (true) {
@@ -357,7 +357,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
         gpr_log(GPR_INFO, "[%p] Early return %" PRIdPTR " bytes", this, ret);
       }
-      GPR_ASSERT(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
+      CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
       return;
     }
@@ -478,7 +478,7 @@ void BasicMemoryQuota::Start() {
   reclaimer_activity_ =
       MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),
                    [](absl::Status status) {
-                     GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
+                     CHECK(status.code() == absl::StatusCode::kCancelled);
                    });
 }
 
@@ -498,7 +498,7 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
-  GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
+  DCHECK(amount <= std::numeric_limits<intptr_t>::max());
   // Grab memory from the quota.
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.

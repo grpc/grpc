@@ -35,6 +35,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -427,7 +428,7 @@ grpc_channel_args* grpc_channel_args_copy_and_add_and_remove(
   for (size_t i = 0; i < num_to_add; ++i) {
     dst->args[dst_idx++] = copy_arg(&to_add[i]);
   }
-  GPR_ASSERT(dst_idx == dst->num_args);
+  CHECK(dst_idx == dst->num_args);
   return dst;
 }
 
@@ -699,7 +700,7 @@ grpc_channel_args_client_channel_creation_mutator g_mutator = nullptr;
 
 void grpc_channel_args_set_client_channel_creation_mutator(
     grpc_channel_args_client_channel_creation_mutator cb) {
-  GPR_DEBUG_ASSERT(g_mutator == nullptr);
+  DCHECK_EQ(g_mutator, nullptr);
   g_mutator = cb;
 }
 grpc_channel_args_client_channel_creation_mutator
