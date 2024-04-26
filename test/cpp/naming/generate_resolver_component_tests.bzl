@@ -32,6 +32,7 @@ def generate_resolver_component_tests():
                 "address_sorting_test.cc",
             ],
             external_deps = [
+                "absl/log:check",
                 "gtest",
             ],
             deps = [
@@ -53,6 +54,7 @@ def generate_resolver_component_tests():
                 "resolver_component_test.cc",
             ],
             external_deps = [
+                "absl/log:check",
                 "gtest",
             ],
             deps = [
@@ -75,6 +77,7 @@ def generate_resolver_component_tests():
             ],
             external_deps = [
                 "absl/flags:flag",
+                "absl/log:check",
                 "absl/strings",
             ],
             deps = [
