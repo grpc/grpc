@@ -44,7 +44,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "certificate_provider_store_test",
     srcs = ["certificate_provider_store_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -151,6 +154,7 @@ grpc_cc_library(
     srcs = ["xds_transport_fake.cc"],
     hdrs = ["xds_transport_fake.h"],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/types:optional",
     ],
@@ -244,7 +248,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "xds_http_filters_test",
     srcs = ["xds_http_filters_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

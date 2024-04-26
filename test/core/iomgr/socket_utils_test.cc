@@ -28,6 +28,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -198,7 +200,7 @@ TEST(SocketUtilsTest, MainTest) {
 
   if (grpc_ipv6_loopback_available()) {
     sock = socket(AF_INET6, SOCK_STREAM, 0);
-    GPR_ASSERT(sock > 0);
+    CHECK_GT(sock, 0);
 
     test_set_socket_dscp_ipv6(sock, 8 /*CS1*/);
     test_set_socket_dscp_ipv6(sock, 16 /*CS2*/);

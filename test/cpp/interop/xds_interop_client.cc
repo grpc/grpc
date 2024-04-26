@@ -342,8 +342,8 @@ class XdsUpdateClientConfigureServiceImpl
     std::vector<RpcConfig> configs;
     int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
     int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-    CHECK(request_payload_size >= 0);
-    CHECK(response_payload_size >= 0);
+    CHECK_GE(request_payload_size, 0);
+    CHECK_GE(response_payload_size, 0);
     for (const auto& rpc : request->types()) {
       RpcConfig config;
       config.timeout_sec = request->timeout_sec();
@@ -448,7 +448,7 @@ grpc::CsmObservability EnableCsmObservability() {
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
                RpcConfigurationsQueue* rpc_configs_queue) {
-  CHECK(port != 0);
+  CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
 
@@ -480,7 +480,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   for (auto& data : rpc_metadata) {
     std::vector<std::string> metadata =
         absl::StrSplit(data, ':', absl::SkipEmpty());
-    CHECK(metadata.size() == 3);
+    CHECK_EQ(metadata.size(), 3u);
     if (metadata[0] == "EmptyCall") {
       metadata_map[ClientConfigureRequest::EMPTY_CALL].push_back(
           {metadata[1], metadata[2]});
@@ -496,8 +496,8 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
   int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-  CHECK(request_payload_size >= 0);
-  CHECK(response_payload_size >= 0);
+  CHECK_GE(request_payload_size, 0);
+  CHECK_GE(response_payload_size, 0);
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {

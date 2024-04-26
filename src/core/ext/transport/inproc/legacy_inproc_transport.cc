@@ -42,9 +42,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -101,8 +101,7 @@ struct shared_mu {
   gpr_refcount refs;
 };
 
-struct inproc_transport final : public grpc_core::Transport,
-                                public grpc_core::FilterStackTransport {
+struct inproc_transport final : public grpc_core::FilterStackTransport {
   inproc_transport(shared_mu* mu, bool is_client)
       : mu(mu),
         is_client(is_client),

@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 
@@ -100,7 +101,7 @@ class InitWithTempFile {
     provider_ = grpc_authorization_policy_provider_file_watcher_create(
         tmp_file_.name().c_str(), /*refresh_interval_sec=*/1, &code,
         &error_details);
-    GPR_ASSERT(GRPC_STATUS_OK == code);
+    CHECK_EQ(code, GRPC_STATUS_OK);
     InitWithPolicy(test, provider_);
   }
 

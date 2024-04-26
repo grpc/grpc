@@ -54,10 +54,10 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
@@ -90,6 +90,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -2879,6 +2880,12 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
         return RefCountedPtr<WrappingCallSpine>(this);
       }
 
+      ClientMetadata& UnprocessedClientInitialMetadata() override {
+        Crash("not for v2");
+      }
+
+      void V2HackToStartCallWithoutACallFilterStack() override {}
+
      private:
       RefCount refs_;
       ClientPromiseBasedCall* const call_;
@@ -3762,6 +3769,12 @@ class ServerCallSpine final : public PipeBasedCallSpine,
       CallArgs, grpc_completion_queue*,
       absl::FunctionRef<void(grpc_call* call)>) override {
     Crash("unimplemented");
+  }
+
+  void V2HackToStartCallWithoutACallFilterStack() override {}
+
+  ClientMetadata& UnprocessedClientInitialMetadata() override {
+    Crash("not for v2");
   }
 
   bool RunParty() override {

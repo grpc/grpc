@@ -23,6 +23,7 @@ grpc_fuzzer(
     name = "alts_credentials_fuzzer",
     srcs = ["alts_credentials_fuzzer.cc"],
     corpus = "corpus/alts_credentials_corpus",
+    external_deps = ["absl/log:check"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -42,6 +43,7 @@ grpc_fuzzer(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
+    external_deps = ["absl/log:check"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -112,7 +114,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "aws_request_signer_test",
     srcs = ["aws_request_signer_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -250,6 +255,7 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "fetch_oauth2",
     srcs = ["fetch_oauth2.cc"],
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         ":oauth2_utils",
@@ -264,6 +270,7 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "verify_jwt",
     srcs = ["verify_jwt.cc"],
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -339,6 +346,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -389,7 +397,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_tls_certificate_distributor_test",
     srcs = ["grpc_tls_certificate_distributor_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -412,7 +423,10 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
