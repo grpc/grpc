@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -95,12 +96,12 @@ class Poll {
   bool ready() const { return ready_; }
 
   T& value() {
-    GPR_DEBUG_ASSERT(ready());
+    DCHECK(ready());
     return value_;
   }
 
   const T& value() const {
-    GPR_DEBUG_ASSERT(ready());
+    DCHECK(ready());
     return value_;
   }
 
@@ -154,7 +155,7 @@ class Poll<Empty> {
   bool ready() const { return ready_; }
 
   Empty value() const {
-    GPR_DEBUG_ASSERT(ready());
+    DCHECK(ready());
     return Empty{};
   }
 

@@ -162,7 +162,7 @@ struct TrySeqTraitsWithSfinae<
   }
   template <typename R>
   static R ReturnValue(T&& status) {
-    GPR_DEBUG_ASSERT(!IsStatusOk(status));
+    DCHECK(!IsStatusOk(status));
     return FailureStatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>

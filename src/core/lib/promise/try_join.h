@@ -83,7 +83,7 @@ struct TryJoinTraits {
   }
   template <typename R, typename T>
   static R EarlyReturn(const ValueOrFailure<T>& x) {
-    GPR_ASSERT(!x.ok());
+    CHECK(!x.ok());
     return FailureStatusCast<R>(Failure{});
   }
   template <typename... A>

@@ -26,6 +26,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -66,7 +67,7 @@ class InterceptorList {
     // Update the next pointer stored with this map.
     // This is only valid to call once, and only before the map is used.
     void SetNext(Map* next) {
-      GPR_DEBUG_ASSERT(next_ == nullptr);
+      DCHECK_EQ(next_, nullptr);
       next_ = next;
     }
 

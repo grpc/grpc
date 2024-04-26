@@ -106,7 +106,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, const absl::Status&> {
 
 template <typename To, typename From>
 To FailureStatusCast(From&& from) {
-  GPR_DEBUG_ASSERT(!IsStatusOk(from));
+  DCHECK(!IsStatusOk(from));
   return FailureStatusCastImpl<To, From>::Cast(std::forward<From>(from));
 }
 

@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -57,7 +58,7 @@ struct JoinState<Traits, P0, P1> {
     Construct(&promise1, std::forward<P1>(p1));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
   }
@@ -172,7 +173,7 @@ struct JoinState<Traits, P0, P1, P2> {
     Construct(&promise2, std::forward<P2>(p2));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
     Construct(&promise2, other.promise2);
@@ -329,7 +330,7 @@ struct JoinState<Traits, P0, P1, P2, P3> {
     Construct(&promise3, std::forward<P3>(p3));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
     Construct(&promise2, other.promise2);
@@ -528,7 +529,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
     Construct(&promise4, std::forward<P4>(p4));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
     Construct(&promise2, other.promise2);
@@ -769,7 +770,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
     Construct(&promise5, std::forward<P5>(p5));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
     Construct(&promise2, other.promise2);
@@ -1051,7 +1052,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
     Construct(&promise6, std::forward<P6>(p6));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
     Construct(&promise2, other.promise2);
@@ -1376,7 +1377,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
     Construct(&promise7, std::forward<P7>(p7));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
     Construct(&promise2, other.promise2);
@@ -1742,7 +1743,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
     Construct(&promise8, std::forward<P8>(p8));
   }
   JoinState(const JoinState& other) {
-    GPR_ASSERT(other.ready.none());
+    CHECK(other.ready.none());
     Construct(&promise0, other.promise0);
     Construct(&promise1, other.promise1);
     Construct(&promise2, other.promise2);

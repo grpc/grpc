@@ -23,6 +23,7 @@
 
 #include "absl/base/thread_annotations.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -179,10 +180,10 @@ class MpscReceiver {
   // a non-empty buffer during a legal move!
   MpscReceiver(MpscReceiver&& other) noexcept
       : center_(std::move(other.center_)) {
-    GPR_DEBUG_ASSERT(other.buffer_.empty());
+    DCHECK(other.buffer_.empty());
   }
   MpscReceiver& operator=(MpscReceiver&& other) noexcept {
-    GPR_DEBUG_ASSERT(other.buffer_.empty());
+    DCHECK(other.buffer_.empty());
     center_ = std::move(other.center_);
     return *this;
   }
