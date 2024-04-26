@@ -591,9 +591,9 @@ class StreamWriteContext {
   bool stream_became_writable() { return stream_became_writable_; }
 
  private:
-  class HeaderToTrailersMetadataEncoder {
+  class TrailersOnlyMetadataEncoder {
    public:
-    explicit HeaderToTrailersMetadataEncoder(grpc_metadata_batch* trailing_md)
+    explicit TrailersOnlyMetadataEncoder(grpc_metadata_batch* trailing_md)
         : trailing_md_(trailing_md) {}
 
     // Non-grpc metadata should not be transferred.
@@ -626,8 +626,8 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move metadata from headers to
     // trailers.
-    if (grpc_core::IsTransferHeadersToTrailersEnabled()) {
-      HeaderToTrailersMetadataEncoder encoder(s_->send_trailing_metadata);
+    if (grpc_core::IsTrailersOnlyTransferEnabled()) {
+      TrailersOnlyMetadataEncoder encoder(s_->send_trailing_metadata);
       s_->send_initial_metadata->Encode(&encoder);
     } else {
       send_status_ =

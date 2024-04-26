@@ -89,8 +89,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
-inline bool IsTransferHeadersToTrailersEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRAILERS_ONLY_TRANSFER
+inline bool IsTrailersOnlyTransferEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
@@ -130,8 +130,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
-inline bool IsTransferHeadersToTrailersEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRAILERS_ONLY_TRANSFER
+inline bool IsTrailersOnlyTransferEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
@@ -172,8 +172,8 @@ inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
-inline bool IsTransferHeadersToTrailersEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRAILERS_ONLY_TRANSFER
+inline bool IsTrailersOnlyTransferEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
 inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
@@ -209,7 +209,7 @@ enum ExperimentIds {
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
   kExperimentIdTraceRecordCallops,
-  kExperimentIdTransferHeadersToTrailers,
+  kExperimentIdTrailersOnlyTransfer,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kExperimentIdWorkSerializerClearsTimeCache,
   kExperimentIdWorkSerializerDispatch,
@@ -319,9 +319,9 @@ inline bool IsTcpRcvLowatEnabled() {
 inline bool IsTraceRecordCallopsEnabled() {
   return IsExperimentEnabled(kExperimentIdTraceRecordCallops);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_TRANSFER_HEADERS_TO_TRAILERS
-inline bool IsTransferHeadersToTrailersEnabled() {
-  return IsExperimentEnabled(kExperimentIdTransferHeadersToTrailers);
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRAILERS_ONLY_TRANSFER
+inline bool IsTrailersOnlyTransferEnabled() {
+  return IsExperimentEnabled(kExperimentIdTrailersOnlyTransfer);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {

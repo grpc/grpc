@@ -110,7 +110,7 @@
   default: false
 - name: trace_record_callops
   default: true
-- name: transfer_headers_to_trailers
+- name: trailers_only_transfer
   default: true
 - name: unconstrained_max_quota_buffer_size
   default: false
