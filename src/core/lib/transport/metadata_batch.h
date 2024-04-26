@@ -35,6 +35,7 @@
 
 #include <grpc/impl/compression_types.h>
 #include <grpc/status.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -107,7 +108,7 @@ struct TeMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType te) { return te; }
   static StaticSlice Encode(ValueType x) {
-    GPR_ASSERT(x == kTrailers);
+    CHECK(x == kTrailers);
     return StaticSlice::FromStaticString("trailers");
   }
   static const char* DisplayValue(ValueType te);
@@ -210,7 +211,7 @@ struct CompressionAlgorithmBasedMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(ValueType x) {
-    GPR_ASSERT(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
+    CHECK(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
     return Slice::FromStaticString(CompressionAlgorithmAsString(x));
   }
   static const char* DisplayValue(ValueType x) {

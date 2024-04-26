@@ -30,6 +30,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -100,7 +101,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
             this, StatusToString(error).c_str(), is_shutdown_, index_,
             HandshakerArgsString(&args_).c_str());
   }
-  GPR_ASSERT(index_ <= handshakers_.size());
+  CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
   // callback.  Otherwise, call the next handshaker.
@@ -177,7 +178,7 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
   bool done;
   {
     MutexLock lock(&mu_);
-    GPR_ASSERT(index_ == 0);
+    CHECK_EQ(index_, 0);
     // Construct handshaker args.  These will be passed through all
     // handshakers and eventually be freed by the on_handshake_done callback.
     args_.endpoint = endpoint;

@@ -22,6 +22,7 @@
 
 #include "absl/base/attributes.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -182,7 +183,7 @@ Timeout Timeout::FromMillis(int64_t millis) {
 }
 
 Timeout Timeout::FromSeconds(int64_t seconds) {
-  GPR_DEBUG_ASSERT(seconds != 0);
+  DCHECK_NE(seconds, 0);
   if (seconds < 1000) {
     if (seconds % kSecondsPerMinute != 0) {
       return Timeout(seconds, Unit::kSeconds);
@@ -202,7 +203,7 @@ Timeout Timeout::FromSeconds(int64_t seconds) {
 }
 
 Timeout Timeout::FromMinutes(int64_t minutes) {
-  GPR_DEBUG_ASSERT(minutes != 0);
+  DCHECK_NE(minutes, 0);
   if (minutes < 1000) {
     if (minutes % kMinutesPerHour != 0) {
       return Timeout(minutes, Unit::kMinutes);
@@ -222,7 +223,7 @@ Timeout Timeout::FromMinutes(int64_t minutes) {
 }
 
 Timeout Timeout::FromHours(int64_t hours) {
-  GPR_DEBUG_ASSERT(hours != 0);
+  DCHECK_NE(hours, 0);
   if (hours < kMaxHours) {
     return Timeout(hours, Unit::kHours);
   }

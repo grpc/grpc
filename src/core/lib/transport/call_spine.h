@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -88,7 +89,7 @@ class CallSpineInterface {
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
@@ -151,7 +152,7 @@ class PipeBasedCallSpine : public CallSpineInterface {
 
   Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
   PullServerInitialMetadata() final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return Map(server_initial_metadata().receiver.Next(),
                [](NextResult<ServerMetadataHandle> md)
                    -> ValueOrFailure<absl::optional<ServerMetadataHandle>> {
@@ -164,41 +165,41 @@ class PipeBasedCallSpine : public CallSpineInterface {
   }
 
   Promise<ServerMetadataHandle> PullServerTrailingMetadata() final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return cancel_latch().Wait();
   }
 
   Promise<ValueOrFailure<absl::optional<MessageHandle>>>
   PullServerToClientMessage() final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return Map(server_to_client_messages().receiver.Next(), MapNextMessage);
   }
 
   Promise<StatusFlag> PushClientToServerMessage(MessageHandle message) final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return Map(client_to_server_messages().sender.Push(std::move(message)),
                [](bool r) { return StatusFlag(r); });
   }
 
   Promise<ValueOrFailure<absl::optional<MessageHandle>>>
   PullClientToServerMessage() final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return Map(client_to_server_messages().receiver.Next(), MapNextMessage);
   }
 
   Promise<StatusFlag> PushServerToClientMessage(MessageHandle message) final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return Map(server_to_client_messages().sender.Push(std::move(message)),
                [](bool r) { return StatusFlag(r); });
   }
 
   void FinishSends() final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     client_to_server_messages().sender.Close();
   }
 
   void PushServerTrailingMetadata(ServerMetadataHandle metadata) final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     auto& c = cancel_latch();
     if (c.is_set()) return;
     const bool was_cancelled =
@@ -213,13 +214,13 @@ class PipeBasedCallSpine : public CallSpineInterface {
   }
 
   Promise<bool> WasCancelled() final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return was_cancelled_latch().Wait();
   }
 
   Promise<ValueOrFailure<ClientMetadataHandle>> PullClientInitialMetadata()
       final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return Map(client_initial_metadata().receiver.Next(),
                [](NextResult<ClientMetadataHandle> md)
                    -> ValueOrFailure<ClientMetadataHandle> {
@@ -230,7 +231,7 @@ class PipeBasedCallSpine : public CallSpineInterface {
 
   Promise<StatusFlag> PushServerInitialMetadata(
       absl::optional<ServerMetadataHandle> md) final {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == &party());
     return If(
         md.has_value(),
         [&md, this]() {

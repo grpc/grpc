@@ -25,6 +25,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -38,7 +39,7 @@ PromiseEndpoint::PromiseEndpoint(
         endpoint,
     SliceBuffer already_received)
     : endpoint_(std::move(endpoint)) {
-  GPR_ASSERT(endpoint_ != nullptr);
+  CHECK_NE(endpoint_, nullptr);
   read_state_->endpoint = endpoint_;
   // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
   // available.
@@ -72,7 +73,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     // Appends `pending_buffer` to `buffer`.
     pending_buffer.MoveFirstNBytesIntoSliceBuffer(pending_buffer.Length(),
                                                   buffer);
-    GPR_DEBUG_ASSERT(pending_buffer.Count() == 0u);
+    DCHECK(pending_buffer.Count() == 0u);
     if (buffer.Length() < num_bytes_requested) {
       // A further read is needed.
       // Set read args with number of bytes needed as hint.

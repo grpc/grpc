@@ -28,6 +28,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -124,7 +125,7 @@ void TCPConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
     MutexLock lock(&mu_);
     on_handshake_done_ = on_handshake_done;
   }
-  GPR_ASSERT(args->endpoint == nullptr);
+  CHECK_EQ(args->endpoint, nullptr);
   args_ = args;
   absl::StatusOr<URI> uri = URI::Parse(
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value());
@@ -179,7 +180,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       return;
     }
-    GPR_ASSERT(self->endpoint_to_destroy_ != nullptr);
+    CHECK_NE(self->endpoint_to_destroy_, nullptr);
     self->args_->endpoint = self->endpoint_to_destroy_;
     self->endpoint_to_destroy_ = nullptr;
     if (self->bind_endpoint_to_pollset_) {

@@ -53,7 +53,7 @@ Timestamp BdpEstimator::CompletePing() {
             std::string(name_).c_str(), accumulator_, estimate_, dt,
             bw / 125000.0, bw_est_ / 125000.0);
   }
-  GPR_ASSERT(ping_state_ == PingState::STARTED);
+  CHECK(ping_state_ == PingState::STARTED);
   if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
     estimate_ = std::max(accumulator_, estimate_ * 2);
     bw_est_ = bw;

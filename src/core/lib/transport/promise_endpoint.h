@@ -33,6 +33,7 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -75,7 +76,7 @@ class PromiseEndpoint {
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
                                              std::memory_order_relaxed);
-    GPR_ASSERT(prev == WriteState::kIdle);
+    CHECK(prev == WriteState::kIdle);
     bool completed;
     if (data.Length() == 0) {
       completed = true;
@@ -102,7 +103,7 @@ class PromiseEndpoint {
           return [write_state = write_state_]() {
             auto prev = write_state->state.exchange(WriteState::kIdle,
                                                     std::memory_order_relaxed);
-            GPR_ASSERT(prev == WriteState::kWriting);
+            CHECK(prev == WriteState::kWriting);
             return absl::OkStatus();
           };
         },
@@ -120,7 +121,7 @@ class PromiseEndpoint {
             }
             // State was not Written; since we're polling it must be
             // Writing. Assert that and return Pending.
-            GPR_ASSERT(expected == WriteState::kWriting);
+            CHECK(expected == WriteState::kWriting);
             return Pending();
           };
         });
@@ -134,9 +135,9 @@ class PromiseEndpoint {
   // undefined behavior.
   auto Read(size_t num_bytes) {
     // Assert previous read finishes.
-    GPR_ASSERT(!read_state_->complete.load(std::memory_order_relaxed));
+    CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
-    GPR_ASSERT(read_state_->pending_buffer.Count() == 0u);
+    CHECK(read_state_->pending_buffer.Count() == 0u);
     bool complete = true;
     while (read_state_->buffer.Length() < num_bytes) {
       // Set read args with hinted bytes.
@@ -156,7 +157,7 @@ class PromiseEndpoint {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
-        GPR_DEBUG_ASSERT(read_state_->pending_buffer.Count() == 0u);
+        DCHECK(read_state_->pending_buffer.Count() == 0u);
       } else {
         complete = false;
         break;
@@ -233,7 +234,7 @@ class PromiseEndpoint {
       // Copy everything from read_state_->buffer into a single slice and
       // replace the contents of read_state_->buffer with that slice.
       grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
-      GPR_ASSERT(
+      CHECK(
           reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
       size_t ofs = 0;
       for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
@@ -249,7 +250,7 @@ class PromiseEndpoint {
       read_state_->buffer.Clear();
       read_state_->buffer.AppendIndexed(
           grpc_event_engine::experimental::Slice(slice));
-      GPR_DEBUG_ASSERT(read_state_->buffer.Length() == ofs);
+      DCHECK(read_state_->buffer.Length() == ofs);
     }
   }
 
@@ -305,7 +306,7 @@ class PromiseEndpoint {
       auto prev = state.exchange(kWritten, std::memory_order_release);
       // Previous state should be Writing. If we got anything else we've entered
       // the callback path twice.
-      GPR_ASSERT(prev == kWriting);
+      CHECK(prev == kWriting);
       w.Wakeup();
     }
   };
