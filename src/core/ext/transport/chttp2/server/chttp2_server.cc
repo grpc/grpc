@@ -43,6 +43,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -308,7 +309,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
     void set_connections(
         std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>>
             connections) {
-      GPR_ASSERT(connections_.empty());
+      CHECK(connections_.empty());
       connections_ = std::move(connections);
     }
 
@@ -334,7 +335,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
             StatusToString(error).c_str());
     // TODO(yashykt): We wouldn't need to assert here if we bound to the
     // port earlier during AddPort.
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   listener_->StartListening();
   {
@@ -1000,7 +1001,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         if (*port_num == -1) {
           *port_num = port_temp;
         } else {
-          GPR_ASSERT(*port_num == port_temp);
+          CHECK(*port_num == port_temp);
         }
       }
     }
@@ -1139,7 +1140,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
 void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
                                      grpc_server_credentials* /* creds */) {
-  GPR_ASSERT(0);
+  CHECK(0);
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD

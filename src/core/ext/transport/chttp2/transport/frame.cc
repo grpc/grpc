@@ -22,6 +22,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -59,7 +60,7 @@ uint16_t Read2b(const uint8_t* input) {
 }
 
 void Write3b(uint32_t x, uint8_t* output) {
-  GPR_ASSERT(x < 16777216);
+  CHECK(x < 16777216);
   output[0] = static_cast<uint8_t>(x >> 16);
   output[1] = static_cast<uint8_t>(x >> 8);
   output[2] = static_cast<uint8_t>(x);
@@ -475,7 +476,7 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
 
 absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
                                              SliceBuffer payload) {
-  GPR_ASSERT(payload.Length() == hdr.length);
+  CHECK(payload.Length() == hdr.length);
   switch (hdr.type) {
     case kFrameTypeData:
       return ParseDataFrame(hdr, payload);

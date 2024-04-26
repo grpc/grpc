@@ -16,6 +16,7 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -31,7 +32,7 @@ void Chttp2MaxConcurrentStreamsPolicy::FlushedSettings() {
 }
 
 void Chttp2MaxConcurrentStreamsPolicy::AckLastSend() {
-  GPR_ASSERT(unacked_demerits_ >= sent_demerits_);
+  CHECK(unacked_demerits_ >= sent_demerits_);
   unacked_demerits_ -= std::exchange(sent_demerits_, 0);
 }
 

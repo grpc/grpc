@@ -34,6 +34,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -104,11 +105,11 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
   {
     MutexLock lock(&mu_);
-    GPR_ASSERT(notify_ == nullptr);
+    CHECK_EQ(notify_, nullptr);
     args_ = args;
     result_ = result;
     notify_ = notify;
-    GPR_ASSERT(endpoint_ == nullptr);
+    CHECK_EQ(endpoint_, nullptr);
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
@@ -166,7 +167,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     } else if (args->endpoint != nullptr) {
       self->result_->transport =
           grpc_create_chttp2_transport(args->args, args->endpoint, true);
-      GPR_ASSERT(self->result_->transport != nullptr);
+      CHECK_NE(self->result_->transport, nullptr);
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
@@ -188,7 +189,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       // If the handshaking succeeded but there is no endpoint, then the
       // handshaker may have handed off the connection to some external
       // code. Just verify that exit_early flag is set.
-      GPR_DEBUG_ASSERT(args->exit_early);
+      DCHECK(args->exit_early);
       NullThenSchedClosure(DEBUG_LOCATION, &self->notify_, error);
     }
     self->handshake_mgr_.reset();
@@ -396,14 +397,14 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
           .SetObject(creds->Ref());
 
   int flags = fcntl(fd, F_GETFL, 0);
-  GPR_ASSERT(fcntl(fd, F_SETFL, flags | O_NONBLOCK) == 0);
+  CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
   grpc_endpoint* client = grpc_tcp_create_from_fd(
       grpc_fd_create(fd, "client", true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
       "fd-client");
   grpc_core::Transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
-  GPR_ASSERT(transport);
+  CHECK(transport);
   auto channel = grpc_core::ChannelCreate(
       target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   if (channel.ok()) {
@@ -424,7 +425,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* /* target */,
                                           int /* fd */,
                                           grpc_channel_credentials* /* creds*/,
                                           const grpc_channel_args* /* args */) {
-  GPR_ASSERT(0);
+  CHECK(0);
   return nullptr;
 }
 

@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -87,8 +88,8 @@ grpc_slice grpc_chttp2_base64_encode(const grpc_slice& input) {
       break;
   }
 
-  GPR_ASSERT(out == (char*)GRPC_SLICE_END_PTR(output));
-  GPR_ASSERT(in == GRPC_SLICE_END_PTR(input));
+  CHECK(out == (char*)GRPC_SLICE_END_PTR(output));
+  CHECK(in == GRPC_SLICE_END_PTR(input));
   return output;
 }
 
@@ -131,7 +132,7 @@ grpc_slice grpc_chttp2_huffman_compress(const grpc_slice& input) {
                              static_cast<uint8_t>(0xffu >> temp_length));
   }
 
-  GPR_ASSERT(out == GRPC_SLICE_END_PTR(output));
+  CHECK(out == GRPC_SLICE_END_PTR(output));
 
   return output;
 }
@@ -227,9 +228,9 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(
         static_cast<uint8_t>(0xffu >> out.temp_length));
   }
 
-  GPR_ASSERT(out.out <= GRPC_SLICE_END_PTR(output));
+  CHECK(out.out <= GRPC_SLICE_END_PTR(output));
   GRPC_SLICE_SET_LENGTH(output, out.out - start_out);
 
-  GPR_ASSERT(in == GRPC_SLICE_END_PTR(input));
+  CHECK(in == GRPC_SLICE_END_PTR(input));
   return output;
 }

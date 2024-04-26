@@ -26,6 +26,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -105,7 +106,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
   s->stats.incoming.framing_bytes += static_cast<uint64_t>(end - cur);
 
   if (p->byte == 4) {
-    GPR_ASSERT(is_last);
+    CHECK(is_last);
     uint32_t reason = ((static_cast<uint32_t>(p->reason_bytes[0])) << 24) |
                       ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |

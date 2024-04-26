@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -42,6 +43,6 @@ size_t grpc_chttp2_num_alpn_versions(void) {
 }
 
 const char* grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));
+  CHECK(i < GPR_ARRAY_SIZE(supported_versions));
   return supported_versions[i];
 }

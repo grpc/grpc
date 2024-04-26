@@ -24,6 +24,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/slice_buffer.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -62,7 +63,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
   hdr = GRPC_SLICE_MALLOC(header_size);
   p = GRPC_SLICE_START_PTR(hdr);
-  GPR_ASSERT(write_bytes < (1 << 24));
+  CHECK(write_bytes < (1 << 24));
   *p++ = static_cast<uint8_t>(write_bytes >> 16);
   *p++ = static_cast<uint8_t>(write_bytes >> 8);
   *p++ = static_cast<uint8_t>(write_bytes);
