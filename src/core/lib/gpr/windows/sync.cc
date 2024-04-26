@@ -23,6 +23,7 @@
 #if defined(GPR_WINDOWS) && !defined(GPR_ABSEIL_SYNC) && \
     !defined(GPR_CUSTOM_SYNC)
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -38,7 +39,7 @@ void gpr_mu_destroy(gpr_mu* mu) { DeleteCriticalSection(&mu->cs); }
 
 void gpr_mu_lock(gpr_mu* mu) {
   EnterCriticalSection(&mu->cs);
-  GPR_ASSERT(!mu->locked);
+  CHECK(!mu->locked);
   mu->locked = 1;
 }
 
