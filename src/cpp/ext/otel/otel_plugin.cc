@@ -773,7 +773,7 @@ void OpenTelemetryPlugin::RemoveCallback(
                     &instrument_data.instrument);
             CHECK_NE(callback_gauge_state, nullptr);
             CHECK((*callback_gauge_state)->ot_callback_registered);
-            CHECK_EQ((*callback_gauge_state)->caches.erase(callback), 1);
+            CHECK_EQ((*callback_gauge_state)->caches.erase(callback), 1u);
             if ((*callback_gauge_state)->caches.empty()) {
               gauges_that_need_to_remove_callback.push_back(
                   callback_gauge_state->get());

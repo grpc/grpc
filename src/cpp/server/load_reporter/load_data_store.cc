@@ -87,7 +87,7 @@ const typename C::value_type* RandomElement(const C& container) {
 LoadRecordKey::LoadRecordKey(const std::string& client_ip_and_token,
                              std::string user_id)
     : user_id_(std::move(user_id)) {
-  CHECK_GE(client_ip_and_token.size(), 2);
+  CHECK_GE(client_ip_and_token.size(), 2u);
   int ip_hex_size;
   CHECK(sscanf(client_ip_and_token.substr(0, 2).c_str(), "%d", &ip_hex_size) ==
         1);

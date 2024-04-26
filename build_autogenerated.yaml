@@ -5142,7 +5142,6 @@ targets:
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
   deps:
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -6277,7 +6276,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: byte_buffer_test
   gtest: true
@@ -8989,7 +8987,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: env_test
   gtest: true
@@ -9047,7 +9044,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   uses_polling: false
 - name: error_utils_test
@@ -15315,7 +15311,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   - grpc++_test_config
 - name: resolve_address_using_native_resolver_posix_test
@@ -15385,7 +15380,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   - grpc++_test_config
 - name: resource_quota_end2end_stress_test
@@ -17766,7 +17760,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: security_connector_test
   gtest: true
@@ -18712,7 +18705,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19192,7 +19184,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
