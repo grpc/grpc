@@ -5311,6 +5311,7 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -19593,6 +19594,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_cpp_end2end_ssl_credentials_test
@@ -19660,6 +19662,7 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_cpp_util_slice_test
@@ -19791,6 +19794,7 @@ targets:
   - test/cpp/common/time_jump_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -19923,6 +19927,7 @@ targets:
   - test/cpp/common/timer_test.cc
   deps:
   - gtest
+  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: tls_certificate_verifier_test

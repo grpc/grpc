@@ -138,6 +138,7 @@ grpc_cc_library(
 
 grpc_cc_binary(
     name = "interop_client",
+    external_deps = ["absl/log:check"],
     language = "C++",
     deps = [
         ":interop_client_main",
@@ -280,6 +281,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
     ],

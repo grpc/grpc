@@ -57,7 +57,7 @@ std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
   msg.SerializeToString(&binary);
   auto status =
       BinaryToJsonString(type_resolver.get(), type, binary, &json_string);
-  CHECK(status.ok());
+  CHECK_OK(status);
   return json_string;
 }
 
