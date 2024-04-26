@@ -39,6 +39,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -381,7 +382,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    GPR_ASSERT(bytes_to_send_size == 0);
+    CHECK_EQ(bytes_to_send_size, 0);
     grpc_endpoint_read(
         args_->endpoint, args_->read_buffer,
         GRPC_CLOSURE_INIT(
@@ -405,7 +406,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
-    GPR_ASSERT(handshaker_result_ == nullptr);
+    CHECK_EQ(handshaker_result_, nullptr);
     handshaker_result_ = handshaker_result;
   }
   if (bytes_to_send_size > 0) {

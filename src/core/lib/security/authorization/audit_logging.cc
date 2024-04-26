@@ -29,6 +29,7 @@
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -45,15 +46,15 @@ AuditLoggerRegistry* AuditLoggerRegistry::registry = new AuditLoggerRegistry();
 AuditLoggerRegistry::AuditLoggerRegistry() {
   auto factory = std::make_unique<StdoutAuditLoggerFactory>();
   absl::string_view name = factory->name();
-  GPR_ASSERT(logger_factories_map_.emplace(name, std::move(factory)).second);
+  CHECK(logger_factories_map_.emplace(name, std::move(factory)).second);
 }
 
 void AuditLoggerRegistry::RegisterFactory(
     std::unique_ptr<AuditLoggerFactory> factory) {
-  GPR_ASSERT(factory != nullptr);
+  CHECK_NE(factory, nullptr);
   MutexLock lock(mu);
   absl::string_view name = factory->name();
-  GPR_ASSERT(
+  CHECK(
       registry->logger_factories_map_.emplace(name, std::move(factory)).second);
 }
 
@@ -78,7 +79,7 @@ std::unique_ptr<AuditLogger> AuditLoggerRegistry::CreateAuditLogger(
     std::unique_ptr<AuditLoggerFactory::Config> config) {
   MutexLock lock(mu);
   auto it = registry->logger_factories_map_.find(config->name());
-  GPR_ASSERT(it != registry->logger_factories_map_.end());
+  CHECK(it != registry->logger_factories_map_.end());
   return it->second->CreateAuditLogger(std::move(config));
 }
 

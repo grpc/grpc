@@ -26,6 +26,7 @@
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -65,7 +66,8 @@ StdoutAuditLoggerFactory::ParseAuditLoggerConfig(const Json&) {
 std::unique_ptr<AuditLogger> StdoutAuditLoggerFactory::CreateAuditLogger(
     std::unique_ptr<AuditLoggerFactory::Config> config) {
   // Sanity check.
-  GPR_ASSERT(config != nullptr && config->name() == name());
+  CHECK(config != nullptr );
+CHECK( config->name() == name());
   return std::make_unique<StdoutAuditLogger>();
 }
 

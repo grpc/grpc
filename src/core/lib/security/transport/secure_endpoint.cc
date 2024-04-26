@@ -35,6 +35,7 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -358,7 +359,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
     grpc_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
-    GPR_ASSERT(ep->leftover_bytes.count == 0);
+    CHECK_EQ(ep->leftover_bytes.count, 0);
     on_read(ep, absl::OkStatus());
     return;
   }
