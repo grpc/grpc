@@ -28,6 +28,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -122,7 +123,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
         CoreConfiguration::Get().resolver_registry().CreateResolver(
             absl::StrCat("dns:", name_to_resolve), args.args, args.pollset_set,
             work_serializer_, std::move(args.result_handler));
-    GPR_ASSERT(child_resolver_ != nullptr);
+    CHECK_NE(child_resolver_, nullptr);
     return;
   }
   // Maybe override metadata server name for testing
@@ -141,7 +142,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       xds_uri, args.args, args.pollset_set, work_serializer_,
       std::move(args.result_handler));
-  GPR_ASSERT(child_resolver_ != nullptr);
+  CHECK_NE(child_resolver_, nullptr);
 }
 
 void GoogleCloud2ProdResolver::StartLocked() {

@@ -29,6 +29,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -47,7 +48,7 @@ EndpointAddresses::EndpointAddresses(const grpc_resolved_address& address,
 EndpointAddresses::EndpointAddresses(
     std::vector<grpc_resolved_address> addresses, const ChannelArgs& args)
     : addresses_(std::move(addresses)), args_(args) {
-  GPR_ASSERT(!addresses_.empty());
+  CHECK(!addresses_.empty());
 }
 
 EndpointAddresses::EndpointAddresses(const EndpointAddresses& other)
@@ -110,7 +111,7 @@ bool EndpointAddressSet::operator==(const EndpointAddressSet& other) const {
   if (addresses_.size() != other.addresses_.size()) return false;
   auto other_it = other.addresses_.begin();
   for (auto it = addresses_.begin(); it != addresses_.end(); ++it) {
-    GPR_ASSERT(other_it != other.addresses_.end());
+    CHECK(other_it != other.addresses_.end());
     if (it->len != other_it->len ||
         memcmp(it->addr, other_it->addr, it->len) != 0) {
       return false;

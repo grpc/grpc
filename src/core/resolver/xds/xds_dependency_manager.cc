@@ -729,7 +729,7 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
     std::set<absl::string_view>* eds_resources_seen,
     std::set<absl::string_view>* dns_names_seen,
     absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters) {
-  if (depth > 0) GPR_ASSERT(leaf_clusters != nullptr);
+  if (depth > 0) CHECK_NE(leaf_clusters, nullptr);
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     *leaf_clusters =
         absl::UnavailableError("aggregate cluster graph exceeds max depth");

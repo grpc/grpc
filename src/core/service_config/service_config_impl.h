@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -89,7 +90,7 @@ class ServiceConfigImpl final : public ServiceConfig {
   /// ServiceConfig object.
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
       size_t index) override {
-    GPR_DEBUG_ASSERT(index < parsed_global_configs_.size());
+    DCHECK(index < parsed_global_configs_.size());
     return parsed_global_configs_[index].get();
   }
 
