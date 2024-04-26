@@ -28,6 +28,7 @@
 
 #include "absl/functional/any_invocable.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -217,7 +218,7 @@ class ChannelInit {
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {
       auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      GPR_ASSERT(slot_value == nullptr);
+      CHECK_EQ(slot_value, nullptr);
       slot_value = std::move(post_processor);
     }
 

@@ -16,6 +16,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -103,6 +104,6 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
   auto channel =
       grpc_core::ChannelCreate(target == nullptr ? "" : target, std::move(args),
                                GRPC_CLIENT_LAME_CHANNEL, nullptr);
-  GPR_ASSERT(channel.ok());
+  CHECK(channel.ok());
   return channel->release()->c_ptr();
 }

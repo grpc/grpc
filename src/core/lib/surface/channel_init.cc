@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -137,9 +138,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     }
     filter_to_registration[registration->filter_] = registration.get();
     if (registration->terminal_) {
-      GPR_ASSERT(registration->after_.empty());
-      GPR_ASSERT(registration->before_.empty());
-      GPR_ASSERT(!registration->before_all_);
+      CHECK(registration->after_.empty());
+      CHECK(registration->before_.empty());
+      CHECK(!registration->before_all_);
       terminal_filters.emplace_back(
           registration->filter_, nullptr, std::move(registration->predicates_),
           registration->skip_v3_, registration->registration_source_);
@@ -149,7 +150,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   }
   for (const auto& registration : registrations) {
     if (registration->terminal_) continue;
-    GPR_ASSERT(filter_to_registration.count(registration->filter_) > 0);
+    CHECK_GT(filter_to_registration.count(registration->filter_), 0);
     for (F after : registration->after_) {
       if (filter_to_registration.count(after) == 0) {
         gpr_log(

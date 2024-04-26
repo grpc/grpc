@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -36,7 +37,7 @@
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.
 inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
-  GPR_DEBUG_ASSERT(sb->count > 0);
+  DCHECK_GT(sb->count, 0);
   return &sb->slices[0];
 }
 
