@@ -341,7 +341,11 @@ class _LoggingInterceptor(
         self.record.append(self.tag + message + context_var_value)
 
     def intercept_service(self, continuation, handler_call_details):
-        self._append_to_log(":intercept_service")
+        if "check_handler_call_details" in self.tag:
+            self._append_to_log(f":method={handler_call_details.method}")
+        else:
+            self._append_to_log(":intercept_service")
+
         return continuation(handler_call_details)
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
@@ -465,12 +469,23 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("s3", self._record),
         )
 
+        conditional_interceptor_check_handler_call_details = (
+            _filter_server_interceptor(
+                lambda x: ("test_case", "check_handler_call_details")
+                in x.invocation_metadata,
+                _LoggingInterceptor(
+                    "s4:check_handler_call_details", self._record
+                ),
+            )
+        )
+
         self._server = grpc.server(
             self._server_pool,
             options=(("grpc.so_reuseport", 0),),
             interceptors=(
                 _LoggingInterceptor("s1", self._record),
                 conditional_interceptor,
+                conditional_interceptor_check_handler_call_details,
                 _ContextVarSettingInterceptor("context-var-value"),
                 _LoggingInterceptor("s2", self._record),
             ),
@@ -942,6 +957,36 @@ class InterceptorTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
+
+    def testServerInterceptorWithCorrectHandlerCallDetails(self):
+        request = b"\x07\x08"
+
+        self._record[:] = []
+
+        channel = grpc.intercept_channel(
+            self._channel,
+            _append_request_header_interceptor(
+                "test_case", "check_handler_call_details"
+            ),
+        )
+
+        multi_callable = _unary_unary_multi_callable(channel)
+        multi_callable(
+            request,
+            metadata=(
+                ("test", "InterceptedUnaryRequestBlockingUnaryResponse"),
+            ),
+        )
+
+        self.assertSequenceEqual(
+            self._record,
+            [
+                "s1:intercept_service",
+                "s4:check_handler_call_details:method=/test/UnaryUnary",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_unary_unary[context-var-value]",
+            ],
+        )
 
 
 if __name__ == "__main__":

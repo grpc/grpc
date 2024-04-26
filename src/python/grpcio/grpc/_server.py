@@ -994,8 +994,12 @@ def _find_method_handler(
     ) -> Optional[grpc.RpcMethodHandler]:
         return method_with_handler.handler(handler_call_details)
 
+    method_name = method_with_handler.name()
+    if not method_name:
+        method_name = _common.decode(rpc_event.call_details.method)
+
     handler_call_details = _HandlerCallDetails(
-        _common.decode(rpc_event.call_details.method),
+        method_name,
         rpc_event.invocation_metadata,
     )
 
