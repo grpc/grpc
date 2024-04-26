@@ -215,12 +215,6 @@
   expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: trailers_only_transfer
-  description:
-    On a trailers-only response, copy most gRPC headers to trailers.
-  expiry: 2024/09/30
-  owner: yashkt@google.com
-  test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
   expiry: 2024/09/01

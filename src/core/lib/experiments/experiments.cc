@@ -127,9 +127,6 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
-const char* const description_trailers_only_transfer =
-    "On a trailers-only response, copy most gRPC headers to trailers.";
-const char* const additional_constraints_trailers_only_transfer = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -210,8 +207,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
-    {"trailers_only_transfer", description_trailers_only_transfer,
-     additional_constraints_trailers_only_transfer, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -332,9 +327,6 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
-const char* const description_trailers_only_transfer =
-    "On a trailers-only response, copy most gRPC headers to trailers.";
-const char* const additional_constraints_trailers_only_transfer = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -415,8 +407,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
-    {"trailers_only_transfer", description_trailers_only_transfer,
-     additional_constraints_trailers_only_transfer, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -537,9 +527,6 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_trace_record_callops =
     "Enables tracing of call batch initiation and completion.";
 const char* const additional_constraints_trace_record_callops = "{}";
-const char* const description_trailers_only_transfer =
-    "On a trailers-only response, copy most gRPC headers to trailers.";
-const char* const additional_constraints_trailers_only_transfer = "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -620,8 +607,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
     {"trace_record_callops", description_trace_record_callops,
      additional_constraints_trace_record_callops, nullptr, 0, true, true},
-    {"trailers_only_transfer", description_trailers_only_transfer,
-     additional_constraints_trailers_only_transfer, nullptr, 0, true, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,

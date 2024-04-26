@@ -562,16 +562,6 @@ class StreamWriteContext {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, t_->outbuf.c_slice_buffer());
     } else {
-      if (!grpc_core::IsTrailersOnlyTransferEnabled()) {
-        if (send_status_.has_value()) {
-          s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
-                                          *send_status_);
-        }
-        if (send_content_type_.has_value()) {
-          s_->send_trailing_metadata->Set(grpc_core::ContentTypeMetadata(),
-                                          *send_content_type_);
-        }
-      }
       t_->hpack_compressor.EncodeHeaders(
           grpc_core::HPackCompressor::EncodeHeaderOptions{
               s_->id, true, t_->settings.peer().allow_true_binary_metadata(),
@@ -596,11 +586,8 @@ class StreamWriteContext {
     explicit TrailersOnlyMetadataEncoder(grpc_metadata_batch* trailing_md)
         : trailing_md_(trailing_md) {}
 
-    // Non-grpc metadata should not be transferred.
-    void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
-
-    template <typename Which>
-    void Encode(Which which, const typename Which::ValueType& value) {
+    template <typename Which, typename Value>
+    void Encode(Which which, Value value) {
       if (Which::kTransferOnTrailersOnly) {
         trailing_md_->Set(which, value);
       }
@@ -613,6 +600,9 @@ class StreamWriteContext {
       }
     }
 
+    // Non-grpc metadata should not be transferred.
+    void Encode(const grpc_core::Slice&, const grpc_core::Slice&) {}
+
    private:
     grpc_metadata_batch* trailing_md_;
   };
@@ -622,15 +612,8 @@ class StreamWriteContext {
         gpr_log(GPR_INFO, "not sending initial_metadata (Trailers-Only)"));
     // When sending Trailers-Only, we need to move metadata from headers to
     // trailers.
-    if (grpc_core::IsTrailersOnlyTransferEnabled()) {
-      TrailersOnlyMetadataEncoder encoder(s_->send_trailing_metadata);
-      s_->send_initial_metadata->Encode(&encoder);
-    } else {
-      send_status_ =
-          s_->send_initial_metadata->get(grpc_core::HttpStatusMetadata());
-      send_content_type_ =
-          s_->send_initial_metadata->get(grpc_core::ContentTypeMetadata());
-    }
+    TrailersOnlyMetadataEncoder encoder(s_->send_trailing_metadata);
+    s_->send_initial_metadata->Encode(&encoder);
   }
 
   void SentLastFrame() {
@@ -663,10 +646,6 @@ class StreamWriteContext {
   grpc_chttp2_transport* const t_;
   grpc_chttp2_stream* const s_;
   bool stream_became_writable_ = false;
-  absl::optional<uint32_t> send_status_;
-  absl::optional<grpc_core::ContentTypeMetadata::ValueType> send_content_type_ =
-      {};
-  absl::optional<grpc_core::XEnvoyPeerMetadata::ValueType> peer_metadata_;
 };
 }  // namespace
 

@@ -110,8 +110,6 @@
   default: false
 - name: trace_record_callops
   default: true
-- name: trailers_only_transfer
-  default: true
 - name: unconstrained_max_quota_buffer_size
   default: false
 - name: work_serializer_clears_time_cache
