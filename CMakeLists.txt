@@ -109,6 +109,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_bind_front
   absl_bits
   absl_charset
+  absl_check
   absl_city
   absl_civil_time
   absl_cleanup
@@ -169,6 +170,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_entry
   absl_log_globals
   absl_log_internal_append_truncated
+  absl_log_internal_check_impl
+  absl_log_internal_check_op
   absl_log_internal_conditions
   absl_log_internal_config
   absl_log_internal_fnmatch
@@ -4146,6 +4149,7 @@ target_include_directories(grpc++
 )
 target_link_libraries(grpc++
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc
   ${_gRPC_PROTOBUF_LIBRARIES}
 )
@@ -4887,6 +4891,7 @@ target_include_directories(grpc++_unsecure
 )
 target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
   grpc_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
 )
@@ -15350,7 +15355,6 @@ target_include_directories(grpc_cli
 
 target_link_libraries(grpc_cli
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   grpc++_test_config
@@ -36971,7 +36975,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
@@ -36982,7 +36986,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
