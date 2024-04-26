@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -45,7 +46,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/json.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -1204,7 +1204,7 @@ grpc_error_handle ClientChannelFilter::Init(grpc_channel_element* elem,
                                             grpc_channel_element_args* args) {
   CHECK(args->is_last);
   CHECK(elem->filter == &kFilterVtableWithPromises ||
-             elem->filter == &kFilterVtableWithoutPromises);
+        elem->filter == &kFilterVtableWithoutPromises);
   grpc_error_handle error;
   new (elem->channel_data) ClientChannelFilter(args, &error);
   return error;

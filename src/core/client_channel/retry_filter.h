@@ -24,12 +24,12 @@
 
 #include <new>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_filter.h"

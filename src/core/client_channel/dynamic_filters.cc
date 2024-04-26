@@ -23,9 +23,9 @@
 #include <new>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

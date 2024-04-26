@@ -22,8 +22,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/call_tracer.h"

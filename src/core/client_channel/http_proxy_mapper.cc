@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -41,7 +42,6 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"

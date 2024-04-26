@@ -3111,6 +3111,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
     ],
     language = "c++",
     deps = [
@@ -3182,6 +3183,7 @@ grpc_cc_library(
         "client_channel/config_selector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
@@ -3509,6 +3511,7 @@ grpc_cc_library(
         "client_channel/http_proxy_mapper.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

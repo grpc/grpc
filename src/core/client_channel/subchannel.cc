@@ -26,6 +26,7 @@
 #include <new>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
@@ -35,7 +36,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/channelz/channel_trace.h"

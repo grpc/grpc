@@ -21,10 +21,10 @@
 #include <memory>
 #include <new>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
