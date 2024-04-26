@@ -21,6 +21,7 @@
 
 #include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -48,7 +49,7 @@ Slice CopyConstructors<Slice>::FromCopiedString(std::string s) {
 
 MutableSlice::MutableSlice(const grpc_slice& slice)
     : slice_detail::BaseSlice(slice) {
-  GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
+  DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
 }
 
 MutableSlice::~MutableSlice() { grpc_core::CSliceUnref(c_slice()); }

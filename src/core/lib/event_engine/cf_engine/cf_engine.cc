@@ -68,7 +68,7 @@ CFEventEngine::~CFEventEngine() {
                 HandleToString(handle).c_str());
       }
     }
-    GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    CHECK(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
   thread_pool_->Quiesce();

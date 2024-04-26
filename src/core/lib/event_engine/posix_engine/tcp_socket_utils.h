@@ -26,6 +26,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -161,7 +162,7 @@ void UnlinkIfUnixDomainSocket(
 
 class PosixSocketWrapper {
  public:
-  explicit PosixSocketWrapper(int fd) : fd_(fd) { GPR_ASSERT(fd_ > 0); }
+  explicit PosixSocketWrapper(int fd) : fd_(fd) { CHECK_GT(fd_, 0); }
 
   PosixSocketWrapper() : fd_(-1){};
 

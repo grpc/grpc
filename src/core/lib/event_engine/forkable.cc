@@ -14,6 +14,7 @@
 
 #include "src/core/lib/event_engine/forkable.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -43,7 +44,7 @@ void ObjectGroupForkHandler::RegisterForkable(
     std::shared_ptr<Forkable> forkable, GRPC_UNUSED void (*prepare)(void),
     GRPC_UNUSED void (*parent)(void), GRPC_UNUSED void (*child)(void)) {
   if (IsForkEnabled()) {
-    GPR_ASSERT(!is_forking_);
+    CHECK(!is_forking_);
     forkables_.emplace_back(forkable);
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     if (!std::exchange(registered_, true)) {
@@ -55,7 +56,7 @@ void ObjectGroupForkHandler::RegisterForkable(
 
 void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
-    GPR_ASSERT(!std::exchange(is_forking_, true));
+    CHECK(!std::exchange(is_forking_, true));
     GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
@@ -71,7 +72,7 @@ void ObjectGroupForkHandler::Prefork() {
 
 void ObjectGroupForkHandler::PostforkParent() {
   if (IsForkEnabled()) {
-    GPR_ASSERT(is_forking_);
+    CHECK(is_forking_);
     GRPC_FORK_TRACE_LOG_STRING("PostforkParent");
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
@@ -88,7 +89,7 @@ void ObjectGroupForkHandler::PostforkParent() {
 
 void ObjectGroupForkHandler::PostforkChild() {
   if (IsForkEnabled()) {
-    GPR_ASSERT(is_forking_);
+    CHECK(is_forking_);
     GRPC_FORK_TRACE_LOG_STRING("PostforkChild");
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();

@@ -153,7 +153,7 @@ void DNSServiceResolverImpl::ResolveCallback(
 
   grpc_core::ReleasableMutexLock lock(&that->request_mu_);
   auto request_it = that->requests_.find(sdRef);
-  GPR_ASSERT(request_it != that->requests_.end());
+  CHECK(request_it != that->requests_.end());
 
   if (errorCode != kDNSServiceErr_NoError &&
       errorCode != kDNSServiceErr_NoSuchRecord) {
