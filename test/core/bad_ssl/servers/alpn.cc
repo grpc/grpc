@@ -20,11 +20,12 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"

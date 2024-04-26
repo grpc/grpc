@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/credentials.h>
@@ -27,7 +28,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -262,8 +262,7 @@ TEST(GrpcChannelArgsTest, Create) {
 
   CHECK_EQ(strcmp(ch_args->args[1].key, to_add[1].key), 0);
   CHECK(ch_args->args[1].type == to_add[1].type);
-  CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) ==
-             0);
+  CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) == 0);
 
   grpc_channel_args_destroy(ch_args);
 }
@@ -322,10 +321,9 @@ grpc_channel_args* mutate_channel_args(const char* target,
   CHECK_NE(old_args, nullptr);
   CHECK_EQ(grpc_channel_args_find(old_args, "arg_int")->value.integer, 0);
   CHECK(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
-                    "arg_str_val") == 0);
-  CHECK(
-      grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
-      &fake_pointer_arg_vtable);
+               "arg_str_val") == 0);
+  CHECK(grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
+        &fake_pointer_arg_vtable);
 
   if (strcmp(target, "no_op_mutator") == 0) {
     return old_args;

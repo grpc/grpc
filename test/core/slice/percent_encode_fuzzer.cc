@@ -21,8 +21,9 @@
 
 #include <utility>
 
-#include <grpc/grpc.h>
 #include "absl/log/check.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/slice/percent_encoding.h"

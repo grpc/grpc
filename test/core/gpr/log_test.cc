@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -48,10 +49,10 @@ static void test_should_not_log(gpr_log_func_args* /*args*/) {
   gpr_set_log_function(test_should_log);        \
   log_func_reached = false;                     \
   gpr_log_message(SEVERITY, "hello 1 2 3");     \
-  CHECK(log_func_reached);                 \
+  CHECK(log_func_reached);                      \
   log_func_reached = false;                     \
   gpr_log(SEVERITY, "hello %d %d %d", 1, 2, 3); \
-  CHECK(log_func_reached);                 \
+  CHECK(log_func_reached);                      \
   gpr_set_log_function(nullptr);
 
 #define test_log_function_unreached(SEVERITY)   \

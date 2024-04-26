@@ -21,9 +21,9 @@
 #include <memory>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"

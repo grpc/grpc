@@ -19,11 +19,11 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

@@ -32,13 +32,13 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -152,7 +152,7 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
   // Initially the channel will be idle, the
   // grpc_channel_check_connectivity_state triggers an attempt to connect.
   CHECK(grpc_channel_check_connectivity_state(
-                 channel, 1 /* try_to_connect */) == GRPC_CHANNEL_IDLE);
+            channel, 1 /* try_to_connect */) == GRPC_CHANNEL_IDLE);
 
   // Wait a bounded number of times for the channel to be ready. When the
   // channel is ready, the initial TLS handshake will have successfully

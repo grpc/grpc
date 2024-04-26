@@ -20,8 +20,9 @@
 #include <utility>
 #include <vector>
 
-#include <grpc/event_engine/memory_allocator.h>
 #include "absl/log/check.h"
+
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/chunked_vector.h"

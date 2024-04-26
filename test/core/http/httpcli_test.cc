@@ -29,6 +29,7 @@
 #include <ares.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
@@ -38,7 +39,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -253,8 +253,7 @@ void InjectNonResponsiveDNSServer(ares_channel* channel) {
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) ==
-             ARES_SUCCESS);
+  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
 TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {

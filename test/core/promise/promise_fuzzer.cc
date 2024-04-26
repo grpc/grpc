@@ -20,10 +20,10 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/promise/activity.h"
@@ -128,8 +128,7 @@ class Fuzzer {
       explicit BoundScheduler(Scheduler scheduler)
           : fuzzer_(scheduler.fuzzer) {}
       void ScheduleWakeup() {
-        CHECK(static_cast<ActivityType*>(this) ==
-                   fuzzer_->activity_.get());
+        CHECK(static_cast<ActivityType*>(this) == fuzzer_->activity_.get());
         CHECK_EQ(fuzzer_->wakeup_, nullptr);
         fuzzer_->wakeup_ = [this]() {
           static_cast<ActivityType*>(this)->RunScheduledWakeup();

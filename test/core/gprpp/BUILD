@@ -220,6 +220,7 @@ grpc_cc_test(
     name = "dual_ref_counted_test",
     srcs = ["dual_ref_counted_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -234,6 +235,7 @@ grpc_cc_test(
     srcs = ["ref_counted_ptr_test.cc"],
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -337,6 +339,7 @@ grpc_proto_fuzzer(
     name = "chunked_vector_fuzzer",
     srcs = ["chunked_vector_fuzzer.cc"],
     corpus = "chunked_vector_corpora",
+    external_deps = ["absl/log:check"],
     language = "C++",
     proto = "chunked_vector_fuzzer.proto",
     tags = ["no_windows"],
