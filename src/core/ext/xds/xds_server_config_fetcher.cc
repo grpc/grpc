@@ -519,7 +519,7 @@ XdsServerConfigFetcher::XdsServerConfigFetcher(
     RefCountedPtr<GrpcXdsClient> xds_client,
     grpc_server_xds_status_notifier notifier)
     : xds_client_(std::move(xds_client)), serving_status_notifier_(notifier) {
-  CHECK_NE(xds_client_, nullptr);
+  CHECK(xds_client_ != nullptr);
 }
 
 std::string ListenerResourceName(absl::string_view resource_name_template,
@@ -1152,7 +1152,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
       return result.status();
     }
     xds_certificate_provider = std::move(*result);
-    CHECK_NE(xds_certificate_provider, nullptr);
+    CHECK(xds_certificate_provider != nullptr);
     args = args.SetObject(xds_certificate_provider);
   }
   return args;
