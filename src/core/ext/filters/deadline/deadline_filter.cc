@@ -28,6 +28,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
@@ -123,7 +124,7 @@ class TimerState {
 static void start_timer_if_needed(grpc_deadline_state* deadline_state,
                                   grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::InfFuture()) return;
-  GPR_ASSERT(deadline_state->timer_state == nullptr);
+  CHECK_EQ(deadline_state->timer_state, nullptr);
   deadline_state->timer_state =
       deadline_state->arena->New<grpc_core::TimerState>(deadline_state,
                                                         deadline);
@@ -246,7 +247,7 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
 // Constructor for channel_data.  Used for both client and server filters.
 static grpc_error_handle deadline_init_channel_elem(
     grpc_channel_element* /*elem*/, grpc_channel_element_args* args) {
-  GPR_ASSERT(!args->is_last);
+  CHECK(!args->is_last);
   return absl::OkStatus();
 }
 

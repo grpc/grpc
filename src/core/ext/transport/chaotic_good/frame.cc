@@ -24,6 +24,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -152,7 +153,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     Arena* arena) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  GPR_ASSERT(arena != nullptr);
+  CHECK_NE(arena, nullptr);
   Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
@@ -275,7 +276,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  GPR_ASSERT(stream_id != 0);
+  CHECK_NE(stream_id, 0);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
@@ -354,7 +355,7 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  GPR_ASSERT(stream_id != 0);
+  CHECK_NE(stream_id, 0);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
@@ -399,7 +400,7 @@ absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
 }
 
 BufferPair CancelFrame::Serialize(HPackCompressor*) const {
-  GPR_ASSERT(stream_id != 0);
+  CHECK_NE(stream_id, 0);
   FrameSerializer serializer(FrameType::kCancel, stream_id);
   return serializer.Finish();
 }

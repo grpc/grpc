@@ -25,6 +25,7 @@
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/server_config_selector/server_config_selector.h"
@@ -120,7 +121,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
           std::move(server_config_selector_provider)) {
-  GPR_ASSERT(server_config_selector_provider_ != nullptr);
+  CHECK_NE(server_config_selector_provider_, nullptr);
   auto server_config_selector_watcher =
       std::make_unique<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(

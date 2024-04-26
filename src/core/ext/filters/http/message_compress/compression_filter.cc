@@ -31,6 +31,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
@@ -144,7 +145,7 @@ MessageHandle ChannelCompression::CompressMessage(
       const size_t after_size = tmp.Length();
       const float savings_ratio = 1.0f - static_cast<float>(after_size) /
                                              static_cast<float>(before_size);
-      GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name));
+      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       gpr_log(GPR_INFO,
               "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
               " bytes (%.2f%% savings)",
@@ -158,7 +159,7 @@ MessageHandle ChannelCompression::CompressMessage(
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
-      GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name));
+      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       gpr_log(GPR_INFO,
               "Algorithm '%s' enabled but decided not to compress. Input size: "
               "%" PRIuPTR,

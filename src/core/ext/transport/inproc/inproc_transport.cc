@@ -17,6 +17,7 @@
 #include <atomic>
 
 #include <grpc/grpc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -151,8 +152,8 @@ class InprocClientTransport final : public Transport, public ClientTransport {
 
 bool UsePromiseBasedTransport() {
   if (!IsPromiseBasedInprocTransportEnabled()) return false;
-  GPR_ASSERT(IsPromiseBasedClientCallEnabled());
-  GPR_ASSERT(IsPromiseBasedServerCallEnabled());
+  CHECK(IsPromiseBasedClientCallEnabled());
+  CHECK(IsPromiseBasedServerCallEnabled());
   return true;
 }
 

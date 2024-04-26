@@ -38,6 +38,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -413,7 +414,7 @@ static void execute_from_storage(stream_obj* s) {
   gpr_mu_lock(&s->mu);
   for (struct op_and_state* curr = s->storage.head; curr != nullptr;) {
     CRONET_LOG(GPR_DEBUG, "calling op at %p. done = %d", curr, curr->done);
-    GPR_ASSERT(!curr->done);
+    CHECK(!curr->done);
     enum e_op_result result = execute_stream_op(curr);
     CRONET_LOG(GPR_DEBUG, "execute_stream_op[%p] returns %s", curr,
                op_result_string(result));
@@ -593,7 +594,7 @@ static void on_response_headers_received(
         s->state.state_callback_received[OP_FAILED])) {
     // Do an extra read to trigger on_succeeded() callback in case connection
     // is closed
-    GPR_ASSERT(s->state.rs.length_field_received == false);
+    CHECK(s->state.rs.length_field_received == false);
     read_grpc_header(s);
   }
   gpr_mu_unlock(&s->mu);
@@ -795,7 +796,7 @@ class CronetMetadataEncoder {
       value = grpc_slice_to_c_string(value_slice.c_slice());
     }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
-    GPR_ASSERT(count_ < capacity_);
+    CHECK(count_ < capacity_);
     headers_[count_].key = key;
     headers_[count_].value = value;
     ++count_;
@@ -1058,8 +1059,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     CRONET_LOG(GPR_DEBUG, "running: %p OP_SEND_INITIAL_METADATA", oas);
     // Start new cronet stream. It is destroyed in on_succeeded, on_canceled,
     // on_failed
-    GPR_ASSERT(s->cbs == nullptr);
-    GPR_ASSERT(!stream_state->state_op_done[OP_SEND_INITIAL_METADATA]);
+    CHECK_EQ(s->cbs, nullptr);
+    CHECK(!stream_state->state_op_done[OP_SEND_INITIAL_METADATA]);
     s->cbs =
         bidirectional_stream_create(t->engine, s->curr_gs, &cronet_callbacks);
     CRONET_LOG(GPR_DEBUG, "%p = bidirectional_stream_create()", s->cbs);
@@ -1230,7 +1231,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         if (stream_state->rs.length_field > 0) {
           stream_state->rs.read_buffer = static_cast<char*>(
               gpr_malloc(static_cast<size_t>(stream_state->rs.length_field)));
-          GPR_ASSERT(stream_state->rs.read_buffer);
+          CHECK(stream_state->rs.read_buffer);
           stream_state->rs.remaining_bytes = stream_state->rs.length_field;
           stream_state->rs.received_bytes = 0;
           CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);

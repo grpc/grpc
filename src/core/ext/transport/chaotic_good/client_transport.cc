@@ -27,6 +27,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -279,7 +280,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                     message_length % aligned_bytes == 0
                         ? 0
                         : aligned_bytes - message_length % aligned_bytes;
-                GPR_ASSERT((message_length + padding) % aligned_bytes == 0);
+                CHECK_EQ((message_length + padding) % aligned_bytes, 0);
                 frame.message = FragmentMessage(std::move(message), padding,
                                                 message_length);
                 return send_fragment(std::move(frame));
