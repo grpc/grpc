@@ -6133,7 +6133,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
     grpc++_test_config
@@ -30387,7 +30386,6 @@ target_include_directories(test_cpp_client_credentials_test
 target_link_libraries(test_cpp_client_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -30547,7 +30545,6 @@ target_include_directories(test_cpp_server_credentials_test
 target_link_libraries(test_cpp_server_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -30967,7 +30964,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(time_jump_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++
     grpc_test_util
   )
@@ -31211,7 +31207,6 @@ target_include_directories(timer_test
 target_link_libraries(timer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
