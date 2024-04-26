@@ -62,12 +62,9 @@ class MyEndpointList : public EndpointList {
     Init(endpoints, args,
          [&](RefCountedPtr<MyEndpointList> endpoint_list,
              const EndpointAddresses& addresses, const ChannelArgs& args) {
-           absl::Status status;
-           auto endpoint = MakeOrphanable<MyEndpoint>(
+           return MakeOrphanable<MyEndpoint>(
                std::move(endpoint_list), addresses, args,
-               policy<MyLbPolicy>()->work_serializer(), &status);
-           if (!error.empty()) errors->push_back(status.ToString());
-           return endpoint;
+               policy<MyLbPolicy>()->work_serializer(), errors);
          });
   }
 
@@ -75,11 +72,15 @@ class MyEndpointList : public EndpointList {
   class MyEndpoint : public Endpoint {
    public:
     MyEndpoint(RefCountedPtr<MyEndpointList> endpoint_list,
-               const EndpointAddresses& address, const ChannelArgs& args,
+               const EndpointAddresses& addresses, const ChannelArgs& args,
                std::shared_ptr<WorkSerializer> work_serializer,
-               absl::Status* status)
+               std::vector<std::string>* errors)
         : Endpoint(std::move(endpoint_list)) {
-      *status = Init(addresses, args, std::move(work_serializer));
+      absl::Status status = Init(addresses, args, std::move(work_serializer));
+      if (!status.ok()) {
+        errors->emplace_back(absl::StrCat(
+            "endpoint ", addresses.ToString(), ": ", status.ToString()));
+      }
     }
 
    private:

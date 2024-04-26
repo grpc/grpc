@@ -222,11 +222,15 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
       WrrEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                   const EndpointAddresses& addresses, const ChannelArgs& args,
                   std::shared_ptr<WorkSerializer> work_serializer,
-                  absl::Status* status)
+                  std::vector<std::string>* errors)
           : Endpoint(std::move(endpoint_list)),
             weight_(policy<WeightedRoundRobin>()->GetOrCreateWeight(
                 addresses.addresses())) {
-        *status = Init(addresses, args, std::move(work_serializer));
+        absl::Status status = Init(addresses, args, std::move(work_serializer));
+        if (!status.ok()) {
+          errors->emplace_back(absl::StrCat("endpoint ", addresses.ToString(),
+                                            ": ", status.ToString()));
+        }
       }
 
       RefCountedPtr<EndpointWeight> weight() const { return weight_; }
@@ -270,15 +274,9 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
       Init(endpoints, args,
            [&](RefCountedPtr<EndpointList> endpoint_list,
                const EndpointAddresses& addresses, const ChannelArgs& args) {
-             absl::Status status;
-             auto endpoint = MakeOrphanable<WrrEndpoint>(
+             return MakeOrphanable<WrrEndpoint>(
                  std::move(endpoint_list), addresses, args,
-                 policy<WeightedRoundRobin>()->work_serializer(), &status);
-             if (!status.ok()) {
-               errors->emplace_back(absl::StrCat(
-                   "endpoint ", addresses.ToString(), ": ", status.ToString()));
-             }
-             return endpoint;
+                 policy<WeightedRoundRobin>()->work_serializer(), errors);
            });
     }
 

@@ -81,15 +81,9 @@ class RoundRobin final : public LoadBalancingPolicy {
       Init(endpoints, args,
            [&](RefCountedPtr<EndpointList> endpoint_list,
                const EndpointAddresses& addresses, const ChannelArgs& args) {
-             absl::Status status;
-             auto endpoint = MakeOrphanable<RoundRobinEndpoint>(
+             return MakeOrphanable<RoundRobinEndpoint>(
                  std::move(endpoint_list), addresses, args,
-                 policy<RoundRobin>()->work_serializer(), &status);
-             if (!status.ok()) {
-               errors->emplace_back(absl::StrCat(
-                   "endpoint ", addresses.ToString(), ": ", status.ToString()));
-             }
-             return endpoint;
+                 policy<RoundRobin>()->work_serializer(), errors);
            });
     }
 
@@ -100,9 +94,13 @@ class RoundRobin final : public LoadBalancingPolicy {
                          const EndpointAddresses& addresses,
                          const ChannelArgs& args,
                          std::shared_ptr<WorkSerializer> work_serializer,
-                         absl::Status* status)
+                         std::vector<std::string>* errors)
           : Endpoint(std::move(endpoint_list)) {
-        *status = Init(addresses, args, std::move(work_serializer));
+        absl::Status status = Init(addresses, args, std::move(work_serializer));
+        if (!status.ok()) {
+          errors->emplace_back(absl::StrCat("endpoint ", addresses.ToString(),
+                                            ": ", status.ToString()));
+        }
       }
 
      private:
