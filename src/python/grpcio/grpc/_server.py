@@ -1442,6 +1442,11 @@ class _Server(grpc.Server):
         service_name: str,
         method_handlers: Dict[str, grpc.RpcMethodHandler],
     ) -> None:
+        # Can't register method once server started.
+        with self._state.lock:
+            if self._state.stage is _ServerStage.STARTED:
+                return
+
         # TODO(xuanwn): We should validate method_handlers first.
         method_to_handlers = {
             _common.fully_qualified_method(service_name, method): method_handler

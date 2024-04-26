@@ -168,9 +168,9 @@ class ServerHandlerTest(unittest.TestCase):
 
     def test_generic_unary_unary_handler(self):
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers((_GenericHandler(),))
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
+        self._server.add_generic_rpc_handlers((_GenericHandler(),))
         self._channel = grpc.insecure_channel("localhost:%d" % port)
 
         response = self._channel.unary_unary(
@@ -221,6 +221,38 @@ class ServerHandlerTest(unittest.TestCase):
         self.assertSequenceEqual(
             [_RESPONSE] * test_constants.STREAM_LENGTH, list(response_iterator)
         )
+
+    def test_add_generic_handler_after_server_start(self):
+        self._server = test_common.test_server()
+        port = self._server.add_insecure_port("[::]:0")
+        self._server.start()
+        self._server.add_generic_rpc_handlers((_GenericHandler(),))
+        self._channel = grpc.insecure_channel("localhost:%d" % port)
+
+        response = self._channel.unary_unary(
+            _UNARY_UNARY,
+            _registered_method=True,
+        )(_REQUEST)
+        self.assertEqual(_RESPONSE, response)
+
+    def test_add_registered_handler_after_server_start(self):
+        self._server = test_common.test_server()
+        port = self._server.add_insecure_port("[::]:0")
+        self._server.start()
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, _REGISTERED_METHOD_HANDLERS
+        )
+        self._channel = grpc.insecure_channel("localhost:%d" % port)
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            self._channel.unary_unary(
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _UNARY_UNARY_REGISTERED
+                ),
+                _registered_method=True,
+            )(_REQUEST)
+
+        self.assertIn("Method not found", str(exception_context.exception))
 
     def test_server_with_both_registered_and_generic_handlers(self):
         self._server = test_common.test_server()
