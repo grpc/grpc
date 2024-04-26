@@ -33,45 +33,7 @@
 namespace grpc_core {
 
 namespace {
-class InprocClientTransport final : public ClientTransport {
- public:
-  explicit InprocClientTransport(
-      RefCountedPtr<InprocServerTransport> server_transport)
-      : server_transport_(std::move(server_transport)) {}
-
-  void StartCall(CallHandler call_handler) override {
-    call_handler.SpawnGuarded(
-        "pull_initial_metadata",
-        TrySeq(call_handler.PullClientInitialMetadata(),
-               [server_transport = server_transport_,
-                call_handler](ClientMetadataHandle md) {
-                 auto call_initiator =
-                     server_transport->AcceptCall(std::move(md));
-                 if (!call_initiator.ok()) return call_initiator.status();
-                 ForwardCall(call_handler, std::move(*call_initiator));
-                 return absl::OkStatus();
-               }));
-  }
-
-  void Orphan() override { delete this; }
-
-  FilterStackTransport* filter_stack_transport() override { return nullptr; }
-  ClientTransport* client_transport() override { return this; }
-  ServerTransport* server_transport() override { return nullptr; }
-  absl::string_view GetTransportName() const override { return "inproc"; }
-  void SetPollset(grpc_stream*, grpc_pollset*) override {}
-  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
-  void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
-
- private:
-  ~InprocClientTransport() override {
-    server_transport_->Disconnect(
-        absl::UnavailableError("Client transport closed"));
-  }
-
-  const RefCountedPtr<InprocServerTransport> server_transport_;
-};
+class InprocClientTransport;
 
 class InprocServerTransport final : public ServerTransport {
  public:
@@ -134,10 +96,7 @@ class InprocServerTransport final : public ServerTransport {
     return acceptor_->CreateCall(std::move(md), acceptor_->CreateArena());
   }
 
-  OrphanablePtr<ClientTransport> MakeClientTransport() {
-    return MakeOrphanable<InprocClientTransport>(
-        RefAsSubclass<InprocServerTransport>());
-  }
+  OrphanablePtr<InprocClientTransport> MakeClientTransport();
 
  private:
   enum class ConnectionState : uint8_t { kInitial, kReady, kDisconnected };
@@ -151,11 +110,57 @@ class InprocServerTransport final : public ServerTransport {
       "inproc_server_transport", GRPC_CHANNEL_CONNECTING};
 };
 
+class InprocClientTransport final : public ClientTransport {
+ public:
+  explicit InprocClientTransport(
+      RefCountedPtr<InprocServerTransport> server_transport)
+      : server_transport_(std::move(server_transport)) {}
+
+  void StartCall(CallHandler call_handler) override {
+    call_handler.SpawnGuarded(
+        "pull_initial_metadata",
+        TrySeq(call_handler.PullClientInitialMetadata(),
+               [server_transport = server_transport_,
+                call_handler](ClientMetadataHandle md) {
+                 auto call_initiator =
+                     server_transport->AcceptCall(std::move(md));
+                 if (!call_initiator.ok()) return call_initiator.status();
+                 ForwardCall(call_handler, std::move(*call_initiator));
+                 return absl::OkStatus();
+               }));
+  }
+
+  void Orphan() override { delete this; }
+
+  FilterStackTransport* filter_stack_transport() override { return nullptr; }
+  ClientTransport* client_transport() override { return this; }
+  ServerTransport* server_transport() override { return nullptr; }
+  absl::string_view GetTransportName() const override { return "inproc"; }
+  void SetPollset(grpc_stream*, grpc_pollset*) override {}
+  void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
+  void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
+  grpc_endpoint* GetEndpoint() override { return nullptr; }
+
+ private:
+  ~InprocClientTransport() override {
+    server_transport_->Disconnect(
+        absl::UnavailableError("Client transport closed"));
+  }
+
+  const RefCountedPtr<InprocServerTransport> server_transport_;
+};
+
 bool UsePromiseBasedTransport() {
   if (!IsPromiseBasedInprocTransportEnabled()) return false;
   GPR_ASSERT(IsPromiseBasedClientCallEnabled());
   GPR_ASSERT(IsPromiseBasedServerCallEnabled());
   return true;
+}
+
+OrphanablePtr<InprocClientTransport>
+InprocServerTransport::MakeClientTransport() {
+  return MakeOrphanable<InprocClientTransport>(
+      RefAsSubclass<InprocServerTransport>());
 }
 
 OrphanablePtr<Channel> MakeLameChannel(absl::string_view why,
@@ -199,8 +204,8 @@ OrphanablePtr<Channel> MakeInprocChannel(Server* server,
 
 std::pair<OrphanablePtr<Transport>, OrphanablePtr<Transport>>
 MakeInProcessTransportPair() {
-  auto client_transport = MakeOrphanable<InprocClientTransport>();
-  auto server_transport = client_transport->GetServerTransport();
+  auto server_transport = MakeOrphanable<InprocServerTransport>();
+  auto client_transport = server_transport->MakeClientTransport();
   return std::make_pair(std::move(client_transport),
                         std::move(server_transport));
 }
