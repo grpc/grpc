@@ -33,6 +33,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -224,7 +225,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  GPR_ASSERT(subchannel_ != nullptr);  // Should not be called before Start().
+  CHECK_NE(subchannel_, nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }

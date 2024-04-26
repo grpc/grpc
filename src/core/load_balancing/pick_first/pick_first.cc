@@ -37,6 +37,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -424,7 +425,7 @@ PickFirst::~PickFirst() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
-  GPR_ASSERT(subchannel_list_ == nullptr);
+  CHECK_EQ(subchannel_list_, nullptr);
 }
 
 void PickFirst::ShutdownLocked() {
@@ -698,7 +699,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
     gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", pick_first_.get(),
             subchannel_.get());
   }
-  GPR_ASSERT(subchannel_data_ != nullptr);
+  CHECK_NE(subchannel_data_, nullptr);
   pick_first_->UnsetSelectedSubchannel();  // Cancel health watch, if any.
   pick_first_->selected_ = std::move(subchannel_data_->subchannel_state_);
   // If health checking is enabled, start the health watch, but don't
@@ -766,7 +767,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
     return;
   }
   // We aren't trying to connect, so we must be the selected subchannel.
-  GPR_ASSERT(pick_first_->selected_.get() == this);
+  CHECK(pick_first_->selected_.get() == this);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO,
             "Pick First %p selected subchannel connectivity changed to %s",
@@ -822,12 +823,12 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   }
   if (subchannel_list_->shutting_down_) return;
   // The notification must be for a subchannel in the current list.
-  GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get());
+  CHECK(subchannel_list_ == p->subchannel_list_.get());
   // SHUTDOWN should never happen.
-  GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
+  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   // READY should be caught by SubchannelState, in which case it will
   // not call us in the first place.
-  GPR_ASSERT(new_state != GRPC_CHANNEL_READY);
+  CHECK(new_state != GRPC_CHANNEL_READY);
   // Update state.
   absl::optional<grpc_connectivity_state> old_state = connectivity_state_;
   connectivity_state_ = new_state;
@@ -949,11 +950,11 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
 }
 
 void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
-  GPR_ASSERT(connectivity_state_.has_value());
+  CHECK(connectivity_state_.has_value());
   if (connectivity_state_ == GRPC_CHANNEL_IDLE) {
     subchannel_state_->RequestConnection();
   } else {
-    GPR_ASSERT(connectivity_state_ == GRPC_CHANNEL_CONNECTING);
+    CHECK(connectivity_state_ == GRPC_CHANNEL_CONNECTING);
   }
   // If this is not the last subchannel in the list, start the timer.
   if (index_ != subchannel_list_->size() - 1) {
@@ -1016,7 +1017,7 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
   addresses->ForEach([&](const EndpointAddresses& address) {
-    GPR_ASSERT(address.addresses().size() == 1);
+    CHECK_EQ(address.addresses().size(), 1);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(
             address.address(), address.args(), args_);
@@ -1053,7 +1054,7 @@ void PickFirst::SubchannelList::Orphan() {
     gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p", policy_.get(),
             this);
   }
-  GPR_ASSERT(!shutting_down_);
+  CHECK(!shutting_down_);
   shutting_down_ = true;
   // Cancel Happy Eyeballs timer, if any.
   if (timer_handle_.has_value()) {
@@ -1074,7 +1075,7 @@ void PickFirst::SubchannelList::StartConnectingNextSubchannel() {
   // large recursion that could overflow the stack.
   for (; attempting_index_ < size(); ++attempting_index_) {
     SubchannelData* sc = subchannels_[attempting_index_].get();
-    GPR_ASSERT(sc->connectivity_state().has_value());
+    CHECK(sc->connectivity_state().has_value());
     if (sc->connectivity_state() != GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // Found a subchannel not in TRANSIENT_FAILURE, so trigger a
       // connection attempt.
@@ -1398,8 +1399,8 @@ OldPickFirst::~OldPickFirst() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
-  GPR_ASSERT(subchannel_list_ == nullptr);
-  GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
+  CHECK_EQ(subchannel_list_, nullptr);
+  CHECK_EQ(latest_pending_subchannel_list_, nullptr);
 }
 
 void OldPickFirst::ShutdownLocked() {
@@ -1667,15 +1668,15 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
                             ->GetStatsPluginGroup();
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
-  GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get() ||
+  CHECK(subchannel_list_ == p->subchannel_list_.get() ||
              subchannel_list_ == p->latest_pending_subchannel_list_.get());
-  GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
+  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   absl::optional<grpc_connectivity_state> old_state = connectivity_state_;
   connectivity_state_ = new_state;
   connectivity_status_ = std::move(status);
   // Handle updates for the currently selected subchannel.
   if (p->selected_ == this) {
-    GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get());
+    CHECK(subchannel_list_ == p->subchannel_list_.get());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO,
               "Pick First %p selected subchannel connectivity changed to %s", p,
@@ -1850,11 +1851,11 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
 
 void OldPickFirst::SubchannelList::SubchannelData::
     RequestConnectionWithTimer() {
-  GPR_ASSERT(connectivity_state_.has_value());
+  CHECK(connectivity_state_.has_value());
   if (connectivity_state_ == GRPC_CHANNEL_IDLE) {
     subchannel_->RequestConnection();
   } else {
-    GPR_ASSERT(connectivity_state_ == GRPC_CHANNEL_CONNECTING);
+    CHECK(connectivity_state_ == GRPC_CHANNEL_CONNECTING);
   }
   // If this is not the last subchannel in the list, start the timer.
   if (index_ != subchannel_list_->size() - 1) {
@@ -1913,7 +1914,7 @@ void OldPickFirst::SubchannelList::SubchannelData::
   //    for a subchannel in p->latest_pending_subchannel_list_.  The
   //    goal here is to find a subchannel from the update that we can
   //    select in place of the current one.
-  GPR_ASSERT(subchannel_list_ == p->subchannel_list_.get() ||
+  CHECK(subchannel_list_ == p->subchannel_list_.get() ||
              subchannel_list_ == p->latest_pending_subchannel_list_.get());
   // Case 2.  Promote p->latest_pending_subchannel_list_ to p->subchannel_list_.
   if (subchannel_list_ == p->latest_pending_subchannel_list_.get()) {
@@ -1981,7 +1982,7 @@ OldPickFirst::SubchannelList::SubchannelList(
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
   addresses->ForEach([&](const EndpointAddresses& address) {
-    GPR_ASSERT(address.addresses().size() == 1);
+    CHECK_EQ(address.addresses().size(), 1);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(
             address.address(), address.args(), args_);
@@ -2017,7 +2018,7 @@ void OldPickFirst::SubchannelList::Orphan() {
     gpr_log(GPR_INFO, "[PF %p] Shutting down subchannel_list %p", policy_.get(),
             this);
   }
-  GPR_ASSERT(!shutting_down_);
+  CHECK(!shutting_down_);
   shutting_down_ = true;
   for (auto& sd : subchannels_) {
     sd.ShutdownLocked();
@@ -2040,7 +2041,7 @@ void OldPickFirst::SubchannelList::StartConnectingNextSubchannel() {
   // large recursion that could overflow the stack.
   for (; attempting_index_ < size(); ++attempting_index_) {
     SubchannelData* sc = &subchannels_[attempting_index_];
-    GPR_ASSERT(sc->connectivity_state().has_value());
+    CHECK(sc->connectivity_state().has_value());
     if (sc->connectivity_state() != GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // Found a subchannel not in TRANSIENT_FAILURE, so trigger a
       // connection attempt.

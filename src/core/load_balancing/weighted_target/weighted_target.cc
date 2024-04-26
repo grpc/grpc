@@ -38,6 +38,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -274,7 +275,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
     }
   }
   if (index == 0) index = start_index;
-  GPR_ASSERT(pickers_[index].first > key);
+  CHECK(pickers_[index].first > key);
   // Delegate to the child picker.
   return pickers_[index].second->Pick(args);
 }
@@ -420,7 +421,7 @@ void WeightedTargetLb::UpdateStateLocked() {
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        GPR_ASSERT(child->weight() > 0);
+        CHECK_GT(child->weight(), 0);
         ready_end += child->weight();
         ready_picker_list.emplace_back(ready_end, std::move(child_picker));
         break;
@@ -434,7 +435,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        GPR_ASSERT(child->weight() > 0);
+        CHECK_GT(child->weight(), 0);
         tf_end += child->weight();
         tf_picker_list.emplace_back(tf_end, std::move(child_picker));
         break;
@@ -513,7 +514,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
-  GPR_ASSERT(timer_handle_.has_value());
+  CHECK(timer_handle_.has_value());
   timer_handle_.reset();
   weighted_child_->weighted_target_policy_->targets_.erase(
       weighted_child_->name_);

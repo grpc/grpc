@@ -24,6 +24,7 @@
 
 #include "absl/functional/any_invocable.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -146,7 +147,7 @@ absl::optional<StaticStrideScheduler> StaticStrideScheduler::Make(
     }
   }
 
-  GPR_ASSERT(weights.size() == float_weights.size());
+  CHECK(weights.size() == float_weights.size());
   return StaticStrideScheduler{std::move(weights),
                                std::move(next_sequence_func)};
 }
@@ -156,7 +157,7 @@ StaticStrideScheduler::StaticStrideScheduler(
     absl::AnyInvocable<uint32_t()> next_sequence_func)
     : next_sequence_func_(std::move(next_sequence_func)),
       weights_(std::move(weights)) {
-  GPR_ASSERT(next_sequence_func_ != nullptr);
+  CHECK_NE(next_sequence_func_, nullptr);
 }
 
 size_t StaticStrideScheduler::Pick() const {

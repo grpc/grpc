@@ -33,6 +33,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -285,13 +286,13 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s is_dynamic=%d",
             this, new_config->cluster().c_str(), new_config->is_dynamic());
   }
-  GPR_ASSERT(new_config != nullptr);
+  CHECK_NE(new_config, nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
   if (cluster_name_.empty()) {
     cluster_name_ = new_config->cluster();
   } else {
-    GPR_ASSERT(cluster_name_ == new_config->cluster());
+    CHECK(cluster_name_ == new_config->cluster());
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
@@ -347,7 +348,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     ReportTransientFailure(new_cluster_config.status());
     return new_cluster_config.status();
   }
-  GPR_ASSERT(new_cluster_config->cluster != nullptr);
+  CHECK_NE(new_cluster_config->cluster, nullptr);
   // Find old cluster, if any.
   const XdsConfig::ClusterConfig* old_cluster_config = nullptr;
   if (xds_config_ != nullptr) {
@@ -387,7 +388,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
           ReportTransientFailure(aggregate_cluster_config.status());
           return aggregate_cluster_config.status();
         }
-        GPR_ASSERT(aggregate_cluster_config->cluster != nullptr);
+        CHECK_NE(aggregate_cluster_config->cluster, nullptr);
         aggregate_cluster_resource = aggregate_cluster_config->cluster.get();
       }
     } else {
@@ -469,7 +470,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     const XdsConfig::ClusterConfig* old_cluster,
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  GPR_ASSERT(
+  CHECK(
       !absl::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
           new_cluster.children));
   // First, build some maps from locality to child number and the reverse

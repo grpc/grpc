@@ -38,6 +38,7 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -516,7 +517,7 @@ void RingHash::RingHashEndpoint::RequestConnectionLocked() {
 }
 
 void RingHash::RingHashEndpoint::CreateChildPolicy() {
-  GPR_ASSERT(child_policy_ == nullptr);
+  CHECK_EQ(child_policy_, nullptr);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = ring_hash_->work_serializer();
   lb_policy_args.args =
@@ -550,7 +551,7 @@ void RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::FromArray(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  GPR_ASSERT(config.ok());
+  CHECK(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses =
@@ -817,7 +818,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     for (size_t i = 0; i < endpoints_.size(); ++i) {
       auto it =
           endpoint_map_.find(EndpointAddressSet(endpoints_[i].addresses()));
-      GPR_ASSERT(it != endpoint_map_.end());
+      CHECK(it != endpoint_map_.end());
       if (it->second->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
         first_idle_index = endpoints_.size();
         break;
@@ -830,7 +831,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     if (first_idle_index != endpoints_.size()) {
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
-      GPR_ASSERT(it != endpoint_map_.end());
+      CHECK(it != endpoint_map_.end());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
         gpr_log(GPR_INFO,
                 "[RH %p] triggering internal connection attempt for endpoint "
