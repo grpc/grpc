@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/strings/match.h"
 
 #include <grpc/grpc.h>
@@ -546,7 +547,7 @@ int main(int argc, char** argv) {
   } else if (absl::StrContains(std::string(argv[0]), "using_ares_resolver")) {
     g_resolver_type = "ares";
   } else {
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   grpc_core::ConfigVars::Overrides overrides;
   overrides.dns_resolver = g_resolver_type;

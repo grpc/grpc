@@ -24,6 +24,7 @@
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
@@ -191,7 +192,7 @@ class XdsRouterFilterTest : public XdsHttpFilterTest {
   XdsRouterFilterTest() {
     XdsExtension extension = MakeXdsExtension(Router());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -275,7 +276,7 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
   XdsFaultInjectionFilterTest() {
     XdsExtension extension = MakeXdsExtension(HTTPFault());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -480,7 +481,7 @@ class XdsRbacFilterTest : public XdsHttpFilterTest {
   XdsRbacFilterTest() {
     XdsExtension extension = MakeXdsExtension(RBAC());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -1107,7 +1108,7 @@ class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
     registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
