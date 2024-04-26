@@ -684,9 +684,8 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     if (it != endpoint_map_.end()) {
       absl::Status status = it->second->UpdateLocked(i);
       if (!status.ok()) {
-        errors.emplace_back(
-            absl::StrCat("endpoint ", address_set.ToString(), ": ",
-                         status.ToString()));
+        errors.emplace_back(absl::StrCat("endpoint ", address_set.ToString(),
+                                         ": ", status.ToString()));
       }
       endpoint_map.emplace(address_set, std::move(it->second));
     } else {
