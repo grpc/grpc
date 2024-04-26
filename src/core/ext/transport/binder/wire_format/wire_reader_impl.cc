@@ -28,6 +28,7 @@
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
@@ -305,7 +306,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
             absl::Seconds(5))) {
       return absl::DeadlineExceededError("wire_writer_ is not ready in time!");
     }
-    GPR_ASSERT(wire_writer_);
+    CHECK(wire_writer_);
     // wire_writer_ should not be accessed while holding mu_!
     // Otherwise, it is possible that
     // 1. wire_writer_::mu_ is acquired before mu_ (NDK call back during
@@ -323,7 +324,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransaction(
 absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
     transaction_code_t code, ReadableParcel* parcel, int* cancellation_flags,
     std::queue<absl::AnyInvocable<void() &&>>& deferred_func_queue) {
-  GPR_ASSERT(cancellation_flags);
+  CHECK(cancellation_flags);
   num_incoming_bytes_ += parcel->GetDataSize();
   gpr_log(GPR_INFO, "Total incoming bytes: %" PRId64, num_incoming_bytes_);
 
@@ -360,7 +361,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   // TODO(waynetu): According to the protocol, "The sequence number will wrap
   // around to 0 if more than 2^31 messages are sent." For now we'll just
   // assert that it never reach such circumstances.
-  GPR_ASSERT(expectation < std::numeric_limits<int32_t>::max() &&
+  CHECK(expectation < std::numeric_limits<int32_t>::max() &&
              "Sequence number too large");
   expectation++;
   gpr_log(GPR_DEBUG, "sequence number = %d", seq_num);

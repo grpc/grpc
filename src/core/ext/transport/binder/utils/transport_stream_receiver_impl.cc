@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -38,7 +39,7 @@ void TransportStreamReceiverImpl::RegisterRecvInitialMetadata(
   absl::StatusOr<Metadata> initial_metadata{};
   {
     grpc_core::MutexLock l(&m_);
-    GPR_ASSERT(initial_metadata_cbs_.count(id) == 0);
+    CHECK_EQ(initial_metadata_cbs_.count(id), 0);
     auto iter = pending_initial_metadata_.find(id);
     if (iter == pending_initial_metadata_.end()) {
       if (trailing_metadata_recvd_.count(id)) {
@@ -66,7 +67,7 @@ void TransportStreamReceiverImpl::RegisterRecvMessage(
   absl::StatusOr<std::string> message{};
   {
     grpc_core::MutexLock l(&m_);
-    GPR_ASSERT(message_cbs_.count(id) == 0);
+    CHECK_EQ(message_cbs_.count(id), 0);
     auto iter = pending_message_.find(id);
     if (iter == pending_message_.end()) {
       // If we'd already received trailing-metadata and there's no pending
@@ -100,7 +101,7 @@ void TransportStreamReceiverImpl::RegisterRecvTrailingMetadata(
   std::pair<absl::StatusOr<Metadata>, int> trailing_metadata{};
   {
     grpc_core::MutexLock l(&m_);
-    GPR_ASSERT(trailing_metadata_cbs_.count(id) == 0);
+    CHECK_EQ(trailing_metadata_cbs_.count(id), 0);
     auto iter = pending_trailing_metadata_.find(id);
     if (iter == pending_trailing_metadata_.end()) {
       trailing_metadata_cbs_[id] = std::move(cb);

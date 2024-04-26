@@ -59,7 +59,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
 std::shared_ptr<ServerCredentials> BinderServerCredentials(
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy) {
-  GPR_ASSERT(security_policy != nullptr);
+  CHECK_NE(security_policy, nullptr);
   return std::shared_ptr<ServerCredentials>(
       new BinderServerCredentialsImpl(security_policy));
 }

@@ -28,6 +28,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -102,8 +103,8 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     const ChannelArguments& args) {
   grpc_init();
 
-  GPR_ASSERT(jni_env_void != nullptr);
-  GPR_ASSERT(security_policy != nullptr);
+  CHECK_NE(jni_env_void, nullptr);
+  CHECK_NE(security_policy, nullptr);
 
   // Generate an unique connection ID that identifies this connection (Useful
   // for mapping connection between Java and C++ code).
@@ -163,7 +164,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -175,7 +176,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -186,7 +187,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -198,7 +199,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -207,7 +208,7 @@ bool InitializeBinderChannelJavaClass(void* jni_env_void) {
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -217,7 +218,7 @@ bool InitializeBinderChannelJavaClass(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 

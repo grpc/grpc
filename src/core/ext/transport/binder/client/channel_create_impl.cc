@@ -50,7 +50,7 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
 
   grpc_core::Transport* transport = grpc_create_binder_transport_client(
       std::move(endpoint_binder), security_policy);
-  GPR_ASSERT(transport != nullptr);
+  CHECK_NE(transport, nullptr);
 
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
@@ -60,7 +60,7 @@ grpc_channel* CreateDirectBinderChannelImplForTesting(
       grpc_core::ChannelCreate("binder_target_placeholder", channel_args,
                                GRPC_CLIENT_DIRECT_CHANNEL, transport);
   // TODO(mingcl): Handle error properly
-  GPR_ASSERT(channel.ok());
+  CHECK(channel.ok());
   grpc_channel_args_destroy(args);
   return channel->release()->c_ptr();
 }

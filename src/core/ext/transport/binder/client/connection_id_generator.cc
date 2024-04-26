@@ -55,7 +55,7 @@ std::string ConnectionIdGenerator::Generate(absl::string_view uri) {
     // Insert a hyphen before serial number
     ret = absl::StrCat(s, "-", ++count_);
   }
-  GPR_ASSERT(ret.length() < kPathLengthLimit);
+  CHECK(ret.length() < kPathLengthLimit);
   return ret;
 }
 

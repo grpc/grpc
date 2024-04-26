@@ -23,6 +23,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
@@ -152,7 +153,7 @@ TransactionReceiverAndroid::TransactionReceiverAndroid(
   args.wire_reader_ref = wire_reader_ref;
   args.callback = &transact_cb_;
   binder_ = ndk_util::AIBinder_new(aibinder_class, &args);
-  GPR_ASSERT(binder_);
+  CHECK(binder_);
   gpr_log(GPR_INFO, "ndk_util::AIBinder_associateClass = %d",
           static_cast<int>(
               ndk_util::AIBinder_associateClass(binder_, aibinder_class)));

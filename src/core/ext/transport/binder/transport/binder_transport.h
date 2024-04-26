@@ -23,6 +23,7 @@
 
 #include "absl/container/flat_hash_map.h"
 
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/binder_security_policy.h>
@@ -75,7 +76,7 @@ struct grpc_binder_transport final : public grpc_core::Transport,
     // TODO(mingcl): Wrap around when all tx codes are used. "If we do detect a
     // collision however, we will fail the new call with UNAVAILABLE, and shut
     // down the transport gracefully."
-    GPR_ASSERT(next_free_tx_code <= LAST_CALL_TRANSACTION);
+    CHECK(next_free_tx_code <= LAST_CALL_TRANSACTION);
     return next_free_tx_code++;
   }
 
