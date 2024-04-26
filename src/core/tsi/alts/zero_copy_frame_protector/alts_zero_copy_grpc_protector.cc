@@ -24,6 +24,7 @@
 #include <utility>
 
 #include <grpc/support/alloc.h>
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -84,7 +85,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
       remaining -= slice_length;
     }
   }
-  GPR_ASSERT(remaining == 0);
+  CHECK_EQ(remaining, 0);
   // Gets little-endian frame size.
   uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
                         (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
@@ -294,7 +295,7 @@ tsi_result alts_zero_copy_grpc_protector_create(
       impl->max_unprotected_data_size =
           alts_grpc_record_protocol_max_unprotected_data_size(
               impl->record_protocol, max_protected_frame_size_to_set);
-      GPR_ASSERT(impl->max_unprotected_data_size > 0);
+      CHECK_GT(impl->max_unprotected_data_size, 0);
       // Allocates internal slice buffers.
       grpc_slice_buffer_init(&impl->unprotected_staging_sb);
       grpc_slice_buffer_init(&impl->protected_sb);
