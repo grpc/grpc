@@ -98,7 +98,7 @@ class DefaultConfigSelector final : public ConfigSelector {
     // The client channel code ensures that this will never be null.
     // If neither the resolver nor the client application provide a
     // config, a default empty config will be used.
-    DCHECK_NE(service_config_, nullptr);
+    DCHECK(service_config_ != nullptr);
   }
 
   const char* name() const override { return "default"; }
