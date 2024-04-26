@@ -562,7 +562,7 @@ class StreamWriteContext {
       grpc_chttp2_encode_data(s_->id, &s_->flow_controlled_buffer, 0, true,
                               &s_->stats.outgoing, t_->outbuf.c_slice_buffer());
     } else {
-      if (!grpc_core::IsTransferHeadersToTrailersEnabled()) {
+      if (!grpc_core::IsTrailersOnlyTransferEnabled()) {
         if (send_status_.has_value()) {
           s_->send_trailing_metadata->Set(grpc_core::HttpStatusMetadata(),
                                           *send_status_);
