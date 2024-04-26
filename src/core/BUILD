@@ -4998,6 +4998,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/functional:bind_front",
+        "absl/log:check",
         "absl/memory",
         "absl/random",
         "absl/status",
@@ -5181,6 +5182,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

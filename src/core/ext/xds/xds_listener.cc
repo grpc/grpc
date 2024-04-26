@@ -21,6 +21,7 @@
 #include <set>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -43,7 +44,6 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/text/encode.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -874,8 +874,8 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  CHECK(static_cast<unsigned int>(
-                 filter_chain.filter_chain_match.source_type) < 3);
+  CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
+        3);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
       &destination_ip->source_types_array[static_cast<int>(
