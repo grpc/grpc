@@ -5820,7 +5820,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   target_link_libraries(fd_conservation_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    absl::check
     grpc_test_util
   )
 
@@ -6134,7 +6133,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++_unsecure
     grpc_test_util_unsecure
     grpc++_test_config
@@ -8339,7 +8337,6 @@ target_include_directories(buffer_list_test
 target_link_libraries(buffer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -12873,7 +12870,6 @@ target_include_directories(endpoint_pair_test
 target_link_libraries(endpoint_pair_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -13024,7 +13020,6 @@ target_include_directories(error_test
 target_link_libraries(error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -23769,7 +23764,6 @@ target_include_directories(resolve_address_using_ares_resolver_test
 target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
   grpc++_test_config
 )
@@ -23876,7 +23870,6 @@ target_include_directories(resolve_address_using_native_resolver_test
 target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
   grpc++_test_config
 )
@@ -26617,7 +26610,6 @@ target_include_directories(secure_endpoint_test
 target_link_libraries(secure_endpoint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc_test_util
 )
 
@@ -28466,7 +28458,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(socket_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -29608,7 +29599,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc_test_util
   )
 
@@ -30396,7 +30386,6 @@ target_include_directories(test_cpp_client_credentials_test
 target_link_libraries(test_cpp_client_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -30556,7 +30545,6 @@ target_include_directories(test_cpp_server_credentials_test
 target_link_libraries(test_cpp_server_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
@@ -30976,7 +30964,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(time_jump_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    absl::check
     grpc++
     grpc_test_util
   )
@@ -31220,7 +31207,6 @@ target_include_directories(timer_test
 target_link_libraries(timer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   grpc++
   grpc_test_util
 )
