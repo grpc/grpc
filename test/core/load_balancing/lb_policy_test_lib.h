@@ -758,7 +758,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   LoadBalancingPolicy* lb_policy() const {
-    CHECK_NE(lb_policy_, nullptr);
+    CHECK(lb_policy_ != nullptr);
     return lb_policy_.get();
   }
 
