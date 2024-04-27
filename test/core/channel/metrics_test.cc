@@ -64,14 +64,14 @@ TEST_F(MetricsTest, UInt64Counter) {
       StatsPluginChannelScope(kDomain3To4, ""))
       .AddCounter(uint64_counter_handle, uint64_t(3), kLabelValues,
                   kOptionalLabelValues);
-  EXPECT_THAT(plugin1->GetCounterValue(uint64_counter_handle.convert(),
-                                       kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetUInt64CounterValue(
+                  uint64_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1));
-  EXPECT_THAT(plugin2->GetCounterValue(uint64_counter_handle.convert(),
-                                       kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetUInt64CounterValue(
+                  uint64_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
-  EXPECT_THAT(plugin3->GetCounterValue(uint64_counter_handle.convert(),
-                                       kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetUInt64CounterValue(
+                  uint64_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(6));
 }
 
@@ -104,14 +104,14 @@ TEST_F(MetricsTest, DoubleCounter) {
       StatsPluginChannelScope(kDomain3To4, ""))
       .AddCounter(double_counter_handle, 3.45, kLabelValues,
                   kOptionalLabelValues);
-  EXPECT_THAT(plugin1->GetCounterValue(double_counter_handle.convert(),
-                                       kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCounterValue(
+                  double_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1.23));
-  EXPECT_THAT(plugin2->GetCounterValue(double_counter_handle.convert(),
-                                       kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleCounterValue(
+                  double_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3.57));
-  EXPECT_THAT(plugin3->GetCounterValue(double_counter_handle.convert(),
-                                       kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetDoubleCounterValue(
+                  double_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(7.02));
 }
 
@@ -144,14 +144,14 @@ TEST_F(MetricsTest, UInt64Histogram) {
       StatsPluginChannelScope(kDomain3To4, ""))
       .RecordHistogram(uint64_histogram_handle, uint64_t(3), kLabelValues,
                        kOptionalLabelValues);
-  EXPECT_THAT(plugin1->GetHistogramValue(uint64_histogram_handle.convert(),
-                                         kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetUInt64HistogramValue(
+                  uint64_histogram_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1)));
-  EXPECT_THAT(plugin2->GetHistogramValue(uint64_histogram_handle.convert(),
-                                         kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetUInt64HistogramValue(
+                  uint64_histogram_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1, 2)));
-  EXPECT_THAT(plugin3->GetHistogramValue(uint64_histogram_handle.convert(),
-                                         kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetUInt64HistogramValue(
+                  uint64_histogram_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1, 2, 3)));
 }
 
@@ -184,15 +184,15 @@ TEST_F(MetricsTest, DoubleHistogram) {
       StatsPluginChannelScope(kDomain3To4, ""))
       .RecordHistogram(double_histogram_handle, 3.45, kLabelValues,
                        kOptionalLabelValues);
-  EXPECT_THAT(plugin1->GetHistogramValue(double_histogram_handle.convert(),
-                                         kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleHistogramValue(
+                  double_histogram_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1.23)));
-  EXPECT_THAT(plugin2->GetHistogramValue(double_histogram_handle.convert(),
-                                         kLabelValues, kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleHistogramValue(
+                  double_histogram_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1.23, 2.34)));
   EXPECT_THAT(
-      plugin3->GetHistogramValue(double_histogram_handle.convert(),
-                                 kLabelValues, kOptionalLabelValues),
+      plugin3->GetDoubleHistogramValue(double_histogram_handle, kLabelValues,
+                                       kOptionalLabelValues),
       ::testing::Optional(::testing::UnorderedElementsAre(1.23, 2.34, 3.45)));
 }
 
@@ -221,58 +221,58 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, ""));
   auto callback1 = group1.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(1), kLabelValues,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle.convert()});
+      {int64_gauge_handle});
   auto callback2 = group1.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(2), kLabelValues2,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle.convert()});
+      {int64_gauge_handle});
   // No plugins have data yet.
-  EXPECT_EQ(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin1->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin1->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
   plugin3->TriggerCallbacks();
   // Now plugin1 should have data, but the others should not.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(2));
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // De-register the callbacks.
   callback1.reset();
@@ -282,58 +282,58 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, ""));
   callback1 = group2.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(3), kLabelValues,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle.convert()});
+      {int64_gauge_handle});
   callback2 = group2.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(4), kLabelValues2,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle.convert()});
+      {int64_gauge_handle});
   // Plugin1 still has data from before, but the others have none.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(2));
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
   plugin3->TriggerCallbacks();
   // Now plugin1 and plugin2 should have data, but plugin3 should not.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4));
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // De-register the callbacks.
   callback1.reset();
@@ -343,58 +343,58 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, ""));
   callback1 = group3.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(5), kLabelValues,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle.convert()});
+      {int64_gauge_handle});
   callback2 = group3.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(6), kLabelValues2,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle.convert()});
+      {int64_gauge_handle});
   // Plugin1 and plugin2 still has data from before, but plugin3 has none.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4));
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
+                int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
   plugin3->TriggerCallbacks();
   // Now plugin1 and plugin2 should have data, but plugin3 should not.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(5));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(6));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(5));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(6));
-  EXPECT_THAT(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(5));
-  EXPECT_THAT(plugin3->GetCallbackGaugeValue(int64_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetInt64CallbackGaugeValue(
+                  int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(6));
   // Need to destroy callbacks before the plugin group that created them.
   callback1.reset();
@@ -426,58 +426,58 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, ""));
   auto callback1 = group1.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 1.23, kLabelValues,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle.convert()});
+      {double_gauge_handle});
   auto callback2 = group1.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 2.34, kLabelValues2,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle.convert()});
+      {double_gauge_handle});
   // No plugins have data yet.
-  EXPECT_EQ(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin1->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin1->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
   plugin3->TriggerCallbacks();
   // Now plugin1 should have data, but the others should not.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1.23));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(2.34));
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // De-register the callbacks.
   callback1.reset();
@@ -487,58 +487,58 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, ""));
   callback1 = group2.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 3.45, kLabelValues,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle.convert()});
+      {double_gauge_handle});
   callback2 = group2.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 4.56, kLabelValues2,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle.convert()});
+      {double_gauge_handle});
   // Plugin1 still has data from before, but the others have none.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1.23));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(2.34));
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
   plugin3->TriggerCallbacks();
   // Now plugin1 and plugin2 should have data, but plugin3 should not.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3.45));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4.56));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3.45));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4.56));
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // De-register the callbacks.
   callback1.reset();
@@ -548,58 +548,58 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, ""));
   callback1 = group3.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 5.67, kLabelValues,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle.convert()});
+      {double_gauge_handle});
   callback2 = group3.RegisterCallback(
-      [&](CallbackMetricReporterWrapper& reporter) {
+      [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 6.78, kLabelValues2,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle.convert()});
+      {double_gauge_handle});
   // Plugin1 and plugin2 still has data from before, but plugin3 has none.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3.45));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4.56));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3.45));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(4.56));
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues, kOptionalLabelValues),
             absl::nullopt);
-  EXPECT_EQ(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                           kOptionalLabelValues),
+  EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
+                double_gauge_handle, kLabelValues2, kOptionalLabelValues),
             absl::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
   plugin3->TriggerCallbacks();
   // Now plugin1 and plugin2 should have data, but plugin3 should not.
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(5.67));
-  EXPECT_THAT(plugin1->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(6.78));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(5.67));
-  EXPECT_THAT(plugin2->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin2->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(6.78));
-  EXPECT_THAT(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(5.67));
-  EXPECT_THAT(plugin3->GetCallbackGaugeValue(double_gauge_handle, kLabelValues2,
-                                             kOptionalLabelValues),
+  EXPECT_THAT(plugin3->GetDoubleCallbackGaugeValue(
+                  double_gauge_handle, kLabelValues2, kOptionalLabelValues),
               ::testing::Optional(6.78));
   // Need to destroy callbacks before the plugin group that created them.
   callback1.reset();
@@ -623,8 +623,8 @@ TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
       StatsPluginChannelScope(kDomain1To4, ""))
       .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
                        kOptionalLabelValues);
-  EXPECT_EQ(plugin->GetHistogramValue(double_histogram_handle.convert(),
-                                      kLabelValues, kOptionalLabelValues),
+  EXPECT_EQ(plugin->GetDoubleHistogramValue(double_histogram_handle,
+                                            kLabelValues, kOptionalLabelValues),
             absl::nullopt);
 }
 

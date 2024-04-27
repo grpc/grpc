@@ -317,10 +317,10 @@ GrpcXdsClient::GrpcXdsClient(
               .certificate_providers())),
       stats_plugin_group_(GetStatsPluginGroupForKey(key_)),
       registered_metric_callback_(stats_plugin_group_.RegisterCallback(
-          [this](CallbackMetricReporterWrapper& reporter) {
+          [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
           },
-          {kMetricConnected.convert(), kMetricResources.convert()})) {}
+          {kMetricConnected, kMetricResources})) {}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
@@ -384,8 +384,7 @@ grpc_slice GrpcXdsClient::DumpAllClientConfigs()
   return grpc_slice_from_cpp_string(std::string(output, output_length));
 }
 
-void GrpcXdsClient::ReportCallbackMetrics(
-    CallbackMetricReporterWrapper& reporter) {
+void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
   MutexLock lock(mu());
   ReportResourceCounts([&](const ResourceCountLabels& labels, uint64_t count) {
     reporter.Report(

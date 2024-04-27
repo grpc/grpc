@@ -79,8 +79,8 @@ GlobalInstrumentsRegistry::GetInstrumentDescriptor(
 
 RegisteredMetricCallback::RegisteredMetricCallback(
     GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
-    absl::AnyInvocable<void(CallbackMetricReporterWrapper&)> callback,
-    std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics,
     Duration min_interval)
     : stats_plugin_group_(stats_plugin_group),
       callback_(std::move(callback)),
@@ -99,8 +99,8 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 
 std::unique_ptr<RegisteredMetricCallback>
 GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
-    absl::AnyInvocable<void(CallbackMetricReporterWrapper&)> callback,
-    std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+    std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics,
     Duration min_interval) {
   return std::make_unique<RegisteredMetricCallback>(
       *this, std::move(callback), std::move(metrics), min_interval);

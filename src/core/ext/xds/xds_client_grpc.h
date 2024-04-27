@@ -87,7 +87,7 @@ class GrpcXdsClient final : public XdsClient {
  private:
   class MetricsReporter;
 
-  void ReportCallbackMetrics(CallbackMetricReporterWrapper& reporter);
+  void ReportCallbackMetrics(CallbackMetricReporter& reporter);
   void Orphaned() override;
 
   std::string key_;

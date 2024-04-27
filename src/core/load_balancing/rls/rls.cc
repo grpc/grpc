@@ -579,7 +579,7 @@ class RlsLb final : public LoadBalancingPolicy {
     // Shutdown the cache; clean-up and orphan all the stored cache entries.
     void Shutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
-    void ReportMetricsLocked(CallbackMetricReporterWrapper& reporter)
+    void ReportMetricsLocked(CallbackMetricReporter& reporter)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
    private:
@@ -757,8 +757,9 @@ class RlsLb final : public LoadBalancingPolicy {
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
   void MaybeExportPickCount(
-      GlobalInstrumentsRegistry::MagicHandle<
-          uint64_t, GlobalInstrumentsRegistry::CounterType, 4, 0>
+      GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<
+          GlobalInstrumentsRegistry::ValueType::kUInt64,
+          GlobalInstrumentsRegistry::InstrumentType::kCounter, 4, 0>
           handle,
       absl::string_view target, const PickResult& pick_result);
 
@@ -1454,8 +1455,7 @@ void RlsLb::Cache::Shutdown() {
   cleanup_timer_handle_.reset();
 }
 
-void RlsLb::Cache::ReportMetricsLocked(
-    CallbackMetricReporterWrapper& reporter) {
+void RlsLb::Cache::ReportMetricsLocked(CallbackMetricReporter& reporter) {
   reporter.Report(
       kMetricCacheSize, static_cast<int64_t>(size_),
       {lb_policy_->channel_control_helper()->GetTarget(),
@@ -1955,11 +1955,11 @@ RlsLb::RlsLb(Args args)
       cache_(this),
       registered_metric_callback_(
           channel_control_helper()->GetStatsPluginGroup().RegisterCallback(
-              [this](CallbackMetricReporterWrapper& reporter) {
+              [this](CallbackMetricReporter& reporter) {
                 MutexLock lock(&mu_);
                 cache_.ReportMetricsLocked(reporter);
               },
-              {kMetricCacheSize.convert(), kMetricCacheEntries.convert()})) {
+              {kMetricCacheSize, kMetricCacheEntries})) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }
@@ -2229,8 +2229,9 @@ void RlsLb::UpdatePickerLocked() {
 }
 
 void RlsLb::MaybeExportPickCount(
-    GlobalInstrumentsRegistry::MagicHandle<
-        uint64_t, GlobalInstrumentsRegistry::CounterType, 4, 0>
+    GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<
+        GlobalInstrumentsRegistry::ValueType::kUInt64,
+        GlobalInstrumentsRegistry::InstrumentType::kCounter, 4, 0>
         handle,
     absl::string_view target, const PickResult& pick_result) {
   absl::string_view pick_result_string = Match(

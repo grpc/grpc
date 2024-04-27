@@ -60,9 +60,6 @@ class GlobalInstrumentsRegistry {
     kHistogram,
     kCallbackGauge,
   };
-  struct CounterType {};
-  struct HistogramType {};
-  struct CallbackGaugeType {};
   using InstrumentID = uint32_t;
   struct GlobalInstrumentDescriptor {
     ValueType value_type;
@@ -82,176 +79,129 @@ class GlobalInstrumentsRegistry {
     // runs or between different versions.
     InstrumentID index;
   };
-  struct GlobalUInt64CounterHandle : public GlobalInstrumentHandle {};
-  struct GlobalDoubleCounterHandle : public GlobalInstrumentHandle {};
-  struct GlobalUInt64HistogramHandle : public GlobalInstrumentHandle {};
-  struct GlobalDoubleHistogramHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackInt64GaugeHandle : public GlobalInstrumentHandle {};
-  struct GlobalCallbackDoubleGaugeHandle : public GlobalInstrumentHandle {};
-  using GlobalCallbackHandle = absl::variant<GlobalCallbackInt64GaugeHandle,
-                                             GlobalCallbackDoubleGaugeHandle>;
 
-  template <typename ValueType, typename InstrumentType, std::size_t M,
-            std::size_t N>
-  struct MagicHandle : public GlobalInstrumentHandle {
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, uint64_t>::value &&
-                  std::is_same<I, CounterType>::value>::type>
-    GlobalUInt64CounterHandle convert() const {
-      GlobalUInt64CounterHandle handle;
-      handle.index = index;
-      return handle;
-    }
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, double>::value &&
-                  std::is_same<I, CounterType>::value>::type>
-    GlobalDoubleCounterHandle convert() const {
-      GlobalDoubleCounterHandle handle;
-      handle.index = index;
-      return handle;
-    }
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, uint64_t>::value &&
-                  std::is_same<I, HistogramType>::value>::type>
-    GlobalUInt64HistogramHandle convert() const {
-      GlobalUInt64HistogramHandle handle;
-      handle.index = index;
-      return handle;
-    }
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, double>::value &&
-                  std::is_same<I, HistogramType>::value>::type>
-    GlobalDoubleHistogramHandle convert() const {
-      GlobalDoubleHistogramHandle handle;
-      handle.index = index;
-      return handle;
-    }
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, int64_t>::value &&
-                  std::is_same<I, CallbackGaugeType>::value>::type>
-    GlobalCallbackInt64GaugeHandle convert() const {
-      GlobalCallbackInt64GaugeHandle handle;
-      handle.index = index;
-      return handle;
-    }
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, double>::value &&
-                  std::is_same<I, CallbackGaugeType>::value>::type>
-    GlobalCallbackDoubleGaugeHandle convert() const {
-      GlobalCallbackDoubleGaugeHandle handle;
-      handle.index = index;
-      return handle;
-    }
+  template <ValueType V, InstrumentType I, size_t M, size_t N>
+  struct TypedGlobalInstrumentHandle : public GlobalInstrumentHandle {
+    static constexpr ValueType value_type = V;
+    static constexpr InstrumentType instrument_type = I;
+    static constexpr size_t num_labels = M;
+    static constexpr size_t num_optional_labels = N;
   };
 
-  template <typename ValueType, typename InstrumentType, std::size_t M,
-            std::size_t N>
+  template <ValueType V, InstrumentType I, std::size_t M, std::size_t N>
   class RegistrationBuilder {
    public:
     template <typename... Args>
-    RegistrationBuilder<ValueType, InstrumentType, sizeof...(Args), N> Labels(
-        Args&&... args) {
-      return RegistrationBuilder<ValueType, InstrumentType, sizeof...(Args), N>(
+    RegistrationBuilder<V, I, sizeof...(Args), N> Labels(Args&&... args) {
+      return RegistrationBuilder<V, I, sizeof...(Args), N>(
           name_, description_, unit_, enable_by_default_,
           std::array<absl::string_view, sizeof...(Args)>({args...}),
           optional_label_keys_);
     }
 
     template <typename... Args>
-    RegistrationBuilder<ValueType, InstrumentType, M, sizeof...(Args)>
-    OptionalLabels(Args&&... args) {
-      return RegistrationBuilder<ValueType, InstrumentType, M, sizeof...(Args)>(
+    RegistrationBuilder<V, I, M, sizeof...(Args)> OptionalLabels(
+        Args&&... args) {
+      return RegistrationBuilder<V, I, M, sizeof...(Args)>(
           name_, description_, unit_, enable_by_default_, label_keys_,
           std::array<absl::string_view, sizeof...(Args)>({args...}));
     }
 
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, uint64_t>::value &&
-                  std::is_same<I, CounterType>::value>::type>
-    MagicHandle<uint64_t, CounterType, M, N> Build() {
-      MagicHandle<uint64_t, CounterType, M, N> handle;
-      handle.index = GlobalInstrumentsRegistry::RegisterInstrument(
-          GlobalInstrumentsRegistry::ValueType::kUInt64,
-          GlobalInstrumentsRegistry::InstrumentType::kCounter, name_,
-          description_, unit_, enable_by_default_, label_keys_,
-          optional_label_keys_);
+    template <ValueType VV = V, InstrumentType II = I,
+              typename =
+                  typename std::enable_if<VV == ValueType::kUInt64 &&
+                                          II == InstrumentType::kCounter>::type>
+    TypedGlobalInstrumentHandle<ValueType::kUInt64, InstrumentType::kCounter, M,
+                                N>
+    Build() {
+      TypedGlobalInstrumentHandle<ValueType::kUInt64, InstrumentType::kCounter,
+                                  M, N>
+          handle;
+      handle.index = RegisterInstrument(
+          ValueType::kUInt64, InstrumentType::kCounter, name_, description_,
+          unit_, enable_by_default_, label_keys_, optional_label_keys_);
       return handle;
     }
 
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, double>::value &&
-                  std::is_same<I, CounterType>::value>::type>
-    MagicHandle<double, CounterType, M, N> Build() {
-      MagicHandle<double, CounterType, M, N> handle;
-      handle.index = GlobalInstrumentsRegistry::RegisterInstrument(
-          GlobalInstrumentsRegistry::ValueType::kDouble,
-          GlobalInstrumentsRegistry::InstrumentType::kCounter, name_,
-          description_, unit_, enable_by_default_, label_keys_,
-          optional_label_keys_);
+    template <ValueType VV = V, InstrumentType II = I,
+              typename =
+                  typename std::enable_if<VV == ValueType::kDouble &&
+                                          II == InstrumentType::kCounter>::type>
+    TypedGlobalInstrumentHandle<ValueType::kDouble, InstrumentType::kCounter, M,
+                                N>
+    Build() {
+      TypedGlobalInstrumentHandle<ValueType::kDouble, InstrumentType::kCounter,
+                                  M, N>
+          handle;
+      handle.index = RegisterInstrument(
+          ValueType::kDouble, InstrumentType::kCounter, name_, description_,
+          unit_, enable_by_default_, label_keys_, optional_label_keys_);
       return handle;
     }
 
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, uint64_t>::value &&
-                  std::is_same<I, HistogramType>::value>::type>
-    MagicHandle<uint64_t, HistogramType, M, N> Build() {
-      MagicHandle<uint64_t, HistogramType, M, N> handle;
-      handle.index = GlobalInstrumentsRegistry::RegisterInstrument(
-          GlobalInstrumentsRegistry::ValueType::kUInt64,
-          GlobalInstrumentsRegistry::InstrumentType::kHistogram, name_,
-          description_, unit_, enable_by_default_, label_keys_,
-          optional_label_keys_);
+    template <
+        ValueType VV = V, InstrumentType II = I,
+        typename = typename std::enable_if<
+            VV == ValueType::kUInt64 && II == InstrumentType::kHistogram>::type>
+    TypedGlobalInstrumentHandle<ValueType::kUInt64, InstrumentType::kHistogram,
+                                M, N>
+    Build() {
+      TypedGlobalInstrumentHandle<ValueType::kUInt64,
+                                  InstrumentType::kHistogram, M, N>
+          handle;
+      handle.index = RegisterInstrument(
+          ValueType::kUInt64, InstrumentType::kHistogram, name_, description_,
+          unit_, enable_by_default_, label_keys_, optional_label_keys_);
       return handle;
     }
 
-    template <typename V = ValueType, typename I = InstrumentType,
-              typename = typename std::enable_if<
-                  std::is_same<V, double>::value &&
-                  std::is_same<I, HistogramType>::value>::type>
-    MagicHandle<double, HistogramType, M, N> Build() {
-      MagicHandle<double, HistogramType, M, N> handle;
-      handle.index = GlobalInstrumentsRegistry::RegisterInstrument(
-          GlobalInstrumentsRegistry::ValueType::kDouble,
-          GlobalInstrumentsRegistry::InstrumentType::kHistogram, name_,
-          description_, unit_, enable_by_default_, label_keys_,
-          optional_label_keys_);
+    template <
+        ValueType VV = V, InstrumentType II = I,
+        typename = typename std::enable_if<
+            VV == ValueType::kDouble && II == InstrumentType::kHistogram>::type>
+    TypedGlobalInstrumentHandle<ValueType::kDouble, InstrumentType::kHistogram,
+                                M, N>
+    Build() {
+      TypedGlobalInstrumentHandle<ValueType::kDouble,
+                                  InstrumentType::kHistogram, M, N>
+          handle;
+      handle.index = RegisterInstrument(
+          ValueType::kDouble, InstrumentType::kHistogram, name_, description_,
+          unit_, enable_by_default_, label_keys_, optional_label_keys_);
       return handle;
     }
 
-    template <typename V = ValueType, typename I = InstrumentType,
+    template <ValueType VV = V, InstrumentType II = I,
               typename = typename std::enable_if<
-                  std::is_same<V, int64_t>::value &&
-                  std::is_same<I, CallbackGaugeType>::value>::type>
-    MagicHandle<int64_t, CallbackGaugeType, M, N> Build() {
-      MagicHandle<int64_t, CallbackGaugeType, M, N> handle;
-      handle.index = GlobalInstrumentsRegistry::RegisterInstrument(
-          GlobalInstrumentsRegistry::ValueType::kInt64,
-          GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge, name_,
-          description_, unit_, enable_by_default_, label_keys_,
-          optional_label_keys_);
+                  VV == ValueType::kInt64 &&
+                  II == InstrumentType::kCallbackGauge>::type>
+    TypedGlobalInstrumentHandle<ValueType::kInt64,
+                                InstrumentType::kCallbackGauge, M, N>
+    Build() {
+      TypedGlobalInstrumentHandle<ValueType::kInt64,
+                                  InstrumentType::kCallbackGauge, M, N>
+          handle;
+      handle.index =
+          RegisterInstrument(ValueType::kInt64, InstrumentType::kCallbackGauge,
+                             name_, description_, unit_, enable_by_default_,
+                             label_keys_, optional_label_keys_);
       return handle;
     }
 
-    template <typename V = ValueType, typename I = InstrumentType,
+    template <ValueType VV = V, InstrumentType II = I,
               typename = typename std::enable_if<
-                  std::is_same<V, double>::value &&
-                  std::is_same<I, CallbackGaugeType>::value>::type>
-    MagicHandle<double, CallbackGaugeType, M, N> Build() {
-      MagicHandle<double, CallbackGaugeType, M, N> handle;
-      handle.index = GlobalInstrumentsRegistry::RegisterInstrument(
-          GlobalInstrumentsRegistry::ValueType::kDouble,
-          GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge, name_,
-          description_, unit_, enable_by_default_, label_keys_,
-          optional_label_keys_);
+                  VV == ValueType::kDouble &&
+                  II == InstrumentType::kCallbackGauge>::type>
+    TypedGlobalInstrumentHandle<ValueType::kDouble,
+                                InstrumentType::kCallbackGauge, M, N>
+    Build() {
+      TypedGlobalInstrumentHandle<ValueType::kDouble,
+                                  InstrumentType::kCallbackGauge, M, N>
+          handle;
+      handle.index =
+          RegisterInstrument(ValueType::kDouble, InstrumentType::kCallbackGauge,
+                             name_, description_, unit_, enable_by_default_,
+                             label_keys_, optional_label_keys_);
       return handle;
     }
 
@@ -285,42 +235,50 @@ class GlobalInstrumentsRegistry {
   };
 
   // Creates instrument in the GlobalInstrumentsRegistry.
-  static RegistrationBuilder<uint64_t, CounterType, 0, 0> RegisterUInt64Counter(
-      absl::string_view name, absl::string_view description,
-      absl::string_view unit, bool enable_by_default) {
-    return RegistrationBuilder<uint64_t, CounterType, 0, 0>(
-        name, description, unit, enable_by_default);
+  static RegistrationBuilder<ValueType::kUInt64, InstrumentType::kCounter, 0, 0>
+  RegisterUInt64Counter(absl::string_view name, absl::string_view description,
+                        absl::string_view unit, bool enable_by_default) {
+    return RegistrationBuilder<ValueType::kUInt64, InstrumentType::kCounter, 0,
+                               0>(name, description, unit, enable_by_default);
   }
-  static RegistrationBuilder<double, CounterType, 0, 0> RegisterDoubleCounter(
-      absl::string_view name, absl::string_view description,
-      absl::string_view unit, bool enable_by_default) {
-    return RegistrationBuilder<double, CounterType, 0, 0>(
-        name, description, unit, enable_by_default);
+  static RegistrationBuilder<ValueType::kDouble, InstrumentType::kCounter, 0, 0>
+  RegisterDoubleCounter(absl::string_view name, absl::string_view description,
+                        absl::string_view unit, bool enable_by_default) {
+    return RegistrationBuilder<ValueType::kDouble, InstrumentType::kCounter, 0,
+                               0>(name, description, unit, enable_by_default);
   }
-  static RegistrationBuilder<uint64_t, HistogramType, 0, 0>
+  static RegistrationBuilder<ValueType::kUInt64, InstrumentType::kHistogram, 0,
+                             0>
   RegisterUInt64Histogram(absl::string_view name, absl::string_view description,
                           absl::string_view unit, bool enable_by_default) {
-    return RegistrationBuilder<uint64_t, HistogramType, 0, 0>(
-        name, description, unit, enable_by_default);
+    return RegistrationBuilder<ValueType::kUInt64, InstrumentType::kHistogram,
+                               0, 0>(name, description, unit,
+                                     enable_by_default);
   }
-  static RegistrationBuilder<double, HistogramType, 0, 0>
+  static RegistrationBuilder<ValueType::kDouble, InstrumentType::kHistogram, 0,
+                             0>
   RegisterDoubleHistogram(absl::string_view name, absl::string_view description,
                           absl::string_view unit, bool enable_by_default) {
-    return RegistrationBuilder<double, HistogramType, 0, 0>(
-        name, description, unit, enable_by_default);
+    return RegistrationBuilder<ValueType::kDouble, InstrumentType::kHistogram,
+                               0, 0>(name, description, unit,
+                                     enable_by_default);
   }
-  static RegistrationBuilder<int64_t, CallbackGaugeType, 0, 0>
+  static RegistrationBuilder<ValueType::kInt64, InstrumentType::kCallbackGauge,
+                             0, 0>
   RegisterCallbackInt64Gauge(absl::string_view name,
                              absl::string_view description,
                              absl::string_view unit, bool enable_by_default) {
-    return RegistrationBuilder<int64_t, CallbackGaugeType, 0, 0>(
+    return RegistrationBuilder<ValueType::kInt64,
+                               InstrumentType::kCallbackGauge, 0, 0>(
         name, description, unit, enable_by_default);
   }
-  static RegistrationBuilder<double, CallbackGaugeType, 0, 0>
+  static RegistrationBuilder<ValueType::kDouble, InstrumentType::kCallbackGauge,
+                             0, 0>
   RegisterCallbackDoubleGauge(absl::string_view name,
                               absl::string_view description,
                               absl::string_view unit, bool enable_by_default) {
-    return RegistrationBuilder<double, CallbackGaugeType, 0, 0>(
+    return RegistrationBuilder<ValueType::kDouble,
+                               InstrumentType::kCallbackGauge, 0, 0>(
         name, description, unit, enable_by_default);
   }
 
@@ -350,37 +308,30 @@ class CallbackMetricReporter {
  public:
   virtual ~CallbackMetricReporter() = default;
 
-  virtual void Report(
-      GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle handle,
-      int64_t value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
-  virtual void Report(
-      GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle handle,
-      double value, absl::Span<const absl::string_view> label_values,
-      absl::Span<const absl::string_view> optional_values) = 0;
-};
-
-class RegisteredMetricCallback;
-
-class CallbackMetricReporterWrapper {
- public:
-  template <
-      template <typename, typename, std::size_t, std::size_t> class HandleType,
-      typename ValueType, typename InstrumentType, std::size_t M, std::size_t N>
-  void Report(HandleType<ValueType, InstrumentType, M, N> handle,
-              ValueType value, std::array<absl::string_view, M> label_values,
-              std::array<absl::string_view, N> optional_values) {
-    reporter_.Report(handle.convert(), value, label_values, optional_values);
+  template <GlobalInstrumentsRegistry::ValueType V,
+            GlobalInstrumentsRegistry::InstrumentType I, std::size_t M,
+            std::size_t N, typename ValueType>
+  void Report(
+      GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<V, I, M, N> handle,
+      ValueType value, std::array<absl::string_view, M> label_values,
+      std::array<absl::string_view, N> optional_values) {
+    Report(
+        static_cast<GlobalInstrumentsRegistry::GlobalInstrumentHandle>(handle),
+        value, label_values, optional_values);
   }
 
  private:
-  friend class RegisteredMetricCallback;
-
-  explicit CallbackMetricReporterWrapper(CallbackMetricReporter& reporter)
-      : reporter_(reporter) {}
-
-  CallbackMetricReporter& reporter_;
+  virtual void Report(GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+                      int64_t value,
+                      absl::Span<const absl::string_view> label_values,
+                      absl::Span<const absl::string_view> optional_values) = 0;
+  virtual void Report(GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+                      double value,
+                      absl::Span<const absl::string_view> label_values,
+                      absl::Span<const absl::string_view> optional_values) = 0;
 };
+
+class RegisteredMetricCallback;
 
 // The StatsPlugin interface.
 class StatsPlugin {
@@ -410,15 +361,15 @@ class StatsPlugin {
   // this measurement and must match with their corresponding keys in
   // GlobalInstrumentsRegistry::RegisterUInt64Counter().
   virtual void AddCounter(
-      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
+      absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
   // Adds \a value to the double counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with
   // this measurement and must match with their corresponding keys in
   // GlobalInstrumentsRegistry::RegisterDoubleCounter().
   virtual void AddCounter(
-      GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle, double value,
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
       absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
   // Records a uint64 \a value to the histogram specified by \a handle. \a
@@ -426,16 +377,16 @@ class StatsPlugin {
   // associated with this measurement and must match with their corresponding
   // keys in GlobalInstrumentsRegistry::RegisterUInt64Histogram().
   virtual void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
-      uint64_t value, absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
+      absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
   // Records a double \a value to the histogram specified by \a handle. \a
   // label_values and \a optional_label_values specify attributes that are
   // associated with this measurement and must match with their corresponding
   // keys in GlobalInstrumentsRegistry::RegisterDoubleHistogram().
   virtual void RecordHistogram(
-      GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
-      double value, absl::Span<const absl::string_view> label_values,
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
+      absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_label_values) = 0;
   // Adds a callback to be invoked when the stats plugin wants to
   // populate the corresponding metrics (see callback->metrics() for list).
@@ -486,31 +437,30 @@ class GlobalStatsPluginRegistry {
     }
     // Adds a counter in all stats plugins within the group. See the StatsPlugin
     // interface for more documentation and valid types.
-    template <template <typename, typename, std::size_t, std::size_t>
-              class HandleType,
-              typename ValueType, typename InstrumentType, std::size_t M,
-              std::size_t N>
-    void AddCounter(HandleType<ValueType, InstrumentType, M, N> handle,
-                    ValueType value,
-                    std::array<absl::string_view, M> label_values,
-                    std::array<absl::string_view, N> optional_values) {
+    template <GlobalInstrumentsRegistry::ValueType V,
+              GlobalInstrumentsRegistry::InstrumentType I, std::size_t M,
+              std::size_t N, typename ValueType>
+    void AddCounter(
+        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<V, I, M, N>
+            handle,
+        ValueType value, std::array<absl::string_view, M> label_values,
+        std::array<absl::string_view, N> optional_values) {
       for (auto& state : plugins_state_) {
-        state.plugin->AddCounter(handle.convert(), value, label_values,
-                                 optional_values);
+        state.plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
     // Records a value to a histogram in all stats plugins within the group. See
     // the StatsPlugin interface for more documentation and valid types.
-    template <template <typename, typename, std::size_t, std::size_t>
-              class HandleType,
-              typename ValueType, typename InstrumentType, std::size_t M,
-              std::size_t N>
-    void RecordHistogram(HandleType<ValueType, InstrumentType, M, N> handle,
-                         ValueType value,
-                         std::array<absl::string_view, M> label_values,
-                         std::array<absl::string_view, N> optional_values) {
+    template <GlobalInstrumentsRegistry::ValueType V,
+              GlobalInstrumentsRegistry::InstrumentType I, std::size_t M,
+              std::size_t N, typename ValueType>
+    void RecordHistogram(
+        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<V, I, M, N>
+            handle,
+        ValueType value, std::array<absl::string_view, M> label_values,
+        std::array<absl::string_view, N> optional_values) {
       for (auto& state : plugins_state_) {
-        state.plugin->RecordHistogram(handle.convert(), value, label_values,
+        state.plugin->RecordHistogram(handle, value, label_values,
                                       optional_values);
       }
     }
@@ -527,8 +477,8 @@ class GlobalStatsPluginRegistry {
     // must not outlive the StatsPluginGroup object that created it.
     GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
     RegisterCallback(
-        absl::AnyInvocable<void(CallbackMetricReporterWrapper&)> callback,
-        std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+        absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+        std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics,
         Duration min_interval = Duration::Seconds(5));
 
     // Adds all available client call tracers associated with the stats plugins
@@ -574,21 +524,18 @@ class RegisteredMetricCallback {
  public:
   RegisteredMetricCallback(
       GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group,
-      absl::AnyInvocable<void(CallbackMetricReporterWrapper&)> callback,
-      std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics,
+      absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
+      std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics,
       Duration min_interval);
 
   ~RegisteredMetricCallback();
 
   // Invokes the callback.  The callback will report metric data via reporter.
-  void Run(CallbackMetricReporter& reporter) {
-    CallbackMetricReporterWrapper reporter_wrapper(reporter);
-    callback_(reporter_wrapper);
-  }
+  void Run(CallbackMetricReporter& reporter) { callback_(reporter); }
 
   // Returns the set of metrics that this callback will modify.
-  const std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle>& metrics()
-      const {
+  const std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>&
+  metrics() const {
     return metrics_;
   }
 
@@ -598,8 +545,8 @@ class RegisteredMetricCallback {
 
  private:
   GlobalStatsPluginRegistry::StatsPluginGroup& stats_plugin_group_;
-  absl::AnyInvocable<void(CallbackMetricReporterWrapper&)> callback_;
-  std::vector<GlobalInstrumentsRegistry::GlobalCallbackHandle> metrics_;
+  absl::AnyInvocable<void(CallbackMetricReporter&)> callback_;
+  std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics_;
   Duration min_interval_;
 };
 
