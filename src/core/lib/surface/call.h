@@ -79,28 +79,6 @@ namespace grpc_core {
 class BasicPromiseBasedCall;
 class ServerPromiseBasedCall;
 
-class ServerCallContext {
- public:
-  virtual void PublishInitialMetadata(
-      ClientMetadataHandle metadata,
-      grpc_metadata_array* publish_initial_metadata) = 0;
-
-  // Construct the top of the server call promise for the v2 filter stack.
-  // TODO(ctiller): delete when v3 is available.
-  virtual ArenaPromise<ServerMetadataHandle> MakeTopOfServerCallPromise(
-      CallArgs call_args, grpc_completion_queue* cq,
-      absl::FunctionRef<void(grpc_call* call)> publish) = 0;
-
-  // Server stream data as supplied by the transport (so we can link the
-  // transport stream up with the call again).
-  // TODO(ctiller): legacy API - once we move transports to promises we'll
-  // create the promise directly and not need to pass around this token.
-  virtual const void* server_stream_data() = 0;
-
- protected:
-  ~ServerCallContext() = default;
-};
-
 // TODO(ctiller): move more call things into this type
 class CallContext {
  public:
@@ -130,8 +108,6 @@ class CallContext {
   gpr_atm* peer_string_atm_ptr();
   gpr_cycle_counter call_start_time() { return start_time_; }
 
-  ServerCallContext* server_call_context();
-
   void set_traced(bool traced) { traced_ = traced; }
   bool traced() const { return traced_; }
 
@@ -159,9 +135,9 @@ template <>
 struct ContextType<CallContext> {};
 
 // TODO(ctiller): remove once call-v3 finalized
-RefCountedPtr<CallSpineInterface> MakeServerCall(
-    ClientMetadataHandle client_initial_metadata, ServerInterface* server,
-    Channel* channel, Arena* arena);
+grpc_call* MakeServerCall(CallHandler call_handler,
+                          ClientMetadataHandle client_initial_metadata,
+                          grpc_metadata_array* publish_initial_metadata);
 
 }  // namespace grpc_core
 

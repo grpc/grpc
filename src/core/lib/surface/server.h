@@ -221,7 +221,7 @@ class Server : public ServerInterface,
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
-  class ChannelData final : public ServerTransport::Acceptor {
+  class ChannelData final {
    public:
     ChannelData() = default;
     ~ChannelData();
@@ -234,8 +234,6 @@ class Server : public ServerInterface,
     Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
-    RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
-                                          const absl::string_view& path);
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
@@ -244,16 +242,11 @@ class Server : public ServerInterface,
         grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
     void InitCall(RefCountedPtr<CallSpineInterface> call);
 
-    Arena* CreateArena() override;
-    absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
-
    private:
     class ConnectivityWatcher;
 
     static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
-    void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
@@ -384,6 +377,10 @@ class Server : public ServerInterface,
     using is_transparent = void;
   };
 
+  RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
+                                        const absl::string_view& path);
+  void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
+
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
@@ -445,10 +442,13 @@ class Server : public ServerInterface,
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
+  auto MatchAndPublishCall(CallHandler call_handler);
+
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
   ServerCallTracerFactory* const server_call_tracer_factory_;
+  RefCountedPtr<UnstartedCallDestination> call_destination_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;

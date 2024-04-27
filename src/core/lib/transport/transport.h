@@ -55,6 +55,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -582,24 +583,9 @@ class ClientTransport : public Transport {
 
 class ServerTransport : public Transport {
  public:
-  // Acceptor helps transports create calls.
-  class Acceptor {
-   public:
-    // Returns an arena that can be used to allocate memory for initial metadata
-    // parsing, and later passed to CreateCall() as the underlying arena for
-    // that call.
-    virtual Arena* CreateArena() = 0;
-    // Create a call at the server (or fail)
-    // arena must have been previously allocated by CreateArena()
-    virtual absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadataHandle client_initial_metadata, Arena* arena) = 0;
-
-   protected:
-    ~Acceptor() = default;
-  };
-
   // Called once slightly after transport setup to register the accept function.
-  virtual void SetAcceptor(Acceptor* acceptor) = 0;
+  virtual void SetCallDestination(
+      RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;
 
  protected:
   ~ServerTransport() override = default;

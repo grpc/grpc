@@ -80,6 +80,7 @@
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/interception_chain.h"
 
 namespace grpc_core {
 
@@ -825,7 +826,74 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
   return channelz_node;
 }
 
+static absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
+    ValueOrFailure<ClientMetadataHandle> md) {
+  if (!md.ok()) {
+    return absl::InternalError("Missing metadata");
+  }
+  if (!md.value()->get_pointer(HttpPathMetadata())) {
+    return absl::InternalError("Missing :path header");
+  }
+  if (!md.value()->get_pointer(HttpAuthorityMetadata())) {
+    return absl::InternalError("Missing :authority header");
+  }
+  return std::move(*md);
+}
 }  // namespace
+
+auto Server::MatchAndPublishCall(CallHandler call_handler) {
+  call_handler.SpawnGuarded("request_matcher", [this, call_handler]() mutable {
+    return TrySeq(
+        // Wait for initial metadata to pass through all filters
+        Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
+        // Match request with requested call
+        [this, call_handler](ClientMetadataHandle md) mutable {
+          auto* registered_method = static_cast<RegisteredMethod*>(
+              md->get(GrpcRegisteredMethod()).value_or(nullptr));
+          RequestMatcherInterface* rm;
+          grpc_server_register_method_payload_handling payload_handling =
+              GRPC_SRM_PAYLOAD_NONE;
+          if (registered_method == nullptr) {
+            rm = unregistered_request_matcher_.get();
+          } else {
+            payload_handling = registered_method->payload_handling;
+            rm = registered_method->matcher.get();
+          }
+          auto maybe_read_first_message = If(
+              payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+              [call_handler]() mutable { return call_handler.PullMessage(); },
+              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
+                return ValueOrFailure<absl::optional<MessageHandle>>(
+                    absl::nullopt);
+              });
+          return TryJoin<absl::StatusOr>(
+              std::move(maybe_read_first_message), rm->MatchRequest(0),
+              [md = std::move(md)]() mutable {
+                return ValueOrFailure<ClientMetadataHandle>(std::move(md));
+              });
+        },
+        // Publish call to cq
+        [call_handler](std::tuple<absl::optional<MessageHandle>,
+                                  RequestMatcherInterface::MatchResult,
+                                  ClientMetadataHandle>
+                           r) {
+          RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
+          auto md = std::move(std::get<2>(r));
+          auto* rc = mr.TakeCall();
+          rc->Complete(std::move(std::get<0>(r)), *md);
+          grpc_call* call =
+              MakeServerCall(call_handler, std::move(md), rc->initial_metadata);
+          *rc->call = call;
+          grpc_call_ref(call);
+          grpc_call_set_completion_queue(call, rc->cq_bound_to_call);
+          // TODO(ctiller): publish metadata
+          return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
+                     [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
+                       return absl::OkStatus();
+                     });
+        });
+  });
+}
 
 Server::Server(const ChannelArgs& args)
     : channel_args_(args),
@@ -834,7 +902,22 @@ Server::Server(const ChannelArgs& args)
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
-              .value_or(30))) {}
+              .value_or(30))) {
+  InterceptionChainBuilder builder(args);
+  builder.AddOnClientInitialMetadata(
+      [this](ClientMetadata& md) { SetRegisteredMethodOnMetadata(md); });
+  CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+      GRPC_SERVER_CHANNEL, builder);
+  auto call_destination =
+      builder.Build(MakeCallDestination([this](CallHandler handler) {
+        return MatchAndPublishCall(std::move(handler));
+      }));
+  if (!call_destination.ok()) {
+    Crash("Failed to build interception chain: %s",
+          call_destination.status().ToString().c_str());
+  }
+  call_destination_ = std::move(*call_destination);
+}
 
 Server::~Server() {
   // Remove the cq pollsets from the config_fetcher.
@@ -1299,17 +1382,6 @@ Server::ChannelData::~ChannelData() {
   }
 }
 
-Arena* Server::ChannelData::CreateArena() { return channel_->CreateArena(); }
-
-absl::StatusOr<CallInitiator> Server::ChannelData::CreateCall(
-    ClientMetadataHandle client_initial_metadata, Arena* arena) {
-  SetRegisteredMethodOnMetadata(*client_initial_metadata);
-  auto call = MakeServerCall(std::move(client_initial_metadata), server_.get(),
-                             channel_.get(), arena);
-  InitCall(call);
-  return CallInitiator(std::move(call));
-}
-
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
                                         OrphanablePtr<Channel> channel,
                                         size_t cq_idx, Transport* transport,
@@ -1333,7 +1405,8 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     op->set_accept_stream_fn = AcceptStream;
     op->set_registered_method_matcher_fn = [](void* arg,
                                               ClientMetadata* metadata) {
-      static_cast<ChannelData*>(arg)->SetRegisteredMethodOnMetadata(*metadata);
+      static_cast<ChannelData*>(arg)->server_->SetRegisteredMethodOnMetadata(
+          *metadata);
     };
     op->set_accept_stream_user_data = this;
   }
@@ -1349,24 +1422,23 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   transport->PerformOp(op);
 }
 
-Server::RegisteredMethod* Server::ChannelData::GetRegisteredMethod(
+Server::RegisteredMethod* Server::GetRegisteredMethod(
     const absl::string_view& host, const absl::string_view& path) {
-  if (server_->registered_methods_.empty()) return nullptr;
+  if (registered_methods_.empty()) return nullptr;
   // check for an exact match with host
-  auto it = server_->registered_methods_.find(std::make_pair(host, path));
-  if (it != server_->registered_methods_.end()) {
+  auto it = registered_methods_.find(std::make_pair(host, path));
+  if (it != registered_methods_.end()) {
     return it->second.get();
   }
   // check for wildcard method definition (no host set)
-  it = server_->registered_methods_.find(std::make_pair("", path));
-  if (it != server_->registered_methods_.end()) {
+  it = registered_methods_.find(std::make_pair("", path));
+  if (it != registered_methods_.end()) {
     return it->second.get();
   }
   return nullptr;
 }
 
-void Server::ChannelData::SetRegisteredMethodOnMetadata(
-    ClientMetadata& metadata) {
+void Server::SetRegisteredMethodOnMetadata(ClientMetadata& metadata) {
   auto* authority = metadata.get_pointer(HttpAuthorityMetadata());
   if (authority == nullptr) {
     authority = metadata.get_pointer(HostMetadata());
@@ -1402,19 +1474,14 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   grpc_call* call;
   grpc_error_handle error = grpc_call_create(&args, &call);
   grpc_call_stack* call_stack = grpc_call_get_call_stack(call);
-  if (call_stack == nullptr) {  // Promise based calls do not have a call stack
-    GPR_ASSERT(error.ok());
-    GPR_ASSERT(IsPromiseBasedServerCallEnabled());
+  GPR_ASSERT(call_stack != nullptr);
+  grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);
+  auto* calld = static_cast<Server::CallData*>(elem->call_data);
+  if (!error.ok()) {
+    calld->FailCallCreation();
     return;
-  } else {
-    grpc_call_element* elem = grpc_call_stack_element(call_stack, 0);
-    auto* calld = static_cast<Server::CallData*>(elem->call_data);
-    if (!error.ok()) {
-      calld->FailCallCreation();
-      return;
-    }
-    calld->Start(elem);
   }
+  calld->Start(elem);
 }
 
 namespace {
@@ -1424,75 +1491,6 @@ auto CancelledDueToServerShutdown() {
   };
 }
 }  // namespace
-
-void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
-  call->SpawnGuarded("request_matcher", [this, call]() {
-    return TrySeq(
-        // Wait for initial metadata to pass through all filters
-        Map(call->PullClientInitialMetadata(),
-            [](ValueOrFailure<ClientMetadataHandle> md)
-                -> absl::StatusOr<ClientMetadataHandle> {
-              if (!md.ok()) {
-                return absl::InternalError("Missing metadata");
-              }
-              if (!md.value()->get_pointer(HttpPathMetadata())) {
-                return absl::InternalError("Missing :path header");
-              }
-              if (!md.value()->get_pointer(HttpAuthorityMetadata())) {
-                return absl::InternalError("Missing :authority header");
-              }
-              return std::move(*md);
-            }),
-        // Match request with requested call
-        [this, call](ClientMetadataHandle md) {
-          auto* registered_method = static_cast<RegisteredMethod*>(
-              md->get(GrpcRegisteredMethod()).value_or(nullptr));
-          RequestMatcherInterface* rm;
-          grpc_server_register_method_payload_handling payload_handling =
-              GRPC_SRM_PAYLOAD_NONE;
-          if (registered_method == nullptr) {
-            rm = server_->unregistered_request_matcher_.get();
-          } else {
-            payload_handling = registered_method->payload_handling;
-            rm = registered_method->matcher.get();
-          }
-          auto maybe_read_first_message = If(
-              payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-              [call]() { return call->PullClientToServerMessage(); },
-              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                return ValueOrFailure<absl::optional<MessageHandle>>(
-                    absl::nullopt);
-              });
-          return TryJoin<absl::StatusOr>(
-              std::move(maybe_read_first_message), rm->MatchRequest(cq_idx()),
-              [md = std::move(md)]() mutable {
-                return ValueOrFailure<ClientMetadataHandle>(std::move(md));
-              });
-        },
-        // Publish call to cq
-        [](std::tuple<absl::optional<MessageHandle>,
-                      RequestMatcherInterface::MatchResult,
-                      ClientMetadataHandle>
-               r) {
-          RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
-          auto md = std::move(std::get<2>(r));
-          auto* rc = mr.TakeCall();
-          rc->Complete(std::move(std::get<0>(r)), *md);
-          auto* call_context = GetContext<CallContext>();
-          *rc->call = call_context->c_call();
-          grpc_call_ref(*rc->call);
-          grpc_call_set_completion_queue(call_context->c_call(),
-                                         rc->cq_bound_to_call);
-          call_context->server_call_context()->PublishInitialMetadata(
-              std::move(md), rc->initial_metadata);
-          // TODO(ctiller): publish metadata
-          return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
-                     [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
-                       return absl::OkStatus();
-                     });
-        });
-  });
-}
 
 ArenaPromise<ServerMetadataHandle> Server::ChannelData::MakeCallPromise(
     grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {

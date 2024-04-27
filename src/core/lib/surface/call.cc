@@ -2002,7 +2002,6 @@ class BasicPromiseBasedCall : public Call,
 
   virtual void OrphanCall() = 0;
 
-  virtual ServerCallContext* server_call_context() { return nullptr; }
   void SetCompletionQueue(grpc_completion_queue* cq) final {
     cq_ = cq;
     GRPC_CQ_INTERNAL_REF(cq, "bind");
@@ -2685,10 +2684,6 @@ void CallContext::UpdateDeadline(Timestamp deadline) {
 }
 
 Timestamp CallContext::deadline() const { return call_->deadline(); }
-
-ServerCallContext* CallContext::server_call_context() {
-  return call_->server_call_context();
-}
 
 RefCountedPtr<CallSpineInterface> CallContext::MakeCallSpine(
     CallArgs call_args) {

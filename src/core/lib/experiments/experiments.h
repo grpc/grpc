@@ -79,7 +79,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
@@ -118,7 +117,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
@@ -158,7 +156,6 @@ inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
@@ -194,7 +191,6 @@ enum ExperimentIds {
   kExperimentIdPendingQueueCap,
   kExperimentIdPickFirstNew,
   kExperimentIdPromiseBasedClientCall,
-  kExperimentIdPromiseBasedServerCall,
   kExperimentIdChaoticGood,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRstpit,
@@ -275,10 +271,6 @@ inline bool IsPickFirstNewEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 inline bool IsPromiseBasedClientCallEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedClientCall);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
-inline bool IsPromiseBasedServerCallEnabled() {
-  return IsExperimentEnabled(kExperimentIdPromiseBasedServerCall);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD
 inline bool IsChaoticGoodEnabled() {
