@@ -78,8 +78,7 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-class ChaoticGoodServerTransport final : public Transport,
-                                         public ServerTransport {
+class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(
       const ChannelArgs& args, PromiseEndpoint control_endpoint,

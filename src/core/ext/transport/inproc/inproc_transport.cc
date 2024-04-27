@@ -34,7 +34,6 @@ namespace grpc_core {
 
 namespace {
 class InprocServerTransport final : public RefCounted<InprocServerTransport>,
-                                    public Transport,
                                     public ServerTransport {
  public:
   void SetAcceptor(Acceptor* acceptor) override {
@@ -108,7 +107,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       "inproc_server_transport", GRPC_CHANNEL_CONNECTING};
 };
 
-class InprocClientTransport final : public Transport, public ClientTransport {
+class InprocClientTransport final : public ClientTransport {
  public:
   void StartCall(CallHandler call_handler) override {
     call_handler.SpawnGuarded(
