@@ -5213,7 +5213,6 @@ targets:
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
   deps:
-  - absl/log:check
   - grpc_test_util
   uses_polling: false
 - name: activity_test
