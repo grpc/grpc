@@ -343,6 +343,7 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
                            grpc_core::RegisteredMetricCallback* key)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
 
+   private:
     void Report(
         grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
         int64_t value, absl::Span<const absl::string_view> label_values,
@@ -356,7 +357,6 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(
             CallbackGaugeState<double>::ot_plugin->mu_) override;
 
-   private:
     OpenTelemetryPlugin* ot_plugin_;
     grpc_core::RegisteredMetricCallback* key_;
   };
