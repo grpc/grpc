@@ -115,7 +115,7 @@ def test_server(max_workers=10, reuse_port=False):
     server_kwargs = os.environ.get("GRPC_ADDITIONAL_SERVER_KWARGS", "")
     try:
         server_kwargs = ast.literal_eval(server_kwargs)
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         server_kwargs = {}
 
     return grpc.server(
