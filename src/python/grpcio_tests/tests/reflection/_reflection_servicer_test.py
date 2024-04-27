@@ -13,7 +13,6 @@
 # limitations under the License.
 """Tests of grpc_reflection.v1alpha.reflection."""
 
-import os
 import sys
 import unittest
 
@@ -62,10 +61,7 @@ def _file_descriptor_to_proto(descriptor):
 class ReflectionServicerTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        # This reflection service should be the only one tested in this case.
         reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
-        # Use this env var to disable the refection service added by default in g3.
-        os.environ["DISABLE_REFLECTION_IN_TESTS"] = "true"
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
