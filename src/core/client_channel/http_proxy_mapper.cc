@@ -142,7 +142,7 @@ absl::optional<std::string> GetHttpProxyServer(
   size_t authority_nstrs;
   gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
                    &authority_nstrs);
-  CHECK_NE(authority_nstrs, 0);  // should have at least 1 string
+  CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
   absl::optional<std::string> proxy_name;
   if (authority_nstrs == 1) {
     // User cred not present in authority
