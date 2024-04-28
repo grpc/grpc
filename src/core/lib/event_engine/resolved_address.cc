@@ -32,7 +32,7 @@ namespace experimental {
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
     : size_(size) {
-  DCHECK_GE(size, 0);
+  DCHECK_GE(size, 0u);
   CHECK(static_cast<size_t>(size) <= sizeof(address_));
   memcpy(&address_, address, size);
 }
