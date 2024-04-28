@@ -112,7 +112,7 @@ void SubchannelStreamClient::StartCall() {
 
 void SubchannelStreamClient::StartCallLocked() {
   if (event_handler_ == nullptr) return;
-  CHECK_EQ(call_state_, nullptr);
+  CHECK(call_state_ == nullptr);
   if (event_handler_ != nullptr) {
     event_handler_->OnCallStartLocked(this);
   }
@@ -446,7 +446,7 @@ void SubchannelStreamClient::CallState::CallEndedLocked(bool retry) {
   if (this == subchannel_stream_client_->call_state_.get()) {
     subchannel_stream_client_->call_state_.reset();
     if (retry) {
-      CHECK_NE(subchannel_stream_client_->event_handler_, nullptr);
+      CHECK(subchannel_stream_client_->event_handler_ != nullptr);
       if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.
