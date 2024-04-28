@@ -17,6 +17,7 @@
 
 #include <chrono>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>

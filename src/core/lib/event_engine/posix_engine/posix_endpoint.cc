@@ -36,6 +36,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/status.h>
 #include "absl/log/check.h"
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

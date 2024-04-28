@@ -23,6 +23,7 @@
 #include <dns_sd.h>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 
 #include <grpc/event_engine/event_engine.h>
 

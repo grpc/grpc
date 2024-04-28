@@ -37,6 +37,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include "absl/log/check.h"
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/extensions/supports_fd.h"

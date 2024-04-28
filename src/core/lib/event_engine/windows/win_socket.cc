@@ -17,6 +17,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "absl/log/check.h"
+
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"

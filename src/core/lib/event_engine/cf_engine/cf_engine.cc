@@ -32,6 +32,9 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
 
+#include "absl/log/check.h"
+
+
 namespace grpc_event_engine {
 namespace experimental {
 
