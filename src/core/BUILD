@@ -1681,11 +1681,11 @@ grpc_cc_library(
     srcs = [
         "lib/event_engine/forkable.cc",
     ],
-    external_deps = [
-        "absl/log:check",
-    ],
     hdrs = [
         "lib/event_engine/forkable.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         "//:config_vars",
