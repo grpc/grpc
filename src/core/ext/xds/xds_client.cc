@@ -719,7 +719,7 @@ template <typename T>
 void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
   CHECK_NE(xds_channel_->transport_, nullptr);
-  CHECK_EQ(call_, nullptr);
+  CHECK(call_ == nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: start new call from retryable "
@@ -1016,7 +1016,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<AdsCall>(this)));
-  CHECK_NE(streaming_call_, nullptr);
+  CHECK(streaming_call_ != nullptr);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -1378,7 +1378,7 @@ XdsClient::XdsChannel::LrsCall::LrsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<LrsCall>(this)));
-  CHECK_NE(streaming_call_, nullptr);
+  CHECK(streaming_call_ != nullptr);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -1599,7 +1599,7 @@ XdsClient::XdsClient(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
-  CHECK_NE(bootstrap_, nullptr);
+  CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
     gpr_log(GPR_INFO, "[xds_client %p] xDS node ID: %s", this,
             bootstrap_->node()->id().c_str());

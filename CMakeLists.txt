@@ -4149,7 +4149,6 @@ target_include_directories(grpc++
 )
 target_link_libraries(grpc++
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc
   ${_gRPC_PROTOBUF_LIBRARIES}
 )
@@ -5981,7 +5980,6 @@ target_include_directories(test_core_iomgr_timer_list_test
 
 target_link_libraries(test_core_iomgr_timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::check
   grpc_test_util
 )
 

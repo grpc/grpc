@@ -187,7 +187,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
     }
   } else if (!root_being_watched && root_cert_watcher_ != nullptr) {
     // Cancel root cert watch.
-    CHECK_NE(root_cert_provider_, nullptr);
+    CHECK(root_cert_provider_ != nullptr);
     root_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         root_cert_watcher_);
     root_cert_watcher_ = nullptr;
