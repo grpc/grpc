@@ -595,7 +595,7 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              const EventEngine::Endpoint::ReadArgs* args) {
   grpc_core::ReleasableMutexLock lock(&read_mu_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Read", this);
-  CHECK_EQ(read_cb_, nullptr);
+  CHECK(read_cb_ == nullptr);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
@@ -1266,7 +1266,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       engine_(engine) {
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
-  CHECK_NE(options.resource_quota, nullptr);
+  CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
