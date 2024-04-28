@@ -246,7 +246,7 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
     ++(out_offset_.slice_idx);
     out_offset_.byte_idx = 0;
   }
-  DCHECK_GT(iov_size, 0);
+  DCHECK_GT(iov_size, 0u);
   return iov_size;
 }
 
@@ -315,7 +315,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     iov[i].iov_len = slice.length();
   }
 
-  CHECK_NE(incoming_buffer_->Length(), 0);
+  CHECK_NE(incoming_buffer_->Length(), 0u);
   DCHECK_GT(min_progress_size_, 0);
 
   do {
@@ -670,8 +670,8 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     }
     if (zerocopy_send_record != nullptr) {
       zerocopy_send_record->PrepareForSends(buf);
-      DCHECK_EQ(buf.Count(), 0);
-      DCHECK_EQ(buf.Length(), 0);
+      DCHECK_EQ(buf.Count(), 0u);
+      DCHECK_EQ(buf.Length(), 0u);
       outgoing_byte_idx_ = 0;
       outgoing_buffer_ = nullptr;
     }
@@ -1158,7 +1158,7 @@ bool PosixEndpointImpl::Write(
   absl::Status status = absl::OkStatus();
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
-  CHECK_EQ(write_cb_, nullptr);
+  CHECK(write_cb_ == nullptr);
   DCHECK_EQ(current_zerocopy_send_, nullptr);
   DCHECK_NE(data, nullptr);
 
