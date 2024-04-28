@@ -1459,8 +1459,8 @@ class CallFilters {
           gpr_log(GPR_INFO, "Push[%p|%p]: take value; %s", &state(), this,
                   state().DebugString().c_str());
         }
-        CHECK_NE(value_, nullptr);
-        CHECK_NE(filters_, nullptr);
+        CHECK(value_ != nullptr);
+        CHECK(filters_ != nullptr);
         push_slot() = nullptr;
         filters_ = nullptr;
         return std::move(value_);
@@ -1566,7 +1566,7 @@ class CallFilters {
       PullMessage& operator=(PullMessage&&) = delete;
 
       Poll<ValueOrFailure<absl::optional<MessageHandle>>> operator()() {
-        CHECK_NE(filters_, nullptr);
+        CHECK(filters_ != nullptr);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
           gpr_log(GPR_INFO, "PullMessage[%p|%p]: %s executor:%d", &state(),
                   this, state().DebugString().c_str(), executor_.IsRunning());
@@ -1594,7 +1594,7 @@ class CallFilters {
           return Failure{};
         }
         if (!**r) return absl::nullopt;
-        CHECK_NE(filters_, nullptr);
+        CHECK(filters_ != nullptr);
         return FinishOperationExecutor(executor_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
       }
