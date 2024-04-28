@@ -1306,7 +1306,6 @@ let package = Package(
         "src/core/lib/gpr/linux/cpu.cc",
         "src/core/lib/gpr/linux/log.cc",
         "src/core/lib/gpr/log.cc",
-        "src/core/lib/gpr/log_internal.h",
         "src/core/lib/gpr/msys/tmpfile.cc",
         "src/core/lib/gpr/posix/cpu.cc",
         "src/core/lib/gpr/posix/log.cc",

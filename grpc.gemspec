@@ -1312,7 +1312,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/linux/cpu.cc )
   s.files += %w( src/core/lib/gpr/linux/log.cc )
   s.files += %w( src/core/lib/gpr/log.cc )
-  s.files += %w( src/core/lib/gpr/log_internal.h )
   s.files += %w( src/core/lib/gpr/msys/tmpfile.cc )
   s.files += %w( src/core/lib/gpr/posix/cpu.cc )
   s.files += %w( src/core/lib/gpr/posix/log.cc )
