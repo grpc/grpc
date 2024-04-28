@@ -142,7 +142,7 @@ std::string PercentEncode(absl::string_view str,
   for (char c : str) {
     if (!is_allowed_char(c)) {
       std::string hex = absl::BytesToHexString(absl::string_view(&c, 1));
-      CHECK_EQ(hex.size(), 2y);
+      CHECK_EQ(hex.size(), 2u);
       // BytesToHexString() returns lower case, but
       // https://datatracker.ietf.org/doc/html/rfc3986#section-6.2.2.1 says
       // to prefer upper-case.
