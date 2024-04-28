@@ -1805,7 +1805,7 @@ inline auto CallFilters::PullClientInitialMetadata() {
 }
 
 inline auto CallFilters::PushServerInitialMetadata(ServerMetadataHandle md) {
-  CHECK_NE(md, nullptr);
+  CHECK(md != nullptr);
   return [p = ServerInitialMetadataPromises::Push{
               this, std::move(md)}]() mutable { return p(); };
 }
@@ -1825,7 +1825,7 @@ inline auto CallFilters::PullClientToServerMessage() {
 }
 
 inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
-  CHECK_NE(message, nullptr);
+  CHECK(message != nullptr);
   return [p = ServerToClientMessagePromises::Push{
               this, std::move(message)}]() mutable { return p(); };
 }
