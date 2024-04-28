@@ -41,8 +41,7 @@ struct grpc_binder_stream;
 // depends on what style we want to follow)
 // TODO(mingcl): Decide casing for this class name. Should we use C-style class
 // name here or just go with C++ style?
-struct grpc_binder_transport final : public grpc_core::Transport,
-                                     public grpc_core::FilterStackTransport {
+struct grpc_binder_transport final : public grpc_core::FilterStackTransport {
   explicit grpc_binder_transport(
       std::unique_ptr<grpc_binder::Binder> binder, bool is_client,
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
