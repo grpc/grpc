@@ -146,8 +146,8 @@ class TcpZerocopySendRecord {
   };
 
   void DebugAssertEmpty() {
-    DCHECK_EQ(buf_.Count(), 0);
-    DCHECK_EQ(buf_.Length(), 0);
+    DCHECK_EQ(buf_.Count(), 0u);
+    DCHECK_EQ(buf_.Length(), 0u);
     DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
   }
 
