@@ -406,7 +406,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override {
-    CHECK_EQ(watcher_, nullptr);
+    CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
       return static_resource_.status();
@@ -1297,7 +1297,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
-    CHECK_EQ(watcher_, nullptr);
+    CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     resource = resource_;
   }

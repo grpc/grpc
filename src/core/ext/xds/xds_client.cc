@@ -718,7 +718,7 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  CHECK_NE(xds_channel_->transport_, nullptr);
+  CHECK(xds_channel_->transport_ != nullptr);
   CHECK(call_ == nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
