@@ -207,7 +207,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
           std::move(watcher), absl::nullopt, identity_cert_name_);
     }
   } else if (!identity_being_watched && identity_cert_watcher_ != nullptr) {
-    CHECK_NE(identity_cert_provider_, nullptr);
+    CHECK(identity_cert_provider_ != nullptr);
     identity_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         identity_cert_watcher_);
     identity_cert_watcher_ = nullptr;
