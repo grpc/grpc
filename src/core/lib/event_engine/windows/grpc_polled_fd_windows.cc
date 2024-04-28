@@ -133,8 +133,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         shutdown_called_);
     grpc_core::CSliceUnref(read_buf_);
     grpc_core::CSliceUnref(write_buf_);
-    CHECK_EQ(read_closure_, nullptr);
-    CHECK_EQ(write_closure_, nullptr);
+    CHECK(read_closure_ == nullptr);
+    CHECK(write_closure_ == nullptr);
     if (!shutdown_called_) {
       winsocket_->Shutdown(DEBUG_LOCATION, "~GrpcPolledFdWindows");
     }
@@ -142,7 +142,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
   void RegisterForOnReadableLocked(
       absl::AnyInvocable<void(absl::Status)> read_closure) override {
-    CHECK_EQ(read_closure_, nullptr);
+    CHECK(read_closure_ == nullptr);
     read_closure_ = std::move(read_closure);
     grpc_core::CSliceUnref(read_buf_);
     CHECK(!read_buf_has_data_);
@@ -167,7 +167,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
           "connect_done_: %d",
           GetName(), tcp_write_state_, connect_done_);
     }
-    CHECK_EQ(write_closure_, nullptr);
+    CHECK(write_closure_ == nullptr);
     write_closure_ = std::move(write_closure);
     if (!connect_done_) {
       CHECK(!pending_continue_register_for_on_writeable_locked_);
