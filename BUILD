@@ -4756,6 +4756,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/subprocess.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/types:span",
     ],

@@ -291,6 +291,9 @@ grpc_cc_library(
     hdrs = [
         "lib/gpr/log_internal.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "c++",
     deps = ["//:gpr_platform"],
 )
