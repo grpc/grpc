@@ -20,7 +20,6 @@
 #include <stdlib.h>
 
 #include <cstring>
-#include "absl/log/check.h"
 
 /// abort() the process if x is zero, with rudimentary logging to prevent
 /// circular dependencies with gpr_log.
@@ -28,7 +27,7 @@
 /// Intended for internal invariants.  If the error can be recovered from,
 /// without the possibility of corruption, or might best be reflected via
 /// an exception in a higher-level language, consider returning error code.
-#define CHECK_INTERNAL(x)                     \
+#define GPR_ASSERT_INTERNAL(x)                     \
   do {                                             \
     if (GPR_UNLIKELY(!(x))) {                      \
       fprintf(stderr, "assertion failed: %s", #x); \
@@ -37,9 +36,9 @@
   } while (0)
 
 #ifndef NDEBUG
-#define DCHECK_INTERNAL(x) CHECK_INTERNAL(x)
+#define GPR_DEBUG_ASSERT_INTERNAL(x) GPR_ASSERT_INTERNAL(x)
 #else
-#define DCHECK_INTERNAL(x)
+#define GPR_DEBUG_ASSERT_INTERNAL(x)
 #endif
 
 #define GPR_LOG_ERROR_INTERNAL(format, ...)                       \
