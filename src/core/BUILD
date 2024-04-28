@@ -7287,9 +7287,6 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_destination.h",
     ],
-    external_deps = [
-        "absl/log:check",
-    ],
     deps = [
         "call_spine",
         "//:gpr_platform",
