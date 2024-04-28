@@ -32,6 +32,7 @@
 
 #include <grpc/support/alloc.h>
 #include "absl/log/check.h"
+#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/subprocess.h"

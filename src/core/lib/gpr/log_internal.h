@@ -20,6 +20,7 @@
 #include <stdlib.h>
 
 #include <cstring>
+#include "absl/log/check.h"
 
 /// abort() the process if x is zero, with rudimentary logging to prevent
 /// circular dependencies with gpr_log.
