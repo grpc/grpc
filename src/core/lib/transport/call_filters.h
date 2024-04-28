@@ -1660,7 +1660,7 @@ class CallFilters {
         filters_->CancelDueToFailedPipeOperation();
         return Failure{};
       }
-      CHECK_NE(filters_->client_initial_metadata_, nullptr);
+      CHECK(filters_->client_initial_metadata_ != nullptr);
       return FinishOperationExecutor(executor_.Start(
           &filters_->stack_->data_.client_initial_metadata,
           std::move(filters_->client_initial_metadata_), filters_->call_data_));
@@ -1815,7 +1815,7 @@ inline auto CallFilters::PullServerInitialMetadata() {
 }
 
 inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
-  CHECK_NE(message, nullptr);
+  CHECK(message != nullptr);
   return [p = ClientToServerMessagePromises::Push{
               this, std::move(message)}]() mutable { return p(); };
 }
