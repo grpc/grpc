@@ -613,7 +613,7 @@ PollPoller::PollPoller(Scheduler* scheduler)
       poll_handles_list_head_(nullptr),
       closed_(false) {
   wakeup_fd_ = *CreateWakeupFd();
-  CHECK_NE(wakeup_fd_, nullptr);
+  CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
 }
 
@@ -626,7 +626,7 @@ PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
       poll_handles_list_head_(nullptr),
       closed_(false) {
   wakeup_fd_ = *CreateWakeupFd();
-  CHECK_NE(wakeup_fd_, nullptr);
+  CHECK(wakeup_fd_ != nullptr);
   ForkPollerListAddPoller(this);
 }
 

@@ -354,7 +354,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
     : scheduler_(scheduler), was_kicked_(false), closed_(false) {
   g_epoll_set_.epfd = EpollCreateAndCloexec();
   wakeup_fd_ = *CreateWakeupFd();
-  CHECK_NE(wakeup_fd_, nullptr);
+  CHECK(wakeup_fd_ != nullptr);
   CHECK_GE(g_epoll_set_.epfd, 0);
   gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set_.epfd);
   struct epoll_event ev;
