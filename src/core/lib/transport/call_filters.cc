@@ -225,7 +225,7 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
             GetContext<Activity>()->DebugTag().c_str(), this,
             md->DebugString().c_str(), DebugString().c_str());
   }
-  CHECK_NE(md, nullptr);
+  CHECK(md != nullptr);
   if (server_trailing_metadata_ != nullptr) return;
   server_trailing_metadata_ = std::move(md);
   client_initial_metadata_state_.CloseWithError();
