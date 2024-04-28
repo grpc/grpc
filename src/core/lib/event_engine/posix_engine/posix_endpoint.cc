@@ -1057,7 +1057,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       outgoing_slice_idx++;
       outgoing_byte_idx_ = 0;
     }
-    CHECK_GT(iov_size, 0);
+    CHECK_GT(iov_size, 0u);
 
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;
