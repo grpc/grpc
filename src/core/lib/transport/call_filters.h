@@ -1390,7 +1390,7 @@ class CallFilters {
      public:
       Push(CallFilters* filters, T x)
           : filters_(filters), value_(std::move(x)) {
-        CHECK_NE(value_, nullptr);
+        CHECK(value_ != nullptr);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
           gpr_log(GPR_INFO, "BeginPush[%p|%p]: %s", &state(), this,
                   state().DebugString().c_str());

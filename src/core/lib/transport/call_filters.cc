@@ -55,7 +55,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::Start(
 
 template <typename T>
 Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
-  CHECK_NE(input, nullptr);
+  CHECK(input != nullptr);
   while (true) {
     if (ops_ == end_ops_) {
       return ResultOr<T>{std::move(input), nullptr};
