@@ -419,7 +419,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     FinishEstimate();
   }
 
-  DCHECK_GT(total_read_bytes, 0);
+  DCHECK_GT(total_read_bytes, 0u);
   status = absl::OkStatus();
   if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
@@ -760,7 +760,7 @@ void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {
 void PosixEndpointImpl::ProcessZerocopy(struct cmsghdr* cmsg) {
   DCHECK(cmsg);
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(cmsg));
-  DCHECK_EQ(serr->ee_errno, 0);
+  DCHECK_EQ(serr->ee_errno, 0u);
   DCHECK(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
   const uint32_t lo = serr->ee_info;
   const uint32_t hi = serr->ee_data;
@@ -1100,7 +1100,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       }
     }
 
-    CHECK_EQ(outgoing_byte_idx_, 0);
+    CHECK_EQ(outgoing_byte_idx_, 0u);
     bytes_counter_ += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
     while (trailing > 0) {
