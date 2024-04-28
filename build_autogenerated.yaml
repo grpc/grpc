@@ -130,6 +130,7 @@ libs:
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/log:check
   - absl/log:log
   - absl/memory:memory
   - absl/random:random
@@ -2098,7 +2099,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc
 - name: grpc_test_util_unsecure
   build: private
@@ -2127,7 +2127,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc_unsecure
 - name: grpc_unsecure
   build: all
@@ -3937,7 +3936,6 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - absl/log:check
   - grpc
   - protobuf
   baselib: true
@@ -4311,7 +4309,6 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - absl/log:check
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -5213,7 +5210,6 @@ targets:
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
   deps:
-  - absl/log:check
   - grpc_test_util
   uses_polling: false
 - name: activity_test
@@ -9902,7 +9898,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -19232,7 +19227,6 @@ targets:
   - test/core/event_engine/tcp_socket_utils_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc
   uses_polling: false
 - name: test_core_channelz_channelz_test
@@ -19332,7 +19326,6 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -19386,7 +19379,6 @@ targets:
   deps:
   - gtest
   - absl/hash:hash
-  - absl/log:check
   - absl/status:statusor
   - absl/utility:utility
   - gpr

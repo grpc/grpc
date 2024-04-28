@@ -33,7 +33,7 @@
 #include <unistd.h>
 
 #include "absl/log/check.h"
-#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
@@ -103,11 +103,9 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
 
     CHECK_EQ(pthread_attr_init(&attr), 0);
     if (options.joinable()) {
-      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
-                 0);
+      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) == 0);
     } else {
-      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
-                 0);
+      CHECK(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) == 0);
     }
 
     if (options.stack_size() != 0) {

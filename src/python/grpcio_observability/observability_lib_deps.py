@@ -105,6 +105,7 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/hash/internal/hash.cc',
     'third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc',
     'third_party/abseil-cpp/absl/log/globals.cc',
+    'third_party/abseil-cpp/absl/log/internal/check_op.cc',
     'third_party/abseil-cpp/absl/log/internal/conditions.cc',
     'third_party/abseil-cpp/absl/log/internal/fnmatch.cc',
     'third_party/abseil-cpp/absl/log/internal/globals.cc',

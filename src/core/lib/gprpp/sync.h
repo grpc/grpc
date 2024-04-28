@@ -20,10 +20,9 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_SYNC_H
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/synchronization/mutex.h"
 
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>

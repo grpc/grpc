@@ -18,9 +18,8 @@
 #include <type_traits>
 
 #include "absl/base/config.h"
+#include "absl/log/check.h"
 
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

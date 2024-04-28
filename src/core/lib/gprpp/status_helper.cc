@@ -22,6 +22,7 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -34,8 +35,6 @@
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
