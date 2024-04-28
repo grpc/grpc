@@ -272,7 +272,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
   channel_ = CreateXdsChannel(
       factory->args_,
       static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
-  CHECK_NE(channel_, nullptr);
+  CHECK(channel_ != nullptr);
   if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
   } else {
