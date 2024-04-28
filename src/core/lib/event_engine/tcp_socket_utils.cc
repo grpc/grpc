@@ -246,8 +246,8 @@ EventEngine::ResolvedAddress ResolvedAddressMakeWild6(int port) {
   EventEngine::ResolvedAddress resolved_wild_out;
   sockaddr_in6* wild_out = reinterpret_cast<sockaddr_in6*>(
       const_cast<sockaddr*>(resolved_wild_out.address()));
-  CHECK(port >= 0);
-  CHECK(port < 65536);
+  CHECK_GE(port, 0);
+  CHECK_LT(port, 65536);
   memset(wild_out, 0, sizeof(sockaddr_in6));
   wild_out->sin6_family = AF_INET6;
   wild_out->sin6_port = htons(static_cast<uint16_t>(port));
@@ -260,8 +260,8 @@ EventEngine::ResolvedAddress ResolvedAddressMakeWild4(int port) {
   EventEngine::ResolvedAddress resolved_wild_out;
   sockaddr_in* wild_out = reinterpret_cast<sockaddr_in*>(
       const_cast<sockaddr*>(resolved_wild_out.address()));
-  CHECK(port >= 0);
-  CHECK(port < 65536);
+  CHECK_GE(port, 0);
+  CHECK_LT(port, 65536);
   memset(wild_out, 0, sizeof(sockaddr_in));
   wild_out->sin_family = AF_INET;
   wild_out->sin_port = htons(static_cast<uint16_t>(port));
@@ -297,14 +297,14 @@ void ResolvedAddressSetPort(EventEngine::ResolvedAddress& resolved_addr,
   sockaddr* addr = const_cast<sockaddr*>(resolved_addr.address());
   switch (addr->sa_family) {
     case AF_INET:
-      CHECK(port >= 0);
-      CHECK(port < 65536);
+      CHECK_GE(port, 0);
+      CHECK_LT(port, 65536);
       (reinterpret_cast<sockaddr_in*>(addr))->sin_port =
           htons(static_cast<uint16_t>(port));
       return;
     case AF_INET6:
-      CHECK(port >= 0);
-      CHECK(port < 65536);
+      CHECK_GE(port, 0);
+      CHECK_LT(port, 65536);
       (reinterpret_cast<sockaddr_in6*>(addr))->sin6_port =
           htons(static_cast<uint16_t>(port));
       return;
