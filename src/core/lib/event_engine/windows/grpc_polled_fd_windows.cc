@@ -436,11 +436,11 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         // to it eventually.
         grpc_slice currently_attempted = FlattenIovec(iov, iov_count);
         CHECK(GRPC_SLICE_LENGTH(currently_attempted) >=
-                   GRPC_SLICE_LENGTH(write_buf_));
+              GRPC_SLICE_LENGTH(write_buf_));
         ares_ssize_t total_sent = 0;
         for (size_t i = 0; i < GRPC_SLICE_LENGTH(write_buf_); i++) {
           CHECK(GRPC_SLICE_START_PTR(currently_attempted)[i] ==
-                     GRPC_SLICE_START_PTR(write_buf_)[i]);
+                GRPC_SLICE_START_PTR(write_buf_)[i]);
           total_sent++;
         }
         grpc_core::CSliceUnref(currently_attempted);

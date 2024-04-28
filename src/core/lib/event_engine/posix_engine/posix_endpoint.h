@@ -29,6 +29,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -36,8 +37,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -276,8 +275,7 @@ class TcpZerocopySendCtx {
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
     grpc_core::MutexLock lock(&mu_);
-    DCHECK(record >= send_records_ &&
-                     record < send_records_ + max_sends_);
+    DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
     PutSendRecordLocked(record);
   }
 

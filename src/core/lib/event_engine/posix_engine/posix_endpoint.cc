@@ -26,6 +26,7 @@
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -35,8 +36,6 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/status.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -373,8 +372,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
 
     AddToEstimate(static_cast<size_t>(read_bytes));
-    DCHECK((size_t)read_bytes <=
-                     incoming_buffer_->Length() - total_read_bytes);
+    DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {

@@ -52,6 +52,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -59,8 +60,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -647,7 +646,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
     CHECK(!nh.empty());
     CHECK(absl::holds_alternative<
-               EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
+          EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
     auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
     if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
@@ -673,9 +672,8 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(
-      absl::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
-          nh.mapped()));
+  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+      nh.mapped()));
   auto callback = absl::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
@@ -729,9 +727,8 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
   CHECK(!nh.empty());
-  CHECK(
-      absl::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
-          nh.mapped()));
+  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+      nh.mapped()));
   auto callback = absl::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {

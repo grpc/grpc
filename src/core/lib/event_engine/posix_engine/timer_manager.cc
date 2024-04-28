@@ -21,11 +21,10 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -71,7 +70,7 @@ void TimerManager::MainLoop() {
   absl::optional<std::vector<experimental::EventEngine::Closure*>>
       check_result = timer_list_->TimerCheck(&next);
   CHECK(check_result.has_value() &&
-             "ERROR: More than one MainLoop is running.");
+        "ERROR: More than one MainLoop is running.");
   bool timers_found = !check_result->empty();
   if (timers_found) {
     RunSomeTimers(std::move(*check_result));

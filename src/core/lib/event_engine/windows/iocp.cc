@@ -82,8 +82,8 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
     GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p deadline exceeded", this);
     return Poller::WorkResult::kDeadlineExceeded;
   }
-  CHECK(completion_key );
-CHECK( overlapped);
+  CHECK(completion_key);
+  CHECK(overlapped);
   if (overlapped == &kick_overlap_) {
     GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p kicked", this);
     outstanding_kicks_.fetch_sub(1);
@@ -111,9 +111,9 @@ CHECK( overlapped);
 
 void IOCP::Kick() {
   outstanding_kicks_.fetch_add(1);
-  CHECK(PostQueuedCompletionStatus(
-      iocp_handle_, 0, reinterpret_cast<ULONG_PTR>(&kick_token_),
-      &kick_overlap_));
+  CHECK(PostQueuedCompletionStatus(iocp_handle_, 0,
+                                   reinterpret_cast<ULONG_PTR>(&kick_token_),
+                                   &kick_overlap_));
 }
 
 DWORD IOCP::GetDefaultSocketFlags() {

@@ -17,10 +17,10 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/log/check.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
@@ -457,7 +457,7 @@ bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
   {
     grpc_core::MutexLock lock(&connection_mu_);
     CHECK(known_connection_handles_.erase(
-                   connection_state->connection_handle) == 1);
+              connection_state->connection_handle) == 1);
   }
   return CancelConnectInternalStateLocked(connection_state);
 }

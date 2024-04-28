@@ -16,11 +16,10 @@
 #include <atomic>
 #include <cstdint>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/atm.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

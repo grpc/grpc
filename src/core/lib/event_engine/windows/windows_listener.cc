@@ -192,7 +192,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
             if (do_close_socket) closesocket(io_state_->accept_socket);
             io_state_->accept_socket = INVALID_SOCKET;
             CHECK(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
-                                         StartLocked()));
+                                    StartLocked()));
           };
   const auto& overlapped_result =
       io_state_->listener_socket->read_info()->result();
