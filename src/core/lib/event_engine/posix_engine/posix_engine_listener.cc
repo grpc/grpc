@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
+#include "src/core/lib/event_engine/posix_engine/posix_engine_systemd.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
@@ -76,11 +77,24 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     return absl::FailedPreconditionError(
         "Listener is already started, ports can no longer be bound");
   }
+
+  // Look for a preallocated fd matching the provided address
+  auto result_fd = MaybeGetSystemdPreallocatedFdFromAddr(addr);
+  GRPC_RETURN_IF_ERROR(result_fd.status());
+  auto sd_fd = result_fd.value();
+
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
   GPR_ASSERT(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
-  UnlinkIfUnixDomainSocket(addr);
+
+  // If uds socket, unlink it so that the corresponding file is deleted, but
+  // only if the file descriptor was NOT preallocated by systemd through
+  // systemd socket activation, as systemd is managing the uds socket for
+  // the service, even inbetween service activations.
+  if (!sd_fd.has_value()) {
+    UnlinkIfUnixDomainSocket(addr);
+  }
 
   /// Check if this is a wildcard port, and if so, try to keep the port the same
   /// as some previously created listener socket.
@@ -113,7 +127,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     res_addr = addr6_v4mapped;
   }
 
-  auto result = CreateAndPrepareListenerSocket(options_, res_addr);
+  auto result = CreateAndPrepareListenerSocket(options_, res_addr, sd_fd);
   GRPC_RETURN_IF_ERROR(result.status());
   acceptors_.Append(*result);
   return result->port;
