@@ -473,7 +473,7 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
         self->OnConnectivityFailure(std::move(status));
       },
       &status);
-  CHECK_NE(transport_, nullptr);
+  CHECK(transport_ != nullptr);
   if (!status.ok()) SetChannelStatusLocked(std::move(status));
 }
 
