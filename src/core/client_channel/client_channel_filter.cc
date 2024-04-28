@@ -1761,7 +1761,7 @@ void ClientChannelFilter::CreateResolverLocked() {
       std::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
-  CHECK_NE(resolver_, nullptr);
+  CHECK(resolver_ != nullptr);
   UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status(),
                     "started resolving");
   resolver_->StartLocked();
