@@ -287,15 +287,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "gpr_log_internal",
-    hdrs = [
-        "lib/gpr/log_internal.h",
-    ],
-    language = "c++",
-    deps = ["//:gpr_platform"],
-)
-
-grpc_cc_library(
     name = "env",
     srcs = [
         "lib/gprpp/linux/env.cc",

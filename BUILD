@@ -2972,6 +2972,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:marshalling",
+        "absl/log:check",
         "absl/strings",
         "absl/types:optional",
     ],
