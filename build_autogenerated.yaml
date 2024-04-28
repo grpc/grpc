@@ -2057,6 +2057,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -2098,7 +2099,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc
 - name: grpc_test_util_unsecure
   build: private
@@ -2127,7 +2127,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc_unsecure
 - name: grpc_unsecure
   build: all
@@ -3119,6 +3118,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -5032,6 +5032,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -5140,7 +5141,6 @@ targets:
   - test/core/util/slice_splitter.cc
   - test/core/util/tracer_util.cc
   deps:
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -5311,7 +5311,6 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -6276,7 +6275,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: byte_buffer_test
   gtest: true
@@ -6525,6 +6523,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -8988,7 +8987,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: env_test
   gtest: true
@@ -9046,7 +9044,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   uses_polling: false
 - name: error_utils_test
@@ -10524,7 +10521,6 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - absl/log:check
   - grpc++
   - protoc
   - grpc++_test_config
@@ -12163,6 +12159,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -15315,7 +15312,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   - grpc++_test_config
 - name: resolve_address_using_native_resolver_posix_test
@@ -15385,7 +15381,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   - grpc++_test_config
 - name: resource_quota_end2end_stress_test
@@ -17766,7 +17761,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
 - name: security_connector_test
   gtest: true
@@ -18712,7 +18706,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19192,7 +19185,6 @@ targets:
   - test/core/util/tracer_util.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc_test_util
   platforms:
   - linux
@@ -19240,7 +19232,6 @@ targets:
   - test/core/event_engine/tcp_socket_utils_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc
   uses_polling: false
 - name: test_core_channelz_channelz_test
@@ -19594,7 +19585,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_cpp_end2end_ssl_credentials_test
@@ -19662,7 +19652,6 @@ targets:
   - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: test_cpp_util_slice_test
@@ -19794,7 +19783,6 @@ targets:
   - test/cpp/common/time_jump_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
   platforms:
@@ -19927,7 +19915,6 @@ targets:
   - test/cpp/common/timer_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc++
   - grpc_test_util
 - name: tls_certificate_verifier_test

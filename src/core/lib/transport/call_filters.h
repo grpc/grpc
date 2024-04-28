@@ -19,6 +19,8 @@
 #include <memory>
 #include <type_traits>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"

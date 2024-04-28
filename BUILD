@@ -1984,6 +1984,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -3086,6 +3087,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log:check",
         "absl/status",
         "absl/strings:str_format",
     ],

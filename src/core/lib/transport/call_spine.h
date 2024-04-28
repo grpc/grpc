@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

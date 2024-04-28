@@ -1242,6 +1242,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -2792,7 +2793,10 @@ grpc_cc_library(
         "lib/transport/bdp_estimator.cc",
     ],
     hdrs = ["lib/transport/bdp_estimator.h"],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings",
+    ],
     deps = [
         "time",
         "//:gpr",
@@ -7040,6 +7044,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -7241,6 +7246,9 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_filters.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "call_final_info",
         "latch",
@@ -7278,6 +7286,9 @@ grpc_cc_library(
     name = "call_destination",
     hdrs = [
         "lib/transport/call_destination.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         "call_spine",
@@ -7348,6 +7359,9 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_spine.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "1999",
         "call_arena_allocator",
@@ -7382,6 +7396,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/strings",
         "absl/strings:str_format",
@@ -7416,6 +7431,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/types:optional",
     ],
     deps = [

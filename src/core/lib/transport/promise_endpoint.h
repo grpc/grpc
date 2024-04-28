@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -33,7 +34,6 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -234,8 +234,7 @@ class PromiseEndpoint {
       // Copy everything from read_state_->buffer into a single slice and
       // replace the contents of read_state_->buffer with that slice.
       grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
-      CHECK(
-          reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
+      CHECK(reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
       size_t ofs = 0;
       for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
         memcpy(

@@ -23,6 +23,8 @@
 
 #include <algorithm>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
