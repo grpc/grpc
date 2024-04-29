@@ -288,7 +288,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->nports = 0;
   s->options = ::TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
-  CHECK_NE(s->options.resource_quota, nullptr);
+  CHECK(s->options.resource_quota != nullptr);
   CHECK(s->on_accept_cb);
   s->memory_quota = s->options.resource_quota->memory_quota();
   s->pre_allocated_fd = -1;
