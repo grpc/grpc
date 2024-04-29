@@ -5177,6 +5177,7 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_benchmark.cc
   deps:
   - absl/algorithm:container
+  - absl/log:check
   - absl/types:span
   - benchmark
   - gpr
