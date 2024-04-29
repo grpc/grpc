@@ -27,6 +27,7 @@ licenses(["notice"])
 grpc_cc_binary(
     name = "low_level_ping_pong",
     srcs = ["low_level_ping_pong.cc"],
+    external_deps = ["absl/log:check"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
