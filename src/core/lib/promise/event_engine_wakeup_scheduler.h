@@ -18,6 +18,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 

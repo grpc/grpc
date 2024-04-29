@@ -18,6 +18,7 @@
 #include <tuple>
 #include <variant>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"

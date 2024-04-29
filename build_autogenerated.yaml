@@ -2057,6 +2057,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -2098,7 +2099,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc
 - name: grpc_test_util_unsecure
   build: private
@@ -2127,7 +2127,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc_unsecure
 - name: grpc_unsecure
   build: all
@@ -3119,6 +3118,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3937,7 +3937,6 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - absl/log:check
   - grpc
   - protobuf
   baselib: true
@@ -4311,7 +4310,6 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - absl/log:check
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -5034,6 +5032,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -5255,6 +5254,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -5395,6 +5395,7 @@ targets:
   - test/core/promise/all_ok_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -6525,6 +6526,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -6961,6 +6963,7 @@ targets:
   - test/core/promise/cancel_callback_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -7779,6 +7782,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -8384,6 +8388,7 @@ targets:
   deps:
   - gtest
   - absl/base:config
+  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -9260,6 +9265,7 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -10038,6 +10044,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -11438,6 +11445,7 @@ targets:
   - test/core/promise/if_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -11571,6 +11579,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12160,6 +12169,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -12290,6 +12300,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12458,6 +12469,7 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12721,6 +12733,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12839,6 +12852,7 @@ targets:
   - test/core/promise/loop_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12973,6 +12987,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13486,6 +13501,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13783,6 +13799,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14451,6 +14468,7 @@ targets:
   - test/core/promise/poll_test.cc
   deps:
   - gtest
+  - absl/log:check
   - gpr
   uses_polling: false
 - name: port_sharing_end2end_test
@@ -14626,6 +14644,7 @@ targets:
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
+  - absl/log:check
   - gpr
   uses_polling: false
 - name: promise_endpoint_test
@@ -14655,6 +14674,7 @@ targets:
   deps:
   - gtest
   - absl/functional:bind_front
+  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -14671,6 +14691,7 @@ targets:
   - test/core/promise/map_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -14712,6 +14733,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14727,6 +14749,7 @@ targets:
   - test/core/promise/promise_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -14946,6 +14969,7 @@ targets:
   - test/core/promise/race_test.cc
   deps:
   - gtest
+  - absl/log:check
   - gpr
   uses_polling: false
 - name: random_early_detection_test
@@ -17811,6 +17835,7 @@ targets:
   - test/core/promise/seq_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -18859,6 +18884,7 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -19045,6 +19071,7 @@ targets:
   - test/core/promise/switch_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -19232,7 +19259,6 @@ targets:
   - test/core/event_engine/tcp_socket_utils_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc
   uses_polling: false
 - name: test_core_channelz_channelz_test
@@ -20231,6 +20257,7 @@ targets:
   - test/core/promise/try_join_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -20268,6 +20295,7 @@ targets:
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -20380,6 +20408,7 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr

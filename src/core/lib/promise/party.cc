@@ -17,9 +17,9 @@
 #include <atomic>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -29,6 +29,7 @@
 #include "src/core/lib/promise/trace.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
+
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
