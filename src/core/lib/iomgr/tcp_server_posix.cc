@@ -792,7 +792,7 @@ static void tcp_server_start(grpc_tcp_server* s,
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
   CHECK(s->on_accept_cb);
-  CHECK_EQ(s->active_ports, 0);
+  CHECK_EQ(s->active_ports, 0u);
   s->pollsets = pollsets;
   if (grpc_event_engine::experimental::UseEventEngineListener()) {
     CHECK(!s->shutdown_listeners);
