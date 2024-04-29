@@ -24,6 +24,7 @@ grpc_proto_fuzzer(
     size = "enormous",
     srcs = ["resolver_fuzzer.cc"],
     corpus = "resolver_fuzzer_corpus",
+    external_deps = ["absl/log:check"],
     language = "C++",
     proto = "resolver_fuzzer.proto",
     proto_deps = [
