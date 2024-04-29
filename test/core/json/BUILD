@@ -23,6 +23,7 @@ grpc_fuzzer(
     name = "json_fuzzer",
     srcs = ["fuzzer.cc"],
     corpus = "corpus",
+    external_deps = ["absl/log:check"],
     language = "C++",
     tags = ["no_windows"],
     deps = [

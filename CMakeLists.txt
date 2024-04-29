@@ -5930,6 +5930,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(static_stride_scheduler_benchmark
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::algorithm_container
+    absl::check
     absl::span
     ${_gRPC_BENCHMARK_LIBRARIES}
     gpr
