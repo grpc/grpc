@@ -26,13 +26,11 @@
 
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
-
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
 // clang-format off
@@ -41,7 +39,6 @@
 // clang-format on
 #else
 #include <sys/un.h>
-
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
 #include <string>
