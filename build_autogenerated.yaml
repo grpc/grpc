@@ -2057,6 +2057,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -2098,7 +2099,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc
 - name: grpc_test_util_unsecure
   build: private
@@ -2127,7 +2127,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:check
   - grpc_unsecure
 - name: grpc_unsecure
   build: all
@@ -3119,6 +3118,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3937,7 +3937,6 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - absl/log:check
   - grpc
   - protobuf
   baselib: true
@@ -4311,7 +4310,6 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - absl/log:check
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -5034,6 +5032,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -10070,6 +10069,7 @@ targets:
   - test/core/event_engine/forkable_test.cc
   deps:
   - gtest
+  - absl/log:check
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -12160,6 +12160,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -19232,7 +19233,6 @@ targets:
   - test/core/event_engine/tcp_socket_utils_test.cc
   deps:
   - gtest
-  - absl/log:check
   - grpc
   uses_polling: false
 - name: test_core_channelz_channelz_test
