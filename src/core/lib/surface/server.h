@@ -215,8 +215,7 @@ class Server : public ServerInterface,
   struct RequestedCall;
 
   class RequestMatcherInterface;
-  class RealRequestMatcherFilterStack;
-  class RealRequestMatcherPromises;
+  class RealRequestMatcher;
   class AllocatingRequestMatcherBase;
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
@@ -238,8 +237,6 @@ class Server : public ServerInterface,
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
-    static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-        grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
     void InitCall(RefCountedPtr<CallSpineInterface> call);
 
    private:
