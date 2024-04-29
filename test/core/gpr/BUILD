@@ -61,6 +61,7 @@ grpc_cc_test(
     name = "log_test",
     srcs = ["log_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
