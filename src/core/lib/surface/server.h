@@ -440,12 +440,13 @@ class Server : public ServerInterface,
   }
 
   auto MatchAndPublishCall(CallHandler call_handler);
+  absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
+      const ChannelArgs& args);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
   ServerCallTracerFactory* const server_call_tracer_factory_;
-  RefCountedPtr<UnstartedCallDestination> call_destination_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;

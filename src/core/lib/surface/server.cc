@@ -789,6 +789,19 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
   });
 }
 
+absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
+Server::MakeCallDestination(const ChannelArgs& args) {
+  InterceptionChainBuilder builder(args);
+  builder.AddOnClientInitialMetadata(
+      [this](ClientMetadata& md) { SetRegisteredMethodOnMetadata(md); });
+  CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+      GRPC_SERVER_CHANNEL, builder);
+  return builder.Build(
+      MakeCallDestinationFromHandlerFunction([this](CallHandler handler) {
+        return MatchAndPublishCall(std::move(handler));
+      }));
+}
+
 Server::Server(const ChannelArgs& args)
     : channel_args_(args),
       channelz_node_(CreateChannelzNode(args)),
@@ -796,22 +809,7 @@ Server::Server(const ChannelArgs& args)
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
-              .value_or(30))) {
-  InterceptionChainBuilder builder(args);
-  builder.AddOnClientInitialMetadata(
-      [this](ClientMetadata& md) { SetRegisteredMethodOnMetadata(md); });
-  CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
-      GRPC_SERVER_CHANNEL, builder);
-  auto call_destination =
-      builder.Build(MakeCallDestination([this](CallHandler handler) {
-        return MatchAndPublishCall(std::move(handler));
-      }));
-  if (!call_destination.ok()) {
-    Crash("Failed to build interception chain: %s",
-          call_destination.status().ToString().c_str());
-  }
-  call_destination_ = std::move(*call_destination);
-}
+              .value_or(30))) {}
 
 Server::~Server() {
   // Remove the cq pollsets from the config_fetcher.
@@ -880,31 +878,41 @@ grpc_error_handle Server::SetupTransport(
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
-  absl::StatusOr<OrphanablePtr<Channel>> channel =
-      LegacyChannel::Create("", args.SetObject(transport), GRPC_SERVER_CHANNEL);
-  if (!channel.ok()) {
-    return absl_status_to_grpc_error(channel.status());
-  }
-  ChannelData* chand = static_cast<ChannelData*>(
-      grpc_channel_stack_element((*channel)->channel_stack(), 0)->channel_data);
-  // Set up CQs.
-  size_t cq_idx;
-  for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
-    if (grpc_cq_pollset(cqs_[cq_idx]) == accepting_pollset) break;
-  }
-  if (cq_idx == cqs_.size()) {
-    // Completion queue not found.  Pick a random one to publish new calls to.
-    cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
-  }
   // Set up channelz node.
   intptr_t channelz_socket_uuid = 0;
   if (socket_node != nullptr) {
     channelz_socket_uuid = socket_node->uuid();
     channelz_node_->AddChildSocket(socket_node);
   }
-  // Initialize chand.
-  chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
-                       channelz_socket_uuid);
+  if (transport->server_transport() != nullptr) {
+    auto destination = MakeCallDestination(args.SetObject(transport));
+    if (!destination.ok()) {
+      return absl_status_to_grpc_error(destination.status());
+    }
+    transport->server_transport()->SetCallDestination(std::move(*destination));
+  } else {
+    GPR_ASSERT(transport->filter_stack_transport() != nullptr);
+    absl::StatusOr<OrphanablePtr<Channel>> channel = LegacyChannel::Create(
+        "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
+    if (!channel.ok()) {
+      return absl_status_to_grpc_error(channel.status());
+    }
+    ChannelData* chand = static_cast<ChannelData*>(
+        grpc_channel_stack_element((*channel)->channel_stack(), 0)
+            ->channel_data);
+    // Set up CQs.
+    size_t cq_idx;
+    for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
+      if (grpc_cq_pollset(cqs_[cq_idx]) == accepting_pollset) break;
+    }
+    if (cq_idx == cqs_.size()) {
+      // Completion queue not found.  Pick a random one to publish new calls to.
+      cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
+    }
+    // Initialize chand.
+    chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
+                         channelz_socket_uuid);
+  }
   return absl::OkStatus();
 }
 
@@ -1283,24 +1291,15 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   }
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  int accept_stream_types = 0;
-  if (transport->filter_stack_transport() != nullptr) {
-    ++accept_stream_types;
-    op->set_accept_stream = true;
-    op->set_accept_stream_fn = AcceptStream;
-    op->set_registered_method_matcher_fn = [](void* arg,
-                                              ClientMetadata* metadata) {
-      static_cast<ChannelData*>(arg)->server_->SetRegisteredMethodOnMetadata(
-          *metadata);
-    };
-    op->set_accept_stream_user_data = this;
-  }
-  if (transport->server_transport() != nullptr) {
-    ++accept_stream_types;
-    transport->server_transport()->SetCallDestination(
-        server_->call_destination_);
-  }
-  GPR_ASSERT(accept_stream_types == 1);
+  GPR_ASSERT(transport->filter_stack_transport() != nullptr);
+  op->set_accept_stream = true;
+  op->set_accept_stream_fn = AcceptStream;
+  op->set_registered_method_matcher_fn = [](void* arg,
+                                            ClientMetadata* metadata) {
+    static_cast<ChannelData*>(arg)->server_->SetRegisteredMethodOnMetadata(
+        *metadata);
+  };
+  op->set_accept_stream_user_data = this;
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
   if (server_->ShutdownCalled()) {
     op->disconnect_with_error = GRPC_ERROR_CREATE("Server shutdown");

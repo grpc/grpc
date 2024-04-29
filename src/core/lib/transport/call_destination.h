@@ -52,7 +52,7 @@ class CallDestination : public DualRefCounted<CallDestination> {
 };
 
 template <typename HC>
-auto MakeCallDestination(HC handle_call) {
+auto MakeCallDestinationFromHandlerFunction(HC handle_call) {
   class Impl : public CallDestination {
    public:
     explicit Impl(HC handle_call) : handle_call_(std::move(handle_call)) {}
