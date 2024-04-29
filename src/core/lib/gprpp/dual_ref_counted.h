@@ -212,7 +212,7 @@ class DualRefCounted {
       gpr_log(GPR_INFO, "%s:%p weak_unref %d -> %d (refs=%d)", trace, this,
               weak_refs, weak_refs - 1, strong_refs);
     }
-    CHECK_GT(weak_refs, 0);
+    CHECK_GT(weak_refs, 0u);
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
       delete static_cast<Child*>(this);
@@ -235,7 +235,7 @@ class DualRefCounted {
               this, location.file(), location.line(), weak_refs, weak_refs - 1,
               strong_refs, reason);
     }
-    CHECK_GT(weak_refs, 0);
+    CHECK_GT(weak_refs, 0u);
 #else
     // Avoid unused-parameter warnings for debug-only parameters
     (void)location;
