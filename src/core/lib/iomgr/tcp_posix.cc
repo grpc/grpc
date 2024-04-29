@@ -1068,7 +1068,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     finish_estimate(tcp);
   }
 
-  DCHECK_GT(total_read_bytes, 0);
+  DCHECK_GT(total_read_bytes, 0u);
   *error = absl::OkStatus();
   if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
@@ -1794,7 +1794,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       }
     }
 
-    CHECK_EQ(tcp->outgoing_byte_idx, 0);
+    CHECK_EQ(tcp->outgoing_byte_idx, 0u);
     grpc_core::EventLog::Append("tcp-write-outstanding", -sent_length);
     tcp->bytes_counter += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
