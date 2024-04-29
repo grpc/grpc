@@ -2931,6 +2931,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log:check",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
