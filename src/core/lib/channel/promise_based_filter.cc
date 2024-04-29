@@ -181,7 +181,7 @@ BaseCallData::CapturedBatch::~CapturedBatch() {
   uintptr_t& refcnt = *RefCountField(batch_);
   if (refcnt == 0) return;  // refcnt==0 ==> cancelled
   --refcnt;
-  CHECK_NE(refcnt, 0);
+  CHECK_NE(refcnt, 0u);
 }
 
 BaseCallData::CapturedBatch::CapturedBatch(const CapturedBatch& rhs)
