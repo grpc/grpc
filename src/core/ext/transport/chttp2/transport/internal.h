@@ -224,8 +224,7 @@ typedef enum {
 } grpc_chttp2_keepalive_state;
 
 struct grpc_chttp2_transport final
-    : public grpc_core::Transport,
-      public grpc_core::FilterStackTransport,
+    : public grpc_core::FilterStackTransport,
       public grpc_core::RefCounted<grpc_chttp2_transport,
                                    grpc_core::NonPolymorphicRefCount>,
       public grpc_core::KeepsGrpcInitialized {

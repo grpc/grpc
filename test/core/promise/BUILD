@@ -519,6 +519,7 @@ grpc_proto_fuzzer(
     corpus = "promise_fuzzer_corpus",
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/types:optional",
     ],
