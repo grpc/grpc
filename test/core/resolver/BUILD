@@ -21,7 +21,10 @@ licenses(["notice"])
 grpc_cc_test(
     name = "endpoint_addresses_test",
     srcs = ["endpoint_addresses_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
