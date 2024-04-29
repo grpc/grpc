@@ -156,7 +156,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
     gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size - 1);
   }
-  CHECK_GE(prev_size, 1);
+  CHECK_GE(prev_size, 1u);
   if (prev_size > 1) {
     while (true) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
