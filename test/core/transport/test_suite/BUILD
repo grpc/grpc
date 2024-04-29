@@ -48,7 +48,10 @@ grpc_cc_library(
     name = "chaotic_good_fixture",
     testonly = 1,
     srcs = ["chaotic_good_fixture.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     deps = [
         "fixture",
         "//src/core:chaotic_good_client_transport",

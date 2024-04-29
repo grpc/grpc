@@ -46,6 +46,7 @@ grpc_cc_library(
     name = "call_checker",
     testonly = True,
     hdrs = ["call_checker.h"],
+    external_deps = ["absl/log:check"],
     language = "c++",
     deps = ["//:gpr"],
 )

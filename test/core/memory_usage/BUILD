@@ -26,6 +26,7 @@ grpc_cc_library(
     ],
     hdrs = ["memstats.h"],
     external_deps = [
+        "absl/log:check",
         "absl/types:optional",
     ],
     tags = [
@@ -44,6 +45,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
+        "absl/log:check",
     ],
     tags = [
         "bazel_only",
@@ -66,6 +68,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
+        "absl/log:check",
     ],
     tags = [
         "bazel_only",
@@ -90,6 +93,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
+        "absl/log:check",
         "absl/time",
     ],
     tags = [
@@ -115,6 +119,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/flags:parse",
+        "absl/log:check",
     ],
     tags = [
         "bazel_only",

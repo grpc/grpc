@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -114,7 +115,7 @@ class CrlSslTransportSecurityTest
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
       client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
       client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
-      GPR_ASSERT(root_store_ != nullptr);
+      CHECK_NE(root_store_, nullptr);
     }
 
     void Run() {
@@ -133,7 +134,7 @@ class CrlSslTransportSecurityTest
 
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
-      GPR_ASSERT(fixture != nullptr);
+      CHECK_NE(fixture, nullptr);
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
       self->SetupHandshakers();
     }
@@ -178,7 +179,7 @@ class CrlSslTransportSecurityTest
     }
 
     static void CheckHandshakerPeers(tsi_test_fixture* fixture) {
-      GPR_ASSERT(fixture != nullptr);
+      CHECK_NE(fixture, nullptr);
       auto* self = reinterpret_cast<SslTsiTestFixture*>(fixture);
       self->CheckHandshakerPeers();
     }
@@ -420,7 +421,7 @@ TEST_P(CrlSslTransportSecurityTest,
 std::string TestNameSuffix(
     const ::testing::TestParamInfo<tsi_tls_version>& version) {
   if (version.param == tsi_tls_version::TSI_TLS1_2) return "TLS_1_2";
-  GPR_ASSERT(version.param == tsi_tls_version::TSI_TLS1_3);
+  CHECK(version.param == tsi_tls_version::TSI_TLS1_3);
   return "TLS_1_3";
 }
 

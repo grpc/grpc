@@ -35,6 +35,7 @@ def grpc_transport_test(name, deps):
         srcs = ["fuzzer_main.cc"],
         tags = ["no_windows", "no_mac"],
         external_deps = [
+            "absl/log:check",
             "gtest",
         ],
         deps = [

@@ -23,6 +23,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
@@ -47,7 +48,7 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     // never called
-    GPR_ASSERT(0);
+    CHECK(0);
     return nullptr;
   }
 

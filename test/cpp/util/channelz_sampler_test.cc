@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
@@ -96,7 +97,7 @@ void RunClient(const std::string& client_id, gpr_event* done_ev) {
     Status status = stub->EmptyCall(&context, request, &response);
     if (!status.ok()) {
       gpr_log(GPR_ERROR, "Client echo failed.");
-      GPR_ASSERT(0);
+      CHECK(0);
     }
   }
 }
@@ -146,17 +147,17 @@ TEST(ChannelzSamplerTest, SimpleTest) {
       gpr_log(GPR_ERROR,
               "Channelz sampler test test-runner exited with code %d",
               WEXITSTATUS(status));
-      GPR_ASSERT(0);  // log the line number of the assertion failure
+      CHECK(0);  // log the line number of the assertion failure
     }
   } else if (WIFSIGNALED(status)) {
     gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
             WTERMSIG(status));
-    GPR_ASSERT(0);
+    CHECK(0);
   } else {
     gpr_log(GPR_ERROR,
             "Channelz sampler test test-runner ended with unknown status %d",
             status);
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   delete test_driver;
   gpr_event_set(&done_ev1, reinterpret_cast<void*>(1));

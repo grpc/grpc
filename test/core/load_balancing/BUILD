@@ -28,6 +28,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["lb_policy_test_lib.h"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -191,6 +192,7 @@ grpc_cc_test(
     srcs = ["static_stride_scheduler_benchmark.cc"],
     external_deps = [
         "absl/algorithm:container",
+        "absl/log:check",
         "benchmark",
     ],
     language = "C++",

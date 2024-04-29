@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
@@ -41,7 +42,7 @@ gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 void InitResolveLocalhost() {
   absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
       GetDNSResolver()->LookupHostnameBlocking("localhost", "https");
-  GPR_ASSERT(addresses_or.ok());
+  CHECK_OK(addresses_or);
   for (const auto& addr : *addresses_or) {
     const grpc_sockaddr* sock_addr =
         reinterpret_cast<const grpc_sockaddr*>(&addr);

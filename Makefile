@@ -1406,9 +1406,9 @@ LIBGRPC_SRC = \
     src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/call_arena_allocator.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
-    src/core/lib/transport/call_size_estimator.cc \
     src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/endpoint_info_handshaker.cc \
@@ -1550,6 +1550,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
     third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
     third_party/abseil-cpp/absl/log/globals.cc \
+    third_party/abseil-cpp/absl/log/internal/check_op.cc \
     third_party/abseil-cpp/absl/log/internal/conditions.cc \
     third_party/abseil-cpp/absl/log/internal/fnmatch.cc \
     third_party/abseil-cpp/absl/log/internal/globals.cc \

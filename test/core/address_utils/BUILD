@@ -26,6 +26,7 @@ grpc_cc_test(
     name = "sockaddr_utils_test",
     srcs = ["sockaddr_utils_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -55,6 +56,7 @@ grpc_fuzzer(
     name = "sockaddr_utils_fuzzer_test",
     srcs = ["sockaddr_utils_fuzzer_test.cc"],
     corpus = "sockaddr_uri_corpus",
+    external_deps = ["absl/log:check"],
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,

@@ -18,6 +18,8 @@
 
 #include <stdbool.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
@@ -33,7 +35,7 @@ extern bool leak_check;
 int main(int argc, char** argv) {
   squelch = false;
   leak_check = false;
-  GPR_ASSERT(argc > 1);  // Make sure that we have a filename argument
+  CHECK_GT(argc, 1);  // Make sure that we have a filename argument
   std::string buffer = grpc_core::testing::GetFileContents(argv[1]);
   LLVMFuzzerTestOneInput(buffer.data(), buffer.size());
   return 0;

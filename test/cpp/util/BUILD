@@ -77,6 +77,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "protobuf",
     ],
     deps = [
@@ -139,6 +140,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "protobuf",
         "protobuf_clib",
     ],
@@ -335,6 +337,7 @@ grpc_cc_binary(
     srcs = ["channelz_sampler.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "absl/strings",
     ],
     language = "c++",
@@ -360,6 +363,7 @@ grpc_cc_test(
         ":channelz_sampler",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     flaky = True,

@@ -77,6 +77,7 @@ grpc_cc_test(
     name = "frame_test",
     srcs = ["frame_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -93,6 +94,7 @@ grpc_proto_fuzzer(
     srcs = ["frame_fuzzer.cc"],
     corpus = "frame_fuzzer_corpus",
     external_deps = [
+        "absl/log:check",
         "absl/random:bit_gen_ref",
         "absl/status:statusor",
     ],
@@ -221,6 +223,7 @@ grpc_cc_test(
     name = "chaotic_good_server_test",
     srcs = ["chaotic_good_server_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/time",
         "gtest",

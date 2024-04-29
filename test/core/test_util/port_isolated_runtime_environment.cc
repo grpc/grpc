@@ -24,6 +24,8 @@
 //
 #include <stdlib.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -49,7 +51,7 @@ static gpr_atm s_pick_counter = 0;
 static int grpc_pick_unused_port_or_die_impl(void) {
   int orig_counter_val =
       static_cast<int>(gpr_atm_full_fetch_add(&s_pick_counter, 1));
-  GPR_ASSERT(orig_counter_val < (MAX_PORT - MIN_PORT + 1));
+  CHECK(orig_counter_val < (MAX_PORT - MIN_PORT + 1));
   return MIN_PORT +
          (s_initial_offset + orig_counter_val) % (MAX_PORT - MIN_PORT + 1);
 }

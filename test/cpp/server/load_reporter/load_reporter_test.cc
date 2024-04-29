@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "opencensus/stats/testing/test_utils.h"
 
@@ -59,7 +60,7 @@ class MockCensusViewProvider : public CensusViewProvider {
 
   const ViewDescriptor& FindViewDescriptor(const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
-    GPR_ASSERT(it != view_descriptor_map().end());
+    CHECK(it != view_descriptor_map().end());
     return it->second;
   }
 };

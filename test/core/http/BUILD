@@ -66,6 +66,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["httpcli_test_util.cc"],
     hdrs = ["httpcli_test_util.h"],
+    external_deps = ["absl/log:check"],
     deps = [
         "//:gpr",
         "//:subprocess",
@@ -84,7 +85,10 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [
@@ -110,7 +114,10 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     tags = ["no_windows"],
     deps = [

@@ -33,6 +33,9 @@ def grpc_bad_ssl_tests():
         name = "bad_ssl_test_server",
         srcs = ["server_common.cc"],
         hdrs = ["server_common.h"],
+        external_deps = [
+            "absl/log:check",
+        ],
         deps = [
             "//test/core/test_util:grpc_test_util",
             "//test/core/test_util:grpc_test_util_base",
@@ -48,6 +51,9 @@ def grpc_bad_ssl_tests():
         grpc_cc_test(
             name = "bad_ssl_%s_test" % t,
             srcs = ["bad_ssl_test.cc"],
+            external_deps = [
+                "absl/log:check",
+            ],
             data = [
                 ":bad_ssl_%s_server" % t,
                 "//src/core/tsi/test_creds:badserver.key",

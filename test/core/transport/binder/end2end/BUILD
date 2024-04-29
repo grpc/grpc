@@ -63,7 +63,7 @@ grpc_cc_library(
     testonly = 1,
     srcs = ["testing_channel_create.cc"],
     hdrs = ["testing_channel_create.h"],
-    external_deps = [],
+    external_deps = ["absl/log:check"],
     deps = [
         ":fake_binder",
         "//:grpc++_base",
