@@ -1989,7 +1989,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
-  CHECK_NE(options.resource_quota, nullptr);
+  CHECK(options.resource_quota != nullptr);
   tcp->memory_owner =
       options.resource_quota->memory_quota()->CreateMemoryOwner();
   tcp->self_reservation = tcp->memory_owner.MakeReservation(sizeof(grpc_tcp));
