@@ -258,7 +258,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "endpoint_test",
@@ -343,6 +346,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
