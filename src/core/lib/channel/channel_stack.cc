@@ -69,8 +69,8 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
                                                sizeof(grpc_channel_element));
   size_t i;
 
-  CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0 &&
-        "GPR_MAX_ALIGNMENT must be a power of two");
+  CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0)
+      << "GPR_MAX_ALIGNMENT must be a power of two";
 
   // add the size for each filter
   for (i = 0; i < filter_count; i++) {
