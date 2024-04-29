@@ -118,7 +118,8 @@ Pod::Spec.new do |s|
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'src/include/openssl'
     ss.private_header_files = 'src/include/openssl/time.h'
-    ss.source_files = 'src/include/openssl/*.h'
+    ss.source_files = 'src/include/openssl/*.h',
+                      'src/include/openssl/**/*.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = 'src'
