@@ -112,12 +112,8 @@ def test_server(max_workers=10, reuse_port=False):
 
     These servers have SO_REUSEPORT disabled to prevent cross-talk.
     """
-    server_kwargs = os.environ.get("GRPC_ADDITIONAL_SERVER_KWARGS", "")
-    try:
-        server_kwargs = ast.literal_eval(server_kwargs)
-    except Exception:  # pylint: disable=broad-except
-        server_kwargs = {}
-
+    server_kwargs = os.environ.get("GRPC_ADDITIONAL_SERVER_KWARGS", "{}")
+    server_kwargs = ast.literal_eval(server_kwargs)
     return grpc.server(
         futures.ThreadPoolExecutor(max_workers=max_workers),
         options=(("grpc.so_reuseport", int(reuse_port)),),
