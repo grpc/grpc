@@ -26,8 +26,9 @@
 
 #include <limits>
 
-#include <grpc/support/alloc.h>
 #include "absl/log/check.h"
+
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 
@@ -74,8 +75,8 @@ grpc_iocp_work_status grpc_iocp_work(grpc_core::Timestamp deadline) {
   if (success == 0 && overlapped == NULL) {
     return GRPC_IOCP_WORK_TIMEOUT;
   }
-  CHECK(completion_key );
-CHECK( overlapped);
+  CHECK(completion_key);
+  CHECK(overlapped);
   if (overlapped == &g_iocp_custom_overlap) {
     gpr_atm_full_fetch_add(&g_custom_events, -1);
     if (completion_key == (ULONG_PTR)&g_iocp_kick_token) {

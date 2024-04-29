@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -49,18 +50,17 @@ static void create_sockets(SOCKET sv[2]) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_family = AF_INET;
-  CHECK(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) !=
-             SOCKET_ERROR);
+  CHECK(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
   CHECK(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
   CHECK(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) !=
-             SOCKET_ERROR);
+        SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                        grpc_get_default_wsa_socket_flags());
   CHECK(cli_sock != INVALID_SOCKET);
 
-  CHECK(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL,
-                        NULL, NULL) == 0);
+  CHECK(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL, NULL,
+                   NULL) == 0);
   svr_sock = accept(lst_sock, (grpc_sockaddr*)&addr, &addr_len);
   CHECK(svr_sock != INVALID_SOCKET);
 

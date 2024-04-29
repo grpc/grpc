@@ -22,11 +22,11 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>

@@ -45,9 +45,10 @@
 #include <algorithm>
 #include <unordered_map>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -299,8 +300,7 @@ class TcpZerocopySendCtx {
   // max_sends_ tcp_write() instances with zerocopy enabled in flight at the
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
-    DCHECK(record >= send_records_ &&
-                     record < send_records_ + max_sends_);
+    DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
     MutexLock guard(&lock_);
     PutSendRecordLocked(record);
   }
@@ -1020,7 +1020,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     DCHECK((size_t)read_bytes <=
-                     tcp->incoming_buffer->length - total_read_bytes);
+           tcp->incoming_buffer->length - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (tcp->inq_capable) {

@@ -43,9 +43,10 @@
 
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 

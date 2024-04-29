@@ -20,9 +20,10 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -371,8 +372,7 @@ void Executor::InitAll() {
 
   // Return if Executor::InitAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] != nullptr) {
-    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] !=
-               nullptr);
+    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] != nullptr);
     return;
   }
 
@@ -398,8 +398,7 @@ void Executor::ShutdownAll() {
 
   // Return if Executor:SshutdownAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] == nullptr) {
-    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] ==
-               nullptr);
+    CHECK(executors[static_cast<size_t>(ExecutorType::RESOLVER)] == nullptr);
     return;
   }
 

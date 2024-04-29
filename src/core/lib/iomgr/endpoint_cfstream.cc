@@ -24,6 +24,8 @@
 
 #import <CoreFoundation/CoreFoundation.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>

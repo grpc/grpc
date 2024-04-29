@@ -27,10 +27,10 @@
 // must be included after winsock2.h
 #include <mswsock.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 

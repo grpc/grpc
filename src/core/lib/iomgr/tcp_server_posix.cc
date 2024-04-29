@@ -43,6 +43,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -50,7 +51,6 @@
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -564,8 +564,8 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   } else {
     grpc_error_handle root_err =
         GRPC_ERROR_CREATE("Failed to add any wildcard listeners");
-    CHECK(!v6_err.ok() );
-CHECK( !v4_err.ok());
+    CHECK(!v6_err.ok());
+    CHECK(!v4_err.ok());
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
     return root_err;
@@ -903,10 +903,9 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
             grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
                 buf->data.raw.slice_buffer);
       }
-      CHECK(
-          GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                            listener_supports_fd->HandleExternalConnection(
-                                listener_fd, fd, &pending_data)));
+      CHECK(GRPC_LOG_IF_ERROR("listener_handle_external_connection",
+                              listener_supports_fd->HandleExternalConnection(
+                                  listener_fd, fd, &pending_data)));
       return;
     }
     grpc_pollset* read_notifier_pollset;
