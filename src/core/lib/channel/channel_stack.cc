@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -69,7 +70,7 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
   size_t i;
 
   CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0 &&
-             "GPR_MAX_ALIGNMENT must be a power of two");
+        "GPR_MAX_ALIGNMENT must be a power of two");
 
   // add the size for each filter
   for (i = 0; i < filter_count; i++) {
@@ -170,7 +171,7 @@ grpc_error_handle grpc_channel_stack_init(
 
   CHECK(user_data > (char*)stack);
   CHECK((uintptr_t)(user_data - (char*)stack) ==
-             grpc_channel_stack_size(filters, filter_count));
+        grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;
   return first_error;

@@ -18,6 +18,7 @@
 #include <cstdint>
 
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -28,9 +29,8 @@ ConnectionQuota::ConnectionQuota() = default;
 void ConnectionQuota::SetMaxIncomingConnections(int max_incoming_connections) {
   // The maximum can only be configured once.
   CHECK_LT(max_incoming_connections, INT_MAX);
-  CHECK(max_incoming_connections_.exchange(max_incoming_connections,
-                                                std::memory_order_release) ==
-             INT_MAX);
+  CHECK(max_incoming_connections_.exchange(
+            max_incoming_connections, std::memory_order_release) == INT_MAX);
 }
 
 // Returns true if the incoming connection is allowed to be accepted on the
@@ -64,8 +64,7 @@ void ConnectionQuota::ReleaseConnections(int num_connections) {
     return;
   }
   CHECK(active_incoming_connections_.fetch_sub(
-                 num_connections, std::memory_order_acq_rel) >=
-             num_connections);
+            num_connections, std::memory_order_acq_rel) >= num_connections);
 }
 
 }  // namespace grpc_core

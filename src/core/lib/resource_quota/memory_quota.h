@@ -28,12 +28,12 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

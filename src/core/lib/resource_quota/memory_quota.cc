@@ -25,6 +25,7 @@
 #include <tuple>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
@@ -253,8 +254,8 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
   CHECK(free_bytes_.load(std::memory_order_acquire) +
-                 sizeof(GrpcMemoryAllocatorImpl) ==
-             taken_bytes_.load(std::memory_order_relaxed));
+            sizeof(GrpcMemoryAllocatorImpl) ==
+        taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 

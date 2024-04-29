@@ -22,6 +22,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -852,7 +853,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
         break;
       }
       CHECK(state_ == State::kPushedToPipe ||
-                 state_ == State::kCompletedWhilePushedToPipe);
+            state_ == State::kCompletedWhilePushedToPipe);
       ABSL_FALLTHROUGH_INTENDED;
     case State::kCompletedWhilePushedToPipe:
     case State::kPushedToPipe: {
@@ -1064,10 +1065,8 @@ class ClientCallData::PollContext {
         case RecvInitialMetadata::kCompleteAndGotPipe:
           self_->recv_initial_metadata_->state =
               RecvInitialMetadata::kCompleteAndPushedToPipe;
-          CHECK(
-              !self_->recv_initial_metadata_->metadata_push_.has_value());
-          CHECK(
-              !self_->recv_initial_metadata_->metadata_next_.has_value());
+          CHECK(!self_->recv_initial_metadata_->metadata_push_.has_value());
+          CHECK(!self_->recv_initial_metadata_->metadata_next_.has_value());
           self_->recv_initial_metadata_->metadata_push_.emplace(
               self_->recv_initial_metadata_->server_initial_metadata_publisher
                   ->Push(ServerMetadataHandle(
@@ -1399,10 +1398,9 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // If this is a cancel stream, cancel anything we have pending and propagate
   // the cancellation.
   if (batch->cancel_stream) {
-    CHECK(!batch->send_initial_metadata &&
-               !batch->send_trailing_metadata && !batch->send_message &&
-               !batch->recv_initial_metadata && !batch->recv_message &&
-               !batch->recv_trailing_metadata);
+    CHECK(!batch->send_initial_metadata && !batch->send_trailing_metadata &&
+          !batch->send_message && !batch->recv_initial_metadata &&
+          !batch->recv_message && !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
     Cancel(batch->payload->cancel_stream.cancel_error, &flusher);
     poll_ctx.Run();
@@ -2045,10 +2043,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // If this is a cancel stream, cancel anything we have pending and
   // propagate the cancellation.
   if (batch->cancel_stream) {
-    CHECK(!batch->send_initial_metadata &&
-               !batch->send_trailing_metadata && !batch->send_message &&
-               !batch->recv_initial_metadata && !batch->recv_message &&
-               !batch->recv_trailing_metadata);
+    CHECK(!batch->send_initial_metadata && !batch->send_trailing_metadata &&
+          !batch->send_message && !batch->recv_initial_metadata &&
+          !batch->recv_message && !batch->recv_trailing_metadata);
     PollContext poll_ctx(this, &flusher);
     Completed(batch->payload->cancel_stream.cancel_error,
               batch->payload->cancel_stream.tarpit, &flusher);
@@ -2063,9 +2060,9 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // recv_initial_metadata: we hook the response of this so we can start the
   // promise at an appropriate time.
   if (batch->recv_initial_metadata) {
-    CHECK(!batch->send_initial_metadata &&
-               !batch->send_trailing_metadata && !batch->send_message &&
-               !batch->recv_message && !batch->recv_trailing_metadata);
+    CHECK(!batch->send_initial_metadata && !batch->send_trailing_metadata &&
+          !batch->send_message && !batch->recv_message &&
+          !batch->recv_trailing_metadata);
     // Otherwise, we should not have seen a send_initial_metadata op yet.
     CHECK(recv_initial_state_ == RecvInitialState::kInitial);
     // Hook the callback so we know when to start the promise.
@@ -2251,11 +2248,10 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
     CallArgs call_args) {
   CHECK(recv_initial_state_ == RecvInitialState::kComplete);
   CHECK(std::move(call_args.client_initial_metadata).get() ==
-             recv_initial_metadata_);
+        recv_initial_metadata_);
   forward_recv_initial_metadata_callback_ = true;
   if (send_initial_metadata_ != nullptr) {
-    CHECK(send_initial_metadata_->server_initial_metadata_publisher ==
-               nullptr);
+    CHECK(send_initial_metadata_->server_initial_metadata_publisher == nullptr);
     CHECK_NE(call_args.server_initial_metadata, nullptr);
     send_initial_metadata_->server_initial_metadata_publisher =
         call_args.server_initial_metadata;

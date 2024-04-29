@@ -18,8 +18,8 @@
 #include <atomic>
 
 #include "absl/functional/any_invocable.h"
-
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -131,9 +131,9 @@ class GRPC_DLL CoreConfiguration {
       // Reset and restore.
       Reset();
       CHECK(CoreConfiguration::config_.exchange(
-                     config_restore_, std::memory_order_acquire) == nullptr);
+                config_restore_, std::memory_order_acquire) == nullptr);
       CHECK(CoreConfiguration::builders_.exchange(
-                     builders_restore_, std::memory_order_acquire) == nullptr);
+                builders_restore_, std::memory_order_acquire) == nullptr);
     }
 
    private:

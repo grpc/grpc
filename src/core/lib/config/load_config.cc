@@ -17,6 +17,7 @@
 #include <stdio.h>
 
 #include "absl/flags/marshalling.h"
+#include "absl/log/check.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"

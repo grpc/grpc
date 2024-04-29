@@ -18,34 +18,44 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
+
+#include "absl/log/check.h"
 #endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "absl/log/check.h"
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
 // clang-format off
+#include "absl/log/check.h"
 #include <ws2def.h>
+#include "absl/log/check.h"
 #include <afunix.h>
 // clang-format on
 #else
 #include <sys/un.h>
+
+#include "absl/log/check.h"
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"

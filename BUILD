@@ -1707,6 +1707,7 @@ grpc_cc_library(
         "//src/core:lib/channel/call_tracer.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -1984,6 +1985,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -3195,6 +3197,7 @@ grpc_cc_library(
         "//src/core:lib/address_utils/sockaddr_utils.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3318,6 +3321,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/grpc_if_nametoindex.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

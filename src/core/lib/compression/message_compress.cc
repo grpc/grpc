@@ -23,9 +23,10 @@
 #include <zconf.h>
 #include <zlib.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

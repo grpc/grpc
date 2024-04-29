@@ -31,6 +31,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -38,7 +39,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -1213,8 +1213,7 @@ class BaseCallData : public Activity, private Wakeable {
   ~BaseCallData() override;
 
   void set_pollent(grpc_polling_entity* pollent) {
-    CHECK(nullptr ==
-               pollent_.exchange(pollent, std::memory_order_release));
+    CHECK(nullptr == pollent_.exchange(pollent, std::memory_order_release));
   }
 
   // Activity implementation (partial).

@@ -21,20 +21,24 @@
 #include <errno.h>
 #include <inttypes.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
+
+#include "absl/log/check.h"
 #endif
 #include <string.h>
 
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -47,11 +51,15 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
 // clang-format off
+#include "absl/log/check.h"
 #include <ws2def.h>
+#include "absl/log/check.h"
 #include <afunix.h>
 // clang-format on
 #else
 #include <sys/un.h>
+
+#include "absl/log/check.h"
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
@@ -204,8 +212,8 @@ void grpc_sockaddr_make_wildcard4(int port,
                                   grpc_resolved_address* resolved_wild_out) {
   grpc_sockaddr_in* wild_out =
       reinterpret_cast<grpc_sockaddr_in*>(resolved_wild_out->addr);
-  CHECK(port >= 0 );
-CHECK( port < 65536);
+  CHECK(port >= 0);
+  CHECK(port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin_family = GRPC_AF_INET;
   wild_out->sin_port = grpc_htons(static_cast<uint16_t>(port));
@@ -216,8 +224,8 @@ void grpc_sockaddr_make_wildcard6(int port,
                                   grpc_resolved_address* resolved_wild_out) {
   grpc_sockaddr_in6* wild_out =
       reinterpret_cast<grpc_sockaddr_in6*>(resolved_wild_out->addr);
-  CHECK(port >= 0 );
-CHECK( port < 65536);
+  CHECK(port >= 0);
+  CHECK(port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin6_family = GRPC_AF_INET6;
   wild_out->sin6_port = grpc_htons(static_cast<uint16_t>(port));
@@ -381,14 +389,14 @@ int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case GRPC_AF_INET:
-      CHECK(port >= 0 );
-CHECK( port < 65536);
+      CHECK(port >= 0);
+      CHECK(port < 65536);
       (reinterpret_cast<grpc_sockaddr_in*>(addr))->sin_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     case GRPC_AF_INET6:
-      CHECK(port >= 0 );
-CHECK( port < 65536);
+      CHECK(port >= 0);
+      CHECK(port < 65536);
       (reinterpret_cast<grpc_sockaddr_in6*>(addr))->sin6_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;

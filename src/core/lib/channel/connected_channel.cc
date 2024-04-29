@@ -26,6 +26,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -33,7 +34,6 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
