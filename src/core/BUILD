@@ -1607,6 +1607,7 @@ grpc_cc_library(
         "lib/gprpp/time.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
