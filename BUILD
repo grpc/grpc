@@ -1859,10 +1859,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "server",
     srcs = [
-        "//src/core:lib/surface/server.cc",
+        "//src/core:server/server.cc",
     ],
     hdrs = [
-        "//src/core:lib/surface/server.h",
+        "//src/core:server/server.h",
     ],
     external_deps = [
         "absl/base:core_headers",

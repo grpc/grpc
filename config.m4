@@ -76,7 +76,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
-    src/core/ext/filters/server_config_selector/server_config_selector_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/gcp/metadata_query.cc \
@@ -439,7 +438,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_bootstrap_grpc.cc \
     src/core/ext/xds/xds_certificate_provider.cc \
-    src/core/ext/xds/xds_channel_stack_modifier.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_grpc.cc \
     src/core/ext/xds/xds_client_stats.cc \
@@ -456,7 +454,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/xds/xds_listener.cc \
     src/core/ext/xds/xds_route_config.cc \
     src/core/ext/xds/xds_routing.cc \
-    src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/ext/xds/xds_transport_grpc.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
@@ -472,7 +469,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
-    src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
@@ -775,7 +771,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
-    src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
     src/core/lib/surface/wait_for_cq_end_op.cc \
@@ -852,6 +847,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
     src/core/resolver/xds/xds_resolver_trace.cc \
+    src/core/server/server.cc \
+    src/core/server/server_call_tracer_filter.cc \
+    src/core/server/server_config_selector_filter.cc \
+    src/core/server/xds_channel_stack_modifier.cc \
+    src/core/server/xds_server_config_fetcher.cc \
     src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
@@ -1396,7 +1396,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/message_size)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/rbac)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/server_config_selector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/stateful_session)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/gcp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/alpn)
@@ -1593,6 +1592,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/google_c2p)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/server)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/service_config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/crypt)

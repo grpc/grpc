@@ -78,12 +78,12 @@
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/server/server.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"

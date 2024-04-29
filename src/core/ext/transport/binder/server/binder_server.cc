@@ -30,8 +30,8 @@
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/server/server.h"
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 

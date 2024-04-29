@@ -61,12 +61,12 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/server/server.h"
 
 namespace grpc_core {
 namespace chaotic_good {
