@@ -3008,7 +3008,10 @@ grpc_cc_library(
     srcs = [
         "//src/core:lib/config/core_configuration.cc",
     ],
-    external_deps = ["absl/functional:any_invocable"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log:check",
+    ],
     language = "c++",
     public_hdrs = [
         "//src/core:lib/config/core_configuration.h",
@@ -3816,6 +3819,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:bind_front",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
