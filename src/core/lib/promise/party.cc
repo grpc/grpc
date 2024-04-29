@@ -29,7 +29,6 @@
 #include "src/core/lib/promise/trace.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
