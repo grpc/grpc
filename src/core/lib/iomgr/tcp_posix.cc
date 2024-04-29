@@ -175,8 +175,8 @@ class TcpZerocopySendRecord {
   };
 
   void AssertEmpty() {
-    DCHECK_EQ(buf_.count, 0);
-    DCHECK_EQ(buf_.length, 0);
+    DCHECK_EQ(buf_.count, 0u);
+    DCHECK_EQ(buf_.length, 0u);
     DCHECK_EQ(ref_.load(std::memory_order_relaxed), 0);
   }
 
@@ -300,7 +300,8 @@ class TcpZerocopySendCtx {
   // max_sends_ tcp_write() instances with zerocopy enabled in flight at the
   // same time.
   void PutSendRecord(TcpZerocopySendRecord* record) {
-    DCHECK(record >= send_records_ && record < send_records_ + max_sends_);
+    DCHECK(record >= send_records_);
+    DCHECK(record < send_records_ + max_sends_);
     MutexLock guard(&lock_);
     PutSendRecordLocked(record);
   }
@@ -950,7 +951,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
   }
 
-  CHECK_NE(tcp->incoming_buffer->length, 0);
+  CHECK_NE(tcp->incoming_buffer->length, 0u);
   DCHECK_GT(tcp->min_progress_size, 0);
 
   do {
@@ -1268,8 +1269,8 @@ static TcpZerocopySendRecord* tcp_get_send_zerocopy_record(
     }
     if (zerocopy_send_record != nullptr) {
       zerocopy_send_record->PrepareForSends(buf);
-      DCHECK_EQ(buf->count, 0);
-      DCHECK_EQ(buf->length, 0);
+      DCHECK_EQ(buf->count, 0u);
+      DCHECK_EQ(buf->length, 0u);
       tcp->outgoing_byte_idx = 0;
       tcp->outgoing_buffer = nullptr;
     }
@@ -1333,7 +1334,7 @@ static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
 static void process_zerocopy(grpc_tcp* tcp, struct cmsghdr* cmsg) {
   DCHECK(cmsg);
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(cmsg));
-  DCHECK_EQ(serr->ee_errno, 0);
+  DCHECK_EQ(serr->ee_errno, 0u);
   DCHECK(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
   const uint32_t lo = serr->ee_info;
   const uint32_t hi = serr->ee_data;
@@ -1585,7 +1586,7 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
     ++(out_offset_.slice_idx);
     out_offset_.byte_idx = 0;
   }
-  DCHECK_GT(iov_size, 0);
+  DCHECK_GT(iov_size, 0u);
   return iov_size;
 }
 
