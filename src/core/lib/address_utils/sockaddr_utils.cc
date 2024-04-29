@@ -26,7 +26,6 @@
 #include <grpc/support/port_platform.h>
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
-
 #endif
 #include <string.h>
 
@@ -54,7 +53,6 @@
 // clang-format on
 #else
 #include <sys/un.h>
-
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
