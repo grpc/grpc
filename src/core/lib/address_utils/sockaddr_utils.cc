@@ -27,14 +27,12 @@
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
 
-#include "absl/log/check.h"
 #endif
 #include <string.h>
 
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -51,15 +49,12 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
 // clang-format off
-#include "absl/log/check.h"
 #include <ws2def.h>
-#include "absl/log/check.h"
 #include <afunix.h>
 // clang-format on
 #else
 #include <sys/un.h>
 
-#include "absl/log/check.h"
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
