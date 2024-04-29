@@ -64,7 +64,7 @@ class NextResult final {
   NextResult() : center_(nullptr) {}
   explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
       : center_(std::move(center)) {
-    CHECK_NE(center_, nullptr);
+    CHECK(center_ != nullptr);
   }
   explicit NextResult(bool cancelled)
       : center_(nullptr), cancelled_(cancelled) {}
