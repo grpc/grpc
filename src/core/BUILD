@@ -359,6 +359,7 @@ grpc_cc_library(
         "lib/gprpp/status_helper.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",
