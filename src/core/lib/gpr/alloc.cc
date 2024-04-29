@@ -61,7 +61,7 @@ void* gpr_realloc(void* p, size_t size) {
 }
 
 void* gpr_malloc_aligned(size_t size, size_t alignment) {
-  CHECK_EQ(((alignment - 1) & alignment), 0);  // Must be power of 2.
+  CHECK_EQ(((alignment - 1) & alignment), 0u);  // Must be power of 2.
   size_t extra = alignment - 1 + sizeof(void*);
   void* p = gpr_malloc(size + extra);
   void** ret = reinterpret_cast<void**>(

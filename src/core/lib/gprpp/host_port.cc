@@ -94,9 +94,9 @@ bool SplitHostPort(absl::string_view name, absl::string_view* host,
 bool SplitHostPort(absl::string_view name, std::string* host,
                    std::string* port) {
   DCHECK(host != nullptr);
-  CHECK(host->empty());
+  DCHECK(host->empty());
   DCHECK(port != nullptr);
-  CHECK(port->empty());
+  DCHECK(port->empty());
   absl::string_view host_view;
   absl::string_view port_view;
   bool has_port;
