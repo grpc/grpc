@@ -1741,7 +1741,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
       outgoing_slice_idx++;
       tcp->outgoing_byte_idx = 0;
     }
-    CHECK_GT(iov_size, 0);
+    CHECK_GT(iov_size, 0u);
 
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;

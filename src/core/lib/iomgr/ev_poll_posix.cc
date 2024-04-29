@@ -803,7 +803,7 @@ static grpc_error_handle pollset_kick_ext(grpc_pollset* p,
                         grpc_wakeup_fd_wakeup(&specific_worker->wakeup_fd->fd));
     }
   } else if (g_current_thread_poller != p) {
-    CHECK_EQ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP), 0);
+    CHECK_EQ((flags & GRPC_POLLSET_REEVALUATE_POLLING_ON_WAKEUP), 0u);
     specific_worker = pop_front_worker(p);
     if (specific_worker != nullptr) {
       if (g_current_thread_worker == specific_worker) {
