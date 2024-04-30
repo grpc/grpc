@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -34,7 +35,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
@@ -287,8 +287,7 @@ struct cq_pluck_data {
   }
 
   ~cq_pluck_data() {
-    CHECK(completed_head.next ==
-               reinterpret_cast<uintptr_t>(&completed_head));
+    CHECK(completed_head.next == reinterpret_cast<uintptr_t>(&completed_head));
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
       gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");

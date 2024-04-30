@@ -19,11 +19,12 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

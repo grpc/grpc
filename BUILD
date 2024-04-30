@@ -1483,6 +1483,9 @@ grpc_cc_library(
         "//src/core:lib/surface/byte_buffer.cc",
         "//src/core:lib/surface/byte_buffer_reader.cc",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "c++",
     deps = [
         "exec_ctx",
@@ -1738,6 +1741,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -1780,6 +1784,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -1826,6 +1831,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -1867,6 +1873,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/hash",
+        "absl/log:check",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -1984,6 +1991,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",

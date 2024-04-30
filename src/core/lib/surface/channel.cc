@@ -16,11 +16,12 @@
 
 #include "src/core/lib/surface/channel.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

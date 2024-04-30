@@ -21,12 +21,12 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

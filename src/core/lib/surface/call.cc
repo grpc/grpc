@@ -33,6 +33,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -50,7 +51,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -884,9 +884,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->CancelWithError(error);
   }
   if (args->cq != nullptr) {
-    CHECK(args->pollset_set_alternative == nullptr &&
-               "Only one of 'cq' and 'pollset_set_alternative' should be "
-               "non-nullptr.");
+    CHECK(args->pollset_set_alternative == nullptr) <<
+          "Only one of 'cq' and 'pollset_set_alternative' should be "
+          "non-nullptr.";
     GRPC_CQ_INTERNAL_REF(args->cq, "bind");
     call->pollent_ =
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args->cq));
@@ -2734,9 +2734,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                        : grpc_polling_entity{})) {
     global_stats().IncrementClientCallsCreated();
     if (args->cq != nullptr) {
-      CHECK(args->pollset_set_alternative == nullptr &&
-                 "Only one of 'cq' and 'pollset_set_alternative' should be "
-                 "non-nullptr.");
+      CHECK(args->pollset_set_alternative == nullptr) << 
+            "Only one of 'cq' and 'pollset_set_alternative' should be "
+            "non-nullptr.");
     }
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
@@ -2897,11 +2897,11 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
       Latch<bool> was_cancelled_latch_;
     };
     CHECK(call_args.server_initial_metadata ==
-               &server_initial_metadata_.sender);
+          &server_initial_metadata_.sender);
     CHECK(call_args.client_to_server_messages ==
-               &client_to_server_messages_.receiver);
+          &client_to_server_messages_.receiver);
     CHECK(call_args.server_to_client_messages ==
-               &server_to_client_messages_.sender);
+          &server_to_client_messages_.sender);
     call_args.client_initial_metadata_outstanding.Complete(true);
     return MakeRefCounted<WrappingCallSpine>(
         this, std::move(call_args.client_initial_metadata));

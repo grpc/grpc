@@ -19,6 +19,7 @@
 #include "src/core/lib/surface/legacy_channel.h"
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -26,7 +27,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -168,8 +168,7 @@ grpc_call* LegacyChannel::CreateCall(
     Slice path, absl::optional<Slice> authority, Timestamp deadline,
     bool registered_method) {
   CHECK(is_client_);
-  CHECK(!(cq != nullptr );
-CHECK( pollset_set_alternative != nullptr));
+  CHECK(!(cq != nullptr); CHECK(pollset_set_alternative != nullptr));
   grpc_call_create_args args;
   args.channel = Ref();
   args.server = nullptr;

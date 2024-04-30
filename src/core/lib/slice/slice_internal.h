@@ -25,10 +25,10 @@
 #include <string>
 
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
