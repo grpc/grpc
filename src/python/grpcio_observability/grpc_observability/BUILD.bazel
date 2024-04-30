@@ -53,7 +53,7 @@ pyx_library(
     ],
 )
 
-# Since `opentelemetry-sdk` and `opentelemetry-api` are non-hermetic,
+# Since `opentelemetry-api` is non-hermetic,
 # pyobservability is for internal use only.
 py_library(
     name = "_opentelemetry_observability",
@@ -63,7 +63,6 @@ py_library(
         "_open_telemetry_plugin.py",
     ],
     deps = [
-        requirement("opentelemetry-sdk"),
         requirement("opentelemetry-api"),
     ],
 )

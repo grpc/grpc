@@ -28,6 +28,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
@@ -59,8 +60,8 @@
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/uri/uri_parser.h"
 #include "test/core/http/httpcli_test_util.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 
@@ -101,7 +102,7 @@ class HttpsCliTest : public ::testing::Test {
   void RunAndKick(const std::function<void()>& f) {
     grpc_core::MutexLockForGprMu lock(mu_);
     f();
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+    CHECK(GRPC_LOG_IF_ERROR(
         "pollset_kick",
         grpc_pollset_kick(grpc_polling_entity_pollset(&pops_), nullptr)));
   }
@@ -109,9 +110,9 @@ class HttpsCliTest : public ::testing::Test {
   void PollUntil(const std::function<bool()>& predicate, absl::Time deadline) {
     gpr_mu_lock(mu_);
     while (!predicate()) {
-      GPR_ASSERT(absl::Now() < deadline);
+      CHECK(absl::Now() < deadline);
       grpc_pollset_worker* worker = nullptr;
-      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      CHECK(GRPC_LOG_IF_ERROR(
           "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&pops_),
                                             &worker, NSecondsTime(1))));
       gpr_mu_unlock(mu_);
@@ -164,10 +165,10 @@ void OnFinish(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_core::StatusToString(error).c_str());
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(response.status == 200);
-  GPR_ASSERT(response.body_length == strlen(expect));
-  GPR_ASSERT(0 == memcmp(expect, response.body, response.body_length));
+  CHECK(error.ok());
+  CHECK_EQ(response.status, 200);
+  CHECK(response.body_length == strlen(expect));
+  CHECK_EQ(memcmp(expect, response.body, response.body_length), 0);
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -177,7 +178,7 @@ void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   grpc_http_response response = request_state->response;
   gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
           grpc_core::StatusToString(error).c_str());
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });
 }
@@ -195,7 +196,7 @@ TEST_F(HttpsCliTest, Get) {
   grpc_channel_args args = {1, &ssl_override_arg};
   auto uri = grpc_core::URI::Create("https", host, "/get",
                                     {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
           std::move(*uri), &args, pops(), &req, NSecondsTime(15),
@@ -223,7 +224,7 @@ TEST_F(HttpsCliTest, Post) {
   grpc_channel_args args = {1, &ssl_override_arg};
   auto uri = grpc_core::URI::Create("https", host, "/post",
                                     {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Post(
           std::move(*uri), &args /* channel args */, pops(), &req,

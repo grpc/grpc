@@ -21,7 +21,9 @@
 #include <stdlib.h>
 
 #include <string>
+#include <thread>
 
+#include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
 
 #include <grpc/credentials.h>
@@ -34,7 +36,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
 namespace grpc_core {
@@ -315,6 +317,28 @@ TEST(ChannelTracerTest, TestTotalEviction) {
   grpc_slice huge_slice = grpc_slice_malloc(kTraceEventSize * (kNumEvents + 1));
   tracer.AddTraceEvent(ChannelTrace::Severity::Info, huge_slice);
   ValidateChannelTraceCustom(&tracer, kNumEvents + 1, 0);
+}
+
+// Tests that the code is thread-safe.
+TEST(ChannelTracerTest, ThreadSafety) {
+  ExecCtx exec_ctx;
+  ChannelTrace tracer(kEventListMemoryLimit);
+  absl::Notification done;
+  std::vector<std::unique_ptr<std::thread>> threads;
+  for (size_t i = 0; i < 10; ++i) {
+    threads.push_back(std::make_unique<std::thread>([&]() {
+      do {
+        AddSimpleTrace(&tracer);
+      } while (!done.HasBeenNotified());
+    }));
+  }
+  for (size_t i = 0; i < 10; ++i) {
+    tracer.RenderJson();
+  }
+  done.Notify();
+  for (const auto& thd : threads) {
+    thd->join();
+  }
 }
 
 }  // namespace testing

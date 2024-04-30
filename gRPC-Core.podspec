@@ -214,6 +214,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/log/check', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -1926,12 +1927,12 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.cc',
                       'src/core/lib/transport/bdp_estimator.h',
+                      'src/core/lib/transport/call_arena_allocator.cc',
+                      'src/core/lib/transport/call_arena_allocator.h',
                       'src/core/lib/transport/call_filters.cc',
                       'src/core/lib/transport/call_filters.h',
                       'src/core/lib/transport/call_final_info.cc',
                       'src/core/lib/transport/call_final_info.h',
-                      'src/core/lib/transport/call_size_estimator.cc',
-                      'src/core/lib/transport/call_size_estimator.h',
                       'src/core/lib/transport/call_spine.cc',
                       'src/core/lib/transport/call_spine.h',
                       'src/core/lib/transport/connectivity_state.cc',
@@ -3297,9 +3298,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
+                              'src/core/lib/transport/call_arena_allocator.h',
                               'src/core/lib/transport/call_filters.h',
                               'src/core/lib/transport/call_final_info.h',
-                              'src/core/lib/transport/call_size_estimator.h',
                               'src/core/lib/transport/call_spine.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/custom_metadata.h',

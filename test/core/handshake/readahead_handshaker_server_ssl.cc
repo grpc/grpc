@@ -34,7 +34,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/handshake/server_ssl_common.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // The purpose of this test is to exercise the case when a
 // grpc *security_handshaker* begins its handshake with data already

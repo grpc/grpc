@@ -1798,12 +1798,12 @@
     <file baseinstalldir="/" name="src/core/lib/transport/batch_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_size_estimator.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/call_size_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_spine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_spine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.cc" role="src" />
@@ -2182,9 +2182,13 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/low_level_hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/absl_vlog_is_on.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/check.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/append_truncated.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/check_impl.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/check_op.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/check_op.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/conditions.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/conditions.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/config.h" role="src" />

@@ -16,6 +16,8 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
@@ -124,9 +126,9 @@ grpc_channel* grpc_binder_channel_create_for_testing(
       grpc_binder::end2end_testing::CreateClientServerBindersPairForTesting();
   grpc_error_handle error = grpc_core::Server::FromC(server)->SetupTransport(
       server_transport, nullptr, server_args, nullptr);
-  GPR_ASSERT(error.ok());
+  CHECK_OK(error);
   auto channel = grpc_core::ChannelCreate(
       "binder", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
-  GPR_ASSERT(channel.ok());
+  CHECK_OK(channel);
   return channel->release()->c_ptr();
 }
