@@ -84,8 +84,8 @@ grpc_cc_library(
         "//:grpc++",
         "//:subprocess",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -118,8 +118,8 @@ grpc_cc_library(
     deps = [
         "//:grpc++_unsecure",
         "//:subprocess",
-        "//test/core/util:grpc_test_util_base",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -213,7 +213,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
         "//src/proto/grpc/testing/xds/v3:orca_load_report_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
 )
@@ -260,7 +260,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -291,7 +291,7 @@ grpc_cc_test(
         ":grpc_cli_libs",
         ":test_util",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -308,7 +308,7 @@ grpc_cc_test(
         "//:grpc++_error_details",
         "//src/proto/grpc/status:status_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -380,7 +380,7 @@ grpc_cc_test(
         "//:grpcpp_channelz",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/testing:test_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -397,7 +397,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 

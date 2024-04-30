@@ -26,7 +26,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/proto/grpc/testing/xds/v3/stateful_session.pb.h"
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
-#include "test/core/util/scoped_env_var.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {

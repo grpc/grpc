@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/ext/filters/event_engine_client_channel_resolver")
 
@@ -28,8 +28,8 @@ grpc_proto_fuzzer(
     language = "C++",
     proto = "resolver_fuzzer.proto",
     proto_deps = [
-        "//test/core/util:fuzz_config_vars_proto",
-        "//test/core/util:fuzzing_channel_args_proto",
+        "//test/core/test_util:fuzz_config_vars_proto",
+        "//test/core/test_util:fuzzing_channel_args_proto",
     ],
     tags = [
         "no_mac",
@@ -43,9 +43,9 @@ grpc_proto_fuzzer(
         "//src/core:channel_args",
         "//test/core/event_engine:aborting_event_engine",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/util:fuzz_config_vars",
-        "//test/core/util:fuzzing_channel_args",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:fuzzing_channel_args",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )

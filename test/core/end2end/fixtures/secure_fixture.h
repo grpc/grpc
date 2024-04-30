@@ -29,7 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 // Base class for a fixture that just needs to select cred types (or mutate
 // client/server channel args).

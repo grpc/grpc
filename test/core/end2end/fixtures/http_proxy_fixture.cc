@@ -65,7 +65,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
