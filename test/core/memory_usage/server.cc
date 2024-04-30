@@ -52,8 +52,8 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use security");

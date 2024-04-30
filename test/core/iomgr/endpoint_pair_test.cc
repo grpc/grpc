@@ -40,8 +40,8 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/iomgr/endpoint_tests.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 using namespace std::chrono_literals;
 

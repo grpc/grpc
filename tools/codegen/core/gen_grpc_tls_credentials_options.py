@@ -474,7 +474,7 @@ print(
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {

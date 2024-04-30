@@ -51,7 +51,7 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
