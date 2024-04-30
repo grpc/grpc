@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -107,7 +108,7 @@ bool AddressIncluded(
 ///
 absl::optional<std::string> GetHttpProxyServer(
     const ChannelArgs& args, absl::optional<std::string>* user_cred) {
-  GPR_ASSERT(user_cred != nullptr);
+  CHECK_NE(user_cred, nullptr);
   absl::StatusOr<URI> uri;
   // We check the following places to determine the HTTP proxy to use, stopping
   // at the first one that is set:
@@ -141,7 +142,7 @@ absl::optional<std::string> GetHttpProxyServer(
   size_t authority_nstrs;
   gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
                    &authority_nstrs);
-  GPR_ASSERT(authority_nstrs != 0);  // should have at least 1 string
+  CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
   absl::optional<std::string> proxy_name;
   if (authority_nstrs == 1) {
     // User cred not present in authority

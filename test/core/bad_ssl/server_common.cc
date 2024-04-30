@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "test/core/util/cmdline.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/test_config.h"
 
 // Common server implementation details for all servers in servers/.
 // There's nothing *wrong* with these servers per-se, but they are

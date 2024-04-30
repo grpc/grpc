@@ -48,6 +48,7 @@
 #include <atomic>
 #include <cstring>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/log.h>
@@ -662,7 +663,7 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
 // Set a socket using a grpc_socket_mutator
 absl::Status PosixSocketWrapper::SetSocketMutator(
     grpc_fd_usage usage, grpc_socket_mutator* mutator) {
-  GPR_ASSERT(mutator);
+  CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd_, usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");

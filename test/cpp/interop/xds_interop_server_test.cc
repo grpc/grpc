@@ -27,8 +27,8 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/xds_interop_server_lib.h"
 
 namespace grpc {

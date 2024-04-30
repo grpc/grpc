@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/surface/init.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #if defined(GRPC_WINSOCK_SOCKET)
 
