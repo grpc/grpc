@@ -13,8 +13,6 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/ares_resolver.h"
 
-#include <sys/socket.h>
-
 #include <string>
 #include <vector>
 
