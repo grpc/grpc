@@ -884,9 +884,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     call->CancelWithError(error);
   }
   if (args->cq != nullptr) {
-    CHECK(args->pollset_set_alternative == nullptr) <<
-          "Only one of 'cq' and 'pollset_set_alternative' should be "
-          "non-nullptr.";
+    CHECK(args->pollset_set_alternative == nullptr)
+        << "Only one of 'cq' and 'pollset_set_alternative' should be "
+           "non-nullptr.";
     GRPC_CQ_INTERNAL_REF(args->cq, "bind");
     call->pollent_ =
         grpc_polling_entity_create_from_pollset(grpc_cq_pollset(args->cq));

@@ -10147,6 +10147,7 @@ targets:
   deps:
   - gtest
   - absl/hash:hash
+  - absl/log:check
   - absl/status:statusor
   - absl/types:span
   - gpr
@@ -18652,6 +18653,7 @@ targets:
   deps:
   - gtest
   - absl/hash:hash
+  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
