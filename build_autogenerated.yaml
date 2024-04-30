@@ -11597,6 +11597,10 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -11717,8 +11721,6 @@ targets:
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
-  - src/core/lib/handshaker/proxy_mapper.h
-  - src/core/lib/handshaker/proxy_mapper_registry.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -11857,8 +11859,6 @@ targets:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/handshaker_factory.h
-  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/interception_chain.h
   - src/core/lib/transport/message.h
@@ -11915,6 +11915,8 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -11995,7 +11997,6 @@ targets:
   - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -12123,7 +12124,6 @@ targets:
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/handshaker_registry.cc
   - src/core/lib/transport/interception_chain.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
