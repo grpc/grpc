@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/log/check.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -37,7 +38,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -1669,7 +1669,7 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   CHECK(subchannel_list_ == p->subchannel_list_.get() ||
-             subchannel_list_ == p->latest_pending_subchannel_list_.get());
+        subchannel_list_ == p->latest_pending_subchannel_list_.get());
   CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   absl::optional<grpc_connectivity_state> old_state = connectivity_state_;
   connectivity_state_ = new_state;
@@ -1915,7 +1915,7 @@ void OldPickFirst::SubchannelList::SubchannelData::
   //    goal here is to find a subchannel from the update that we can
   //    select in place of the current one.
   CHECK(subchannel_list_ == p->subchannel_list_.get() ||
-             subchannel_list_ == p->latest_pending_subchannel_list_.get());
+        subchannel_list_ == p->latest_pending_subchannel_list_.get());
   // Case 2.  Promote p->latest_pending_subchannel_list_ to p->subchannel_list_.
   if (subchannel_list_ == p->latest_pending_subchannel_list_.get()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
