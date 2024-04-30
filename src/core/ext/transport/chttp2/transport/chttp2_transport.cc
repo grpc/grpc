@@ -142,8 +142,6 @@ static bool g_default_server_keepalive_permit_without_calls = false;
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
-grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount(false,
-                                                         "chttp2_refcount");
 
 // forward declarations of various callbacks that we'll build closures around
 static void write_action_begin_locked(
@@ -594,12 +592,7 @@ static void init_keepalive_pings_if_enabled_locked(
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
     bool is_client)
-    : grpc_core::RefCounted<grpc_chttp2_transport,
-                            grpc_core::NonPolymorphicRefCount>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_refcount)
-              ? "chttp2_refcount"
-              : nullptr),
-      ep(ep),
+    : ep(ep),
       peer_string(
           grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
