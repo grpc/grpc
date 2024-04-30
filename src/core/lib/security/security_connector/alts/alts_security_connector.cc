@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -32,7 +33,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
@@ -104,10 +104,10 @@ class grpc_alts_channel_security_connector final
         static_cast<const grpc_alts_credentials*>(channel_creds());
     const size_t user_specified_max_frame_size =
         std::max(0, args.GetInt(GRPC_ARG_TSI_MAX_FRAME_SIZE).value_or(0));
-    CHECK(alts_tsi_handshaker_create(
-                   creds->options(), target_name_,
-                   creds->handshaker_service_url(), true, interested_parties,
-                   &handshaker, user_specified_max_frame_size) == TSI_OK);
+    CHECK(alts_tsi_handshaker_create(creds->options(), target_name_,
+                                     creds->handshaker_service_url(), true,
+                                     interested_parties, &handshaker,
+                                     user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -157,10 +157,10 @@ class grpc_alts_server_security_connector final
         static_cast<const grpc_alts_server_credentials*>(server_creds());
     size_t user_specified_max_frame_size =
         std::max(0, args.GetInt(GRPC_ARG_TSI_MAX_FRAME_SIZE).value_or(0));
-    CHECK(alts_tsi_handshaker_create(
-                   creds->options(), nullptr, creds->handshaker_service_url(),
-                   false, interested_parties, &handshaker,
-                   user_specified_max_frame_size) == TSI_OK);
+    CHECK(alts_tsi_handshaker_create(creds->options(), nullptr,
+                                     creds->handshaker_service_url(), false,
+                                     interested_parties, &handshaker,
+                                     user_specified_max_frame_size) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -253,7 +253,7 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
           ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
           tsi_prop->value.data, tsi_prop->value.length);
       CHECK(grpc_auth_context_set_peer_identity_property_name(
-                     ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
+                ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 1);
     }
     // Add alts context to auth context.
     if (strcmp(tsi_prop->name, TSI_ALTS_CONTEXT) == 0) {
