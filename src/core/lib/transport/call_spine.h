@@ -516,6 +516,8 @@ class CallHandler {
 
   auto PullMessage() { return spine_->PullClientToServerMessage(); }
 
+  auto WasCancelled() { return spine_->WasCancelled(); }
+
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
                     DebugLocation whence = {}) {
