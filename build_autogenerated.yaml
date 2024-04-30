@@ -2058,7 +2058,6 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3119,7 +3118,6 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -5033,7 +5031,6 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -6524,7 +6521,6 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -7779,7 +7775,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -9261,7 +9256,6 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -10039,7 +10033,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -10072,7 +10065,6 @@ targets:
   - test/core/event_engine/forkable_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -12163,7 +12155,6 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -12294,7 +12285,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12978,7 +12968,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14179,7 +14168,6 @@ targets:
   - upb_message_lib
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
