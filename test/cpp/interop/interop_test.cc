@@ -37,7 +37,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(std::vector<std::string>, extra_client_flags, {},

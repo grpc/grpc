@@ -26,7 +26,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 int main(int argc, char** argv) {
   int i;

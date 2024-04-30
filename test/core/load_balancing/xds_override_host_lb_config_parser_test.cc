@@ -29,7 +29,7 @@
 #include "src/core/load_balancing/xds/xds_override_host.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

@@ -26,7 +26,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/bad_ssl/server_common.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 // This server will present an untrusted cert to the connecting client,
 // causing the SSL handshake to fail

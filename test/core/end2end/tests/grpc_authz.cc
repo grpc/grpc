@@ -30,7 +30,7 @@
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 namespace grpc_core {
 namespace {

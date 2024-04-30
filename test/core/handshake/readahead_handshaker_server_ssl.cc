@@ -34,7 +34,7 @@
 #include "src/core/lib/transport/handshaker_factory.h"
 #include "src/core/lib/transport/handshaker_registry.h"
 #include "test/core/handshake/server_ssl_common.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // The purpose of this test is to exercise the case when a
 // grpc *security_handshaker* begins its handshake with data already

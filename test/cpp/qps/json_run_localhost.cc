@@ -34,7 +34,7 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/util/subprocess.h"
 
 using grpc::SubProcess;

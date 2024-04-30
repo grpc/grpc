@@ -47,7 +47,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
