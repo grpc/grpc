@@ -627,9 +627,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         now, config_->weight_expiration_period(), config_->blackout_period(),
         &num_not_yet_usable, &num_stale);
     weights.push_back(weight);
-    stats_plugins.RecordHistogram(
-        kMetricEndpointWeights, static_cast<double>(weight),
-        {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
+    stats_plugins.RecordHistogram(kMetricEndpointWeights, weight,
+                                  {wrr_->channel_control_helper()->GetTarget()},
+                                  {wrr_->locality_name_});
   }
   stats_plugins.AddCounter(
       kMetricEndpointWeightNotYetUsable, num_not_yet_usable,
@@ -656,7 +656,7 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
       gpr_log(GPR_INFO, "[WRR %p picker %p] no scheduler, falling back to RR",
               wrr_.get(), this);
     }
-    stats_plugins.AddCounter(kMetricRrFallback, uint64_t(1),
+    stats_plugins.AddCounter(kMetricRrFallback, 1,
                              {wrr_->channel_control_helper()->GetTarget()},
                              {wrr_->locality_name_});
   }

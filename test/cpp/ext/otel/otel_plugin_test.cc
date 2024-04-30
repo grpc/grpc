@@ -1717,8 +1717,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
@@ -1734,8 +1734,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   constexpr int kIterations = 100;
   MetricsCollectorThread collector{
       this, grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
@@ -1852,8 +1852,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
@@ -1869,8 +1869,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   constexpr int kIterations = 100;
   MetricsCollectorThread collector{
       this,

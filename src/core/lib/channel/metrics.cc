@@ -97,15 +97,6 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
   }
 }
 
-std::unique_ptr<RegisteredMetricCallback>
-GlobalStatsPluginRegistry::StatsPluginGroup::RegisterCallback(
-    absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
-    std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle> metrics,
-    Duration min_interval) {
-  return std::make_unique<RegisteredMetricCallback>(
-      *this, std::move(callback), std::move(metrics), min_interval);
-}
-
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
     const Slice& path, bool registered_method,
     grpc_call_context_element* call_context) {

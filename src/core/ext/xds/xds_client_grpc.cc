@@ -171,7 +171,7 @@ class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
 
   void ReportServerFailure(absl::string_view xds_server) override {
     xds_client_.stats_plugin_group_.AddCounter(
-        kMetricServerFailure, uint64_t(1), {xds_client_.key_, xds_server}, {});
+        kMetricServerFailure, 1, {xds_client_.key_, xds_server}, {});
   }
 
  private:
@@ -320,7 +320,7 @@ GrpcXdsClient::GrpcXdsClient(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
           },
-          {kMetricConnected, kMetricResources})) {}
+          Duration::Seconds(5), kMetricConnected, kMetricResources)) {}
 
 void GrpcXdsClient::Orphaned() {
   registered_metric_callback_.reset();
@@ -388,13 +388,12 @@ void GrpcXdsClient::ReportCallbackMetrics(CallbackMetricReporter& reporter) {
   MutexLock lock(mu());
   ReportResourceCounts([&](const ResourceCountLabels& labels, uint64_t count) {
     reporter.Report(
-        kMetricResources, static_cast<int64_t>(count),
+        kMetricResources, count,
         {key_, labels.xds_authority, labels.resource_type, labels.cache_state},
         {});
   });
   ReportServerConnections([&](absl::string_view xds_server, bool connected) {
-    reporter.Report(kMetricConnected, static_cast<int64_t>(connected),
-                    {key_, xds_server}, {});
+    reporter.Report(kMetricConnected, connected, {key_, xds_server}, {});
   });
 }
 

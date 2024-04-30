@@ -1125,7 +1125,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
   }
   auto& stats_plugins =
       lb_policy_->channel_control_helper()->GetStatsPluginGroup();
-  stats_plugins.AddCounter(kMetricFailedPicks, uint64_t(1),
+  stats_plugins.AddCounter(kMetricFailedPicks, 1,
                            {lb_policy_->channel_control_helper()->GetTarget(),
                             config_->lookup_service()},
                            {});
@@ -1457,12 +1457,12 @@ void RlsLb::Cache::Shutdown() {
 
 void RlsLb::Cache::ReportMetricsLocked(CallbackMetricReporter& reporter) {
   reporter.Report(
-      kMetricCacheSize, static_cast<int64_t>(size_),
+      kMetricCacheSize, size_,
       {lb_policy_->channel_control_helper()->GetTarget(),
        lb_policy_->config_->lookup_service(), lb_policy_->instance_uuid_},
       {});
   reporter.Report(
-      kMetricCacheEntries, static_cast<int64_t>(map_.size()),
+      kMetricCacheEntries, map_.size(),
       {lb_policy_->channel_control_helper()->GetTarget(),
        lb_policy_->config_->lookup_service(), lb_policy_->instance_uuid_},
       {});
@@ -1959,7 +1959,7 @@ RlsLb::RlsLb(Args args)
                 MutexLock lock(&mu_);
                 cache_.ReportMetricsLocked(reporter);
               },
-              {kMetricCacheSize, kMetricCacheEntries})) {
+              Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }
@@ -2245,7 +2245,7 @@ void RlsLb::MaybeExportPickCount(
   if (pick_result_string.empty()) return;  // Don't report queued picks.
   auto& stats_plugins = channel_control_helper()->GetStatsPluginGroup();
   stats_plugins.AddCounter(
-      handle, uint64_t(1),
+      handle, 1,
       {channel_control_helper()->GetTarget(), config_->lookup_service(), target,
        pick_result_string},
       {});

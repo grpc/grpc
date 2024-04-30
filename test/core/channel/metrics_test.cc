@@ -225,13 +225,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
         reporter.Report(int64_gauge_handle, int64_t(1), kLabelValues,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle});
+      Duration::Seconds(5), int64_gauge_handle);
   auto callback2 = group1.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(2), kLabelValues2,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle});
+      Duration::Seconds(5), int64_gauge_handle);
   // No plugins have data yet.
   EXPECT_EQ(plugin1->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
@@ -286,13 +286,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
         reporter.Report(int64_gauge_handle, int64_t(3), kLabelValues,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle});
+      Duration::Seconds(5), int64_gauge_handle);
   callback2 = group2.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(4), kLabelValues2,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle});
+      Duration::Seconds(5), int64_gauge_handle);
   // Plugin1 still has data from before, but the others have none.
   EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
                   int64_gauge_handle, kLabelValues, kOptionalLabelValues),
@@ -347,13 +347,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
         reporter.Report(int64_gauge_handle, int64_t(5), kLabelValues,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle});
+      Duration::Seconds(5), int64_gauge_handle);
   callback2 = group3.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(6), kLabelValues2,
                         kOptionalLabelValues);
       },
-      {int64_gauge_handle});
+      Duration::Seconds(5), int64_gauge_handle);
   // Plugin1 and plugin2 still has data from before, but plugin3 has none.
   EXPECT_THAT(plugin1->GetInt64CallbackGaugeValue(
                   int64_gauge_handle, kLabelValues, kOptionalLabelValues),
@@ -430,13 +430,13 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
         reporter.Report(double_gauge_handle, 1.23, kLabelValues,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle});
+      Duration::Seconds(5), double_gauge_handle);
   auto callback2 = group1.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 2.34, kLabelValues2,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle});
+      Duration::Seconds(5), double_gauge_handle);
   // No plugins have data yet.
   EXPECT_EQ(plugin1->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
@@ -491,13 +491,13 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
         reporter.Report(double_gauge_handle, 3.45, kLabelValues,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle});
+      Duration::Seconds(5), double_gauge_handle);
   callback2 = group2.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 4.56, kLabelValues2,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle});
+      Duration::Seconds(5), double_gauge_handle);
   // Plugin1 still has data from before, but the others have none.
   EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
                   double_gauge_handle, kLabelValues, kOptionalLabelValues),
@@ -552,13 +552,13 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
         reporter.Report(double_gauge_handle, 5.67, kLabelValues,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle});
+      Duration::Seconds(5), double_gauge_handle);
   callback2 = group3.RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 6.78, kLabelValues2,
                         kOptionalLabelValues);
       },
-      {double_gauge_handle});
+      Duration::Seconds(5), double_gauge_handle);
   // Plugin1 and plugin2 still has data from before, but plugin3 has none.
   EXPECT_THAT(plugin1->GetDoubleCallbackGaugeValue(
                   double_gauge_handle, kLabelValues, kOptionalLabelValues),
