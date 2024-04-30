@@ -344,25 +344,26 @@ class Channel(_base_channel.Channel):
         self._unary_stream_interceptors = []
         self._stream_unary_interceptors = []
         self._stream_stream_interceptors = []
+        valid_classes = (
+          UnaryUnaryClientInterceptor,
+          UnaryStreamClientInterceptor,
+          StreamUnaryClientInterceptor,
+          StreamStreamClientInterceptor,
+        )
 
         if interceptors is not None:
             for interceptor in interceptors:
+                if not isinstance(interceptor, valid_classes):
+                    msg = " or ".join(x.__name__ for x in valid_classes)
+                    raise ValueError(f"Interceptor {interceptor} must be {msg}")
                 if isinstance(interceptor, UnaryUnaryClientInterceptor):
                     self._unary_unary_interceptors.append(interceptor)
-                elif isinstance(interceptor, UnaryStreamClientInterceptor):
+                if isinstance(interceptor, UnaryStreamClientInterceptor):
                     self._unary_stream_interceptors.append(interceptor)
-                elif isinstance(interceptor, StreamUnaryClientInterceptor):
+                if isinstance(interceptor, StreamUnaryClientInterceptor):
                     self._stream_unary_interceptors.append(interceptor)
-                elif isinstance(interceptor, StreamStreamClientInterceptor):
+                if isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
-                else:
-                    raise ValueError(
-                        "Interceptor {} must be ".format(interceptor)
-                        + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
-                        + "{} or ".format(UnaryStreamClientInterceptor.__name__)
-                        + "{} or ".format(StreamUnaryClientInterceptor.__name__)
-                        + "{}. ".format(StreamStreamClientInterceptor.__name__)
-                    )
 
         self._loop = cygrpc.get_working_loop()
         self._channel = cygrpc.AioChannel(
