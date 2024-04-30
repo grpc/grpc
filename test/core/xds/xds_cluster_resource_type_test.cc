@@ -64,7 +64,7 @@
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;

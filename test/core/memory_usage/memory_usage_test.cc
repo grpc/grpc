@@ -50,9 +50,9 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
 
