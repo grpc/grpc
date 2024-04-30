@@ -215,7 +215,7 @@ RoundRobin::~RoundRobin() {
     gpr_log(GPR_INFO, "[RR %p] Destroying Round Robin policy", this);
   }
   CHECK(endpoint_list_ == nullptr);
-  CHECK_EQ(latest_pending_endpoint_list_, nullptr);
+  CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void RoundRobin::ShutdownLocked() {

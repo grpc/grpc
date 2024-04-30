@@ -951,7 +951,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
       return;
     }
     wrapper_->connectivity_state_ = state;
-    DCHECK_NE(picker, nullptr);
+    DCHECK(picker != nullptr);
     if (picker != nullptr) {
       wrapper_->picker_ = std::move(picker);
     }
