@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/http/parser.h"
 
 #include <string.h>
@@ -28,6 +26,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 

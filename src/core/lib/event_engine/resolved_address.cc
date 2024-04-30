@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/resolved_address.h"
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 
@@ -31,8 +32,8 @@ namespace experimental {
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
     : size_(size) {
-  GPR_DEBUG_ASSERT(size >= 0);
-  GPR_ASSERT(static_cast<size_t>(size) <= sizeof(address_));
+  DCHECK_GE(size, 0u);
+  CHECK(static_cast<size_t>(size) <= sizeof(address_));
   memcpy(&address_, address, size);
 }
 

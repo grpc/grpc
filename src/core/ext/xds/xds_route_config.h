@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -34,6 +32,8 @@
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
 #include "upb/reflection/def.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_client.h"
@@ -227,7 +227,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       ValidationErrors* errors);
 };
 
-class XdsRouteConfigResourceType
+class XdsRouteConfigResourceType final
     : public XdsResourceTypeImpl<XdsRouteConfigResourceType,
                                  XdsRouteConfigResource> {
  public:

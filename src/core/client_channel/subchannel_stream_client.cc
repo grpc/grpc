@@ -23,6 +23,8 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
@@ -110,7 +112,7 @@ void SubchannelStreamClient::StartCall() {
 
 void SubchannelStreamClient::StartCallLocked() {
   if (event_handler_ == nullptr) return;
-  GPR_ASSERT(call_state_ == nullptr);
+  CHECK(call_state_ == nullptr);
   if (event_handler_ != nullptr) {
     event_handler_->OnCallStartLocked(this);
   }
@@ -172,11 +174,7 @@ SubchannelStreamClient::CallState::CallState(
       arena_(Arena::Create(subchannel_stream_client_->connected_subchannel_
                                ->GetInitialCallSizeEstimate(),
                            &subchannel_stream_client_->call_allocator_)),
-      payload_(context_),
-      send_initial_metadata_(arena_.get()),
-      send_trailing_metadata_(arena_.get()),
-      recv_initial_metadata_(arena_.get()),
-      recv_trailing_metadata_(arena_.get()) {}
+      payload_(context_) {}
 
 SubchannelStreamClient::CallState::~CallState() {
   if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
@@ -239,7 +237,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  GPR_ASSERT(error.ok());
+  CHECK(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   batch_.send_initial_metadata = true;
@@ -448,7 +446,7 @@ void SubchannelStreamClient::CallState::CallEndedLocked(bool retry) {
   if (this == subchannel_stream_client_->call_state_.get()) {
     subchannel_stream_client_->call_state_.reset();
     if (retry) {
-      GPR_ASSERT(subchannel_stream_client_->event_handler_ != nullptr);
+      CHECK(subchannel_stream_client_->event_handler_ != nullptr);
       if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.

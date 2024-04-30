@@ -18,6 +18,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
@@ -33,8 +34,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 
 using grpc::testing::EchoRequest;
@@ -104,7 +105,7 @@ class CrashTest : public ::testing::Test {
     client_ = std::make_unique<SubProcess>(
         std::vector<std::string>({g_root + "/server_crash_test_client",
                                   "--address=" + addr, "--mode=" + mode}));
-    GPR_ASSERT(client_);
+    CHECK(client_);
 
     ServerBuilder builder;
     builder.AddListeningPort(addr, grpc::InsecureServerCredentials());
@@ -130,7 +131,7 @@ TEST_F(CrashTest, ResponseStream) {
                                gpr_time_from_seconds(60, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
-  GPR_ASSERT(HadOneResponseStream());
+  CHECK(HadOneResponseStream());
 }
 
 TEST_F(CrashTest, BidiStream) {
@@ -140,7 +141,7 @@ TEST_F(CrashTest, BidiStream) {
                                gpr_time_from_seconds(60, GPR_TIMESPAN)));
   KillClient();
   server->Shutdown();
-  GPR_ASSERT(HadOneBidiStream());
+  CHECK(HadOneBidiStream());
 }
 
 }  // namespace

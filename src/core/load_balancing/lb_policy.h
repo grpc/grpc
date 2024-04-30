@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,9 +35,10 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -50,6 +49,7 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 
@@ -274,7 +274,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     virtual PickResult Pick(PickArgs args) = 0;
 
-    void Orphan() override {}
+   protected:
+    void Orphaned() override {}
   };
 
   /// A proxy object implemented by the client channel and used by the
@@ -299,6 +300,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() = 0;
 
+    /// Returns the channel target.
+    virtual absl::string_view GetTarget() = 0;
+
     /// Returns the channel authority.
     virtual absl::string_view GetAuthority() = 0;
 
@@ -318,6 +322,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Returns the EventEngine to use for timers and async work.
     virtual grpc_event_engine::experimental::EventEngine* GetEventEngine() = 0;
+
+    /// Returns the stats plugin group for reporting metrics.
+    virtual GlobalStatsPluginRegistry::StatsPluginGroup&
+    GetStatsPluginGroup() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
@@ -421,7 +429,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   // A picker that returns PickResult::Queue for all picks.
   // Also calls the parent LB policy's ExitIdleLocked() method when the
   // first pick is seen.
-  class QueuePicker : public SubchannelPicker {
+  class QueuePicker final : public SubchannelPicker {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
@@ -436,7 +444,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
   // A picker that returns PickResult::Fail for all picks.
-  class TransientFailurePicker : public SubchannelPicker {
+  class TransientFailurePicker final : public SubchannelPicker {
    public:
     explicit TransientFailurePicker(absl::Status status) : status_(status) {}
 

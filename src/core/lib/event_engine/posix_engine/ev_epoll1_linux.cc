@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 
 #include <stdint.h>
@@ -20,6 +18,7 @@
 #include <atomic>
 #include <memory>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -27,6 +26,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/poller.h"
@@ -354,14 +354,14 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
     : scheduler_(scheduler), was_kicked_(false), closed_(false) {
   g_epoll_set_.epfd = EpollCreateAndCloexec();
   wakeup_fd_ = *CreateWakeupFd();
-  GPR_ASSERT(wakeup_fd_ != nullptr);
-  GPR_ASSERT(g_epoll_set_.epfd >= 0);
+  CHECK(wakeup_fd_ != nullptr);
+  CHECK_GE(g_epoll_set_.epfd, 0);
   gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set_.epfd);
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = wakeup_fd_.get();
-  GPR_ASSERT(epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, wakeup_fd_->ReadFd(),
-                       &ev) == 0);
+  CHECK(epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, wakeup_fd_->ReadFd(),
+                  &ev) == 0);
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
   ForkPollerListAddPoller(this);
@@ -439,7 +439,7 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
     struct epoll_event* ev = &g_epoll_set_.events[c];
     void* data_ptr = ev->data.ptr;
     if (data_ptr == wakeup_fd_.get()) {
-      GPR_ASSERT(wakeup_fd_->ConsumeWakeup().ok());
+      CHECK(wakeup_fd_->ConsumeWakeup().ok());
       was_kicked = true;
     } else {
       Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
@@ -558,7 +558,7 @@ void Epoll1Poller::Kick() {
     return;
   }
   was_kicked_ = true;
-  GPR_ASSERT(wakeup_fd_->Wakeup().ok());
+  CHECK(wakeup_fd_->Wakeup().ok());
 }
 
 std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {

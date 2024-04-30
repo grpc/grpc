@@ -19,15 +19,15 @@
 #ifndef GRPC_GRPC_CRL_PROVIDER_H
 #define GRPC_GRPC_CRL_PROVIDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace experimental {
@@ -47,6 +47,7 @@ class CertificateInfo {
  public:
   virtual ~CertificateInfo() = default;
   virtual absl::string_view Issuer() const = 0;
+  virtual absl::string_view AuthorityKeyIdentifier() const = 0;
 };
 
 // The base class for CRL Provider implementations.

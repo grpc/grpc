@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
 #include <atomic>
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -33,7 +34,6 @@ namespace grpc_core {
 
 namespace {
 class InprocServerTransport final : public RefCounted<InprocServerTransport>,
-                                    public Transport,
                                     public ServerTransport {
  public:
   void SetAcceptor(Acceptor* acceptor) override {
@@ -82,7 +82,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
                             "inproc transport disconnected");
   }
 
-  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadata& md) {
+  absl::StatusOr<CallInitiator> AcceptCall(ClientMetadataHandle md) {
     switch (state_.load(std::memory_order_acquire)) {
       case ConnectionState::kInitial:
         return absl::InternalError(
@@ -92,7 +92,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       case ConnectionState::kReady:
         break;
     }
-    return acceptor_->CreateCall(md, acceptor_->CreateArena());
+    return acceptor_->CreateCall(std::move(md), acceptor_->CreateArena());
   }
 
  private:
@@ -107,7 +107,7 @@ class InprocServerTransport final : public RefCounted<InprocServerTransport>,
       "inproc_server_transport", GRPC_CHANNEL_CONNECTING};
 };
 
-class InprocClientTransport final : public Transport, public ClientTransport {
+class InprocClientTransport final : public ClientTransport {
  public:
   void StartCall(CallHandler call_handler) override {
     call_handler.SpawnGuarded(
@@ -115,10 +115,10 @@ class InprocClientTransport final : public Transport, public ClientTransport {
         TrySeq(call_handler.PullClientInitialMetadata(),
                [server_transport = server_transport_,
                 call_handler](ClientMetadataHandle md) {
-                 auto call_initiator = server_transport->AcceptCall(*md);
+                 auto call_initiator =
+                     server_transport->AcceptCall(std::move(md));
                  if (!call_initiator.ok()) return call_initiator.status();
-                 ForwardCall(call_handler, std::move(*call_initiator),
-                             std::move(md));
+                 ForwardCall(call_handler, std::move(*call_initiator));
                  return absl::OkStatus();
                }));
   }
@@ -155,7 +155,7 @@ bool UsePromiseBasedTransport() {
   return true;
 }
 
-RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
+OrphanablePtr<Channel> MakeLameChannel(absl::string_view why,
                                        absl::Status error) {
   gpr_log(GPR_ERROR, "%s: %s", std::string(why).c_str(),
           std::string(error.message()).c_str());
@@ -164,11 +164,11 @@ RefCountedPtr<Channel> MakeLameChannel(absl::string_view why,
   if (grpc_error_get_int(error, StatusIntProperty::kRpcStatus, &integer)) {
     status = static_cast<grpc_status_code>(integer);
   }
-  return RefCountedPtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
+  return OrphanablePtr<Channel>(Channel::FromC(grpc_lame_client_channel_create(
       nullptr, status, std::string(why).c_str())));
 }
 
-RefCountedPtr<Channel> MakeInprocChannel(Server* server,
+OrphanablePtr<Channel> MakeInprocChannel(Server* server,
                                          ChannelArgs client_channel_args) {
   auto transports = MakeInProcessTransportPair();
   auto client_transport = std::move(transports.first);
@@ -183,7 +183,7 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }
   std::ignore = server_transport.release();  // consumed by SetupTransport
-  auto channel = Channel::Create(
+  auto channel = ChannelCreate(
       "inproc",
       client_channel_args.Set(GRPC_ARG_DEFAULT_AUTHORITY, "inproc.authority"),
       GRPC_CLIENT_DIRECT_CHANNEL, client_transport.release());

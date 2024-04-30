@@ -25,8 +25,6 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_ARENA_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <atomic>
@@ -35,6 +33,7 @@
 #include <utility>
 
 #include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
@@ -173,6 +172,8 @@ class Arena {
     }
   }
 
+  // Allocates T from the arena.
+  // The caller is responsible for calling p->~T(), but should NOT delete.
   // TODO(roth): We currently assume that all callers need alignment of 16
   // bytes, which may be wrong in some cases. When we have time, we should
   // change this to instead use the alignment of the type being allocated by
@@ -185,6 +186,7 @@ class Arena {
   }
 
   // Like New, but has the arena call p->~T() at arena destruction time.
+  // The caller should NOT delete.
   template <typename T, typename... Args>
   T* ManagedNew(Args&&... args) {
     auto* p = New<ManagedNewImpl<T>>(std::forward<Args>(args)...);

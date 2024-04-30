@@ -17,6 +17,9 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -31,7 +34,7 @@
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 class Oauth2Fixture : public SecureFixture {
  public:
@@ -72,7 +75,7 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    GPR_ASSERT(oauth2 != nullptr);
+    CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_OK, nullptr);
   }
 
@@ -82,8 +85,8 @@ class Oauth2Fixture : public SecureFixture {
                                      void* user_data) {
     const grpc_metadata* oauth2 =
         find_metadata(md, md_count, "authorization", oauth2_md());
-    GPR_ASSERT(state != nullptr);
-    GPR_ASSERT(oauth2 != nullptr);
+    CHECK_NE(state, nullptr);
+    CHECK_NE(oauth2, nullptr);
     cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 
@@ -158,7 +161,7 @@ class Oauth2Fixture : public SecureFixture {
                                    size_t /*md_count*/,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
-    GPR_ASSERT(state == nullptr);
+    CHECK_EQ(state, nullptr);
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

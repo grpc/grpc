@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
@@ -43,7 +44,7 @@ void ParseJson(const std::string& json, const std::string& type,
             static_cast<int>(status.code()), errmsg.c_str());
     grpc_core::Crash(absl::StrFormat("JSON: %s", json.c_str()));
   }
-  GPR_ASSERT(msg->ParseFromString(binary));
+  CHECK(msg->ParseFromString(binary));
 }
 
 std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
@@ -56,7 +57,7 @@ std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
   msg.SerializeToString(&binary);
   auto status =
       BinaryToJsonString(type_resolver.get(), type, binary, &json_string);
-  GPR_ASSERT(status.ok());
+  CHECK_OK(status);
   return json_string;
 }
 

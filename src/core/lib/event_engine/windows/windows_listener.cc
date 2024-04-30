@@ -15,6 +15,7 @@
 
 #ifdef GPR_WINDOWS
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -47,7 +48,7 @@ WindowsEventEngineListener::SinglePortSocketListener::AsyncIOState::
 
 void WindowsEventEngineListener::SinglePortSocketListener::
     OnAcceptCallbackWrapper::Run() {
-  GPR_ASSERT(io_state_ != nullptr);
+  CHECK_NE(io_state_, nullptr);
   grpc_core::ReleasableMutexLock lock(&io_state_->mu);
   if (io_state_->listener_socket->IsShutdown()) {
     GRPC_EVENT_ENGINE_TRACE(
@@ -124,7 +125,7 @@ WindowsEventEngineListener::SinglePortSocketListener::Create(
   }
   auto result = SinglePortSocketListener::PrepareListenerSocket(sock, addr);
   GRPC_RETURN_IF_ERROR(result.status());
-  GPR_ASSERT(result->port >= 0);
+  CHECK_GE(result->port, 0);
   // Using `new` to access non-public constructor
   return absl::WrapUnique(new SinglePortSocketListener(
       listener, AcceptEx, /*win_socket=*/listener->iocp_->Watch(sock),
@@ -190,8 +191,8 @@ void WindowsEventEngineListener::SinglePortSocketListener::
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(io_state_->mu) {
             if (do_close_socket) closesocket(io_state_->accept_socket);
             io_state_->accept_socket = INVALID_SOCKET;
-            GPR_ASSERT(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
-                                         StartLocked()));
+            CHECK(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
+                                    StartLocked()));
           };
   const auto& overlapped_result =
       io_state_->listener_socket->read_info()->result();
@@ -265,7 +266,7 @@ absl::StatusOr<WindowsEventEngineListener::SinglePortSocketListener::
 WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     SOCKET sock, const EventEngine::ResolvedAddress& addr) {
   auto fail = [&](absl::Status error) -> absl::Status {
-    GPR_ASSERT(!error.ok());
+    CHECK(!error.ok());
     auto addr_uri = ResolvedAddressToURI(addr);
     error = grpc_error_set_int(
         grpc_error_set_str(
@@ -354,7 +355,7 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
     out_addr = tmp_addr;
   }
   // Treat :: or 0.0.0.0 as a family-agnostic wildcard.
-  if (ResolvedAddressIsWildcard(out_addr)) {
+  if (MaybeGetWildcardPortFromAddress(out_addr).has_value()) {
     out_addr = ResolvedAddressMakeWild6(out_port);
   }
   // open the socket
@@ -374,7 +375,7 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
 }
 
 absl::Status WindowsEventEngineListener::Start() {
-  GPR_ASSERT(!started_.exchange(true));
+  CHECK(!started_.exchange(true));
   grpc_core::MutexLock lock(&port_listeners_mu_);
   for (auto& port_listener : port_listeners_) {
     GRPC_RETURN_IF_ERROR(port_listener->Start());

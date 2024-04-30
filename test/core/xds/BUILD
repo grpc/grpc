@@ -18,7 +18,7 @@ load(
     "grpc_cc_test",
     "grpc_package",
 )
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 grpc_package(name = "test/core/xds")
 
@@ -36,21 +36,25 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//src/core:grpc_xds_client",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
 grpc_cc_test(
     name = "certificate_provider_store_test",
     srcs = ["certificate_provider_store_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -64,7 +68,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -83,7 +87,7 @@ grpc_cc_test(
         "//:grpc_opencensus_plugin",
         "//src/core:channel_args",
         "//src/core:grpc_xds_channel_stack_modifier",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -97,7 +101,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -119,8 +123,8 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -139,7 +143,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:audit_logger_stream_proto",
         "//src/proto/grpc/testing/xds/v3:rbac_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -150,6 +154,7 @@ grpc_cc_library(
     srcs = ["xds_transport_fake.cc"],
     hdrs = ["xds_transport_fake.h"],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/types:optional",
     ],
@@ -158,7 +163,19 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:xds_client",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_client_test_peer",
+    hdrs = ["xds_client_test_peer.h"],
+    external_deps = [
+        "absl/functional:function_ref",
+    ],
+    language = "C++",
+    deps = [
+        "//:xds_client",
     ],
 )
 
@@ -171,11 +188,12 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = False,
     deps = [
+        ":xds_client_test_peer",
         ":xds_transport_fake",
         "//:xds_client",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -192,9 +210,10 @@ grpc_proto_fuzzer(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":xds_client_test_peer",
         ":xds_transport_fake",
         "//src/core:grpc_xds_client",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         # These proto deps are needed to ensure that we can read these
         # resource types out of the google.protobuf.Any fields in the
         # textproto files in the corpora.
@@ -221,7 +240,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:udpa_typed_struct_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -229,7 +248,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "xds_http_filters_test",
     srcs = ["xds_http_filters_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -242,8 +264,8 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:stateful_session_cookie_proto",
         "//src/proto/grpc/testing/xds/v3:stateful_session_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -266,7 +288,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -287,8 +309,8 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:http_filter_rbac_proto",
         "//src/proto/grpc/testing/xds/v3:route_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
         "//test/cpp/util:grpc_cli_utils",
     ],
 )
@@ -311,7 +333,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//src/proto/grpc/testing/xds/v3:typed_struct_proto",
         "//src/proto/grpc/testing/xds/v3:wrr_locality_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -328,7 +350,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:grpc_xds_client",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )

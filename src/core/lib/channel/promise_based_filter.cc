@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/promise_based_filter.h"
 
 #include <algorithm>
@@ -30,6 +28,7 @@
 #include "absl/strings/str_join.h"
 
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -107,7 +106,7 @@ BaseCallData::BaseCallData(
               ? arena_->New<ReceiveMessage>(this, make_recv_interceptor())
               : nullptr),
       event_engine_(
-          static_cast<ChannelFilter*>(elem->channel_data)
+          ChannelFilterFromElem(elem)
               ->hack_until_per_channel_stack_event_engines_land_get_event_engine()) {
 }
 
@@ -509,7 +508,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kGotBatch:
       if (allow_push_to_pipe) {
         state_ = State::kPushedToPipe;
-        auto message = GetContext<Arena>()->MakePooled<Message>();
+        auto message = Arena::MakePooled<Message>();
         message->payload()->Swap(batch_->payload->send_message.send_message);
         message->mutable_flags() = batch_->payload->send_message.flags;
         push_ = interceptor()->Push()->Push(std::move(message));
@@ -840,7 +839,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
         } else {
           state_ = State::kCompletedWhilePushedToPipe;
         }
-        auto message = GetContext<Arena>()->MakePooled<Message>();
+        auto message = Arena::MakePooled<Message>();
         message->payload()->Swap(&**intercepted_slice_buffer_);
         message->mutable_flags() = *intercepted_flags_;
         push_ = interceptor()->Push()->Push(std::move(message));
@@ -1573,7 +1572,7 @@ void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
 // metadata and return some trailing metadata.
 void ClientCallData::StartPromise(Flusher* flusher) {
   GPR_ASSERT(send_initial_state_ == SendInitialState::kQueued);
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = promise_filter_detail::ChannelFilterFromElem(elem());
 
   // Construct the promise.
   PollContext ctx(this, flusher);
@@ -2370,7 +2369,7 @@ void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   // Start the promise.
   ScopedContext context(this);
   // Construct the promise.
-  ChannelFilter* filter = static_cast<ChannelFilter*>(elem()->channel_data);
+  ChannelFilter* filter = promise_filter_detail::ChannelFilterFromElem(elem());
   FakeActivity(this).Run([this, filter] {
     promise_ = filter->MakeCallPromise(
         CallArgs{WrapMetadata(recv_initial_metadata_),

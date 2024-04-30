@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,8 +37,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -59,7 +59,6 @@
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -225,8 +224,7 @@ typedef enum {
 } grpc_chttp2_keepalive_state;
 
 struct grpc_chttp2_transport final
-    : public grpc_core::Transport,
-      public grpc_core::FilterStackTransport,
+    : public grpc_core::FilterStackTransport,
       public grpc_core::RefCounted<grpc_chttp2_transport,
                                    grpc_core::NonPolymorphicRefCount>,
       public grpc_core::KeepsGrpcInitialized {
@@ -546,7 +544,7 @@ typedef enum {
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
-                     const void* server_data, grpc_core::Arena* arena);
+                     const void* server_data);
   ~grpc_chttp2_stream();
 
   void* context = nullptr;
@@ -639,6 +637,9 @@ struct grpc_chttp2_stream {
 
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
+
+  /// Number of times written
+  int64_t write_counter = 0;
 
   /// Only set when enabled.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
@@ -775,7 +776,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc,

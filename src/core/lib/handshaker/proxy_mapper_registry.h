@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_REGISTRY_H
 #define GRPC_SRC_CORE_LIB_HANDSHAKER_PROXY_MAPPER_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
@@ -28,6 +26,8 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/handshaker/proxy_mapper.h"

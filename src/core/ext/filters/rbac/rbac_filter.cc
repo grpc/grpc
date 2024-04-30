@@ -82,8 +82,8 @@ RbacFilter::RbacFilter(size_t index,
       service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
       per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
-absl::StatusOr<RbacFilter> RbacFilter::Create(const ChannelArgs& args,
-                                              ChannelFilter::Args filter_args) {
+absl::StatusOr<std::unique_ptr<RbacFilter>> RbacFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   auto* auth_context = args.GetObject<grpc_auth_context>();
   if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE("No auth context found");
@@ -94,11 +94,9 @@ absl::StatusOr<RbacFilter> RbacFilter::Create(const ChannelArgs& args,
     // side.
     return GRPC_ERROR_CREATE("No transport configured");
   }
-  return RbacFilter(
-      grpc_channel_stack_filter_instance_number(
-          filter_args.channel_stack(),
-          filter_args.uninitialized_channel_element()),
-      EvaluateArgs::PerChannelArgs(auth_context, transport->GetEndpoint()));
+  return std::make_unique<RbacFilter>(
+      filter_args.instance_id(),
+      EvaluateArgs::PerChannelArgs(auth_context, args));
 }
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {

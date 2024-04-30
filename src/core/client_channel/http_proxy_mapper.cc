@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -46,13 +47,11 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -109,7 +108,7 @@ bool AddressIncluded(
 ///
 absl::optional<std::string> GetHttpProxyServer(
     const ChannelArgs& args, absl::optional<std::string>* user_cred) {
-  GPR_ASSERT(user_cred != nullptr);
+  CHECK_NE(user_cred, nullptr);
   absl::StatusOr<URI> uri;
   // We check the following places to determine the HTTP proxy to use, stopping
   // at the first one that is set:
@@ -143,7 +142,7 @@ absl::optional<std::string> GetHttpProxyServer(
   size_t authority_nstrs;
   gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
                    &authority_nstrs);
-  GPR_ASSERT(authority_nstrs != 0);  // should have at least 1 string
+  CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
   absl::optional<std::string> proxy_name;
   if (authority_nstrs == 1) {
     // User cred not present in authority
@@ -260,14 +259,7 @@ absl::optional<std::string> HttpProxyMapper::MapName(
                     MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")));
   if (user_cred.has_value()) {
     // Use base64 encoding for user credentials as stated in RFC 7617
-    std::string encoded_user_cred;
-    if (IsAbslBase64Enabled()) {
-      encoded_user_cred = absl::Base64Escape(*user_cred);
-    } else {
-      UniquePtr<char> tmp(
-          grpc_base64_encode(user_cred->data(), user_cred->length(), 0, 0));
-      encoded_user_cred = tmp.get();
-    }
+    std::string encoded_user_cred = absl::Base64Escape(*user_cred);
     *args = args->Set(
         GRPC_ARG_HTTP_CONNECT_HEADERS,
         absl::StrCat("Proxy-Authorization:Basic ", encoded_user_cred));

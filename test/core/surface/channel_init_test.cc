@@ -15,6 +15,7 @@
 #include "src/core/lib/surface/channel_init.h"
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -23,7 +24,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -174,7 +175,8 @@ TEST(ChannelInitTest, CanAddBeforeAllOnce) {
             std::vector<std::string>({"foo", "bar", "baz", "aaa"}));
 }
 
-TEST(ChannelInitTest, CanAddBeforeAllTwice) {
+TEST(ChannelInitDeathTest, CanAddBeforeAllTwice) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo")).BeforeAll();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar")).BeforeAll();
@@ -205,9 +207,10 @@ class TestFilter1 {
  public:
   explicit TestFilter1(int* p) : p_(p) {}
 
-  static absl::StatusOr<TestFilter1> Create(const ChannelArgs& args, Empty) {
+  static absl::StatusOr<std::unique_ptr<TestFilter1>> Create(
+      const ChannelArgs& args, Empty) {
     EXPECT_EQ(args.GetInt("foo"), 1);
-    return TestFilter1(args.GetPointer<int>("p"));
+    return std::make_unique<TestFilter1>(args.GetPointer<int>("p"));
   }
 
   static const grpc_channel_filter kFilter;
@@ -255,7 +258,10 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
   segment->AddToCallFilterStack(stack_builder);
   segment = absl::CancelledError();  // force the segment to be destroyed
   auto stack = stack_builder.Build();
-  { CallFilters call_filters(stack); }
+  {
+    CallFilters call_filters(Arena::MakePooled<ClientMetadata>());
+    call_filters.SetStack(std::move(stack));
+  }
   EXPECT_EQ(p, 1);
 }
 

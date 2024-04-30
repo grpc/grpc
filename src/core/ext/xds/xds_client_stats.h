@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_STATS_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_STATS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstdint>
 #include <map>
@@ -31,7 +29,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -45,7 +46,7 @@ namespace grpc_core {
 class XdsClient;
 
 // Locality name.
-class XdsLocalityName : public RefCounted<XdsLocalityName> {
+class XdsLocalityName final : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
     bool operator()(const XdsLocalityName* lhs,
@@ -63,7 +64,10 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   XdsLocalityName(std::string region, std::string zone, std::string sub_zone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
-        sub_zone_(std::move(sub_zone)) {}
+        sub_zone_(std::move(sub_zone)),
+        human_readable_string_(
+            absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                            region_, zone_, sub_zone_)) {}
 
   bool operator==(const XdsLocalityName& other) const {
     return region_ == other.region_ && zone_ == other.zone_ &&
@@ -86,9 +90,8 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const std::string& zone() const { return zone_; }
   const std::string& sub_zone() const { return sub_zone_; }
 
-  std::string AsHumanReadableString() const {
-    return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                           region_, zone_, sub_zone_);
+  const RefCountedStringValue& human_readable_string() const {
+    return human_readable_string_;
   }
 
   // Channel args traits.
@@ -104,10 +107,11 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   std::string region_;
   std::string zone_;
   std::string sub_zone_;
+  RefCountedStringValue human_readable_string_;
 };
 
 // Drop stats for an xds cluster.
-class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
+class XdsClusterDropStats final : public RefCounted<XdsClusterDropStats> {
  public:
   // The total number of requests dropped for any reason is the sum of
   // uncategorized_drops, and dropped_requests map.
@@ -161,7 +165,8 @@ class XdsClusterDropStats : public RefCounted<XdsClusterDropStats> {
 };
 
 // Locality stats for an xds cluster.
-class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
+class XdsClusterLocalityStats final
+    : public RefCounted<XdsClusterLocalityStats> {
  public:
   struct BackendMetric {
     uint64_t num_requests_finished_with_metric = 0;
@@ -222,6 +227,8 @@ class XdsClusterLocalityStats : public RefCounted<XdsClusterLocalityStats> {
   void AddCallStarted();
   void AddCallFinished(const std::map<absl::string_view, double>* named_metrics,
                        bool fail = false);
+
+  XdsLocalityName* locality_name() const { return name_.get(); }
 
  private:
   struct Stats {

@@ -16,18 +16,18 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -121,7 +121,7 @@ static bool is_in_ht(grpc_timer* t) {
 }
 
 static void add_to_ht(grpc_timer* t) {
-  GPR_ASSERT(!t->hash_table_next);
+  CHECK(!t->hash_table_next);
   size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
 
   gpr_mu_lock(&g_hash_mu[i]);

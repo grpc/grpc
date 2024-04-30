@@ -26,12 +26,14 @@
 #include <gtest/gtest.h>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 #include "absl/types/span.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -58,15 +60,15 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
-#include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
 
 // TODO(dgq): Other scenarios in need of testing:
@@ -162,13 +164,13 @@ class BackendServiceImpl : public BackendService {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  GPR_ASSERT(inet_pton(AF_INET, ip_str, &ip4) == 1);
+  CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
 std::string Ip6ToPackedString(const char* ip_str) {
   struct in6_addr ip6;
-  GPR_ASSERT(inet_pton(AF_INET6, ip_str, &ip6) == 1);
+  CHECK_EQ(inet_pton(AF_INET6, ip_str, &ip6), 1);
   return std::string(reinterpret_cast<const char*>(&ip6), sizeof(ip6));
 }
 
@@ -450,7 +452,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
     void Start() {
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      GPR_ASSERT(!running_);
+      CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc_core::Mutex mu;
@@ -605,9 +607,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
         grpc_fake_transport_security_credentials_create();
     grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
         kCallCredsMdKey, kCallCredsMdValue);
-    std::shared_ptr<ChannelCredentials> creds(
-        new SecureChannelCredentials(grpc_composite_channel_credentials_create(
-            channel_creds, call_creds, nullptr)));
+    auto creds = std::make_shared<TestCompositeChannelCredentials>(
+        channel_creds, call_creds);
     call_creds->Unref();
     channel_creds->Unref();
     channel_ = grpc::CreateCustomChannel(
@@ -708,9 +709,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      GPR_ASSERT(lb_uri.ok());
+      CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
+      CHECK(grpc_parse_uri(*lb_uri, &address));
       grpc_core::ChannelArgs args;
       if (!balancer_name.empty()) {
         args = args.Set(GRPC_ARG_DEFAULT_AUTHORITY, balancer_name);
@@ -729,7 +730,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses = std::move(backends);
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json);
-    GPR_ASSERT(result.service_config.ok());
+    CHECK_OK(result.service_config);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancers));
     response_generator_->SetResponseSynchronously(std::move(result));

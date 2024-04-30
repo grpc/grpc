@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 
 #include <map>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -83,7 +82,7 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
   if (fd_ == nullptr || session_keys_info.empty()) return;
   // Append to key log file under lock
   bool err =
-      fwrite((session_keys_info + "\r\n").c_str(), sizeof(char),
+      fwrite((session_keys_info + "\n").c_str(), sizeof(char),
              session_keys_info.length() + 1, fd_) < session_keys_info.length();
 
   if (err) {

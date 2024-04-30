@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "gmock/gmock.h"
@@ -20,8 +18,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -29,6 +27,7 @@
 #include <gmock/gmock.h>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -37,6 +36,7 @@
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -62,10 +62,10 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/socket_use_after_close_detector.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/socket_use_after_close_detector.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
@@ -210,7 +210,7 @@ void ArgsInit(ArgsStruct* args) {
 void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
-  GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
+  CHECK(gpr_event_wait(&args->ev, TestDeadline()));
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;
@@ -243,7 +243,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", args->done,
             time_left.tv_sec, time_left.tv_nsec);
-    GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
+    CHECK_GE(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)), 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
     if (grpc_core::IsEventEngineDnsEnabled()) {
@@ -305,7 +305,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReportResult(grpc_core::Resolver::Result result) override {
     CheckResult(result);
     grpc_core::MutexLockForGprMu lock(args_->mu);
-    GPR_ASSERT(!args_->done);
+    CHECK(!args_->done);
     args_->done = true;
     GRPC_LOG_IF_ERROR("pollset_kick",
                       grpc_pollset_kick(args_->pollset, nullptr));
@@ -363,7 +363,7 @@ class CheckingResultHandler : public ResultHandler {
               "Invalid for setting for --do_ordered_address_comparison. "
               "Have %s, want True or False",
               absl::GetFlag(FLAGS_do_ordered_address_comparison).c_str());
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     if (!result.service_config.ok()) {
       CheckServiceConfigResultLocked(nullptr, result.service_config.status(),
@@ -406,7 +406,7 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
   std::string unused_host;
   std::string local_dns_server_port;
-  GPR_ASSERT(grpc_core::SplitHostPort(
+  CHECK(grpc_core::SplitHostPort(
       absl::GetFlag(FLAGS_local_dns_server_address).c_str(), &unused_host,
       &local_dns_server_port));
   gpr_log(GPR_DEBUG,
@@ -430,8 +430,7 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
-  GPR_ASSERT(ares_set_servers_ports(*channel, dns_server_addrs) ==
-             ARES_SUCCESS);
+  CHECK(ares_set_servers_ports(*channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
 void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }

@@ -33,7 +33,7 @@
 
 namespace grpc_core {
 
-class HttpProxyMapper : public ProxyMapperInterface {
+class HttpProxyMapper final : public ProxyMapperInterface {
  public:
   static constexpr char const* kAddressProxyEnvVar = "GRPC_ADDRESS_HTTP_PROXY";
   static constexpr char const* kAddressProxyEnabledAddressesEnvVar =

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
 #define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <openssl/x509.h>
 
 #include "absl/status/status.h"
@@ -28,6 +26,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -160,6 +159,15 @@ bool HasCrlSignBit(X509* cert);
 // return: a std::string of the DER encoding of the X509_NAME issuer name.
 absl::StatusOr<std::string> IssuerFromCert(X509* cert);
 
+// Gets a stable representation of the authority key identifier from an X509
+// certificate.
+// return: a std::string of the DER encoding of the AKID or a status on failure.
+absl::StatusOr<std::string> AkidFromCertificate(X509* cert);
+
+// Gets a stable representation of the authority key identifier from an X509
+// crl.
+// return: a std::string of the DER encoding of the AKID or a status on failure.
+absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl);
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H

@@ -15,12 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <atomic>
+#include <cstring>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -35,7 +34,10 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -164,8 +166,9 @@ class PromiseEndpoint {
         complete,
         [this, num_bytes]() {
           SliceBuffer ret;
-          grpc_slice_buffer_move_first(read_state_->buffer.c_slice_buffer(),
-                                       num_bytes, ret.c_slice_buffer());
+          grpc_slice_buffer_move_first_no_inline(
+              read_state_->buffer.c_slice_buffer(), num_bytes,
+              ret.c_slice_buffer());
           return [ret = std::move(
                       ret)]() mutable -> Poll<absl::StatusOr<SliceBuffer>> {
             return std::move(ret);
@@ -180,8 +183,9 @@ class PromiseEndpoint {
             // If read succeeds, return `SliceBuffer` with `num_bytes` bytes.
             if (read_state->result.ok()) {
               SliceBuffer ret;
-              grpc_slice_buffer_move_first(read_state->buffer.c_slice_buffer(),
-                                           num_bytes, ret.c_slice_buffer());
+              grpc_slice_buffer_move_first_no_inline(
+                  read_state->buffer.c_slice_buffer(), num_bytes,
+                  ret.c_slice_buffer());
               read_state->complete.store(false, std::memory_order_relaxed);
               return std::move(ret);
             }
@@ -212,6 +216,41 @@ class PromiseEndpoint {
                  if (!slice.ok()) return slice.status();
                  return (*slice)[0];
                });
+  }
+
+  // Enables RPC receive coalescing and alignment of memory holding received
+  // RPCs.
+  void EnforceRxMemoryAlignmentAndCoalescing() {
+    auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::ChaoticGoodExtension>(endpoint_.get());
+    if (chaotic_good_ext != nullptr) {
+      chaotic_good_ext->EnforceRxMemoryAlignment();
+      chaotic_good_ext->EnableRpcReceiveCoalescing();
+      if (read_state_->buffer.Length() == 0) {
+        return;
+      }
+
+      // Copy everything from read_state_->buffer into a single slice and
+      // replace the contents of read_state_->buffer with that slice.
+      grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
+      GPR_ASSERT(
+          reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
+      size_t ofs = 0;
+      for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
+        memcpy(
+            GRPC_SLICE_START_PTR(slice) + ofs,
+            GRPC_SLICE_START_PTR(
+                read_state_->buffer.c_slice_buffer()->slices[i]),
+            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]));
+        ofs +=
+            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]);
+      }
+
+      read_state_->buffer.Clear();
+      read_state_->buffer.AppendIndexed(
+          grpc_event_engine::experimental::Slice(slice));
+      GPR_DEBUG_ASSERT(read_state_->buffer.Length() == ofs);
+    }
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&

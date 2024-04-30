@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -114,7 +115,7 @@ WindowsEventEngine::WindowsEventEngine()
       iocp_worker_(thread_pool_.get(), &iocp_) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
-  GPR_ASSERT(status == 0);
+  CHECK_EQ(status, 0);
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
@@ -143,13 +144,13 @@ WindowsEventEngine::~WindowsEventEngine() {
         task_mu_.Lock();
       }
     }
-    GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    CHECK(GPR_LIKELY(known_handles_.empty()));
     task_mu_.Unlock();
   }
   iocp_.Kick();
   iocp_worker_.WaitForShutdown();
   iocp_.Shutdown();
-  GPR_ASSERT(WSACleanup() == 0);
+  CHECK_EQ(WSACleanup(), 0);
   timer_manager_.Shutdown();
   thread_pool_->Quiesce();
 }
@@ -369,7 +370,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   auto connection_state = std::make_shared<ConnectionState>();
   grpc_core::MutexLock lock(&connection_state->mu);
   connection_state->socket = iocp_.Watch(sock);
-  GPR_ASSERT(connection_state->socket != nullptr);
+  CHECK(connection_state->socket != nullptr);
   auto* info = connection_state->socket->write_info();
   connection_state->address = address;
   connection_state->allocator = std::move(memory_allocator);
@@ -455,8 +456,8 @@ bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
   // Erase the connection handle, which is guaranteed to exist.
   {
     grpc_core::MutexLock lock(&connection_mu_);
-    GPR_ASSERT(known_connection_handles_.erase(
-                   connection_state->connection_handle) == 1);
+    CHECK(known_connection_handles_.erase(
+              connection_state->connection_handle) == 1);
   }
   return CancelConnectInternalStateLocked(connection_state);
 }

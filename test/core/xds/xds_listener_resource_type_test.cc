@@ -64,7 +64,7 @@
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using envoy::config::listener::v3::Listener;
 using envoy::extensions::filters::http::fault::v3::HTTPFault;
@@ -85,7 +85,8 @@ class XdsListenerTest : public ::testing::Test {
  protected:
   XdsListenerTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
                         &xds_listener_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
@@ -117,7 +118,8 @@ class XdsListenerTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 

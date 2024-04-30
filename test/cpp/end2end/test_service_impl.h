@@ -27,6 +27,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
@@ -35,7 +37,7 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 namespace grpc {
@@ -89,11 +91,27 @@ void ServerTryCancel(ServerContext* context);
 
 class TestServiceSignaller {
  public:
-  void ClientWaitUntilRpcStarted() {
-    gpr_log(GPR_DEBUG, "*** enter ClientWaitUntilRpcStarted ***");
+  // Waits for at least *desired_rpcs* to to be waiting for a server
+  // continue notification.
+  // Returns when *desired_rpcs* reaches that amount, or when we've
+  // surpassed the timeout, whichever happens first. The return value
+  // is whatever the number of RPCs waiting for server notification is
+  // at that time.
+  int ClientWaitUntilNRpcsStarted(int desired_rpcs, absl::Duration timeout) {
+    gpr_log(GPR_DEBUG, "*** enter ClientWaitUntilNRpcsStarted ***");
+    absl::Time deadline = absl::Now() + timeout;
+    std::chrono::system_clock::time_point chrono_deadline =
+        absl::ToChronoTime(deadline);
     std::unique_lock<std::mutex> lock(mu_);
-    cv_rpc_started_.wait(lock, [this] { return rpc_started_; });
-    gpr_log(GPR_DEBUG, "*** leave ClientWaitUntilRpcStarted ***");
+    cv_rpc_started_.wait_until(lock, chrono_deadline, [this, desired_rpcs] {
+      gpr_log(
+          GPR_DEBUG,
+          "*** desired_rpcs: %d rpcs_waiting_for_server_to_continue_: %d ***",
+          desired_rpcs, rpcs_waiting_for_server_to_continue_);
+      return rpcs_waiting_for_server_to_continue_ >= desired_rpcs;
+    });
+    gpr_log(GPR_DEBUG, "*** leave ClientWaitUntilNRpcsStarted ***");
+    return rpcs_waiting_for_server_to_continue_;
   }
   void ServerWaitToContinue() {
     gpr_log(GPR_DEBUG, "*** enter ServerWaitToContinue ***");
@@ -104,20 +122,25 @@ class TestServiceSignaller {
   void SignalClientThatRpcStarted() {
     gpr_log(GPR_DEBUG, "*** SignalClientThatRpcStarted ***");
     std::unique_lock<std::mutex> lock(mu_);
-    rpc_started_ = true;
-    cv_rpc_started_.notify_one();
+    ++rpcs_waiting_for_server_to_continue_;
+    cv_rpc_started_.notify_all();
   }
   void SignalServerToContinue() {
     gpr_log(GPR_DEBUG, "*** SignalServerToContinue ***");
     std::unique_lock<std::mutex> lock(mu_);
     server_should_continue_ = true;
-    cv_server_continue_.notify_one();
+    cv_server_continue_.notify_all();
+  }
+  void Reset() {
+    std::unique_lock<std::mutex> lock(mu_);
+    rpcs_waiting_for_server_to_continue_ = 0;
+    server_should_continue_ = false;
   }
 
  private:
   std::mutex mu_;
   std::condition_variable cv_rpc_started_;
-  bool rpc_started_ /* GUARDED_BY(mu_) */ = false;
+  int rpcs_waiting_for_server_to_continue_ /* GUARDED_BY(mu_) */ = 0;
   std::condition_variable cv_server_continue_;
   bool server_should_continue_ /* GUARDED_BY(mu_) */ = false;
 };
@@ -148,7 +171,7 @@ class TestMultipleServiceImpl : public RpcService {
 
     if (request->has_param() && request->param().server_die()) {
       gpr_log(GPR_ERROR, "The request should not reach application handler.");
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     if (request->has_param() && request->param().has_expected_error()) {
       const auto& error = request->param().expected_error();
@@ -451,8 +474,12 @@ class TestMultipleServiceImpl : public RpcService {
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
-  void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
+  int ClientWaitUntilNRpcsStarted(int desired_rpcs,
+                                  absl::Duration timeout = absl::Minutes(1)) {
+    return signaller_.ClientWaitUntilNRpcsStarted(desired_rpcs, timeout);
+  }
   void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
+  void ResetSignaller() { signaller_.Reset(); }
   uint64_t RpcsWaitingForClientCancel() {
     std::unique_lock<std::mutex> lock(mu_);
     return rpcs_waiting_for_client_cancel_;
@@ -495,8 +522,12 @@ class CallbackTestServiceImpl
     std::unique_lock<std::mutex> lock(mu_);
     return signal_client_;
   }
-  void ClientWaitUntilRpcStarted() { signaller_.ClientWaitUntilRpcStarted(); }
+  int ClientWaitUntilNRpcsStarted(int desired_rpcs,
+                                  absl::Duration timeout = absl::Minutes(1)) {
+    return signaller_.ClientWaitUntilNRpcsStarted(desired_rpcs, timeout);
+  }
   void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
+  void ResetSignaller() { signaller_.Reset(); }
 
  private:
   bool signal_client_;

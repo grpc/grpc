@@ -20,10 +20,12 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>
@@ -40,7 +42,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 void run_test(bool wait_for_ready) {
   gpr_log(GPR_INFO, "TEST: wait_for_ready=%d", wait_for_ready);
@@ -84,9 +86,9 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_call_start_batch(call, ops, (size_t)(op - ops),
-                                   grpc_core::CqVerifier::tag(1), nullptr));
+  CHECK_EQ(GRPC_CALL_OK,
+           grpc_call_start_batch(call, ops, (size_t)(op - ops),
+                                 grpc_core::CqVerifier::tag(1), nullptr));
 
   {
     response_generator->WaitForResolverSet(
@@ -104,9 +106,9 @@ void run_test(bool wait_for_ready) {
 
   gpr_log(GPR_INFO, "call status: %d", status);
   if (wait_for_ready) {
-    GPR_ASSERT(status == GRPC_STATUS_DEADLINE_EXCEEDED);
+    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
+    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_slice_unref(details);

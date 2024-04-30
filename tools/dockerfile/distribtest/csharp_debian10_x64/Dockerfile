@@ -14,20 +14,21 @@
 
 FROM debian:10
 
-RUN apt-get update && apt-get install -y apt-transport-https ca-certificates curl dirmngr gnupg unzip wget && apt-get clean
+RUN apt update && apt -y upgrade
+RUN apt install -y apt-transport-https ca-certificates curl dirmngr gnupg unzip wget && apt clean
 
 # Install mono
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF \
     && echo "deb https://download.mono-project.com/repo/debian stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
-    && apt-get update && apt-get install -y mono-devel nuget \
-    && apt-get clean
+    && apt update && apt install -y mono-devel nuget \
+    && apt clean
 
 # Install dotnet SDK
 RUN wget https://packages.microsoft.com/config/debian/10/packages-microsoft-prod.deb \
     && dpkg -i packages-microsoft-prod.deb \
     && apt update \
     && apt install -y dotnet-sdk-3.1 \
-    && apt-get clean
+    && apt clean
 
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
 RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem
@@ -36,3 +37,5 @@ RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert
 ENV SKIP_NETCOREAPP21_DISTRIBTEST=1
 # we have a separate distribtest for net5.0
 ENV SKIP_NET50_DISTRIBTEST=1
+# we have a separate distribtest for net7.0
+ENV SKIP_NET70_DISTRIBTEST=1

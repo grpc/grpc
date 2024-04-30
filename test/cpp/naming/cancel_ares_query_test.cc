@@ -23,10 +23,12 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -53,11 +55,11 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/socket_use_after_close_detector.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/socket_use_after_close_detector.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 #ifdef GPR_WINDOWS
@@ -294,7 +296,7 @@ void TestCancelDuringActiveQuery(
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
-  GPR_ASSERT(call);
+  CHECK(call);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;

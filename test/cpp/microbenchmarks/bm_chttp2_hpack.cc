@@ -25,6 +25,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/log/check.h"
 #include "absl/random/random.h"
 
 #include <grpc/slice.h>
@@ -40,7 +41,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -75,7 +76,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   b.Set(grpc_core::GrpcTimeoutMetadata(),
         saved_now + grpc_core::Duration::Seconds(30));
 
@@ -111,7 +112,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   Fixture::Prepare(&b);
 
   grpc_core::HPackCompressor c;
@@ -351,7 +352,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
                                      ->CreateMemoryAllocator("test"));
   auto* arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
-  b.Init(arena);
+  b.Init();
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                std::numeric_limits<uint32_t>::max(),
                grpc_core::HPackParser::Boundary::None,
@@ -364,7 +365,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       auto error =
           p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
                   /*call_tracer=*/nullptr);
-      GPR_ASSERT(error.ok());
+      CHECK_OK(error);
     }
   };
   parse_vec(init_slices);
@@ -377,7 +378,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       b.Destroy();
       arena->Destroy();
       arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
-      b.Init(arena);
+      b.Init();
       p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
                    std::numeric_limits<uint32_t>::max(),
                    grpc_core::HPackParser::Boundary::None,
@@ -410,7 +411,7 @@ class FromEncoderFixture {
                                        ->memory_quota()
                                        ->CreateMemoryAllocator("test"));
     auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
     EncoderFixture::Prepare(&b);
 
     grpc_core::HPackCompressor c;
@@ -443,8 +444,8 @@ class FromEncoderFixture {
       i++;
     }
     // Remove the HTTP header.
-    GPR_ASSERT(!out.empty());
-    GPR_ASSERT(GRPC_SLICE_LENGTH(out[0]) > 9);
+    CHECK(!out.empty());
+    CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
   }

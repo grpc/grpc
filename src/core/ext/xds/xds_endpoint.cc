@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_endpoint.h"
 
 #include <stdlib.h>
@@ -27,6 +25,7 @@
 #include <set>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -42,6 +41,7 @@
 #include "upb/text/encode.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_health_status.h"
@@ -81,7 +81,7 @@ std::string XdsEndpointResource::Priority::Locality::ToString() const {
   for (const EndpointAddresses& endpoint : endpoints) {
     endpoint_strings.emplace_back(endpoint.ToString());
   }
-  return absl::StrCat("{name=", name->AsHumanReadableString(),
+  return absl::StrCat("{name=", name->human_readable_string().as_string_view(),
                       ", lb_weight=", lb_weight, ", endpoints=[",
                       absl::StrJoin(endpoint_strings, ", "), "]}");
 }
@@ -408,7 +408,7 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
       ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
       auto parsed_locality = LocalityParse(endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
-        GPR_ASSERT(parsed_locality->locality.lb_weight != 0);
+        CHECK_NE(parsed_locality->locality.lb_weight, 0u);
         // Make sure prorities is big enough. Note that they might not
         // arrive in priority order.
         if (eds_resource->priorities.size() < parsed_locality->priority + 1) {
@@ -420,7 +420,8 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
         if (it != locality_map.end()) {
           errors.AddError(absl::StrCat(
               "duplicate locality ",
-              parsed_locality->locality.name->AsHumanReadableString(),
+              parsed_locality->locality.name->human_readable_string()
+                  .as_string_view(),
               " found in priority ", parsed_locality->priority));
         } else {
           locality_map.emplace(parsed_locality->locality.name.get(),

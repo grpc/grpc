@@ -33,6 +33,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -50,6 +51,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 
 namespace grpc_core {
 namespace {
@@ -97,10 +99,8 @@ class FakeCallTracer : public ClientCallTracer {
     void RecordAnnotation(absl::string_view /*annotation*/) override {}
     void RecordAnnotation(const Annotation& /*annotation*/) override {}
 
-    void AddOptionalLabels(
-        OptionalLabelComponent /*component*/,
-        std::shared_ptr<std::map<std::string, std::string>> /*labels*/)
-        override {}
+    void SetOptionalLabel(OptionalLabelKey /*key*/,
+                          RefCountedStringValue /*value*/) override {}
 
     static grpc_transport_stream_stats transport_stream_stats() {
       MutexLock lock(g_mu);
@@ -129,33 +129,6 @@ class FakeCallTracer : public ClientCallTracer {
 
 grpc_transport_stream_stats
     FakeCallTracer::FakeCallAttemptTracer::transport_stream_stats_;
-
-class FakeClientFilter : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::StatusOr<FakeClientFilter> Create(
-      const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
-    return FakeClientFilter();
-  }
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override {
-    auto* call_context = GetContext<grpc_call_context_element>();
-    auto* tracer = GetContext<Arena>()->ManagedNew<FakeCallTracer>();
-    GPR_DEBUG_ASSERT(
-        call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
-        nullptr);
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy =
-        nullptr;
-    return next_promise_factory(std::move(call_args));
-  }
-};
-
-const grpc_channel_filter FakeClientFilter::kFilter =
-    MakePromiseBasedFilter<FakeClientFilter, FilterEndpoint::kClient>(
-        "fake_client");
 
 class FakeServerCallTracer : public ServerCallTracer {
  public:
@@ -203,11 +176,18 @@ class FakeServerCallTracer : public ServerCallTracer {
 
 grpc_transport_stream_stats FakeServerCallTracer::transport_stream_stats_;
 
-class FakeServerCallTracerFactory : public ServerCallTracerFactory {
+// TODO(yijiem): figure out how to reuse FakeStatsPlugin instead of
+// inheriting and overriding it here.
+class NewFakeStatsPlugin : public FakeStatsPlugin {
  public:
-  ServerCallTracer* CreateNewServerCallTracer(
-      Arena* arena, const ChannelArgs& /*args*/) override {
-    return arena->ManagedNew<FakeServerCallTracer>();
+  ClientCallTracer* GetClientCallTracer(
+      const Slice& /*path*/, bool /*registered_method*/,
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    return GetContext<Arena>()->ManagedNew<FakeCallTracer>();
+  }
+  ServerCallTracer* GetServerCallTracer(
+      std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
+    return GetContext<Arena>()->ManagedNew<FakeServerCallTracer>();
   }
 };
 
@@ -219,12 +199,8 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
   g_client_call_ended_notify = new Notification();
   g_server_call_ended_notify = new Notification();
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterFilter<FakeClientFilter>(
-        GRPC_CLIENT_CHANNEL);
-  });
-  ServerCallTracerFactory::RegisterGlobal(new FakeServerCallTracerFactory);
-
+  GlobalStatsPluginRegistry::RegisterStatsPlugin(
+      std::make_shared<NewFakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
   auto send_from_server = RandomSlice(20);
   CoreEnd2endTest::IncomingStatusOnClient server_status;

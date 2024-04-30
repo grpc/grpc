@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.63.0-dev
+PROJECT_NUMBER         = 1.64.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -880,6 +880,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/credentials.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -939,6 +940,7 @@ include/grpc/support/cpu.h \
 include/grpc/support/json.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
+include/grpc/support/metrics.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
@@ -1081,13 +1083,14 @@ include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
 include/grpcpp/version_info.h \
 include/grpcpp/xds_server_builder.h \
-src/core/client_channel/backend_metric.cc \
-src/core/client_channel/backend_metric.h \
+src/core/channelz/channel_trace.cc \
+src/core/channelz/channel_trace.h \
+src/core/channelz/channelz.cc \
+src/core/channelz/channelz.h \
+src/core/channelz/channelz_registry.cc \
+src/core/channelz/channelz_registry.h \
 src/core/client_channel/backup_poller.cc \
 src/core/client_channel/backup_poller.h \
-src/core/client_channel/channel_connectivity.cc \
-src/core/client_channel/client_channel_channelz.cc \
-src/core/client_channel/client_channel_channelz.h \
 src/core/client_channel/client_channel_factory.cc \
 src/core/client_channel/client_channel_factory.h \
 src/core/client_channel/client_channel_filter.cc \
@@ -1115,7 +1118,6 @@ src/core/client_channel/retry_service_config.cc \
 src/core/client_channel/retry_service_config.h \
 src/core/client_channel/retry_throttle.cc \
 src/core/client_channel/retry_throttle.h \
-src/core/client_channel/service_config_channel_arg_filter.cc \
 src/core/client_channel/subchannel.cc \
 src/core/client_channel/subchannel.h \
 src/core/client_channel/subchannel_interface_internal.h \
@@ -1127,8 +1129,6 @@ src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
 src/core/ext/filters/backend_metrics/backend_metric_filter.h \
 src/core/ext/filters/backend_metrics/backend_metric_provider.h \
 src/core/ext/filters/census/grpc_context.cc \
-src/core/ext/filters/channel_idle/channel_idle_filter.cc \
-src/core/ext/filters/channel_idle/channel_idle_filter.h \
 src/core/ext/filters/channel_idle/idle_filter_state.cc \
 src/core/ext/filters/channel_idle/idle_filter_state.h \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
@@ -1146,8 +1146,6 @@ src/core/ext/filters/http/client_authority_filter.h \
 src/core/ext/filters/http/http_filters_plugin.cc \
 src/core/ext/filters/http/message_compress/compression_filter.cc \
 src/core/ext/filters/http/message_compress/compression_filter.h \
-src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
-src/core/ext/filters/http/message_compress/legacy_compression_filter.h \
 src/core/ext/filters/http/server/http_server_filter.cc \
 src/core/ext/filters/http/server/http_server_filter.h \
 src/core/ext/filters/message_size/message_size_filter.cc \
@@ -2119,6 +2117,7 @@ src/core/ext/xds/xds_lb_policy_registry.cc \
 src/core/ext/xds/xds_lb_policy_registry.h \
 src/core/ext/xds/xds_listener.cc \
 src/core/ext/xds/xds_listener.h \
+src/core/ext/xds/xds_metrics.h \
 src/core/ext/xds/xds_resource_type.h \
 src/core/ext/xds/xds_resource_type_impl.h \
 src/core/ext/xds/xds_route_config.cc \
@@ -2154,18 +2153,15 @@ src/core/lib/channel/channel_stack_builder_impl.cc \
 src/core/lib/channel/channel_stack_builder_impl.h \
 src/core/lib/channel/channel_stack_trace.cc \
 src/core/lib/channel/channel_stack_trace.h \
-src/core/lib/channel/channel_trace.cc \
-src/core/lib/channel/channel_trace.h \
-src/core/lib/channel/channelz.cc \
-src/core/lib/channel/channelz.h \
-src/core/lib/channel/channelz_registry.cc \
-src/core/lib/channel/channelz_registry.h \
 src/core/lib/channel/connected_channel.cc \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
+src/core/lib/channel/metrics.cc \
+src/core/lib/channel/metrics.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/server_call_tracer_filter.cc \
+src/core/lib/channel/server_call_tracer_filter.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/channel/tcp_tracer.h \
@@ -2208,7 +2204,9 @@ src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
 src/core/lib/event_engine/event_engine.cc \
+src/core/lib/event_engine/event_engine_context.h \
 src/core/lib/event_engine/extensions/can_track_errors.h \
+src/core/lib/event_engine/extensions/chaotic_good_extension.h \
 src/core/lib/event_engine/extensions/supports_fd.h \
 src/core/lib/event_engine/forkable.cc \
 src/core/lib/event_engine/forkable.h \
@@ -2400,6 +2398,8 @@ src/core/lib/gprpp/time_util.cc \
 src/core/lib/gprpp/time_util.h \
 src/core/lib/gprpp/type_list.h \
 src/core/lib/gprpp/unique_type_name.h \
+src/core/lib/gprpp/uuid_v4.cc \
+src/core/lib/gprpp/uuid_v4.h \
 src/core/lib/gprpp/validation_errors.cc \
 src/core/lib/gprpp/validation_errors.h \
 src/core/lib/gprpp/windows/directory_reader.cc \
@@ -2613,6 +2613,8 @@ src/core/lib/resource_quota/api.cc \
 src/core/lib/resource_quota/api.h \
 src/core/lib/resource_quota/arena.cc \
 src/core/lib/resource_quota/arena.h \
+src/core/lib/resource_quota/connection_quota.cc \
+src/core/lib/resource_quota/connection_quota.h \
 src/core/lib/resource_quota/memory_quota.cc \
 src/core/lib/resource_quota/memory_quota.h \
 src/core/lib/resource_quota/periodic_update.cc \
@@ -2724,6 +2726,7 @@ src/core/lib/security/security_connector/load_system_roots.h \
 src/core/lib/security/security_connector/load_system_roots_fallback.cc \
 src/core/lib/security/security_connector/load_system_roots_supported.cc \
 src/core/lib/security/security_connector/load_system_roots_supported.h \
+src/core/lib/security/security_connector/load_system_roots_windows.cc \
 src/core/lib/security/security_connector/local/local_security_connector.cc \
 src/core/lib/security/security_connector/local/local_security_connector.h \
 src/core/lib/security/security_connector/security_connector.cc \
@@ -2736,7 +2739,6 @@ src/core/lib/security/security_connector/tls/tls_security_connector.cc \
 src/core/lib/security/security_connector/tls/tls_security_connector.h \
 src/core/lib/security/transport/auth_filters.h \
 src/core/lib/security/transport/client_auth_filter.cc \
-src/core/lib/security/transport/legacy_server_auth_filter.cc \
 src/core/lib/security/transport/secure_endpoint.cc \
 src/core/lib/security/transport/secure_endpoint.h \
 src/core/lib/security/transport/security_handshaker.cc \
@@ -2746,8 +2748,6 @@ src/core/lib/security/transport/tsi_error.cc \
 src/core/lib/security/transport/tsi_error.h \
 src/core/lib/security/util/json_util.cc \
 src/core/lib/security/util/json_util.h \
-src/core/lib/slice/b64.cc \
-src/core/lib/slice/b64.h \
 src/core/lib/slice/percent_encoding.cc \
 src/core/lib/slice/percent_encoding.h \
 src/core/lib/slice/slice.cc \
@@ -2761,8 +2761,6 @@ src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
-src/core/lib/surface/builtins.cc \
-src/core/lib/surface/builtins.h \
 src/core/lib/surface/byte_buffer.cc \
 src/core/lib/surface/byte_buffer_reader.cc \
 src/core/lib/surface/call.cc \
@@ -2773,9 +2771,10 @@ src/core/lib/surface/call_test_only.h \
 src/core/lib/surface/call_trace.h \
 src/core/lib/surface/channel.cc \
 src/core/lib/surface/channel.h \
+src/core/lib/surface/channel_create.cc \
+src/core/lib/surface/channel_create.h \
 src/core/lib/surface/channel_init.cc \
 src/core/lib/surface/channel_init.h \
-src/core/lib/surface/channel_ping.cc \
 src/core/lib/surface/channel_stack_type.cc \
 src/core/lib/surface/channel_stack_type.h \
 src/core/lib/surface/completion_queue.cc \
@@ -2790,9 +2789,12 @@ src/core/lib/surface/init_internally.cc \
 src/core/lib/surface/init_internally.h \
 src/core/lib/surface/lame_client.cc \
 src/core/lib/surface/lame_client.h \
+src/core/lib/surface/legacy_channel.cc \
+src/core/lib/surface/legacy_channel.h \
 src/core/lib/surface/metadata_array.cc \
 src/core/lib/surface/server.cc \
 src/core/lib/surface/server.h \
+src/core/lib/surface/server_interface.h \
 src/core/lib/surface/validate_metadata.cc \
 src/core/lib/surface/validate_metadata.h \
 src/core/lib/surface/version.cc \
@@ -2802,19 +2804,19 @@ src/core/lib/transport/batch_builder.cc \
 src/core/lib/transport/batch_builder.h \
 src/core/lib/transport/bdp_estimator.cc \
 src/core/lib/transport/bdp_estimator.h \
-src/core/lib/transport/call_factory.cc \
-src/core/lib/transport/call_factory.h \
+src/core/lib/transport/call_arena_allocator.cc \
+src/core/lib/transport/call_arena_allocator.h \
 src/core/lib/transport/call_filters.cc \
 src/core/lib/transport/call_filters.h \
 src/core/lib/transport/call_final_info.cc \
 src/core/lib/transport/call_final_info.h \
-src/core/lib/transport/call_size_estimator.cc \
-src/core/lib/transport/call_size_estimator.h \
 src/core/lib/transport/call_spine.cc \
 src/core/lib/transport/call_spine.h \
 src/core/lib/transport/connectivity_state.cc \
 src/core/lib/transport/connectivity_state.h \
 src/core/lib/transport/custom_metadata.h \
+src/core/lib/transport/endpoint_info_handshaker.cc \
+src/core/lib/transport/endpoint_info_handshaker.h \
 src/core/lib/transport/error_utils.cc \
 src/core/lib/transport/error_utils.h \
 src/core/lib/transport/handshaker.cc \
@@ -2832,6 +2834,8 @@ src/core/lib/transport/metadata.h \
 src/core/lib/transport/metadata_batch.cc \
 src/core/lib/transport/metadata_batch.h \
 src/core/lib/transport/metadata_compression_traits.h \
+src/core/lib/transport/metadata_info.cc \
+src/core/lib/transport/metadata_info.h \
 src/core/lib/transport/parsed_metadata.cc \
 src/core/lib/transport/parsed_metadata.h \
 src/core/lib/transport/simple_slice_based_metadata.h \
@@ -2850,6 +2854,8 @@ src/core/lib/uri/uri_parser.h \
 src/core/load_balancing/address_filtering.cc \
 src/core/load_balancing/address_filtering.h \
 src/core/load_balancing/backend_metric_data.h \
+src/core/load_balancing/backend_metric_parser.cc \
+src/core/load_balancing/backend_metric_parser.h \
 src/core/load_balancing/child_policy_handler.cc \
 src/core/load_balancing/child_policy_handler.h \
 src/core/load_balancing/delegating_helper.h \
@@ -2884,13 +2890,14 @@ src/core/load_balancing/priority/priority.cc \
 src/core/load_balancing/ring_hash/ring_hash.cc \
 src/core/load_balancing/ring_hash/ring_hash.h \
 src/core/load_balancing/rls/rls.cc \
+src/core/load_balancing/rls/rls.h \
 src/core/load_balancing/round_robin/round_robin.cc \
 src/core/load_balancing/subchannel_interface.h \
-src/core/load_balancing/subchannel_list.h \
 src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc \
 src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h \
 src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc \
 src/core/load_balancing/weighted_target/weighted_target.cc \
+src/core/load_balancing/weighted_target/weighted_target.h \
 src/core/load_balancing/xds/cds.cc \
 src/core/load_balancing/xds/xds_channel_args.h \
 src/core/load_balancing/xds/xds_cluster_impl.cc \
@@ -2940,6 +2947,7 @@ src/core/resolver/xds/xds_resolver_trace.cc \
 src/core/resolver/xds/xds_resolver_trace.h \
 src/core/service_config/service_config.h \
 src/core/service_config/service_config_call_data.h \
+src/core/service_config/service_config_channel_arg_filter.cc \
 src/core/service_config/service_config_impl.cc \
 src/core/service_config/service_config_impl.h \
 src/core/service_config/service_config_parser.cc \
@@ -3003,7 +3011,9 @@ src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
 src/cpp/README.md \
+src/cpp/client/call_credentials.cc \
 src/cpp/client/channel_cc.cc \
+src/cpp/client/channel_credentials.cc \
 src/cpp/client/client_callback.cc \
 src/cpp/client/client_context.cc \
 src/cpp/client/client_interceptor.cc \
@@ -3025,7 +3035,6 @@ src/cpp/common/resource_quota_cc.cc \
 src/cpp/common/rpc_method.cc \
 src/cpp/common/secure_auth_context.cc \
 src/cpp/common/secure_auth_context.h \
-src/cpp/common/secure_channel_arguments.cc \
 src/cpp/common/secure_create_auth_context.cc \
 src/cpp/common/tls_certificate_provider.cc \
 src/cpp/common/tls_certificate_verifier.cc \
@@ -3051,6 +3060,7 @@ src/cpp/server/server_builder.cc \
 src/cpp/server/server_callback.cc \
 src/cpp/server/server_cc.cc \
 src/cpp/server/server_context.cc \
+src/cpp/server/server_credentials.cc \
 src/cpp/server/server_posix.cc \
 src/cpp/server/thread_pool_interface.h \
 src/cpp/server/xds_server_builder.cc \

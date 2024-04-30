@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -32,6 +30,8 @@
 #include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
 #include "upb/reflection/def.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -71,7 +71,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
   // 1. to initialize in the control plane combiner;
   // 2. to use in the data plane combiner.
   // So no additional synchronization is needed.
-  class DropConfig : public RefCounted<DropConfig> {
+  class DropConfig final : public RefCounted<DropConfig> {
    public:
     struct DropCategory {
       bool operator==(const DropCategory& other) const {
@@ -130,7 +130,7 @@ struct XdsEndpointResource : public XdsResourceType::ResourceData {
   std::string ToString() const;
 };
 
-class XdsEndpointResourceType
+class XdsEndpointResourceType final
     : public XdsResourceTypeImpl<XdsEndpointResourceType, XdsEndpointResource> {
  public:
   absl::string_view type_url() const override {

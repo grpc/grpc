@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,6 +35,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gpr/useful.h"

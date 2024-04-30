@@ -20,6 +20,7 @@
 #include <thread>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
@@ -27,7 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -86,11 +87,11 @@ int main(int argc, char** argv) {
             "Number of entries in --server_uris %ld != number of entries in "
             "--credentials_types %ld",
             uris.size(), creds.size());
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   if (uris.empty()) {
     gpr_log(GPR_ERROR, "--server_uris has zero entries");
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   // construct and start clients
   std::vector<std::thread> threads;
@@ -122,7 +123,7 @@ int main(int argc, char** argv) {
       } else {
         gpr_log(GPR_ERROR,
                 "Invalid test case, must be either rpc_soak or channel_soak");
-        GPR_ASSERT(0);
+        CHECK(0);
       }
     }));
   }

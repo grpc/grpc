@@ -10,7 +10,7 @@ Package for gRPC Python.
 
 Supported Python Versions
 -------------------------
-Python >= 3.7
+Python >= 3.8
 
 Installation
 ------------
@@ -58,6 +58,10 @@ package named :code:`python-dev`).
   $ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc $REPO_ROOT
   $ cd $REPO_ROOT
   $ git submodule update --init
+
+  # To include systemd socket-activation feature in the build,
+  # first install the `libsystemd-dev` package, then :
+  $ export GRPC_PYTHON_BUILD_WITH_SYSTEMD=1
 
   # For the next two commands do `sudo pip install` if you get permission-denied errors
   $ pip install -r requirements.txt

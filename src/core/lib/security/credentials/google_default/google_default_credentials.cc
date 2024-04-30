@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
 #include <string.h>
@@ -30,12 +28,14 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/grpc_security.h>  // IWYU pragma: keep
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"

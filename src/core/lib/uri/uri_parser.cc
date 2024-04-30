@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/uri/uri_parser.h"
 
 #include <ctype.h>
@@ -27,6 +25,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
@@ -38,6 +37,7 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -142,7 +142,7 @@ std::string PercentEncode(absl::string_view str,
   for (char c : str) {
     if (!is_allowed_char(c)) {
       std::string hex = absl::BytesToHexString(absl::string_view(&c, 1));
-      GPR_ASSERT(hex.size() == 2);
+      CHECK_EQ(hex.size(), 2u);
       // BytesToHexString() returns lower case, but
       // https://datatracker.ietf.org/doc/html/rfc3986#section-6.2.2.1 says
       // to prefer upper-case.

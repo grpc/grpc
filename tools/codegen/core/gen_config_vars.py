@@ -176,7 +176,7 @@ attrs_in_packing_order = sorted(
     attrs, key=lambda a: SORT_ORDER_FOR_PACKING[a["type"]]
 )
 
-with open("test/core/util/fuzz_config_vars.proto", "w") as P:
+with open("test/core/test_util/fuzz_config_vars.proto", "w") as P:
     put_copyright(P)
 
     put_banner(
@@ -207,7 +207,7 @@ with open("test/core/util/fuzz_config_vars.proto", "w") as P:
         )
     print("};", file=P)
 
-with open("test/core/util/fuzz_config_vars.h", "w") as H:
+with open("test/core/test_util/fuzz_config_vars.h", "w") as H:
     put_copyright(H)
 
     put_banner(
@@ -224,7 +224,7 @@ with open("test/core/util/fuzz_config_vars.h", "w") as H:
     print(file=H)
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
-    print('#include "test/core/util/fuzz_config_vars.pb.h"', file=H)
+    print('#include "test/core/test_util/fuzz_config_vars.pb.h"', file=H)
     print('#include "src/core/lib/config/config_vars.h"', file=H)
     print(file=H)
     print("namespace grpc_core {", file=H)
@@ -245,7 +245,7 @@ with open("test/core/util/fuzz_config_vars.h", "w") as H:
     print(file=H)
     print("#endif  // GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_H", file=H)
 
-with open("test/core/util/fuzz_config_vars.cc", "w") as C:
+with open("test/core/test_util/fuzz_config_vars.cc", "w") as C:
     put_copyright(C)
 
     put_banner(
@@ -257,8 +257,8 @@ with open("test/core/util/fuzz_config_vars.cc", "w") as C:
         ],
     )
 
-    print('#include "test/core/util/fuzz_config_vars.h"', file=C)
-    print('#include "test/core/util/fuzz_config_vars_helpers.h"', file=C)
+    print('#include "test/core/test_util/fuzz_config_vars.h"', file=C)
+    print('#include "test/core/test_util/fuzz_config_vars_helpers.h"', file=C)
     print(file=C)
     print("namespace grpc_core {", file=C)
     print(file=C)

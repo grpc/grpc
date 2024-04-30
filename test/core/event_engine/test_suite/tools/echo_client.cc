@@ -11,11 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/slice.h>
+#include <grpc/support/port_platform.h>
 
 // The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
 // implementations, allowing third-party TCP listeners to interact with your
@@ -79,7 +80,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
   grpc_core::Notification write_done;
   endpoint->Write(
       [&](absl::Status status) {
-        GPR_ASSERT(status.ok());
+        CHECK_OK(status);
         write_done.Notify();
       },
       &buf, nullptr);
@@ -119,7 +120,7 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
-  GPR_ASSERT(addr.ok());
+  CHECK_OK(addr);
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
@@ -132,7 +133,7 @@ void RunUntilInterrupted() {
       },
       *addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
-  GPR_ASSERT(endpoint.get() != nullptr);
+  CHECK_NE(endpoint.get(), nullptr);
   gpr_log(GPR_DEBUG, "peer addr: %s",
           ResolvedAddressToString(endpoint->GetPeerAddress())->c_str());
   gpr_log(GPR_DEBUG, "local addr: %s",

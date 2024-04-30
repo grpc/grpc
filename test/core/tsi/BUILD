@@ -26,6 +26,7 @@ grpc_cc_library(
     srcs = ["transport_security_test_lib.cc"],
     hdrs = ["transport_security_test_lib.h"],
     external_deps = [
+        "absl/log:check",
         "libssl",
         "libcrypto",
     ],
@@ -43,7 +44,7 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -51,13 +52,14 @@ grpc_cc_test(
     name = "ssl_session_cache_test",
     srcs = ["ssl_session_cache_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -66,13 +68,15 @@ grpc_cc_test(
     srcs = ["ssl_transport_security_utils_test.cc"],
     data = [
         "//test/core/tsi/test_creds/crl_data:ca.pem",
+        "//test/core/tsi/test_creds/crl_data:ca_with_akid.pem",
+        "//test/core/tsi/test_creds/crl_data:crl_with_akid.crl",
         "//test/core/tsi/test_creds/crl_data:evil_ca.pem",
         "//test/core/tsi/test_creds/crl_data:intermediate_ca.pem",
         "//test/core/tsi/test_creds/crl_data:leaf_signed_by_intermediate.pem",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_content.crl",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_signature.crl",
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
-        "//test/core/tsi/test_creds/crl_data/crls:invalid_content.crl",
-        "//test/core/tsi/test_creds/crl_data/crls:invalid_signature.crl",
     ],
     external_deps = ["gtest"],
     language = "C++",
@@ -80,8 +84,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -116,7 +120,7 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -134,6 +138,9 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data:revoked.pem",
         "//test/core/tsi/test_creds/crl_data:valid.key",
         "//test/core/tsi/test_creds/crl_data:valid.pem",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:evil.crl",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_content.crl",
+        "//test/core/tsi/test_creds/crl_data/bad_crls:invalid_signature.crl",
         "//test/core/tsi/test_creds/crl_data/crls:ab06acdd.r0",
         "//test/core/tsi/test_creds/crl_data/crls:b9322cac.r0",
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
@@ -142,6 +149,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -151,7 +159,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:tsi",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -163,6 +171,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

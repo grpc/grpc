@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_POLICY_PROVIDER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_POLICY_PROVIDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -27,6 +25,7 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -56,7 +55,7 @@ class StaticDataAuthorizationPolicyProvider
     return {allow_engine_, deny_engine_};
   }
 
-  void Orphan() override {}
+  void Orphaned() override {}
 
  private:
   RefCountedPtr<AuthorizationEngine> allow_engine_;
@@ -87,7 +86,7 @@ class FileWatcherAuthorizationPolicyProvider
   void SetCallbackForTesting(
       std::function<void(bool contents_changed, absl::Status Status)> cb);
 
-  void Orphan() override;
+  void Orphaned() override;
 
   AuthorizationEngines engines() override {
     MutexLock lock(&mu_);

@@ -15,6 +15,7 @@
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 
 #include <algorithm>
+#include <cstddef>
 #include <cstdlib>
 #include <initializer_list>
 #include <memory>
@@ -36,6 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/seq.h"
@@ -66,8 +68,7 @@ const uint8_t kGrpcStatus0[] = {0x10, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
                                 0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ClientMetadataHandle TestInitialMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ClientMetadata>(GetContext<Arena>());
+  auto md = Arena::MakePooled<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
@@ -78,12 +79,15 @@ auto SendClientToServerMessages(CallInitiator initiator, int num_messages) {
     bool has_message = (i < num_messages);
     return If(
         has_message,
-        Seq(initiator.PushMessage(GetContext<Arena>()->MakePooled<Message>(
-                SliceBuffer(Slice::FromCopiedString(std::to_string(i))), 0)),
-            [&i]() -> LoopCtl<absl::Status> {
-              ++i;
-              return Continue();
-            }),
+        [initiator, &i]() mutable {
+          return Seq(
+              initiator.PushMessage(Arena::MakePooled<Message>(
+                  SliceBuffer(Slice::FromCopiedString(std::to_string(i))), 0)),
+              [&i]() -> LoopCtl<absl::Status> {
+                ++i;
+                return Continue();
+              });
+        },
         [initiator]() mutable -> LoopCtl<absl::Status> {
           initiator.FinishSends();
           return absl::OkStatus();
@@ -115,9 +119,8 @@ TEST_F(TransportTest, AddOneStream) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call =
-      MakeCall(event_engine().get(), Arena::Create(1024, memory_allocator()));
-  transport->StartCall(std::move(call.handler));
+  auto call = MakeCall(TestInitialMetadata());
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -133,11 +136,10 @@ TEST_F(TransportTest, AddOneStream) {
       {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
-  call.initiator.SpawnGuarded("test-send", [initiator =
-                                                call.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 1));
-  });
+  call.initiator.SpawnGuarded("test-send",
+                              [initiator = call.initiator]() mutable {
+                                return SendClientToServerMessages(initiator, 1);
+                              });
   call.initiator.SpawnInfallible(
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
@@ -152,18 +154,23 @@ TEST_F(TransportTest, AddOneStream) {
                         "/demo.Service/Step");
               return Empty{};
             },
-            initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "12345678");
+            [initiator]() mutable { return initiator.PullMessage(); },
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_TRUE(msg.value().has_value());
+              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                        "12345678");
               return Empty{};
             },
-            initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_FALSE(msg.has_value());
+            [initiator]() mutable { return initiator.PullMessage(); },
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_FALSE(msg.value().has_value());
               return Empty{};
             },
-            initiator.PullServerTrailingMetadata(),
+            [initiator]() mutable {
+              return initiator.PullServerTrailingMetadata();
+            },
             [&on_done](ServerMetadataHandle md) {
               EXPECT_EQ(md->get(GrpcStatusMetadata()).value(), GRPC_STATUS_OK);
               on_done.Call();
@@ -198,9 +205,8 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       std::move(control_endpoint.promise_endpoint),
       std::move(data_endpoint.promise_endpoint), MakeChannelArgs(),
       event_engine(), HPackParser(), HPackCompressor());
-  auto call =
-      MakeCall(event_engine().get(), Arena::Create(8192, memory_allocator()));
-  transport->StartCall(std::move(call.handler));
+  auto call = MakeCall(TestInitialMetadata());
+  transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
   control_endpoint.ExpectWrite(
@@ -221,11 +227,10 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       {EventEngineSlice::FromCopiedString("1"), Zeros(63)}, nullptr);
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
-  call.initiator.SpawnGuarded("test-send", [initiator =
-                                                call.initiator]() mutable {
-    return TrySeq(initiator.PushClientInitialMetadata(TestInitialMetadata()),
-                  SendClientToServerMessages(initiator, 2));
-  });
+  call.initiator.SpawnGuarded("test-send",
+                              [initiator = call.initiator]() mutable {
+                                return SendClientToServerMessages(initiator, 2);
+                              });
   call.initiator.SpawnInfallible(
       "test-read", [&on_done, initiator = call.initiator]() mutable {
         return Seq(
@@ -241,20 +246,25 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "12345678");
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_TRUE(msg.value().has_value());
+              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                        "12345678");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "87654321");
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_TRUE(msg.value().has_value());
+              EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                        "87654321");
               return Empty{};
             },
             initiator.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_FALSE(msg.has_value());
+            [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+              EXPECT_TRUE(msg.ok());
+              EXPECT_FALSE(msg.value().has_value());
               return Empty{};
             },
             initiator.PullServerTrailingMetadata(),

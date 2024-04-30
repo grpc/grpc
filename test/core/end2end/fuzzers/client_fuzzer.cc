@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
@@ -32,6 +33,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
@@ -39,8 +41,8 @@
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/mock_endpoint.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -66,13 +68,13 @@ class ClientFuzzer final : public BasicFuzzer {
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
     Transport* transport =
         grpc_create_chttp2_transport(args, mock_endpoint_, true);
-    channel_ = Channel::Create("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                               transport)
+    channel_ = ChannelCreate("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                             transport)
                    ->release()
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { GPR_ASSERT(channel_ == nullptr); }
+  ~ClientFuzzer() { CHECK_EQ(channel_, nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {

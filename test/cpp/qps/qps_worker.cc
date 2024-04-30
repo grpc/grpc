@@ -25,6 +25,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
@@ -39,8 +40,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
-#include "test/core/util/grpc_profiler.h"
-#include "test/core/util/histogram.h"
+#include "test/core/test_util/grpc_profiler.h"
+#include "test/core/test_util/histogram.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
@@ -180,7 +181,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   void ReleaseInstance() {
     std::lock_guard<std::mutex> g(mu_);
-    GPR_ASSERT(acquired_);
+    CHECK(acquired_);
     acquired_ = false;
   }
 

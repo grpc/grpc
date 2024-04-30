@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 
 #include <stdint.h>
@@ -41,6 +39,7 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
@@ -120,8 +119,7 @@ static bidirectional_stream_callback cronet_callbacks = {
     on_canceled};
 
 // Cronet transport object
-struct grpc_cronet_transport final : public grpc_core::Transport,
-                                     public grpc_core::FilterStackTransport {
+struct grpc_cronet_transport final : public grpc_core::FilterStackTransport {
   FilterStackTransport* filter_stack_transport() override { return this; }
   grpc_core::ClientTransport* client_transport() override { return nullptr; }
   grpc_core::ServerTransport* server_transport() override { return nullptr; }
@@ -154,9 +152,6 @@ typedef struct grpc_cronet_transport grpc_cronet_transport;
 // TODO (makdharma): reorder structure for memory efficiency per
 // http://www.catb.org/esr/structure-packing/#_structure_reordering:
 struct read_state {
-  explicit read_state(grpc_core::Arena* arena)
-      : trailing_metadata(arena), initial_metadata(arena) {}
-
   // vars to store data coming from server
   char* read_buffer = nullptr;
   bool length_field_received = false;
@@ -185,8 +180,6 @@ struct write_state {
 
 // track state of one stream op
 struct op_state {
-  explicit op_state(grpc_core::Arena* arena) : rs(arena) {}
-
   bool state_op_done[OP_NUM_OPS] = {};
   bool state_callback_received[OP_NUM_OPS] = {};
   // A non-zero gRPC status code has been seen
@@ -352,7 +345,7 @@ static grpc_error_handle make_error_with_desc(int error_code,
 
 inline op_and_state::op_and_state(stream_obj* s,
                                   const grpc_transport_stream_op_batch& op)
-    : op(op), state(s->arena), s(s) {}
+    : op(op), s(s) {}
 
 //
 // Add a new stream op to op storage.
@@ -1412,7 +1405,6 @@ inline stream_obj::stream_obj(grpc_core::Transport* gt, grpc_stream* gs,
     : arena(arena),
       curr_ct(reinterpret_cast<grpc_cronet_transport*>(gt)),
       curr_gs(gs),
-      state(arena),
       refcount(refcount) {
   GRPC_CRONET_STREAM_REF(this, "cronet transport");
   gpr_mu_init(&mu);

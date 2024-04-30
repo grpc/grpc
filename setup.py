@@ -101,7 +101,6 @@ CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -166,6 +165,11 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value("GRPC_PYTHON_BUILD_SYSTEM_RE2", "False")
 # have the header files installed (in /usr/include/absl) and during
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_ABSL = os.environ.get("GRPC_PYTHON_BUILD_SYSTEM_ABSL", False)
+
+# Export this variable to enable socket activation functions of systemd
+# You need to have the header files installed
+# and during runtime, the shared library must be installed
+BUILD_WITH_SYSTEMD = os.environ.get("GRPC_PYTHON_BUILD_WITH_SYSTEMD", False)
 
 # Export this variable to force building the python extension with a statically linked libstdc++.
 # At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
@@ -279,6 +283,11 @@ if EXTRA_ENV_LINK_ARGS is None:
 if "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
 
+# Building with systemd socket activation requires defines and libraries.
+if BUILD_WITH_SYSTEMD:
+    EXTRA_ENV_COMPILE_ARGS += " -DHAVE_LIBSYSTEMD"
+    EXTRA_ENV_LINK_ARGS += " -lsystemd"
+
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
 
@@ -361,7 +370,8 @@ if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ("re2",)
 if BUILD_WITH_SYSTEM_ABSL:
     EXTENSION_LIBRARIES += tuple(
-        lib.stem[3:] for lib in pathlib.Path("/usr").glob("lib*/libabsl_*.so")
+        lib.stem[3:]
+        for lib in sorted(pathlib.Path("/usr").glob("lib*/libabsl_*.so"))
     )
 
 DEFINE_MACROS = (("_WIN32_WINNT", 0x600),)
@@ -392,6 +402,11 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         else sysconfig.get_platform()
     )
+    if "i686" in boringssl_asm_platform:
+        print("Enabling SSE2 on %s platform" % boringssl_asm_platform)
+        EXTRA_COMPILE_ARGS.append("-msse2")
+    else:
+        print("SSE2 not enabled on %s platform" % boringssl_asm_platform)
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
     # (i.e. not Windows), we can include the assembly files and let BoringSSL
@@ -539,7 +554,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=0.23,<3.0.0rc1",)
+        SETUP_REQUIRES += ("cython>=3.0.0",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,
@@ -591,7 +606,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
 #include <openssl/crypto.h>
@@ -27,6 +25,8 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -259,12 +259,19 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
+    gpr_log(GPR_DEBUG, "Could not public key from certificate.");
     EVP_PKEY_free(ikey);
     return false;
   }
-  bool ret = X509_CRL_verify(crl, ikey) == 1;
+  int ret = X509_CRL_verify(crl, ikey);
+  if (ret < 0) {
+    gpr_log(GPR_DEBUG,
+            "There was an unexpected problem checking the CRL signature.");
+  } else if (ret == 0) {
+    gpr_log(GPR_DEBUG, "CRL failed verification.");
+  }
   EVP_PKEY_free(ikey);
-  return ret;
+  return ret == 1;
 }
 
 bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {
@@ -289,10 +296,14 @@ bool HasCrlSignBit(X509* cert) {
   // X509_get_key_usage was introduced in 1.1.1
   // A missing key usage extension means all key usages are valid.
 #if OPENSSL_VERSION_NUMBER < 0x10100000
-  if (!cert->ex_flags & EXFLAG_KUSAGE) {
+  // X509_check_ca sets cert->ex_flags. We dont use the return value, but those
+  // flags being set is important.
+  // https://github.com/openssl/openssl/blob/e818b74be2170fbe957a07b0da4401c2b694b3b8/crypto/x509v3/v3_purp.c#L585
+  X509_check_ca(cert);
+  if (!(cert->ex_flags & EXFLAG_KUSAGE)) {
     return true;
   }
-  return cert->ex_kusage & KU_CRL_SIGN;
+  return (cert->ex_kusage & KU_CRL_SIGN) != 0;
 #else
   return (X509_get_key_usage(cert) & KU_CRL_SIGN) != 0;
 #endif  // OPENSSL_VERSION_NUMBER < 0x10100000
@@ -307,6 +318,56 @@ absl::StatusOr<std::string> IssuerFromCert(X509* cert) {
   int len = i2d_X509_NAME(issuer, &buf);
   if (len < 0 || buf == nullptr) {
     return absl::InvalidArgumentError("could not read issuer name from cert");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
+
+absl::StatusOr<std::string> AkidFromCertificate(X509* cert) {
+  if (cert == nullptr) {
+    return absl::InvalidArgumentError("cert cannot be null.");
+  }
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_get_ext_by_NID(cert, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_get_ext_by_NID(cert, NID_authority_key_identifier, j) != -1) {
+      return absl::InvalidArgumentError("Could not get AKID from certificate.");
+    }
+    akid = X509_EXTENSION_get_data(X509_get_ext(cert, j));
+  } else {
+    return absl::InvalidArgumentError("Could not get AKID from certificate.");
+  }
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from certificate.");
+  }
+  std::string ret(reinterpret_cast<char const*>(buf), len);
+  OPENSSL_free(buf);
+  return ret;
+}
+
+absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
+  if (crl == nullptr) {
+    return absl::InvalidArgumentError("Could not get AKID from crl.");
+  }
+  ASN1_OCTET_STRING* akid = nullptr;
+  int j = X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, -1);
+  // Can't have multiple occurrences
+  if (j >= 0) {
+    if (X509_CRL_get_ext_by_NID(crl, NID_authority_key_identifier, j) != -1) {
+      return absl::InvalidArgumentError("Could not get AKID from crl.");
+    }
+    akid = X509_EXTENSION_get_data(X509_CRL_get_ext(crl, j));
+  } else {
+    return absl::InvalidArgumentError("Could not get AKID from crl.");
+  }
+  unsigned char* buf = nullptr;
+  int len = i2d_ASN1_OCTET_STRING(akid, &buf);
+  if (len <= 0) {
+    return absl::InvalidArgumentError("Could not get AKID from crl.");
   }
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);

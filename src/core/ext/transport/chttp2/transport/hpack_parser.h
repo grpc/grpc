@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -36,6 +34,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
@@ -123,8 +122,6 @@ class HPackParser {
   // Helper classes: see implementation
   class Parser;
   class Input;
-  class MetadataSizeEncoder;
-  class MetadataSizesAnnotation;
 
   // Helper to parse a string and turn it into a slice with appropriate memory
   // management characteristics

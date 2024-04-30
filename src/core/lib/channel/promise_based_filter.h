@@ -19,8 +19,6 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -41,15 +39,17 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -74,24 +74,64 @@
 
 namespace grpc_core {
 
+// HACK: If a filter has this type as a base class it will be skipped in
+// v3 filter stacks. This is a temporary measure to allow the v3 filter stack
+// to be bought up whilst some tests inadvertently rely on hard to convert
+// filters.
+class HackyHackyHackySkipInV3FilterStacks {};
+
 class ChannelFilter {
  public:
   class Args {
    public:
     Args() : Args(nullptr, nullptr) {}
-    explicit Args(grpc_channel_stack* channel_stack,
-                  grpc_channel_element* channel_element)
-        : channel_stack_(channel_stack), channel_element_(channel_element) {}
+    Args(grpc_channel_stack* channel_stack,
+         grpc_channel_element* channel_element)
+        : impl_(ChannelStackBased{channel_stack, channel_element}) {}
+    // While we're moving to call-v3 we need to have access to
+    // grpc_channel_stack & friends here. That means that we can't rely on this
+    // type signature from interception_chain.h, which means that we need a way
+    // of constructing this object without naming it ===> implicit construction.
+    // TODO(ctiller): remove this once we're fully on call-v3
+    // NOLINTNEXTLINE(google-explicit-constructor)
+    Args(size_t instance_id) : impl_(V3Based{instance_id}) {}
 
-    grpc_channel_stack* channel_stack() const { return channel_stack_; }
-    grpc_channel_element* uninitialized_channel_element() {
-      return channel_element_;
+    ABSL_DEPRECATED("Direct access to channel stack is deprecated")
+    grpc_channel_stack* channel_stack() const {
+      return absl::get<ChannelStackBased>(impl_).channel_stack;
+    }
+
+    // Get the instance id of this filter.
+    // This id is unique amongst all filters /of the same type/ and densely
+    // packed (starting at 0) for a given channel stack instantiation.
+    // eg. for a stack with filter types A B C A B D A the instance ids would be
+    // 0 0 0 1 1 0 2.
+    // This is useful for filters that need to store per-instance data in a
+    // parallel data structure.
+    size_t instance_id() const {
+      return Match(
+          impl_,
+          [](const ChannelStackBased& cs) {
+            return grpc_channel_stack_filter_instance_number(
+                cs.channel_stack, cs.channel_element);
+          },
+          [](const V3Based& v3) { return v3.instance_id; });
     }
 
    private:
     friend class ChannelFilter;
-    grpc_channel_stack* channel_stack_;
-    grpc_channel_element* channel_element_;
+
+    struct ChannelStackBased {
+      grpc_channel_stack* channel_stack;
+      grpc_channel_element* channel_element;
+    };
+
+    struct V3Based {
+      size_t instance_id;
+    };
+
+    using Impl = absl::variant<ChannelStackBased, V3Based>;
+    Impl impl_;
   };
 
   // Perform post-initialization step (if any).
@@ -519,13 +559,14 @@ inline void InterceptClientToServerMessage(const NoInterceptor*, void*, void*,
 template <typename Derived>
 inline void InterceptClientToServerMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
   call_spine->client_to_server_messages().receiver.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnClientToServerMessage(*msg);
         if (return_md == nullptr) return std::move(msg);
-        return call_spine->Cancel(std::move(return_md));
+        call_spine->PushServerTrailingMetadata(std::move(return_md));
+        return absl::nullopt;
       });
 }
 
@@ -533,14 +574,15 @@ template <typename Derived>
 inline void InterceptClientToServerMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
   call_spine->client_to_server_messages().receiver.InterceptAndMap(
       [call, call_spine,
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnClientToServerMessage(*msg, channel);
         if (return_md == nullptr) return std::move(msg);
-        return call_spine->Cancel(std::move(return_md));
+        call_spine->PushServerTrailingMetadata(std::move(return_md));
+        return absl::nullopt;
       });
 }
 
@@ -548,7 +590,7 @@ template <typename Derived>
 inline void InterceptClientToServerMessage(
     MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
   call_spine->client_to_server_messages().receiver.InterceptAndMap(
       [call, channel](MessageHandle msg) {
@@ -560,24 +602,26 @@ template <typename Derived>
 inline void InterceptClientToServerMessage(
     absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientToServerMessage);
   call_spine->client_to_server_messages().receiver.InterceptAndMap(
       [call, call_spine,
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto r = call->OnClientToServerMessage(std::move(msg), channel);
         if (r.ok()) return std::move(*r);
-        return call_spine->Cancel(ServerMetadataFromStatus(r.status()));
+        call_spine->PushServerTrailingMetadata(
+            ServerMetadataFromStatus(r.status()));
+        return absl::nullopt;
       });
 }
 
 inline void InterceptClientInitialMetadata(const NoInterceptor*, void*, void*,
-                                           CallSpineInterface*) {}
+                                           PipeBasedCallSpine*) {}
 
 template <typename Derived>
 inline void InterceptClientInitialMetadata(
     void (Derived::Call::*fn)(ClientMetadata& md), typename Derived::Call* call,
-    Derived*, CallSpineInterface* call_spine) {
+    Derived*, PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call](ClientMetadataHandle md) {
@@ -590,7 +634,7 @@ template <typename Derived>
 inline void InterceptClientInitialMetadata(
     void (Derived::Call::*fn)(ClientMetadata& md, Derived* channel),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call, channel](ClientMetadataHandle md) {
@@ -602,14 +646,15 @@ inline void InterceptClientInitialMetadata(
 template <typename Derived>
 inline void InterceptClientInitialMetadata(
     ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md),
-    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call_spine,
        call](ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
         auto return_md = call->OnClientInitialMetadata(*md);
         if (return_md == nullptr) return std::move(md);
-        return call_spine->Cancel(std::move(return_md));
+        call_spine->PushServerTrailingMetadata(std::move(return_md));
+        return absl::nullopt;
       });
 }
 
@@ -618,28 +663,31 @@ inline void InterceptClientInitialMetadata(
     ServerMetadataHandle (Derived::Call::*fn)(ClientMetadata& md,
                                               Derived* channel),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call_spine, call, channel](
           ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
         auto return_md = call->OnClientInitialMetadata(*md, channel);
         if (return_md == nullptr) return std::move(md);
-        return call_spine->Cancel(std::move(return_md));
+        call_spine->PushServerTrailingMetadata(std::move(return_md));
+        return absl::nullopt;
       });
 }
 
 template <typename Derived>
 inline void InterceptClientInitialMetadata(
     absl::Status (Derived::Call::*fn)(ClientMetadata& md),
-    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call_spine,
        call](ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
         auto status = call->OnClientInitialMetadata(*md);
         if (status.ok()) return std::move(md);
-        return call_spine->Cancel(ServerMetadataFromStatus(status));
+        call_spine->PushServerTrailingMetadata(
+            ServerMetadataFromStatus(status));
+        return absl::nullopt;
       });
 }
 
@@ -647,14 +695,16 @@ template <typename Derived>
 inline void InterceptClientInitialMetadata(
     absl::Status (Derived::Call::*fn)(ClientMetadata& md, Derived* channel),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call_spine, call, channel](
           ClientMetadataHandle md) -> absl::optional<ClientMetadataHandle> {
         auto status = call->OnClientInitialMetadata(*md, channel);
         if (status.ok()) return std::move(md);
-        return call_spine->Cancel(ServerMetadataFromStatus(status));
+        call_spine->PushServerTrailingMetadata(
+            ServerMetadataFromStatus(status));
+        return absl::nullopt;
       });
 }
 
@@ -666,7 +716,7 @@ absl::void_t<decltype(StatusCast<ServerMetadataHandle>(
 InterceptClientInitialMetadata(Promise (Derived::Call::*promise_factory)(
                                    ClientMetadata& md, Derived* channel),
                                typename Derived::Call* call, Derived* channel,
-                               CallSpineInterface* call_spine) {
+                               PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(promise_factory == &Derived::Call::OnClientInitialMetadata);
   call_spine->client_initial_metadata().receiver.InterceptAndMap(
       [call, call_spine, channel](ClientMetadataHandle md) {
@@ -676,8 +726,9 @@ InterceptClientInitialMetadata(Promise (Derived::Call::*promise_factory)(
                     call_spine](PromiseResult<Promise> status) mutable
                    -> absl::optional<ClientMetadataHandle> {
                      if (IsStatusOk(status)) return std::move(md);
-                     return call_spine->Cancel(
+                     call_spine->PushServerTrailingMetadata(
                          StatusCast<ServerMetadataHandle>(std::move(status)));
+                     return absl::nullopt;
                    });
       });
 }
@@ -751,7 +802,7 @@ inline void InterceptServerInitialMetadata(const NoInterceptor*, void*, void*,
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
     void (Derived::Call::*fn)(ServerMetadata&), typename Derived::Call* call,
-    Derived*, CallSpineInterface* call_spine) {
+    Derived*, PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
   call_spine->server_initial_metadata().sender.InterceptAndMap(
       [call](ServerMetadataHandle md) {
@@ -763,14 +814,16 @@ inline void InterceptServerInitialMetadata(
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
     absl::Status (Derived::Call::*fn)(ServerMetadata&),
-    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
   call_spine->server_initial_metadata().sender.InterceptAndMap(
       [call, call_spine](
           ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
         auto status = call->OnServerInitialMetadata(*md);
         if (status.ok()) return std::move(md);
-        return call_spine->Cancel(ServerMetadataFromStatus(status));
+        call_spine->PushServerTrailingMetadata(
+            ServerMetadataFromStatus(status));
+        return absl::nullopt;
       });
 }
 
@@ -778,7 +831,7 @@ template <typename Derived>
 inline void InterceptServerInitialMetadata(
     void (Derived::Call::*fn)(ServerMetadata&, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
   call_spine->server_initial_metadata().sender.InterceptAndMap(
       [call, channel](ServerMetadataHandle md) {
@@ -791,14 +844,16 @@ template <typename Derived>
 inline void InterceptServerInitialMetadata(
     absl::Status (Derived::Call::*fn)(ServerMetadata&, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerInitialMetadata);
   call_spine->server_initial_metadata().sender.InterceptAndMap(
       [call, call_spine, channel](
           ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
         auto status = call->OnServerInitialMetadata(*md, channel);
         if (status.ok()) return std::move(md);
-        return call_spine->Cancel(ServerMetadataFromStatus(status));
+        call_spine->PullServerTrailingMetadata(
+            ServerMetadataFromStatus(status));
+        return absl::nullopt;
       });
 }
 
@@ -870,13 +925,14 @@ inline void InterceptServerToClientMessage(const NoInterceptor*, void*, void*,
 template <typename Derived>
 inline void InterceptServerToClientMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
+    typename Derived::Call* call, Derived*, PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnServerToClientMessage(*msg);
         if (return_md == nullptr) return std::move(msg);
-        return call_spine->Cancel(std::move(return_md));
+        call_spine->PushServerTrailingMetadata(std::move(return_md));
+        return absl::nullopt;
       });
 }
 
@@ -884,14 +940,15 @@ template <typename Derived>
 inline void InterceptServerToClientMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine,
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnServerToClientMessage(*msg, channel);
         if (return_md == nullptr) return std::move(msg);
-        return call_spine->Cancel(std::move(return_md));
+        call_spine->PushServerTrailingMetadata(std::move(return_md));
+        return absl::nullopt;
       });
 }
 
@@ -899,7 +956,7 @@ template <typename Derived>
 inline void InterceptServerToClientMessage(
     MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, channel](MessageHandle msg) {
@@ -911,14 +968,16 @@ template <typename Derived>
 inline void InterceptServerToClientMessage(
     absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
     typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
+    PipeBasedCallSpine* call_spine) {
   GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerToClientMessage);
   call_spine->server_to_client_messages().sender.InterceptAndMap(
       [call, call_spine,
        channel](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto r = call->OnServerToClientMessage(std::move(msg), channel);
         if (r.ok()) return std::move(*r);
-        return call_spine->Cancel(ServerMetadataFromStatus(r.status()));
+        call_spine->PushServerTrailingMetadata(
+            ServerMetadataFromStatus(r.status()));
+        return absl::nullopt;
       });
 }
 
@@ -927,40 +986,25 @@ inline void InterceptServerTrailingMetadata(const NoInterceptor*, void*, void*,
 
 template <typename Derived>
 inline void InterceptServerTrailingMetadata(
-    void (Derived::Call::*fn)(ServerMetadata&), typename Derived::Call* call,
-    Derived*, CallSpineInterface* call_spine) {
-  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
-  call_spine->server_trailing_metadata().sender.InterceptAndMap(
-      [call](ServerMetadataHandle md) {
-        call->OnServerTrailingMetadata(*md);
-        return md;
-      });
+    void (Derived::Call::*)(ServerMetadata&), typename Derived::Call*, Derived*,
+    PipeBasedCallSpine*) {
+  gpr_log(GPR_ERROR,
+          "InterceptServerTrailingMetadata not available for call v2.5");
+}
+template <typename Derived>
+inline void InterceptServerTrailingMetadata(
+    void (Derived::Call::*)(ServerMetadata&, Derived*), typename Derived::Call*,
+    Derived*, PipeBasedCallSpine*) {
+  gpr_log(GPR_ERROR,
+          "InterceptServerTrailingMetadata not available for call v2.5");
 }
 
 template <typename Derived>
 inline void InterceptServerTrailingMetadata(
-    void (Derived::Call::*fn)(ServerMetadata&, Derived*),
-    typename Derived::Call* call, Derived* channel,
-    CallSpineInterface* call_spine) {
-  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
-  call_spine->server_trailing_metadata().sender.InterceptAndMap(
-      [call, channel](ServerMetadataHandle md) {
-        call->OnServerTrailingMetadata(*md, channel);
-        return md;
-      });
-}
-
-template <typename Derived>
-inline void InterceptServerTrailingMetadata(
-    absl::Status (Derived::Call::*fn)(ServerMetadata&),
-    typename Derived::Call* call, Derived*, CallSpineInterface* call_spine) {
-  GPR_DEBUG_ASSERT(fn == &Derived::Call::OnServerTrailingMetadata);
-  call_spine->server_trailing_metadata().sender.InterceptAndMap(
-      [call](ServerMetadataHandle md) -> absl::optional<ServerMetadataHandle> {
-        auto status = call->OnServerTrailingMetadata(*md);
-        if (status.ok()) return std::move(md);
-        return ServerMetadataFromStatus(status);
-      });
+    absl::Status (Derived::Call::*)(ServerMetadata&), typename Derived::Call*,
+    Derived*, PipeBasedCallSpine*) {
+  gpr_log(GPR_ERROR,
+          "InterceptServerTrailingMetadata not available for call v2.5");
 }
 
 inline void InterceptFinalize(const NoInterceptor*, void*, void*) {}
@@ -1059,8 +1103,10 @@ MakeFilterCall(Derived* derived) {
 //   the filter does not intercept call finalization.
 // - void OnFinalize(const grpc_call_final_info*):
 //   the filter intercepts call finalization.
+class ImplementChannelFilterTag {};
 template <typename Derived>
-class ImplementChannelFilter : public ChannelFilter {
+class ImplementChannelFilter : public ChannelFilter,
+                               public ImplementChannelFilterTag {
  public:
   // Natively construct a v3 call.
   void InitCall(CallSpineInterface* call_spine) {
@@ -1068,23 +1114,20 @@ class ImplementChannelFilter : public ChannelFilter {
         GetContext<Arena>()
             ->ManagedNew<promise_filter_detail::CallWrapper<Derived>>(
                 static_cast<Derived*>(this));
+    auto* c = DownCast<PipeBasedCallSpine*>(call_spine);
+    auto* d = static_cast<Derived*>(this);
     promise_filter_detail::InterceptClientInitialMetadata(
-        &Derived::Call::OnClientInitialMetadata, call,
-        static_cast<Derived*>(this), call_spine);
+        &Derived::Call::OnClientInitialMetadata, call, d, c);
     promise_filter_detail::InterceptClientToServerMessage(
-        &Derived::Call::OnClientToServerMessage, call,
-        static_cast<Derived*>(this), call_spine);
+        &Derived::Call::OnClientToServerMessage, call, d, c);
     promise_filter_detail::InterceptServerInitialMetadata(
-        &Derived::Call::OnServerInitialMetadata, call,
-        static_cast<Derived*>(this), call_spine);
+        &Derived::Call::OnServerInitialMetadata, call, d, c);
     promise_filter_detail::InterceptServerToClientMessage(
-        &Derived::Call::OnServerToClientMessage, call,
-        static_cast<Derived*>(this), call_spine);
+        &Derived::Call::OnServerToClientMessage, call, d, c);
     promise_filter_detail::InterceptServerTrailingMetadata(
-        &Derived::Call::OnServerTrailingMetadata, call,
-        static_cast<Derived*>(this), call_spine);
-    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize,
-                                             static_cast<Derived*>(this), call);
+        &Derived::Call::OnServerTrailingMetadata, call, d, c);
+    promise_filter_detail::InterceptFinalize(&Derived::Call::OnFinalize, d,
+                                             call);
   }
 
   // Polyfill for the original promise scheme.
@@ -1823,6 +1866,15 @@ struct BaseCallDataMethods {
   }
 };
 
+// The type of object returned by a filter's Create method.
+template <typename T>
+using CreatedType = typename decltype(T::Create(ChannelArgs(), {}))::value_type;
+
+template <typename GrpcChannelOrCallElement>
+inline ChannelFilter* ChannelFilterFromElem(GrpcChannelOrCallElement* elem) {
+  return *static_cast<ChannelFilter**>(elem->channel_data);
+}
+
 template <typename CallData, uint8_t kFlags>
 struct CallDataFilterWithFlagsMethods {
   static absl::Status InitCallElem(grpc_call_element* elem,
@@ -1847,32 +1899,25 @@ struct ChannelFilterMethods {
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       grpc_channel_element* elem, CallArgs call_args,
       NextPromiseFactory next_promise_factory) {
-    return static_cast<ChannelFilter*>(elem->channel_data)
-        ->MakeCallPromise(std::move(call_args),
-                          std::move(next_promise_factory));
+    return ChannelFilterFromElem(elem)->MakeCallPromise(
+        std::move(call_args), std::move(next_promise_factory));
   }
 
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op) {
-    if (!static_cast<ChannelFilter*>(elem->channel_data)
-             ->StartTransportOp(op)) {
+    if (!ChannelFilterFromElem(elem)->StartTransportOp(op)) {
       grpc_channel_next_op(elem, op);
     }
   }
 
   static void PostInitChannelElem(grpc_channel_stack*,
                                   grpc_channel_element* elem) {
-    static_cast<ChannelFilter*>(elem->channel_data)->PostInit();
-  }
-
-  static void DestroyChannelElem(grpc_channel_element* elem) {
-    static_cast<ChannelFilter*>(elem->channel_data)->~ChannelFilter();
+    ChannelFilterFromElem(elem)->PostInit();
   }
 
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* info) {
-    if (!static_cast<ChannelFilter*>(elem->channel_data)
-             ->GetChannelInfo(info)) {
+    if (!ChannelFilterFromElem(elem)->GetChannelInfo(info)) {
       grpc_channel_next_get_info(elem, info);
     }
   }
@@ -1886,14 +1931,15 @@ struct ChannelFilterWithFlagsMethods {
     auto status = F::Create(args->channel_args,
                             ChannelFilter::Args(args->channel_stack, elem));
     if (!status.ok()) {
-      static_assert(
-          sizeof(promise_filter_detail::InvalidChannelFilter) <= sizeof(F),
-          "InvalidChannelFilter must fit in F");
-      new (elem->channel_data) promise_filter_detail::InvalidChannelFilter();
+      new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());
     }
-    new (elem->channel_data) F(std::move(*status));
+    new (elem->channel_data) F*(status->release());
     return absl::OkStatus();
+  }
+
+  static void DestroyChannelElem(grpc_channel_element* elem) {
+    CreatedType<F> channel_elem(DownCast<F*>(ChannelFilterFromElem(elem)));
   }
 };
 
@@ -1906,9 +1952,11 @@ struct ChannelFilterWithFlagsMethods {
 //       ChannelArgs channel_args, ChannelFilter::Args filter_args);
 // };
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
-                      !std::is_base_of<ImplementChannelFilter<F>, F>::value,
-                  grpc_channel_filter>
+absl::enable_if_t<
+    std::is_base_of<ChannelFilter, F>::value &&
+        !std::is_base_of<ImplementChannelFilterTag, F>::value &&
+        !std::is_base_of<HackyHackyHackySkipInV3FilterStacks, F>::value,
+    grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 
@@ -1938,7 +1986,8 @@ MakePromiseBasedFilter(const char* name) {
       // post_init_channel_elem
       promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
       // destroy_channel_elem
-      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name
@@ -1947,7 +1996,54 @@ MakePromiseBasedFilter(const char* name) {
 }
 
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
-absl::enable_if_t<std::is_base_of<ImplementChannelFilter<F>, F>::value,
+absl::enable_if_t<
+    std::is_base_of<HackyHackyHackySkipInV3FilterStacks, F>::value,
+    grpc_channel_filter>
+MakePromiseBasedFilter(const char* name) {
+  using CallData = promise_filter_detail::CallData<kEndpoint>;
+
+  return grpc_channel_filter{
+      // start_transport_stream_op_batch
+      promise_filter_detail::BaseCallDataMethods::StartTransportStreamOpBatch,
+      // make_call_promise
+      promise_filter_detail::ChannelFilterMethods::MakeCallPromise,
+      [](grpc_channel_element* elem, CallSpineInterface*) {
+        GRPC_LOG_EVERY_N_SEC(
+            1, GPR_ERROR,
+            "gRPC V3 call stack in use, with a filter ('%s') that is not V3.",
+            elem->filter->name);
+      },
+      // start_transport_op
+      promise_filter_detail::ChannelFilterMethods::StartTransportOp,
+      // sizeof_call_data
+      sizeof(CallData),
+      // init_call_elem
+      promise_filter_detail::CallDataFilterWithFlagsMethods<
+          CallData, kFlags>::InitCallElem,
+      // set_pollset_or_pollset_set
+      promise_filter_detail::BaseCallDataMethods::SetPollsetOrPollsetSet,
+      // destroy_call_elem
+      promise_filter_detail::CallDataFilterWithFlagsMethods<
+          CallData, kFlags>::DestroyCallElem,
+      // sizeof_channel_data
+      sizeof(F),
+      // init_channel_elem
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::InitChannelElem,
+      // post_init_channel_elem
+      promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
+      // destroy_channel_elem
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
+      // get_channel_info
+      promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
+      // name
+      name,
+  };
+}
+
+template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
+absl::enable_if_t<std::is_base_of<ImplementChannelFilterTag, F>::value,
                   grpc_channel_filter>
 MakePromiseBasedFilter(const char* name) {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
@@ -1980,7 +2076,8 @@ MakePromiseBasedFilter(const char* name) {
       // post_init_channel_elem
       promise_filter_detail::ChannelFilterMethods::PostInitChannelElem,
       // destroy_channel_elem
-      promise_filter_detail::ChannelFilterMethods::DestroyChannelElem,
+      promise_filter_detail::ChannelFilterWithFlagsMethods<
+          F, kFlags>::DestroyChannelElem,
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name

@@ -63,21 +63,17 @@ void FillMetadata(const std::vector<std::pair<std::string, std::string>>& md,
 
 TRANSPORT_TEST(UnaryWithSomeContent) {
   SetServerAcceptor();
-  auto initiator = CreateCall();
   const auto client_initial_metadata = RandomMetadata();
   const auto server_initial_metadata = RandomMetadata();
   const auto server_trailing_metadata = RandomMetadata();
   const auto client_payload = RandomMessage();
   const auto server_payload = RandomMessage();
+  auto md = Arena::MakePooled<ClientMetadata>();
+  FillMetadata(client_initial_metadata, *md);
+  auto initiator = CreateCall(std::move(md));
   SpawnTestSeq(
       initiator, "initiator",
-      [&]() {
-        auto md = Arena::MakePooled<ClientMetadata>(GetContext<Arena>());
-        FillMetadata(client_initial_metadata, *md);
-        return initiator.PushClientInitialMetadata(std::move(md));
-      },
-      [&](StatusFlag status) mutable {
-        EXPECT_TRUE(status.ok());
+      [&]() mutable {
         return initiator.PushMessage(Arena::MakePooled<Message>(
             SliceBuffer(Slice::FromCopiedString(client_payload)), 0));
       },
@@ -93,14 +89,16 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
                     UnorderedElementsAreArray(server_initial_metadata));
         return initiator.PullMessage();
       },
-      [&](NextResult<MessageHandle> msg) {
-        EXPECT_TRUE(msg.has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), server_payload);
+      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+        EXPECT_TRUE(msg.ok());
+        EXPECT_TRUE(msg.value().has_value());
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  server_payload);
         return initiator.PullMessage();
       },
-      [&](NextResult<MessageHandle> msg) {
-        EXPECT_FALSE(msg.has_value());
-        EXPECT_FALSE(msg.cancelled());
+      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+        EXPECT_TRUE(msg.ok());
+        EXPECT_FALSE(msg.value().has_value());
         return initiator.PullServerTrailingMetadata();
       },
       [&](ValueOrFailure<ServerMetadataHandle> md) {
@@ -118,15 +116,17 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
                     UnorderedElementsAreArray(client_initial_metadata));
         return handler.PullMessage();
       },
-      [&](NextResult<MessageHandle> msg) {
-        EXPECT_TRUE(msg.has_value());
-        EXPECT_EQ(msg.value()->payload()->JoinIntoString(), client_payload);
+      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+        EXPECT_TRUE(msg.ok());
+        EXPECT_TRUE(msg.value().has_value());
+        EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                  client_payload);
         return handler.PullMessage();
       },
-      [&](NextResult<MessageHandle> msg) {
-        EXPECT_FALSE(msg.has_value());
-        EXPECT_FALSE(msg.cancelled());
-        auto md = Arena::MakePooled<ServerMetadata>(GetContext<Arena>());
+      [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+        EXPECT_TRUE(msg.ok());
+        EXPECT_FALSE(msg.value().has_value());
+        auto md = Arena::MakePooled<ServerMetadata>();
         FillMetadata(server_initial_metadata, *md);
         return handler.PushServerInitialMetadata(std::move(md));
       },
@@ -137,12 +137,9 @@ TRANSPORT_TEST(UnaryWithSomeContent) {
       },
       [&](StatusFlag result) mutable {
         EXPECT_TRUE(result.ok());
-        auto md = Arena::MakePooled<ServerMetadata>(GetContext<Arena>());
+        auto md = Arena::MakePooled<ServerMetadata>();
         FillMetadata(server_trailing_metadata, *md);
-        return handler.PushServerTrailingMetadata(std::move(md));
-      },
-      [&](StatusFlag result) mutable {
-        EXPECT_TRUE(result.ok());
+        handler.PushServerTrailingMetadata(std::move(md));
         return Empty{};
       });
   WaitForAllPendingWork();

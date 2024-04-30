@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <string.h>
 
@@ -41,7 +39,9 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -59,7 +59,6 @@
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/backoff/random_early_detection.h"
 #include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -644,17 +643,12 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(t->stream_map.size() + t->extra_streams >=
                             t->settings.acked().max_concurrent_streams())) {
-      if (grpc_core::IsRfcMaxConcurrentStreamsEnabled()) {
-        ++t->num_pending_induced_frames;
-        grpc_slice_buffer_add(
-            &t->qbuf,
-            grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+      ++t->num_pending_induced_frames;
+      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
+                                          t->incoming_stream_id,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
-        grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
-        return init_header_skip_frame_parser(t, priority_type, is_eoh);
-      } else {
-        return GRPC_ERROR_CREATE("Max stream count exceeded");
-      }
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
                    t->max_concurrent_streams_overload_protection &&
                    t->streams_allocated.load(std::memory_order_relaxed) >

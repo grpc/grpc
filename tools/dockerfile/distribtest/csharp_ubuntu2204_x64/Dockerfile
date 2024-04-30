@@ -14,40 +14,20 @@
 
 FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y apt-transport-https gnupg && apt-get clean
-
-RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/ubuntu stable-xenial main" | tee /etc/apt/sources.list.d/mono-official-stable.list
-
-RUN apt-get update
-
-RUN DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC apt-get install -y \
-    mono-devel \
-    nuget \
-    && apt-get clean
-
-RUN apt-get update && apt-get install -y curl && apt-get clean
+RUN apt update && apt -y upgrade
+RUN apt install -y apt-transport-https ca-certificates gnupg wget unzip && apt clean
 
 # Install dotnet SDK
-ENV DOTNET_SDK_VERSION 2.1.500
-RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
-    && mkdir -p /usr/share/dotnet \
-    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
-    && rm dotnet.tar.gz \
-    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+RUN wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
+    && apt update \
+    && apt install -y dotnet-sdk-8.0 \
+    && apt clean
 
-RUN apt-get update && apt-get install -y unzip && apt-get clean
-
-# Make sure the mono certificate store is up to date to prevent issues with nuget restore
-RUN apt-get update && apt-get install -y curl && apt-get clean
-RUN curl https://curl.haxx.se/ca/cacert.pem > ~/cacert.pem && cert-sync ~/cacert.pem && rm -f ~/cacert.pem
-
-# libssl 1.0. Ubuntu22.04 only has libssl 3
-RUN curl -sSL -o libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb http://security.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.13_amd64.deb
-RUN dpkg -i libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb
-RUN rm libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb
-
-# we have a separate distribtest for netcoreapp3.1
+# we only want to test dotnet core runtime. This also allows us to keep
+# this docker image minimal by not installing the other runtimes.
+ENV SKIP_NET45_DISTRIBTEST=1
+ENV SKIP_NETCOREAPP21_DISTRIBTEST=1
 ENV SKIP_NETCOREAPP31_DISTRIBTEST=1
-# we have a separate distribtest for net5.0
 ENV SKIP_NET50_DISTRIBTEST=1

@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -24,15 +24,18 @@ grpc_proto_fuzzer(
     name = "hpack_parser_fuzzer",
     srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
+    external_deps = [
+        "absl/log:check",
+    ],
     proto = "hpack_parser_fuzzer.proto",
-    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
+    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:fuzz_config_vars",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:proto_bit_gen",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:proto_bit_gen",
     ],
 )
 
@@ -41,14 +44,14 @@ grpc_proto_fuzzer(
     srcs = ["hpack_sync_fuzzer.cc"],
     corpus = "hpack_sync_corpus",
     proto = "hpack_sync_fuzzer.proto",
-    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
+    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:fuzz_config_vars",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:proto_bit_gen",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:proto_bit_gen",
     ],
 )
 
@@ -56,16 +59,17 @@ grpc_proto_fuzzer(
     name = "flow_control_fuzzer",
     srcs = ["flow_control_fuzzer.cc"],
     corpus = "flow_control_fuzzer_corpus",
+    external_deps = ["absl/log:check"],
     language = "C++",
     proto = "flow_control_fuzzer.proto",
-    proto_deps = ["//test/core/util:fuzz_config_vars_proto"],
+    proto_deps = ["//test/core/test_util:fuzz_config_vars_proto"],
     tags = ["no_windows"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//src/core:chttp2_flow_control",
-        "//test/core/util:fuzz_config_vars",
+        "//test/core/test_util:fuzz_config_vars",
     ],
 )
 
@@ -83,8 +87,8 @@ grpc_fuzzer(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -130,7 +134,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -145,7 +149,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:slice",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -173,7 +177,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:slice",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -186,8 +190,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -200,8 +204,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -214,8 +218,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -253,6 +257,7 @@ grpc_cc_test(
     name = "flow_control_test",
     srcs = ["flow_control_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -268,7 +273,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "graceful_shutdown_test",
     srcs = ["graceful_shutdown_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -277,7 +285,7 @@ grpc_cc_test(
         "//src/core:closure",
         "//src/core:slice",
         "//test/core/end2end:cq_verifier",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -292,8 +300,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -308,8 +316,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -324,8 +332,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -342,7 +350,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "streams_not_seen_test",
     srcs = ["streams_not_seen_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:channel_stack_builder",
@@ -352,8 +363,8 @@ grpc_cc_test(
         "//src/core:closure",
         "//src/core:slice",
         "//test/core/end2end:cq_verifier",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -361,6 +372,7 @@ grpc_cc_test(
     name = "settings_timeout_test",
     srcs = ["settings_timeout_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -368,8 +380,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
     ],
 )
 
@@ -377,7 +389,10 @@ grpc_cc_test(
     name = "too_many_pings_test",
     timeout = "long",  # Required for internal test infrastructure (cl/325757166)
     srcs = ["too_many_pings_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     flaky = True,
     shard_count = 7,
     deps = [
@@ -386,7 +401,7 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:channel_args",
         "//test/core/end2end:cq_verifier",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -402,7 +417,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -418,6 +433,7 @@ grpc_cc_test(
     # LARGE_MACHINE, it can reproduce at a high rate.
     exec_properties = LARGE_MACHINE,
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -429,7 +445,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -437,6 +453,7 @@ grpc_cc_test(
     name = "stream_leak_with_queued_flow_control_update_test",
     srcs = ["stream_leak_with_queued_flow_control_update_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -444,7 +461,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -461,6 +478,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_settings",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <string.h>
 
@@ -47,6 +45,7 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
@@ -79,20 +78,20 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/resolver.h"
-#include "src/core/resolver/resolver_factory.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/resolver/xds/xds_resolver_trace.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 namespace grpc_core {
 
@@ -102,7 +101,7 @@ namespace {
 // XdsResolver
 //
 
-class XdsResolver : public Resolver {
+class XdsResolver final : public Resolver {
  public:
   XdsResolver(ResolverArgs args, std::string data_plane_authority)
       : work_serializer_(std::move(args.work_serializer)),
@@ -135,7 +134,7 @@ class XdsResolver : public Resolver {
   }
 
  private:
-  class XdsWatcher : public XdsDependencyManager::Watcher {
+  class XdsWatcher final : public XdsDependencyManager::Watcher {
    public:
     explicit XdsWatcher(RefCountedPtr<XdsResolver> resolver)
         : resolver_(std::move(resolver)) {}
@@ -163,7 +162,7 @@ class XdsResolver : public Resolver {
   // the cluster by the ConfigSelector.  The ref for each call is held
   // until the call is committed.  When the strong refs go away, we hop
   // back into the WorkSerializer to remove the entry from the map.
-  class ClusterRef : public DualRefCounted<ClusterRef> {
+  class ClusterRef final : public DualRefCounted<ClusterRef> {
    public:
     ClusterRef(RefCountedPtr<XdsResolver> resolver,
                RefCountedPtr<XdsDependencyManager::ClusterSubscription>
@@ -173,7 +172,7 @@ class XdsResolver : public Resolver {
           cluster_subscription_(std::move(cluster_subscription)),
           cluster_key_(cluster_key) {}
 
-    void Orphan() override {
+    void Orphaned() override {
       XdsResolver* resolver_ptr = resolver_.get();
       resolver_ptr->work_serializer_->Run(
           [resolver = std::move(resolver_)]() {
@@ -196,7 +195,7 @@ class XdsResolver : public Resolver {
   // XdsConfigSelector. A ref to this map will be taken by each call processed
   // by the XdsConfigSelector, stored in a the call's call attributes, and later
   // unreffed by the ClusterSelection filter.
-  class RouteConfigData : public RefCounted<RouteConfigData> {
+  class RouteConfigData final : public RefCounted<RouteConfigData> {
    public:
     struct RouteEntry {
       struct ClusterWeightState {
@@ -266,7 +265,7 @@ class XdsResolver : public Resolver {
     std::vector<RouteEntry> routes_;
   };
 
-  class XdsConfigSelector : public ConfigSelector {
+  class XdsConfigSelector final : public ConfigSelector {
    public:
     XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
                       RefCountedPtr<RouteConfigData> route_config_data);
@@ -293,7 +292,7 @@ class XdsResolver : public Resolver {
     std::vector<const grpc_channel_filter*> filters_;
   };
 
-  class XdsRouteStateAttributeImpl : public XdsRouteStateAttribute {
+  class XdsRouteStateAttributeImpl final : public XdsRouteStateAttribute {
    public:
     explicit XdsRouteStateAttributeImpl(
         RefCountedPtr<RouteConfigData> route_config_data,
@@ -312,14 +311,15 @@ class XdsResolver : public Resolver {
     RouteConfigData::RouteEntry* route_;
   };
 
-  class ClusterSelectionFilter
+  class ClusterSelectionFilter final
       : public ImplementChannelFilter<ClusterSelectionFilter> {
    public:
     const static grpc_channel_filter kFilter;
 
-    static absl::StatusOr<ClusterSelectionFilter> Create(
-        const ChannelArgs& /* unused */, ChannelFilter::Args filter_args) {
-      return ClusterSelectionFilter(filter_args);
+    static absl::StatusOr<std::unique_ptr<ClusterSelectionFilter>> Create(
+        const ChannelArgs& /* unused */,
+        ChannelFilter::Args /* filter_args */) {
+      return std::make_unique<ClusterSelectionFilter>();
     }
 
     // Construct a promise for one call.
@@ -332,12 +332,6 @@ class XdsResolver : public Resolver {
       static const NoInterceptor OnServerToClientMessage;
       static const NoInterceptor OnFinalize;
     };
-
-   private:
-    explicit ClusterSelectionFilter(ChannelFilter::Args filter_args)
-        : filter_args_(filter_args) {}
-
-    ChannelFilter::Args filter_args_;
   };
 
   RefCountedPtr<ClusterRef> GetOrCreateClusterRef(
@@ -398,7 +392,7 @@ const NoInterceptor XdsResolver::ClusterSelectionFilter::Call::OnFinalize;
 
 // Implementation of XdsRouting::RouteListIterator for getting the matching
 // route for a request.
-class XdsResolver::RouteConfigData::RouteListIterator
+class XdsResolver::RouteConfigData::RouteListIterator final
     : public XdsRouting::RouteListIterator {
  public:
   explicit RouteListIterator(const RouteConfigData* route_table)
@@ -880,7 +874,8 @@ void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
 //
 
 void XdsResolver::StartLocked() {
-  auto xds_client = GrpcXdsClient::GetOrCreate(args_, "xds resolver");
+  auto xds_client =
+      GrpcXdsClient::GetOrCreate(uri_.ToString(), args_, "xds resolver");
   if (!xds_client.ok()) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -1096,7 +1091,7 @@ void XdsResolver::MaybeRemoveUnusedClusters() {
 // XdsResolverFactory
 //
 
-class XdsResolverFactory : public ResolverFactory {
+class XdsResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "xds"; }
 

@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
 #include <algorithm>
@@ -27,6 +25,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -36,6 +35,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
@@ -143,7 +143,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
   mu_.Lock();
-  GPR_ASSERT(fd_ != nullptr);
+  CHECK_NE(fd_, nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
   if (fd->IsHandleShutdown() && status.ok()) {
@@ -335,7 +335,7 @@ PosixEnginePollerManager::PosixEnginePollerManager(
       poller_state_(PollerState::kExternal),
       executor_(nullptr),
       trigger_shutdown_called_(false) {
-  GPR_DEBUG_ASSERT(poller_ != nullptr);
+  DCHECK_NE(poller_, nullptr);
 }
 
 void PosixEnginePollerManager::Run(
@@ -352,7 +352,7 @@ void PosixEnginePollerManager::Run(absl::AnyInvocable<void()> cb) {
 }
 
 void PosixEnginePollerManager::TriggerShutdown() {
-  GPR_DEBUG_ASSERT(trigger_shutdown_called_ == false);
+  DCHECK(trigger_shutdown_called_ == false);
   trigger_shutdown_called_ = true;
   // If the poller is external, dont try to shut it down. Otherwise
   // set poller state to PollerState::kShuttingDown.
@@ -468,7 +468,7 @@ PosixEventEngine::~PosixEventEngine() {
                 this, HandleToString(handle).c_str());
       }
     }
-    GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    CHECK(GPR_LIKELY(known_handles_.empty()));
   }
   timer_manager_->Shutdown();
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -593,7 +593,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;
-      GPR_ASSERT(ac != nullptr);
+      CHECK_NE(ac, nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
       // the OnWritable method tries to acquire the two mutexes used
       // here in the reverse order. But we dont need to acquire ac->mu before
@@ -640,7 +640,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  GPR_ASSERT(poller_manager_ != nullptr);
+  CHECK_NE(poller_manager_, nullptr);
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<PosixSocketWrapper::PosixSocketCreateResult> socket =
       PosixSocketWrapper::CreateAndPrepareTcpClientSocket(options, addr);
@@ -662,9 +662,9 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  GPR_DEBUG_ASSERT(fd > 0);
+  DCHECK_GT(fd, 0);
   PosixEventPoller* poller = poller_manager_->Poller();
-  GPR_DEBUG_ASSERT(poller != nullptr);
+  DCHECK_NE(poller, nullptr);
   EventHandle* handle =
       poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),

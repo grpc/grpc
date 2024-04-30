@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/dns/event_engine/service_config_helper.h"
 
 #include <stdlib.h>
@@ -22,6 +20,8 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/gethostname.h"

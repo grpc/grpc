@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
 
 #include <string.h>
@@ -27,6 +25,7 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -154,7 +153,7 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
   GPR_ASSERT(arena != nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>(arena);
+  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),

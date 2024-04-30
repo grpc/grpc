@@ -32,8 +32,8 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
 
 typedef enum { ONE_A = 0, ONE_KB_A, ONE_MB_A, TEST_VALUE_COUNT } test_value;
 

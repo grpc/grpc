@@ -21,6 +21,7 @@
 #include <memory>
 #include <new>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
@@ -72,7 +73,7 @@ namespace grpc_core {
 // those refs are not released until the LB call stack is destroyed.
 // When this object is destroyed, it will invoke the
 // on_call_stack_destruction closure from the surface.
-class RetryFilter::LegacyCallData::CallStackDestructionBarrier
+class RetryFilter::LegacyCallData::CallStackDestructionBarrier final
     : public RefCounted<CallStackDestructionBarrier, PolymorphicRefCount,
                         UnrefCallDtor> {
  public:
@@ -1577,7 +1578,7 @@ RetryFilter::LegacyCallData::~LegacyCallData() {
   CSliceUnref(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    GPR_ASSERT(pending_batches_[i].batch == nullptr);
+    CHECK_EQ(pending_batches_[i].batch, nullptr);
   }
 }
 
@@ -1826,7 +1827,7 @@ RetryFilter::LegacyCallData::PendingBatchesAdd(
             chand_, this, idx);
   }
   PendingBatch* pending = &pending_batches_[idx];
-  GPR_ASSERT(pending->batch == nullptr);
+  CHECK_EQ(pending->batch, nullptr);
   pending->batch = batch;
   pending->send_ops_cached = false;
   // Update state in calld about pending batches.
@@ -1910,7 +1911,7 @@ void RetryFilter::LegacyCallData::FailPendingBatchInCallCombiner(
 
 // This is called via the call combiner, so access to calld is synchronized.
 void RetryFilter::LegacyCallData::PendingBatchesFail(grpc_error_handle error) {
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -1991,7 +1992,7 @@ void RetryFilter::LegacyCallData::StartRetryTimer(
   // Compute backoff delay.
   Duration next_attempt_timeout;
   if (server_pushback.has_value()) {
-    GPR_ASSERT(*server_pushback >= Duration::Zero());
+    CHECK(*server_pushback >= Duration::Zero());
     next_attempt_timeout = *server_pushback;
     retry_backoff_.Reset();
   } else {

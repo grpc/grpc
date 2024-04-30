@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
 
 #include <stddef.h>
@@ -35,6 +33,7 @@
 #include "google/protobuf/wrappers.upb.h"
 
 #include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -46,7 +45,7 @@ namespace grpc_core {
 
 namespace {
 
-class RoundRobinLbPolicyConfigFactory
+class RoundRobinLbPolicyConfigFactory final
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   Json::Object ConvertXdsLbPolicyConfig(
@@ -64,7 +63,7 @@ class RoundRobinLbPolicyConfigFactory
   }
 };
 
-class ClientSideWeightedRoundRobinLbPolicyConfigFactory
+class ClientSideWeightedRoundRobinLbPolicyConfigFactory final
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   Json::Object ConvertXdsLbPolicyConfig(
@@ -151,7 +150,7 @@ class ClientSideWeightedRoundRobinLbPolicyConfigFactory
   }
 };
 
-class RingHashLbPolicyConfigFactory
+class RingHashLbPolicyConfigFactory final
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   Json::Object ConvertXdsLbPolicyConfig(
@@ -216,7 +215,7 @@ class RingHashLbPolicyConfigFactory
   }
 };
 
-class WrrLocalityLbPolicyConfigFactory
+class WrrLocalityLbPolicyConfigFactory final
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   Json::Object ConvertXdsLbPolicyConfig(
@@ -255,7 +254,7 @@ class WrrLocalityLbPolicyConfigFactory
   }
 };
 
-class PickFirstLbPolicyConfigFactory
+class PickFirstLbPolicyConfigFactory final
     : public XdsLbPolicyRegistry::ConfigFactory {
  public:
   Json::Object ConvertXdsLbPolicyConfig(

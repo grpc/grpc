@@ -16,9 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
@@ -635,8 +636,8 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
 }
 
 static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
-  GPR_ASSERT(pollset->shutdown_closure == nullptr);
-  GPR_ASSERT(!pollset->shutting_down);
+  CHECK_EQ(pollset->shutdown_closure, nullptr);
+  CHECK(!pollset->shutting_down);
   pollset->shutdown_closure = closure;
   pollset->shutting_down = true;
   GRPC_LOG_IF_ERROR("pollset_shutdown", pollset_kick_all(pollset));
@@ -807,7 +808,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
       }
     }
     if (is_reassigning) {
-      GPR_ASSERT(pollset->reassigning_neighborhood);
+      CHECK(pollset->reassigning_neighborhood);
       pollset->reassigning_neighborhood = false;
     }
     gpr_mu_unlock(&neighborhood->mu);
@@ -816,7 +817,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
   worker_insert(pollset, worker);
   pollset->begin_refs--;
   if (worker->state == UNKICKED && !pollset->kicked_without_poller) {
-    GPR_ASSERT(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
+    CHECK(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
     worker->initialized_cv = true;
     gpr_cv_init(&worker->cv);
     while (worker->state == UNKICKED && !pollset->shutting_down) {
@@ -871,7 +872,7 @@ static bool check_neighborhood_for_available_poller(
       break;
     }
     gpr_mu_lock(&inspect->mu);
-    GPR_ASSERT(!inspect->seen_inactive);
+    CHECK(!inspect->seen_inactive);
     grpc_pollset_worker* inspect_worker = inspect->root_worker;
     if (inspect_worker != nullptr) {
       do {
@@ -940,7 +941,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
       if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
         gpr_log(GPR_INFO, " .. choose next poller to be peer %p", worker);
       }
-      GPR_ASSERT(worker->next->initialized_cv);
+      CHECK(worker->next->initialized_cv);
       gpr_atm_no_barrier_store(&g_active_poller, (gpr_atm)worker->next);
       SET_KICK_STATE(worker->next, DESIGNATED_POLLER);
       gpr_cv_signal(&worker->next->cv);
@@ -994,7 +995,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
   if (EMPTIED == worker_remove(pollset, worker)) {
     pollset_maybe_finish_shutdown(pollset);
   }
-  GPR_ASSERT(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
+  CHECK(gpr_atm_no_barrier_load(&g_active_poller) != (gpr_atm)worker);
 }
 
 // pollset->po.mu lock must be held by the caller before calling this.
@@ -1015,8 +1016,8 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
   if (begin_worker(ps, &worker, worker_hdl, deadline)) {
     g_current_thread_pollset = ps;
     g_current_thread_worker = &worker;
-    GPR_ASSERT(!ps->shutting_down);
-    GPR_ASSERT(!ps->seen_inactive);
+    CHECK(!ps->shutting_down);
+    CHECK(!ps->seen_inactive);
 
     gpr_mu_unlock(&ps->mu);  // unlock
     // This is the designated polling thread at this point and should ideally do
@@ -1112,7 +1113,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
         if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
           gpr_log(GPR_INFO, " .. kicked %p", next_worker);
         }
-        GPR_ASSERT(next_worker->initialized_cv);
+        CHECK(next_worker->initialized_cv);
         SET_KICK_STATE(next_worker, KICKED);
         gpr_cv_signal(&next_worker->cv);
         goto done;
@@ -1139,7 +1140,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
           goto done;
         }
       } else {
-        GPR_ASSERT(next_worker->state == KICKED);
+        CHECK(next_worker->state == KICKED);
         SET_KICK_STATE(next_worker, KICKED);
         goto done;
       }
@@ -1279,7 +1280,7 @@ const grpc_event_engine_vtable grpc_ev_epoll1_posix = {
     /* check_engine_available = */
     [](bool) { return init_epoll1_linux(); },
     /* init_engine = */
-    []() { GPR_ASSERT(init_epoll1_linux()); },
+    []() { CHECK(init_epoll1_linux()); },
     shutdown_background_closure,
     /* shutdown_engine = */
     []() { shutdown_engine(); },

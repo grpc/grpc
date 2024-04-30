@@ -19,6 +19,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/support/log.h>
@@ -42,6 +43,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   absl::StatusOr<grpc_core::URI> parsed_uri =
       grpc_core::URI::Parse(uri.value());
 
-  GPR_ASSERT(parsed_uri.ok());
+  CHECK_OK(parsed_uri);
   return 0;
 }

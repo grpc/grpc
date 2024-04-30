@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -32,7 +33,7 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -69,9 +70,9 @@ class RingHashTest : public XdsEnd2endTest {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      GPR_ASSERT(lb_uri.ok());
+      CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      GPR_ASSERT(grpc_parse_uri(*lb_uri, &address));
+      CHECK(grpc_parse_uri(*lb_uri, &address));
       addresses.emplace_back(address, grpc_core::ChannelArgs());
     }
     return addresses;

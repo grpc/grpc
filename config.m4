@@ -41,10 +41,10 @@ if test "$PHP_GRPC" != "no"; then
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
-    src/core/client_channel/backend_metric.cc \
+    src/core/channelz/channel_trace.cc \
+    src/core/channelz/channelz.cc \
+    src/core/channelz/channelz_registry.cc \
     src/core/client_channel/backup_poller.cc \
-    src/core/client_channel/channel_connectivity.cc \
-    src/core/client_channel/client_channel_channelz.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
     src/core/client_channel/client_channel_plugin.cc \
@@ -58,13 +58,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/client_channel/retry_filter_legacy_call_data.cc \
     src/core/client_channel/retry_service_config.cc \
     src/core/client_channel/retry_throttle.cc \
-    src/core/client_channel/service_config_channel_arg_filter.cc \
     src/core/client_channel/subchannel.cc \
     src/core/client_channel/subchannel_pool_interface.cc \
     src/core/client_channel/subchannel_stream_client.cc \
     src/core/ext/filters/backend_metrics/backend_metric_filter.cc \
     src/core/ext/filters/census/grpc_context.cc \
-    src/core/ext/filters/channel_idle/channel_idle_filter.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
@@ -74,7 +72,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/compression_filter.cc \
-    src/core/ext/filters/http/message_compress/legacy_compression_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/rbac/rbac_filter.cc \
@@ -472,10 +469,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
     src/core/lib/channel/channel_stack_trace.cc \
-    src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz.cc \
-    src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/server_call_tracer_filter.cc \
     src/core/lib/channel/status_util.cc \
@@ -586,6 +581,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/time.cc \
     src/core/lib/gprpp/time_averaged_stats.cc \
     src/core/lib/gprpp/time_util.cc \
+    src/core/lib/gprpp/uuid_v4.cc \
     src/core/lib/gprpp/validation_errors.cc \
     src/core/lib/gprpp/windows/directory_reader.cc \
     src/core/lib/gprpp/windows/env.cc \
@@ -685,6 +681,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/promise/trace.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
+    src/core/lib/resource_quota/connection_quota.cc \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
@@ -743,34 +740,32 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/security_connector/insecure/insecure_security_connector.cc \
     src/core/lib/security/security_connector/load_system_roots_fallback.cc \
     src/core/lib/security/security_connector/load_system_roots_supported.cc \
+    src/core/lib/security/security_connector/load_system_roots_windows.cc \
     src/core/lib/security/security_connector/local/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
-    src/core/lib/security/transport/legacy_server_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
-    src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
     src/core/lib/surface/api_trace.cc \
-    src/core/lib/surface/builtins.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
     src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
-    src/core/lib/surface/channel_ping.cc \
     src/core/lib/surface/channel_stack_type.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
@@ -778,6 +773,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
+    src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
     src/core/lib/surface/server.cc \
     src/core/lib/surface/validate_metadata.cc \
@@ -785,12 +781,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/surface/wait_for_cq_end_op.cc \
     src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
-    src/core/lib/transport/call_factory.cc \
+    src/core/lib/transport/call_arena_allocator.cc \
     src/core/lib/transport/call_filters.cc \
     src/core/lib/transport/call_final_info.cc \
-    src/core/lib/transport/call_size_estimator.cc \
     src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/endpoint_info_handshaker.cc \
     src/core/lib/transport/error_utils.cc \
     src/core/lib/transport/handshaker.cc \
     src/core/lib/transport/handshaker_registry.cc \
@@ -798,6 +794,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/message.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/metadata_info.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
     src/core/lib/transport/tcp_connect_handshaker.cc \
@@ -806,6 +803,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/uri/uri_parser.cc \
     src/core/load_balancing/address_filtering.cc \
+    src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \
     src/core/load_balancing/endpoint_list.cc \
     src/core/load_balancing/grpclb/client_load_reporting_filter.cc \
@@ -854,6 +852,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
     src/core/resolver/xds/xds_resolver_trace.cc \
+    src/core/service_config/service_config_channel_arg_filter.cc \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
@@ -920,6 +919,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
     third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
     third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
+    third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc \
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
@@ -934,6 +934,19 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
     third_party/abseil-cpp/absl/hash/internal/low_level_hash.cc \
+    third_party/abseil-cpp/absl/log/globals.cc \
+    third_party/abseil-cpp/absl/log/internal/check_op.cc \
+    third_party/abseil-cpp/absl/log/internal/conditions.cc \
+    third_party/abseil-cpp/absl/log/internal/fnmatch.cc \
+    third_party/abseil-cpp/absl/log/internal/globals.cc \
+    third_party/abseil-cpp/absl/log/internal/log_format.cc \
+    third_party/abseil-cpp/absl/log/internal/log_message.cc \
+    third_party/abseil-cpp/absl/log/internal/log_sink_set.cc \
+    third_party/abseil-cpp/absl/log/internal/nullguard.cc \
+    third_party/abseil-cpp/absl/log/internal/proto.cc \
+    third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
+    third_party/abseil-cpp/absl/log/log_entry.cc \
+    third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/random/discrete_distribution.cc \
@@ -1324,6 +1337,10 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/mem/arena.c \
     third_party/upb/upb/message/accessors.c \
     third_party/upb/upb/message/array.c \
+    third_party/upb/upb/message/compat.c \
+    third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/message.c \
     third_party/upb/upb/message/map.c \
     third_party/upb/upb/message/map_sorter.c \
     third_party/upb/upb/message/message.c \
@@ -1354,20 +1371,19 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/reflection/service_def.c \
     third_party/upb/upb/text/encode.c \
     third_party/upb/upb/wire/decode.c \
-    third_party/upb/upb/wire/decode_fast.c \
     third_party/upb/upb/wire/encode.c \
     third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/decode_fast.c \
     third_party/upb/upb/wire/reader.c \
-    third_party/utf8_range/naive.c \
-    third_party/utf8_range/range2-neon.c \
-    third_party/utf8_range/range2-sse.c \
+    third_party/utf8_range/utf8_range.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.63.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.64.0dev\""')
 
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
@@ -1596,6 +1612,8 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/flags)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/flags/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/log)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/log/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/profiling/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/random)
@@ -1663,6 +1681,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
@@ -1671,5 +1690,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)
 fi

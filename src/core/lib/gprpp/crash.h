@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_CRASH_H
 #define GRPC_SRC_CORE_LIB_GPRPP_CRASH_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 

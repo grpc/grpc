@@ -50,6 +50,7 @@ py_library(
     name = "grpc_tools",
     srcs = [
         "grpc_tools/__init__.py",
+        "grpc_tools/grpc_version.py",
         "grpc_tools/protoc.py",
     ],
     data = [":well_known_protos"],

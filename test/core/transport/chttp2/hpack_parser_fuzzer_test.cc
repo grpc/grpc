@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 
 #include <grpc/grpc.h>
@@ -40,9 +41,9 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/proto_bit_gen.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -70,7 +71,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
     for (int i = 0; i < msg.frames_size(); i++) {
       auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
       grpc_core::ExecCtx exec_ctx;
-      grpc_metadata_batch b(arena.get());
+      grpc_metadata_batch b;
       const auto& frame = msg.frames(i);
       if (frame.parse_size() == 0) continue;
 
@@ -129,8 +130,8 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
         // (This is incredibly generous, but having a bound nevertheless means
         // we don't accidentally flow to infinity, which would be crossing the
         // streams level bad).
-        GPR_ASSERT(static_cast<int>(parser->buffered_bytes() / 4) <
-                   std::max(1024, absolute_max_length));
+        CHECK(static_cast<int>(parser->buffered_bytes() / 4) <
+              std::max(1024, absolute_max_length));
         if (!err.ok()) {
           intptr_t unused;
           if (grpc_error_get_int(err, grpc_core::StatusIntProperty::kStreamId,

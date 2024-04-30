@@ -20,6 +20,7 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>

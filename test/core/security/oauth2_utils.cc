@@ -20,6 +20,7 @@
 
 #include <string.h>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -54,7 +55,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch initial_metadata{arena.get()};
+  grpc_metadata_batch initial_metadata;
   char* token = nullptr;
 
   auto activity = grpc_core::MakeActivity(

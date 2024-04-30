@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_transport_grpc.h"
 
 #include <string.h>
@@ -25,6 +23,7 @@
 #include <string_view>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/byte_buffer.h>
@@ -36,6 +35,7 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
@@ -69,16 +69,17 @@ namespace grpc_core {
 //
 
 GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
-    RefCountedPtr<GrpcXdsTransportFactory> factory, grpc_channel* channel,
+    RefCountedPtr<GrpcXdsTransportFactory> factory, Channel* channel,
     const char* method,
     std::unique_ptr<StreamingCall::EventHandler> event_handler)
     : factory_(std::move(factory)), event_handler_(std::move(event_handler)) {
   // Create call.
-  call_ = grpc_channel_create_pollset_set_call(
-      channel, nullptr, GRPC_PROPAGATE_DEFAULTS, factory_->interested_parties(),
-      StaticSlice::FromStaticString(method).c_slice(), nullptr,
-      Timestamp::InfFuture(), nullptr);
-  GPR_ASSERT(call_ != nullptr);
+  call_ = channel->CreateCall(
+      /*parent_call=*/nullptr, GRPC_PROPAGATE_DEFAULTS, /*cq=*/nullptr,
+      factory_->interested_parties(), Slice::FromStaticString(method),
+      /*authority=*/absl::nullopt, Timestamp::InfFuture(),
+      /*registered_method=*/true);
+  CHECK_NE(call_, nullptr);
   // Init data associated with the call.
   grpc_metadata_array_init(&initial_metadata_recv_);
   grpc_metadata_array_init(&trailing_metadata_recv_);
@@ -108,7 +109,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
       this->Ref(DEBUG_LOCATION, "OnRecvInitialMetadata").release(), nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_recv_initial_metadata_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
+  CHECK_EQ(call_error, GRPC_CALL_OK);
   // Start a batch for recv_trailing_metadata.
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -125,7 +126,7 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::GrpcStreamingCall(
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this, nullptr);
   call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &on_status_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
+  CHECK_EQ(call_error, GRPC_CALL_OK);
   GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this, nullptr);
 }
 
@@ -135,12 +136,12 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
   CSliceUnref(status_details_);
-  GPR_ASSERT(call_ != nullptr);
+  CHECK_NE(call_, nullptr);
   grpc_call_unref(call_);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::Orphan() {
-  GPR_ASSERT(call_ != nullptr);
+  CHECK_NE(call_, nullptr);
   // If we are here because xds_client wants to cancel the call,
   // OnStatusReceived() will complete the cancellation and clean up.
   // Otherwise, we are here because xds_client has to orphan a failed call,
@@ -164,7 +165,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::SendMessage(
   Ref(DEBUG_LOCATION, "OnRequestSent").release();
   grpc_call_error call_error =
       grpc_call_start_batch_and_execute(call_, &op, 1, &on_request_sent_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
+  CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -174,10 +175,10 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;
   op.data.recv_message.recv_message = &recv_message_payload_;
-  GPR_ASSERT(call_ != nullptr);
+  CHECK_NE(call_, nullptr);
   const grpc_call_error call_error =
       grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
-  GPR_ASSERT(GRPC_CALL_OK == call_error);
+  CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
@@ -226,7 +227,7 @@ void GrpcXdsTransportFactory::GrpcXdsTransport::GrpcStreamingCall::
 // GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 //
 
-class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
+class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(
@@ -252,19 +253,13 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher
 
 namespace {
 
-grpc_channel* CreateXdsChannel(const ChannelArgs& args,
-                               const GrpcXdsBootstrap::GrpcXdsServer& server) {
+OrphanablePtr<Channel> CreateXdsChannel(
+    const ChannelArgs& args, const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());
-  return grpc_channel_create(server.server_uri().c_str(), channel_creds.get(),
-                             args.ToC().get());
-}
-
-bool IsLameChannel(grpc_channel* channel) {
-  grpc_channel_element* elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  return elem->filter == &LameClientFilter::kFilter;
+  return OrphanablePtr<Channel>(Channel::FromC(grpc_channel_create(
+      server.server_uri().c_str(), channel_creds.get(), args.ToC().get())));
 }
 
 }  // namespace
@@ -277,30 +272,20 @@ GrpcXdsTransportFactory::GrpcXdsTransport::GrpcXdsTransport(
   channel_ = CreateXdsChannel(
       factory->args_,
       static_cast<const GrpcXdsBootstrap::GrpcXdsServer&>(server));
-  GPR_ASSERT(channel_ != nullptr);
-  if (IsLameChannel(channel_)) {
+  CHECK(channel_ != nullptr);
+  if (channel_->IsLame()) {
     *status = absl::UnavailableError("xds client has a lame channel");
   } else {
-    ClientChannelFilter* client_channel =
-        ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
-    GPR_ASSERT(client_channel != nullptr);
     watcher_ = new StateWatcher(std::move(on_connectivity_failure));
-    client_channel->AddConnectivityWatcher(
+    channel_->AddConnectivityWatcher(
         GRPC_CHANNEL_IDLE,
         OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
   }
 }
 
-GrpcXdsTransportFactory::GrpcXdsTransport::~GrpcXdsTransport() {
-  grpc_channel_destroy_internal(channel_);
-}
-
 void GrpcXdsTransportFactory::GrpcXdsTransport::Orphan() {
-  if (!IsLameChannel(channel_)) {
-    ClientChannelFilter* client_channel =
-        ClientChannelFilter::GetFromChannel(Channel::FromC(channel_));
-    GPR_ASSERT(client_channel != nullptr);
-    client_channel->RemoveConnectivityWatcher(watcher_);
+  if (!channel_->IsLame()) {
+    channel_->RemoveConnectivityWatcher(watcher_);
   }
   // Do an async hop before unreffing.  This avoids a deadlock upon
   // shutdown in the case where the xDS channel is itself an xDS channel
@@ -319,11 +304,11 @@ GrpcXdsTransportFactory::GrpcXdsTransport::CreateStreamingCall(
   return MakeOrphanable<GrpcStreamingCall>(
       factory_->RefAsSubclass<GrpcXdsTransportFactory>(DEBUG_LOCATION,
                                                        "StreamingCall"),
-      channel_, method, std::move(event_handler));
+      channel_.get(), method, std::move(event_handler));
 }
 
 void GrpcXdsTransportFactory::GrpcXdsTransport::ResetBackoff() {
-  grpc_channel_reset_connect_backoff(channel_);
+  channel_->ResetConnectionBackoff();
 }
 
 //

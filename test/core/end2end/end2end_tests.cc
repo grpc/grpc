@@ -22,6 +22,7 @@
 #include <regex>
 #include <tuple>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 
@@ -119,8 +120,8 @@ void CoreEnd2endTest::TearDown() {
       gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
     }
   }
-  GPR_ASSERT(client_ == nullptr);
-  GPR_ASSERT(server_ == nullptr);
+  CHECK_EQ(client_, nullptr);
+  CHECK_EQ(server_, nullptr);
   initialized_ = false;
 }
 
@@ -151,20 +152,20 @@ std::string CoreEnd2endTest::IncomingMessage::payload() const {
   if (payload_->data.raw.compression > GRPC_COMPRESS_NONE) {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
-    GPR_ASSERT(grpc_msg_decompress(payload_->data.raw.compression,
+    CHECK(grpc_msg_decompress(payload_->data.raw.compression,
                                    &payload_->data.raw.slice_buffer,
                                    &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
         decompressed_buffer.slices, decompressed_buffer.count);
     grpc_byte_buffer_reader reader;
-    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, rbb));
+    CHECK(grpc_byte_buffer_reader_init(&reader, rbb));
     out = Slice(grpc_byte_buffer_reader_readall(&reader));
     grpc_byte_buffer_reader_destroy(&reader);
     grpc_byte_buffer_destroy(rbb);
     grpc_slice_buffer_destroy(&decompressed_buffer);
   } else {
     grpc_byte_buffer_reader reader;
-    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, payload_));
+    CHECK(grpc_byte_buffer_reader_init(&reader, payload_));
     out = Slice(grpc_byte_buffer_reader_readall(&reader));
     grpc_byte_buffer_reader_destroy(&reader);
   }
@@ -322,7 +323,7 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
 CoreEnd2endTest::ServerRegisteredMethod::ServerRegisteredMethod(
     CoreEnd2endTest* test, absl::string_view name,
     grpc_server_register_method_payload_handling payload_handling) {
-  GPR_ASSERT(test->server_ == nullptr);
+  CHECK_EQ(test->server_, nullptr);
   test->pre_server_start_ = [old = std::move(test->pre_server_start_),
                              handle = handle_, name = std::string(name),
                              payload_handling](grpc_server* server) mutable {
@@ -374,14 +375,14 @@ void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
                                            SourceLocation) {
   if (absl::StartsWith(name, "DISABLED_")) return;
   auto& tests = tests_by_suite_[suite];
-  GPR_ASSERT(tests.count(name) == 0);
+  CHECK_EQ(tests.count(name), 0u);
   tests[name] = std::move(make_test);
 }
 
 void CoreEnd2endTestRegistry::RegisterSuite(
     absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
     SourceLocation) {
-  GPR_ASSERT(suites_.count(suite) == 0);
+  CHECK_EQ(suites_.count(suite), 0u);
   suites_[suite] = std::move(configs);
 }
 

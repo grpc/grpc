@@ -12,18 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 using ::grpc_event_engine::experimental::AbortingEventEngine;

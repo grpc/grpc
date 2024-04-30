@@ -14,19 +14,19 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_http_filters.h"
 
 #include <map>
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/types/variant.h"
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_http_fault_filter.h"
 #include "src/core/ext/xds/xds_http_rbac_filter.h"
@@ -92,11 +92,10 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
-  GPR_ASSERT(
-      registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+  CHECK(registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
-    GPR_ASSERT(registry_map_.emplace(override_proto_name, filter.get()).second);
+    CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
   }
   owning_list_.push_back(std::move(filter));
 }

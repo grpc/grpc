@@ -68,7 +68,7 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 static gpr_mu g_mu;
 static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
@@ -585,7 +585,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
 
   ~WakeupFdHandle() override { delete on_read_; }
 
-  void Orphan() override {
+  void Orphaned() override {
     // Once the handle has orphaned itself, decrement
     // kTotalActiveWakeupFdHandles. Once all handles have orphaned themselves,
     // send a Kick to the poller.
@@ -650,7 +650,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
     }
     WeakRef().release();
   }
-  void Orphan() override { signal.Notify(); }
+  void Orphaned() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     scheduler_->Run([this]() { Work(); });

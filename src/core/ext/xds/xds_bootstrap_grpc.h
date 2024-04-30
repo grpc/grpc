@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
 #define GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <set>
@@ -28,6 +26,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_audit_logger_registry.h"
@@ -44,9 +44,9 @@
 
 namespace grpc_core {
 
-class GrpcXdsBootstrap : public XdsBootstrap {
+class GrpcXdsBootstrap final : public XdsBootstrap {
  public:
-  class GrpcNode : public Node {
+  class GrpcNode final : public Node {
    public:
     const std::string& id() const override { return id_; }
     const std::string& cluster() const override { return cluster_; }
@@ -76,7 +76,7 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     Json::Object metadata_;
   };
 
-  class GrpcXdsServer : public XdsServer {
+  class GrpcXdsServer final : public XdsServer {
    public:
     const std::string& server_uri() const override { return server_uri_; }
 
@@ -102,10 +102,15 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     std::set<std::string> server_features_;
   };
 
-  class GrpcAuthority : public Authority {
+  class GrpcAuthority final : public Authority {
    public:
-    const XdsServer* server() const override {
-      return servers_.empty() ? nullptr : &servers_[0];
+    std::vector<const XdsServer*> servers() const override {
+      std::vector<const XdsServer*> servers;
+      servers.reserve(servers_.size());
+      for (const auto& server : servers_) {
+        servers.emplace_back(&server);
+      }
+      return servers;
     }
 
     const std::string& client_listener_resource_name_template() const {
@@ -113,6 +118,8 @@ class GrpcXdsBootstrap : public XdsBootstrap {
     }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+    void JsonPostLoad(const Json& json, const JsonArgs& args,
+                      ValidationErrors* errors);
 
    private:
     std::vector<GrpcXdsServer> servers_;
@@ -129,7 +136,15 @@ class GrpcXdsBootstrap : public XdsBootstrap {
 
   std::string ToString() const override;
 
-  const XdsServer& server() const override { return servers_[0]; }
+  std::vector<const XdsServer*> servers() const override {
+    std::vector<const XdsServer*> servers;
+    servers.reserve(servers_.size());
+    for (const auto& server : servers_) {
+      servers.emplace_back(&server);
+    }
+    return servers;
+  }
+
   const Node* node() const override {
     return node_.has_value() ? &*node_ : nullptr;
   }

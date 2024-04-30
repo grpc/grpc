@@ -19,6 +19,7 @@
 #include <mutex>
 #include <thread>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
@@ -49,8 +50,8 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/interceptors_util.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -84,52 +85,53 @@ const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
 const char kFakeToken[] = "fake_token";
 const char kFakeSelector[] = "fake_selector";
 const char kExpectedFakeCredsDebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector}}";
 
 const char kWrongToken[] = "wrong_token";
 const char kWrongSelector[] = "wrong_selector";
 const char kExpectedWrongCredsDebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:wrong_selector}}";
 
 const char kFakeToken1[] = "fake_token1";
 const char kFakeSelector1[] = "fake_selector1";
 const char kExpectedFakeCreds1DebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector1}}";
 
 const char kFakeToken2[] = "fake_token2";
 const char kFakeSelector2[] = "fake_selector2";
 const char kExpectedFakeCreds2DebugString[] =
-    "SecureCallCredentials{GoogleIAMCredentials{Token:present,"
+    "CallCredentials{GoogleIAMCredentials{Token:present,"
     "AuthoritySelector:fake_selector2}}";
 
 const char kExpectedAuthMetadataPluginKeyFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:TestPluginMetadata,"
+    "CallCredentials{TestMetadataCredentials{key:TestPluginMetadata,"
     "value:Does not matter, will fail the key is invalid.}}";
 const char kExpectedAuthMetadataPluginValueFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:With illegal \n value.}}";
 const char kExpectedAuthMetadataPluginWithDeadlineCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:meta_key,value:Does not "
+    "CallCredentials{TestMetadataCredentials{key:meta_key,value:Does "
+    "not "
     "matter}}";
 const char kExpectedNonBlockingAuthMetadataPluginFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:Does not matter, will fail anyway (see 3rd param)}}";
 const char
     kExpectedNonBlockingAuthMetadataPluginAndProcessorSuccessCredsDebugString
-        [] = "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-"
+        [] = "CallCredentials{TestMetadataCredentials{key:test-plugin-"
              "metadata,value:Dr Jekyll}}";
 const char
     kExpectedNonBlockingAuthMetadataPluginAndProcessorFailureCredsDebugString
-        [] = "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-"
+        [] = "CallCredentials{TestMetadataCredentials{key:test-plugin-"
              "metadata,value:Mr Hyde}}";
 const char kExpectedBlockingAuthMetadataPluginFailureCredsDebugString[] =
-    "SecureCallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
+    "CallCredentials{TestMetadataCredentials{key:test-plugin-metadata,"
     "value:Does not matter, will fail anyway (see 3rd param)}}";
 const char kExpectedCompositeCallCredsDebugString[] =
-    "SecureCallCredentials{CompositeCallCredentials{TestMetadataCredentials{"
+    "CallCredentials{CompositeCallCredentials{TestMetadataCredentials{"
     "key:call-creds-key1,value:call-creds-val1},TestMetadataCredentials{key:"
     "call-creds-key2,value:call-creds-val2}}}";
 
@@ -1206,9 +1208,9 @@ TEST_P(End2endTest, CancelRpcAfterStart) {
       s = stub_->Echo(&context, request, &response);
     });
     if (!GetParam().callback_server()) {
-      service_.ClientWaitUntilRpcStarted();
+      EXPECT_EQ(service_.ClientWaitUntilNRpcsStarted(1), 1);
     } else {
-      callback_service_.ClientWaitUntilRpcStarted();
+      EXPECT_EQ(callback_service_.ClientWaitUntilNRpcsStarted(1), 1);
     }
 
     context.TryCancel();
@@ -1745,8 +1747,8 @@ TEST_P(ProxyEnd2endTest, Peer) {
 class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
-    GPR_ASSERT(!GetParam().use_proxy());
-    GPR_ASSERT(GetParam().credentials_type() != kInsecureCredentialsType);
+    CHECK(!GetParam().use_proxy());
+    CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
   }
 };
 
@@ -2278,7 +2280,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
 
   // Test callback with inproc or if the event-engine allows it
-  GPR_ASSERT(!credentials_types.empty());
+  CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     scenarios.emplace_back(false, false, false, cred, false);
     scenarios.emplace_back(true, false, false, cred, false);

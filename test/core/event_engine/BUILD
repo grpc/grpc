@@ -64,7 +64,7 @@ grpc_cc_test(
         "//src/core:event_engine_thread_count",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -98,7 +98,7 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//src/core:default_event_engine",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -109,7 +109,7 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -122,14 +122,17 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//src/core:default_event_engine",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
 grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     deps = [
         "//:gpr",
         "//:gpr_platform",
@@ -181,6 +184,7 @@ grpc_cc_test(
     name = "tcp_socket_utils_test",
     srcs = ["tcp_socket_utils_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -216,6 +220,7 @@ grpc_cc_library(
     srcs = ["event_engine_test_utils.cc"],
     hdrs = ["event_engine_test_utils.h"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -230,7 +235,7 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:time",
-        "//test/core/util:build",
+        "//test/core/test_util:build",
     ],
 )
 

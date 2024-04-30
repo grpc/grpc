@@ -18,8 +18,11 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -32,7 +35,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -61,17 +64,17 @@ class MetadataMapTest : public ::testing::Test {
 
 TEST_F(MetadataMapTest, Noop) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  EmptyMetadataMap(arena.get());
+  EmptyMetadataMap();
 }
 
 TEST_F(MetadataMapTest, NoopWithDeadline) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap(arena.get());
+  TimeoutOnlyMetadataMap();
 }
 
 TEST_F(MetadataMapTest, SimpleOps) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
   map.Set(GrpcTimeoutMetadata(),
@@ -110,7 +113,7 @@ class FakeEncoder {
 TEST_F(MetadataMapTest, EmptyEncodeTest) {
   FakeEncoder encoder;
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "");
 }
@@ -118,7 +121,7 @@ TEST_F(MetadataMapTest, EmptyEncodeTest) {
 TEST_F(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   map.Set(GrpcTimeoutMetadata(),
           Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   map.Encode(&encoder);
@@ -132,7 +135,7 @@ TEST_F(MetadataMapTest, NonEncodableTrait) {
     }
   };
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  StreamNetworkStateMetadataMap map(arena.get());
+  StreamNetworkStateMetadataMap map;
   map.Set(GrpcStreamNetworkState(), GrpcStreamNetworkState::kNotSentOnWire);
   EXPECT_EQ(map.get(GrpcStreamNetworkState()),
             GrpcStreamNetworkState::kNotSentOnWire);
@@ -141,17 +144,116 @@ TEST_F(MetadataMapTest, NonEncodableTrait) {
   EXPECT_EQ(map.DebugString(), "GrpcStreamNetworkState: not sent on wire");
 }
 
-TEST(DebugStringBuilderTest, AddOne) {
+TEST(DebugStringBuilderTest, OneAddAfterRedaction) {
   metadata_detail::DebugStringBuilder b;
-  b.Add("a", "b");
-  EXPECT_EQ(b.TakeOutput(), "a: b");
+  b.AddAfterRedaction(ContentTypeMetadata::key(), "AddValue01");
+  EXPECT_EQ(b.TakeOutput(),
+            absl::StrCat(ContentTypeMetadata::key(), ": AddValue01"));
 }
 
-TEST(DebugStringBuilderTest, AddTwo) {
-  metadata_detail::DebugStringBuilder b;
-  b.Add("a", "b");
-  b.Add("c", "d");
-  EXPECT_EQ(b.TakeOutput(), "a: b, c: d");
+std::vector<std::string> GetAllowList() {
+  return {
+      // clang-format off
+          std::string(ContentTypeMetadata::key()),
+          std::string(EndpointLoadMetricsBinMetadata::key()),
+          std::string(GrpcAcceptEncodingMetadata::key()),
+          std::string(GrpcEncodingMetadata::key()),
+          std::string(GrpcInternalEncodingRequest::key()),
+          std::string(GrpcLbClientStatsMetadata::key()),
+          std::string(GrpcMessageMetadata::key()),
+          std::string(GrpcPreviousRpcAttemptsMetadata::key()),
+          std::string(GrpcRetryPushbackMsMetadata::key()),
+          std::string(GrpcServerStatsBinMetadata::key()),
+          std::string(GrpcStatusMetadata::key()),
+          std::string(GrpcTagsBinMetadata::key()),
+          std::string(GrpcTimeoutMetadata::key()),
+          std::string(GrpcTraceBinMetadata::key()),
+          std::string(HostMetadata::key()),
+          std::string(HttpAuthorityMetadata::key()),
+          std::string(HttpMethodMetadata::key()),
+          std::string(HttpPathMetadata::key()),
+          std::string(HttpSchemeMetadata::key()),
+          std::string(HttpStatusMetadata::key()),
+          std::string(LbCostBinMetadata::key()),
+          std::string(LbTokenMetadata::key()),
+          std::string(TeMetadata::key()),
+          std::string(UserAgentMetadata::key()),
+          std::string(XEnvoyPeerMetadata::key()),
+          std::string(GrpcCallWasCancelled::DebugKey()),
+          std::string(GrpcRegisteredMethod::DebugKey()),
+          std::string(GrpcStatusContext::DebugKey()),
+          std::string(GrpcStatusFromWire::DebugKey()),
+          std::string(GrpcStreamNetworkState::DebugKey()),
+          std::string(GrpcTarPit::DebugKey()),
+          std::string(GrpcTrailersOnly::DebugKey()),
+          std::string(PeerString::DebugKey()),
+          std::string(WaitForReady::DebugKey())
+      // clang-format on
+  };
+}
+
+TEST(DebugStringBuilderTest, TestAllAllowListed) {
+  metadata_detail::DebugStringBuilder builder_add_allow_list;
+  const std::vector<std::string> allow_list_keys = GetAllowList();
+
+  for (const std::string& curr_key : allow_list_keys) {
+    builder_add_allow_list.AddAfterRedaction(curr_key, curr_key);
+  }
+
+  // All values which are allow listed should be added as is.
+  EXPECT_EQ(builder_add_allow_list.TakeOutput(),
+            "content-type: content-type, "
+            "endpoint-load-metrics-bin: endpoint-load-metrics-bin, "
+            "grpc-accept-encoding: grpc-accept-encoding, "
+            "grpc-encoding: grpc-encoding, "
+            "grpc-internal-encoding-request: grpc-internal-encoding-request, "
+            "grpclb_client_stats: grpclb_client_stats, "
+            "grpc-message: grpc-message, "
+            "grpc-previous-rpc-attempts: grpc-previous-rpc-attempts, "
+            "grpc-retry-pushback-ms: grpc-retry-pushback-ms, "
+            "grpc-server-stats-bin: grpc-server-stats-bin, "
+            "grpc-status: grpc-status, "
+            "grpc-tags-bin: grpc-tags-bin, "
+            "grpc-timeout: grpc-timeout, "
+            "grpc-trace-bin: grpc-trace-bin, "
+            "host: host, :authority: :authority, "
+            ":method: :method, "
+            ":path: :path, "
+            ":scheme: :scheme, "
+            ":status: :status, "
+            "lb-cost-bin: lb-cost-bin, "
+            "lb-token: lb-token, "
+            "te: te, "
+            "user-agent: user-agent, "
+            "x-envoy-peer-metadata: x-envoy-peer-metadata, "
+            "GrpcCallWasCancelled: GrpcCallWasCancelled, "
+            "GrpcRegisteredMethod: GrpcRegisteredMethod, "
+            "GrpcStatusContext: GrpcStatusContext, "
+            "GrpcStatusFromWire: GrpcStatusFromWire, "
+            "GrpcStreamNetworkState: GrpcStreamNetworkState, "
+            "GrpcTarPit: GrpcTarPit, "
+            "GrpcTrailersOnly: GrpcTrailersOnly, "
+            "PeerString: PeerString, "
+            "WaitForReady: WaitForReady");
+}
+
+TEST(DebugStringBuilderTest, TestAllRedacted) {
+  metadata_detail::DebugStringBuilder builder_add_redacted;
+  const std::vector<std::string> allow_list_keys = GetAllowList();
+
+  for (const std::string& curr_key : allow_list_keys) {
+    builder_add_redacted.AddAfterRedaction(curr_key + "1234", curr_key);
+  }
+
+  // All values which are not allow listed should be redacted
+  std::vector<std::string> redacted_output =
+      absl::StrSplit(builder_add_redacted.TakeOutput(), ',');
+  int i = 0;
+  for (std::string& curr_row : redacted_output) {
+    std::string redacted_str = absl::StrCat(
+        allow_list_keys[i++].size(), " bytes redacted by allow listing.");
+    EXPECT_EQ(absl::StrContains(curr_row, redacted_str), true);
+  }
 }
 
 }  // namespace testing

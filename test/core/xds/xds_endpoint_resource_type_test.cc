@@ -55,8 +55,8 @@
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "src/proto/grpc/testing/xds/v3/percent.pb.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
 
 using envoy::config::endpoint::v3::ClusterLoadAssignment;
 
@@ -71,7 +71,8 @@ class XdsEndpointTest : public ::testing::Test {
  protected:
   XdsEndpointTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
                         &xds_endpoint_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
@@ -94,7 +95,8 @@ class XdsEndpointTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 

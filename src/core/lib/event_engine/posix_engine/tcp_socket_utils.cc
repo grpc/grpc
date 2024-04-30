@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 #include <errno.h>
@@ -27,6 +25,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
@@ -49,6 +48,7 @@
 #include <atomic>
 #include <cstring>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/log.h>
@@ -663,7 +663,7 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
 // Set a socket using a grpc_socket_mutator
 absl::Status PosixSocketWrapper::SetSocketMutator(
     grpc_fd_usage usage, grpc_socket_mutator* mutator) {
-  GPR_ASSERT(mutator);
+  CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd_, usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");

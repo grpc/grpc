@@ -24,6 +24,7 @@
 #include <google/protobuf/duration.pb.h>
 #include <google/protobuf/wrappers.pb.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
@@ -68,8 +69,8 @@
 #include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 
@@ -117,7 +118,8 @@ class XdsHttpFilterTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 
@@ -190,7 +192,7 @@ class XdsRouterFilterTest : public XdsHttpFilterTest {
   XdsRouterFilterTest() {
     XdsExtension extension = MakeXdsExtension(Router());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -274,7 +276,7 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
   XdsFaultInjectionFilterTest() {
     XdsExtension extension = MakeXdsExtension(HTTPFault());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -479,7 +481,7 @@ class XdsRbacFilterTest : public XdsHttpFilterTest {
   XdsRbacFilterTest() {
     XdsExtension extension = MakeXdsExtension(RBAC());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -1106,7 +1108,7 @@ class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
     registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
-    GPR_ASSERT(filter_ != nullptr);
+    CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;

@@ -45,11 +45,14 @@ def grpc_bad_client_tests():
         language = "C++",
         testonly = 1,
         deps = [
-            "//test/core/util:grpc_test_util",
+            "//test/core/test_util:grpc_test_util",
             "//:grpc",
             "//:gpr",
             "//test/core/end2end:cq_verifier",
             "//:grpc_http_filters",
+        ],
+        external_deps = [
+            "absl/log:check",
         ],
     )
     for t, topt in BAD_CLIENT_TESTS.items():
@@ -59,6 +62,7 @@ def grpc_bad_client_tests():
             deps = [":bad_client_test"],
             tags = ["bad_client_test"],
             external_deps = [
+                "absl/log:check",
                 "gtest",
             ],
         )

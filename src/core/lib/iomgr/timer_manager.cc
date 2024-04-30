@@ -16,14 +16,15 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/timer_manager.h"
 
 #include <inttypes.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -83,7 +84,7 @@ static void gc_completed_threads(void) {
 }
 
 static void start_timer_thread_and_unlock(void) {
-  GPR_ASSERT(g_threaded);
+  CHECK(g_threaded);
   ++g_waiter_count;
   ++g_thread_count;
   gpr_mu_unlock(&g_mu);

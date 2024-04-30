@@ -26,6 +26,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -34,6 +35,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
@@ -67,9 +69,9 @@
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 // IWYU pragma: no_include <unistd.h>
 
@@ -108,7 +110,7 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
                         grpc_process_auth_metadata_done_cb cb,
                         void* user_data) {
-  GPR_ASSERT(state == nullptr);
+  CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -133,8 +135,7 @@ class CensusFixture : public CoreTestFixture {
     auto* server = grpc_server_create(
         args.Set(GRPC_ARG_ENABLE_CENSUS, true).ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(
-        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -167,8 +168,7 @@ class CompressionFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(
-        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -280,13 +280,11 @@ class FdFixture : public CoreTestFixture {
     int flags;
     grpc_create_socketpair_if_unix(sv);
     flags = fcntl(sv[0], F_GETFL, 0);
-    GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
+    CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
     flags = fcntl(sv[1], F_GETFL, 0);
-    GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-    GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) ==
-               absl::OkStatus());
-    GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) ==
-               absl::OkStatus());
+    CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
   }
 
   int fd_pair_[2];
@@ -314,7 +312,7 @@ class HttpProxyFilter : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(
+    CHECK(
         grpc_server_add_http2_port(server, server_addr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
@@ -341,7 +339,7 @@ class HttpProxyFilter : public CoreTestFixture {
         server_addr_.c_str(), creds,
         args.Set(GRPC_ARG_HTTP_PROXY, proxy_uri).ToC().get());
     grpc_channel_credentials_release(creds);
-    GPR_ASSERT(client);
+    CHECK(client);
     return client;
   }
 
@@ -363,7 +361,7 @@ class ProxyFixture : public CoreTestFixture {
     grpc_server* s = grpc_server_create(server_args, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(grpc_server_add_http2_port(s, port, server_creds));
+    CHECK(grpc_server_add_http2_port(s, port, server_creds));
     grpc_server_credentials_release(server_creds);
     return s;
   }
@@ -383,7 +381,7 @@ class ProxyFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(grpc_server_add_http2_port(
+    CHECK(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
@@ -397,7 +395,7 @@ class ProxyFixture : public CoreTestFixture {
     auto* client = grpc_channel_create(
         grpc_end2end_proxy_get_client_target(proxy_), creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
-    GPR_ASSERT(client);
+    CHECK(client);
     return client;
   }
   const grpc_end2end_proxy_def proxy_def_ = {CreateProxyServer,
@@ -423,7 +421,7 @@ class SslProxyFixture : public CoreTestFixture {
                                                     server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(s, port, ssl_creds));
+    CHECK(grpc_server_add_http2_port(s, port, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
     return s;
   }
@@ -465,7 +463,7 @@ class SslProxyFixture : public CoreTestFixture {
 
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(
+    CHECK(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
     pre_server_start(server);
@@ -482,7 +480,7 @@ class SslProxyFixture : public CoreTestFixture {
         args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr")
             .ToC()
             .get());
-    GPR_ASSERT(client != nullptr);
+    CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(ssl_creds);
     return client;
   }
@@ -536,7 +534,7 @@ class ChaoticGoodFixture final : public CoreTestFixture {
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
+    CHECK(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
     pre_server_start(server);
     grpc_server_start(server);
     return server;

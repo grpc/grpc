@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_listener.h"
 
 #include <stdint.h>
@@ -23,6 +21,7 @@
 #include <set>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -46,6 +45,7 @@
 #include "upb/text/encode.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
@@ -874,8 +874,8 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  GPR_ASSERT(static_cast<unsigned int>(
-                 filter_chain.filter_chain_match.source_type) < 3);
+  CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
+        3u);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
       &destination_ip->source_types_array[static_cast<int>(

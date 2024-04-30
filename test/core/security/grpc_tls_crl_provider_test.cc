@@ -40,9 +40,9 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
 
 static constexpr absl::string_view kCrlPath =
     "test/core/tsi/test_creds/crl_data/crls/current.crl";
@@ -282,6 +282,19 @@ TEST_F(DirectoryReloaderCrlProviderTest, WithBadInitialDirectoryStatus) {
   // callback will have been called
   ASSERT_TRUE(provider.ok()) << provider.status();
   EXPECT_EQ(reload_errors.size(), 1);
+}
+
+TEST(CertificateInfoImplTest, CanFetchValues) {
+  experimental::CertificateInfoImpl cert =
+      CertificateInfoImpl("issuer", "akid");
+  EXPECT_EQ(cert.Issuer(), "issuer");
+  EXPECT_EQ(cert.AuthorityKeyIdentifier(), "akid");
+}
+
+TEST(CertificateInfoImplTest, NoAkid) {
+  experimental::CertificateInfoImpl cert = CertificateInfoImpl("issuer");
+  EXPECT_EQ(cert.Issuer(), "issuer");
+  EXPECT_EQ(cert.AuthorityKeyIdentifier(), "");
 }
 
 }  // namespace testing

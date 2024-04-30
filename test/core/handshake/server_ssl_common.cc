@@ -34,8 +34,10 @@
 #include <openssl/ssl.h>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -48,9 +50,9 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -130,7 +132,7 @@ void server_thread(void* arg) {
   // Start server listening on local port.
   std::string addr = absl::StrCat("127.0.0.1:", port);
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
+  CHECK(grpc_server_add_http2_port(server, addr.c_str(), ssl_creds));
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
@@ -147,7 +149,7 @@ void server_thread(void* arg) {
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
     const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-    GPR_ASSERT(ev.type == GRPC_QUEUE_TIMEOUT);
+    CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
   }
 
   gpr_log(GPR_INFO, "Shutting down server");
@@ -156,7 +158,7 @@ void server_thread(void* arg) {
 
   const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(5);
   grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
-  GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
+  CHECK(ev.type == GRPC_OP_COMPLETE);
 
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
@@ -180,7 +182,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   // Launch the gRPC server thread.
   bool ok;
   grpc_core::Thread thd("grpc_ssl_test", server_thread, &s, &ok);
-  GPR_ASSERT(ok);
+  CHECK(ok);
   thd.Start();
 
   // The work in server_thread will cause the SSL initialization to take place
@@ -231,7 +233,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     memcpy(p, alpn_list[i], len);
     p += len;
   }
-  GPR_ASSERT(SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len) == 0);
+  CHECK_EQ(SSL_CTX_set_alpn_protos(ctx, alpn_protos, alpn_protos_len), 0);
 
   // Try and connect to server. We allow a bounded number of retries as we might
   // be racing with the server setup on its separate thread.
@@ -243,12 +245,12 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
       sleep(1);
     }
   }
-  GPR_ASSERT(sock > 0);
+  CHECK_GT(sock, 0);
   gpr_log(GPR_INFO, "Connected to server on port %d", s.port());
 
   // Establish a SSL* and connect at SSL layer.
   SSL* ssl = SSL_new(ctx);
-  GPR_ASSERT(ssl);
+  CHECK(ssl);
   SSL_set_fd(ssl, sock);
   if (SSL_connect(ssl) <= 0) {
     ERR_print_errors_fp(stderr);

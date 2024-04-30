@@ -41,9 +41,9 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_config.h"
@@ -133,6 +133,7 @@ ABSL_DECLARE_FLAG(std::string, proto_path);
 ABSL_DECLARE_FLAG(std::string, default_service_config);
 ABSL_DECLARE_FLAG(double, timeout);
 ABSL_DECLARE_FLAG(int, max_recv_msg_size);
+ABSL_DECLARE_FLAG(std::string, channel_args);
 
 namespace grpc {
 namespace testing {
@@ -1299,11 +1300,11 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeSmall) {
 
   // Set max_recv_msg_size to 4 which is not enough.
   absl::SetFlag(&FLAGS_max_recv_msg_size, 4);
-
-  // This should fail.
   EXPECT_FALSE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                     std::bind(PrintStream, &output_stream,
                                               std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
   // No output expected.
   EXPECT_TRUE(0 == output_stream.tellp());
   ShutdownServer();
@@ -1320,10 +1321,11 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeEnough) {
 
   // Set max_recv_msg_size to a large enough number.
   absl::SetFlag(&FLAGS_max_recv_msg_size, 1024 * 1024);
-
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
@@ -1341,10 +1343,10 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeDefault) {
 
   // Set max_recv_msg_size to gRPC default, which should suffice.
   absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
-
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
@@ -1362,13 +1364,43 @@ TEST_F(GrpcToolTest, CallMaxRecvMessageSizeUnlimited) {
 
   // Set max_recv_msg_size to unlimited (-1), which should work.
   absl::SetFlag(&FLAGS_max_recv_msg_size, -1);
-
   EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
                                    std::bind(PrintStream, &output_stream,
                                              std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_max_recv_msg_size, 0);
+
   // Expected output: "message: \"Hello\""
   EXPECT_TRUE(nullptr !=
               strstr(output_stream.str().c_str(), "message: \"Hello\""));
+  ShutdownServer();
+}
+
+// This duplicates CallMaxRecvMessageSizeSmall, but using --channel_args.
+TEST_F(GrpcToolTest, CallWithChannelArgs) {
+  std::stringstream output_stream;
+  const std::string server_address = SetUpServer();
+  // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'
+  // --channel_args=grpc.max_receive_message_length=4"
+  const char* argv[] = {"grpc_cli", "call", server_address.c_str(),
+                        "grpc.testing.EchoTestService.Echo",
+                        "message: 'Hello'"};
+
+  // Set max receive size to 4 bytes which is not enough.
+  absl::SetFlag(&FLAGS_channel_args,
+                "x=y,grpc.max_receive_message_length=4,z=1");
+  EXPECT_FALSE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                    std::bind(PrintStream, &output_stream,
+                                              std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_channel_args, "");
+
+  // Then try again with large enough size, which should succeed.
+  absl::SetFlag(&FLAGS_channel_args,
+                ",grpc.max_receive_message_length=1000000,");
+  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
+  absl::SetFlag(&FLAGS_channel_args, "");
+
   ShutdownServer();
 }
 

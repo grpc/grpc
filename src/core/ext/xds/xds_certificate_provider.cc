@@ -16,16 +16,16 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/xds/xds_certificate_provider.h"
 
 #include <utility>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
@@ -35,7 +35,7 @@ namespace grpc_core {
 
 namespace {
 
-class RootCertificatesWatcher
+class RootCertificatesWatcher final
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is
@@ -68,7 +68,7 @@ class RootCertificatesWatcher
   RefCountedPtr<grpc_tls_certificate_distributor> parent_;
 };
 
-class IdentityCertificatesWatcher
+class IdentityCertificatesWatcher final
     : public grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface {
  public:
   // Takes a ref to \a parent instead of a raw pointer since the watcher is
@@ -187,7 +187,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
     }
   } else if (!root_being_watched && root_cert_watcher_ != nullptr) {
     // Cancel root cert watch.
-    GPR_ASSERT(root_cert_provider_ != nullptr);
+    CHECK(root_cert_provider_ != nullptr);
     root_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         root_cert_watcher_);
     root_cert_watcher_ = nullptr;
@@ -207,7 +207,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
           std::move(watcher), absl::nullopt, identity_cert_name_);
     }
   } else if (!identity_being_watched && identity_cert_watcher_ != nullptr) {
-    GPR_ASSERT(identity_cert_provider_ != nullptr);
+    CHECK(identity_cert_provider_ != nullptr);
     identity_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         identity_cert_watcher_);
     identity_cert_watcher_ = nullptr;
