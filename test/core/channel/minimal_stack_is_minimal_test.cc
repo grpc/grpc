@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
@@ -53,7 +54,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 class FakeTransport final : public grpc_core::Transport {
@@ -95,7 +96,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
   builder.SetTarget("foo.test.google.fr");
   {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+    CHECK(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         &builder));
   }
 

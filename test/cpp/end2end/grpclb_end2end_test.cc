@@ -63,9 +63,9 @@
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
@@ -709,7 +709,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (int port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK(lb_uri.ok());
+      CHECK_OK(lb_uri);
       grpc_resolved_address address;
       CHECK(grpc_parse_uri(*lb_uri, &address));
       grpc_core::ChannelArgs args;
@@ -730,7 +730,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     result.addresses = std::move(backends);
     result.service_config = grpc_core::ServiceConfigImpl::Create(
         grpc_core::ChannelArgs(), service_config_json);
-    CHECK(result.service_config.ok());
+    CHECK_OK(result.service_config);
     result.args = grpc_core::SetGrpcLbBalancerAddresses(
         grpc_core::ChannelArgs(), std::move(balancers));
     response_generator_->SetResponseSynchronously(std::move(result));

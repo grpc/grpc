@@ -25,6 +25,7 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/time/time.h"
 
 #include <grpc/grpc.h>
@@ -37,7 +38,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 extern char** environ;
 
@@ -95,7 +96,7 @@ TEST_P(TimeJumpTest, TimerRunning) {
                   grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(3),
                   GRPC_CLOSURE_CREATE(
                       [](void*, grpc_error_handle error) {
-                        GPR_ASSERT(error == absl::CancelledError());
+                        CHECK(error == absl::CancelledError());
                       },
                       nullptr, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
@@ -106,7 +107,7 @@ TEST_P(TimeJumpTest, TimerRunning) {
   // We expect 1 wakeup/sec when there are not timer expiries
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
-  GPR_ASSERT(wakeups <= 3);
+  CHECK_LE(wakeups, 3);
   grpc_timer_cancel(&timer);
 }
 
@@ -127,9 +128,8 @@ TEST_P(TimeJumpTest, TimedWait) {
     int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(after, before));
     gpr_log(GPR_DEBUG, "After wait, timedout = %d elapsed_ms = %d", timedout,
             elapsed_ms);
-    GPR_ASSERT(1 == timedout);
-    GPR_ASSERT(1 ==
-               gpr_time_similar(gpr_time_sub(after, before),
+    CHECK_EQ(timedout, 1);
+    CHECK(1 == gpr_time_similar(gpr_time_sub(after, before),
                                 gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
                                 gpr_time_from_millis(50, GPR_TIMESPAN)));
 
@@ -138,7 +138,7 @@ TEST_P(TimeJumpTest, TimedWait) {
   // We expect 1 wakeup/sec when there are not timer expiries
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
-  GPR_ASSERT(wakeups <= 3);
+  CHECK_LE(wakeups, 3);
 }
 
 int main(int argc, char** argv) {

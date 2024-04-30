@@ -47,7 +47,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/histogram.h"
+#include "test/core/test_util/histogram.h"
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 #include "test/cpp/interop/client_helper.h"
 
@@ -1328,7 +1328,7 @@ bool InteropClient::DoRpcSoakTest(
     int32_t soak_min_time_ms_between_rpcs, int32_t overall_timeout_seconds,
     int32_t request_size, int32_t response_size) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
-  CHECK(soak_iterations > 0);
+  CHECK_GT(soak_iterations, 0);
   PerformSoakTest(server_uri, false /* reset channel per iteration */,
                   soak_iterations, max_failures,
                   max_acceptable_per_iteration_latency_ms,
@@ -1345,7 +1345,7 @@ bool InteropClient::DoChannelSoakTest(
     int32_t request_size, int32_t response_size) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
           soak_iterations);
-  CHECK(soak_iterations > 0);
+  CHECK_GT(soak_iterations, 0);
   PerformSoakTest(server_uri, true /* reset channel per iteration */,
                   soak_iterations, max_failures,
                   max_acceptable_per_iteration_latency_ms,
@@ -1358,8 +1358,8 @@ bool InteropClient::DoChannelSoakTest(
 bool InteropClient::DoLongLivedChannelTest(int32_t soak_iterations,
                                            int32_t iteration_interval) {
   gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
-  CHECK(soak_iterations > 0);
-  CHECK(iteration_interval > 0);
+  CHECK_GT(soak_iterations, 0);
+  CHECK_GT(iteration_interval, 0);
   SimpleRequest request;
   SimpleResponse response;
   int num_failures = 0;

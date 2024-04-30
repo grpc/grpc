@@ -40,8 +40,8 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/tsi/transport_security.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define CLIENT_CERT_PATH "src/core/tsi/test_creds/multi-domain.pem"

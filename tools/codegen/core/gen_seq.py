@@ -110,7 +110,7 @@ tail${i}:
 % endfor
   }
   SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&${"prior."*(n-1-i)}current_promise,
             other.${"prior."*(n-1-i)}current_promise);
 % for i in range(0,n-1):
@@ -197,6 +197,7 @@ front_matter = """
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
 

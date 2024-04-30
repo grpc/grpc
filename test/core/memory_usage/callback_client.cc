@@ -27,6 +27,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/check.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
@@ -41,7 +42,7 @@
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
@@ -124,7 +125,7 @@ std::shared_ptr<CallParams> GetBeforeSnapshot(
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
-  GPR_ASSERT(argc >= 1);
+  CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
   if (absl::GetFlag(FLAGS_target).empty()) {
@@ -158,10 +159,10 @@ int main(int argc, char** argv) {
 
   // Checking that all channels are still open
   for (int i = 0; i < size; ++i) {
-    GPR_ASSERT(!std::exchange(channels_list[i], nullptr)
-                    ->WaitForStateChange(GRPC_CHANNEL_READY,
-                                         std::chrono::system_clock::now() +
-                                             std::chrono::milliseconds(1)));
+    CHECK(!std::exchange(channels_list[i], nullptr)
+               ->WaitForStateChange(GRPC_CHANNEL_READY,
+                                    std::chrono::system_clock::now() +
+                                        std::chrono::milliseconds(1)));
   }
 
   std::string prefix;

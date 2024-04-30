@@ -26,6 +26,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
@@ -40,7 +42,7 @@
 #include "test/core/end2end/fixtures/h2_tls_common.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
@@ -133,7 +135,7 @@ void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg) {
   test->SetUp();
   test->RunTest();
   test->TearDown();
-  GPR_ASSERT(!::testing::Test::HasFailure());
+  CHECK(!::testing::Test::HasFailure());
 }
 
 }  // namespace grpc_core

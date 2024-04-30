@@ -24,7 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 

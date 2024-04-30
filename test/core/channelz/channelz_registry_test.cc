@@ -26,7 +26,7 @@
 #include "gtest/gtest.h"
 
 #include "src/core/channelz/channelz.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace channelz {

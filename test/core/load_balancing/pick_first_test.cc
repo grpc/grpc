@@ -49,8 +49,8 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

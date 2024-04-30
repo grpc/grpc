@@ -18,14 +18,15 @@
 #include <sstream>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
-#include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(int32_t, handshaker_port, 55056,
@@ -49,7 +50,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
-  GPR_ASSERT(absl::GetFlag(FLAGS_handshaker_port) != 0);
+  CHECK_NE(absl::GetFlag(FLAGS_handshaker_port), 0);
   std::ostringstream server_address;
   server_address << "[::1]:" << absl::GetFlag(FLAGS_handshaker_port);
 

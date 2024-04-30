@@ -112,7 +112,7 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   data_endpoint.ExpectRead(
       {EventEngineSlice::FromCopiedString("12345678"), Zeros(56)}, nullptr);
   // Once that's read we'll create a new call
-  auto* call_arena = Arena::Create(1024, memory_allocator());
+  auto* call_arena = MakeArena();
   EXPECT_CALL(acceptor, CreateArena).WillOnce(Return(call_arena));
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(acceptor, CreateCall(_, call_arena))
@@ -121,9 +121,9 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
         EXPECT_EQ(client_initial_metadata->get_pointer(HttpPathMetadata())
                       ->as_string_view(),
                   "/demo.Service/Step");
-        CallInitiatorAndHandler call =
-            MakeCall(std::move(client_initial_metadata), event_engine().get(),
-                     call_arena, true);
+        CallInitiatorAndHandler call = MakeCallPair(
+            std::move(client_initial_metadata), event_engine().get(),
+            call_arena, call_arena_allocator(), nullptr);
         auto handler = call.handler.V2HackToStartCallWithoutACallFilterStack();
         handler.SpawnInfallible("test-io", [&on_done, handler]() mutable {
           return Seq(

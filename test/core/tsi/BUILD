@@ -44,7 +44,7 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -52,13 +52,14 @@ grpc_cc_test(
     name = "ssl_session_cache_test",
     srcs = ["ssl_session_cache_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -83,8 +84,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
@@ -119,7 +120,7 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -148,6 +149,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -157,7 +159,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:tsi",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -169,6 +171,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

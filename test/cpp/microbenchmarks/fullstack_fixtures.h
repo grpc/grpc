@@ -44,8 +44,8 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/server.h"
 #include "src/cpp/client/create_channel_internal.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {

@@ -29,8 +29,8 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/scoped_env_var.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {

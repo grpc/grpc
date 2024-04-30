@@ -75,10 +75,10 @@
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/test_lb_policies.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
@@ -239,7 +239,7 @@ class FakeResolverResponseGeneratorWrapper {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK(lb_uri.ok());
+      CHECK_OK(lb_uri);
       grpc_resolved_address address;
       CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, per_address_args);
@@ -3018,7 +3018,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const std::vector<size_t>& expected_weights, size_t total_passes = 3,
       EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
-    CHECK(expected_weights.size() == servers_.size());
+    CHECK_EQ(expected_weights.size(), servers_.size());
     size_t total_picks_per_pass = 0;
     for (size_t picks : expected_weights) {
       total_picks_per_pass += picks;
