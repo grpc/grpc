@@ -123,7 +123,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
         CoreConfiguration::Get().resolver_registry().CreateResolver(
             absl::StrCat("dns:", name_to_resolve), args.args, args.pollset_set,
             work_serializer_, std::move(args.result_handler));
-    CHECK_NE(child_resolver_, nullptr);
+    CHECK(child_resolver_ != nullptr);
     return;
   }
   // Maybe override metadata server name for testing
@@ -142,7 +142,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       xds_uri, args.args, args.pollset_set, work_serializer_,
       std::move(args.result_handler));
-  CHECK_NE(child_resolver_, nullptr);
+  CHECK(child_resolver_ != nullptr);
 }
 
 void GoogleCloud2ProdResolver::StartLocked() {
