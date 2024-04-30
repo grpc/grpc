@@ -4515,42 +4515,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_deadline_filter",
-    srcs = [
-        "ext/filters/deadline/deadline_filter.cc",
-    ],
-    hdrs = [
-        "ext/filters/deadline/deadline_filter.h",
-    ],
-    external_deps = [
-        "absl/status",
-        "absl/types:optional",
-    ],
-    language = "c++",
-    deps = [
-        "arena",
-        "arena_promise",
-        "channel_fwd",
-        "channel_stack_type",
-        "closure",
-        "context",
-        "error",
-        "metadata_batch",
-        "status_helper",
-        "time",
-        "//:call_combiner",
-        "//:channel_arg_names",
-        "//:config",
-        "//:debug_location",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_base",
-        "//:grpc_public_hdrs",
-        "//:iomgr_timer",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_client_authority_filter",
     srcs = [
         "ext/filters/http/client_authority_filter.cc",
@@ -4603,7 +4567,6 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "context",
-        "grpc_deadline_filter",
         "grpc_service_config",
         "json",
         "json_args",

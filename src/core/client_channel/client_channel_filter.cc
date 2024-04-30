@@ -60,7 +60,6 @@
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
-#include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
@@ -209,14 +208,14 @@ class ClientChannelFilter::FilterBasedCallData final
                       const grpc_call_element_args& args);
   ~FilterBasedCallData() override;
 
-  grpc_call_element* elem() const { return deadline_state_.elem; }
-  grpc_call_stack* owning_call() const { return deadline_state_.call_stack; }
-  CallCombiner* call_combiner() const { return deadline_state_.call_combiner; }
+  grpc_call_element* elem() const { return elem_; }
+  grpc_call_stack* owning_call() const { return owning_call_; }
+  CallCombiner* call_combiner() const { return call_combiner_; }
 
   ClientChannelFilter* chand() const override {
     return static_cast<ClientChannelFilter*>(elem()->channel_data);
   }
-  Arena* arena() const override { return deadline_state_.arena; }
+  Arena* arena() const override { return arena_; }
   grpc_polling_entity* pollent() override { return pollent_; }
   grpc_metadata_batch* send_initial_metadata() override {
     return pending_batches_[0]
@@ -269,10 +268,8 @@ class ClientChannelFilter::FilterBasedCallData final
   void ResetDeadline(Duration timeout) override {
     const Timestamp per_method_deadline =
         Timestamp::FromCycleCounterRoundUp(call_start_time_) + timeout;
-    if (per_method_deadline < deadline_) {
-      deadline_ = per_method_deadline;
-      grpc_deadline_state_reset(&deadline_state_, deadline_);
-    }
+    static_cast<Call*>(call_context_[GRPC_CONTEXT_CALL].value)
+        ->UpdateDeadline(per_method_deadline);
   }
 
   void CreateDynamicCall();
@@ -285,8 +282,10 @@ class ClientChannelFilter::FilterBasedCallData final
   gpr_cycle_counter call_start_time_;
   Timestamp deadline_;
 
-  // State for handling deadlines.
-  grpc_deadline_state deadline_state_;
+  Arena* const arena_;
+  grpc_call_element* const elem_;
+  grpc_call_stack* const owning_call_;
+  CallCombiner* const call_combiner_;
 
   grpc_polling_entity* pollent_ = nullptr;
 
@@ -386,11 +385,12 @@ class ClientChannelFilter::PromiseBasedCallData final
   }
 
   void ResetDeadline(Duration timeout) override {
+    Call* call = GetContext<Call>();
     CallContext* call_context = GetContext<CallContext>();
     const Timestamp per_method_deadline =
         Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
         timeout;
-    call_context->UpdateDeadline(per_method_deadline);
+    call->UpdateDeadline(per_method_deadline);
   }
 
   ClientChannelFilter* chand_;
@@ -2212,12 +2212,15 @@ ClientChannelFilter::FilterBasedCallData::FilterBasedCallData(
       call_context_(args.context),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
-      deadline_state_(
-          elem, args,
-          GPR_LIKELY(static_cast<ClientChannelFilter*>(elem->channel_data)
-                         ->deadline_checking_enabled_)
-              ? args.deadline
-              : Timestamp::InfFuture()) {
+      arena_(args.arena),
+      elem_(elem),
+      owning_call_(args.call_stack),
+      call_combiner_(args.call_combiner) {
+  if (GPR_LIKELY(static_cast<ClientChannelFilter*>(elem->channel_data)
+                     ->deadline_checking_enabled_)) {
+    static_cast<Call*>(call_context_[GRPC_CONTEXT_CALL].value)
+        ->UpdateDeadline(args.deadline);
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: created call", chand(), this);
   }
@@ -2260,10 +2263,6 @@ void ClientChannelFilter::FilterBasedCallData::StartTransportStreamOpBatch(
       !GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from above: %s", chand,
             calld, grpc_transport_stream_op_batch_string(batch, false).c_str());
-  }
-  if (GPR_LIKELY(chand->deadline_checking_enabled_)) {
-    grpc_deadline_state_client_start_transport_stream_op_batch(
-        &calld->deadline_state_, batch);
   }
   // Intercept recv_trailing_metadata to commit the call, in case we wind up
   // failing the call before we get down to the retry or LB call layer.
