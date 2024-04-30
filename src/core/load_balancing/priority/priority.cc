@@ -465,7 +465,7 @@ void PriorityLb::ChoosePriorityLocked() {
               priority, child_name.c_str());
     }
     auto& child = children_[child_name];
-    CHECK_NE(child, nullptr);
+    CHECK(child != nullptr);
     if (child->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
       SetCurrentPriorityLocked(priority, /*deactivate_lower_priorities=*/false,
                                "CONNECTING (pass 2)");
@@ -497,7 +497,7 @@ void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
     }
   }
   auto& child = children_[config_->priorities()[priority]];
-  CHECK_NE(child, nullptr);
+  CHECK(child != nullptr);
   channel_control_helper()->UpdateState(child->connectivity_state(),
                                         child->connectivity_status(),
                                         child->GetPicker());

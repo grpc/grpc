@@ -701,7 +701,7 @@ WeightedRoundRobin::~WeightedRoundRobin() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p] Destroying Round Robin policy", this);
   }
-  CHECK_EQ(endpoint_list_, nullptr);
+  CHECK(endpoint_list_ == nullptr);
   CHECK_EQ(latest_pending_endpoint_list_, nullptr);
 }
 

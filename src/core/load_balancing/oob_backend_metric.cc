@@ -225,7 +225,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  CHECK_NE(subchannel_, nullptr);  // Should not be called before Start().
+  CHECK(subchannel_ != nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }

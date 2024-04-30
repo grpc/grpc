@@ -214,7 +214,7 @@ RoundRobin::~RoundRobin() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Destroying Round Robin policy", this);
   }
-  CHECK_EQ(endpoint_list_, nullptr);
+  CHECK(endpoint_list_ == nullptr);
   CHECK_EQ(latest_pending_endpoint_list_, nullptr);
 }
 

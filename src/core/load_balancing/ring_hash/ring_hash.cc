@@ -517,7 +517,7 @@ void RingHash::RingHashEndpoint::RequestConnectionLocked() {
 }
 
 void RingHash::RingHashEndpoint::CreateChildPolicy() {
-  CHECK_EQ(child_policy_, nullptr);
+  CHECK(child_policy_ == nullptr);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = ring_hash_->work_serializer();
   lb_policy_args.args =

@@ -51,8 +51,6 @@
 
 #include "src/core/load_balancing/grpclb/grpclb.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/json.h>
@@ -887,7 +885,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
           GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace) ? "BalancerCallState"
                                                      : nullptr),
       grpclb_policy_(std::move(parent_grpclb_policy)) {
-  CHECK_NE(grpclb_policy_, nullptr);
+  CHECK(grpclb_policy_ != nullptr);
   CHECK(!grpclb_policy()->shutting_down_);
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in grpclb_policy_->interested_parties(), which is comprised of

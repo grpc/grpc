@@ -425,7 +425,7 @@ PickFirst::~PickFirst() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
-  CHECK_EQ(subchannel_list_, nullptr);
+  CHECK(subchannel_list_ == nullptr);
 }
 
 void PickFirst::ShutdownLocked() {
@@ -1399,7 +1399,7 @@ OldPickFirst::~OldPickFirst() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
-  CHECK_EQ(subchannel_list_, nullptr);
+  CHECK(subchannel_list_ == nullptr);
   CHECK_EQ(latest_pending_subchannel_list_, nullptr);
 }
 

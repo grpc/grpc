@@ -157,7 +157,7 @@ StaticStrideScheduler::StaticStrideScheduler(
     absl::AnyInvocable<uint32_t()> next_sequence_func)
     : next_sequence_func_(std::move(next_sequence_func)),
       weights_(std::move(weights)) {
-  CHECK_NE(next_sequence_func_, nullptr);
+  CHECK(next_sequence_func_ != nullptr);
 }
 
 size_t StaticStrideScheduler::Pick() const {

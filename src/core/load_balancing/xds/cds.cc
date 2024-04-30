@@ -286,7 +286,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s is_dynamic=%d",
             this, new_config->cluster().c_str(), new_config->is_dynamic());
   }
-  CHECK_NE(new_config, nullptr);
+  CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
   if (cluster_name_.empty()) {
