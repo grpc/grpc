@@ -380,7 +380,7 @@ static void slice_buffer_move_first_maybe_ref(grpc_slice_buffer* src, size_t n,
   }
   CHECK(dst->length == output_len);
   CHECK(src->length == new_input_len);
-  CHECK_GT(src->count, 0);
+  CHECK_GT(src->count, 0u);
 }
 
 void grpc_slice_buffer_move_first_no_inline(grpc_slice_buffer* src, size_t n,
@@ -495,7 +495,7 @@ void grpc_slice_buffer_trim_end(grpc_slice_buffer* sb, size_t n,
 
 grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
   grpc_slice slice;
-  CHECK_GT(sb->count, 0);
+  CHECK_GT(sb->count, 0u);
   slice = sb->slices[0];
   sb->slices++;
   sb->count--;
@@ -505,7 +505,7 @@ grpc_slice grpc_slice_buffer_take_first(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_remove_first(grpc_slice_buffer* sb) {
-  DCHECK_GT(sb->count, 0);
+  DCHECK_GT(sb->count, 0u);
   sb->length -= GRPC_SLICE_LENGTH(sb->slices[0]);
   grpc_core::CSliceUnref(sb->slices[0]);
   sb->slices++;
