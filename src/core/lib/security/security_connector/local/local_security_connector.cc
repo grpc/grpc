@@ -79,7 +79,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_LOCAL_TRANSPORT_SECURITY_TYPE);
   CHECK(grpc_auth_context_set_peer_identity_property_name(
-            ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1);
+            ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1u);
   CHECK_EQ(peer->property_count, 1);
   const tsi_peer_property* prop = &peer->properties[0];
   CHECK_NE(prop, nullptr);
