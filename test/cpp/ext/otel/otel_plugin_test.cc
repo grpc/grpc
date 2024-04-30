@@ -39,7 +39,7 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
 

@@ -33,7 +33,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
-#include "test/core/util/cmdline.h"
+#include "test/core/test_util/cmdline.h"
 
 typedef struct {
   grpc_pollset* pollset;

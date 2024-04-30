@@ -35,8 +35,8 @@
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 namespace grpc_core {
 namespace testing {

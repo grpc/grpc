@@ -21,7 +21,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/time.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 int main(int argc, char** argv) {
   grpc_completion_queue* cq1;

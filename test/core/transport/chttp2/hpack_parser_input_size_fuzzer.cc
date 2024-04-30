@@ -44,7 +44,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "test/core/util/slice_splitter.h"
+#include "test/core/test_util/slice_splitter.h"
 
 bool squelch = true;
 bool leak_check = true;

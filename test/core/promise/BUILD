@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 licenses(["notice"])
 
@@ -124,7 +124,7 @@ grpc_cc_test(
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -519,6 +519,7 @@ grpc_proto_fuzzer(
     corpus = "promise_fuzzer_corpus",
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/types:optional",
     ],

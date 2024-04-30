@@ -27,7 +27,7 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
