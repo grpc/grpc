@@ -751,7 +751,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
         method_config = entry->method_config;
       });
   auto cluster = route_config_data_->FindClusterRef(cluster_name);
-  CHECK_NE(cluster, nullptr);
+  CHECK(cluster != nullptr);
   // Generate a hash.
   absl::optional<uint64_t> hash;
   for (const auto& hash_policy : route_action->hash_policies) {
