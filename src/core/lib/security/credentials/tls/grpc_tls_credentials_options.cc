@@ -20,8 +20,9 @@
 
 #include <memory>
 
-#include <grpc/grpc_crl_provider.h>
 #include "absl/log/check.h"
+
+#include <grpc/grpc_crl_provider.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

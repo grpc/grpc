@@ -41,6 +41,7 @@
 #include <openssl/param_build.h>
 #endif
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -49,7 +50,6 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -840,8 +840,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   char* path;
   absl::StatusOr<grpc_core::URI> uri;
 
-  CHECK(ctx != nullptr && ctx->header != nullptr &&
-             ctx->claims != nullptr);
+  CHECK(ctx != nullptr && ctx->header != nullptr && ctx->claims != nullptr);
   iss = ctx->claims->iss;
   if (ctx->header->kid == nullptr) {
     gpr_log(GPR_ERROR, "Missing kid in jose header.");
@@ -928,7 +927,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   std::string signature_str;
 
   CHECK(verifier != nullptr && jwt != nullptr && audience != nullptr &&
-             cb != nullptr);
+        cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));

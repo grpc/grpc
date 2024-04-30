@@ -22,10 +22,10 @@
 #include <memory>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -145,8 +145,8 @@ grpc_core::RefCountedPtr<grpc_channel_security_connector>
 grpc_composite_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
-  CHECK(inner_creds_ != nullptr );
-CHECK_NE( call_creds_, nullptr);
+  CHECK(inner_creds_ != nullptr);
+  CHECK_NE(call_creds_, nullptr);
   // If we are passed a call_creds, create a call composite to pass it
   // downstream.
   if (call_creds != nullptr) {
@@ -162,7 +162,7 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved) {
   CHECK(channel_creds != nullptr && call_creds != nullptr &&
-             reserved == nullptr);
+        reserved == nullptr);
   GRPC_API_TRACE(
       "grpc_composite_channel_credentials_create(channel_creds=%p, "
       "call_creds=%p, reserved=%p)",

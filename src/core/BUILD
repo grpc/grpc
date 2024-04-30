@@ -3909,6 +3909,7 @@ grpc_cc_library(
         "lib/security/security_connector/ssl/ssl_security_connector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
@@ -3953,6 +3954,7 @@ grpc_cc_library(
         "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -4034,6 +4036,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:bind_front",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4085,6 +4088,7 @@ grpc_cc_library(
         "lib/security/credentials/iam/iam_credentials.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -4118,6 +4122,7 @@ grpc_cc_library(
         "lib/security/credentials/oauth2/oauth2_credentials.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4179,6 +4184,7 @@ grpc_cc_library(
         "lib/security/credentials/external/url_external_account_credentials.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4998,6 +5004,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/functional:bind_front",
+        "absl/log:check",
         "absl/memory",
         "absl/random",
         "absl/status",
