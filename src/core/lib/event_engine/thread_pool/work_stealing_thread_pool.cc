@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
@@ -183,7 +184,7 @@ WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
 void WorkStealingThreadPool::Quiesce() { pool_->Quiesce(); }
 
 WorkStealingThreadPool::~WorkStealingThreadPool() {
-  GPR_ASSERT(pool_->IsQuiesced());
+  CHECK(pool_->IsQuiesced());
 }
 
 void WorkStealingThreadPool::Run(absl::AnyInvocable<void()> callback) {
@@ -237,7 +238,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
-  GPR_DEBUG_ASSERT(quiesced_.load(std::memory_order_relaxed) == false);
+  DCHECK(quiesced_.load(std::memory_order_relaxed) == false);
   if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
@@ -280,7 +281,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
   if (!threads_were_shut_down.ok() && g_log_verbose_failures) {
     DumpStacksAndCrash();
   }
-  GPR_ASSERT(queue_.Empty());
+  CHECK(queue_.Empty());
   quiesced_.store(true, std::memory_order_relaxed);
   lifeguard_.BlockUntilShutdownAndReset();
 }
@@ -293,14 +294,14 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetShutdown(
     bool is_shutdown) {
   auto was_shutdown = shutdown_.exchange(is_shutdown);
-  GPR_ASSERT(is_shutdown != was_shutdown);
+  CHECK(is_shutdown != was_shutdown);
   work_signal_.SignalAll();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetForking(
     bool is_forking) {
   auto was_forking = forking_.exchange(is_forking);
-  GPR_ASSERT(is_forking != was_forking);
+  CHECK(is_forking != was_forking);
 }
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsForking() {
@@ -507,7 +508,7 @@ void WorkStealingThreadPool::ThreadState::ThreadBody() {
   } else if (pool_->IsShutdown()) {
     FinishDraining();
   }
-  GPR_ASSERT(g_local_queue->Empty());
+  CHECK(g_local_queue->Empty());
   pool_->theft_registry()->Unenroll(g_local_queue);
   delete g_local_queue;
   if (g_log_verbose_failures) {

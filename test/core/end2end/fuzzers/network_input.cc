@@ -41,7 +41,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/test_util/mock_endpoint.h"
 
 using grpc_event_engine::experimental::EventEngine;
 

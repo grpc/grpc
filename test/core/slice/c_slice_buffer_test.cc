@@ -25,7 +25,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static constexpr size_t kTotalDataLength = 4096;
 

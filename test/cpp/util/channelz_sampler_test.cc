@@ -45,8 +45,8 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
 

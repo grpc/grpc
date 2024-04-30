@@ -38,8 +38,8 @@
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 #include "src/proto/grpc/reflection/v1alpha/reflection.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 
 namespace grpc {

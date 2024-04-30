@@ -25,7 +25,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_binder {
 namespace end2end_testing {

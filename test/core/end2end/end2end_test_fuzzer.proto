@@ -17,7 +17,7 @@ syntax = "proto3";
 package core_end2end_test_fuzzer;
 
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
-import "test/core/util/fuzz_config_vars.proto";
+import "test/core/test_util/fuzz_config_vars.proto";
 
 message Msg {
     uint32 test_id = 1;

@@ -51,7 +51,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/fake_stats_plugin.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 
 namespace grpc_core {
 namespace {

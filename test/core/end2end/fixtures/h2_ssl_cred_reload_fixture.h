@@ -33,7 +33,7 @@
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 class SslCredReloadFixture : public SecureFixture {
  public:

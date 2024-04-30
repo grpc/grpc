@@ -25,7 +25,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(ForkTest, Init) {
   ASSERT_FALSE(grpc_core::Fork::Enabled());

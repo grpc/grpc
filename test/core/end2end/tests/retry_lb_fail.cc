@@ -27,7 +27,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_lb_policies.h"
+#include "test/core/test_util/test_lb_policies.h"
 
 namespace grpc_core {
 namespace {
