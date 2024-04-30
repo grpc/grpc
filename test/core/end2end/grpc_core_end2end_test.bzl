@@ -17,7 +17,7 @@ Generate one e2e test & associated fuzzer
 """
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 END2END_TEST_DATA = [
     "//src/core/tsi/test_creds:ca.pem",
@@ -86,9 +86,9 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
             "//src/core:stats_data",
             "//src/core:status_helper",
             "//src/core:time",
-            "//test/core/util:fake_stats_plugin",
-            "//test/core/util:grpc_test_util",
-            "//test/core/util:test_lb_policies",
+            "//test/core/test_util:fake_stats_plugin",
+            "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:test_lb_policies",
         ],
     )
 

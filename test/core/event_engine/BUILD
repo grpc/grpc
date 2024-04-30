@@ -64,7 +64,7 @@ grpc_cc_test(
         "//src/core:event_engine_thread_count",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -98,7 +98,7 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//src/core:default_event_engine",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -109,7 +109,7 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -122,7 +122,7 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//src/core:default_event_engine",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -235,7 +235,7 @@ grpc_cc_library(
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:time",
-        "//test/core/util:build",
+        "//test/core/test_util:build",
     ],
 )
 

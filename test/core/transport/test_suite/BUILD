@@ -97,7 +97,7 @@ grpc_cc_library(
         "fixture",
         "test",
         "//:grpc_trace",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -141,7 +141,7 @@ grpc_proto_library(
     has_services = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "//test/core/util:fuzz_config_vars_proto",
+        "//test/core/test_util:fuzz_config_vars_proto",
     ],
 )
 
