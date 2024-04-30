@@ -30,7 +30,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
     ],
 )
@@ -48,7 +48,7 @@ grpc_cc_test(
         "//:grpc++",
         "//src/core:channel_args",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
     ],
 )
@@ -66,6 +66,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -68,7 +68,7 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 static gpr_mu g_mu;
 static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>

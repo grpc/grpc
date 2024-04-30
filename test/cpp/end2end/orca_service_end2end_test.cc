@@ -34,8 +34,8 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_service.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 using xds::data::orca::v3::OrcaLoadReport;
 using xds::service::orca::v3::OpenRcaService;

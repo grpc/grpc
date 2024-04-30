@@ -38,7 +38,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 struct test_socket_mutator {
   grpc_socket_mutator base;

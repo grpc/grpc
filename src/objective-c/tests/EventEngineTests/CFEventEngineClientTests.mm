@@ -24,7 +24,7 @@
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/event_engine/test_suite/tests/client_test.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 @interface EventEngineTimerTests : XCTestCase
 @end

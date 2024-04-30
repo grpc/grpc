@@ -34,8 +34,8 @@
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/mock_objects.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_binder {
 namespace {

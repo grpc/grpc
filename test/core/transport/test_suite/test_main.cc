@@ -15,9 +15,9 @@
 #include "absl/random/random.h"
 
 #include "src/core/lib/debug/trace.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/test_suite/fixture.h"
 #include "test/core/transport/test_suite/test.h"
-#include "test/core/util/test_config.h"
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
