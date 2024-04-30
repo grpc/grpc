@@ -8579,7 +8579,6 @@ target_link_libraries(call_filters_test
   absl::inlined_vector
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   absl::utility
@@ -10240,7 +10239,6 @@ target_link_libraries(chunked_vector_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -13384,7 +13382,6 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   upb_message_lib
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -14339,7 +14336,6 @@ target_link_libraries(for_each_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -18091,7 +18087,6 @@ target_link_libraries(interceptor_list_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -19285,7 +19280,6 @@ target_link_libraries(map_pipe_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -21549,7 +21543,6 @@ target_link_libraries(periodic_update_test
   upb_message_lib
   absl::function_ref
   absl::hash
-  absl::check
   absl::statusor
   gpr
 )
