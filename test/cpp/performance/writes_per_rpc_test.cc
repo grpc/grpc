@@ -81,16 +81,16 @@ class InProcessCHTTP2 {
           listener_endpoint = std::move(ep);
           listener_started.Notify();
         },
-        [](absl::Status status) { CHECK_OK(status); }, config,
+        [](absl::Status status) { CHECK(status.ok()); }, config,
         std::make_unique<grpc_core::MemoryQuota>("foo"));
     if (!listener.ok()) {
       grpc_core::Crash(absl::StrCat("failed to start listener: ",
                                     listener.status().ToString()));
     }
     auto target_addr = URIToResolvedAddress(addr);
-    CHECK_OK(target_addr);
-    CHECK_OK((*listener)->Bind(*target_addr));
-    CHECK_OK((*listener)->Start());
+    CHECK(target_addr.ok());
+    CHECK((*listener)->Bind(*target_addr).ok());
+    CHECK((*listener)->Start().ok());
     // Creating the client
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
     grpc_core::Notification client_connected;
@@ -98,7 +98,7 @@ class InProcessCHTTP2 {
         std::make_unique<grpc_core::MemoryQuota>("client");
     std::ignore = fuzzing_engine->Connect(
         [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-          CHECK_OK(endpoint);
+          CHECK(endpoint.ok());
           client_endpoint = std::move(*endpoint);
           client_connected.Notify();
         },

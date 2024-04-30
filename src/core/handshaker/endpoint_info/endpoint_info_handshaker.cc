@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/transport/endpoint_info_handshaker.h"
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 
 #include <memory>
 
@@ -22,15 +22,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/handshaker_factory.h"
+#include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/transport/handshaker.h"
-#include "src/core/lib/transport/handshaker_factory.h"
-#include "src/core/lib/transport/handshaker_registry.h"
 
 namespace grpc_core {
 

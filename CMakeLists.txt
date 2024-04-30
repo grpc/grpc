@@ -1834,7 +1834,6 @@ add_library(grpc
   src/core/client_channel/config_selector.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
-  src/core/client_channel/http_proxy_mapper.cc
   src/core/client_channel/local_subchannel_pool.cc
   src/core/client_channel/retry_filter.cc
   src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -2237,6 +2236,16 @@ add_library(grpc
   src/core/ext/xds/xds_route_config.cc
   src/core/ext/xds/xds_routing.cc
   src/core/ext/xds/xds_transport_grpc.cc
+  src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
+  src/core/handshaker/handshaker.cc
+  src/core/handshaker/handshaker_registry.cc
+  src/core/handshaker/http_connect/http_connect_handshaker.cc
+  src/core/handshaker/http_connect/http_proxy_mapper.cc
+  src/core/handshaker/proxy_mapper_registry.cc
+  src/core/handshaker/security/secure_endpoint.cc
+  src/core/handshaker/security/security_handshaker.cc
+  src/core/handshaker/security/tsi_error.cc
+  src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
@@ -2321,7 +2330,6 @@ add_library(grpc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/windows/directory_reader.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/handshaker/proxy_mapper_registry.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/httpcli_security_connector.cc
@@ -2480,10 +2488,7 @@ add_library(grpc
   src/core/lib/security/security_connector/ssl_utils.cc
   src/core/lib/security/security_connector/tls/tls_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/secure_endpoint.cc
-  src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -2518,18 +2523,13 @@ add_library(grpc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
-  src/core/lib/transport/endpoint_info_handshaker.cc
   src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/handshaker.cc
-  src/core/lib/transport/handshaker_registry.cc
-  src/core/lib/transport/http_connect_handshaker.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/metadata_info.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/tcp_connect_handshaker.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2931,7 +2931,6 @@ add_library(grpc_unsecure
   src/core/client_channel/config_selector.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
-  src/core/client_channel/http_proxy_mapper.cc
   src/core/client_channel/local_subchannel_pool.cc
   src/core/client_channel/retry_filter.cc
   src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -3006,6 +3005,16 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
+  src/core/handshaker/handshaker.cc
+  src/core/handshaker/handshaker_registry.cc
+  src/core/handshaker/http_connect/http_connect_handshaker.cc
+  src/core/handshaker/http_connect/http_proxy_mapper.cc
+  src/core/handshaker/proxy_mapper_registry.cc
+  src/core/handshaker/security/secure_endpoint.cc
+  src/core/handshaker/security/security_handshaker.cc
+  src/core/handshaker/security/tsi_error.cc
+  src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
@@ -3088,7 +3097,6 @@ add_library(grpc_unsecure
   src/core/lib/gprpp/uuid_v4.cc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/handshaker/proxy_mapper_registry.cc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
@@ -3210,10 +3218,7 @@ add_library(grpc_unsecure
   src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/secure_endpoint.cc
-  src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -3248,18 +3253,13 @@ add_library(grpc_unsecure
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
-  src/core/lib/transport/endpoint_info_handshaker.cc
   src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/handshaker.cc
-  src/core/lib/transport/handshaker_registry.cc
-  src/core/lib/transport/http_connect_handshaker.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
   src/core/lib/transport/metadata_info.cc
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/tcp_connect_handshaker.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -5124,6 +5124,13 @@ add_library(grpc_authorization_provider
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
+  src/core/handshaker/handshaker.cc
+  src/core/handshaker/handshaker_registry.cc
+  src/core/handshaker/proxy_mapper_registry.cc
+  src/core/handshaker/security/secure_endpoint.cc
+  src/core/handshaker/security/security_handshaker.cc
+  src/core/handshaker/security/tsi_error.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
@@ -5204,7 +5211,6 @@ add_library(grpc_authorization_provider
   src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/handshaker/proxy_mapper_registry.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -5325,10 +5331,7 @@ add_library(grpc_authorization_provider
   src/core/lib/security/security_connector/load_system_roots_windows.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/secure_endpoint.cc
-  src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
-  src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -5359,10 +5362,7 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
-  src/core/lib/transport/endpoint_info_handshaker.cc
   src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/handshaker.cc
-  src/core/lib/transport/handshaker_registry.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
@@ -8582,6 +8582,7 @@ target_link_libraries(call_filters_test
   absl::inlined_vector
   absl::function_ref
   absl::hash
+  absl::check
   absl::type_traits
   absl::statusor
   absl::utility
@@ -10242,6 +10243,7 @@ target_link_libraries(chunked_vector_test
   absl::config
   absl::function_ref
   absl::hash
+  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -13385,6 +13387,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   upb_message_lib
   absl::config
   absl::hash
+  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -14340,6 +14343,7 @@ target_link_libraries(for_each_test
   absl::config
   absl::function_ref
   absl::hash
+  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -17725,6 +17729,8 @@ add_executable(interception_chain_test
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/handshaker/handshaker_registry.cc
+  src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
@@ -17805,7 +17811,6 @@ add_executable(interception_chain_test
   src/core/lib/gprpp/time_averaged_stats.cc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/handshaker/proxy_mapper_registry.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -17933,7 +17938,6 @@ add_executable(interception_chain_test
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/handshaker_registry.cc
   src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
@@ -18093,6 +18097,7 @@ target_link_libraries(interceptor_list_test
   absl::config
   absl::function_ref
   absl::hash
+  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -19286,6 +19291,7 @@ target_link_libraries(map_pipe_test
   absl::config
   absl::function_ref
   absl::hash
+  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -21549,6 +21555,7 @@ target_link_libraries(periodic_update_test
   upb_message_lib
   absl::function_ref
   absl::hash
+  absl::check
   absl::statusor
   gpr
 )

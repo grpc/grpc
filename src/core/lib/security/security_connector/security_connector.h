@@ -29,6 +29,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -39,7 +40,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;

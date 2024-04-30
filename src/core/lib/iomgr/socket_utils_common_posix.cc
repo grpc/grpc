@@ -43,6 +43,8 @@
 
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -418,7 +420,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 // set a socket using a grpc_socket_mutator
 grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
-  GPR_ASSERT(mutator);
+  CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
   }

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/transport/handshaker_registry.h"
+#include "src/core/handshaker/handshaker_registry.h"
 
 #include <stddef.h>
 

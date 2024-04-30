@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -61,6 +62,7 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"
+#include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/status_util.h"
@@ -75,7 +77,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -458,8 +459,8 @@ class DynamicTerminationFilter final {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
-    GPR_ASSERT(args->is_last);
-    GPR_ASSERT(elem->filter == &kFilterVtable);
+    CHECK(args->is_last);
+    CHECK(elem->filter == &kFilterVtable);
     new (elem->channel_data) DynamicTerminationFilter(args->channel_args);
     return absl::OkStatus();
   }
@@ -644,7 +645,7 @@ class ClientChannelFilter::SubchannelWrapper final
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
 #ifndef NDEBUG
-    GPR_DEBUG_ASSERT(chand_->work_serializer_->RunningInWorkSerializer());
+    DCHECK(chand_->work_serializer_->RunningInWorkSerializer());
 #endif
     if (chand_->channelz_node_ != nullptr) {
       auto* subchannel_node = subchannel_->channelz_node();
@@ -673,7 +674,7 @@ class ClientChannelFilter::SubchannelWrapper final
         auto* subchannel_node = subchannel_->channelz_node();
         if (subchannel_node != nullptr) {
           auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-          GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+          CHECK(it != chand_->subchannel_refcount_map_.end());
           --it->second;
           if (it->second == 0) {
             chand_->channelz_node_->RemoveChildSubchannel(
@@ -700,7 +701,7 @@ class ClientChannelFilter::SubchannelWrapper final
             if (subchannel_node != nullptr) {
               auto it =
                   chand_->subchannel_refcount_map_.find(subchannel_.get());
-              GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+              CHECK(it != chand_->subchannel_refcount_map_.end());
               --it->second;
               if (it->second == 0) {
                 chand_->channelz_node_->RemoveChildSubchannel(
@@ -718,7 +719,7 @@ class ClientChannelFilter::SubchannelWrapper final
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
-    GPR_ASSERT(watcher_wrapper == nullptr);
+    CHECK_EQ(watcher_wrapper, nullptr);
     watcher_wrapper = new WatcherWrapper(
         std::move(watcher),
         RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
@@ -730,7 +731,7 @@ class ClientChannelFilter::SubchannelWrapper final
   void CancelConnectivityStateWatch(ConnectivityStateWatcherInterface* watcher)
       override ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     auto it = watcher_map_.find(watcher);
-    GPR_ASSERT(it != watcher_map_.end());
+    CHECK(it != watcher_map_.end());
     subchannel_->CancelConnectivityStateWatch(it->second);
     watcher_map_.erase(it);
   }
@@ -747,7 +748,7 @@ class ClientChannelFilter::SubchannelWrapper final
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get())
         ->SetSubchannel(subchannel_.get());
-    GPR_ASSERT(data_watchers_.insert(std::move(watcher)).second);
+    CHECK(data_watchers_.insert(std::move(watcher)).second);
   }
 
   void CancelDataWatcher(DataWatcherInterface* watcher) override
@@ -923,7 +924,7 @@ ClientChannelFilter::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   {
     MutexLock lock(&chand_->external_watchers_mu_);
     // Will be deleted when the watch is complete.
-    GPR_ASSERT(chand->external_watchers_[on_complete] == nullptr);
+    CHECK(chand->external_watchers_[on_complete] == nullptr);
     // Store a ref to the watcher in the external_watchers_ map.
     chand->external_watchers_[on_complete] =
         RefAsSubclass<ExternalConnectivityWatcher>(
@@ -1201,9 +1202,9 @@ class ClientChannelFilter::ClientChannelControlHelper final
 
 grpc_error_handle ClientChannelFilter::Init(grpc_channel_element* elem,
                                             grpc_channel_element_args* args) {
-  GPR_ASSERT(args->is_last);
-  GPR_ASSERT(elem->filter == &kFilterVtableWithPromises ||
-             elem->filter == &kFilterVtableWithoutPromises);
+  CHECK(args->is_last);
+  CHECK(elem->filter == &kFilterVtableWithPromises ||
+        elem->filter == &kFilterVtableWithoutPromises);
   grpc_error_handle error;
   new (elem->channel_data) ClientChannelFilter(args, &error);
   return error;
@@ -1449,7 +1450,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // - A channel arg, in which case we check that the specified policy exists
   //   and accepts an empty config. If not, we revert to using pick_first
   //   lb_policy
-  GPR_ASSERT(lb_policy_config.ok());
+  CHECK(lb_policy_config.ok());
   return std::move(*lb_policy_config);
 }
 
@@ -1729,7 +1730,7 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked() {
   }
   RefCountedPtr<DynamicFilters> dynamic_filters =
       DynamicFilters::Create(new_args, std::move(filters));
-  GPR_ASSERT(dynamic_filters != nullptr);
+  CHECK(dynamic_filters != nullptr);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
@@ -1760,7 +1761,7 @@ void ClientChannelFilter::CreateResolverLocked() {
       std::make_unique<ResolverResultHandler>(this));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
-  GPR_ASSERT(resolver_ != nullptr);
+  CHECK(resolver_ != nullptr);
   UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status(),
                     "started resolving");
   resolver_->StartLocked();
@@ -1869,7 +1870,7 @@ T HandlePickResult(
   }
   auto* drop_pick =
       absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
-  GPR_ASSERT(drop_pick != nullptr);
+  CHECK_NE(drop_pick, nullptr);
   return drop_func(drop_pick);
 }
 
@@ -1963,7 +1964,7 @@ void ClientChannelFilter::StartTransportOpLocked(grpc_transport_op* op) {
       }
     } else {
       // Disconnect.
-      GPR_ASSERT(disconnect_error_.ok());
+      CHECK(disconnect_error_.ok());
       disconnect_error_ = op->disconnect_with_error;
       UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, absl::Status(), "shutdown from API",
@@ -1981,7 +1982,7 @@ void ClientChannelFilter::StartTransportOpLocked(grpc_transport_op* op) {
 void ClientChannelFilter::StartTransportOp(grpc_channel_element* elem,
                                            grpc_transport_op* op) {
   auto* chand = static_cast<ClientChannelFilter*>(elem->channel_data);
-  GPR_ASSERT(op->set_accept_stream == false);
+  CHECK(op->set_accept_stream == false);
   // Handle bind_pollset.
   if (op->bind_pollset != nullptr) {
     grpc_pollset_set_add_pollset(chand->interested_parties_, op->bind_pollset);
@@ -2227,7 +2228,7 @@ ClientChannelFilter::FilterBasedCallData::~FilterBasedCallData() {
   CSliceUnref(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    GPR_ASSERT(pending_batches_[i] == nullptr);
+    CHECK_EQ(pending_batches_[i], nullptr);
   }
 }
 
@@ -2389,7 +2390,7 @@ void ClientChannelFilter::FilterBasedCallData::PendingBatchesAdd(
             chand(), this, idx);
   }
   grpc_transport_stream_op_batch*& pending = pending_batches_[idx];
-  GPR_ASSERT(pending == nullptr);
+  CHECK_EQ(pending, nullptr);
   pending = batch;
 }
 
@@ -2409,7 +2410,7 @@ void ClientChannelFilter::FilterBasedCallData::FailPendingBatchInCallCombiner(
 void ClientChannelFilter::FilterBasedCallData::PendingBatchesFail(
     grpc_error_handle error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2958,11 +2959,11 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
-  GPR_ASSERT(connected_subchannel_ == nullptr);
+  CHECK(connected_subchannel_ == nullptr);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
-  GPR_ASSERT(path != nullptr);
+  CHECK_NE(path, nullptr);
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state(this);
   pick_args.call_state = &lb_call_state;
@@ -2978,7 +2979,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
                   "chand=%p lb_call=%p: LB pick succeeded: subchannel=%p",
                   chand_, this, complete_pick->subchannel.get());
         }
-        GPR_ASSERT(complete_pick->subchannel != nullptr);
+        CHECK(complete_pick->subchannel != nullptr);
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.
         SubchannelWrapper* subchannel =
@@ -3066,7 +3067,7 @@ ClientChannelFilter::FilterBasedLoadBalancedCall::
     ~FilterBasedLoadBalancedCall() {
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    GPR_ASSERT(pending_batches_[i] == nullptr);
+    CHECK_EQ(pending_batches_[i], nullptr);
   }
   if (on_call_destruction_complete_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
@@ -3109,7 +3110,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesAdd(
             "chand=%p lb_call=%p: adding pending batch at index %" PRIuPTR,
             chand(), this, idx);
   }
-  GPR_ASSERT(pending_batches_[idx] == nullptr);
+  CHECK_EQ(pending_batches_[idx], nullptr);
   pending_batches_[idx] = batch;
 }
 
@@ -3129,7 +3130,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
 void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesFail(
     grpc_error_handle error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   failure_error_ = error;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     size_t num_batches = 0;
@@ -3491,7 +3492,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::RetryPickLocked() {
 
 void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
-  GPR_ASSERT(path != nullptr);
+  CHECK_NE(path, nullptr);
   SubchannelCall::Args call_args = {
       connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
       deadline_, arena_,

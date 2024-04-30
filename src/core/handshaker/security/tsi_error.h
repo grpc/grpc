@@ -16,16 +16,15 @@
 //
 //
 
-#include "src/core/lib/security/transport/tsi_error.h"
+#ifndef GRPC_SRC_CORE_HANDSHAKER_SECURITY_TSI_ERROR_H
+#define GRPC_SRC_CORE_HANDSHAKER_SECURITY_TSI_ERROR_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 grpc_error_handle grpc_set_tsi_error_result(grpc_error_handle error,
-                                            tsi_result result) {
-  return grpc_error_set_int(
-      grpc_error_set_str(error, grpc_core::StatusStrProperty::kTsiError,
-                         tsi_result_to_string(result)),
-      grpc_core::StatusIntProperty::kTsiCode, result);
-}
+                                            tsi_result result);
+
+#endif  // GRPC_SRC_CORE_HANDSHAKER_SECURITY_TSI_ERROR_H
