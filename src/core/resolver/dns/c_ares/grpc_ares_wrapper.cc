@@ -930,7 +930,7 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */) ||
       grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
                                false /* log errors */)) {
-    CHECK_EQ(*addrs, nullptr);
+    CHECK(*addrs == nullptr);
     *addrs = std::make_unique<EndpointAddressesList>();
     (*addrs)->emplace_back(addr, grpc_core::ChannelArgs());
     return true;

@@ -172,7 +172,7 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
                   : result.service_config.status().ToString().c_str(),
               result.resolution_note.c_str());
     }
-    CHECK_EQ(result.result_health_callback, nullptr);
+    CHECK(result.result_health_callback == nullptr);
     result.result_health_callback =
         [self = RefAsSubclass<PollingResolver>(
              DEBUG_LOCATION, "result_health_callback")](absl::Status status) {
