@@ -146,7 +146,7 @@ grpc_composite_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
   CHECK(inner_creds_ != nullptr);
-  CHECK_NE(call_creds_, nullptr);
+  CHECK(call_creds_ != nullptr);
   // If we are passed a call_creds, create a call composite to pass it
   // downstream.
   if (call_creds != nullptr) {

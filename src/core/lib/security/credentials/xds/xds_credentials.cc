@@ -166,7 +166,7 @@ XdsCredentials::create_security_connector(
                                                         target_name, args);
     }
   }
-  CHECK_NE(fallback_credentials_, nullptr);
+  CHECK(fallback_credentials_ != nullptr);
   return fallback_credentials_->create_security_connector(std::move(call_creds),
                                                           target_name, args);
 }
