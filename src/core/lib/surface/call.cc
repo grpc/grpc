@@ -384,7 +384,7 @@ void Call::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
   CancelWithError(grpc_error_set_int(
-      absl::DeadlineExceededError("Deadline exceeded"),
+      absl::DeadlineExceededError("Deadline Exceeded"),
       StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
   InternalUnref("deadline[run]");
 }
@@ -3536,7 +3536,12 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
   server_to_client_messages_ = call_args.server_to_client_messages;
   client_to_server_messages_ = call_args.client_to_server_messages;
   server_initial_metadata_ = call_args.server_initial_metadata;
-  set_send_deadline(deadline());
+  absl::optional<Timestamp> deadline =
+      client_initial_metadata_->get(GrpcTimeoutMetadata());
+  if (deadline.has_value()) {
+    set_send_deadline(*deadline);
+    UpdateDeadline(*deadline);
+  }
   ProcessIncomingInitialMetadata(*client_initial_metadata_);
   ExternalRef();
   publish(c_ptr());
