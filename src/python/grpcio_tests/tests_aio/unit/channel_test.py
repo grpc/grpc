@@ -42,6 +42,45 @@ _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
 
 
+class AsyncClientInterceptor(
+  aio.UnaryUnaryClientInterceptor,
+  aio.UnaryStreamClientInterceptor,
+  aio.StreamUnaryClientInterceptor,
+  aio.StreamStreamClientInterceptor,
+):
+    async def intercept_unary_unary(
+          self,
+          continuation,
+          client_call_details,
+          request,
+      ):
+        pass
+
+    async def intercept_unary_stream(
+      self,
+      continuation,
+      client_call_details,
+      request,
+    ):
+        pass
+
+    async def intercept_stream_unary(
+      self,
+      continuation,
+      client_call_details,
+      request_iterator,
+    ):
+        pass
+
+    async def intercept_stream_stream(
+      self,
+      continuation,
+      client_call_details,
+      request_iterator,
+    ):
+        pass
+
+
 class TestChannel(AioTestBase):
     async def setUp(self):
         self._server_target, self._server = await start_test_server()
@@ -57,6 +96,14 @@ class TestChannel(AioTestBase):
                 response_deserializer=messages_pb2.SimpleResponse.FromString,
             )
             await hi(messages_pb2.SimpleRequest())
+
+    async def test_initiate_with_interceptors(self):
+        client_interceptor = AsyncClientInterceptor()
+        async with aio.insecure_channel(self._server_target, interceptors=[client_interceptor]) as channel:
+            self.assertIn(client_interceptor, channel._unary_unary_interceptors)
+            self.assertIn(client_interceptor, channel._unary_stream_interceptors)
+            self.assertIn(client_interceptor, channel._stream_unary_interceptors)
+            self.assertIn(client_interceptor, channel._stream_stream_interceptors)
 
     async def test_unary_unary(self):
         async with aio.insecure_channel(self._server_target) as channel:
