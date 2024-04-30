@@ -218,7 +218,7 @@ class ChannelInit {
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {
       auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      CHECK_EQ(slot_value, nullptr);
+      CHECK(slot_value == nullptr);
       slot_value = std::move(post_processor);
     }
 

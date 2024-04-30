@@ -1549,6 +1549,9 @@ grpc_cc_library(
         "lib/slice/slice_buffer.h",
         "//:include/grpc/slice_buffer.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "slice",
         "slice_refcount",
