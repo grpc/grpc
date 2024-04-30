@@ -37,7 +37,7 @@
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.
 inline grpc_slice* grpc_slice_buffer_peek_first(grpc_slice_buffer* sb) {
-  DCHECK_GT(sb->count, 0);
+  DCHECK_GT(sb->count, 0u);
   return &sb->slices[0];
 }
 
