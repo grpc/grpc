@@ -233,7 +233,6 @@ libs:
   - src/core/client_channel/connector.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
-  - src/core/client_channel/http_proxy_mapper.h
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
@@ -809,6 +808,18 @@ libs:
   - src/core/ext/xds/xds_routing.h
   - src/core/ext/xds/xds_transport.h
   - src/core/ext/xds/xds_transport_grpc.h
+  - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
+  - src/core/handshaker/handshaker.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/http_connect/http_connect_handshaker.h
+  - src/core/handshaker/http_connect/http_proxy_mapper.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/secure_endpoint.h
+  - src/core/handshaker/security/security_handshaker.h
+  - src/core/handshaker/security/tsi_error.h
+  - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -935,8 +946,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
-  - src/core/lib/handshaker/proxy_mapper.h
-  - src/core/lib/handshaker/proxy_mapper_registry.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/httpcli_ssl_credentials.h
@@ -1106,9 +1115,6 @@ libs:
   - src/core/lib/security/security_connector/ssl_utils.h
   - src/core/lib/security/security_connector/tls/tls_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/secure_endpoint.h
-  - src/core/lib/security/transport/security_handshaker.h
-  - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -1143,13 +1149,8 @@ libs:
   - src/core/lib/transport/call_spine.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
-  - src/core/lib/transport/endpoint_info_handshaker.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/handshaker.h
-  - src/core/lib/transport/handshaker_factory.h
-  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/message.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
@@ -1158,7 +1159,6 @@ libs:
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
-  - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
@@ -1254,7 +1254,6 @@ libs:
   - src/core/client_channel/config_selector.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
-  - src/core/client_channel/http_proxy_mapper.cc
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -1659,6 +1658,16 @@ libs:
   - src/core/ext/xds/xds_routing.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/ext/xds/xds_transport_grpc.cc
+  - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
+  - src/core/handshaker/handshaker.cc
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/http_connect/http_connect_handshaker.cc
+  - src/core/handshaker/http_connect/http_proxy_mapper.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/secure_endpoint.cc
+  - src/core/handshaker/security/security_handshaker.cc
+  - src/core/handshaker/security/tsi_error.cc
+  - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -1744,7 +1753,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1903,10 +1911,7 @@ libs:
   - src/core/lib/security/security_connector/ssl_utils.cc
   - src/core/lib/security/security_connector/tls/tls_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
-  - src/core/lib/security/transport/secure_endpoint.cc
-  - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
-  - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -1942,18 +1947,13 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
-  - src/core/lib/transport/endpoint_info_handshaker.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/handshaker.cc
-  - src/core/lib/transport/handshaker_registry.cc
-  - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/metadata_info.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
-  - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -2218,7 +2218,6 @@ libs:
   - src/core/client_channel/connector.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
-  - src/core/client_channel/http_proxy_mapper.h
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
@@ -2311,6 +2310,18 @@ libs:
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.h
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb.h
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.h
+  - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
+  - src/core/handshaker/handshaker.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/http_connect/http_connect_handshaker.h
+  - src/core/handshaker/http_connect/http_proxy_mapper.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/secure_endpoint.h
+  - src/core/handshaker/security/security_handshaker.h
+  - src/core/handshaker/security/tsi_error.h
+  - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -2435,8 +2446,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
-  - src/core/lib/handshaker/proxy_mapper.h
-  - src/core/lib/handshaker/proxy_mapper_registry.h
   - src/core/lib/http/format_request.h
   - src/core/lib/http/httpcli.h
   - src/core/lib/http/parser.h
@@ -2572,9 +2581,6 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_supported.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/secure_endpoint.h
-  - src/core/lib/security/transport/security_handshaker.h
-  - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -2609,13 +2615,8 @@ libs:
   - src/core/lib/transport/call_spine.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
-  - src/core/lib/transport/endpoint_info_handshaker.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/handshaker.h
-  - src/core/lib/transport/handshaker_factory.h
-  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
-  - src/core/lib/transport/http_connect_handshaker.h
   - src/core/lib/transport/message.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
@@ -2624,7 +2625,6 @@ libs:
   - src/core/lib/transport/parsed_metadata.h
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
-  - src/core/lib/transport/tcp_connect_handshaker.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
@@ -2708,7 +2708,6 @@ libs:
   - src/core/client_channel/config_selector.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
-  - src/core/client_channel/http_proxy_mapper.cc
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -2782,6 +2781,16 @@ libs:
   - src/core/ext/upb-gen/validate/validate.upb_minitable.c
   - src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   - src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
+  - src/core/handshaker/handshaker.cc
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/http_connect/http_connect_handshaker.cc
+  - src/core/handshaker/http_connect/http_proxy_mapper.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/secure_endpoint.cc
+  - src/core/handshaker/security/security_handshaker.cc
+  - src/core/handshaker/security/tsi_error.cc
+  - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -2865,7 +2874,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -2987,10 +2995,7 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_windows.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
-  - src/core/lib/security/transport/secure_endpoint.cc
-  - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
-  - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -3026,18 +3031,13 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
-  - src/core/lib/transport/endpoint_info_handshaker.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/handshaker.cc
-  - src/core/lib/transport/handshaker_registry.cc
-  - src/core/lib/transport/http_connect_handshaker.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
   - src/core/lib/transport/metadata_info.cc
   - src/core/lib/transport/parsed_metadata.cc
   - src/core/lib/transport/status_conversion.cc
-  - src/core/lib/transport/tcp_connect_handshaker.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -4401,6 +4401,15 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/handshaker/endpoint_info/endpoint_info_handshaker.h
+  - src/core/handshaker/handshaker.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/secure_endpoint.h
+  - src/core/handshaker/security/security_handshaker.h
+  - src/core/handshaker/security/tsi_error.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -4521,8 +4530,6 @@ libs:
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
-  - src/core/lib/handshaker/proxy_mapper.h
-  - src/core/lib/handshaker/proxy_mapper_registry.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -4653,9 +4660,6 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_supported.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/secure_endpoint.h
-  - src/core/lib/security/transport/security_handshaker.h
-  - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -4686,11 +4690,7 @@ libs:
   - src/core/lib/transport/call_spine.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
-  - src/core/lib/transport/endpoint_info_handshaker.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/handshaker.h
-  - src/core/lib/transport/handshaker_factory.h
-  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/message.h
   - src/core/lib/transport/metadata.h
@@ -4748,6 +4748,13 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
+  - src/core/handshaker/handshaker.cc
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/secure_endpoint.cc
+  - src/core/handshaker/security/security_handshaker.cc
+  - src/core/handshaker/security/tsi_error.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -4828,7 +4835,6 @@ libs:
   - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -4949,10 +4955,7 @@ libs:
   - src/core/lib/security/security_connector/load_system_roots_windows.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
-  - src/core/lib/security/transport/secure_endpoint.cc
-  - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
-  - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -4983,10 +4986,7 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
-  - src/core/lib/transport/endpoint_info_handshaker.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/handshaker.cc
-  - src/core/lib/transport/handshaker_registry.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
@@ -6520,6 +6520,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -7774,6 +7775,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -9255,6 +9257,7 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -10033,6 +10036,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -11589,6 +11593,10 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -11709,8 +11717,6 @@ targets:
   - src/core/lib/gprpp/unique_type_name.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
-  - src/core/lib/handshaker/proxy_mapper.h
-  - src/core/lib/handshaker/proxy_mapper_registry.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -11849,8 +11855,6 @@ targets:
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
-  - src/core/lib/transport/handshaker_factory.h
-  - src/core/lib/transport/handshaker_registry.h
   - src/core/lib/transport/http2_errors.h
   - src/core/lib/transport/interception_chain.h
   - src/core/lib/transport/message.h
@@ -11907,6 +11911,8 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -11987,7 +11993,6 @@ targets:
   - src/core/lib/gprpp/time_averaged_stats.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/handshaker/proxy_mapper_registry.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -12115,7 +12120,6 @@ targets:
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
-  - src/core/lib/transport/handshaker_registry.cc
   - src/core/lib/transport/interception_chain.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
@@ -12287,6 +12291,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12970,6 +12975,7 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14170,6 +14176,7 @@ targets:
   - upb_message_lib
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false

@@ -1208,7 +1208,7 @@ grpc_cc_library(
     name = "handshaker_factory",
     language = "c++",
     public_hdrs = [
-        "lib/transport/handshaker_factory.h",
+        "handshaker/handshaker_factory.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -1221,11 +1221,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "handshaker_registry",
     srcs = [
-        "lib/transport/handshaker_registry.cc",
+        "handshaker/handshaker_registry.cc",
     ],
     language = "c++",
     public_hdrs = [
-        "lib/transport/handshaker_registry.h",
+        "handshaker/handshaker_registry.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -1239,7 +1239,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tcp_connect_handshaker",
     srcs = [
-        "lib/transport/tcp_connect_handshaker.cc",
+        "handshaker/tcp_connect/tcp_connect_handshaker.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -1249,7 +1249,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "lib/transport/tcp_connect_handshaker.h",
+        "handshaker/tcp_connect/tcp_connect_handshaker.h",
     ],
     deps = [
         "channel_args",
@@ -1278,10 +1278,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "endpoint_info_handshaker",
     srcs = [
-        "lib/transport/endpoint_info_handshaker.cc",
+        "handshaker/endpoint_info/endpoint_info_handshaker.cc",
     ],
     hdrs = [
-        "lib/transport/endpoint_info_handshaker.h",
+        "handshaker/endpoint_info/endpoint_info_handshaker.h",
     ],
     external_deps = [
         "absl/status",
@@ -1564,6 +1564,7 @@ grpc_cc_library(
         "lib/iomgr/error.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings:str_format",
     ],
@@ -1589,7 +1590,10 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/closure.h",
     ],
-    external_deps = ["absl/strings:str_format"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings:str_format",
+    ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "error",
@@ -1647,6 +1651,9 @@ grpc_cc_library(
         "lib/iomgr/sockaddr_posix.h",
         "lib/iomgr/sockaddr_windows.h",
         "lib/iomgr/socket_utils.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         "iomgr_port",
@@ -3137,6 +3144,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
     ],
     language = "c++",
     deps = [
@@ -3208,6 +3216,7 @@ grpc_cc_library(
         "client_channel/config_selector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
@@ -3498,7 +3507,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy_mapper",
-    hdrs = ["lib/handshaker/proxy_mapper.h"],
+    hdrs = ["handshaker/proxy_mapper.h"],
     external_deps = [
         "absl/strings",
         "absl/types:optional",
@@ -3512,8 +3521,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy_mapper_registry",
-    srcs = ["lib/handshaker/proxy_mapper_registry.cc"],
-    hdrs = ["lib/handshaker/proxy_mapper_registry.h"],
+    srcs = ["handshaker/proxy_mapper_registry.cc"],
+    hdrs = ["handshaker/proxy_mapper_registry.h"],
     external_deps = [
         "absl/strings",
         "absl/types:optional",
@@ -3529,12 +3538,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "http_proxy_mapper",
     srcs = [
-        "client_channel/http_proxy_mapper.cc",
+        "handshaker/http_connect/http_proxy_mapper.cc",
     ],
     hdrs = [
-        "client_channel/http_proxy_mapper.h",
+        "handshaker/http_connect/http_proxy_mapper.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4987,6 +4997,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/functional:bind_front",
+        "absl/log:check",
         "absl/memory",
         "absl/random",
         "absl/status",
@@ -5170,6 +5181,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
