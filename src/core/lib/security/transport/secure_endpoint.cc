@@ -359,7 +359,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   SECURE_ENDPOINT_REF(ep, "read");
   if (ep->leftover_bytes.count) {
     grpc_slice_buffer_swap(&ep->leftover_bytes, &ep->source_buffer);
-    CHECK_EQ(ep->leftover_bytes.count, 0);
+    CHECK_EQ(ep->leftover_bytes.count, 0u);
     on_read(ep, absl::OkStatus());
     return;
   }
