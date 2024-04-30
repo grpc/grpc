@@ -14189,6 +14189,7 @@ targets:
   - upb_message_lib
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false

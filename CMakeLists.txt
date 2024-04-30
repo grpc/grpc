@@ -21564,6 +21564,7 @@ target_link_libraries(periodic_update_test
   upb_message_lib
   absl::function_ref
   absl::hash
+  absl::check
   absl::statusor
   gpr
 )

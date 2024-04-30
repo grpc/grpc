@@ -1570,6 +1570,7 @@ grpc_cc_library(
         "lib/iomgr/error.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings:str_format",
     ],
@@ -1595,7 +1596,10 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/closure.h",
     ],
-    external_deps = ["absl/strings:str_format"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings:str_format",
+    ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "error",
@@ -1653,6 +1657,9 @@ grpc_cc_library(
         "lib/iomgr/sockaddr_posix.h",
         "lib/iomgr/sockaddr_windows.h",
         "lib/iomgr/socket_utils.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         "iomgr_port",
