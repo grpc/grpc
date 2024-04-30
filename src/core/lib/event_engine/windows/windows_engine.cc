@@ -370,7 +370,7 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   auto connection_state = std::make_shared<ConnectionState>();
   grpc_core::MutexLock lock(&connection_state->mu);
   connection_state->socket = iocp_.Watch(sock);
-  CHECK_NE(connection_state->socket, nullptr);
+  CHECK(connection_state->socket != nullptr);
   auto* info = connection_state->socket->write_info();
   connection_state->address = address;
   connection_state->allocator = std::move(memory_allocator);
