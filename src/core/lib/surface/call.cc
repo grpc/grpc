@@ -925,6 +925,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   }
   ClearPeerString();
   InternalRef("termination");
+  ResetDeadline();
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
   // combiner.  This ensures that the cancel_stream batch can be sent
@@ -946,6 +947,7 @@ void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
     gpr_log(GPR_INFO, "set_final_status %s %s", is_client() ? "CLI" : "SVR",
             StatusToString(error).c_str());
   }
+  ResetDeadline();
   if (is_client()) {
     std::string status_details;
     grpc_error_get_status(error, send_deadline(), final_op_.client.status,
