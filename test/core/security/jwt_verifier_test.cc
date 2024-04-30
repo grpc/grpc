@@ -34,7 +34,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_core::Json;
 

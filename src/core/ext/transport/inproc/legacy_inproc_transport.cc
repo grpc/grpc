@@ -101,8 +101,7 @@ struct shared_mu {
   gpr_refcount refs;
 };
 
-struct inproc_transport final : public grpc_core::Transport,
-                                public grpc_core::FilterStackTransport {
+struct inproc_transport final : public grpc_core::FilterStackTransport {
   inproc_transport(shared_mu* mu, bool is_client)
       : mu(mu),
         is_client(is_client),

@@ -25,7 +25,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 template <uint8_t kPrefixBits>
 static void test_varint(uint32_t value, uint8_t prefix_or,

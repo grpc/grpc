@@ -29,7 +29,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 

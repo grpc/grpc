@@ -68,6 +68,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
