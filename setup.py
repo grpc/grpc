@@ -166,11 +166,6 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value("GRPC_PYTHON_BUILD_SYSTEM_RE2", "False")
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_ABSL = os.environ.get("GRPC_PYTHON_BUILD_SYSTEM_ABSL", False)
 
-# Export this variable to enable socket activation functions of systemd
-# You need to have the header files installed
-# and during runtime, the shared library must be installed
-BUILD_WITH_SYSTEMD = os.environ.get("GRPC_PYTHON_BUILD_WITH_SYSTEMD", False)
-
 # Export this variable to force building the python extension with a statically linked libstdc++.
 # At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
 # without statically linking libstdc++ (which leads to a slight increase in the wheel size).
@@ -282,11 +277,6 @@ if EXTRA_ENV_LINK_ARGS is None:
 # missing when compiled using package managers like Conda.
 if "darwin" in sys.platform:
     EXTRA_ENV_LINK_ARGS += " -framework CoreFoundation"
-
-# Building with systemd socket activation requires defines and libraries.
-if BUILD_WITH_SYSTEMD:
-    EXTRA_ENV_COMPILE_ARGS += " -DHAVE_LIBSYSTEMD"
-    EXTRA_ENV_LINK_ARGS += " -lsystemd"
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)

@@ -2231,6 +2231,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_security_base",
     srcs = [
+        "//src/core:handshaker/security/secure_endpoint.cc",
+        "//src/core:handshaker/security/security_handshaker.cc",
+        "//src/core:handshaker/security/tsi_error.cc",
         "//src/core:lib/security/context/security_context.cc",
         "//src/core:lib/security/credentials/call_creds_util.cc",
         "//src/core:lib/security/credentials/composite/composite_credentials.cc",
@@ -2238,12 +2241,12 @@ grpc_cc_library(
         "//src/core:lib/security/credentials/plugin/plugin_credentials.cc",
         "//src/core:lib/security/security_connector/security_connector.cc",
         "//src/core:lib/security/transport/client_auth_filter.cc",
-        "//src/core:lib/security/transport/secure_endpoint.cc",
-        "//src/core:lib/security/transport/security_handshaker.cc",
         "//src/core:lib/security/transport/server_auth_filter.cc",
-        "//src/core:lib/security/transport/tsi_error.cc",
     ],
     hdrs = [
+        "//src/core:handshaker/security/secure_endpoint.h",
+        "//src/core:handshaker/security/security_handshaker.h",
+        "//src/core:handshaker/security/tsi_error.h",
         "//src/core:lib/security/context/security_context.h",
         "//src/core:lib/security/credentials/call_creds_util.h",
         "//src/core:lib/security/credentials/composite/composite_credentials.h",
@@ -2251,9 +2254,6 @@ grpc_cc_library(
         "//src/core:lib/security/credentials/plugin/plugin_credentials.h",
         "//src/core:lib/security/security_connector/security_connector.h",
         "//src/core:lib/security/transport/auth_filters.h",
-        "//src/core:lib/security/transport/secure_endpoint.h",
-        "//src/core:lib/security/transport/security_handshaker.h",
-        "//src/core:lib/security/transport/tsi_error.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3089,7 +3089,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "handshaker",
     srcs = [
-        "//src/core:lib/transport/handshaker.cc",
+        "//src/core:handshaker/handshaker.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3099,7 +3099,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "//src/core:lib/transport/handshaker.h",
+        "//src/core:handshaker/handshaker.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
@@ -3126,7 +3126,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "http_connect_handshaker",
     srcs = [
-        "//src/core:lib/transport/http_connect_handshaker.cc",
+        "//src/core:handshaker/http_connect/http_connect_handshaker.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3136,7 +3136,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = [
-        "//src/core:lib/transport/http_connect_handshaker.h",
+        "//src/core:handshaker/http_connect/http_connect_handshaker.h",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
