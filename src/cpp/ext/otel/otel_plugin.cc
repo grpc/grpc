@@ -275,7 +275,7 @@ OpenTelemetryPlugin::CallbackMetricReporter::CallbackMetricReporter(
   }
 }
 
-void OpenTelemetryPlugin::CallbackMetricReporter::Report(
+void OpenTelemetryPlugin::CallbackMetricReporter::ReportInt64(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     int64_t value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {
@@ -303,7 +303,7 @@ void OpenTelemetryPlugin::CallbackMetricReporter::Report(
   cell.insert_or_assign(std::move(key), value);
 }
 
-void OpenTelemetryPlugin::CallbackMetricReporter::Report(
+void OpenTelemetryPlugin::CallbackMetricReporter::ReportDouble(
     grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
     double value, absl::Span<const absl::string_view> label_values,
     absl::Span<const absl::string_view> optional_values) {

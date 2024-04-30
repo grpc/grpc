@@ -83,21 +83,6 @@ class GlobalInstrumentsRegistry {
   template <ValueType V, InstrumentType I, size_t M, size_t N>
   struct TypedGlobalInstrumentHandle : public GlobalInstrumentHandle {};
 
-  // C++17 has fold expression that may simplify this.
-  template <ValueType V, InstrumentType I, size_t M, size_t N>
-  static constexpr void IsCallbackGaugeHandle(
-      TypedGlobalInstrumentHandle<V, I, M, N> handle) {
-    static_assert(V == ValueType::kInt64 || V == ValueType::kDouble,
-                  "ValueType must be kInt64 or kDouble");
-    static_assert(I == InstrumentType::kCallbackGauge,
-                  "InstrumentType must be kCallbackGauge");
-  }
-  template <typename T, typename... Args>
-  static constexpr void IsCallbackGaugeHandle(T t, Args&&... args) {
-    IsCallbackGaugeHandle(t);
-    IsCallbackGaugeHandle(args...);
-  }
-
   template <ValueType V, InstrumentType I, std::size_t M, std::size_t N>
   class RegistrationBuilder {
    public:
@@ -236,9 +221,7 @@ class CallbackMetricReporter {
           handle,
       int64_t value, std::array<absl::string_view, M> label_values,
       std::array<absl::string_view, N> optional_values) {
-    Report(
-        static_cast<GlobalInstrumentsRegistry::GlobalInstrumentHandle>(handle),
-        value, label_values, optional_values);
+    ReportInt64(handle, value, label_values, optional_values);
   }
   template <std::size_t M, std::size_t N>
   void Report(
@@ -248,20 +231,18 @@ class CallbackMetricReporter {
           handle,
       double value, std::array<absl::string_view, M> label_values,
       std::array<absl::string_view, N> optional_values) {
-    Report(
-        static_cast<GlobalInstrumentsRegistry::GlobalInstrumentHandle>(handle),
-        value, label_values, optional_values);
+    ReportDouble(handle, value, label_values, optional_values);
   }
 
  private:
-  virtual void Report(GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
-                      int64_t value,
-                      absl::Span<const absl::string_view> label_values,
-                      absl::Span<const absl::string_view> optional_values) = 0;
-  virtual void Report(GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
-                      double value,
-                      absl::Span<const absl::string_view> label_values,
-                      absl::Span<const absl::string_view> optional_values) = 0;
+  virtual void ReportInt64(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, int64_t value,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
+  virtual void ReportDouble(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) = 0;
 };
 
 class RegisteredMetricCallback;
@@ -437,7 +418,7 @@ class GlobalStatsPluginRegistry {
     GRPC_MUST_USE_RESULT std::unique_ptr<RegisteredMetricCallback>
     RegisterCallback(absl::AnyInvocable<void(CallbackMetricReporter&)> callback,
                      Duration min_interval, Args... args) {
-      GlobalInstrumentsRegistry::IsCallbackGaugeHandle(args...);
+      AssertIsCallbackGaugeHandle(args...);
       return std::make_unique<RegisteredMetricCallback>(
           *this, std::move(callback),
           std::vector<GlobalInstrumentsRegistry::GlobalInstrumentHandle>{
@@ -460,6 +441,25 @@ class GlobalStatsPluginRegistry {
       std::shared_ptr<StatsPlugin::ScopeConfig> scope_config;
       std::shared_ptr<StatsPlugin> plugin;
     };
+
+    // C++17 has fold expression that may simplify this.
+    template <GlobalInstrumentsRegistry::ValueType V,
+              GlobalInstrumentsRegistry::InstrumentType I, size_t M, size_t N>
+    static constexpr void AssertIsCallbackGaugeHandle(
+        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<V, I, M, N>
+            handle) {
+      static_assert(V == GlobalInstrumentsRegistry::ValueType::kInt64 ||
+                        V == GlobalInstrumentsRegistry::ValueType::kDouble,
+                    "ValueType must be kInt64 or kDouble");
+      static_assert(
+          I == GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge,
+          "InstrumentType must be kCallbackGauge");
+    }
+    template <typename T, typename... Args>
+    static constexpr void AssertIsCallbackGaugeHandle(T t, Args&&... args) {
+      AssertIsCallbackGaugeHandle(t);
+      AssertIsCallbackGaugeHandle(args...);
+    }
 
     std::vector<PluginState> plugins_state_;
   };

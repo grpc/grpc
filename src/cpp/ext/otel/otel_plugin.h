@@ -344,13 +344,13 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
 
    private:
-    void Report(
+    void ReportInt64(
         grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
         int64_t value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(
             CallbackGaugeState<int64_t>::ot_plugin->mu_) override;
-    void Report(
+    void ReportDouble(
         grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
         double value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values)

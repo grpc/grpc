@@ -441,9 +441,10 @@ class FakeStatsPlugin : public StatsPlugin {
    public:
     explicit Reporter(FakeStatsPlugin& plugin) : plugin_(plugin) {}
 
-    void Report(GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
-                int64_t value, absl::Span<const absl::string_view> label_values,
-                absl::Span<const absl::string_view> optional_values) override {
+    void ReportInt64(
+        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, int64_t value,
+        absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) override {
       gpr_log(GPR_INFO,
               "FakeStatsPlugin[%p]::Reporter::Report(index=%u, "
               "value=(int64_t)%" PRId64
@@ -458,9 +459,10 @@ class FakeStatsPlugin : public StatsPlugin {
       iter->second.Set(value, label_values, optional_values);
     }
 
-    void Report(GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
-                double value, absl::Span<const absl::string_view> label_values,
-                absl::Span<const absl::string_view> optional_values) override {
+    void ReportDouble(
+        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, double value,
+        absl::Span<const absl::string_view> label_values,
+        absl::Span<const absl::string_view> optional_values) override {
       gpr_log(GPR_INFO,
               "FakeStatsPlugin[%p]::Reporter::Report(index=%u, "
               "value=(double)%f, label_values={%s}, "

@@ -756,12 +756,9 @@ class RlsLb final : public LoadBalancingPolicy {
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
-  void MaybeExportPickCount(
-      GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<
-          GlobalInstrumentsRegistry::ValueType::kUInt64,
-          GlobalInstrumentsRegistry::InstrumentType::kCounter, 4, 0>
-          handle,
-      absl::string_view target, const PickResult& pick_result);
+  template <typename HandleType>
+  void MaybeExportPickCount(HandleType handle, absl::string_view target,
+                            const PickResult& pick_result);
 
   const std::string instance_uuid_;
 
@@ -2228,12 +2225,9 @@ void RlsLb::UpdatePickerLocked() {
       MakeRefCounted<Picker>(RefAsSubclass<RlsLb>(DEBUG_LOCATION, "Picker")));
 }
 
-void RlsLb::MaybeExportPickCount(
-    GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<
-        GlobalInstrumentsRegistry::ValueType::kUInt64,
-        GlobalInstrumentsRegistry::InstrumentType::kCounter, 4, 0>
-        handle,
-    absl::string_view target, const PickResult& pick_result) {
+template <typename HandleType>
+void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
+                                 const PickResult& pick_result) {
   absl::string_view pick_result_string = Match(
       pick_result.result,
       [](const LoadBalancingPolicy::PickResult::Complete&) {
