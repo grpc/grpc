@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/xds_channel_stack_modifier.h"
+#include "src/core/server/xds_channel_stack_modifier.h"
 
 #include <algorithm>
 #include <string>
