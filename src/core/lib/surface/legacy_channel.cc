@@ -168,7 +168,7 @@ grpc_call* LegacyChannel::CreateCall(
     Slice path, absl::optional<Slice> authority, Timestamp deadline,
     bool registered_method) {
   CHECK(is_client_);
-  CHECK(!(cq != nullptr); CHECK(pollset_set_alternative != nullptr));
+  CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
   args.channel = Ref();
   args.server = nullptr;
