@@ -130,11 +130,9 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* /* args */) {
   if (io_state_->socket->IsShutdown()) {
-    io_state_->thread_pool->Run(
-        [on_read = std::move(on_read),
-         error = absl::InternalError("Socket is shutting down.")]() mutable {
-          on_read(error);
-        });
+    io_state_->thread_pool->Run([on_read = std::move(on_read)]() mutable {
+      on_read(absl::InternalError("Socket is shutting down."));
+    });
     return false;
   }
   buffer->Clear();
@@ -155,9 +153,8 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
   if (io_state_->socket->IsShutdown()) {
     io_state_->thread_pool->Run(
-        [on_writable = std::move(on_writable),
-         error = absl::InternalError("Socket is shutting down.")]() mutable {
-          on_writable(error);
+        [on_writable = std::move(on_writable)]() mutable {
+          on_writable(absl::InternalError("Socket is shutting down."));
         });
     return false;
   }
@@ -304,6 +301,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
                                                io_state->endpoint));
     }
     status = absl::InternalError("End of TCP stream");
+    grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
+                            GRPC_STATUS_UNAVAILABLE);
     buffer_->Swap(last_read_buffer_);
     return ResetAndReturnCallback()(status);
   }
