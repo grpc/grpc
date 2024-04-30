@@ -25,8 +25,8 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gprpp/crash.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
-#include "test/core/util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(int32_t, handshaker_port, 55056,

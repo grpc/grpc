@@ -30,7 +30,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #define TEST_VECTOR(raw, encoded, dict) \
   test_vector(raw, sizeof(raw) - 1, encoded, sizeof(encoded) - 1, dict)

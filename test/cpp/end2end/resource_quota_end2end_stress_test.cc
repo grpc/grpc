@@ -36,8 +36,8 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/credentials.h"
 
 // IWYU pragma: no_include <sys/socket.h>
