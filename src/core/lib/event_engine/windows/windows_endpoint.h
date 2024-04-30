@@ -107,8 +107,6 @@ class WindowsEndpoint : public EventEngine::Endpoint {
     ThreadPool* thread_pool;
   };
 
-  absl::Status TcpAnnotateError(absl::Status src_error);
-
   EventEngine::ResolvedAddress peer_address_;
   std::string peer_address_string_;
   EventEngine::ResolvedAddress local_address_;
