@@ -988,7 +988,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     *port = default_port;
   }
   if (gpr_stricmp(host->c_str(), "localhost") == 0) {
-    CHECK_EQ(*addrs, nullptr);
+    CHECK(*addrs == nullptr);
     *addrs = std::make_unique<grpc_core::EndpointAddressesList>();
     uint16_t numeric_port = grpc_strhtons(port->c_str());
     grpc_resolved_address address;
