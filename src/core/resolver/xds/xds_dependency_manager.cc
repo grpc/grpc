@@ -18,6 +18,7 @@
 
 #include <set>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/port_platform.h>

@@ -6133,6 +6133,7 @@ grpc_cc_library(
         "resolver/polling_resolver.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6196,6 +6197,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6378,6 +6380,7 @@ grpc_cc_library(
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
+        "absl/log:check",
         "absl/strings",
     ],
     language = "c++",
@@ -6400,6 +6403,7 @@ grpc_cc_library(
         "resolver/xds/xds_resolver.cc",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -6460,6 +6464,7 @@ grpc_cc_library(
         "resolver/google_c2p/google_c2p_resolver.cc",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",

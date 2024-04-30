@@ -29,10 +29,10 @@
 #include <ares.h>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
@@ -428,11 +428,11 @@ class GrpcPolledFdWindows final : public GrpcPolledFd {
         // to it eventually.
         grpc_slice currently_attempted = FlattenIovec(iov, iov_count);
         CHECK(GRPC_SLICE_LENGTH(currently_attempted) >=
-                   GRPC_SLICE_LENGTH(write_buf_));
+              GRPC_SLICE_LENGTH(write_buf_));
         ares_ssize_t total_sent = 0;
         for (size_t i = 0; i < GRPC_SLICE_LENGTH(write_buf_); i++) {
           CHECK(GRPC_SLICE_START_PTR(currently_attempted)[i] ==
-                     GRPC_SLICE_START_PTR(write_buf_)[i]);
+                GRPC_SLICE_START_PTR(write_buf_)[i]);
           total_sent++;
         }
         CSliceUnref(currently_attempted);
