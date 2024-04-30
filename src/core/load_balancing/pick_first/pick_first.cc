@@ -1017,7 +1017,7 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
   addresses->ForEach([&](const EndpointAddresses& address) {
-    CHECK_EQ(address.addresses().size(), 1);
+    CHECK_EQ(address.addresses().size(), 1u);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(
             address.address(), address.args(), args_);
@@ -1982,7 +1982,7 @@ OldPickFirst::SubchannelList::SubchannelList(
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
   addresses->ForEach([&](const EndpointAddresses& address) {
-    CHECK_EQ(address.addresses().size(), 1);
+    CHECK_EQ(address.addresses().size(), 1u);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(
             address.address(), address.args(), args_);

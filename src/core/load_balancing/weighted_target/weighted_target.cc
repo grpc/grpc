@@ -421,7 +421,7 @@ void WeightedTargetLb::UpdateStateLocked() {
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        CHECK_GT(child->weight(), 0);
+        CHECK_GT(child->weight(), 0u);
         ready_end += child->weight();
         ready_picker_list.emplace_back(ready_end, std::move(child_picker));
         break;
@@ -435,7 +435,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        CHECK_GT(child->weight(), 0);
+        CHECK_GT(child->weight(), 0u);
         tf_end += child->weight();
         tf_picker_list.emplace_back(tf_end, std::move(child_picker));
         break;
