@@ -41,9 +41,9 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/proto_bit_gen.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 

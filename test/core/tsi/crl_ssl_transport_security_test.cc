@@ -37,9 +37,9 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
 
 extern "C" {
 #include <openssl/crypto.h>

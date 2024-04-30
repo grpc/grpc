@@ -43,7 +43,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
     const char* target, const struct sockaddr_in6 result_from_getaddrinfo) {

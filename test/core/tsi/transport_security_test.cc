@@ -36,7 +36,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 typedef struct {
   // 1 if success, 0 if failure.
