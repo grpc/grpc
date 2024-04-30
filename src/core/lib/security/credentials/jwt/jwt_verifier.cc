@@ -460,7 +460,7 @@ static EVP_PKEY* extract_pkey_from_x509(const char* x509_str) {
   EVP_PKEY* result = nullptr;
   BIO* bio = BIO_new(BIO_s_mem());
   size_t len = strlen(x509_str);
-  CHECK_LT(len, INT_MAX);
+  CHECK_LT(len, static_cast<size_t>(INT_MAX));
   BIO_write(bio, x509_str, static_cast<int>(len));
   x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
   if (x509 == nullptr) {

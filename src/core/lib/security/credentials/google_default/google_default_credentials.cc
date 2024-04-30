@@ -318,7 +318,7 @@ static grpc_error_handle create_default_creds_from_path(
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
-  CHECK_EQ((result == nullptr) + (error.ok()), 1);
+  CHECK((result == nullptr) + (error.ok()) == 1);
   *creds = result;
   return error;
 }
