@@ -40,7 +40,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/surface/call.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 struct grpc_end2end_proxy {
   grpc_end2end_proxy()

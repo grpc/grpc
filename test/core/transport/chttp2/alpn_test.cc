@@ -22,7 +22,7 @@
 
 #include "gtest/gtest.h"
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(AlpnTest, TestAlpnSuccess) {
   ASSERT_TRUE(grpc_chttp2_is_alpn_version_supported("h2", 2));

@@ -23,7 +23,7 @@
 #include "test/core/event_engine/test_suite/tests/client_test.h"
 #include "test/core/event_engine/test_suite/tests/server_test.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

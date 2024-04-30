@@ -36,8 +36,8 @@
 #include "src/core/lib/security/util/json_util.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/tls_utils.h"
 
 static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
   grpc::experimental::StsCredentialsOptions options;
