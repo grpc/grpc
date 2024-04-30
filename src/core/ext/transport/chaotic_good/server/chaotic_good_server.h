@@ -32,6 +32,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -44,7 +45,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
 namespace grpc_core {

@@ -62,7 +62,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 

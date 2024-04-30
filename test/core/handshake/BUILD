@@ -32,7 +32,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -40,11 +40,12 @@ grpc_cc_library(
     name = "server_ssl_common",
     srcs = ["server_ssl_common.cc"],
     hdrs = ["server_ssl_common.h"],
+    external_deps = ["absl/log:check"],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -63,7 +64,7 @@ grpc_cc_test(
         ":server_ssl_common",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -84,7 +85,7 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -97,12 +98,15 @@ grpc_cc_test(
 #        "//src/core/tsi/test_creds:server1.key",
 #        "//src/core/tsi/test_creds:server1.pem",
 #    ],
+#    external_deps = [
+#        "absl/log:check",
+#    ],
 #    language = "C++",
 #    tags = ["no_mac", no_windows"],
 #    deps = [
 #        "//:gpr",
 #        "//:grpc",
-#        "//test/core/util:grpc_test_util",
+#        "//test/core/test_util:grpc_test_util",
 #    ],
 #)
 
@@ -116,7 +120,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )

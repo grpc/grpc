@@ -34,7 +34,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 //
 // General test notes:

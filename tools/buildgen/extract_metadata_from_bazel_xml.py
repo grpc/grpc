@@ -237,7 +237,7 @@ def _try_extract_source_file_path(label: str) -> str:
         # labels in form //:src/core/lib/surface/call_test_only.h
         if label.startswith(":"):
             label = label[len(":") :]
-        # labels in form //test/core/util:port.cc
+        # labels in form //test/core/test_util:port.cc
         return label.replace(":", "/")
 
 
@@ -1219,12 +1219,12 @@ _BUILD_EXTRA_METADATA = {
     },
     # TODO(jtattermusch): consider adding grpc++_core_stats
     # test support libraries
-    "test/core/util:grpc_test_util": {
+    "test/core/test_util:grpc_test_util": {
         "language": "c",
         "build": "private",
         "_RENAME": "grpc_test_util",
     },
-    "test/core/util:grpc_test_util_unsecure": {
+    "test/core/test_util:grpc_test_util_unsecure": {
         "language": "c",
         "build": "private",
         "_RENAME": "grpc_test_util_unsecure",
