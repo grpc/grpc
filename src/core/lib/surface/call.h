@@ -165,7 +165,7 @@ class Call : public CppImplOf<Call, grpc_call>,
     GPR_DEBUG_ASSERT(arena_ != nullptr);
     GPR_DEBUG_ASSERT(channel_ != nullptr);
   }
-  virtual ~Call() = default;
+  ~Call() override = default;
 
   void DeleteThis();
 
