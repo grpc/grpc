@@ -128,6 +128,11 @@ config_setting(
 )
 
 config_setting(
+    name = "visionos",
+    values = {"apple_platform_type": "visionos"},
+)
+
+config_setting(
     name = "watchos",
     values = {"apple_platform_type": "watchos"},
 )
