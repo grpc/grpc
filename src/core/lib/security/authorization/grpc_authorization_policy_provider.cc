@@ -84,7 +84,7 @@ absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
   CHECK(!authz_policy_path.empty());
-  CHECK_GT(refresh_interval_sec, 0);
+  CHECK_GT(refresh_interval_sec, 0u);
   absl::Status status;
   auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
       authz_policy_path, refresh_interval_sec, &status);
