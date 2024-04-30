@@ -253,7 +253,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   const char* peer_identity_property_name = nullptr;
 
   // The caller has checked the certificate type property.
-  CHECK_GE(peer->property_count, 1);
+  CHECK_GE(peer->property_count, 1u);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
@@ -326,7 +326,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   // A valid SPIFFE certificate can only have exact one URI SAN field.
   if (has_spiffe_id) {
     if (uri_count == 1) {
-      CHECK_GT(spiffe_length, 0);
+      CHECK_GT(spiffe_length, 0u);
       CHECK_NE(spiffe_data, nullptr);
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
