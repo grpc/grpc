@@ -1133,8 +1133,6 @@ src/core/ext/filters/channel_idle/idle_filter_state.cc \
 src/core/ext/filters/channel_idle/idle_filter_state.h \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
 src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h \
-src/core/ext/filters/deadline/deadline_filter.cc \
-src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/fault_injection/fault_injection_filter.cc \
 src/core/ext/filters/fault_injection/fault_injection_filter.h \
 src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \

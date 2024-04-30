@@ -173,8 +173,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/channel_idle/idle_filter_state.h )
   s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc )
   s.files += %w( src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h )
-  s.files += %w( src/core/ext/filters/deadline/deadline_filter.cc )
-  s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/fault_injection/fault_injection_filter.cc )
   s.files += %w( src/core/ext/filters/fault_injection/fault_injection_filter.h )
   s.files += %w( src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc )

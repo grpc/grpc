@@ -30,7 +30,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\channel_idle\\idle_filter_state.cc " +
     "src\\core\\ext\\filters\\channel_idle\\legacy_channel_idle_filter.cc " +
-    "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
     "src\\core\\ext\\filters\\fault_injection\\fault_injection_filter.cc " +
     "src\\core\\ext\\filters\\fault_injection\\fault_injection_service_config_parser.cc " +
     "src\\core\\ext\\filters\\http\\client\\http_client_filter.cc " +
@@ -1382,7 +1381,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\backend_metrics");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\census");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\channel_idle");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\deadline");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\fault_injection");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http\\client");
