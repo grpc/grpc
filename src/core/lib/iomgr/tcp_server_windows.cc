@@ -27,6 +27,7 @@
 
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -292,7 +293,7 @@ static grpc_error_handle prepare_socket(SOCKET sock,
   return absl::OkStatus();
 
 failure:
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   error = grpc_error_set_int(
       grpc_error_set_str(
@@ -307,7 +308,7 @@ failure:
 
 static void decrement_active_ports_and_notify_locked(grpc_tcp_listener* sp) {
   sp->shutting_down = 0;
-  GPR_ASSERT(sp->server->active_ports > 0);
+  CHECK_GT(sp->server->active_ports, 0u);
   if (0 == --sp->server->active_ports) {
     finish_shutdown_locked(sp->server);
   }
@@ -365,7 +366,7 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   return error;
 
 failure:
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }
@@ -458,7 +459,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   // the former socked we created has now either been destroy or assigned
   // to the new connection. We need to create a new one for the next
   // connection.
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
+  CHECK(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
   if (0 == --sp->outstanding_calls) {
     decrement_active_ports_and_notify_locked(sp);
   }
@@ -494,7 +495,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
     return error;
   }
 
-  GPR_ASSERT(port >= 0);
+  CHECK_GE(port, 0);
   gpr_mu_lock(&s->mu);
   sp = (grpc_tcp_listener*)gpr_malloc(sizeof(grpc_tcp_listener));
   sp->next = NULL;
@@ -514,7 +515,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   sp->port = port;
   sp->port_index = port_index;
   GRPC_CLOSURE_INIT(&sp->on_accept, on_accept, sp, grpc_schedule_on_exec_ctx);
-  GPR_ASSERT(sp->socket);
+  CHECK(sp->socket);
   gpr_mu_unlock(&s->mu);
   *listener = sp;
 
@@ -591,7 +592,7 @@ done:
     error = error_out;
     *port = -1;
   } else {
-    GPR_ASSERT(sp != NULL);
+    CHECK(sp != NULL);
     *port = sp->port;
   }
   return error;
@@ -601,9 +602,9 @@ static void tcp_server_start(grpc_tcp_server* s,
                              const std::vector<grpc_pollset*>* /*pollsets*/) {
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(s->active_ports == 0);
+  CHECK_EQ(s->active_ports, 0u);
   for (sp = s->head; sp; sp = sp->next) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
+    CHECK(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);
@@ -653,7 +654,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
   WindowsEventEngine* engine_ptr = reinterpret_cast<WindowsEventEngine*>(
       config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  GPR_ASSERT(on_accept_cb != nullptr);
+  CHECK_NE(on_accept_cb, nullptr);
   auto accept_cb = [s, on_accept_cb, on_accept_cb_arg](
                        std::unique_ptr<EventEngine::Endpoint> endpoint,
                        MemoryAllocator memory_allocator) {
@@ -675,7 +676,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
   {
     void* tmp_quota = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
-    GPR_ASSERT(tmp_quota != nullptr);
+    CHECK_NE(tmp_quota, nullptr);
     resource_quota =
         reinterpret_cast<grpc_core::ResourceQuota*>(tmp_quota)->Ref();
   }
@@ -706,13 +707,13 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
 
 static void event_engine_start(grpc_tcp_server* s,
                                const std::vector<grpc_pollset*>* /*pollsets*/) {
-  GPR_ASSERT(s->ee_listener->Start().ok());
+  CHECK(s->ee_listener->Start().ok());
 }
 
 static grpc_error_handle event_engine_add_port(
     grpc_tcp_server* s, const grpc_resolved_address* addr, int* port) {
-  GPR_ASSERT(addr != nullptr);
-  GPR_ASSERT(port != nullptr);
+  CHECK_NE(addr, nullptr);
+  CHECK_NE(port, nullptr);
   auto ee_addr = CreateResolvedAddress(*addr);
   auto out_port = s->ee_listener->Bind(ee_addr);
   *port = out_port.ok() ? *out_port : -1;
