@@ -27,8 +27,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:fake_stats_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -46,7 +46,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -61,7 +61,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -77,7 +77,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -95,7 +95,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -110,7 +110,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -125,7 +125,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/promise:test_context",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -141,7 +141,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -156,7 +156,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:metrics",
-        "//test/core/util:fake_stats_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

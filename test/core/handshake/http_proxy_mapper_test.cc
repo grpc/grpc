@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/client_channel/http_proxy_mapper.h"
+#include "src/core/handshaker/http_connect/http_proxy_mapper.h"
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -27,12 +27,12 @@
 
 #include <grpc/impl/channel_arg_names.h>
 
+#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/transport/http_connect_handshaker.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

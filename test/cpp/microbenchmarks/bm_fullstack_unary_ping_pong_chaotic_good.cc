@@ -21,7 +21,7 @@
 // good can run without custom experiment configuration.
 
 #include "src/cpp/ext/chaotic_good.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
 #include "test/cpp/util/test_config.h"
 

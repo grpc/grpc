@@ -33,7 +33,7 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 

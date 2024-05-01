@@ -53,9 +53,9 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/test_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_tcp_server.h"
 
 #define HTTP1_RESP_400                       \
   "HTTP/1.0 400 Bad Request\n"               \

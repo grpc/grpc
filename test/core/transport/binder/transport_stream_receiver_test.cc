@@ -23,7 +23,7 @@
 #include "absl/memory/memory.h"
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver_impl.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_binder {
 namespace {

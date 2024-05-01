@@ -45,8 +45,8 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/test_config.h"
 
 static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);

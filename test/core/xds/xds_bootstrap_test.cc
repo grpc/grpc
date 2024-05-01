@@ -49,8 +49,8 @@
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

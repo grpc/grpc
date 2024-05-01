@@ -57,9 +57,9 @@ grpc_cc_test(
         ":lb_policy_test_lib",
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_pick_first",
-        "//test/core/util:fake_stats_plugin",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -77,7 +77,7 @@ grpc_cc_test(
         ":lb_policy_test_lib",
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_round_robin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -96,8 +96,8 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:scoped_env_var",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -114,7 +114,7 @@ grpc_cc_test(
         ":lb_policy_test_lib",
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_outlier_detection",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -133,7 +133,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//src/core:client_channel_service_config",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -150,7 +150,7 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_xds_override_host",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -169,7 +169,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -222,8 +222,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:fake_stats_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -239,8 +239,8 @@ grpc_cc_test(
     deps = [
         ":lb_policy_test_lib",
         "//src/core:grpc_lb_policy_weighted_round_robin",
-        "//test/core/util:fake_stats_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -258,6 +258,6 @@ grpc_cc_test(
         ":lb_policy_test_lib",
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

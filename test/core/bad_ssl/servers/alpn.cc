@@ -31,7 +31,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/bad_ssl/server_common.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
