@@ -44,7 +44,6 @@ extern void SecurityRegisterHandshakerFactories(
 extern void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder);
 extern void RegisterLegacyChannelIdleFilters(
     CoreConfiguration::Builder* builder);
-extern void RegisterDeadlineFilter(CoreConfiguration::Builder* builder);
 extern void RegisterGrpcLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterHttpFilters(CoreConfiguration::Builder* builder);
 extern void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder);
@@ -111,7 +110,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterConnectedChannel(builder);
   RegisterGrpcLbPolicy(builder);
   RegisterHttpFilters(builder);
-  RegisterDeadlineFilter(builder);
   RegisterMessageSizeFilter(builder);
   RegisterServiceConfigChannelArgFilter(builder);
   RegisterResourceQuota(builder);

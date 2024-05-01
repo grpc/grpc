@@ -197,7 +197,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.33'
+    ss.dependency 'BoringSSL-GRPC', '0.0.34'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -282,8 +282,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/channel_idle/idle_filter_state.h',
                       'src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc',
                       'src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h',
-                      'src/core/ext/filters/deadline/deadline_filter.cc',
-                      'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/filters/fault_injection/fault_injection_filter.cc',
                       'src/core/ext/filters/fault_injection/fault_injection_filter.h',
                       'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc',
@@ -2375,7 +2373,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/backend_metrics/backend_metric_provider.h',
                               'src/core/ext/filters/channel_idle/idle_filter_state.h',
                               'src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h',
-                              'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/filters/fault_injection/fault_injection_filter.h',
                               'src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h',
                               'src/core/ext/filters/http/client/http_client_filter.h',

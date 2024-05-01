@@ -234,7 +234,7 @@ struct Server::RequestedCall {
 
   template <typename OptionalPayload>
   void Complete(OptionalPayload payload, ClientMetadata& md) {
-    Timestamp deadline = GetContext<CallContext>()->deadline();
+    Timestamp deadline = GetContext<Call>()->deadline();
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
         GPR_ASSERT(!payload.has_value());
@@ -1479,6 +1479,10 @@ void Server::ChannelData::InitCall(RefCountedPtr<CallSpineInterface> call) {
           auto* rc = mr.TakeCall();
           rc->Complete(std::move(std::get<0>(r)), *md);
           auto* call_context = GetContext<CallContext>();
+          const auto* deadline = md->get_pointer(GrpcTimeoutMetadata());
+          if (deadline != nullptr) {
+            GetContext<Call>()->UpdateDeadline(*deadline);
+          }
           *rc->call = call_context->c_call();
           grpc_call_ref(*rc->call);
           grpc_call_set_completion_queue(call_context->c_call(),
@@ -1828,6 +1832,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {
     calld->deadline_ = *op_deadline;
+    Call::FromC(calld->call_)->UpdateDeadline(*op_deadline);
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     // do nothing

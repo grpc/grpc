@@ -64,7 +64,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1034,7 +1033,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
-    third_party/boringssl-with-bazel/err_data.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c \
@@ -1125,6 +1123,8 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/evp/evp.c \
     third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_ec.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c \
@@ -1266,6 +1266,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
+    third_party/boringssl-with-bazel/src/gen/crypto/err_data.c \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -1287,6 +1288,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/ssl_buffer.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_cert.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_cipher.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_credential.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_file.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_key_share.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_lib.cc \
@@ -1388,7 +1390,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/fault_injection)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/client)
@@ -1633,7 +1634,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/asn1)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/base64)
@@ -1676,6 +1676,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/stack)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/trust_token)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/x509)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/gen/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
