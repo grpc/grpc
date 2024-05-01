@@ -18794,7 +18794,6 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/types:span
   - gpr
   uses_polling: false

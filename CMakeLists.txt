@@ -28745,7 +28745,6 @@ target_include_directories(static_stride_scheduler_test
 target_link_libraries(static_stride_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::span
   gpr
 )
