@@ -36,7 +36,7 @@ absl::optional<std::string> LoadEnv(absl::string_view environment_variable) {
 
 std::string LoadConfigFromEnv(absl::string_view environment_variable,
                               const char* default_value) {
-  DCHECK(!environment_variable.empty());
+  CHECK(!environment_variable.empty());
   return LoadEnv(environment_variable).value_or(default_value);
 }
 
