@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "python_census_context.h"
+#include "python_observability_context.h"
 
 #include <string.h>
 

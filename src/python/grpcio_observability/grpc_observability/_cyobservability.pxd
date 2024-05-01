@@ -38,7 +38,7 @@ cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
   cdef cppclass ClientCallTracer:
     pass
 
-cdef extern from "python_census_context.h" namespace "grpc_observability":
+cdef extern from "python_observability_context.h" namespace "grpc_observability":
   cdef void EnablePythonCensusStats(bint enable) nogil
   cdef void EnablePythonCensusTracing(bint enable) nogil
 
@@ -58,6 +58,7 @@ cdef extern from "python_census_context.h" namespace "grpc_observability":
     cMetricsName name
     MeasurementType type
     MeasurementValue value
+    bint registered_method
 
   ctypedef struct SpanCensusData:
     string name
@@ -78,7 +79,8 @@ cdef extern from "observability_util.h" namespace "grpc_observability":
   cdef void* CreateClientCallTracer(const char* method,
                                     const char* target,
                                     const char* trace_id,
-                                    const char* parent_span_id) except +
+                                    const char* parent_span_id,
+                                    bint registered_method) except +
   cdef void* CreateServerCallTracerFactory() except +
   cdef queue[NativeCensusData]* g_census_data_buffer
   cdef void AwaitNextBatchLocked(unique_lock[mutex]&, int) nogil
@@ -147,6 +149,7 @@ cdef extern from "constants.h" namespace "grpc_observability":
   string kClientMethod
   string kClientTarget
   string kClientStatus
+  string kRegisteredMethod
 
 cdef extern from "sampler.h" namespace "grpc_observability":
   cdef cppclass ProbabilitySampler:
