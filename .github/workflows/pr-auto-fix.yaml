@@ -29,7 +29,7 @@ jobs:
           path: ~/.cache/bazel
           # formattedTime here is like 2021323 - the year concatenated with the week then
           # the day of that week.
-          # As this changes every day, we cycle to a new cache once per day, with lookup 
+          # As this changes every day, we cycle to a new cache once per day, with lookup
           # across the week (and then the year).
           key: ${{ runner.os }}-${{ steps.current-time-with-day.outputs.formattedTime }}
           restore-keys: |
@@ -48,13 +48,13 @@ jobs:
         with:
           script: |
             // If you'd like not to run this code on your commits, add your github user id here:
-            NO_AUTOFIX_USERS = ["copybara-service[bot]"]
-            const { owner, repo } = context.repo
+            const NO_AUTOFIX_USERS = ["copybara-service[bot]"];
+            const { owner, repo } = context.repo;
             console.log("Actor: " + context.actor);
             if (NO_AUTOFIX_USERS.includes(context.actor)) {
               console.log('Cancelling');
               const run_id = "${{ github.run_id }}";
-              await github.actions.cancelWorkflowRun({ owner, repo, run_id });
+              await github.rest.actions.cancelWorkflowRun({ owner, repo, run_id });
               return 'go';
             } else {
               return 'stay';
