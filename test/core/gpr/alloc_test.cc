@@ -25,7 +25,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(AllocTest, MallocAligned) {
   for (size_t size = 1; size <= 256; ++size) {

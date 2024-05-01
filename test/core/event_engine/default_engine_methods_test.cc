@@ -30,7 +30,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 

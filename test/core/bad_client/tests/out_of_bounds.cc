@@ -27,7 +27,7 @@
 
 #include "src/core/lib/surface/server.h"
 #include "test/core/bad_client/bad_client.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #define APPEND_BUFFER(string, to_append) \
   ((string).append((to_append), sizeof(to_append) - 1))

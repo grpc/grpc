@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -472,7 +473,7 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
         self->OnConnectivityFailure(std::move(status));
       },
       &status);
-  GPR_ASSERT(transport_ != nullptr);
+  CHECK(transport_ != nullptr);
   if (!status.ok()) SetChannelStatusLocked(std::move(status));
 }
 
@@ -717,8 +718,8 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  GPR_ASSERT(xds_channel_->transport_ != nullptr);
-  GPR_ASSERT(call_ == nullptr);
+  CHECK(xds_channel_->transport_ != nullptr);
+  CHECK(call_ == nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] xds server %s: start new call from retryable "
@@ -1005,7 +1006,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "AdsCall"
                                                                   : nullptr),
       retryable_call_(std::move(retryable_call)) {
-  GPR_ASSERT(xds_client() != nullptr);
+  CHECK_NE(xds_client(), nullptr);
   // Init the ADS call.
   const char* method =
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
@@ -1015,7 +1016,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<AdsCall>(this)));
-  GPR_ASSERT(streaming_call_ != nullptr);
+  CHECK(streaming_call_ != nullptr);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -1369,7 +1370,7 @@ XdsClient::XdsChannel::LrsCall::LrsCall(
   // Init the LRS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
-  GPR_ASSERT(xds_client() != nullptr);
+  CHECK_NE(xds_client(), nullptr);
   const char* method =
       "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
   streaming_call_ = xds_channel()->transport_->CreateStreamingCall(
@@ -1377,7 +1378,7 @@ XdsClient::XdsChannel::LrsCall::LrsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<LrsCall>(this)));
-  GPR_ASSERT(streaming_call_ != nullptr);
+  CHECK(streaming_call_ != nullptr);
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
@@ -1598,7 +1599,7 @@ XdsClient::XdsClient(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
   }
-  GPR_ASSERT(bootstrap_ != nullptr);
+  CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
     gpr_log(GPR_INFO, "[xds_client %p] xDS node ID: %s", this,
             bootstrap_->node()->id().c_str());
@@ -1853,7 +1854,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     const XdsResourceType* resource_type) {
   auto it = resource_types_.find(resource_type->type_url());
   if (it != resource_types_.end()) {
-    GPR_ASSERT(it->second == resource_type);
+    CHECK(it->second == resource_type);
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
@@ -1904,7 +1905,7 @@ std::string XdsClient::ConstructFullXdsResourceName(
     auto uri = URI::Create("xdstp", std::string(authority),
                            absl::StrCat("/", resource_type, "/", key.id),
                            key.query_params, /*fragment=*/"");
-    GPR_ASSERT(uri.ok());
+    CHECK(uri.ok());
     return uri->ToString();
   }
   // Old-style name.

@@ -31,6 +31,6 @@ grpc_cc_binary(
         "//:grpc",
         "//:server",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

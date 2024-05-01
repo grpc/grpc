@@ -35,6 +35,8 @@
 #endif
 #include <sys/socket.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -44,8 +46,8 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/histogram.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/histogram.h"
 
 typedef struct fd_pair {
   int read_fd;
@@ -122,8 +124,8 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       }
     }
     if (err == 0 && spin) continue;
-    GPR_ASSERT(err == 1);
-    GPR_ASSERT(pfd.revents == POLLIN);
+    CHECK_EQ(err, 1);
+    CHECK(pfd.revents == POLLIN);
     do {
       err2 = read(fd, buf + bytes_read, read_size - bytes_read);
     } while (err2 < 0 && errno == EINTR);
@@ -162,9 +164,9 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
       return -1;
     }
     if (err == 0 && spin) continue;
-    GPR_ASSERT(err == 1);
-    GPR_ASSERT(ev.events & EPOLLIN);
-    GPR_ASSERT(ev.data.fd == args->fds.read_fd);
+    CHECK_EQ(err, 1);
+    CHECK(ev.events & EPOLLIN);
+    CHECK(ev.data.fd == args->fds.read_fd);
     do {
       do {
         err2 =
@@ -176,7 +178,7 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
       // done to ensure we see an EAGAIN
     } while (bytes_read < read_size);
   } while (bytes_read < read_size);
-  GPR_ASSERT(bytes_read == read_size);
+  CHECK(bytes_read == read_size);
   return 0;
 }
 

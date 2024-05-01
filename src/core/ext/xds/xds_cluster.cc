@@ -22,6 +22,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -476,7 +477,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     ValidationErrors::ScopedField field(&errors, ".cluster_type");
     const auto* custom_cluster_type =
         envoy_config_cluster_v3_Cluster_cluster_type(cluster);
-    GPR_ASSERT(custom_cluster_type != nullptr);
+    CHECK_NE(custom_cluster_type, nullptr);
     ValidationErrors::ScopedField field2(&errors, ".typed_config");
     const auto* typed_config =
         envoy_config_cluster_v3_Cluster_CustomClusterType_typed_config(

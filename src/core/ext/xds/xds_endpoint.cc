@@ -25,6 +25,7 @@
 #include <set>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -407,7 +408,7 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
       ValidationErrors::ScopedField field(&errors, absl::StrCat("[", i, "]"));
       auto parsed_locality = LocalityParse(endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
-        GPR_ASSERT(parsed_locality->locality.lb_weight != 0);
+        CHECK_NE(parsed_locality->locality.lb_weight, 0u);
         // Make sure prorities is big enough. Note that they might not
         // arrive in priority order.
         if (eds_resource->priorities.size() < parsed_locality->priority + 1) {
