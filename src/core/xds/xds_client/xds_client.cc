@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
 #include <inttypes.h>
 #include <string.h>
@@ -47,9 +47,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_api.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -57,6 +54,9 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/xds/xds_client/xds_api.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client_stats.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6

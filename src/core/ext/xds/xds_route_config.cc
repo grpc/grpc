@@ -62,7 +62,6 @@
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -76,6 +75,7 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
 

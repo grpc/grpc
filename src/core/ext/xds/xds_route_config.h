@@ -36,15 +36,15 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
+#include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
 namespace grpc_core {
 

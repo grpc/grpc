@@ -31,7 +31,6 @@
 
 #include "src/core/ext/xds/certificate_provider_store.h"
 #include "src/core/ext/xds/xds_audit_logger_registry.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_cluster_specifier_plugin.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/ext/xds/xds_lb_policy_registry.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 

@@ -45,7 +45,6 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_health_status.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -54,6 +53,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 
 // IWYU pragma: no_include "absl/meta/type_traits.h"
 

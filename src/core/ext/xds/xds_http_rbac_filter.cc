@@ -48,12 +48,12 @@
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_audit_logger_registry.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {
 

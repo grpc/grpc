@@ -43,10 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
@@ -56,6 +53,9 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"

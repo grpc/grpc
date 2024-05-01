@@ -28,8 +28,6 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -37,6 +35,8 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 
 namespace grpc_core {
 

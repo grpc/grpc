@@ -33,12 +33,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_api.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_metrics.h"
-#include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_transport.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -48,6 +42,12 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/xds/xds_client/xds_api.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_metrics.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 
 namespace grpc_core {
 

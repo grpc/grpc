@@ -37,11 +37,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -72,6 +69,9 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_client_stats.h"
 
 namespace grpc_core {
 

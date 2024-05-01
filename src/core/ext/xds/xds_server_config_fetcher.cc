@@ -53,7 +53,6 @@
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_channel_stack_modifier.h"
-#include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -89,6 +88,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {
 namespace {

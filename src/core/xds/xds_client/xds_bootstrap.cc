@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/ext/xds/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
 
 #include "absl/types/optional.h"
 

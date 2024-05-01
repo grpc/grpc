@@ -26,10 +26,10 @@
 
 #include "src/core/ext/xds/xds_common_types.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
 

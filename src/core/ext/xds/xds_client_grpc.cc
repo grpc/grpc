@@ -40,12 +40,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/xds/upb_utils.h"
-#include "src/core/ext/xds/xds_api.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_transport.h"
 #include "src/core/ext/xds/xds_transport_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/metrics.h"
@@ -63,6 +58,11 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/xds/xds_client/xds_api.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_channel_args.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.

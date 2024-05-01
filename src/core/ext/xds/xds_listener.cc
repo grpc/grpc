@@ -49,7 +49,6 @@
 
 #include "src/core/ext/xds/upb_utils.h"
 #include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/debug/trace.h"
@@ -58,6 +57,7 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
 

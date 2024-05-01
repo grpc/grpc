@@ -432,15 +432,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
-    src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_audit_logger_registry.cc \
-    src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_bootstrap_grpc.cc \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
-    src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_grpc.cc \
-    src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
     src/core/ext/xds/xds_common_types.cc \
@@ -883,6 +879,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/xds/xds_client/xds_api.cc \
+    src/core/xds/xds_client/xds_bootstrap.cc \
+    src/core/xds/xds_client/xds_client.cc \
+    src/core/xds/xds_client/xds_client_stats.cc \
     src/php/ext/grpc/byte_buffer.c \
     src/php/ext/grpc/call.c \
     src/php/ext/grpc/call_credentials.c \
@@ -1606,6 +1606,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)

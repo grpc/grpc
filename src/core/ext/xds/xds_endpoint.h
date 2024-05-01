@@ -33,14 +33,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
+#include "src/core/xds/xds_client/xds_resource_type_impl.h"
 
 namespace grpc_core {
 

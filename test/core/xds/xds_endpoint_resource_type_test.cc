@@ -35,13 +35,9 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/ext/xds/xds_health_status.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -50,6 +46,10 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.pb.h"

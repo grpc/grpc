@@ -31,7 +31,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/per_cpu.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 

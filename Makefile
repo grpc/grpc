@@ -1057,15 +1057,11 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
-    src/core/ext/xds/xds_api.cc \
     src/core/ext/xds/xds_audit_logger_registry.cc \
-    src/core/ext/xds/xds_bootstrap.cc \
     src/core/ext/xds/xds_bootstrap_grpc.cc \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_channel_stack_modifier.cc \
-    src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_grpc.cc \
-    src/core/ext/xds/xds_client_stats.cc \
     src/core/ext/xds/xds_cluster.cc \
     src/core/ext/xds/xds_cluster_specifier_plugin.cc \
     src/core/ext/xds/xds_common_types.cc \
@@ -1508,6 +1504,10 @@ LIBGRPC_SRC = \
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/xds/xds_client/xds_api.cc \
+    src/core/xds/xds_client/xds_bootstrap.cc \
+    src/core/xds/xds_client/xds_client.cc \
+    src/core/xds/xds_client/xds_client_stats.cc \
     third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
     third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
     third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
