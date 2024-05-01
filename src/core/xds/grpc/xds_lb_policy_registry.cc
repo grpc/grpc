@@ -35,11 +35,11 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {
 

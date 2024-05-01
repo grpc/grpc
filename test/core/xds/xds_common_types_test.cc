@@ -38,8 +38,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/xds/grpc/upb_utils.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -47,6 +45,8 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"

@@ -47,9 +47,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/xds/grpc/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/xds/grpc/xds_enabled_server.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/port.h"

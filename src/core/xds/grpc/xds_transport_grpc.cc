@@ -38,7 +38,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -60,6 +59,7 @@
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {

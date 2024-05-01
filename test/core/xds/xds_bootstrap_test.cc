@@ -35,8 +35,6 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/xds/grpc/certificate_provider_store.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
@@ -49,6 +47,8 @@
 #include "src/core/lib/security/certificate_provider/certificate_provider_factory.h"
 #include "src/core/lib/security/credentials/channel_creds_registry.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/xds/grpc/certificate_provider_store.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 

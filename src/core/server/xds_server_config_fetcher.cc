@@ -47,15 +47,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/xds/grpc/certificate_provider_store.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_certificate_provider.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
-#include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_http_filters.h"
-#include "src/core/xds/grpc/xds_listener.h"
-#include "src/core/xds/grpc/xds_route_config.h"
-#include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -88,6 +79,15 @@
 #include "src/core/server/xds_channel_stack_modifier.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/xds/grpc/certificate_provider_store.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_certificate_provider.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_http_filters.h"
+#include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {

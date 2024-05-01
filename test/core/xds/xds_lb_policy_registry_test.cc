@@ -34,7 +34,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"

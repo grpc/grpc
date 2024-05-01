@@ -32,7 +32,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/gcp/metadata_query.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -50,6 +49,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {

@@ -34,9 +34,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/xds/grpc/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/xds/grpc/xds_http_filters.h"
 
 namespace grpc_core {
 

@@ -44,9 +44,9 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/json/json_reader.h"
 #include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {

@@ -27,9 +27,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {
 
