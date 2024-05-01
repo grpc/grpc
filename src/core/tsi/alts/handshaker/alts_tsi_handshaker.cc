@@ -16,55 +16,32 @@
 //
 //
 
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
-#include "absl/log/check.h"
 #include <stdio.h>
-#include "absl/log/check.h"
 #include <stdlib.h>
-#include "absl/log/check.h"
 #include <string.h>
 
 #include "absl/log/check.h"
 #include "upb/mem/arena.hpp"
 
-#include "absl/log/check.h"
 #include <grpc/credentials.h>
-#include "absl/log/check.h"
 #include <grpc/grpc_security.h>
-#include "absl/log/check.h"
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
-#include "absl/log/check.h"
 #include <grpc/support/port_platform.h>
-#include "absl/log/check.h"
 #include <grpc/support/string_util.h>
-#include "absl/log/check.h"
 #include <grpc/support/sync.h>
-#include "absl/log/check.h"
 #include <grpc/support/thd_id.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "absl/log/check.h"
 #include "src/core/lib/surface/channel.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
 // Main struct for ALTS TSI handshaker.
@@ -482,7 +459,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
   if (handshaker->channel == nullptr &&
       handshaker->client_vtable_for_testing == nullptr) {
     CHECK(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
-                                handshaker->client));
+                           handshaker->client));
   }
   grpc_slice slice = (received_bytes == nullptr || received_bytes_size == 0)
                          ? grpc_empty_slice()
@@ -700,8 +677,8 @@ tsi_result alts_tsi_handshaker_create(
 void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
                                                  grpc_slice* recv_bytes,
                                                  size_t bytes_consumed) {
-  CHECK(recv_bytes != nullptr );
-CHECK_NE( result, nullptr);
+  CHECK(recv_bytes != nullptr);
+  CHECK_NE(result, nullptr);
   if (GRPC_SLICE_LENGTH(*recv_bytes) == bytes_consumed) {
     return;
   }

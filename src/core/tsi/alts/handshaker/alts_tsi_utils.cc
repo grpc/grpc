@@ -16,17 +16,14 @@
 //
 //
 
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 
 #include "absl/log/check.h"
+
 #include <grpc/byte_buffer_reader.h>
-#include "absl/log/check.h"
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/slice/slice.h"
-#include "absl/log/check.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 tsi_result alts_tsi_utils_convert_to_tsi_result(grpc_status_code code) {

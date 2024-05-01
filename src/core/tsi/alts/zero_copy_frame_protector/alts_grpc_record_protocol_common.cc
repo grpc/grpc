@@ -16,28 +16,19 @@
 //
 //
 
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 
-#include "absl/log/check.h"
 #include <string.h>
 
 #include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
-#include "absl/log/check.h"
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/gpr/useful.h"
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "absl/log/check.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 const size_t kInitialIovecBufferSize = 8;
@@ -45,8 +36,8 @@ const size_t kInitialIovecBufferSize = 8;
 // Makes sure iovec_buf in alts_grpc_record_protocol is large enough.
 static void ensure_iovec_buf_size(alts_grpc_record_protocol* rp,
                                   const grpc_slice_buffer* sb) {
-  CHECK(rp != nullptr );
-CHECK_NE( sb, nullptr);
+  CHECK(rp != nullptr);
+  CHECK_NE(sb, nullptr);
   if (sb->count <= rp->iovec_buf_length) {
     return;
   }
@@ -61,8 +52,8 @@ CHECK_NE( sb, nullptr);
 
 void alts_grpc_record_protocol_convert_slice_buffer_to_iovec(
     alts_grpc_record_protocol* rp, const grpc_slice_buffer* sb) {
-  CHECK(rp != nullptr );
-CHECK_NE( sb, nullptr);
+  CHECK(rp != nullptr);
+  CHECK_NE(sb, nullptr);
   ensure_iovec_buf_size(rp, sb);
   for (size_t i = 0; i < sb->count; i++) {
     rp->iovec_buf[i].iov_base = GRPC_SLICE_START_PTR(sb->slices[i]);
@@ -72,8 +63,8 @@ CHECK_NE( sb, nullptr);
 
 void alts_grpc_record_protocol_copy_slice_buffer(const grpc_slice_buffer* src,
                                                  unsigned char* dst) {
-  CHECK(src != nullptr );
-CHECK_NE( dst, nullptr);
+  CHECK(src != nullptr);
+  CHECK_NE(dst, nullptr);
   for (size_t i = 0; i < src->count; i++) {
     size_t slice_length = GRPC_SLICE_LENGTH(src->slices[i]);
     memcpy(dst, GRPC_SLICE_START_PTR(src->slices[i]), slice_length);

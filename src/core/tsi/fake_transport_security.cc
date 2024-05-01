@@ -16,32 +16,21 @@
 //
 //
 
-#include "absl/log/check.h"
 #include "src/core/tsi/fake_transport_security.h"
 
-#include "absl/log/check.h"
 #include <stdlib.h>
-#include "absl/log/check.h"
 #include <string.h>
 
 #include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
-#include "absl/log/check.h"
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/gpr/useful.h"
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "absl/log/check.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
 // --- Constants. ---
@@ -137,8 +126,8 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
 }
 
 static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
-  CHECK(sb != nullptr );
-CHECK( sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
+  CHECK(sb != nullptr);
+  CHECK(sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
   uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
   uint8_t* buf = frame_size_buffer;
   // Copies the first 4 bytes to a temporary buffer.

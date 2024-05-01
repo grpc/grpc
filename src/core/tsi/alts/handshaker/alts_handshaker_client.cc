@@ -16,45 +16,27 @@
 //
 //
 
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
-#include "absl/log/check.h"
 #include <list>
 
 #include "absl/log/check.h"
 #include "absl/strings/numbers.h"
-#include "absl/log/check.h"
 #include "upb/mem/arena.hpp"
 
-#include "absl/log/check.h"
 #include <grpc/byte_buffer.h>
-#include "absl/log/check.h"
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
-#include "absl/log/check.h"
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
-#include "absl/log/check.h"
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/env.h"
-#include "absl/log/check.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "absl/log/check.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "absl/log/check.h"
 #include "src/core/lib/surface/call.h"
-#include "absl/log/check.h"
 #include "src/core/lib/surface/channel.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
-#include "absl/log/check.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 
 #define TSI_ALTS_INITIAL_BUFFER_SIZE 256
@@ -778,8 +760,8 @@ namespace internal {
 
 void alts_handshaker_client_set_grpc_caller_for_testing(
     alts_handshaker_client* c, alts_grpc_caller caller) {
-  CHECK(c != nullptr );
-CHECK_NE( caller, nullptr);
+  CHECK(c != nullptr);
+  CHECK_NE(caller, nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   client->grpc_caller = caller;
@@ -843,7 +825,7 @@ void alts_handshaker_client_check_fields_for_testing(
     CHECK_EQ(grpc_slice_cmp(client->recv_bytes, *recv_bytes), 0);
   }
   CHECK(alts_tsi_handshaker_get_has_sent_start_message_for_testing(
-                 client->handshaker) == has_sent_start_message);
+            client->handshaker) == has_sent_start_message);
 }
 
 void alts_handshaker_client_set_vtable_for_testing(
