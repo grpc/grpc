@@ -73,25 +73,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "xds_channel_stack_modifier_test",
-    srcs = ["xds_channel_stack_modifier_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    tags = ["no_test_ios"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc_base",
-        "//:grpc_opencensus_plugin",
-        "//src/core:channel_args",
-        "//src/core:grpc_xds_channel_stack_modifier",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "xds_certificate_provider_test",
     srcs = ["xds_certificate_provider_test.cc"],
     external_deps = ["gtest"],
