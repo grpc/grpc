@@ -64,7 +64,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1391,7 +1390,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/backend_metrics)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/channel_idle)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/fault_injection)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http/client)

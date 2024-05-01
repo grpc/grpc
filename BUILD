@@ -851,7 +851,6 @@ grpc_cc_library(
         # standard plugins
         "census",
         "//src/core:grpc_backend_metric_filter",
-        "//src/core:grpc_deadline_filter",
         "//src/core:grpc_client_authority_filter",
         "//src/core:grpc_lb_policy_grpclb",
         "//src/core:grpc_lb_policy_outlier_detection",
@@ -3697,7 +3696,6 @@ grpc_cc_library(
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
-        "//src/core:grpc_deadline_filter",
         "//src/core:grpc_message_size_filter",
         "//src/core:grpc_service_config",
         "//src/core:init_internally",
