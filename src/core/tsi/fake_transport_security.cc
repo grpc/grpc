@@ -144,7 +144,7 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
       remaining -= slice_length;
     }
   }
-  CHECK_EQ(remaining, 0);
+  CHECK_EQ(remaining, 0u);
   return load32_little_endian(frame_size_buffer);
 }
 

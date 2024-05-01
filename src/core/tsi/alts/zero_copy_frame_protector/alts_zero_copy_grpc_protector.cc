@@ -86,7 +86,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
       remaining -= slice_length;
     }
   }
-  CHECK_EQ(remaining, 0);
+  CHECK_EQ(remaining, 0u);
   // Gets little-endian frame size.
   uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
                         (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
@@ -296,7 +296,7 @@ tsi_result alts_zero_copy_grpc_protector_create(
       impl->max_unprotected_data_size =
           alts_grpc_record_protocol_max_unprotected_data_size(
               impl->record_protocol, max_protected_frame_size_to_set);
-      CHECK_GT(impl->max_unprotected_data_size, 0);
+      CHECK_GT(impl->max_unprotected_data_size, 0u);
       // Allocates internal slice buffers.
       grpc_slice_buffer_init(&impl->unprotected_staging_sb);
       grpc_slice_buffer_init(&impl->protected_sb);

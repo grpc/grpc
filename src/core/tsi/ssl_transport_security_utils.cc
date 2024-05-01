@@ -69,7 +69,7 @@ void LogSslErrorStack(void) {
 
 tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
                       size_t unprotected_bytes_size) {
-  CHECK_LE(unprotected_bytes_size, INT_MAX);
+  CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int ssl_write_result = SSL_write(ssl, unprotected_bytes,
                                    static_cast<int>(unprotected_bytes_size));
@@ -90,7 +90,7 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
 
 tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
                      size_t* unprotected_bytes_size) {
-  CHECK_LE(*unprotected_bytes_size, INT_MAX);
+  CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int read_from_ssl = SSL_read(ssl, unprotected_bytes,
                                static_cast<int>(*unprotected_bytes_size));
@@ -135,7 +135,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   int pending_in_ssl = static_cast<int>(BIO_pending(network_io));
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
-    CHECK_LE(*protected_output_frames_size, INT_MAX);
+    CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
     read_from_ssl = BIO_read(network_io, protected_output_frames,
                              static_cast<int>(*protected_output_frames_size));
     if (read_from_ssl < 0) {
@@ -162,7 +162,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   result = DoSslWrite(ssl, buffer, buffer_size);
   if (result != TSI_OK) return result;
 
-  CHECK_LE(*protected_output_frames_size, INT_MAX);
+  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl < 0) {
@@ -196,7 +196,7 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   *still_pending_size = static_cast<size_t>(pending);
   if (*still_pending_size == 0) return TSI_OK;
 
-  CHECK_LE(*protected_output_frames_size, INT_MAX);
+  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl <= 0) {
@@ -233,7 +233,7 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   *unprotected_bytes_size = output_bytes_size - output_bytes_offset;
 
   // Then, try to write some data to ssl.
-  CHECK_LE(*protected_frames_bytes_size, INT_MAX);
+  CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
   written_into_ssl = BIO_write(network_io, protected_frames_bytes,
                                static_cast<int>(*protected_frames_bytes_size));
   if (written_into_ssl < 0) {

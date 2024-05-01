@@ -15,10 +15,8 @@
 // limitations under the License.
 //
 //
-
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -26,7 +24,6 @@
 
 #ifndef OPENSSL_IS_BORINGSSL
 
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include "src/core/lib/slice/slice.h"

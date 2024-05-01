@@ -145,7 +145,7 @@ void SslSessionLRUCache::Remove(SslSessionLRUCache::Node* node) {
   } else {
     node->next_->prev_ = node->prev_;
   }
-  CHECK_GE(use_order_list_size_, 1);
+  CHECK_GE(use_order_list_size_, 1u);
   use_order_list_size_--;
 }
 

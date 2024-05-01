@@ -21,8 +21,6 @@
 #include <limits.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
@@ -30,13 +28,9 @@
 // can't be in grpc, it has to be in gpr.
 #ifdef GPR_WINDOWS
 #include <ws2tcpip.h>
-
-#include "absl/log/check.h"
 #else
 #include <arpa/inet.h>
 #include <sys/socket.h>
-
-#include "absl/log/check.h"
 #endif
 
 #include <memory>
@@ -548,7 +542,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   tsi_result result = TSI_OK;
   X509* certificate = nullptr;
   BIO* pem;
-  CHECK_LE(pem_cert_chain_size, INT_MAX);
+  CHECK_LE(pem_cert_chain_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_cert_chain, static_cast<int>(pem_cert_chain_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
 
@@ -668,7 +662,7 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
   tsi_result result = TSI_OK;
   EVP_PKEY* private_key = nullptr;
   BIO* pem;
-  CHECK_LE(pem_key_size, INT_MAX);
+  CHECK_LE(pem_key_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
   do {
@@ -713,7 +707,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
   X509* root = nullptr;
   X509_NAME* root_name = nullptr;
   BIO* pem;
-  CHECK_LE(pem_roots_size, INT_MAX);
+  CHECK_LE(pem_roots_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_roots, static_cast<int>(pem_roots_size));
   if (cert_store == nullptr) return TSI_INVALID_ARGUMENT;
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
@@ -1607,7 +1601,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  CHECK_LE(*bytes_size, INT_MAX);
+  CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
   bytes_read_from_ssl =
       BIO_read(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_read_from_ssl < 0) {
@@ -1678,7 +1672,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  CHECK_LE(*bytes_size, INT_MAX);
+  CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
   bytes_written_into_ssl_size =
       BIO_write(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_written_into_ssl_size < 0) {
