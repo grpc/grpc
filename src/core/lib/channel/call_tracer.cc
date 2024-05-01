@@ -22,6 +22,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -76,7 +78,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     explicit DelegatingClientCallAttemptTracer(
         std::vector<CallAttemptTracer*> tracers)
         : tracers_(std::move(tracers)) {
-      GPR_DEBUG_ASSERT(!tracers_.empty());
+      DCHECK(!tracers_.empty());
     }
     ~DelegatingClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
@@ -176,7 +178,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     attempt_tracers.reserve(tracers_.size());
     for (auto* tracer : tracers_) {
       auto* attempt_tracer = tracer->StartNewAttempt(is_transparent_retry);
-      GPR_DEBUG_ASSERT(attempt_tracer != nullptr);
+      DCHECK_NE(attempt_tracer, nullptr);
       attempt_tracers.push_back(attempt_tracer);
     }
     return GetContext<Arena>()->ManagedNew<DelegatingClientCallAttemptTracer>(
@@ -328,9 +330,8 @@ void AddClientCallTracerToContext(grpc_call_context_element* call_context,
 
 void AddServerCallTracerToContext(grpc_call_context_element* call_context,
                                   ServerCallTracer* tracer) {
-  GPR_DEBUG_ASSERT(
-      call_context[GRPC_CONTEXT_CALL_TRACER].value ==
-      call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
+  DCHECK(call_context[GRPC_CONTEXT_CALL_TRACER].value ==
+         call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
   if (call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
       nullptr) {
     // This is the first call tracer. Set it directly.
