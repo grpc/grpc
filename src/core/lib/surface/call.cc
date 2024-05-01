@@ -2580,9 +2580,9 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
                        : grpc_polling_entity{})) {
     global_stats().IncrementClientCallsCreated();
     if (args->cq != nullptr) {
-      CHECK(args->pollset_set_alternative == nullptr) << 
-            "Only one of 'cq' and 'pollset_set_alternative' should be "
-            "non-nullptr.";
+      CHECK(args->pollset_set_alternative == nullptr)
+          << "Only one of 'cq' and 'pollset_set_alternative' should be "
+             "non-nullptr.";
     }
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
