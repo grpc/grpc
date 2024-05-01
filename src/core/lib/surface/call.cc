@@ -2258,13 +2258,13 @@ class PromiseBasedCall : public BasicPromiseBasedCall {
         if (reason == PendingOp::kReceiveMessage) is_recv_message = true;
         auto prev =
             state.fetch_or(PendingOpBit(reason), std::memory_order_relaxed);
-        CHECK_EQ((prev & PendingOpBit(reason)), 0);
+        CHECK_EQ((prev & PendingOpBit(reason)), 0u);
       }
 
       CompletionState RemovePendingBit(PendingOp reason) {
         const uint32_t mask = ~PendingOpBit(reason);
         auto prev = state.fetch_and(mask, std::memory_order_acq_rel);
-        CHECK_NE((prev & PendingOpBit(reason)), 0);
+        CHECK_NE((prev & PendingOpBit(reason)), 0u);
         switch (prev & mask) {
           case kOpFailed:
             return kFailure;
