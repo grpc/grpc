@@ -5247,7 +5247,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -5740,7 +5739,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - gpr
   uses_polling: false
 - name: aws_request_signer_test
@@ -8378,7 +8376,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -8651,7 +8648,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/log:check
   - gpr
   uses_polling: false
 - name: dual_ref_counted_test
@@ -8949,7 +8945,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -11567,7 +11562,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12718,7 +12712,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13484,7 +13477,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13782,7 +13774,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14712,7 +14703,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -19725,7 +19715,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - gpr
   uses_polling: false
 - name: thread_stress_test
@@ -20379,7 +20368,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr

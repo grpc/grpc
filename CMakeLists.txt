@@ -6022,7 +6022,6 @@ target_link_libraries(activity_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -7348,7 +7347,6 @@ target_link_libraries(avl_test
   gtest
   absl::config
   absl::hash
-  absl::check
   gpr
 )
 
@@ -11631,7 +11629,6 @@ target_link_libraries(context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::check
   absl::type_traits
   gpr
 )
@@ -12293,7 +12290,6 @@ target_link_libraries(down_cast_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::check
   gpr
 )
 
@@ -12815,7 +12811,6 @@ target_link_libraries(endpoint_config_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -17705,7 +17700,6 @@ target_link_libraries(inter_activity_pipe_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -18849,7 +18843,6 @@ target_link_libraries(latch_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -20237,7 +20230,6 @@ target_link_libraries(mpsc_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -20734,7 +20726,6 @@ target_link_libraries(observable_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -22613,7 +22604,6 @@ target_link_libraries(promise_mutex_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -30806,7 +30796,6 @@ target_link_libraries(thread_quota_test
   gtest
   absl::config
   absl::hash
-  absl::check
   gpr
 )
 
@@ -32222,7 +32211,6 @@ target_link_libraries(wait_for_callback_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
