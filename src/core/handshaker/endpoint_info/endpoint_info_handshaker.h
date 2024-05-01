@@ -14,26 +14,24 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TCP_CONNECT_HANDSHAKER_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_TCP_CONNECT_HANDSHAKER_H
+#ifndef GRPC_SRC_CORE_HANDSHAKER_ENDPOINT_INFO_ENDPOINT_INFO_HANDSHAKER_H
+#define GRPC_SRC_CORE_HANDSHAKER_ENDPOINT_INFO_ENDPOINT_INFO_HANDSHAKER_H
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
 
-// Indicates the address that the tcp connect handshaker should connect to.
-#define GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS \
-  "grpc.internal.tcp_handshaker_resolved_address"
+// Set by the handshaker to indicate the local address of the endpoint.
+#define GRPC_ARG_ENDPOINT_LOCAL_ADDRESS "grpc.internal.endpoint_local_address"
 
-// Whether the TCP connect handshaker should bind the endpoint to the pollset.
-#define GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET \
-  "grpc.internal.tcp_handshaker_bind_endpoint_to_pollset"
+// Set by the handshaker to indicate the peer address of the endpoint.
+#define GRPC_ARG_ENDPOINT_PEER_ADDRESS "grpc.internal.endpoint_peer_address"
 
 namespace grpc_core {
 
-// Register the TCP Connect handshaker into the configuration builder.
-void RegisterTCPConnectHandshaker(CoreConfiguration::Builder* builder);
+// Register the endpoint info handshaker into the configuration builder.
+void RegisterEndpointInfoHandshaker(CoreConfiguration::Builder* builder);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_TCP_CONNECT_HANDSHAKER_H
+#endif  // GRPC_SRC_CORE_HANDSHAKER_ENDPOINT_INFO_ENDPOINT_INFO_HANDSHAKER_H
