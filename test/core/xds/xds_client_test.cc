@@ -627,10 +627,12 @@ class XdsClientTest : public ::testing::Test {
         uint64_t>;
     using ServerFailureMap = std::map<std::string /*xds_server*/, uint64_t>;
 
-    const ResourceUpdateMap& resource_updates_valid() const {
+    ResourceUpdateMap resource_updates_valid() const {
+      MutexLock lock(&mu_);
       return resource_updates_valid_;
     }
-    const ResourceUpdateMap& resource_updates_invalid() const {
+    ResourceUpdateMap resource_updates_invalid() const {
+      MutexLock lock(&mu_);
       return resource_updates_invalid_;
     }
     const ServerFailureMap& server_failures() const { return server_failures_; }
@@ -640,6 +642,7 @@ class XdsClientTest : public ::testing::Test {
                                absl::string_view resource_type,
                                uint64_t num_resources_valid,
                                uint64_t num_resources_invalid) override {
+      MutexLock lock(&mu_);
       auto key =
           std::make_pair(std::string(xds_server), std::string(resource_type));
       if (num_resources_valid > 0) {
@@ -651,12 +654,14 @@ class XdsClientTest : public ::testing::Test {
     }
 
     void ReportServerFailure(absl::string_view xds_server) override {
+      MutexLock lock(&mu_);
       ++server_failures_[std::string(xds_server)];
     }
 
-    ResourceUpdateMap resource_updates_valid_;
-    ResourceUpdateMap resource_updates_invalid_;
-    ServerFailureMap server_failures_;
+    mutable Mutex mu_;
+    ResourceUpdateMap resource_updates_valid_ ABSL_GUARDED_BY(mu_);
+    ResourceUpdateMap resource_updates_invalid_ ABSL_GUARDED_BY(mu_);
+    ServerFailureMap server_failures_ ABSL_GUARDED_BY(mu_);
   };
 
   using ResourceCounts =

@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -405,7 +406,7 @@ class XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<RefCountedPtr<ServerConfigSelector>> Watch(
       std::unique_ptr<ServerConfigSelectorProvider::ServerConfigSelectorWatcher>
           watcher) override {
-    GPR_ASSERT(watcher_ == nullptr);
+    CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     if (!static_resource_.ok()) {
       return static_resource_.status();
@@ -518,7 +519,7 @@ XdsServerConfigFetcher::XdsServerConfigFetcher(
     RefCountedPtr<GrpcXdsClient> xds_client,
     grpc_server_xds_status_notifier notifier)
     : xds_client_(std::move(xds_client)), serving_status_notifier_(notifier) {
-  GPR_ASSERT(xds_client_ != nullptr);
+  CHECK(xds_client_ != nullptr);
 }
 
 std::string ListenerResourceName(absl::string_view resource_name_template,
@@ -1102,7 +1103,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
-    GPR_ASSERT(filter_impl != nullptr);
+    CHECK_NE(filter_impl, nullptr);
     // Some filters like the router filter are no-op filters and do not have
     // an implementation.
     if (filter_impl->channel_filter() != nullptr) {
@@ -1151,7 +1152,7 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
       return result.status();
     }
     xds_certificate_provider = std::move(*result);
-    GPR_ASSERT(xds_certificate_provider != nullptr);
+    CHECK(xds_certificate_provider != nullptr);
     args = args.SetObject(xds_certificate_provider);
   }
   return args;
@@ -1269,7 +1270,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       resource_name_(std::move(resource_name)),
       http_filters_(std::move(http_filters)),
       resource_(std::move(initial_resource)) {
-  GPR_ASSERT(!resource_name_.empty());
+  CHECK(!resource_name_.empty());
   // RouteConfigWatcher is being created here instead of in Watch() to avoid
   // deadlocks from invoking XdsRouteConfigResourceType::StartWatch whilst in a
   // critical region.
@@ -1296,7 +1297,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
   absl::StatusOr<std::shared_ptr<const XdsRouteConfigResource>> resource;
   {
     MutexLock lock(&mu_);
-    GPR_ASSERT(watcher_ == nullptr);
+    CHECK(watcher_ == nullptr);
     watcher_ = std::move(watcher);
     resource = resource_;
   }
