@@ -3702,7 +3702,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
-        "absl/strings"
+        "absl/strings",
     ],
     deps = [
         "certificate_provider_factory",
