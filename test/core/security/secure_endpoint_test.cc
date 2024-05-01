@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/handshaker/security/secure_endpoint.h"
 
 #include <fcntl.h>
 #include <sys/types.h>
