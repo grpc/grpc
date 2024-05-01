@@ -32,6 +32,6 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//src/core:grpc_server_config_selector",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -21,7 +21,7 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER
@@ -57,7 +57,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 

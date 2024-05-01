@@ -34,6 +34,6 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//:grpcpp_chaotic_good",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

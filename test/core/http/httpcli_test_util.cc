@@ -34,7 +34,7 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gpr/subprocess.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_core {
 namespace testing {
