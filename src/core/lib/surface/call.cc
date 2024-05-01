@@ -353,12 +353,19 @@ void Call::HandleCompressionAlgorithmDisabled(
 }
 
 void Call::UpdateDeadline(Timestamp deadline) {
-  MutexLock lock(&deadline_mu_);
+  ReleasableMutexLock lock(&deadline_mu_);
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
             deadline_.ToString().c_str(), deadline.ToString().c_str());
   }
   if (deadline >= deadline_) return;
+  if (deadline < Timestamp::Now()) {
+    lock.Release();
+    CancelWithError(grpc_error_set_int(
+        absl::DeadlineExceededError("Deadline Exceeded"),
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
+    return;
+  }
   auto* const event_engine = channel()->event_engine();
   if (deadline_ != Timestamp::InfFuture()) {
     if (!event_engine->Cancel(deadline_task_)) return;
