@@ -5247,7 +5247,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -5388,7 +5387,6 @@ targets:
   - test/core/promise/all_ok_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -6955,7 +6953,6 @@ targets:
   - test/core/promise/cancel_callback_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -8379,7 +8376,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -11433,7 +11429,6 @@ targets:
   - test/core/promise/if_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -11567,7 +11562,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12455,7 +12449,6 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12719,7 +12712,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12838,7 +12830,6 @@ targets:
   - test/core/promise/loop_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13486,7 +13477,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13784,7 +13774,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14453,7 +14442,6 @@ targets:
   - test/core/promise/poll_test.cc
   deps:
   - gtest
-  - absl/log:check
   - gpr
   uses_polling: false
 - name: port_sharing_end2end_test
@@ -14629,7 +14617,6 @@ targets:
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
-  - absl/log:check
   - gpr
   uses_polling: false
 - name: promise_endpoint_test
@@ -14659,7 +14646,6 @@ targets:
   deps:
   - gtest
   - absl/functional:bind_front
-  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -14676,7 +14662,6 @@ targets:
   - test/core/promise/map_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -14718,7 +14703,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14734,7 +14718,6 @@ targets:
   - test/core/promise/promise_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -14954,7 +14937,6 @@ targets:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - absl/log:check
   - gpr
   uses_polling: false
 - name: random_early_detection_test
@@ -17820,7 +17802,6 @@ targets:
   - test/core/promise/seq_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -18869,7 +18850,6 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -19056,7 +19036,6 @@ targets:
   - test/core/promise/switch_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -20240,7 +20219,6 @@ targets:
   - test/core/promise/try_join_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -20278,7 +20256,6 @@ targets:
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -20391,7 +20368,6 @@ targets:
   - gtest
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr

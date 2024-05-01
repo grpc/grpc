@@ -26,6 +26,7 @@ let package = Package(
       ],
     
       sources: [
+        "err_data.c",
         "src/crypto/asn1/a_bitstr.c",
         "src/crypto/asn1/a_bool.c",
         "src/crypto/asn1/a_d2i_fp.c",
@@ -116,8 +117,6 @@ let package = Package(
         "src/crypto/evp/evp.c",
         "src/crypto/evp/evp_asn1.c",
         "src/crypto/evp/evp_ctx.c",
-        "src/crypto/evp/p_dh.c",
-        "src/crypto/evp/p_dh_asn1.c",
         "src/crypto/evp/p_dsa_asn1.c",
         "src/crypto/evp/p_ec.c",
         "src/crypto/evp/p_ec_asn1.c",
@@ -259,7 +258,6 @@ let package = Package(
         "src/crypto/x509/x_val.c",
         "src/crypto/x509/x_x509.c",
         "src/crypto/x509/x_x509a.c",
-        "src/gen/crypto/err_data.c",
         "src/ssl/bio_ssl.cc",
         "src/ssl/d1_both.cc",
         "src/ssl/d1_lib.cc",
@@ -281,7 +279,6 @@ let package = Package(
         "src/ssl/ssl_buffer.cc",
         "src/ssl/ssl_cert.cc",
         "src/ssl/ssl_cipher.cc",
-        "src/ssl/ssl_credential.cc",
         "src/ssl/ssl_file.cc",
         "src/ssl/ssl_key_share.cc",
         "src/ssl/ssl_lib.cc",

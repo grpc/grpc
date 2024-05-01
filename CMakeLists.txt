@@ -6022,7 +6022,6 @@ target_link_libraries(activity_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -6293,7 +6292,6 @@ target_include_directories(all_ok_test
 target_link_libraries(all_ok_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   absl::utility
@@ -9133,7 +9131,6 @@ target_include_directories(cancel_callback_test
 target_link_libraries(cancel_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   gpr
 )
@@ -11632,7 +11629,6 @@ target_link_libraries(context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::check
   absl::type_traits
   gpr
 )
@@ -17420,7 +17416,6 @@ target_include_directories(if_test
 target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -17705,7 +17700,6 @@ target_link_libraries(inter_activity_pipe_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -18446,7 +18440,6 @@ target_include_directories(join_test
 target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -18850,7 +18843,6 @@ target_link_libraries(latch_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -19202,7 +19194,6 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -20239,7 +20230,6 @@ target_link_libraries(mpsc_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -20736,7 +20726,6 @@ target_link_libraries(observable_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -22007,7 +21996,6 @@ target_include_directories(poll_test
 target_link_libraries(poll_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   gpr
 )
 
@@ -22442,7 +22430,6 @@ target_include_directories(prioritized_race_test
 target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   gpr
 )
 
@@ -22528,7 +22515,6 @@ target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::bind_front
-  absl::check
   absl::type_traits
   gpr
 )
@@ -22571,7 +22557,6 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   gpr
 )
@@ -22619,7 +22604,6 @@ target_link_libraries(promise_mutex_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -22663,7 +22647,6 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   gpr
 )
@@ -23159,7 +23142,6 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   gpr
 )
 
@@ -26716,7 +26698,6 @@ target_include_directories(seq_test
 target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -28899,7 +28880,6 @@ target_include_directories(status_flag_test
 target_link_libraries(status_flag_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::statusor
   gpr
 )
@@ -29334,7 +29314,6 @@ target_include_directories(switch_test
 target_link_libraries(switch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -31821,7 +31800,6 @@ target_include_directories(try_join_test
 target_link_libraries(try_join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   absl::utility
@@ -31910,7 +31888,6 @@ target_include_directories(try_seq_test
 target_link_libraries(try_seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -32234,7 +32211,6 @@ target_link_libraries(wait_for_callback_test
   gtest
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
