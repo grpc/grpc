@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/handshaker/proxy_mapper_registry.h"
+#include "src/core/handshaker/proxy_mapper_registry.h"
 
 #include <algorithm>
 #include <memory>

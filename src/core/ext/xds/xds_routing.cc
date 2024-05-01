@@ -25,6 +25,7 @@
 #include <cctype>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -117,7 +118,7 @@ absl::optional<size_t> XdsRouting::FindVirtualHostForDomain(
       // than current match.
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       // This should be caught by RouteConfigParse().
-      GPR_ASSERT(match_type != INVALID_MATCH);
+      CHECK(match_type != INVALID_MATCH);
       if (match_type > best_match_type) continue;
       if (match_type == best_match_type &&
           domain_pattern.size() <= longest_match) {
@@ -235,7 +236,7 @@ XdsRouting::GeneratePerHTTPFilterConfigs(
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
-    GPR_ASSERT(filter_impl != nullptr);
+    CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
     if (filter_impl->channel_filter() == nullptr) continue;
