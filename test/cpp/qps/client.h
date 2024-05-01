@@ -262,6 +262,8 @@ class Client {
     return static_cast<bool>(gpr_atm_acq_load(&thread_pool_done_));
   }
 
+  bool all_channels_connected() { return all_channels_connected_; }
+
   class Thread {
    public:
     Thread(Client* client, size_t idx)
@@ -344,6 +346,7 @@ class Client {
   bool closed_loop_;
   gpr_atm thread_pool_done_;
   double median_latency_collection_interval_seconds_;  // In seconds
+  bool all_channels_connected_;
 
   void StartThreads(size_t num_threads) {
     gpr_atm_rel_store(&thread_pool_done_, static_cast<gpr_atm>(false));
@@ -490,8 +493,10 @@ class ClientImpl : public Client {
       cq.Next(&tag, &ok);
       Channel* channel = static_cast<Channel*>(tag);
       if (!ok) {
-        grpc_core::Crash(absl::StrFormat(
-            "Channel %p failed to connect within the deadline", channel));
+        gpr_log(GPR_ERROR, "Channel %p failed to connect within the deadline",
+                channel);
+                all_channels_connected_ = false;
+        return;
       } else {
         grpc_connectivity_state last_observed = channel->GetState(true);
         if (last_observed == GRPC_CHANNEL_READY) {
@@ -503,6 +508,7 @@ class ClientImpl : public Client {
         }
       }
     }
+    all_channels_connected_ = true;
   }
 
  protected:

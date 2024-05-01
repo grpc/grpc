@@ -39,11 +39,13 @@ extern std::vector<grpc::testing::Server*>* g_inproc_servers;
 class QpsWorker {
  public:
   explicit QpsWorker(int driver_port, int server_port,
-                     const std::string& credential_type);
+                     const std::string& credential_type,
+                     bool die_on_connection_failure = true);
   ~QpsWorker();
 
   bool Done() const;
   void MarkDone();
+  bool die_on_connection_failure() const;
 
   std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args) {
     return server_->InProcessChannel(args);
@@ -52,6 +54,7 @@ class QpsWorker {
  private:
   std::unique_ptr<WorkerServiceImpl> impl_;
   std::unique_ptr<grpc::Server> server_;
+  const bool die_on_connection_failure_;
 
   gpr_atm done_;
 };

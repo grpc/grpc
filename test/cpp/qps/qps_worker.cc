@@ -185,7 +185,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     acquired_ = false;
   }
 
-  Status RunClientBody(ServerContext* /*ctx*/,
+  Status RunClientBody(ServerContext* ctx,
                        ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
@@ -198,6 +198,16 @@ class WorkerServiceImpl final : public WorkerService::Service {
     std::unique_ptr<Client> client = CreateClient(args.setup());
     if (!client) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create client");
+    }
+    if (!client->all_channels_connected()) {
+      if (worker_->die_on_connection_failure()) {
+        grpc_core::Crash("Client failed to connect all channels");
+      } else {
+        client->AwaitThreadsCompletion();
+        ctx->TryCancel();
+        return Status(StatusCode::UNKNOWN,
+                      "Client failed to connect all channels");
+      }
     }
     gpr_log(GPR_INFO, "RunClientBody: client created");
     ClientStatus status;
@@ -277,7 +287,9 @@ class WorkerServiceImpl final : public WorkerService::Service {
 };
 
 QpsWorker::QpsWorker(int driver_port, int server_port,
-                     const std::string& credential_type) {
+                     const std::string& credential_type,
+                     bool die_on_connection_failure)
+    : die_on_connection_failure_(die_on_connection_failure) {
   impl_ = std::make_unique<WorkerServiceImpl>(server_port, this);
   gpr_atm_rel_store(&done_, gpr_atm{0});
 
@@ -309,5 +321,10 @@ bool QpsWorker::Done() const {
   return (gpr_atm_acq_load(&done_) != gpr_atm{0});
 }
 void QpsWorker::MarkDone() { gpr_atm_rel_store(&done_, gpr_atm{1}); }
+
+bool QpsWorker::die_on_connection_failure() const {
+  return die_on_connection_failure_;
+}
+
 }  // namespace testing
 }  // namespace grpc

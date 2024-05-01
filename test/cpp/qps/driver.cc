@@ -400,7 +400,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     char addr[256];
     // we use port # of -1 to indicate inproc
     int driver_port = (!run_inproc) ? grpc_pick_unused_port_or_die() : -1;
-    local_workers.emplace_back(new QpsWorker(driver_port, 0, credential_type));
+    local_workers.emplace_back(
+        new QpsWorker(driver_port, 0, credential_type));
     sprintf(addr, "localhost:%d", driver_port);
     if (spawn_local_worker_count < 0) {
       workers.push_front(addr);
