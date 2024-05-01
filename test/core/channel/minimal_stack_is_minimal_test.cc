@@ -138,29 +138,29 @@ TEST(ChannelStackFilters, LooksAsExpected) {
 
   // tests with a default stack
 
-  EXPECT_EQ(MakeStack("unknown", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
-            std::vector<std::string>(
-                {"authority", "message_size", "deadline", "connected"}));
+  EXPECT_EQ(
+      MakeStack("unknown", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
+      std::vector<std::string>({"authority", "message_size", "connected"}));
   EXPECT_EQ(
       MakeStack("unknown", no_args, GRPC_CLIENT_SUBCHANNEL),
       std::vector<std::string>({"authority", "message_size", "connected"}));
   EXPECT_EQ(MakeStack("unknown", no_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>({"server", "message_size", "deadline",
-                                      "server_call_tracer", "connected"}));
+            std::vector<std::string>(
+                {"server", "message_size", "server_call_tracer", "connected"}));
 
   EXPECT_EQ(
       MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
-      std::vector<std::string>({"authority", "message_size", "deadline",
-                                "http-client", "compression", "connected"}));
+      std::vector<std::string>({"authority", "message_size", "http-client",
+                                "compression", "connected"}));
   EXPECT_EQ(
       MakeStack("chttp2", no_args, GRPC_CLIENT_SUBCHANNEL),
       std::vector<std::string>({"authority", "message_size", "http-client",
                                 "compression", "connected"}));
 
   EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>({"server", "message_size", "deadline",
-                                      "http-server", "compression",
-                                      "server_call_tracer", "connected"}));
+            std::vector<std::string>({"server", "message_size", "http-server",
+                                      "compression", "server_call_tracer",
+                                      "connected"}));
   EXPECT_EQ(MakeStack(nullptr, no_args, GRPC_CLIENT_CHANNEL),
             std::vector<std::string>({"client_idle", "client-channel"}));
 }

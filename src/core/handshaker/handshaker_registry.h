@@ -16,17 +16,17 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_TRANSPORT_HANDSHAKER_REGISTRY_H
-#define GRPC_SRC_CORE_LIB_TRANSPORT_HANDSHAKER_REGISTRY_H
+#ifndef GRPC_SRC_CORE_HANDSHAKER_HANDSHAKER_REGISTRY_H
+#define GRPC_SRC_CORE_HANDSHAKER_HANDSHAKER_REGISTRY_H
 
 #include <memory>
 #include <vector>
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/transport/handshaker_factory.h"
 
 namespace grpc_core {
 
@@ -66,4 +66,4 @@ class HandshakerRegistry {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_HANDSHAKER_REGISTRY_H
+#endif  // GRPC_SRC_CORE_HANDSHAKER_HANDSHAKER_REGISTRY_H
