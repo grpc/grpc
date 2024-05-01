@@ -131,6 +131,7 @@ libs:
   - absl/flags:marshalling
   - absl/functional:any_invocable
   - absl/log:check
+  - absl/log:globals
   - absl/log:log
   - absl/memory:memory
   - absl/random:random
