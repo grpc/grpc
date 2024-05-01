@@ -50,7 +50,7 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
     : tls_session_key_log_file_path_(std::move(tls_session_key_log_file_path)),
       cache_(std::move(cache)) {
   CHECK(!tls_session_key_log_file_path_.empty());
-  CHECK_NE(cache_, nullptr);
+  CHECK(cache_ != nullptr);
   fd_ = fopen(tls_session_key_log_file_path_.c_str(), "a");
   if (fd_ == nullptr) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fopen");
