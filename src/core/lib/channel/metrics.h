@@ -446,8 +446,7 @@ class GlobalStatsPluginRegistry {
     template <GlobalInstrumentsRegistry::ValueType V,
               GlobalInstrumentsRegistry::InstrumentType I, size_t M, size_t N>
     static constexpr void AssertIsCallbackGaugeHandle(
-        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<V, I, M, N>
-            handle) {
+        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<V, I, M, N>) {
       static_assert(V == GlobalInstrumentsRegistry::ValueType::kInt64 ||
                         V == GlobalInstrumentsRegistry::ValueType::kDouble,
                     "ValueType must be kInt64 or kDouble");
