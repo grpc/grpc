@@ -307,7 +307,7 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
-  if (!grpc_core::IsChaoticGoodEnabled()) {
+  if (!IsChaoticGoodEnabled()) {
     builder->channel_init()
         ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
         .ExcludeFromMinimalStack()
