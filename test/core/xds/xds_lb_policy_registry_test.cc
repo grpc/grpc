@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_lb_policy_registry.h"
 
 #include <string>
 
@@ -34,7 +34,7 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"

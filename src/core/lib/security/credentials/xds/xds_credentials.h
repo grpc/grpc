@@ -33,7 +33,7 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/xds/grpc/xds_certificate_provider.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"

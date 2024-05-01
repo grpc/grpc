@@ -429,26 +429,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
-    src/core/ext/xds/certificate_provider_store.cc \
-    src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
-    src/core/ext/xds/xds_audit_logger_registry.cc \
-    src/core/ext/xds/xds_bootstrap_grpc.cc \
-    src/core/ext/xds/xds_certificate_provider.cc \
-    src/core/ext/xds/xds_client_grpc.cc \
-    src/core/ext/xds/xds_cluster.cc \
-    src/core/ext/xds/xds_cluster_specifier_plugin.cc \
-    src/core/ext/xds/xds_common_types.cc \
-    src/core/ext/xds/xds_endpoint.cc \
-    src/core/ext/xds/xds_health_status.cc \
-    src/core/ext/xds/xds_http_fault_filter.cc \
-    src/core/ext/xds/xds_http_filters.cc \
-    src/core/ext/xds/xds_http_rbac_filter.cc \
-    src/core/ext/xds/xds_http_stateful_session_filter.cc \
-    src/core/ext/xds/xds_lb_policy_registry.cc \
-    src/core/ext/xds/xds_listener.cc \
-    src/core/ext/xds/xds_route_config.cc \
-    src/core/ext/xds/xds_routing.cc \
-    src/core/ext/xds/xds_transport_grpc.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
@@ -879,6 +859,26 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/xds/grpc/certificate_provider_store.cc \
+    src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
+    src/core/xds/grpc/xds_audit_logger_registry.cc \
+    src/core/xds/grpc/xds_bootstrap_grpc.cc \
+    src/core/xds/grpc/xds_certificate_provider.cc \
+    src/core/xds/grpc/xds_client_grpc.cc \
+    src/core/xds/grpc/xds_cluster.cc \
+    src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
+    src/core/xds/grpc/xds_common_types.cc \
+    src/core/xds/grpc/xds_endpoint.cc \
+    src/core/xds/grpc/xds_health_status.cc \
+    src/core/xds/grpc/xds_http_fault_filter.cc \
+    src/core/xds/grpc/xds_http_filters.cc \
+    src/core/xds/grpc/xds_http_rbac_filter.cc \
+    src/core/xds/grpc/xds_http_stateful_session_filter.cc \
+    src/core/xds/grpc/xds_lb_policy_registry.cc \
+    src/core/xds/grpc/xds_listener.cc \
+    src/core/xds/grpc/xds_route_config.cc \
+    src/core/xds/grpc/xds_routing.cc \
+    src/core/xds/grpc/xds_transport_grpc.cc \
     src/core/xds/xds_client/xds_api.cc \
     src/core/xds/xds_client/xds_bootstrap.cc \
     src/core/xds/xds_client/xds_client.cc \
@@ -1506,7 +1506,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/matcher/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)
@@ -1606,6 +1605,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)

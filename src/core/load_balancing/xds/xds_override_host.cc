@@ -48,7 +48,7 @@
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
-#include "src/core/ext/xds/xds_health_status.h"
+#include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"

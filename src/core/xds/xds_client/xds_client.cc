@@ -46,7 +46,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/upb_utils.h"
+#include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"

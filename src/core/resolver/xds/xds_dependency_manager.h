@@ -23,11 +23,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_endpoint.h"
-#include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_route_config.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/xds_cluster.h"
+#include "src/core/xds/grpc/xds_endpoint.h"
+#include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/resolver/resolver.h"
 

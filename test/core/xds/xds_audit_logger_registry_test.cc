@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/xds_audit_logger_registry.h"
+#include "src/core/xds/grpc/xds_audit_logger_registry.h"
 
 #include <memory>
 #include <string>
@@ -36,7 +36,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_audit_logging.h>
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"

@@ -34,7 +34,7 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/server/server.h"
