@@ -783,9 +783,14 @@ class CoreEnd2endTest : public ::testing::Test {
           cq_,
           g_is_fuzzing_core_e2e_tests ? CqVerifier::FailUsingGprCrashWithStdio
                                       : CqVerifier::FailUsingGprCrash,
-          [this](grpc_event_engine::experimental::EventEngine::Duration d) {
-            step_fn_(d);
-          });
+          step_fn_ == nullptr
+              ? nullptr
+              : absl::AnyInvocable<void(
+                    grpc_event_engine::experimental::EventEngine::Duration)
+                                       const>(
+                    [this](
+                        grpc_event_engine::experimental::EventEngine::Duration
+                            d) { step_fn_(d); }));
     }
     return *cq_verifier_;
   }

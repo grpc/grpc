@@ -1230,9 +1230,6 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
                                          grpc_error_handle* error)
     : channel_args_(args->channel_args),
-      deadline_checking_enabled_(
-          channel_args_.GetBool(GRPC_ARG_ENABLE_DEADLINE_CHECKS)
-              .value_or(!channel_args_.WantMinimalStack())),
       owning_stack_(args->channel_stack),
       client_channel_factory_(channel_args_.GetObject<ClientChannelFactory>()),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
@@ -2112,8 +2109,7 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   if (method_params != nullptr) {
     // If the deadline from the service config is shorter than the one
     // from the client API, reset the deadline timer.
-    if (chand()->deadline_checking_enabled_ &&
-        method_params->timeout() != Duration::Zero()) {
+    if (method_params->timeout() != Duration::Zero()) {
       ResetDeadline(method_params->timeout());
     }
     // If the service config set wait_for_ready and the application
@@ -2217,11 +2213,6 @@ ClientChannelFilter::FilterBasedCallData::FilterBasedCallData(
       elem_(elem),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner) {
-  if (GPR_LIKELY(static_cast<ClientChannelFilter*>(elem->channel_data)
-                     ->deadline_checking_enabled_)) {
-    static_cast<Call*>(call_context_[GRPC_CONTEXT_CALL].value)
-        ->UpdateDeadline(args.deadline);
-  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: created call", chand(), this);
   }

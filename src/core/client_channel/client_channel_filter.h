@@ -287,7 +287,6 @@ class ClientChannelFilter final {
   // Fields set at construction and never modified.
   //
   ChannelArgs channel_args_;
-  const bool deadline_checking_enabled_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   RefCountedPtr<ServiceConfig> default_service_config_;
