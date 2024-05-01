@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ENDPOINT_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_ENDPOINT_H
 
 #include <stdint.h>
 
@@ -147,4 +147,4 @@ class XdsEndpointResourceType final
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ENDPOINT_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_ENDPOINT_H

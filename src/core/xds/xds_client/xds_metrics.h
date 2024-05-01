@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_METRICS_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_METRICS_H
+#ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_METRICS_H
+#define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_METRICS_H
 
 #include "absl/strings/string_view.h"
 
@@ -38,4 +38,4 @@ class XdsMetricsReporter {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_METRICS_H
+#endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_METRICS_H

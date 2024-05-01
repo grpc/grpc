@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -55,4 +55,4 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_HTTP_FAULT_FILTER_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_HTTP_FAULT_FILTER_H

@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_GRPC_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_GRPC_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H
 
 #include <memory>
 
@@ -106,4 +106,4 @@ void SetXdsFallbackBootstrapConfig(const char* config);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_GRPC_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_CLIENT_GRPC_H

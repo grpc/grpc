@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
+#ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
+#define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
 
 #include <map>
 #include <memory>
@@ -387,4 +387,4 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_H
+#endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H

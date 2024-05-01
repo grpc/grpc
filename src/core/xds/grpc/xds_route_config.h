@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_H
 
 #include <stdint.h>
 
@@ -250,4 +250,4 @@ class XdsRouteConfigResourceType final
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ROUTE_CONFIG_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_H

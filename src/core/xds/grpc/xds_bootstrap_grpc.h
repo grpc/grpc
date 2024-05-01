@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H
 
 #include <map>
 #include <memory>
@@ -194,4 +194,4 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_BOOTSTRAP_GRPC_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_BOOTSTRAP_GRPC_H

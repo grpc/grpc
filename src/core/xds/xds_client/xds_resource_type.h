@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
+#ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_H
+#define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_H
 #include <memory>
 #include <string>
 
@@ -95,4 +95,4 @@ class XdsResourceType {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_RESOURCE_TYPE_H
+#endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_H

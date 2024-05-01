@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_STATS_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_STATS_H
+#ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H
+#define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H
 
 #include <atomic>
 #include <cstdint>
@@ -255,4 +255,4 @@ class XdsClusterLocalityStats final
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_CLIENT_STATS_H
+#endif  // GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_STATS_H

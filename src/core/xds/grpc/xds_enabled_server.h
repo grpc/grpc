@@ -14,11 +14,11 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ENABLED_SERVER_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_ENABLED_SERVER_H
 
 // EXPERIMENTAL. Bool-valued channel arg used as an indicator that a server is
 // xds enabled.
 #define GRPC_ARG_XDS_ENABLED_SERVER "grpc.experimental.xds_enabled_server"
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ENABLED_SERVER_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_ENABLED_SERVER_H

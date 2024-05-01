@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 
 #include <stddef.h>
 
@@ -103,4 +103,4 @@ class XdsRouting final {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_ROUTING_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H

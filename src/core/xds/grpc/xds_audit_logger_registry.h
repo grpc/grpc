@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
-#define GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
+#ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_AUDIT_LOGGER_REGISTRY_H
+#define GRPC_SRC_CORE_XDS_GRPC_XDS_AUDIT_LOGGER_REGISTRY_H
 
 #include <map>
 #include <memory>
@@ -65,4 +65,4 @@ class XdsAuditLoggerRegistry final {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_XDS_XDS_AUDIT_LOGGER_REGISTRY_H
+#endif  // GRPC_SRC_CORE_XDS_GRPC_XDS_AUDIT_LOGGER_REGISTRY_H
