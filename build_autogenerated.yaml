@@ -130,6 +130,7 @@ libs:
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/log:check
   - absl/log:log
   - absl/memory:memory
   - absl/random:random
@@ -2055,7 +2056,6 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3114,7 +3114,6 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -5028,7 +5027,6 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -5172,7 +5170,6 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_benchmark.cc
   deps:
   - absl/algorithm:container
-  - absl/log:check
   - absl/types:span
   - benchmark
   - gpr
@@ -6520,7 +6517,6 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -7775,7 +7771,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -9257,7 +9252,6 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -9900,7 +9894,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -10036,7 +10029,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -10069,7 +10061,6 @@ targets:
   - test/core/event_engine/forkable_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -12160,7 +12151,6 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -12291,7 +12281,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12975,7 +12964,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -14176,7 +14164,6 @@ targets:
   - upb_message_lib
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -19335,7 +19322,6 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -19389,7 +19375,6 @@ targets:
   deps:
   - gtest
   - absl/hash:hash
-  - absl/log:check
   - absl/status:statusor
   - absl/utility:utility
   - gpr

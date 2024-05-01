@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/log/check.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
@@ -120,7 +121,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     return GRPC_COMPRESS_NONE;
   }
 
-  GPR_ASSERT(level > 0);
+  CHECK_GT(level, 0);
 
   // Establish a "ranking" or compression algorithms in increasing order of
   // compression.

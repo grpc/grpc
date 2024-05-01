@@ -1748,6 +1748,7 @@ target_link_libraries(gpr
   absl::flags
   absl::flags_marshalling
   absl::any_invocable
+  absl::check
   absl::log
   absl::memory
   absl::random_random
@@ -2676,7 +2677,6 @@ target_link_libraries(grpc
   absl::bind_front
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::random_bit_gen_ref
   absl::random_distributions
@@ -3378,7 +3378,6 @@ target_link_libraries(grpc_unsecure
   absl::bind_front
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::random_bit_gen_ref
   absl::random_distributions
@@ -5443,7 +5442,6 @@ target_link_libraries(grpc_authorization_provider
   absl::inlined_vector
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   absl::span
@@ -5930,7 +5928,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(static_stride_scheduler_benchmark
     ${_gRPC_ALLTARGETS_LIBRARIES}
     absl::algorithm_container
-    absl::check
     absl::span
     ${_gRPC_BENCHMARK_LIBRARIES}
     gpr
@@ -8580,7 +8577,6 @@ target_link_libraries(call_filters_test
   absl::inlined_vector
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   absl::utility
@@ -10241,7 +10237,6 @@ target_link_libraries(chunked_vector_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -13385,7 +13380,6 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   upb_message_lib
   absl::config
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -14255,7 +14249,6 @@ target_link_libraries(flow_control_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   absl::span
@@ -14341,7 +14334,6 @@ target_link_libraries(for_each_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -14431,7 +14423,6 @@ target_include_directories(forkable_test
 target_link_libraries(forkable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::statusor
   gpr
 )
@@ -18006,7 +17997,6 @@ target_link_libraries(interception_chain_test
   absl::inlined_vector
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   absl::span
@@ -18095,7 +18085,6 @@ target_link_libraries(interceptor_list_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -19289,7 +19278,6 @@ target_link_libraries(map_pipe_test
   absl::config
   absl::function_ref
   absl::hash
-  absl::check
   absl::type_traits
   absl::statusor
   gpr
@@ -21553,7 +21541,6 @@ target_link_libraries(periodic_update_test
   upb_message_lib
   absl::function_ref
   absl::hash
-  absl::check
   absl::statusor
   gpr
 )
@@ -29860,7 +29847,6 @@ target_include_directories(test_core_event_engine_posix_timer_heap_test
 target_link_libraries(test_core_event_engine_posix_timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
   absl::statusor
   gpr
 )
@@ -29959,7 +29945,6 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::hash
-  absl::check
   absl::statusor
   absl::utility
   gpr
@@ -36934,7 +36919,7 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  "absl_any_invocable absl_base absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
+  "absl_any_invocable absl_base absl_check absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_log absl_log_severity absl_memory absl_optional absl_random_random absl_status absl_str_format absl_strings absl_synchronization absl_time absl_variant"
   ""
   "-lgpr"
   ""
