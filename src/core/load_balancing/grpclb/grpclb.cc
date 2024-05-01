@@ -1635,7 +1635,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
     lb_channel_.reset(Channel::FromC(
         grpc_channel_create(uri_str.c_str(), channel_credentials.get(),
                             lb_channel_args.ToC().get())));
-    CHECK_NE(lb_channel_, nullptr);
+    CHECK(lb_channel_ != nullptr);
     // Set up channelz linkage.
     channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
     auto parent_channelz_node = args_.GetObjectRef<channelz::ChannelNode>();
@@ -1665,10 +1665,10 @@ void GrpcLb::CancelBalancerChannelConnectivityWatchLocked() {
 //
 
 void GrpcLb::StartBalancerCallLocked() {
-  CHECK_NE(lb_channel_, nullptr);
+  CHECK(lb_channel_ != nullptr);
   if (shutting_down_) return;
   // Init the LB call data.
-  CHECK_EQ(lb_calld_, nullptr);
+  CHECK(lb_calld_ == nullptr);
   lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO,

@@ -1699,7 +1699,7 @@ void RlsLb::RlsChannel::ReportResponseLocked(bool response_succeeded) {
 }
 
 void RlsLb::RlsChannel::ResetBackoff() {
-  DCHECK_NE(channel_, nullptr);
+  DCHECK(channel_ != nullptr);
   channel_->ResetConnectionBackoff();
 }
 
