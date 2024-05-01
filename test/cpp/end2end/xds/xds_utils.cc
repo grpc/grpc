@@ -37,7 +37,7 @@
 #include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"

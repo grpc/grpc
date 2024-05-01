@@ -119,10 +119,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "server_call_tracer_filter",
     srcs = [
-        "lib/channel/server_call_tracer_filter.cc",
+        "server/server_call_tracer_filter.cc",
     ],
     hdrs = [
-        "lib/channel/server_call_tracer_filter.h",
+        "server/server_call_tracer_filter.h",
     ],
     external_deps = [
         "absl/status",
@@ -3040,7 +3040,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "server_interface",
     hdrs = [
-        "lib/surface/server_interface.h",
+        "server/server_interface.h",
     ],
     language = "c++",
     deps = [
@@ -3591,7 +3591,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_server_config_selector",
     hdrs = [
-        "ext/filters/server_config_selector/server_config_selector.h",
+        "server/server_config_selector.h",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -3614,10 +3614,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_server_config_selector_filter",
     srcs = [
-        "ext/filters/server_config_selector/server_config_selector_filter.cc",
+        "server/server_config_selector_filter.cc",
     ],
     hdrs = [
-        "ext/filters/server_config_selector/server_config_selector_filter.h",
+        "server/server_config_selector_filter.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5173,10 +5173,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_channel_stack_modifier",
     srcs = [
-        "ext/xds/xds_channel_stack_modifier.cc",
+        "server/xds_channel_stack_modifier.cc",
     ],
     hdrs = [
-        "ext/xds/xds_channel_stack_modifier.h",
+        "server/xds_channel_stack_modifier.h",
     ],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -5198,7 +5198,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_server_config_fetcher",
     srcs = [
-        "ext/xds/xds_server_config_fetcher.cc",
+        "server/xds_server_config_fetcher.cc",
     ],
     external_deps = [
         "absl/base:core_headers",
