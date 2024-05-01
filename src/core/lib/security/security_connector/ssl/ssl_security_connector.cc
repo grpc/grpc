@@ -395,7 +395,7 @@ grpc_ssl_channel_security_connector_create(
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials) {
-  CHECK_NE(server_credentials, nullptr);
+  CHECK(server_credentials != nullptr);
   grpc_core::RefCountedPtr<grpc_ssl_server_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_server_security_connector>(
           std::move(server_credentials));

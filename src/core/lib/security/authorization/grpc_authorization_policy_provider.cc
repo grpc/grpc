@@ -106,7 +106,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
   auto thread_lambda = [](void* arg) {
     WeakRefCountedPtr<FileWatcherAuthorizationPolicyProvider> provider(
         static_cast<FileWatcherAuthorizationPolicyProvider*>(arg));
-    CHECK_NE(provider, nullptr);
+    CHECK(provider != nullptr);
     while (true) {
       void* value = gpr_event_wait(
           &provider->shutdown_event_,

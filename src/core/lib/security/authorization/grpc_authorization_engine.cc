@@ -60,7 +60,7 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
   for (auto& logger_config : policy.logger_configs) {
     auto logger =
         AuditLoggerRegistry::CreateAuditLogger(std::move(logger_config));
-    CHECK_NE(logger, nullptr);
+    CHECK(logger != nullptr);
     audit_loggers_.push_back(std::move(logger));
   }
 }

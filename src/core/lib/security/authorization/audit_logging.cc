@@ -51,7 +51,7 @@ AuditLoggerRegistry::AuditLoggerRegistry() {
 
 void AuditLoggerRegistry::RegisterFactory(
     std::unique_ptr<AuditLoggerFactory> factory) {
-  CHECK_NE(factory, nullptr);
+  CHECK(factory != nullptr);
   MutexLock lock(mu);
   absl::string_view name = factory->name();
   CHECK(
