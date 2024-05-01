@@ -55,6 +55,8 @@ class ObservabilityPlugin(
     Attributes:
       _stats_enabled: A bool indicates whether tracing is enabled.
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
+      _registered_methods: A set which stores the registered method names in
+        bytes.
     """
 
     _tracing_enabled: bool = False
@@ -76,6 +78,7 @@ class ObservabilityPlugin(
         Args:
           method_name: The method name of the call in byte format.
           target: The channel target of the call in byte format.
+          registered_method: Wether this method is pre-registered.
 
         Returns:
           A PyCapsule which stores a ClientCallTracer object.
@@ -174,6 +177,17 @@ class ObservabilityPlugin(
         """
         self._stats_enabled = enable
 
+    def save_registered_method(self, method_name: bytes) -> None:
+        """Saves the method name to registered_method list.
+
+        When exporting metrics, method name for unregistered methods will be replaced
+        with 'other' by default.
+
+        Args:
+          method_name: The method name in bytes.
+        """
+        raise NotImplementedError()
+
     @property
     def tracing_enabled(self) -> bool:
         return self._tracing_enabled
@@ -259,9 +273,8 @@ def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
       client_call_tracer_capsule: A PyCapsule which stores a ClientCallTracer object.
     """
     with get_plugin() as plugin:
-        if not (plugin and plugin.observability_enabled):
-            return
-        plugin.delete_client_call_tracer(client_call_tracer_capsule)
+        if plugin and plugin.observability_enabled:
+            plugin.delete_client_call_tracer(client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
