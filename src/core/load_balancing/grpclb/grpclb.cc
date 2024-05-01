@@ -1561,7 +1561,7 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   }
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config.TakeAsSubclass<GrpcLbConfig>();
-  CHECK_NE(config_, nullptr);
+  CHECK(config_ != nullptr);
   args_ = std::move(args.args);
   // Update fallback address list.
   if (!args.addresses.ok()) {

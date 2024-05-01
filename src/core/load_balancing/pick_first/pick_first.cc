@@ -1400,7 +1400,7 @@ OldPickFirst::~OldPickFirst() {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
   CHECK(subchannel_list_ == nullptr);
-  CHECK_EQ(latest_pending_subchannel_list_, nullptr);
+  CHECK(latest_pending_subchannel_list_ == nullptr);
 }
 
 void OldPickFirst::ShutdownLocked() {
