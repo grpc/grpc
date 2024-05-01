@@ -37,6 +37,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -50,9 +52,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"

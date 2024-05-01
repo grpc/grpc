@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/handshaker/security/secure_endpoint.h"
 
 #include <inttypes.h>
 
@@ -40,6 +40,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/handshaker/security/tsi_error.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -53,7 +54,6 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/resource_quota/trace.h"
-#include "src/core/lib/security/transport/tsi_error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
