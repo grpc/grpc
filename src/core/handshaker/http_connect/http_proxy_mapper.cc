@@ -16,9 +16,7 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
-#include "src/core/client_channel/http_proxy_mapper.h"
+#include "src/core/handshaker/http_connect/http_proxy_mapper.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -27,6 +25,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -42,7 +41,9 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -51,7 +52,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/transport/http_connect_handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 
 namespace grpc_core {
@@ -107,7 +107,7 @@ bool AddressIncluded(
 ///
 absl::optional<std::string> GetHttpProxyServer(
     const ChannelArgs& args, absl::optional<std::string>* user_cred) {
-  GPR_ASSERT(user_cred != nullptr);
+  CHECK_NE(user_cred, nullptr);
   absl::StatusOr<URI> uri;
   // We check the following places to determine the HTTP proxy to use, stopping
   // at the first one that is set:
@@ -141,7 +141,7 @@ absl::optional<std::string> GetHttpProxyServer(
   size_t authority_nstrs;
   gpr_string_split(uri->authority().c_str(), "@", &authority_strs,
                    &authority_nstrs);
-  GPR_ASSERT(authority_nstrs != 0);  // should have at least 1 string
+  CHECK_NE(authority_nstrs, 0u);  // should have at least 1 string
   absl::optional<std::string> proxy_name;
   if (authority_nstrs == 1) {
     // User cred not present in authority

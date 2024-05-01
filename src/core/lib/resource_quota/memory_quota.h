@@ -28,6 +28,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -137,7 +138,7 @@ class ReclaimerQueue {
     explicit Handle(F reclaimer, std::shared_ptr<State> state)
         : sweep_(new SweepFn<F>(std::move(reclaimer), std::move(state))) {}
     ~Handle() override {
-      GPR_DEBUG_ASSERT(sweep_.load(std::memory_order_relaxed) == nullptr);
+      DCHECK_EQ(sweep_.load(std::memory_order_relaxed), nullptr);
     }
 
     Handle(const Handle&) = delete;
@@ -438,7 +439,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   template <typename F>
   void PostReclaimer(ReclamationPass pass, F fn) {
     MutexLock lock(&reclaimer_mu_);
-    GPR_ASSERT(!shutdown_);
+    CHECK(!shutdown_);
     InsertReclaimer(static_cast<size_t>(pass), std::move(fn));
   }
 

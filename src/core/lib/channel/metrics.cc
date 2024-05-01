@@ -16,6 +16,8 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -48,7 +50,7 @@ GlobalInstrumentsRegistry::RegisterInstrument(
     }
   }
   InstrumentID index = instruments.size();
-  GPR_ASSERT(index < std::numeric_limits<uint32_t>::max());
+  CHECK_LT(index, std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = value_type;
   descriptor.instrument_type = instrument_type;
