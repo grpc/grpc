@@ -1599,7 +1599,7 @@ void Server::ChannelData::FinishDestroy(void* arg,
 
 void Server::ChannelData::Destroy() {
   if (!list_position_.has_value()) return;
-  CHECK_NE(server_, nullptr);
+  CHECK(server_ != nullptr);
   server_->channels_.erase(*list_position_);
   list_position_.reset();
   server_->Ref().release();

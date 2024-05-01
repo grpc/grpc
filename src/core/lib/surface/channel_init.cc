@@ -150,7 +150,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   }
   for (const auto& registration : registrations) {
     if (registration->terminal_) continue;
-    CHECK_GT(filter_to_registration.count(registration->filter_), 0);
+    CHECK_GT(filter_to_registration.count(registration->filter_), 0u);
     for (F after : registration->after_) {
       if (filter_to_registration.count(after) == 0) {
         gpr_log(

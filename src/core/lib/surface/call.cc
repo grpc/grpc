@@ -2582,7 +2582,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     if (args->cq != nullptr) {
       CHECK(args->pollset_set_alternative == nullptr) << 
             "Only one of 'cq' and 'pollset_set_alternative' should be "
-            "non-nullptr.");
+            "non-nullptr.";
     }
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
@@ -3952,12 +3952,12 @@ void ServerCallSpine::CommitBatch(const grpc_op* ops, size_t nops,
           metadata->Set(GrpcMessageMetadata(),
                         Slice(grpc_slice_copy(*details)));
         }
-        CHECK_NE(metadata, nullptr);
+        CHECK(metadata != nullptr);
         return [this, metadata = std::move(metadata)]() mutable {
-          CHECK_NE(metadata, nullptr);
+          CHECK(metadata != nullptr);
           return [this,
                   metadata = std::move(metadata)]() mutable -> Poll<Success> {
-            CHECK_NE(metadata, nullptr);
+            CHECK(metadata != nullptr);
             PushServerTrailingMetadata(std::move(metadata));
             return Success{};
           };
