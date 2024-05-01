@@ -123,7 +123,7 @@ using GrpcClosure = Closure;
 Call::ParentCall* Call::GetOrCreateParentCall() {
   ParentCall* p = parent_call_.load(std::memory_order_acquire);
   if (p == nullptr) {
-    p = arena_->New<ParentCall>();
+    p = arena()->New<ParentCall>();
     ParentCall* expected = nullptr;
     if (!parent_call_.compare_exchange_strong(expected, p,
                                               std::memory_order_release,
@@ -242,28 +242,6 @@ void Call::PropagateCancellationToChildren() {
   }
 }
 
-char* Call::GetPeer() {
-  Slice peer_slice = GetPeerString();
-  if (!peer_slice.empty()) {
-    absl::string_view peer_string_view = peer_slice.as_string_view();
-    char* peer_string =
-        static_cast<char*>(gpr_malloc(peer_string_view.size() + 1));
-    memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
-    peer_string[peer_string_view.size()] = '\0';
-    return peer_string;
-  }
-  char* peer_string = grpc_channel_get_target(channel_->c_ptr());
-  if (peer_string != nullptr) return peer_string;
-  return gpr_strdup("unknown");
-}
-
-void Call::DeleteThis() {
-  RefCountedPtr<Channel> channel = std::move(channel_);
-  Arena* arena = arena_;
-  this->~Call();
-  channel->DestroyArena(arena);
-}
-
 void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
                                           grpc_metadata_batch& md) {
   // TODO(juanlishen): If the user has already specified a compression
@@ -278,7 +256,7 @@ void Call::PrepareOutgoingInitialMetadata(const grpc_op& op,
         op.data.send_initial_metadata.maybe_compression_level.level;
     level_set = true;
   } else {
-    const grpc_compression_options copts = channel()->compression_options();
+    const grpc_compression_options copts = compression_options();
     if (copts.default_level.is_set) {
       level_set = true;
       effective_compression_level = copts.default_level.level;
@@ -310,13 +288,12 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
       md.Take(GrpcAcceptEncodingMetadata())
           .value_or(CompressionAlgorithmSet{GRPC_COMPRESS_NONE});
 
-  const grpc_compression_options compression_options =
-      channel_->compression_options();
+  const grpc_compression_options copts = compression_options();
   const grpc_compression_algorithm compression_algorithm =
       incoming_compression_algorithm_;
-  if (GPR_UNLIKELY(!CompressionAlgorithmSet::FromUint32(
-                        compression_options.enabled_algorithms_bitset)
-                        .IsSet(compression_algorithm))) {
+  if (GPR_UNLIKELY(
+          !CompressionAlgorithmSet::FromUint32(copts.enabled_algorithms_bitset)
+               .IsSet(compression_algorithm))) {
     // check if algorithm is supported by current channel config
     HandleCompressionAlgorithmDisabled(compression_algorithm);
   }
@@ -359,22 +336,20 @@ void Call::UpdateDeadline(Timestamp deadline) {
             deadline_.ToString().c_str(), deadline.ToString().c_str());
   }
   if (deadline >= deadline_) return;
-  auto* const event_engine = channel()->event_engine();
   if (deadline_ != Timestamp::InfFuture()) {
-    if (!event_engine->Cancel(deadline_task_)) return;
+    if (!event_engine_->Cancel(deadline_task_)) return;
   } else {
     InternalRef("deadline");
   }
   deadline_ = deadline;
-  deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
+  deadline_task_ = event_engine_->RunAfter(deadline - Timestamp::Now(), this);
 }
 
 void Call::ResetDeadline() {
   {
     MutexLock lock(&deadline_mu_);
     if (deadline_ == Timestamp::InfFuture()) return;
-    auto* const event_engine = channel()->event_engine();
-    if (!event_engine->Cancel(deadline_task_)) return;
+    if (!event_engine_->Cancel(deadline_task_)) return;
     deadline_ = Timestamp::InfFuture();
   }
   InternalUnref("deadline[reset]");
@@ -390,10 +365,65 @@ void Call::Run() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// ChannelBasedCall
+// TODO(ctiller): once we remove the v2 client code this can be folded into
+// FilterStackCall
+
+class ChannelBasedCall : public Call {
+ protected:
+  ChannelBasedCall(Arena* arena, bool is_client, Timestamp send_deadline,
+                   RefCountedPtr<Channel> channel)
+      : Call(is_client, send_deadline, channel->event_engine()),
+        arena_(arena),
+        channel_(std::move(channel)) {
+    GPR_DEBUG_ASSERT(arena_ != nullptr);
+  }
+
+  Arena* arena() final { return arena_; }
+
+  char* GetPeer() final {
+    Slice peer_slice = GetPeerString();
+    if (!peer_slice.empty()) {
+      absl::string_view peer_string_view = peer_slice.as_string_view();
+      char* peer_string =
+          static_cast<char*>(gpr_malloc(peer_string_view.size() + 1));
+      memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
+      peer_string[peer_string_view.size()] = '\0';
+      return peer_string;
+    }
+    char* peer_string = grpc_channel_get_target(channel_->c_ptr());
+    if (peer_string != nullptr) return peer_string;
+    return gpr_strdup("unknown");
+  }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
+    return channel_->event_engine();
+  }
+
+ protected:
+  grpc_compression_options compression_options() override {
+    return channel_->compression_options();
+  }
+
+  void DeleteThis() {
+    RefCountedPtr<Channel> channel = std::move(channel_);
+    Arena* arena = arena_;
+    this->~ChannelBasedCall();
+    channel->DestroyArena(arena);
+  }
+
+  Channel* channel() const { return channel_.get(); }
+
+ private:
+  Arena* const arena_;
+  RefCountedPtr<Channel> channel_;
+};
+
+///////////////////////////////////////////////////////////////////////////////
 // FilterStackCall
 // To be removed once promise conversion is complete
 
-class FilterStackCall final : public Call {
+class FilterStackCall final : public ChannelBasedCall {
  public:
   ~FilterStackCall() override {
     for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
@@ -420,10 +450,6 @@ class FilterStackCall final : public Call {
     return reinterpret_cast<grpc_call_stack*>(
         reinterpret_cast<char*>(this) +
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(*this)));
-  }
-
-  grpc_event_engine::experimental::EventEngine* event_engine() const override {
-    return channel()->event_engine();
   }
 
   grpc_call_element* call_elem(size_t idx) {
@@ -561,8 +587,8 @@ class FilterStackCall final : public Call {
   };
 
   FilterStackCall(Arena* arena, const grpc_call_create_args& args)
-      : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->Ref()),
+      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+                         args.send_deadline, args.channel->Ref()),
         cq_(args.cq),
         stream_op_payload_(context_) {
     context_[GRPC_CONTEXT_CALL].value = this;
@@ -1866,15 +1892,15 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class BasicPromiseBasedCall : public Call, public Party {
+class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
  public:
   using Call::arena;
 
   BasicPromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
                         uint32_t initial_internal_refs,
                         const grpc_call_create_args& args)
-      : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
-             args.channel->Ref()),
+      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+                         args.send_deadline, args.channel->Ref()),
         Party(initial_internal_refs),
         external_refs_(initial_external_refs),
         cq_(args.cq) {

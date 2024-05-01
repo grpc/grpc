@@ -81,7 +81,7 @@ class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
  public:
-  Arena* arena() { return arena_; }
+  virtual Arena* arena() = 0;
   bool is_client() const { return is_client_; }
 
   virtual void ContextSet(grpc_context_index elem, void* value,
@@ -91,7 +91,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   void CancelWithStatus(grpc_status_code status, const char* description);
   virtual void CancelWithError(grpc_error_handle error) = 0;
   virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
-  char* GetPeer();
+  virtual char* GetPeer() = 0;
   virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
                                      void* notify_tag,
                                      bool is_notify_tag_closure) = 0;
@@ -156,25 +156,15 @@ class Call : public CppImplOf<Call, grpc_call>,
     Call* sibling_prev = nullptr;
   };
 
-  Call(Arena* arena, bool is_client, Timestamp send_deadline,
-       RefCountedPtr<Channel> channel)
-      : channel_(std::move(channel)),
-        arena_(arena),
-        send_deadline_(send_deadline),
-        is_client_(is_client) {
-    GPR_DEBUG_ASSERT(arena_ != nullptr);
-    GPR_DEBUG_ASSERT(channel_ != nullptr);
-  }
+  Call(bool is_client, Timestamp send_deadline,
+       grpc_event_engine::experimental::EventEngine* event_engine)
+      : send_deadline_(send_deadline),
+        is_client_(is_client),
+        event_engine_(event_engine) {}
   ~Call() override = default;
-
-  void DeleteThis();
 
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
-  Channel* channel() const {
-    GPR_DEBUG_ASSERT(channel_ != nullptr);
-    return channel_.get();
-  }
 
   absl::Status InitParent(Call* parent, uint32_t propagation_mask);
   void PublishToParent(Call* parent);
@@ -220,9 +210,9 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   gpr_cycle_counter start_time() const { return start_time_; }
 
+  virtual grpc_compression_options compression_options() = 0;
+
  private:
-  RefCountedPtr<Channel> channel_;
-  Arena* const arena_;
   std::atomic<ParentCall*> parent_call_{nullptr};
   ChildCall* child_ = nullptr;
   Timestamp send_deadline_;
@@ -246,6 +236,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
   grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
       deadline_mu_) deadline_task_;
+  grpc_event_engine::experimental::EventEngine* const event_engine_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
