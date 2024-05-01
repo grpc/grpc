@@ -287,7 +287,6 @@ class ClientChannelFilter final {
   // Fields set at construction and never modified.
   //
   ChannelArgs channel_args_;
-  const bool deadline_checking_enabled_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   RefCountedPtr<ServiceConfig> default_service_config_;
@@ -558,7 +557,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
-  Timestamp deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;

@@ -928,7 +928,7 @@ struct StackData {
     filter_destructor.push_back(FilterDestructor{
         call_offset,
         [](void* call_data) {
-          static_cast<typename FilterType::Call*>(call_data)->~Call();
+          Destruct(static_cast<typename FilterType::Call*>(call_data));
         },
     });
   }

@@ -677,7 +677,6 @@ LIBGRPC_SRC = \
     src/core/client_channel/config_selector.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \
-    src/core/client_channel/http_proxy_mapper.cc \
     src/core/client_channel/local_subchannel_pool.cc \
     src/core/client_channel/retry_filter.cc \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
@@ -690,7 +689,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/channel_idle/idle_filter_state.cc \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1083,6 +1081,16 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_routing.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/ext/xds/xds_transport_grpc.cc \
+    src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
+    src/core/handshaker/handshaker.cc \
+    src/core/handshaker/handshaker_registry.cc \
+    src/core/handshaker/http_connect/http_connect_handshaker.cc \
+    src/core/handshaker/http_connect/http_proxy_mapper.cc \
+    src/core/handshaker/proxy_mapper_registry.cc \
+    src/core/handshaker/security/secure_endpoint.cc \
+    src/core/handshaker/security/security_handshaker.cc \
+    src/core/handshaker/security/tsi_error.cc \
+    src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
     src/core/lib/backoff/backoff.cc \
@@ -1213,7 +1221,6 @@ LIBGRPC_SRC = \
     src/core/lib/gprpp/windows/stat.cc \
     src/core/lib/gprpp/windows/thd.cc \
     src/core/lib/gprpp/work_serializer.cc \
-    src/core/lib/handshaker/proxy_mapper_registry.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1372,10 +1379,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/security_connector/ssl_utils.cc \
     src/core/lib/security/security_connector/tls/tls_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
-    src/core/lib/security/transport/secure_endpoint.cc \
-    src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
-    src/core/lib/security/transport/tsi_error.cc \
     src/core/lib/security/util/json_util.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
@@ -1411,18 +1415,13 @@ LIBGRPC_SRC = \
     src/core/lib/transport/call_final_info.cc \
     src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
-    src/core/lib/transport/endpoint_info_handshaker.cc \
     src/core/lib/transport/error_utils.cc \
-    src/core/lib/transport/handshaker.cc \
-    src/core/lib/transport/handshaker_registry.cc \
-    src/core/lib/transport/http_connect_handshaker.cc \
     src/core/lib/transport/message.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
     src/core/lib/transport/metadata_info.cc \
     src/core/lib/transport/parsed_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
-    src/core/lib/transport/tcp_connect_handshaker.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
@@ -1856,7 +1855,6 @@ endif
 # deps: []
 # transitive_deps: []
 LIBBORINGSSL_SRC = \
-    third_party/boringssl-with-bazel/err_data.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.c \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.c \
@@ -1947,6 +1945,8 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/evp/evp.c \
     third_party/boringssl-with-bazel/src/crypto/evp/evp_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/evp_ctx.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh.c \
+    third_party/boringssl-with-bazel/src/crypto/evp/p_dh_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_dsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_ec.c \
     third_party/boringssl-with-bazel/src/crypto/evp/p_ec_asn1.c \
@@ -2088,6 +2088,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x_val.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x_x509a.c \
+    third_party/boringssl-with-bazel/src/gen/crypto/err_data.c \
     third_party/boringssl-with-bazel/src/ssl/bio_ssl.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_both.cc \
     third_party/boringssl-with-bazel/src/ssl/d1_lib.cc \
@@ -2109,6 +2110,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/ssl_buffer.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_cert.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_cipher.cc \
+    third_party/boringssl-with-bazel/src/ssl/ssl_credential.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_file.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_key_share.cc \
     third_party/boringssl-with-bazel/src/ssl/ssl_lib.cc \

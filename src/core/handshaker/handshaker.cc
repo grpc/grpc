@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/transport/handshaker.h"
+#include "src/core/handshaker/handshaker.h"
 
 #include <inttypes.h>
 
