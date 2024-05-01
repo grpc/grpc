@@ -14570,7 +14570,6 @@ target_link_libraries(frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::hash
-  absl::check
   absl::statusor
   absl::span
   gpr
@@ -28274,7 +28273,6 @@ target_link_libraries(slice_string_helpers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::hash
-  absl::check
   absl::statusor
   gpr
 )
