@@ -43,8 +43,8 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/surface/server.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
 
