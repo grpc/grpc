@@ -41,7 +41,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/test_util/mock_endpoint.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -506,8 +506,8 @@ Duration ScheduleConnection(
             Duration::NanosecondsRoundUp(
                 (q.slices.Length() * event_engine->max_delay_write()).count()));
   }
-  delay += Duration::Milliseconds(network_input.connect_delay_ms() +
-                                  network_input.connect_timeout_ms());
+  delay += Duration::Milliseconds(network_input.connect_delay_ms()) +
+           Duration::Milliseconds(network_input.connect_timeout_ms());
   event_engine->RunAfterExactly(
       Duration::Milliseconds(network_input.connect_delay_ms()),
       [event_engine, channel_args,

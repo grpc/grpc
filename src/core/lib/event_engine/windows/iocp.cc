@@ -17,6 +17,7 @@
 
 #include <chrono>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
@@ -37,7 +38,7 @@ IOCP::IOCP(ThreadPool* thread_pool) noexcept
     : thread_pool_(thread_pool),
       iocp_handle_(CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr,
                                           (ULONG_PTR) nullptr, 0)) {
-  GPR_ASSERT(iocp_handle_);
+  CHECK(iocp_handle_);
   WSASocketFlagsInit();
 }
 
@@ -54,7 +55,7 @@ std::unique_ptr<WinSocket> IOCP::Watch(SOCKET socket) {
         GRPC_WSA_ERROR(WSAGetLastError(), "Unable to add socket to iocp")
             .ToString());
   }
-  GPR_ASSERT(ret == iocp_handle_);
+  CHECK(ret == iocp_handle_);
   return wrapped_socket;
 }
 
@@ -65,7 +66,7 @@ void IOCP::Shutdown() {
   while (outstanding_kicks_.load() > 0) {
     Work(std::chrono::hours(42), []() {});
   }
-  GPR_ASSERT(CloseHandle(iocp_handle_));
+  CHECK(CloseHandle(iocp_handle_));
 }
 
 Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
@@ -81,7 +82,8 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
     GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p deadline exceeded", this);
     return Poller::WorkResult::kDeadlineExceeded;
   }
-  GPR_ASSERT(completion_key && overlapped);
+  CHECK(completion_key);
+  CHECK(overlapped);
   if (overlapped == &kick_overlap_) {
     GRPC_EVENT_ENGINE_POLLER_TRACE("IOCP::%p kicked", this);
     outstanding_kicks_.fetch_sub(1);
@@ -100,7 +102,7 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
   // about to register for notification of an overlapped event.
   auto* socket = reinterpret_cast<WinSocket*>(completion_key);
   WinSocket::OpState* info = socket->GetOpInfoForOverlapped(overlapped);
-  GPR_ASSERT(info != nullptr);
+  CHECK_NE(info, nullptr);
   info->GetOverlappedResult();
   info->SetReady();
   schedule_poll_again();
@@ -109,9 +111,9 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
 
 void IOCP::Kick() {
   outstanding_kicks_.fetch_add(1);
-  GPR_ASSERT(PostQueuedCompletionStatus(
-      iocp_handle_, 0, reinterpret_cast<ULONG_PTR>(&kick_token_),
-      &kick_overlap_));
+  CHECK(PostQueuedCompletionStatus(iocp_handle_, 0,
+                                   reinterpret_cast<ULONG_PTR>(&kick_token_),
+                                   &kick_overlap_));
 }
 
 DWORD IOCP::GetDefaultSocketFlags() {

@@ -54,7 +54,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":fake_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -96,7 +96,7 @@ grpc_cc_test(
         ":end2end_binder_channel",
         ":fake_binder",
         "//:grpc++_binder",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
     ],
 )
@@ -111,8 +111,8 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//:grpc++_binder",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/transport/binder/end2end:fake_binder",
-        "//test/core/util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
     ],
 )

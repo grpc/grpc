@@ -25,8 +25,8 @@
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
-#include "test/core/util/audit_logging_utils.h"
-#include "test/core/util/evaluate_args_test_util.h"
+#include "test/core/test_util/audit_logging_utils.h"
+#include "test/core/test_util/evaluate_args_test_util.h"
 
 namespace grpc_core {
 

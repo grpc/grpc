@@ -20,11 +20,13 @@
 
 #include <signal.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "test/core/util/cmdline.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/test_config.h"
 
 // Common server implementation details for all servers in servers/.
 // There's nothing *wrong* with these servers per-se, but they are
@@ -42,7 +44,7 @@ const char* bad_ssl_addr(int argc, char** argv) {
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
   gpr_cmdline_parse(cl, argc, argv);
   gpr_cmdline_destroy(cl);
-  GPR_ASSERT(addr);
+  CHECK(addr);
   return addr;
 }
 
@@ -67,7 +69,7 @@ void bad_ssl_run(grpc_server* server) {
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    reinterpret_cast<void*>(1));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   signal(SIGINT, sigint_handler);
   while (!shutdown_finished) {
@@ -75,10 +77,10 @@ void bad_ssl_run(grpc_server* server) {
       gpr_log(GPR_INFO, "Shutting down due to SIGINT");
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, nullptr);
-      GPR_ASSERT(grpc_completion_queue_pluck(
-                     shutdown_cq, nullptr, grpc_timeout_seconds_to_deadline(5),
-                     nullptr)
-                     .type == GRPC_OP_COMPLETE);
+      CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                        grpc_timeout_seconds_to_deadline(5),
+                                        nullptr)
+                .type == GRPC_OP_COMPLETE);
       grpc_completion_queue_destroy(shutdown_cq);
       grpc_completion_queue_shutdown(cq);
       shutdown_started = 1;
@@ -90,11 +92,11 @@ void bad_ssl_run(grpc_server* server) {
         nullptr);
     switch (ev.type) {
       case GRPC_OP_COMPLETE:
-        GPR_ASSERT(ev.tag == (void*)1);
-        GPR_ASSERT(ev.success == 0);
+        CHECK(ev.tag == (void*)1);
+        CHECK_EQ(ev.success, 0);
         break;
       case GRPC_QUEUE_SHUTDOWN:
-        GPR_ASSERT(shutdown_started);
+        CHECK(shutdown_started);
         shutdown_finished = 1;
         break;
       case GRPC_QUEUE_TIMEOUT:
@@ -102,7 +104,7 @@ void bad_ssl_run(grpc_server* server) {
     }
   }
 
-  GPR_ASSERT(s == nullptr);
+  CHECK_EQ(s, nullptr);
   grpc_call_details_destroy(&call_details);
   grpc_metadata_array_destroy(&request_metadata_recv);
 }

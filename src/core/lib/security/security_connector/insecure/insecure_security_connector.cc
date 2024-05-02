@@ -24,13 +24,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/local_transport_security.h"
 
 namespace grpc_core {

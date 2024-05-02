@@ -39,7 +39,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {

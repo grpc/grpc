@@ -46,7 +46,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/memory_usage/memstats.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static grpc_channel* channel;
 static grpc_completion_queue* cq;

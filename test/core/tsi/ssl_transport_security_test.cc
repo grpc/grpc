@@ -39,10 +39,10 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "test/core/test_util/build.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
-#include "test/core/util/build.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
 
 #define SSL_TSI_TEST_ALPN1 "foo"
 #define SSL_TSI_TEST_ALPN2 "toto"

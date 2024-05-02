@@ -23,8 +23,8 @@
 
 #include <grpcpp/impl/grpc_library.h>
 
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/mock_objects.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_binder {
 

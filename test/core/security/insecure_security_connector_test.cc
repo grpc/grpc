@@ -26,7 +26,7 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/transport_security.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

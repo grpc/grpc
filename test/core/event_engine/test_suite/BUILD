@@ -33,7 +33,7 @@ grpc_cc_library(
     deps = [
         "//:grpc",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
