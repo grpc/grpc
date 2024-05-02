@@ -795,7 +795,7 @@ class CronetMetadataEncoder {
       value = grpc_slice_to_c_string(value_slice.c_slice());
     }
     CRONET_LOG(GPR_DEBUG, "header %s = %s", key, value);
-    CHECK(count_ < capacity_);
+    CHECK_LT(count_, capacity_);
     headers_[count_].key = key;
     headers_[count_].value = value;
     ++count_;

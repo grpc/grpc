@@ -168,7 +168,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
             message_length % aligned_bytes == 0
                 ? 0
                 : aligned_bytes - message_length % aligned_bytes;
-        CHECK_EQ((message_length + padding) % aligned_bytes, 0);
+        CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
         frame.message =
             FragmentMessage(std::move(message), padding, message_length);
         frame.stream_id = stream_id;

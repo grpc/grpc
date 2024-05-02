@@ -276,7 +276,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  CHECK_NE(stream_id, 0);
+  CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
@@ -355,7 +355,7 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  CHECK_NE(stream_id, 0);
+  CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
@@ -400,7 +400,7 @@ absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
 }
 
 BufferPair CancelFrame::Serialize(HPackCompressor*) const {
-  CHECK_NE(stream_id, 0);
+  CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kCancel, stream_id);
   return serializer.Finish();
 }
