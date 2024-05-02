@@ -829,7 +829,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 
   CHECK((write_closed && read_closed) || id == 0);
   if (id != 0) {
-    CHECK_EQ(t->stream_map.count(id), 0);
+    CHECK_EQ(t->stream_map.count(id), 0u);
   }
 
   grpc_slice_buffer_destroy(&frame_storage);
@@ -995,7 +995,7 @@ static void write_action_begin_locked(
                     begin_writing_desc(r.partial));
     write_action(t.get());
     if (t->reading_paused_on_pending_induced_frames) {
-      CHECK_EQ(t->num_pending_induced_frames, 0);
+      CHECK_EQ(t->num_pending_induced_frames, 0u);
       // We had paused reading, because we had many induced frames (SETTINGS
       // ACK, PINGS ACK and RST_STREAMS) pending in t->qbuf. Now that we have
       // been able to flush qbuf, we can resume reading.
@@ -1212,7 +1212,7 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
         "HTTP:%s: Transport %p allocating new grpc_chttp2_stream %p to id %d",
         t->is_client ? "CLI" : "SVR", t, s, t->next_stream_id));
 
-    CHECK_EQ(s->id, 0);
+    CHECK_EQ(s->id, 0u);
     s->id = t->next_stream_id;
     t->next_stream_id += 2;
 
@@ -1403,7 +1403,7 @@ static void perform_stream_op_locked(void* stream_op,
     if (!s->write_closed) {
       if (t->is_client) {
         if (t->closed_with_error.ok()) {
-          CHECK_EQ(s->id, 0);
+          CHECK_EQ(s->id, 0u);
           grpc_chttp2_list_add_waiting_for_concurrency(t, s);
           maybe_start_some_streams(t);
         } else {
@@ -1420,7 +1420,7 @@ static void perform_stream_op_locked(void* stream_op,
               false);
         }
       } else {
-        CHECK_NE(s->id, 0);
+        CHECK_NE(s->id, 0u);
         grpc_chttp2_mark_stream_writable(t, s);
         if (!(op->send_message &&
               (op->payload->send_message.flags & GRPC_WRITE_BUFFER_HINT))) {
@@ -2021,7 +2021,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
     } else {
       if (s->frame_storage.length != 0) {
         while (true) {
-          CHECK_GT(s->frame_storage.length, 0);
+          CHECK_GT(s->frame_storage.length, 0u);
           int64_t min_progress_size;
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
@@ -2359,7 +2359,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_error_get_status(error, s->deadline, &grpc_status, &message, nullptr,
                         nullptr);
 
-  CHECK(grpc_status >= 0);
+  CHECK_LE(grpc_status, 0);
   CHECK_LT((int)grpc_status, 100);
 
   auto remove_stream_handle = grpc_chttp2_mark_stream_closed(t, s, 1, 1, error);

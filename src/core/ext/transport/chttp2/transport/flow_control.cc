@@ -337,7 +337,7 @@ void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  CHECK_EQ(DesiredAnnounceSize(), 0);
+  CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 

@@ -42,7 +42,7 @@
 namespace grpc_core {
 
 void HPackTable::MementoRingBuffer::Put(Memento m) {
-  CHECK(num_entries_ < max_entries_);
+  CHECK_LT(num_entries_, max_entries_);
   if (entries_.size() < max_entries_) {
     ++num_entries_;
     return entries_.push_back(std::move(m));
@@ -53,7 +53,7 @@ void HPackTable::MementoRingBuffer::Put(Memento m) {
 }
 
 auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
-  CHECK_GT(num_entries_, 0);
+  CHECK_GT(num_entries_, 0u);
   size_t index = first_entry_ % max_entries_;
   ++first_entry_;
   --num_entries_;

@@ -246,7 +246,7 @@ class HPackParser::Input {
   // min_progress_size: how many bytes beyond the current frontier do we need to
   // read prior to being able to get further in this parse.
   void UnexpectedEOF(size_t min_progress_size) {
-    CHECK_GT(min_progress_size, 0);
+    CHECK_GT(min_progress_size, 0u);
     if (min_progress_size_ != 0 || error_.connection_error()) {
       DCHECK(eof_error());
       return;
@@ -259,7 +259,7 @@ class HPackParser::Input {
 
   // Update the frontier - signifies we've successfully parsed another element
   void UpdateFrontier() {
-    DCHECK_EQ(skip_bytes_, 0);
+    DCHECK_EQ(skip_bytes_, 0u);
     frontier_ = begin_;
   }
 

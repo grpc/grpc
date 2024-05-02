@@ -63,7 +63,7 @@ static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
   // max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
   // which has a max allowable value of 16777215 (see chttp_transport.cc).
   // Thus, the following assert can be a debug assert.
-  DCHECK(len <= 16777216);
+  DCHECK_LT(len, 16777216u);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);

@@ -60,7 +60,7 @@ uint16_t Read2b(const uint8_t* input) {
 }
 
 void Write3b(uint32_t x, uint8_t* output) {
-  CHECK(x < 16777216);
+  CHECK_LT(x, 16777216u);
   output[0] = static_cast<uint8_t>(x >> 16);
   output[1] = static_cast<uint8_t>(x >> 8);
   output[2] = static_cast<uint8_t>(x);

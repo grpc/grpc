@@ -24,7 +24,7 @@
 namespace grpc_core {
 
 uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
-  DCHECK_GE(element_size, 32);
+  DCHECK_GE(element_size, 32u);
 
   uint32_t new_index = tail_remote_index_ + table_elems_ + 1;
   DCHECK(element_size <= MaxEntrySize());
@@ -71,8 +71,8 @@ bool HPackEncoderTable::SetMaxSize(uint32_t max_table_size) {
 
 void HPackEncoderTable::EvictOne() {
   tail_remote_index_++;
-  CHECK_GT(tail_remote_index_, 0);
-  CHECK_GT(table_elems_, 0);
+  CHECK_GT(tail_remote_index_, 0u);
+  CHECK_GT(table_elems_, 0u);
   auto removing_size = elem_size_[tail_remote_index_ % elem_size_.size()];
   CHECK(table_size_ >= removing_size);
   table_size_ -= removing_size;
@@ -81,7 +81,7 @@ void HPackEncoderTable::EvictOne() {
 
 void HPackEncoderTable::Rebuild(uint32_t capacity) {
   decltype(elem_size_) new_elem_size(capacity);
-  CHECK(table_elems_ <= capacity);
+  CHECK_LT(table_elems_, capacity);
   for (uint32_t i = 0; i < table_elems_; i++) {
     uint32_t ofs = tail_remote_index_ + i + 1;
     new_elem_size[ofs % capacity] = elem_size_[ofs % elem_size_.size()];
