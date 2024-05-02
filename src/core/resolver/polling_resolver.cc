@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -171,7 +172,7 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
                   : result.service_config.status().ToString().c_str(),
               result.resolution_note.c_str());
     }
-    GPR_ASSERT(result.result_health_callback == nullptr);
+    CHECK(result.result_health_callback == nullptr);
     result.result_health_callback =
         [self = RefAsSubclass<PollingResolver>(
              DEBUG_LOCATION, "result_health_callback")](absl::Status status) {
@@ -206,7 +207,7 @@ void PollingResolver::GetResultStatus(absl::Status status) {
     ExecCtx::Get()->InvalidateNow();
     const Timestamp next_try = backoff_.NextAttemptTime();
     const Duration timeout = next_try - Timestamp::Now();
-    GPR_ASSERT(!next_resolution_timer_handle_.has_value());
+    CHECK(!next_resolution_timer_handle_.has_value());
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
       if (timeout > Duration::Zero()) {
         gpr_log(GPR_INFO, "[polling resolver %p] retrying in %" PRId64 " ms",

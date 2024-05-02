@@ -23,6 +23,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
@@ -95,7 +96,7 @@ void FakeResolver::StartLocked() {
 
 void FakeResolver::RequestReresolutionLocked() {
   // Re-resolution can't happen until after we return an initial result.
-  GPR_ASSERT(response_generator_ != nullptr);
+  CHECK(response_generator_ != nullptr);
   response_generator_->ReresolutionRequested();
 }
 
