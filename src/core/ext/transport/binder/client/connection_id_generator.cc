@@ -14,10 +14,13 @@
 
 #include "src/core/ext/transport/binder/client/connection_id_generator.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 namespace {

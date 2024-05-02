@@ -14,12 +14,16 @@
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
 #include <memory>
 #include <utility>
+
+#include "absl/log/check.h"
 
 #include "src/core/ext/transport/binder/client/binder_connector.h"
 #include "src/core/ext/transport/binder/transport/binder_transport.h"

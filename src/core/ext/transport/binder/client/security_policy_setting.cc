@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
+
+#include "absl/log/check.h"
 
 #include "src/core/ext/transport/binder/client/security_policy_setting.h"
 

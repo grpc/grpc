@@ -14,15 +14,21 @@
 
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
+
+#include "absl/log/check.h"
 
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <jni.h>
+
+#include "absl/log/check.h"
 
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 

@@ -12,9 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
+
+#include "absl/log/check.h"
 
 #include <grpcpp/create_channel_binder.h>
 
@@ -36,6 +40,7 @@
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/substitute.h"
 #include "absl/time/clock.h"

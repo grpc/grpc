@@ -14,6 +14,8 @@
 
 #include "src/core/ext/transport/binder/server/binder_server.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
@@ -22,6 +24,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
@@ -36,6 +39,8 @@
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <jni.h>
+
+#include "absl/log/check.h"
 
 extern "C" {
 
