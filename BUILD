@@ -244,7 +244,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "grateful"  # @unused
 
-core_version = "40.0.0"  # @unused
+core_version = "41.0.0"  # @unused
 
 version = "1.64.0-dev"  # @unused
 
