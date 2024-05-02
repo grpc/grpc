@@ -18,7 +18,7 @@
 namespace grpc_core {
 
 TRANSPORT_FIXTURE(Inproc) {
-  auto transports = MakeInProcessTransportPair();
+  auto transports = MakeInProcessTransportPair(ChannelArgs());
   return {std::move(transports.first), std::move(transports.second)};
 }
 

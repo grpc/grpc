@@ -220,7 +220,7 @@ class TransportTest : public ::testing::Test {
         fixture_(std::move(fixture)),
         rng_(rng) {}
 
-  void SetServerAcceptor();
+  void SetServerCallDestination();
   CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
 
   std::string RandomString(int min_length, int max_length,
@@ -270,18 +270,14 @@ class TransportTest : public ::testing::Test {
 
   void Timeout();
 
-  class Acceptor final : public ServerTransport::Acceptor {
+  class ServerCallDestination final : public UnstartedCallDestination {
    public:
-    explicit Acceptor(TransportTest* test) : test_(test) {}
-
-    Arena* CreateArena() override;
-    absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
-    absl::optional<CallHandler> PopHandler();
+    void StartCall(UnstartedCallHandler unstarted_call_handler) override;
+    void Orphaned() override {}
+    absl::optional<UnstartedCallHandler> PopHandler();
 
    private:
-    std::queue<CallHandler> handlers_;
-    TransportTest* const test_;
+    std::queue<UnstartedCallHandler> handlers_;
   };
 
   class WatchDog {
@@ -313,7 +309,8 @@ class TransportTest : public ::testing::Test {
               ->memory_quota()
               ->CreateMemoryAllocator("test-allocator"),
           1024)};
-  Acceptor acceptor_{this};
+  RefCountedPtr<ServerCallDestination> server_call_destination_ =
+      MakeRefCounted<ServerCallDestination>();
   TransportFixture::ClientAndServerTransportPair transport_pair_ =
       fixture_->CreateTransportPair(event_engine_);
   std::queue<std::shared_ptr<transport_test_detail::ActionState>>

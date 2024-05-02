@@ -139,6 +139,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                             ClientFragmentFrame frame, uint32_t stream_id);
 
   RefCountedPtr<UnstartedCallDestination> call_destination_;
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
   InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
   // Assigned aligned bytes from setting frame.
@@ -147,7 +150,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   // Map of stream incoming server frames, key is stream_id.
   StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
   uint32_t last_seen_new_stream_id_ = 0;
-  grpc_event_engine::experimental::MemoryAllocator allocator_;
   ActivityPtr writer_ ABSL_GUARDED_BY(mu_);
   ActivityPtr reader_ ABSL_GUARDED_BY(mu_);
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
