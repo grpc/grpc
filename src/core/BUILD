@@ -2663,6 +2663,7 @@ grpc_cc_library(
             ],
             "//:ios": ["cf_event_engine"],
             "//:tvos": ["cf_event_engine"],
+            "//:visionos": ["cf_event_engine"],
             "//:watchos": ["cf_event_engine"],
             "//conditions:default": ["posix_event_engine"],
         },
