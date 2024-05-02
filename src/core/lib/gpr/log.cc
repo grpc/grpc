@@ -150,7 +150,9 @@ void gpr_log_verbosity_init() {
     gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);
     if (grpc_core::ConfigVars::Get().AbslLogging() &&
         min_severity_to_print == GPR_LOG_SEVERITY_DEBUG) {
-      absl::SetGlobalVLogLevel(g_absl_vlog_level_for_gpr_verbosity_debug);
+      // Matches full file paths that include a `*grpc*` folder, including
+      // grpcpp.
+      absl::SetVLogLevel("*grpc*/*", g_absl_vlog_level_for_gpr_verbosity_debug);
     }
   }
   // init stacktrace_minloglevel when it hasn't been set
