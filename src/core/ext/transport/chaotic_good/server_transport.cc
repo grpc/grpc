@@ -355,12 +355,13 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     PromiseEndpoint data_endpoint,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     HPackParser hpack_parser, HPackCompressor hpack_encoder)
-    : outgoing_frames_(4),
-      call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
+    : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator("chaotic-good"),
-          1024)) {
+          1024)),
+      event_engine_(event_engine),
+      outgoing_frames_(4) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));

@@ -3162,6 +3162,8 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
         server_(server) {
+    call_handler_.legacy_context()[GRPC_CONTEXT_CALL].value =
+        static_cast<Call*>(this);
     global_stats().IncrementServerCallsCreated();
   }
 

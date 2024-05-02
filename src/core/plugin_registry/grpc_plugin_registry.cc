@@ -83,6 +83,7 @@ void RegisterBuiltins(CoreConfiguration::Builder* builder) {
       .Terminal();
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+      .SkipV3()
       .BeforeAll();
 }
 

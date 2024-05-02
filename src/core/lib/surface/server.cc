@@ -235,7 +235,8 @@ struct Server::RequestedCall {
 
   template <typename OptionalPayload>
   void Complete(OptionalPayload payload, ClientMetadata& md) {
-    Timestamp deadline = GetContext<Call>()->deadline();
+    Timestamp deadline =
+        md.get(GrpcTimeoutMetadata()).value_or(Timestamp::InfFuture());
     switch (type) {
       case RequestedCall::Type::BATCH_CALL:
         GPR_ASSERT(!payload.has_value());
@@ -426,8 +427,59 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     calld->Publish(cq_idx, rc);
   }
 
-  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(size_t) override {
-    Crash("not implemented for filter stack request matcher");
+  ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
+      size_t start_request_queue_index) override {
+    for (size_t i = 0; i < requests_per_cq_.size(); i++) {
+      size_t cq_idx = (start_request_queue_index + i) % requests_per_cq_.size();
+      RequestedCall* rc =
+          reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].TryPop());
+      if (rc != nullptr) {
+        return Immediate(MatchResult(server(), cq_idx, rc));
+      }
+    }
+    // No cq to take the request found; queue it on the slow list.
+    // We need to ensure that all the queues are empty.  We do this under
+    // the server mu_call_ lock to ensure that if something is added to
+    // an empty request queue, it will block until the call is actually
+    // added to the pending list.
+    RequestedCall* rc = nullptr;
+    size_t cq_idx = 0;
+    size_t loop_count;
+    {
+      std::vector<std::shared_ptr<ActivityWaiter>> removed_pending;
+      MutexLock lock(&server_->mu_call_);
+      while (!pending_promises_.empty() &&
+             pending_promises_.front()->Age() >
+                 server_->max_time_in_pending_queue_) {
+        removed_pending.push_back(std::move(pending_promises_.front()));
+        pending_promises_.pop();
+      }
+      for (loop_count = 0; loop_count < requests_per_cq_.size(); loop_count++) {
+        cq_idx =
+            (start_request_queue_index + loop_count) % requests_per_cq_.size();
+        rc = reinterpret_cast<RequestedCall*>(requests_per_cq_[cq_idx].Pop());
+        if (rc != nullptr) break;
+      }
+      if (rc == nullptr) {
+        if (server_->pending_backlog_protector_.Reject(pending_promises_.size(),
+                                                       server_->bitgen_)) {
+          return Immediate(absl::ResourceExhaustedError(
+              "Too many pending requests for this server"));
+        }
+        auto w = std::make_shared<ActivityWaiter>(
+            GetContext<Activity>()->MakeOwningWaker());
+        pending_promises_.push(w);
+        return OnCancel(
+            [w]() -> Poll<absl::StatusOr<MatchResult>> {
+              std::unique_ptr<absl::StatusOr<MatchResult>> r(
+                  w->result.exchange(nullptr, std::memory_order_acq_rel));
+              if (r == nullptr) return Pending{};
+              return std::move(*r);
+            },
+            [w]() { w->Expire(); });
+      }
+    }
+    return Immediate(MatchResult(server(), cq_idx, rc));
   }
 
   Server* server() const final { return server_; }
@@ -886,11 +938,15 @@ grpc_error_handle Server::SetupTransport(
     channelz_node_->AddChildSocket(socket_node);
   }
   if (transport->server_transport() != nullptr) {
+    // Take ownership
+    // TODO(ctiller): post-v3-transition make this method take an
+    // OrphanablePtr<ServerTransport> directly.
+    OrphanablePtr<ServerTransport> t(transport->server_transport());
     auto destination = MakeCallDestination(args.SetObject(transport));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
-    transport->server_transport()->SetCallDestination(std::move(*destination));
+    t->SetCallDestination(std::move(*destination));
   } else {
     GPR_ASSERT(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<OrphanablePtr<Channel>> channel = LegacyChannel::Create(
