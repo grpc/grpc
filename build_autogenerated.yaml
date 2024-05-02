@@ -3593,7 +3593,6 @@ libs:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -4017,7 +4016,6 @@ libs:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5122,7 +5120,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5193,7 +5190,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5282,7 +5278,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5346,7 +5341,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5537,7 +5531,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5653,7 +5646,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5695,7 +5687,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5756,7 +5747,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5892,7 +5882,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5931,7 +5920,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -6255,7 +6243,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7280,7 +7267,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7498,7 +7484,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7605,7 +7590,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7635,7 +7619,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -8047,7 +8030,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -8103,7 +8085,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -8270,7 +8251,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -8965,7 +8945,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9022,7 +9001,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9054,7 +9032,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9084,7 +9061,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9448,7 +9424,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10079,7 +10054,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10309,7 +10283,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10350,7 +10323,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10381,7 +10353,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10557,7 +10528,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10627,7 +10597,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10657,7 +10626,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10687,7 +10655,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10717,7 +10684,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10747,7 +10713,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11058,7 +11023,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11100,7 +11064,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11131,7 +11094,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11162,7 +11124,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11500,7 +11461,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -12490,7 +12450,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -12521,7 +12480,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -12995,7 +12953,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -13331,7 +13288,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -13372,7 +13328,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -13972,7 +13927,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -14203,7 +14157,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -14246,7 +14199,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -14340,7 +14292,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -14997,7 +14948,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15251,7 +15201,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15288,7 +15237,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15320,7 +15268,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15357,7 +15304,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17737,7 +17683,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17768,7 +17713,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17849,7 +17793,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17889,7 +17832,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18079,7 +18021,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18234,7 +18175,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18685,7 +18625,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18825,7 +18764,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18985,7 +18923,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19068,7 +19005,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19113,7 +19049,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19163,7 +19098,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19197,7 +19131,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19420,7 +19353,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19451,7 +19383,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19481,7 +19412,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19869,7 +19799,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19966,7 +19895,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -20863,7 +20791,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -21250,7 +21177,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
