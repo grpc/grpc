@@ -65,7 +65,7 @@ void EndpointBinderPool::GetEndpointBinder(
     if (binder_map_.count(conn_id)) {
       b = std::move(binder_map_[conn_id]);
       binder_map_.erase(conn_id);
-      CHECK_NE(b, nullptr);
+      CHECK(b != nullptr);
     } else {
       if (pending_requests_.count(conn_id) != 0) {
         gpr_log(GPR_ERROR,

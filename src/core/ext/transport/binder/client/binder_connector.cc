@@ -88,7 +88,7 @@ class BinderConnector : public grpc_core::SubchannelConnector {
   }
 
   void OnConnected(std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
-    CHECK_NE(endpoint_binder, nullptr);
+    CHECK(endpoint_binder != nullptr);
     grpc_core::Transport* transport = grpc_create_binder_transport_client(
         std::move(endpoint_binder),
         grpc_binder::GetSecurityPolicySetting()->Get(conn_id_));
