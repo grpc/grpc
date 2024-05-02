@@ -120,8 +120,7 @@ static bidirectional_stream_callback cronet_callbacks = {
     on_canceled};
 
 // Cronet transport object
-struct grpc_cronet_transport final : public grpc_core::Transport,
-                                     public grpc_core::FilterStackTransport {
+struct grpc_cronet_transport final : public grpc_core::FilterStackTransport {
   FilterStackTransport* filter_stack_transport() override { return this; }
   grpc_core::ClientTransport* client_transport() override { return nullptr; }
   grpc_core::ServerTransport* server_transport() override { return nullptr; }

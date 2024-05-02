@@ -22,17 +22,19 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static bool log_func_reached = false;
 
 static void test_callback(gpr_log_func_args* args) {
-  GPR_ASSERT(0 == strcmp(__FILE__, args->file));
-  GPR_ASSERT(args->severity == GPR_LOG_SEVERITY_INFO);
-  GPR_ASSERT(0 == strcmp(args->message, "hello 1 2 3"));
+  CHECK_EQ(strcmp(__FILE__, args->file), 0);
+  CHECK(args->severity == GPR_LOG_SEVERITY_INFO);
+  CHECK_EQ(strcmp(args->message, "hello 1 2 3"), 0);
 }
 
 static void test_should_log(gpr_log_func_args* /*args*/) {
@@ -47,10 +49,10 @@ static void test_should_not_log(gpr_log_func_args* /*args*/) {
   gpr_set_log_function(test_should_log);        \
   log_func_reached = false;                     \
   gpr_log_message(SEVERITY, "hello 1 2 3");     \
-  GPR_ASSERT(log_func_reached);                 \
+  CHECK(log_func_reached);                      \
   log_func_reached = false;                     \
   gpr_log(SEVERITY, "hello %d %d %d", 1, 2, 3); \
-  GPR_ASSERT(log_func_reached);                 \
+  CHECK(log_func_reached);                      \
   gpr_set_log_function(nullptr);
 
 #define test_log_function_unreached(SEVERITY)   \
@@ -65,7 +67,7 @@ TEST(LogTest, Basic) {
   gpr_log(GPR_INFO, "%s", "hello world");
   gpr_log(GPR_ERROR, "%s", "hello world");
   // should succeed
-  GPR_ASSERT(1);
+  CHECK(1);
   gpr_set_log_function(test_callback);
   gpr_log_message(GPR_INFO, "hello 1 2 3");
   gpr_log(GPR_INFO, "hello %d %d %d", 1, 2, 3);

@@ -27,7 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(StringTest, Strdup) {
   static const char* src1 = "hello world";

@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -64,10 +65,10 @@ class Fuzzer {
         Scheduler{this},
         [this](absl::Status status) {
           // Must only be called once
-          GPR_ASSERT(!done_);
+          CHECK(!done_);
           // If we became certain of the eventual status, verify it.
           if (expected_status_.has_value()) {
-            GPR_ASSERT(status == *expected_status_);
+            CHECK(status == *expected_status_);
           }
           // Mark ourselves done.
           done_ = true;
@@ -114,7 +115,7 @@ class Fuzzer {
     ExpectCancelled();
     activity_.reset();
     if (wakeup_ != nullptr) std::exchange(wakeup_, nullptr)();
-    GPR_ASSERT(done_);
+    CHECK(done_);
   }
 
  private:
@@ -127,9 +128,8 @@ class Fuzzer {
       explicit BoundScheduler(Scheduler scheduler)
           : fuzzer_(scheduler.fuzzer) {}
       void ScheduleWakeup() {
-        GPR_ASSERT(static_cast<ActivityType*>(this) ==
-                   fuzzer_->activity_.get());
-        GPR_ASSERT(fuzzer_->wakeup_ == nullptr);
+        CHECK(static_cast<ActivityType*>(this) == fuzzer_->activity_.get());
+        CHECK(fuzzer_->wakeup_ == nullptr);
         fuzzer_->wakeup_ = [this]() {
           static_cast<ActivityType*>(this)->RunScheduledWakeup();
         };

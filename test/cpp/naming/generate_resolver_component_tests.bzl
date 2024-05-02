@@ -37,7 +37,7 @@ def generate_resolver_component_tests():
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:grpc_test_util%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
@@ -59,9 +59,9 @@ def generate_resolver_component_tests():
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:fake_udp_and_tcp_server%s" % unsecure_build_config_suffix,
-                "//test/core/util:socket_use_after_close_detector%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:fake_udp_and_tcp_server%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:socket_use_after_close_detector%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
@@ -82,7 +82,7 @@ def generate_resolver_component_tests():
             ],
             deps = [
                 "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
-                "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
+                "//test/core/test_util:grpc_test_util%s" % unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",

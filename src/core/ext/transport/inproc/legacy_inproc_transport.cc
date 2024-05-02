@@ -63,10 +63,10 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server.h"
 
 #define INPROC_LOG(...)                               \
   do {                                                \
@@ -102,8 +102,7 @@ struct shared_mu {
   gpr_refcount refs;
 };
 
-struct inproc_transport final : public grpc_core::Transport,
-                                public grpc_core::FilterStackTransport {
+struct inproc_transport final : public grpc_core::FilterStackTransport {
   inproc_transport(shared_mu* mu, bool is_client)
       : mu(mu),
         is_client(is_client),

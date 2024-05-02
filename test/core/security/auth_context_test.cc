@@ -26,7 +26,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(AuthContextTest, EmptyContext) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =

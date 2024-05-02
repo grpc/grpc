@@ -20,6 +20,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -228,8 +229,8 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
 void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
     grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
-    GPR_ASSERT(request->hdr_count == 0);
-    GPR_ASSERT(request->hdrs == nullptr);
+    CHECK_EQ(request->hdr_count, 0u);
+    CHECK_EQ(request->hdrs, nullptr);
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
     headers[0].key = gpr_strdup("x-aws-ec2-metadata-token");

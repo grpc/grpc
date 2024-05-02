@@ -23,7 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // TODO(hork): parameterize these tests for other WorkQueue implementations.
 

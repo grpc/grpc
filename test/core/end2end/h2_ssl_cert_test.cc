@@ -47,7 +47,7 @@
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static std::string test_server1_key_id;
 

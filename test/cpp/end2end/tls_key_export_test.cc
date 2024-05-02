@@ -34,9 +34,9 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 extern "C" {
 #include <openssl/ssl.h>

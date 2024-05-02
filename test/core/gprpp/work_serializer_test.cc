@@ -44,7 +44,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 using grpc_event_engine::experimental::WaitForSingleOwner;
