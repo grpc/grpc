@@ -136,6 +136,19 @@ class Server(abc.ABC):
           A bool indicates if the operation times out.
         """
 
+    @abc.abstractmethod
+    def add_registered_method_handlers(self, service_name, method_handlers):
+        """Registers GenericRpcHandlers with this Server.
+
+        This method is only safe to call before the server is started.
+
+        Args:
+          service_name: The service name.
+          method_handlers: A dictionary that maps method names to corresponding
+            RpcMethodHandler.
+        """
+        raise NotImplementedError()
+
 
 # pylint: disable=too-many-public-methods
 class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):

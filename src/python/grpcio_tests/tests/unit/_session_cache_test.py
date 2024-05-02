@@ -27,7 +27,8 @@ from tests.unit import test_common
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
-_UNARY_UNARY = "/test/UnaryUnary"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 _ID = "id"
@@ -56,13 +57,14 @@ def handle_unary_unary(request, servicer_context):
     )
 
 
+_METHOD_HANDLERS = {
+    _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+}
+
+
 def start_secure_server():
-    handler = grpc.method_handlers_generic_handler(
-        "test",
-        {"UnaryUnary": grpc.unary_unary_rpc_method_handler(handle_unary_unary)},
-    )
     server = test_common.test_server()
-    server.add_generic_rpc_handlers((handler,))
+    server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
     server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
     port = server.add_secure_port("[::]:0", server_cred)
     server.start()
@@ -78,7 +80,7 @@ class SSLSessionCacheTest(unittest.TestCase):
             "localhost:{}".format(port), channel_creds, options=channel_options
         )
         response = channel.unary_unary(
-            _UNARY_UNARY,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=True,
         )(_REQUEST)
         auth_data = pickle.loads(response)

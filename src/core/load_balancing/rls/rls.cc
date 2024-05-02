@@ -1863,9 +1863,16 @@ void RlsLb::RlsRequest::OnRlsCallCompleteLocked(grpc_error_handle error) {
   // Now that we've released the lock, finish the update on any newly
   // created child policies.
   for (ChildPolicyWrapper* child : child_policies_to_finish_update) {
-    // TODO(roth): If the child reports an error with the update, we
-    // need to propagate that back to the resolver somehow.
-    (void)child->MaybeFinishUpdate();
+    // If the child policy returns a non-OK status, request re-resolution.
+    // Note that this will initially cause fixed backoff delay in the
+    // resolver instead of exponential delay.  However, once the
+    // resolver returns the initial re-resolution, we will be able to
+    // return non-OK from UpdateLocked(), which will trigger
+    // exponential backoff instead.
+    absl::Status status = child->MaybeFinishUpdate();
+    if (!status.ok()) {
+      lb_policy_->channel_control_helper()->RequestReresolution();
+    }
   }
 }
 

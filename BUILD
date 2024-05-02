@@ -1862,10 +1862,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "server",
     srcs = [
-        "//src/core:lib/surface/server.cc",
+        "//src/core:server/server.cc",
     ],
     hdrs = [
-        "//src/core:lib/surface/server.h",
+        "//src/core:server/server.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2259,6 +2259,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3948,6 +3949,7 @@ grpc_cc_library(
         "//src/core:lib/security/credentials/jwt/jwt_verifier.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
