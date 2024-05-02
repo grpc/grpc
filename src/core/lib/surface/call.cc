@@ -3241,7 +3241,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   StatusFlag FinishRecvMessage(
       ValueOrFailure<absl::optional<MessageHandle>> result);
 
-  std::string DebugTag();
+  std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
   CallHandler call_handler_;
   grpc_byte_buffer** recv_message_ = nullptr;

@@ -297,6 +297,7 @@ struct ContextType<CallContext> {};
 // TODO(ctiller): remove once call-v3 finalized
 grpc_call* MakeServerCall(CallHandler call_handler,
                           ClientMetadataHandle client_initial_metadata,
+                          ServerInterface* server, grpc_completion_queue* cq,
                           grpc_metadata_array* publish_initial_metadata);
 
 }  // namespace grpc_core

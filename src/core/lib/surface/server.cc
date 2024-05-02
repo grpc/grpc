@@ -767,19 +767,19 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
               });
         },
         // Publish call to cq
-        [call_handler](std::tuple<absl::optional<MessageHandle>,
-                                  RequestMatcherInterface::MatchResult,
-                                  ClientMetadataHandle>
-                           r) {
+        [call_handler, this](std::tuple<absl::optional<MessageHandle>,
+                                        RequestMatcherInterface::MatchResult,
+                                        ClientMetadataHandle>
+                                 r) {
           RequestMatcherInterface::MatchResult& mr = std::get<1>(r);
           auto md = std::move(std::get<2>(r));
           auto* rc = mr.TakeCall();
           rc->Complete(std::move(std::get<0>(r)), *md);
           grpc_call* call =
-              MakeServerCall(call_handler, std::move(md), rc->initial_metadata);
+              MakeServerCall(call_handler, std::move(md), this,
+                             rc->cq_bound_to_call, rc->initial_metadata);
           *rc->call = call;
           grpc_call_ref(call);
-          grpc_call_set_completion_queue(call, rc->cq_bound_to_call);
           // TODO(ctiller): publish metadata
           return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
                      [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
