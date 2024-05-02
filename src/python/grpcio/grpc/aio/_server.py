@@ -14,7 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 
 from concurrent.futures import Executor
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 import grpc
 from grpc import _common
@@ -78,6 +78,14 @@ class Server(_base_server.Server):
           used to service RPCs.
         """
         self._server.add_generic_rpc_handlers(generic_rpc_handlers)
+
+    def add_registered_method_handlers(
+        self,
+        service_name: str,
+        method_handlers: Dict[str, grpc.RpcMethodHandler],
+    ) -> None:
+        # TODO(xuanwn): Implement this for AsyncIO.
+        pass
 
     def add_insecure_port(self, address: str) -> int:
         """Opens an insecure port for accepting RPCs.

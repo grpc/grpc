@@ -20,7 +20,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"

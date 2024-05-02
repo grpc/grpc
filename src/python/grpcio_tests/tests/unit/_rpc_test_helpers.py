@@ -29,12 +29,13 @@ _DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) // 2 :]
 _SERIALIZE_RESPONSE = lambda bytestring: bytestring * 3
 _DESERIALIZE_RESPONSE = lambda bytestring: bytestring[: len(bytestring) // 3]
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_UNARY_STREAM_NON_BLOCKING = "/test/UnaryStreamNonBlocking"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
-_STREAM_STREAM_NON_BLOCKING = "/test/StreamStreamNonBlocking"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_UNARY_STREAM_NON_BLOCKING = "UnaryStreamNonBlocking"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
+_STREAM_STREAM_NON_BLOCKING = "StreamStreamNonBlocking"
 
 TIMEOUT_SHORT = datetime.timedelta(seconds=4).total_seconds()
 
@@ -276,16 +277,81 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
+def get_method_handlers(handler):
+    return {
+        _UNARY_UNARY: _MethodHandler(
+            False,
+            False,
+            None,
+            None,
+            handler.handle_unary_unary,
+            None,
+            None,
+            None,
+        ),
+        _UNARY_STREAM: _MethodHandler(
+            False,
+            True,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            handler.handle_unary_stream,
+            None,
+            None,
+        ),
+        _UNARY_STREAM_NON_BLOCKING: _MethodHandler(
+            False,
+            True,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            handler.handle_unary_stream_non_blocking,
+            None,
+            None,
+        ),
+        _STREAM_UNARY: _MethodHandler(
+            True,
+            False,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            None,
+            handler.handle_stream_unary,
+            None,
+        ),
+        _STREAM_STREAM: _MethodHandler(
+            True,
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            handler.handle_stream_stream,
+        ),
+        _STREAM_STREAM_NON_BLOCKING: _MethodHandler(
+            True,
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            handler.handle_stream_stream_non_blocking,
+        ),
+    }
+
+
 def unary_unary_multi_callable(channel):
     return channel.unary_unary(
-        _UNARY_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
         _registered_method=True,
     )
 
 
 def unary_stream_multi_callable(channel):
     return channel.unary_stream(
-        _UNARY_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
@@ -294,7 +360,9 @@ def unary_stream_multi_callable(channel):
 
 def unary_stream_non_blocking_multi_callable(channel):
     return channel.unary_stream(
-        _UNARY_STREAM_NON_BLOCKING,
+        grpc._common.fully_qualified_method(
+            _SERVICE_NAME, _UNARY_STREAM_NON_BLOCKING
+        ),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
@@ -303,7 +371,7 @@ def unary_stream_non_blocking_multi_callable(channel):
 
 def stream_unary_multi_callable(channel):
     return channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
@@ -312,14 +380,16 @@ def stream_unary_multi_callable(channel):
 
 def stream_stream_multi_callable(channel):
     return channel.stream_stream(
-        _STREAM_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
         _registered_method=True,
     )
 
 
 def stream_stream_non_blocking_multi_callable(channel):
     return channel.stream_stream(
-        _STREAM_STREAM_NON_BLOCKING,
+        grpc._common.fully_qualified_method(
+            _SERVICE_NAME, _STREAM_STREAM_NON_BLOCKING
+        ),
         _registered_method=True,
     )
 
@@ -332,7 +402,9 @@ class BaseRPCTest(object):
 
         self._server = test_common.test_server()
         port = self._server.add_insecure_port("[::]:0")
-        self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(self._handler)
+        )
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)
