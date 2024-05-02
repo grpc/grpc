@@ -74,7 +74,7 @@ CallHandler TransportTest::TickUntilServerCall() {
   for (;;) {
     auto handler = server_call_destination_->PopHandler();
     if (handler.has_value()) {
-      return handler->V2HackToStartCallWithoutACallFilterStack();
+      return std::move(*handler);
     }
     event_engine_->Tick();
   }
@@ -234,11 +234,10 @@ std::string TransportTest::RandomMessage() {
 
 void TransportTest::ServerCallDestination::StartCall(
     UnstartedCallHandler handler) {
-  handlers_.push(std::move(handler));
+  handlers_.push(handler.V2HackToStartCallWithoutACallFilterStack());
 }
 
-absl::optional<UnstartedCallHandler>
-TransportTest::ServerCallDestination::PopHandler() {
+absl::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {
   if (!handlers_.empty()) {
     auto handler = std::move(handlers_.front());
     handlers_.pop();

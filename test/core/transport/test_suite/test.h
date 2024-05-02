@@ -32,6 +32,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/test_suite/fixture.h"
 
 namespace grpc_core {
@@ -274,10 +275,10 @@ class TransportTest : public ::testing::Test {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override;
     void Orphaned() override {}
-    absl::optional<UnstartedCallHandler> PopHandler();
+    absl::optional<CallHandler> PopHandler();
 
    private:
-    std::queue<UnstartedCallHandler> handlers_;
+    std::queue<CallHandler> handlers_;
   };
 
   class WatchDog {
@@ -292,6 +293,7 @@ class TransportTest : public ::testing::Test {
                                        [this]() { test_->Timeout(); })};
   };
 
+  grpc::testing::TestGrpcScope grpc_scope_;
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_{
           std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
