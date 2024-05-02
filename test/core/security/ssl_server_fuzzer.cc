@@ -25,6 +25,7 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/test_util/mock_endpoint.h"
@@ -48,6 +49,7 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 
 struct handshake_state {
   bool done_callback_called;
+  grpc_core::Notification done_signal;
 };
 
 static void on_handshake_done(void* arg, grpc_error_handle error) {
@@ -59,6 +61,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
   CHECK(!error.ok());
+  state->done_signal.Notify();
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
@@ -112,6 +115,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                              GRPC_ERROR_CREATE("Explicit close"));
       grpc_core::ExecCtx::Get()->Flush();
     }
+    state.done_signal.WaitForNotification();
     CHECK(state.done_callback_called);
 
     sc.reset(DEBUG_LOCATION, "test");
