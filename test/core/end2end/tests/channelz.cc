@@ -29,7 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using testing::HasSubstr;
