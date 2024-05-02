@@ -23,10 +23,11 @@ from tests.unit.framework.common import test_constants
 _REQUEST = b""
 _RESPONSE = b""
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 
 def handle_unary_unary(request, servicer_context):
@@ -69,24 +70,20 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.unary_unary = handle_unary_unary
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(True, True)
-        else:
-            return None
+_METHOD_HANDLERS = {
+    _UNARY_UNARY: _MethodHandler(False, False),
+    _UNARY_STREAM: _MethodHandler(False, True),
+    _STREAM_UNARY: _MethodHandler(True, False),
+    _STREAM_STREAM: _MethodHandler(True, True),
+}
 
 
 class EmptyMessageTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers((_GenericHandler(),))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, _METHOD_HANDLERS
+        )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
         self._channel = grpc.insecure_channel("localhost:%d" % port)
@@ -97,14 +94,14 @@ class EmptyMessageTest(unittest.TestCase):
 
     def testUnaryUnary(self):
         response = self._channel.unary_unary(
-            _UNARY_UNARY,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=True,
         )(_REQUEST)
         self.assertEqual(_RESPONSE, response)
 
     def testUnaryStream(self):
         response_iterator = self._channel.unary_stream(
-            _UNARY_STREAM,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
             _registered_method=True,
         )(_REQUEST)
         self.assertSequenceEqual(
@@ -113,14 +110,14 @@ class EmptyMessageTest(unittest.TestCase):
 
     def testStreamUnary(self):
         response = self._channel.stream_unary(
-            _STREAM_UNARY,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
             _registered_method=True,
         )(iter([_REQUEST] * test_constants.STREAM_LENGTH))
         self.assertEqual(_RESPONSE, response)
 
     def testStreamStream(self):
         response_iterator = self._channel.stream_stream(
-            _STREAM_STREAM,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
             _registered_method=True,
         )(iter([_REQUEST] * test_constants.STREAM_LENGTH))
         self.assertSequenceEqual(
