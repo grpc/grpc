@@ -21,9 +21,9 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/types/variant.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"

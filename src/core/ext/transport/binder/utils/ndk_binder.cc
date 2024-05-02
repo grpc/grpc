@@ -23,6 +23,7 @@
 #include <dlfcn.h>
 
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -103,7 +104,7 @@ namespace ndk_util {
             "dlsym failed. Cannot find %s in libbinder_ndk.so. "       \
             "BinderTransport requires API level >= 33",                \
             #name);                                                    \
-    CHECK(0);                                                     \
+    CHECK(0);                                                          \
   }                                                                    \
   return ptr
 

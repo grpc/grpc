@@ -23,11 +23,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/substitute.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
@@ -392,8 +392,8 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->cancel_stream) {
     // TODO(waynetu): Is this true?
     CHECK(!op->send_initial_metadata && !op->send_message &&
-               !op->send_trailing_metadata && !op->recv_initial_metadata &&
-               !op->recv_message && !op->recv_trailing_metadata);
+          !op->send_trailing_metadata && !op->recv_initial_metadata &&
+          !op->recv_message && !op->recv_trailing_metadata);
     gpr_log(GPR_INFO, "cancel_stream is_client = %d", stream->is_client);
     if (!stream->is_client) {
       // Send trailing metadata to inform the other end about the cancellation,

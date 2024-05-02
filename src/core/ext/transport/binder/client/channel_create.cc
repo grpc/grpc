@@ -26,9 +26,10 @@
 
 #ifdef GPR_ANDROID
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"

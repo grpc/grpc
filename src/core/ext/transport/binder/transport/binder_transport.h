@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
-
 #include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/binder_security_policy.h>

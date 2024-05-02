@@ -25,10 +25,10 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/status/statusor.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
@@ -362,7 +362,7 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   // around to 0 if more than 2^31 messages are sent." For now we'll just
   // assert that it never reach such circumstances.
   CHECK(expectation < std::numeric_limits<int32_t>::max() &&
-             "Sequence number too large");
+        "Sequence number too large");
   expectation++;
   gpr_log(GPR_DEBUG, "sequence number = %d", seq_num);
   if (flags & kFlagPrefix) {
