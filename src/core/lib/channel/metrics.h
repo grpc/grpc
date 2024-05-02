@@ -46,6 +46,27 @@ constexpr absl::string_view kMetricLabelTarget = "grpc.target";
 // startup, before the execution of the main function (during dynamic
 // initialization time). Using this API after the main function begins may
 // result into missing instruments. This API is thread-unsafe.
+//
+// The registration of instruments is done through the templated
+// RegistrationBuilder API and gets back a handle with an opaque type. At
+// runtime, the handle should be used with the StatsPluginGroup API to record
+// metrics for the instruments.
+//
+// At dynamic initialization time:
+//   const auto kMetricHandle =
+//       GlobalInstrumentsRegistry::RegisterUInt64Counter(
+//           "name",
+//           "description",
+//           "unit", /*enable_by_default=*/false)
+//           .Labels(kLabel1, kLabel2, kLabel3)
+//           .OptionalLabels(kOptionalLabel1, kOptionalLabel2)
+//           .Build();
+//
+// At runtime time:
+//   stats_plugin_group.AddCounter(kMetricHandle, 1,
+//       {"label_value_1", "label_value_2", "label_value_3"},
+//       {"optional_label_value_1", "optional_label_value_2"});
+//
 class GlobalInstrumentsRegistry {
  public:
   enum class ValueType {
