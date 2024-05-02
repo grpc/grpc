@@ -18,6 +18,8 @@
 
 #include "test/core/test_util/mock_endpoint.h"
 
+#include <memory>
+
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -27,140 +29,104 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 
-typedef struct mock_endpoint {
-  grpc_endpoint base;
-  gpr_mu mu;
-  void (*on_write)(grpc_slice slice);
-  grpc_slice_buffer read_buffer;
-  grpc_slice_buffer* on_read_out;
-  grpc_closure* on_read;
-  bool put_reads_done;
-  bool destroyed;
-} mock_endpoint;
+namespace grpc_event_engine {
+namespace experimental {
 
-static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/,
-                    int /*min_progress_size*/) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
-  gpr_mu_lock(&m->mu);
-  if (m->read_buffer.count > 0) {
-    grpc_slice_buffer_swap(&m->read_buffer, slices);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
-  } else if (m->put_reads_done) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb,
-                            absl::UnavailableError("reads done"));
+MockEndpoint::MockEndpoint(std::shared_ptr<EventEngine> engine)
+    : engine_(std::move(engine)),
+      peer_addr_(URIToResolvedAddress("ipv4:127.0.0.1:12345").value()),
+      local_addr_(URIToResolvedAddress("ipv4:127.0.0.1:6789").value()) {}
+
+MockEndpoint::~MockEndpoint() {
+  grpc_core::MutexLock lock(&mu_);
+  if (on_read_) {
+    engine_->Run([cb = std::move(on_read_)]() mutable {
+      cb(absl::InternalError("Endpoint Shutdown"));
+    });
+    on_read_ = nullptr;
+  }
+}
+
+void MockEndpoint::TriggerReadEvent(Slice read_data) {
+  grpc_core::MutexLock lock(&mu_);
+  CHECK(!reads_done_)
+      << "Cannot trigger a read event after NoMoreReads has been called.";
+  if (on_read_) {
+    on_read_slice_buffer_->Append(std::move(read_data));
+    engine_->Run(
+        [cb = std::move(on_read_)]() mutable { cb(absl::OkStatus()); });
+    on_read_ = nullptr;
+    on_read_slice_buffer_ = nullptr;
   } else {
-    m->on_read = cb;
-    m->on_read_out = slices;
-  }
-  gpr_mu_unlock(&m->mu);
-}
-
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* /*arg*/, int /*max_frame_size*/) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
-  for (size_t i = 0; i < slices->count; i++) {
-    m->on_write(slices->slices[i]);
-  }
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, absl::OkStatus());
-}
-
-static void me_add_to_pollset(grpc_endpoint* /*ep*/,
-                              grpc_pollset* /*pollset*/) {}
-
-static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
-                                  grpc_pollset_set* /*pollset*/) {}
-
-static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
-                                       grpc_pollset_set* /*pollset*/) {}
-
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
-  gpr_mu_lock(&m->mu);
-  if (m->on_read) {
-    grpc_core::ExecCtx::Run(
-        DEBUG_LOCATION, m->on_read,
-        GRPC_ERROR_CREATE_REFERENCING("Endpoint Shutdown", &why, 1));
-    m->on_read = nullptr;
-  }
-  gpr_mu_unlock(&m->mu);
-}
-
-static void destroy(mock_endpoint* m) {
-  grpc_slice_buffer_destroy(&m->read_buffer);
-  gpr_mu_destroy(&m->mu);
-  gpr_free(m);
-}
-
-static void me_destroy(grpc_endpoint* ep) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
-  m->destroyed = true;
-  if (m->put_reads_done) {
-    destroy(m);
+    read_buffer_.Append(std::move(read_data));
   }
 }
 
-void grpc_mock_endpoint_finish_put_reads(grpc_endpoint* ep) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
-  m->put_reads_done = true;
-  if (m->destroyed) {
-    destroy(m);
+void MockEndpoint::NoMoreReads() {
+  grpc_core::MutexLock lock(&mu_);
+  CHECK(!std::exchange(reads_done_, true))
+      << "NoMoreReads() can only be called once";
+}
+
+bool MockEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                        SliceBuffer* buffer, const ReadArgs* /* args */) {
+  grpc_core::MutexLock lock(&mu_);
+  if (read_buffer_.Count() > 0) {
+    CHECK(buffer->Count() == 0);
+    read_buffer_.Swap(*buffer);
+    engine_->Run([cb = std::move(on_read)]() mutable { cb(absl::OkStatus()); });
+  } else if (reads_done_) {
+    engine_->Run([cb = std::move(on_read)]() mutable {
+      cb(absl::UnavailableError("reads done"));
+    });
+  } else {
+    on_read_ = std::move(on_read);
+    on_read_slice_buffer_ = buffer;
   }
+  return false;
 }
 
-static absl::string_view me_get_peer(grpc_endpoint* /*ep*/) {
-  return "fake:mock_endpoint";
+bool MockEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                         SliceBuffer* data, const WriteArgs* /* args */) {
+  // No-op implementation. Nothing was using it.
+  data->Clear();
+  engine_->Run(
+      [cb = std::move(on_writable)]() mutable { cb(absl::OkStatus()); });
+  return false;
 }
 
-static absl::string_view me_get_local_address(grpc_endpoint* /*ep*/) {
-  return "fake:mock_endpoint";
+const EventEngine::ResolvedAddress& MockEndpoint::GetPeerAddress() const {
+  return peer_addr_;
 }
 
-static int me_get_fd(grpc_endpoint* /*ep*/) { return -1; }
+const EventEngine::ResolvedAddress& MockEndpoint::GetLocalAddress() const {
+  return local_addr_;
+}
 
-static bool me_can_track_err(grpc_endpoint* /*ep*/) { return false; }
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
-static const grpc_endpoint_vtable vtable = {me_read,
-                                            me_write,
-                                            me_add_to_pollset,
-                                            me_add_to_pollset_set,
-                                            me_delete_from_pollset_set,
-                                            me_shutdown,
-                                            me_destroy,
-                                            me_get_peer,
-                                            me_get_local_address,
-                                            me_get_fd,
-                                            me_can_track_err};
-
-grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice)) {
-  mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
-  m->base.vtable = &vtable;
-  grpc_slice_buffer_init(&m->read_buffer);
-  gpr_mu_init(&m->mu);
-  m->on_write = on_write;
-  m->on_read = nullptr;
-  m->put_reads_done = false;
-  m->destroyed = false;
-  return &m->base;
+grpc_endpoint* grpc_mock_endpoint_create(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine) {
+  return grpc_event_engine_endpoint_create(
+      std::make_unique<grpc_event_engine::experimental::MockEndpoint>(
+          std::move(engine)));
 }
 
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
-  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
-  gpr_mu_lock(&m->mu);
-  CHECK(!m->put_reads_done);
-  if (m->on_read != nullptr) {
-    grpc_slice_buffer_add(m->on_read_out, slice);
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, m->on_read, absl::OkStatus());
-    m->on_read = nullptr;
-  } else {
-    grpc_slice_buffer_add(&m->read_buffer, slice);
-  }
-  gpr_mu_unlock(&m->mu);
+  grpc_event_engine::experimental::Slice s(slice);
+  static_cast<grpc_event_engine::experimental::MockEndpoint*>(
+      grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+          ep))
+      ->TriggerReadEvent(std::move(s));
+}
+
+void grpc_mock_endpoint_finish_put_reads(grpc_endpoint* ep) {
+  static_cast<grpc_event_engine::experimental::MockEndpoint*>(
+      grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+          ep))
+      ->NoMoreReads();
 }
