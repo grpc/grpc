@@ -24,7 +24,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/log_internal.h"
 #include "src/core/lib/gprpp/env.h"
 
 namespace grpc_core {

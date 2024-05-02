@@ -14,6 +14,8 @@
 
 #include "src/core/lib/transport/call_filters.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -43,7 +45,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::Start(
   if (layout->promise_size == 0) {
     // No call state ==> instantaneously ready
     auto r = InitStep(std::move(input), call_data);
-    GPR_ASSERT(r.ready());
+    CHECK(r.ready());
     return r;
   }
   promise_data_ =
@@ -53,7 +55,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::Start(
 
 template <typename T>
 Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
-  GPR_ASSERT(input != nullptr);
+  CHECK(input != nullptr);
   while (true) {
     if (ops_ == end_ops_) {
       return ResultOr<T>{std::move(input), nullptr};
@@ -73,7 +75,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
 
 template <typename T>
 Poll<ResultOr<T>> OperationExecutor<T>::Step(void* call_data) {
-  GPR_DEBUG_ASSERT(promise_data_ != nullptr);
+  DCHECK_NE(promise_data_, nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
     gpr_free_aligned(promise_data_);
@@ -109,7 +111,7 @@ Poll<T> InfallibleOperationExecutor<T>::Start(
   if (layout->promise_size == 0) {
     // No call state ==> instantaneously ready
     auto r = InitStep(std::move(input), call_data);
-    GPR_ASSERT(r.ready());
+    CHECK(r.ready());
     return r;
   }
   promise_data_ =
@@ -137,7 +139,7 @@ Poll<T> InfallibleOperationExecutor<T>::InitStep(T input, void* call_data) {
 
 template <typename T>
 Poll<T> InfallibleOperationExecutor<T>::Step(void* call_data) {
-  GPR_DEBUG_ASSERT(promise_data_ != nullptr);
+  DCHECK_NE(promise_data_, nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
     gpr_free_aligned(promise_data_);
@@ -182,7 +184,7 @@ CallFilters::~CallFilters() {
 }
 
 void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
-  GPR_ASSERT(call_data_ == nullptr);
+  CHECK_EQ(call_data_, nullptr);
   stack_ = std::move(stack);
   call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
                                   stack_->data_.call_data_alignment);
@@ -217,13 +219,13 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
-  GPR_ASSERT(md != nullptr);
+  CHECK(md != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
     gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
             GetContext<Activity>()->DebugTag().c_str(), this,
             md->DebugString().c_str(), DebugString().c_str());
   }
-  GPR_ASSERT(md != nullptr);
+  CHECK(md != nullptr);
   if (server_trailing_metadata_ != nullptr) return;
   server_trailing_metadata_ = std::move(md);
   client_initial_metadata_state_.CloseWithError();
@@ -286,7 +288,7 @@ RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
 // CallFilters::PipeState
 
 void filters_detail::PipeState::Start() {
-  GPR_DEBUG_ASSERT(!started_);
+  DCHECK(!started_);
   started_ = true;
   wait_recv_.Wake();
 }
