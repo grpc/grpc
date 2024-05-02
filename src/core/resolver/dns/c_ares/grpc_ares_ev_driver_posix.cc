@@ -36,6 +36,7 @@
 #include <ares.h>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
@@ -116,7 +117,7 @@ class GrpcPolledFdFactoryPosix final : public GrpcPolledFdFactory {
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
     auto insert_result = owned_fds_.insert(as);
-    GPR_ASSERT(insert_result.second);
+    CHECK(insert_result.second);
     return new GrpcPolledFdPosix(as, driver_pollset_set);
   }
 

@@ -38,8 +38,8 @@
 
 #include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 struct test_state {
   int is_client;

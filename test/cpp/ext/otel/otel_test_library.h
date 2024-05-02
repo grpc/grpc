@@ -36,7 +36,7 @@
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
@@ -83,6 +83,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
             grpc_core::RefCountedStringValue>
             labels) {
       labels_to_inject = std::move(labels);
+      return *this;
+    }
+
+    Options& set_service_config(std::string svc_cfg) {
+      service_config = std::move(svc_cfg);
       return *this;
     }
 
@@ -138,6 +143,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
              grpc_core::RefCountedStringValue>
         labels_to_inject;
+    std::string service_config;
     absl::AnyInvocable<bool(
         const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter;

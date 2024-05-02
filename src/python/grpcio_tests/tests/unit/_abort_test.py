@@ -24,9 +24,10 @@ import grpc
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
-_ABORT = "/test/abort"
-_ABORT_WITH_STATUS = "/test/AbortWithStatus"
-_INVALID_CODE = "/test/InvalidCode"
+_SERVICE_NAME = "test"
+_ABORT = "abort"
+_ABORT_WITH_STATUS = "AbortWithStatus"
+_INVALID_CODE = "InvalidCode"
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
@@ -76,27 +77,24 @@ def invalid_code_unary_unary(request, servicer_context):
     )
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _ABORT:
-            return grpc.unary_unary_rpc_method_handler(abort_unary_unary)
-        elif handler_call_details.method == _ABORT_WITH_STATUS:
-            return grpc.unary_unary_rpc_method_handler(
-                abort_with_status_unary_unary
-            )
-        elif handler_call_details.method == _INVALID_CODE:
-            return grpc.stream_stream_rpc_method_handler(
-                invalid_code_unary_unary
-            )
-        else:
-            return None
+RPC_METHOD_HANDLERS = {
+    _ABORT: grpc.unary_unary_rpc_method_handler(abort_unary_unary),
+    _ABORT_WITH_STATUS: grpc.unary_unary_rpc_method_handler(
+        abort_with_status_unary_unary
+    ),
+    _INVALID_CODE: grpc.stream_stream_rpc_method_handler(
+        invalid_code_unary_unary
+    ),
+}
 
 
 class AbortTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
         port = self._server.add_insecure_port("[::]:0")
-        self._server.add_generic_rpc_handlers((_GenericHandler(),))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, RPC_METHOD_HANDLERS
+        )
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)
@@ -108,7 +106,7 @@ class AbortTest(unittest.TestCase):
     def test_abort(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
-                _ABORT,
+                grpc._common.fully_qualified_method(_SERVICE_NAME, _ABORT),
                 _registered_method=True,
             )(_REQUEST)
         rpc_error = exception_context.exception
@@ -128,7 +126,7 @@ class AbortTest(unittest.TestCase):
         # Servicer will abort() after creating a local ref to do_not_leak_me.
         with self.assertRaises(grpc.RpcError):
             self._channel.unary_unary(
-                _ABORT,
+                grpc._common.fully_qualified_method(_SERVICE_NAME, _ABORT),
                 _registered_method=True,
             )(_REQUEST)
 
@@ -141,7 +139,9 @@ class AbortTest(unittest.TestCase):
     def test_abort_with_status(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
-                _ABORT_WITH_STATUS,
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _ABORT_WITH_STATUS
+                ),
                 _registered_method=True,
             )(_REQUEST)
         rpc_error = exception_context.exception
@@ -153,7 +153,9 @@ class AbortTest(unittest.TestCase):
     def test_invalid_code(self):
         with self.assertRaises(grpc.RpcError) as exception_context:
             self._channel.unary_unary(
-                _INVALID_CODE,
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _INVALID_CODE
+                ),
                 _registered_method=True,
             )(_REQUEST)
         rpc_error = exception_context.exception

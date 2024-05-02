@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -89,7 +90,7 @@ class ServiceConfigImpl final : public ServiceConfig {
   /// ServiceConfig object.
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
       size_t index) override {
-    GPR_DEBUG_ASSERT(index < parsed_global_configs_.size());
+    DCHECK(index < parsed_global_configs_.size());
     return parsed_global_configs_[index].get();
   }
 

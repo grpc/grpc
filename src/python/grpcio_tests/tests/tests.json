@@ -80,6 +80,7 @@
   "tests.unit._server_ssl_cert_config_test.ServerSSLCertReloadTestCertConfigReuse",
   "tests.unit._server_ssl_cert_config_test.ServerSSLCertReloadTestWithClientAuth",
   "tests.unit._server_ssl_cert_config_test.ServerSSLCertReloadTestWithoutClientAuth",
+  "tests.unit._server_test.ServerHandlerTest",
   "tests.unit._server_test.ServerTest",
   "tests.unit._server_wait_for_termination_test.ServerWaitForTerminationTest",
   "tests.unit._session_cache_test.SSLSessionCacheTest",

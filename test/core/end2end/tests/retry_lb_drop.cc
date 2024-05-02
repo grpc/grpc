@@ -39,7 +39,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/test_lb_policies.h"
+#include "test/core/test_util/test_lb_policies.h"
 
 namespace grpc_core {
 namespace {

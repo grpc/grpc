@@ -22,6 +22,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -38,8 +40,8 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "test/core/iomgr/endpoint_tests.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 using namespace std::chrono_literals;
 
@@ -58,7 +60,7 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;
@@ -80,13 +82,13 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
 
-  GPR_ASSERT(listener->Bind(*resolved_addr).ok());
-  GPR_ASSERT(listener->Start().ok());
+  CHECK_OK(listener->Bind(*resolved_addr));
+  CHECK_OK(listener->Start());
 
   ee->Connect(
       [&client_endpoint, &client_signal](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        GPR_ASSERT(endpoint.ok());
+        CHECK_OK(endpoint);
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },

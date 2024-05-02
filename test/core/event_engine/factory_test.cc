@@ -22,7 +22,7 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 using ::grpc_event_engine::experimental::AbortingEventEngine;
