@@ -94,6 +94,7 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
+  EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
       CoreConfiguration::Get()
           .channel_args_preconditioning()
@@ -112,6 +113,11 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
       {EventEngineSlice::FromCopiedString("12345678"), Zeros(56)}, nullptr);
   // Once that's read we'll create a new call
   StrictMock<MockFunction<void()>> on_done;
+  auto control_address =
+      grpc_event_engine::experimental::URIToResolvedAddress("ipv4:1.2.3.4:5678")
+          .value();
+  EXPECT_CALL(*control_endpoint.endpoint, GetPeerAddress)
+      .WillRepeatedly([&control_address]() { return control_address; });
   EXPECT_CALL(*call_destination, StartCall(_))
       .WillOnce(WithArgs<0>([&on_done](
                                 UnstartedCallHandler unstarted_call_handler) {
