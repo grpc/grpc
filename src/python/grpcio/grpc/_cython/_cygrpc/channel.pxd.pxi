@@ -28,6 +28,7 @@ cdef class _CallState:
   cdef set due
   # call_tracer_capsule should have type of grpc._observability.ClientCallTracerCapsule
   cdef object call_tracer_capsule
+  cdef void maybe_save_registered_method(self, bytes method_name) except *
   cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name, bytes target) except *
   cdef void maybe_delete_call_tracer(self) except *
 

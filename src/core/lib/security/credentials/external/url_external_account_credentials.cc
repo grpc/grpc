@@ -20,6 +20,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -167,7 +168,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
-  GPR_ASSERT(http_request_ == nullptr);
+  CHECK(http_request_ == nullptr);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (url_.scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(

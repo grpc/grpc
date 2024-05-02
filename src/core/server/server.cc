@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
