@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -28,7 +29,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

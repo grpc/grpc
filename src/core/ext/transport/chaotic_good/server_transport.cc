@@ -18,6 +18,7 @@
 #include <string>
 #include <tuple>
 
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -26,7 +27,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

@@ -22,6 +22,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -31,7 +32,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"

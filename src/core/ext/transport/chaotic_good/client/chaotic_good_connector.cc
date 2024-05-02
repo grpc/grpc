@@ -18,6 +18,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"

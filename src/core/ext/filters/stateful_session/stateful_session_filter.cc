@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -36,7 +37,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"

@@ -16,8 +16,9 @@
 
 #include <atomic>
 
-#include <grpc/grpc.h>
 #include "absl/log/check.h"
+
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

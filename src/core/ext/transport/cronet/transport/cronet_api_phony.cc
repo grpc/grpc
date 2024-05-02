@@ -19,9 +19,9 @@
 // This file has empty implementation of all the functions exposed by the cronet
 // library, so we can build it in all environments
 
+#include "absl/log/check.h"
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -63,9 +63,7 @@ int bidirectional_stream_write(bidirectional_stream* /*stream*/,
   return 0;
 }
 
-void bidirectional_stream_cancel(bidirectional_stream* /*stream*/) {
-  CHECK(0);
-}
+void bidirectional_stream_cancel(bidirectional_stream* /*stream*/) { CHECK(0); }
 
 void bidirectional_stream_disable_auto_flush(bidirectional_stream* /*stream*/,
                                              bool /*disable_auto_flush*/) {
@@ -77,8 +75,6 @@ void bidirectional_stream_delay_request_headers_until_flush(
   CHECK(0);
 }
 
-void bidirectional_stream_flush(bidirectional_stream* /*stream*/) {
-  CHECK(0);
-}
+void bidirectional_stream_flush(bidirectional_stream* /*stream*/) { CHECK(0); }
 
 #endif  // GRPC_COMPILE_WITH_CRONET
