@@ -60,7 +60,7 @@
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "test/core/test_util/test_config.h"
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }

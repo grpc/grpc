@@ -27,10 +27,11 @@ from grpc import _grpcio_metadata
 from tests.unit import _tcp_proxy
 from tests.unit.framework.common import test_constants
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 # Cut down on test time.
 _STREAM_LENGTH = test_constants.STREAM_LENGTH // 16
@@ -149,21 +150,13 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.stream_unary = _make_handle_stream_unary(pre_response_callback)
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def __init__(self, pre_response_callback):
-        self._pre_response_callback = pre_response_callback
-
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(False, False, self._pre_response_callback)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(False, True, self._pre_response_callback)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(True, False, self._pre_response_callback)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(True, True, self._pre_response_callback)
-        else:
-            return None
+def get_method_handlers(pre_response_callback):
+    return {
+        _UNARY_UNARY: _MethodHandler(False, False, pre_response_callback),
+        _UNARY_STREAM: _MethodHandler(False, True, pre_response_callback),
+        _STREAM_UNARY: _MethodHandler(True, False, pre_response_callback),
+        _STREAM_STREAM: _MethodHandler(True, True, pre_response_callback),
+    }
 
 
 @contextlib.contextmanager
@@ -171,7 +164,7 @@ def _instrumented_client_server_pair(
     channel_kwargs, server_kwargs, server_handler
 ):
     server = grpc.server(futures.ThreadPoolExecutor(), **server_kwargs)
-    server.add_generic_rpc_handlers((server_handler,))
+    server.add_registered_method_handlers(_SERVICE_NAME, server_handler)
     server_port = server.add_insecure_port("{}:0".format(_HOST))
     server.start()
     with _tcp_proxy.TcpProxy(_HOST, _HOST, server_port) as proxy:
@@ -238,7 +231,7 @@ def _get_compression_ratios(
 
 def _unary_unary_client(channel, multicallable_kwargs, message):
     multi_callable = channel.unary_unary(
-        _UNARY_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
         _registered_method=True,
     )
     response = multi_callable(message, **multicallable_kwargs)
@@ -250,7 +243,7 @@ def _unary_unary_client(channel, multicallable_kwargs, message):
 
 def _unary_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.unary_stream(
-        _UNARY_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
         _registered_method=True,
     )
     response_iterator = multi_callable(message, **multicallable_kwargs)
@@ -263,7 +256,7 @@ def _unary_stream_client(channel, multicallable_kwargs, message):
 
 def _stream_unary_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         _registered_method=True,
     )
     requests = (_REQUEST for _ in range(_STREAM_LENGTH))
@@ -276,7 +269,7 @@ def _stream_unary_client(channel, multicallable_kwargs, message):
 
 def _stream_stream_client(channel, multicallable_kwargs, message):
     multi_callable = channel.stream_stream(
-        _STREAM_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
         _registered_method=True,
     )
     request_prefix = str(0).encode("ascii") * 100
@@ -351,19 +344,19 @@ class CompressionTest(unittest.TestCase):
             if server_compression
             else {}
         )
-        server_handler = (
-            _GenericHandler(
+        if server_call_compression:
+            server_handler = get_method_handlers(
                 functools.partial(set_call_compression, grpc.Compression.Gzip)
             )
-            if server_call_compression
-            else _GenericHandler(None)
-        )
+        else:
+            server_handler = get_method_handlers(None)
+
         _get_compression_ratios(
             client_function,
             {},
             {},
             {},
-            _GenericHandler(None),
+            get_method_handlers(None),
             channel_kwargs,
             multicallable_kwargs,
             server_kwargs,
@@ -380,11 +373,11 @@ class CompressionTest(unittest.TestCase):
             {},
             {},
             {},
-            _GenericHandler(None),
+            get_method_handlers(None),
             {},
             {},
             server_kwargs,
-            _GenericHandler(disable_next_compression),
+            get_method_handlers(disable_next_compression),
             _REQUEST,
         )
 
@@ -397,11 +390,11 @@ class CompressionTest(unittest.TestCase):
             {},
             {},
             {},
-            _GenericHandler(None),
+            get_method_handlers(None),
             {},
             {},
             server_kwargs,
-            _GenericHandler(disable_first_compression),
+            get_method_handlers(disable_first_compression),
             _REQUEST,
         )
 

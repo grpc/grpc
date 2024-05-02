@@ -170,7 +170,7 @@ class RingHash final : public LoadBalancingPolicy {
 
     size_t index() const { return index_; }
 
-    void UpdateLocked(size_t index);
+    absl::Status UpdateLocked(size_t index);
 
     grpc_connectivity_state connectivity_state() const {
       return connectivity_state_;
@@ -197,7 +197,7 @@ class RingHash final : public LoadBalancingPolicy {
     class Helper;
 
     void CreateChildPolicy();
-    void UpdateChildPolicyLocked();
+    absl::Status UpdateChildPolicyLocked();
 
     // Called when the child policy reports a connectivity state update.
     void OnStateUpdate(grpc_connectivity_state new_state,
@@ -499,9 +499,10 @@ void RingHash::RingHashEndpoint::Orphan() {
   Unref();
 }
 
-void RingHash::RingHashEndpoint::UpdateLocked(size_t index) {
+absl::Status RingHash::RingHashEndpoint::UpdateLocked(size_t index) {
   index_ = index;
-  if (child_policy_ != nullptr) UpdateChildPolicyLocked();
+  if (child_policy_ == nullptr) return absl::OkStatus();
+  return UpdateChildPolicyLocked();
 }
 
 void RingHash::RingHashEndpoint::ResetBackoffLocked() {
@@ -542,10 +543,19 @@ void RingHash::RingHashEndpoint::CreateChildPolicy() {
   // this policy, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                    ring_hash_->interested_parties());
-  UpdateChildPolicyLocked();
+  // If the child policy returns a non-OK status, request re-resolution.
+  // Note that this will initially cause fixed backoff delay in the
+  // resolver instead of exponential delay.  However, once the
+  // resolver returns the initial re-resolution, we will be able to
+  // return non-OK from UpdateLocked(), which will trigger
+  // exponential backoff instead.
+  absl::Status status = UpdateChildPolicyLocked();
+  if (!status.ok()) {
+    ring_hash_->channel_control_helper()->RequestReresolution();
+  }
 }
 
-void RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
+absl::Status RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
   // Construct pick_first config.
   auto config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
@@ -558,9 +568,7 @@ void RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
       std::make_shared<SingleEndpointIterator>(ring_hash_->endpoints_[index_]);
   update_args.args = ring_hash_->args_;
   update_args.config = std::move(*config);
-  // TODO(roth): If the child reports a non-OK status with the update,
-  // we need to propagate that back to the resolver somehow.
-  (void)child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void RingHash::RingHashEndpoint::OnStateUpdate(
@@ -668,13 +676,18 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       this, static_cast<RingHashLbConfig*>(args.config.get()));
   // Update endpoint map.
   std::map<EndpointAddressSet, OrphanablePtr<RingHashEndpoint>> endpoint_map;
+  std::vector<std::string> errors;
   for (size_t i = 0; i < endpoints_.size(); ++i) {
     const EndpointAddresses& addresses = endpoints_[i];
     const EndpointAddressSet address_set(addresses.addresses());
     // If present in old map, retain it; otherwise, create a new one.
     auto it = endpoint_map_.find(address_set);
     if (it != endpoint_map_.end()) {
-      it->second->UpdateLocked(i);
+      absl::Status status = it->second->UpdateLocked(i);
+      if (!status.ok()) {
+        errors.emplace_back(absl::StrCat("endpoint ", address_set.ToString(),
+                                         ": ", status.ToString()));
+      }
       endpoint_map.emplace(address_set, std::move(it->second));
     } else {
       endpoint_map.emplace(address_set, MakeOrphanable<RingHashEndpoint>(
@@ -696,6 +709,10 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   // Return a new picker.
   UpdateAggregatedConnectivityStateLocked(/*entered_transient_failure=*/false,
                                           absl::OkStatus());
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
+  }
   return absl::OkStatus();
 }
 

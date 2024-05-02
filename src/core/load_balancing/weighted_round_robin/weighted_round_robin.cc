@@ -222,11 +222,16 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
      public:
       WrrEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                   const EndpointAddresses& addresses, const ChannelArgs& args,
-                  std::shared_ptr<WorkSerializer> work_serializer)
+                  std::shared_ptr<WorkSerializer> work_serializer,
+                  std::vector<std::string>* errors)
           : Endpoint(std::move(endpoint_list)),
             weight_(policy<WeightedRoundRobin>()->GetOrCreateWeight(
                 addresses.addresses())) {
-        Init(addresses, args, std::move(work_serializer));
+        absl::Status status = Init(addresses, args, std::move(work_serializer));
+        if (!status.ok()) {
+          errors->emplace_back(absl::StrCat("endpoint ", addresses.ToString(),
+                                            ": ", status.ToString()));
+        }
       }
 
       RefCountedPtr<EndpointWeight> weight() const { return weight_; }
@@ -262,7 +267,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
 
     WrrEndpointList(RefCountedPtr<WeightedRoundRobin> wrr,
                     EndpointAddressesIterator* endpoints,
-                    const ChannelArgs& args)
+                    const ChannelArgs& args, std::vector<std::string>* errors)
         : EndpointList(std::move(wrr),
                        GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)
                            ? "WrrEndpointList"
@@ -272,7 +277,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
                const EndpointAddresses& addresses, const ChannelArgs& args) {
              return MakeOrphanable<WrrEndpoint>(
                  std::move(endpoint_list), addresses, args,
-                 policy<WeightedRoundRobin>()->work_serializer());
+                 policy<WeightedRoundRobin>()->work_serializer(), errors);
            });
     }
 
@@ -768,8 +773,9 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[WRR %p] replacing previous pending endpoint list %p",
             this, latest_pending_endpoint_list_.get());
   }
+  std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<WrrEndpointList>(
-      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args);
+      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args, &errors);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -792,6 +798,10 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   // endpoint_list_.
   if (endpoint_list_.get() == nullptr) {
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
+  }
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
   }
   return absl::OkStatus();
 }

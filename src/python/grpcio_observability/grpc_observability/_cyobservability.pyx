@@ -115,7 +115,8 @@ def activate_stats() -> None:
   EnablePythonCensusStats(True);
 
 
-def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id,
+def create_client_call_tracer(bytes method_name, bytes target,
+                              bytes trace_id, bint registered_method,
                               bytes parent_span_id=b'') -> cpython.PyObject:
   """Create a ClientCallTracer and save to PyCapsule.
 
@@ -126,7 +127,7 @@ def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id,
   cdef char* c_trace_id = cpython.PyBytes_AsString(trace_id)
   cdef char* c_parent_span_id = cpython.PyBytes_AsString(parent_span_id)
 
-  cdef void* call_tracer = CreateClientCallTracer(c_method, c_target, c_trace_id, c_parent_span_id)
+  cdef void* call_tracer = CreateClientCallTracer(c_method, c_target, c_trace_id, c_parent_span_id, registered_method)
   capsule = cpython.PyCapsule_New(call_tracer, CLIENT_CALL_TRACER, NULL)
   return capsule
 
@@ -158,7 +159,7 @@ def _c_label_to_labels(vector[Label] c_labels) -> Mapping[str, str]:
 
 
 def _c_measurement_to_measurement(object measurement
-  ) -> Mapping[str, Union[enum, Mapping[str, Union[float, int]]]]:
+  ) -> Mapping[str, Union[enum, Mapping[str, Union[float, int], bool]]]:
   """Convert Cython Measurement to Python measurement.
 
   Args:
@@ -169,6 +170,7 @@ def _c_measurement_to_measurement(object measurement
    A mapping object with keys and values as following:
     name -> cMetricsName
     type -> MeasurementType
+    registered_method -> bool
     value -> {value_double: float | value_int: int}
   """
   measurement: Measurement
@@ -176,6 +178,7 @@ def _c_measurement_to_measurement(object measurement
   py_measurement = {}
   py_measurement['name'] = measurement['name']
   py_measurement['type'] = measurement['type']
+  py_measurement['registered_method'] = measurement['registered_method']
   if measurement['type'] == kMeasurementDouble:
     py_measurement['value'] = {'value_double': measurement['value']['value_double']}
   else:
@@ -223,10 +226,12 @@ def _get_stats_data(object measurement, object labels) -> _observability.StatsDa
   if measurement['type'] == kMeasurementDouble:
     py_stat = _observability.StatsData(name=metric_name, measure_double=True,
                                        value_float=measurement['value']['value_double'],
+                                       registered_method=measurement['registered_method'],
                                        labels=labels)
   else:
     py_stat = _observability.StatsData(name=metric_name, measure_double=False,
                                        value_int=measurement['value']['value_int'],
+                                       registered_method=measurement['registered_method'],
                                        labels=labels)
   return py_stat
 
@@ -248,13 +253,15 @@ def _get_tracing_data(SpanCensusData span_data, vector[Label] span_labels,
                                     span_annotations = py_span_annotations)
 
 
-def _record_rpc_latency(object exporter, str method, str target, float rpc_latency, str status_code) -> None:
+def _record_rpc_latency(object exporter, str method, str target,
+                        float rpc_latency, str status_code, bint registered_method) -> None:
   exporter: _observability.Exporter
 
   measurement = {}
   measurement['name'] = kRpcClientApiLatencyMeasureName
   measurement['type'] = kMeasurementDouble
   measurement['value'] = {'value_double': rpc_latency}
+  measurement['registered_method'] = registered_method
 
   labels = {}
   labels[_decode(kClientMethod)] = method.strip("/")
