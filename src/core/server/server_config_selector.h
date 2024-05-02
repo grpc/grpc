@@ -14,15 +14,15 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_H
-#define GRPC_SRC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_H
-
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_SRC_CORE_SERVER_SERVER_CONFIG_SELECTOR_H
+#define GRPC_SRC_CORE_SERVER_SERVER_CONFIG_SELECTOR_H
 
 #include <memory>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
@@ -80,4 +80,4 @@ class ServerConfigSelectorProvider
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_FILTERS_SERVER_CONFIG_SELECTOR_SERVER_CONFIG_SELECTOR_H
+#endif  // GRPC_SRC_CORE_SERVER_SERVER_CONFIG_SELECTOR_H

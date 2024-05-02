@@ -256,8 +256,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/rbac/rbac_filter.h
   - src/core/ext/filters/rbac/rbac_service_config_parser.h
-  - src/core/ext/filters/server_config_selector/server_config_selector.h
-  - src/core/ext/filters/server_config_selector/server_config_selector_filter.h
   - src/core/ext/filters/stateful_session/stateful_session_filter.h
   - src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h
   - src/core/ext/gcp/metadata_query.h
@@ -787,7 +785,6 @@ libs:
   - src/core/ext/xds/xds_bootstrap_grpc.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
-  - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_grpc.h
   - src/core/ext/xds/xds_client_stats.h
@@ -839,7 +836,6 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/server_call_tracer_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
@@ -1138,8 +1134,6 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -1208,6 +1202,12 @@ libs:
   - src/core/resolver/xds/xds_dependency_manager.h
   - src/core/resolver/xds/xds_resolver_attributes.h
   - src/core/resolver/xds/xds_resolver_trace.h
+  - src/core/server/server.h
+  - src/core/server/server_call_tracer_filter.h
+  - src/core/server/server_config_selector.h
+  - src/core/server/server_config_selector_filter.h
+  - src/core/server/server_interface.h
+  - src/core/server/xds_channel_stack_modifier.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_impl.h
@@ -1277,7 +1277,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
   - src/core/ext/filters/rbac/rbac_service_config_parser.cc
-  - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   - src/core/ext/filters/stateful_session/stateful_session_filter.cc
   - src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
   - src/core/ext/gcp/metadata_query.cc
@@ -1640,7 +1639,6 @@ libs:
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_bootstrap_grpc.cc
   - src/core/ext/xds/xds_certificate_provider.cc
-  - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_grpc.cc
   - src/core/ext/xds/xds_client_stats.cc
@@ -1657,7 +1655,6 @@ libs:
   - src/core/ext/xds/xds_listener.cc
   - src/core/ext/xds/xds_route_config.cc
   - src/core/ext/xds/xds_routing.cc
-  - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/ext/xds/xds_transport_grpc.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
@@ -1683,7 +1680,6 @@ libs:
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -1937,7 +1933,6 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
@@ -2009,6 +2004,11 @@ libs:
   - src/core/resolver/xds/xds_dependency_manager.cc
   - src/core/resolver/xds/xds_resolver.cc
   - src/core/resolver/xds/xds_resolver_trace.cc
+  - src/core/server/server.cc
+  - src/core/server/server_call_tracer_filter.cc
+  - src/core/server/server_config_selector_filter.cc
+  - src/core/server/xds_channel_stack_modifier.cc
+  - src/core/server/xds_server_config_fetcher.cc
   - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
@@ -2340,7 +2340,6 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/server_call_tracer_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
@@ -2603,8 +2602,6 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -2667,6 +2664,9 @@ libs:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/server/server.h
+  - src/core/server/server_call_tracer_filter.h
+  - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_impl.h
@@ -2805,7 +2805,6 @@ libs:
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -3020,7 +3019,6 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
@@ -3082,6 +3080,8 @@ libs:
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
   - src/core/resolver/sockaddr/sockaddr_resolver.cc
+  - src/core/server/server.cc
+  - src/core/server/server_call_tracer_filter.cc
   - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
@@ -4679,7 +4679,6 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -4712,6 +4711,7 @@ libs:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
@@ -11834,7 +11834,6 @@ targets:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -11869,6 +11868,7 @@ targets:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
@@ -17938,7 +17938,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/server_config_selector/server_config_selector_test.cc
+  - test/core/server/server_config_selector_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -20948,6 +20948,94 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - gtest
+  - grpc_test_util
+  uses_polling: false
+- name: xds_channel_stack_modifier_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/filters/logging/logging_filter.h
+  - src/core/ext/filters/logging/logging_sink.h
+  - src/cpp/client/client_stats_interceptor.h
+  - src/cpp/client/create_channel_internal.h
+  - src/cpp/client/secure_credentials.h
+  - src/cpp/common/secure_auth_context.h
+  - src/cpp/ext/filters/census/client_filter.h
+  - src/cpp/ext/filters/census/context.h
+  - src/cpp/ext/filters/census/grpc_plugin.h
+  - src/cpp/ext/filters/census/measures.h
+  - src/cpp/ext/filters/census/open_census_call_tracer.h
+  - src/cpp/ext/filters/census/rpc_encoding.h
+  - src/cpp/ext/filters/census/server_call_tracer.h
+  - src/cpp/server/backend_metric_recorder.h
+  - src/cpp/server/dynamic_thread_pool.h
+  - src/cpp/server/external_connection_acceptor_impl.h
+  - src/cpp/server/health/default_health_check_service.h
+  - src/cpp/server/secure_server_credentials.h
+  - src/cpp/server/thread_pool_interface.h
+  - src/cpp/thread_manager/thread_manager.h
+  src:
+  - src/core/ext/filters/logging/logging_filter.cc
+  - src/cpp/client/call_credentials.cc
+  - src/cpp/client/channel_cc.cc
+  - src/cpp/client/channel_credentials.cc
+  - src/cpp/client/client_callback.cc
+  - src/cpp/client/client_context.cc
+  - src/cpp/client/client_interceptor.cc
+  - src/cpp/client/client_stats_interceptor.cc
+  - src/cpp/client/create_channel.cc
+  - src/cpp/client/create_channel_internal.cc
+  - src/cpp/client/create_channel_posix.cc
+  - src/cpp/client/insecure_credentials.cc
+  - src/cpp/client/secure_credentials.cc
+  - src/cpp/common/alarm.cc
+  - src/cpp/common/auth_property_iterator.cc
+  - src/cpp/common/channel_arguments.cc
+  - src/cpp/common/completion_queue_cc.cc
+  - src/cpp/common/resource_quota_cc.cc
+  - src/cpp/common/rpc_method.cc
+  - src/cpp/common/secure_auth_context.cc
+  - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_certificate_provider.cc
+  - src/cpp/common/tls_certificate_verifier.cc
+  - src/cpp/common/tls_credentials_options.cc
+  - src/cpp/common/validate_service_config.cc
+  - src/cpp/common/version_cc.cc
+  - src/cpp/ext/filters/census/client_filter.cc
+  - src/cpp/ext/filters/census/context.cc
+  - src/cpp/ext/filters/census/grpc_plugin.cc
+  - src/cpp/ext/filters/census/measures.cc
+  - src/cpp/ext/filters/census/rpc_encoding.cc
+  - src/cpp/ext/filters/census/server_call_tracer.cc
+  - src/cpp/ext/filters/census/views.cc
+  - src/cpp/server/async_generic_service.cc
+  - src/cpp/server/backend_metric_recorder.cc
+  - src/cpp/server/channel_argument_option.cc
+  - src/cpp/server/create_default_thread_pool.cc
+  - src/cpp/server/external_connection_acceptor_impl.cc
+  - src/cpp/server/health/default_health_check_service.cc
+  - src/cpp/server/health/health_check_service.cc
+  - src/cpp/server/health/health_check_service_server_builder_option.cc
+  - src/cpp/server/insecure_server_credentials.cc
+  - src/cpp/server/secure_server_credentials.cc
+  - src/cpp/server/server_builder.cc
+  - src/cpp/server/server_callback.cc
+  - src/cpp/server/server_cc.cc
+  - src/cpp/server/server_context.cc
+  - src/cpp/server/server_credentials.cc
+  - src/cpp/server/server_posix.cc
+  - src/cpp/thread_manager/thread_manager.cc
+  - src/cpp/util/byte_buffer_cc.cc
+  - src/cpp/util/status.cc
+  - src/cpp/util/string_ref.cc
+  - src/cpp/util/time_cc.cc
+  - test/core/server/xds_channel_stack_modifier_test.cc
+  deps:
+  - gtest
+  - absl/base:endian
+  - absl/numeric:int128
+  - protobuf
   - grpc_test_util
   uses_polling: false
 - name: xds_client_test

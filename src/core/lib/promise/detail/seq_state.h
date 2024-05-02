@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
@@ -119,7 +120,7 @@ struct SeqState<Traits, P, F0> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.next_factory, other.prior.next_factory);
   }
@@ -254,7 +255,7 @@ struct SeqState<Traits, P, F0, F1> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.next_factory, other.prior.prior.next_factory);
     Construct(&prior.next_factory, other.prior.next_factory);
@@ -447,7 +448,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.next_factory,
               other.prior.prior.prior.next_factory);
@@ -700,7 +701,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.next_factory);
@@ -1021,7 +1022,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.prior.next_factory);
@@ -1405,7 +1406,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.prior.prior.next_factory);
@@ -1855,7 +1856,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.next_factory,
               other.prior.prior.prior.prior.prior.prior.prior.next_factory);
@@ -2373,7 +2374,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
@@ -2964,7 +2965,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.next_factory,
@@ -3631,7 +3632,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
@@ -4375,7 +4376,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .next_factory,
@@ -5198,7 +5199,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   }
   SeqState(const SeqState& other) noexcept
       : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&prior.current_promise, other.prior.current_promise);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .prior.next_factory,

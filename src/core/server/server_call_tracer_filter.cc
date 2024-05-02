@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/channel/server_call_tracer_filter.h"
+#include "src/core/server/server_call_tracer_filter.h"
 
 #include <functional>
 #include <memory>

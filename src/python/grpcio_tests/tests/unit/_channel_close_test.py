@@ -28,6 +28,7 @@ _BEAT = 0.5
 _SOME_TIME = 5
 _MORE_TIME = 10
 
+_SERVICE_NAME = ""
 _STREAM_URI = "Meffod"
 _UNARY_URI = "MeffodMan"
 
@@ -57,15 +58,10 @@ _STREAMING_METHOD_HANDLER = _StreamingMethodHandler()
 _UNARY_METHOD_HANDLER = _UnaryMethodHandler()
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _STREAM_URI:
-            return _STREAMING_METHOD_HANDLER
-        else:
-            return _UNARY_METHOD_HANDLER
-
-
-_GENERIC_HANDLER = _GenericHandler()
+_METHOD_HANDLERS = {
+    _STREAM_URI: _STREAMING_METHOD_HANDLER,
+    _UNARY_URI: _UNARY_METHOD_HANDLER,
+}
 
 
 class _Pipe(object):
@@ -114,7 +110,7 @@ class ChannelCloseTest(unittest.TestCase):
         self._server = test_common.test_server(
             max_workers=test_constants.THREAD_CONCURRENCY
         )
-        self._server.add_generic_rpc_handlers((_GENERIC_HANDLER,))
+        self._server.add_registered_method_handlers("", _METHOD_HANDLERS)
         self._port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
@@ -124,7 +120,7 @@ class ChannelCloseTest(unittest.TestCase):
     def test_close_immediately_after_call_invocation(self):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
-            _STREAM_URI,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
             _registered_method=True,
         )
         request_iterator = _Pipe(())
@@ -137,7 +133,7 @@ class ChannelCloseTest(unittest.TestCase):
     def test_close_while_call_active(self):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
-            _STREAM_URI,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
             _registered_method=True,
         )
         request_iterator = _Pipe((b"abc",))
@@ -153,7 +149,7 @@ class ChannelCloseTest(unittest.TestCase):
             "localhost:{}".format(self._port)
         ) as channel:  # pylint: disable=bad-continuation
             multi_callable = channel.stream_stream(
-                _STREAM_URI,
+                grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
                 _registered_method=True,
             )
             request_iterator = _Pipe((b"abc",))
@@ -168,7 +164,7 @@ class ChannelCloseTest(unittest.TestCase):
             "localhost:{}".format(self._port)
         ) as channel:  # pylint: disable=bad-continuation
             multi_callable = channel.stream_stream(
-                _STREAM_URI,
+                grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
                 _registered_method=True,
             )
             request_iterators = tuple(
@@ -189,7 +185,7 @@ class ChannelCloseTest(unittest.TestCase):
     def test_many_concurrent_closes(self):
         channel = grpc.insecure_channel("localhost:{}".format(self._port))
         multi_callable = channel.stream_stream(
-            _STREAM_URI,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
             _registered_method=True,
         )
         request_iterator = _Pipe((b"abc",))
@@ -219,13 +215,13 @@ class ChannelCloseTest(unittest.TestCase):
             "localhost:{}".format(self._port)
         ) as channel:
             stream_multi_callable = channel.stream_stream(
-                _STREAM_URI,
+                grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
                 _registered_method=True,
             )
             endless_iterator = itertools.repeat(b"abc")
             stream_response_iterator = stream_multi_callable(endless_iterator)
             future = channel.unary_unary(
-                _UNARY_URI,
+                grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_URI),
                 _registered_method=True,
             ).future(b"abc")
 
