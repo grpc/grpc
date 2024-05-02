@@ -18,8 +18,6 @@
 
 #ifndef GRPC_NO_BINDER
 
-#include "absl/log/check.h"
-
 #include <grpcpp/security/binder_security_policy.h>
 #include <grpcpp/security/server_credentials.h>
 

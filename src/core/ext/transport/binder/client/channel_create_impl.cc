@@ -14,8 +14,6 @@
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER

@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
-
-#include "absl/log/check.h"
 
 #include <grpcpp/create_channel_binder.h>
 
@@ -29,8 +25,6 @@
 // transport requires newer version of NDK API
 
 #ifdef GPR_ANDROID
-
-#include "absl/log/check.h"
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>

@@ -18,8 +18,6 @@
 
 #ifndef GRPC_NO_BINDER
 
-#include "absl/log/check.h"
-
 #include "src/core/ext/transport/binder/client/security_policy_setting.h"
 
 namespace grpc_binder {

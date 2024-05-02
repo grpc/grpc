@@ -14,8 +14,6 @@
 
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER

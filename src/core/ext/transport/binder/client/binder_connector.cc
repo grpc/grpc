@@ -12,13 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
-
-#include "absl/log/check.h"
 
 #include "src/core/ext/transport/binder/client/binder_connector.h"
 #include "src/core/lib/iomgr/port.h"
@@ -26,15 +22,11 @@
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
 // clang-format off
-#include "absl/log/check.h"
 #include <ws2def.h>
-#include "absl/log/check.h"
 #include <afunix.h>
 // clang-format on
 #else
 #include <sys/un.h>
-
-#include "absl/log/check.h"
 #endif  // GPR_WINDOWS
 #endif
 

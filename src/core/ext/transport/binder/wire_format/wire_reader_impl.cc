@@ -14,8 +14,6 @@
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
