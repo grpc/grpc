@@ -136,7 +136,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
 }
 
 absl::Status ChaoticGoodServerListener::StartListening() {
-  CHECK_NE(ee_listener_, nullptr);
+  CHECK(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
   if (!status.ok()) {
     gpr_log(GPR_ERROR, "Start listening failed: %s", status.ToString().c_str());
