@@ -3149,11 +3149,11 @@ grpc_call_error ValidateServerBatch(const grpc_op* ops, size_t nops) {
   return GRPC_CALL_OK;
 }
 
-class ServerCall final : public Call {
+class ServerCall final : public Call, public DualRefCounted<ServerCall> {
  public:
   ServerCall(ClientMetadataHandle client_initial_metadata,
              CallHandler call_handler, ServerInterface* server,
-             grpc_completion_queue* cq, ServerTransport* transport)
+             grpc_completion_queue* cq)
       : Call(false,
              client_initial_metadata->get(GrpcTimeoutMetadata())
                  .value_or(Timestamp::InfFuture()),
@@ -3161,8 +3161,7 @@ class ServerCall final : public Call {
         call_handler_(std::move(call_handler)),
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
-        server_(server),
-        transport_(transport) {
+        server_(server) {
     global_stats().IncrementServerCallsCreated();
   }
 
@@ -3188,6 +3187,16 @@ class ServerCall final : public Call {
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return call_handler_.event_engine();
+  }
+
+  void ExternalRef() override { Ref().release(); }
+  void ExternalUnref() override { Unref(); }
+  void InternalRef(const char*) override { WeakRef().release(); }
+  void InternalUnref(const char*) override { WeakUnref(); }
+
+  void Orphaned() override {
+    // TODO(ctiller): only when we're not already finished
+    CancelWithError(absl::CancelledError());
   }
 
   void ContextSet(grpc_context_index elem, void* value,
@@ -3239,7 +3248,6 @@ class ServerCall final : public Call {
   ClientMetadataHandle client_initial_metadata_stored_;
   grpc_completion_queue* const cq_;
   ServerInterface* const server_;
-  ServerTransport* const transport_;
 };
 
 grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
@@ -3556,12 +3564,13 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
 
 grpc_call* MakeServerCall(CallHandler call_handler,
                           ClientMetadataHandle client_initial_metadata,
+                          ServerInterface* server, grpc_completion_queue* cq,
                           grpc_metadata_array* publish_initial_metadata) {
   PublishMetadataArray(client_initial_metadata.get(), publish_initial_metadata,
                        false);
   return call_handler.arena()
       ->New<ServerCall>(std::move(client_initial_metadata),
-                        std::move(call_handler))
+                        std::move(call_handler), server, cq)
       ->c_ptr();
 }
 
