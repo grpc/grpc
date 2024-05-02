@@ -380,10 +380,11 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
                          OnTransportActivityDone("reader"));
 }
 
-void ChaoticGoodServerTransport::SetAcceptor(Acceptor* acceptor) {
-  GPR_ASSERT(acceptor_ == nullptr);
-  GPR_ASSERT(acceptor != nullptr);
-  acceptor_ = acceptor;
+void ChaoticGoodServerTransport::SetCallDestination(
+    RefCountedPtr<UnstartedCallDestination> call_destination) {
+  GPR_ASSERT(call_destination_ == nullptr);
+  GPR_ASSERT(call_destination != nullptr);
+  call_destination_ = call_destination;
   got_acceptor_.Set();
 }
 

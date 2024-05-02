@@ -3152,7 +3152,19 @@ grpc_call_error ValidateServerBatch(const grpc_op* ops, size_t nops) {
 class ServerCall final : public Call {
  public:
   ServerCall(ClientMetadataHandle client_initial_metadata,
-             CallHandler call_handler);
+             CallHandler call_handler, ServerInterface* server,
+             grpc_completion_queue* cq, ServerTransport* transport)
+      : Call(false,
+             client_initial_metadata->get(GrpcTimeoutMetadata())
+                 .value_or(Timestamp::InfFuture()),
+             call_handler.event_engine()),
+        call_handler_(std::move(call_handler)),
+        client_initial_metadata_stored_(std::move(client_initial_metadata)),
+        cq_(cq),
+        server_(server),
+        transport_(transport) {
+    global_stats().IncrementServerCallsCreated();
+  }
 
   void CancelWithError(grpc_error_handle error) override {
     call_handler_.SpawnInfallible(
@@ -3172,13 +3184,53 @@ class ServerCall final : public Call {
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
 
+  Arena* arena() override { return call_handler_.arena(); }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
+    return call_handler_.event_engine();
+  }
+
+  void ContextSet(grpc_context_index elem, void* value,
+                  void (*destroy)(void*)) override {
+    call_handler_.legacy_context()[elem] =
+        grpc_call_context_element{value, destroy};
+  }
+
+  void* ContextGet(grpc_context_index elem) const override {
+    return call_handler_.legacy_context()[elem].value;
+  }
+
+  void SetCompletionQueue(grpc_completion_queue* cq) override {
+    Crash("unimplemented");
+  }
+
+  grpc_compression_options compression_options() override {
+    return server_->compression_options();
+  }
+
+  grpc_call_stack* call_stack() override { return nullptr; }
+
+  char* GetPeer() override {
+    Slice peer_slice = GetPeerString();
+    if (!peer_slice.empty()) {
+      absl::string_view peer_string_view = peer_slice.as_string_view();
+      char* peer_string =
+          static_cast<char*>(gpr_malloc(peer_string_view.size() + 1));
+      memcpy(peer_string, peer_string_view.data(), peer_string_view.size());
+      peer_string[peer_string_view.size()] = '\0';
+      return peer_string;
+    }
+    return gpr_strdup("unknown");
+  }
+
   bool Completed() final { Crash("unimplemented"); }
   bool failed_before_recv_message() const final { Crash("unimplemented"); }
 
  private:
   void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                    bool is_notify_tag_closure);
-  StatusFlag FinishRecvMessage(NextResult<MessageHandle> result);
+  StatusFlag FinishRecvMessage(
+      ValueOrFailure<absl::optional<MessageHandle>> result);
 
   std::string DebugTag();
 
@@ -3186,14 +3238,9 @@ class ServerCall final : public Call {
   grpc_byte_buffer** recv_message_ = nullptr;
   ClientMetadataHandle client_initial_metadata_stored_;
   grpc_completion_queue* const cq_;
+  ServerInterface* const server_;
+  ServerTransport* const transport_;
 };
-
-ServerCall::ServerCall(ClientMetadataHandle client_initial_metadata,
-                       CallHandler call_handler)
-    : call_handler_(std::move(call_handler)),
-      client_initial_metadata_stored_(std::move(client_initial_metadata)) {
-  global_stats().IncrementServerCallsCreated();
-}
 
 grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
@@ -3346,30 +3393,9 @@ PollBatchLogger<F> LogPollBatch(void* tag, F f) {
 }
 }  // namespace
 
-StatusFlag ServerCall::FinishRecvMessage(NextResult<MessageHandle> result) {
-  if (result.has_value()) {
-    MessageHandle& message = *result;
-    NoteLastMessageFlags(message->flags());
-    if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
-        (incoming_compression_algorithm() != GRPC_COMPRESS_NONE)) {
-      *recv_message_ = grpc_raw_compressed_byte_buffer_create(
-          nullptr, 0, incoming_compression_algorithm());
-    } else {
-      *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
-    }
-    grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
-                                &(*recv_message_)->data.raw.slice_buffer);
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "%s[call] RecvMessage: outstanding_recv "
-              "finishes: received %" PRIdPTR " byte message",
-              DebugTag().c_str(),
-              (*recv_message_)->data.raw.slice_buffer.length);
-    }
-    recv_message_ = nullptr;
-    return Success{};
-  }
-  if (result.cancelled()) {
+StatusFlag ServerCall::FinishRecvMessage(
+    ValueOrFailure<absl::optional<MessageHandle>> result) {
+  if (!result.ok()) {
     if (grpc_call_trace.enabled()) {
       gpr_log(GPR_INFO,
               "%s[call] RecvMessage: outstanding_recv "
@@ -3380,13 +3406,34 @@ StatusFlag ServerCall::FinishRecvMessage(NextResult<MessageHandle> result) {
     recv_message_ = nullptr;
     return Failure{};
   }
+  if (!result->has_value()) {
+    if (grpc_call_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "%s[call] RecvMessage: outstanding_recv "
+              "finishes: received end-of-stream",
+              DebugTag().c_str());
+    }
+    *recv_message_ = nullptr;
+    recv_message_ = nullptr;
+    return Success{};
+  }
+  MessageHandle& message = **result;
+  NoteLastMessageFlags(message->flags());
+  if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
+      (incoming_compression_algorithm() != GRPC_COMPRESS_NONE)) {
+    *recv_message_ = grpc_raw_compressed_byte_buffer_create(
+        nullptr, 0, incoming_compression_algorithm());
+  } else {
+    *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
+  }
+  grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
+                              &(*recv_message_)->data.raw.slice_buffer);
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_INFO,
             "%s[call] RecvMessage: outstanding_recv "
-            "finishes: received end-of-stream",
-            DebugTag().c_str());
+            "finishes: received %" PRIdPTR " byte message",
+            DebugTag().c_str(), (*recv_message_)->data.raw.slice_buffer.length);
   }
-  *recv_message_ = nullptr;
   recv_message_ = nullptr;
   return Success{};
 }
@@ -3456,8 +3503,8 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         GPR_ASSERT(recv_message_ == nullptr);
         recv_message_ = op.data.recv_message.recv_message;
         return [this]() mutable {
-          return Map(client_to_server_messages_.receiver.Next(),
-                     [this](NextResult<MessageHandle> msg) {
+          return Map(call_handler_.PullMessage(),
+                     [this](ValueOrFailure<absl::optional<MessageHandle>> msg) {
                        return FinishRecvMessage(std::move(msg));
                      });
         };
@@ -3512,8 +3559,10 @@ grpc_call* MakeServerCall(CallHandler call_handler,
                           grpc_metadata_array* publish_initial_metadata) {
   PublishMetadataArray(client_initial_metadata.get(), publish_initial_metadata,
                        false);
-  return call_handler.arena()->New<ServerCall>(
-      std::move(client_initial_metadata), std::move(call_handler));
+  return call_handler.arena()
+      ->New<ServerCall>(std::move(client_initial_metadata),
+                        std::move(call_handler))
+      ->c_ptr();
 }
 
 }  // namespace grpc_core

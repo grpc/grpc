@@ -98,7 +98,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override { Unref(); }
 
-  void SetAcceptor(Acceptor* acceptor) override;
+  void SetCallDestination(
+      RefCountedPtr<UnstartedCallDestination> call_destination) override;
   void AbortWithError();
 
  private:
@@ -137,7 +138,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   auto PushFragmentIntoCall(CallInitiator call_initiator,
                             ClientFragmentFrame frame, uint32_t stream_id);
 
-  Acceptor* acceptor_ = nullptr;
+  RefCountedPtr<UnstartedCallDestination> call_destination_;
   InterActivityLatch<void> got_acceptor_;
   MpscReceiver<ServerFrame> outgoing_frames_;
   // Assigned aligned bytes from setting frame.

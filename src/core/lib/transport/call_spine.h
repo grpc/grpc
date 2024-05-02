@@ -536,11 +536,15 @@ class CallHandler {
 
   Arena* arena() { return spine_->arena(); }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() {
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
     return DownCast<CallSpine*>(spine_.get())->event_engine();
   }
 
   // TODO(ctiller): re-evaluate this API
+  const grpc_call_context_element* legacy_context() const {
+    return DownCast<CallSpine*>(spine_.get())->legacy_context();
+  }
+
   grpc_call_context_element* legacy_context() {
     return DownCast<CallSpine*>(spine_.get())->legacy_context();
   }

@@ -38,6 +38,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
@@ -210,6 +211,10 @@ class Server : public ServerInterface,
   void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
+
+  grpc_compression_options compression_options() const override {
+    return compression_options_;
+  }
 
  private:
   struct RequestedCall;
@@ -451,6 +456,7 @@ class Server : public ServerInterface,
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
   bool started_ = false;
+  const grpc_compression_options compression_options_;
 
   // The two following mutexes control access to server-state.
   // mu_global_ controls access to non-call-related state (e.g., channel state).
