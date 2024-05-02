@@ -62,10 +62,10 @@ class BinderConnector : public grpc_core::SubchannelConnector {
       size_t id_length = args.address->len - sizeof(un->sun_family);
       // The c-style string at least will have a null terminator, and the
       // connection id itself should not be empty
-      CHECK_GE(id_length, 2);
+      CHECK_GE(id_length, 2u);
       // Make sure there is null terminator at the expected location before
       // reading from it
-      CHECK(un->sun_path[id_length - 1] == '\0');
+      CHECK_EQ(un->sun_path[id_length - 1], '\0');
       conn_id_ = un->sun_path;
     }
 #else

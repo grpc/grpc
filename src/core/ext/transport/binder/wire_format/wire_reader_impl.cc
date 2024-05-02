@@ -361,8 +361,8 @@ absl::Status WireReaderImpl::ProcessStreamingTransactionImpl(
   // TODO(waynetu): According to the protocol, "The sequence number will wrap
   // around to 0 if more than 2^31 messages are sent." For now we'll just
   // assert that it never reach such circumstances.
-  CHECK(expectation < std::numeric_limits<int32_t>::max() &&
-        "Sequence number too large");
+  CHECK(expectation < std::numeric_limits<int32_t>::max())
+      << "Sequence number too large";
   expectation++;
   gpr_log(GPR_DEBUG, "sequence number = %d", seq_num);
   if (flags & kFlagPrefix) {
