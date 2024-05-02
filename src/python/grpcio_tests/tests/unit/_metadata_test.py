@@ -31,10 +31,11 @@ _CHANNEL_ARGS = (
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 _INVOCATION_METADATA = (
     (
@@ -161,28 +162,20 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.unary_unary = lambda x, y: handle_unary_unary(test, x, y)
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def __init__(self, test):
-        self._test = test
-
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(self._test, False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(self._test, False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(self._test, True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(self._test, True, True)
-        else:
-            return None
+def get_method_handlers(test):
+    return {
+        _UNARY_UNARY: _MethodHandler(test, False, False),
+        _UNARY_STREAM: _MethodHandler(test, False, True),
+        _STREAM_UNARY: _MethodHandler(test, True, False),
+        _STREAM_STREAM: _MethodHandler(test, True, True),
+    }
 
 
 class MetadataTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers(
-            (_GenericHandler(weakref.proxy(self)),)
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(weakref.proxy(self))
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
@@ -196,7 +189,8 @@ class MetadataTest(unittest.TestCase):
 
     def testUnaryUnary(self):
         multi_callable = self._channel.unary_unary(
-            _UNARY_UNARY, _registered_method=True
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+            _registered_method=True,
         )
         unused_response, call = multi_callable.with_call(
             _REQUEST, metadata=_INVOCATION_METADATA
@@ -214,7 +208,8 @@ class MetadataTest(unittest.TestCase):
 
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(
-            _UNARY_STREAM, _registered_method=True
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
+            _registered_method=True,
         )
         call = multi_callable(_REQUEST, metadata=_INVOCATION_METADATA)
         self.assertTrue(
@@ -232,7 +227,8 @@ class MetadataTest(unittest.TestCase):
 
     def testStreamUnary(self):
         multi_callable = self._channel.stream_unary(
-            _STREAM_UNARY, _registered_method=True
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
+            _registered_method=True,
         )
         unused_response, call = multi_callable.with_call(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),
@@ -251,7 +247,8 @@ class MetadataTest(unittest.TestCase):
 
     def testStreamStream(self):
         multi_callable = self._channel.stream_stream(
-            _STREAM_STREAM, _registered_method=True
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+            _registered_method=True,
         )
         call = multi_callable(
             iter([_REQUEST] * test_constants.STREAM_LENGTH),

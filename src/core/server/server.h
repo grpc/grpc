@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
-#define GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
+#ifndef GRPC_SRC_CORE_SERVER_SERVER_H
+#define GRPC_SRC_CORE_SERVER_SERVER_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -65,9 +65,9 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server_interface.h"
 
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
@@ -551,4 +551,4 @@ inline void Server::set_config_fetcher(
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_SURFACE_SERVER_H
+#endif  // GRPC_SRC_CORE_SERVER_SERVER_H
