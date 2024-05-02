@@ -21,6 +21,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
@@ -111,7 +112,7 @@ UniqueTypeName NoOpCertificateVerifier::type() const {
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {
-  GPR_ASSERT(request != nullptr);
+  CHECK_NE(request, nullptr);
   // Extract the target name, and remove its port.
   const char* target_name = request->target_name;
   if (target_name == nullptr) {
