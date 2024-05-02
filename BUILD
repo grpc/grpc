@@ -2990,7 +2990,6 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "//src/core:env",
-        "//src/core:gpr_log_internal",
     ],
 )
 
@@ -3107,6 +3106,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log:check",
         "absl/status",
         "absl/strings:str_format",
     ],
