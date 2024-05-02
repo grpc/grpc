@@ -76,6 +76,7 @@ bool MockEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   grpc_core::MutexLock lock(&mu_);
   if (read_buffer_.Count() > 0) {
     CHECK(buffer->Count() == 0);
+    CHECK(!on_read_);
     read_buffer_.Swap(*buffer);
     engine_->Run([cb = std::move(on_read)]() mutable { cb(absl::OkStatus()); });
   } else if (reads_done_) {

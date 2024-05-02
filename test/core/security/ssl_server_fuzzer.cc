@@ -48,7 +48,6 @@ static void discard_write(grpc_slice /*slice*/) {}
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 struct handshake_state {
-  bool done_callback_called;
   grpc_core::Notification done_signal;
 };
 
@@ -57,8 +56,6 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
       static_cast<grpc_core::HandshakerArgs*>(arg);
   struct handshake_state* state =
       static_cast<struct handshake_state*>(args->user_data);
-  CHECK(state->done_callback_called == false);
-  state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
   CHECK(!error.ok());
   state->done_signal.Notify();
@@ -96,7 +93,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
     struct handshake_state state;
-    state.done_callback_called = false;
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
     auto channel_args =
@@ -109,15 +105,11 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     // If the given string happens to be part of the correct client hello, the
     // server will wait for more data. Explicitly fail the server by shutting
-    // down the endpoint.
-    if (!state.done_callback_called) {
-      grpc_endpoint_shutdown(mock_endpoint,
-                             GRPC_ERROR_CREATE("Explicit close"));
-      grpc_core::ExecCtx::Get()->Flush();
+    // down the handshake manager.
+    if (!state.done_signal.WaitForNotificationWithTimeout(absl::Seconds(3))) {
+      handshake_mgr->Shutdown(
+          absl::DeadlineExceededError("handshake did not fail as expected"));
     }
-    state.done_signal.WaitForNotification();
-    CHECK(state.done_callback_called);
-
     sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);
     grpc_core::ExecCtx::Get()->Flush();
