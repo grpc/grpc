@@ -34,6 +34,7 @@
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -51,7 +52,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -618,7 +618,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       is_client(is_client) {
   cl = new grpc_core::ContextList();
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
-             GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
+        GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
   grpc_slice_buffer_init(&read_buffer);
   if (is_client) {
@@ -1602,13 +1602,13 @@ void grpc_chttp2_transport::PerformStreamOp(
   if (!is_client) {
     if (op->send_initial_metadata) {
       CHECK(!op->payload->send_initial_metadata.send_initial_metadata
-                      ->get(grpc_core::GrpcTimeoutMetadata())
-                      .has_value());
+                 ->get(grpc_core::GrpcTimeoutMetadata())
+                 .has_value());
     }
     if (op->send_trailing_metadata) {
       CHECK(!op->payload->send_trailing_metadata.send_trailing_metadata
-                      ->get(grpc_core::GrpcTimeoutMetadata())
-                      .has_value());
+                 ->get(grpc_core::GrpcTimeoutMetadata())
+                 .has_value());
     }
   }
 
@@ -2359,8 +2359,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_error_get_status(error, s->deadline, &grpc_status, &message, nullptr,
                         nullptr);
 
-  CHECK(grpc_status >= 0 );
-CHECK_LT( (int)grpc_status, 100);
+  CHECK(grpc_status >= 0);
+  CHECK_LT((int)grpc_status, 100);
 
   auto remove_stream_handle = grpc_chttp2_mark_stream_closed(t, s, 1, 1, error);
   grpc_core::MaybeTarpit(

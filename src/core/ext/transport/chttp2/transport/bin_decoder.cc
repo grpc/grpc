@@ -19,9 +19,9 @@
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 
 #include "absl/base/attributes.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

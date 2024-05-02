@@ -21,13 +21,13 @@
 #include <string.h>
 
 #include "absl/base/attributes.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

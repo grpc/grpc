@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -36,7 +37,6 @@
 #include "absl/types/variant.h"
 
 #include <grpc/slice.h>
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 

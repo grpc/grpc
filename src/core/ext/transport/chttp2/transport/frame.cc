@@ -19,10 +19,10 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-#include "absl/log/check.h"
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
