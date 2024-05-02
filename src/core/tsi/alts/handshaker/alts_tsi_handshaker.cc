@@ -93,7 +93,7 @@ static tsi_result handshaker_result_extract_peer(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  CHECK_EQ(kTsiAltsNumOfPeerProperties, 5);
+  CHECK_EQ(kTsiAltsNumOfPeerProperties, 5u);
   tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, peer);
   int index = 0;
   if (ok != TSI_OK) {
