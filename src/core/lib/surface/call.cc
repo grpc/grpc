@@ -98,13 +98,13 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/batch_builder.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server_interface.h"
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
@@ -113,163 +113,12 @@ grpc_core::DebugOnlyTraceFlag grpc_call_refcount_trace(false, "call_refcount");
 
 namespace grpc_core {
 
+// Alias to make this type available in Call implementation without a grpc_core
+// prefix.
+using GrpcClosure = Closure;
+
 ///////////////////////////////////////////////////////////////////////////////
 // Call
-
-class Call : public CppImplOf<Call, grpc_call> {
- public:
-  Arena* arena() { return arena_; }
-  bool is_client() const { return is_client_; }
-
-  virtual void ContextSet(grpc_context_index elem, void* value,
-                          void (*destroy)(void* value)) = 0;
-  virtual void* ContextGet(grpc_context_index elem) const = 0;
-  virtual bool Completed() = 0;
-  void CancelWithStatus(grpc_status_code status, const char* description);
-  virtual void CancelWithError(grpc_error_handle error) = 0;
-  virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
-  char* GetPeer();
-  virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
-                                     void* notify_tag,
-                                     bool is_notify_tag_closure) = 0;
-  virtual bool failed_before_recv_message() const = 0;
-  virtual bool is_trailers_only() const = 0;
-  virtual absl::string_view GetServerAuthority() const = 0;
-  virtual void ExternalRef() = 0;
-  virtual void ExternalUnref() = 0;
-  virtual void InternalRef(const char* reason) = 0;
-  virtual void InternalUnref(const char* reason) = 0;
-
-  grpc_compression_algorithm test_only_compression_algorithm() {
-    return incoming_compression_algorithm_;
-  }
-  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
-  CompressionAlgorithmSet encodings_accepted_by_peer() {
-    return encodings_accepted_by_peer_;
-  }
-
-  // This should return nullptr for the promise stack (and alternative means
-  // for that functionality be invented)
-  virtual grpc_call_stack* call_stack() = 0;
-
-  // Return the EventEngine used for this call's async execution.
-  virtual grpc_event_engine::experimental::EventEngine* event_engine()
-      const = 0;
-
- protected:
-  // The maximum number of concurrent batches possible.
-  // Based upon the maximum number of individually queueable ops in the batch
-  // api:
-  //    - initial metadata send
-  //    - message send
-  //    - status/close send (depending on client/server)
-  //    - initial metadata recv
-  //    - message recv
-  //    - status/close recv (depending on client/server)
-  static constexpr size_t kMaxConcurrentBatches = 6;
-
-  struct ParentCall {
-    Mutex child_list_mu;
-    Call* first_child ABSL_GUARDED_BY(child_list_mu) = nullptr;
-  };
-
-  struct ChildCall {
-    explicit ChildCall(Call* parent) : parent(parent) {}
-    Call* parent;
-    /// siblings: children of the same parent form a list, and this list is
-    /// protected under
-    /// parent->mu
-    Call* sibling_next = nullptr;
-    Call* sibling_prev = nullptr;
-  };
-
-  Call(Arena* arena, bool is_client, Timestamp send_deadline,
-       RefCountedPtr<Channel> channel)
-      : channel_(std::move(channel)),
-        arena_(arena),
-        send_deadline_(send_deadline),
-        is_client_(is_client) {
-    GPR_DEBUG_ASSERT(arena_ != nullptr);
-    GPR_DEBUG_ASSERT(channel_ != nullptr);
-  }
-  virtual ~Call() = default;
-
-  void DeleteThis();
-
-  ParentCall* GetOrCreateParentCall();
-  ParentCall* parent_call();
-  Channel* channel() const {
-    GPR_DEBUG_ASSERT(channel_ != nullptr);
-    return channel_.get();
-  }
-
-  absl::Status InitParent(Call* parent, uint32_t propagation_mask);
-  void PublishToParent(Call* parent);
-  void MaybeUnpublishFromParent();
-  void PropagateCancellationToChildren();
-
-  Timestamp send_deadline() const { return send_deadline_; }
-  void set_send_deadline(Timestamp send_deadline) {
-    send_deadline_ = send_deadline;
-  }
-
-  Slice GetPeerString() const {
-    MutexLock lock(&peer_mu_);
-    return peer_string_.Ref();
-  }
-
-  void SetPeerString(Slice peer_string) {
-    MutexLock lock(&peer_mu_);
-    peer_string_ = std::move(peer_string);
-  }
-
-  void ClearPeerString() { SetPeerString(Slice(grpc_empty_slice())); }
-
-  // TODO(ctiller): cancel_func is for cancellation of the call - filter stack
-  // holds no mutexes here, promise stack does, and so locking is different.
-  // Remove this and cancel directly once promise conversion is done.
-  void ProcessIncomingInitialMetadata(grpc_metadata_batch& md);
-  // Fixup outgoing metadata before sending - adds compression, protects
-  // internal headers against external modification.
-  void PrepareOutgoingInitialMetadata(const grpc_op& op,
-                                      grpc_metadata_batch& md);
-  void NoteLastMessageFlags(uint32_t flags) {
-    test_only_last_message_flags_ = flags;
-  }
-  grpc_compression_algorithm incoming_compression_algorithm() const {
-    return incoming_compression_algorithm_;
-  }
-
-  void HandleCompressionAlgorithmDisabled(
-      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
-  void HandleCompressionAlgorithmNotAccepted(
-      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
-
-  gpr_cycle_counter start_time() const { return start_time_; }
-
- private:
-  RefCountedPtr<Channel> channel_;
-  Arena* const arena_;
-  std::atomic<ParentCall*> parent_call_{nullptr};
-  ChildCall* child_ = nullptr;
-  Timestamp send_deadline_;
-  const bool is_client_;
-  // flag indicating that cancellation is inherited
-  bool cancellation_is_inherited_ = false;
-  // Compression algorithm for *incoming* data
-  grpc_compression_algorithm incoming_compression_algorithm_ =
-      GRPC_COMPRESS_NONE;
-  // Supported encodings (compression algorithms), a bitset.
-  // Always support no compression.
-  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
-  uint32_t test_only_last_message_flags_ = 0;
-  // Peer name is protected by a mutex because it can be accessed by the
-  // application at the same moment as it is being set by the completion
-  // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
-  mutable Mutex peer_mu_;
-  Slice peer_string_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
-};
 
 Call::ParentCall* Call::GetOrCreateParentCall() {
   ParentCall* p = parent_call_.load(std::memory_order_acquire);
@@ -503,6 +352,50 @@ void Call::HandleCompressionAlgorithmDisabled(
                                      GRPC_STATUS_UNIMPLEMENTED));
 }
 
+void Call::UpdateDeadline(Timestamp deadline) {
+  ReleasableMutexLock lock(&deadline_mu_);
+  if (grpc_call_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
+            deadline_.ToString().c_str(), deadline.ToString().c_str());
+  }
+  if (deadline >= deadline_) return;
+  if (deadline < Timestamp::Now()) {
+    lock.Release();
+    CancelWithError(grpc_error_set_int(
+        absl::DeadlineExceededError("Deadline Exceeded"),
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
+    return;
+  }
+  auto* const event_engine = channel()->event_engine();
+  if (deadline_ != Timestamp::InfFuture()) {
+    if (!event_engine->Cancel(deadline_task_)) return;
+  } else {
+    InternalRef("deadline");
+  }
+  deadline_ = deadline;
+  deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
+}
+
+void Call::ResetDeadline() {
+  {
+    MutexLock lock(&deadline_mu_);
+    if (deadline_ == Timestamp::InfFuture()) return;
+    auto* const event_engine = channel()->event_engine();
+    if (!event_engine->Cancel(deadline_task_)) return;
+    deadline_ = Timestamp::InfFuture();
+  }
+  InternalUnref("deadline[reset]");
+}
+
+void Call::Run() {
+  ApplicationCallbackExecCtx callback_exec_ctx;
+  ExecCtx exec_ctx;
+  CancelWithError(grpc_error_set_int(
+      absl::DeadlineExceededError("Deadline Exceeded"),
+      StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
+  InternalUnref("deadline[run]");
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // FilterStackCall
 // To be removed once promise conversion is complete
@@ -678,7 +571,9 @@ class FilterStackCall final : public Call {
       : Call(arena, args.server_transport_data == nullptr, args.send_deadline,
              args.channel->Ref()),
         cq_(args.cq),
-        stream_op_payload_(context_) {}
+        stream_op_payload_(context_) {
+    context_[GRPC_CONTEXT_CALL].value = this;
+  }
 
   static void ReleaseCall(void* call, grpc_error_handle);
   static void DestroyCall(void* call, grpc_error_handle);
@@ -912,6 +807,10 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     }
   }
 
+  if (args->send_deadline != Timestamp::InfFuture()) {
+    call->UpdateDeadline(args->send_deadline);
+  }
+
   CSliceUnref(path);
 
   return error;
@@ -1027,8 +926,13 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   if (!gpr_atm_rel_cas(&cancelled_with_error_, 0, 1)) {
     return;
   }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
+    gpr_log(GPR_INFO, "CancelWithError %s %s", is_client() ? "CLI" : "SVR",
+            StatusToString(error).c_str());
+  }
   ClearPeerString();
   InternalRef("termination");
+  ResetDeadline();
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
   // combiner.  This ensures that the cancel_stream batch can be sent
@@ -1047,9 +951,10 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
 
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
-    gpr_log(GPR_DEBUG, "set_final_status %s %s", is_client() ? "CLI" : "SVR",
+    gpr_log(GPR_INFO, "set_final_status %s %s", is_client() ? "CLI" : "SVR",
             StatusToString(error).c_str());
   }
+  ResetDeadline();
   if (is_client()) {
     std::string status_details;
     grpc_error_get_status(error, send_deadline(), final_op_.client.status,
@@ -1353,9 +1258,9 @@ void FilterStackCall::BatchControl::PostCompletion() {
 
   if (completion_data_.notify_tag.is_closure) {
     call_ = nullptr;
-    Closure::Run(DEBUG_LOCATION,
-                 static_cast<grpc_closure*>(completion_data_.notify_tag.tag),
-                 error);
+    GrpcClosure::Run(
+        DEBUG_LOCATION,
+        static_cast<grpc_closure*>(completion_data_.notify_tag.tag), error);
     call->InternalUnref("completion");
   } else {
     grpc_cq_end_op(
@@ -1477,7 +1382,7 @@ void FilterStackCall::BatchControl::ReceivingInitialMetadataReady(
     }
   }
   if (saved_rsr_closure != nullptr) {
-    Closure::Run(DEBUG_LOCATION, saved_rsr_closure, error);
+    GrpcClosure::Run(DEBUG_LOCATION, saved_rsr_closure, error);
   }
 
   FinishStep(PendingOp::kRecvInitialMetadata);
@@ -1968,10 +1873,7 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 // PromiseBasedCall
 // Will be folded into Call once the promise conversion is done
 
-class BasicPromiseBasedCall : public Call,
-                              public Party,
-                              public grpc_event_engine::experimental::
-                                  EventEngine::Closure /* for deadlines */ {
+class BasicPromiseBasedCall : public Call, public Party {
  public:
   using Call::arena;
 
@@ -1986,6 +1888,7 @@ class BasicPromiseBasedCall : public Call,
     if (args.cq != nullptr) {
       GRPC_CQ_INTERNAL_REF(args.cq, "bind");
     }
+    context_[GRPC_CONTEXT_CALL].value = this;
   }
 
   ~BasicPromiseBasedCall() override {
@@ -1996,9 +1899,6 @@ class BasicPromiseBasedCall : public Call,
       }
     }
   }
-
-  // Implementation of EventEngine::Closure, called when deadline expires
-  void Run() final;
 
   virtual void OrphanCall() = 0;
 
@@ -2055,13 +1955,6 @@ class BasicPromiseBasedCall : public Call,
 
   void* ContextGet(grpc_context_index elem) const final {
     return context_[elem].value;
-  }
-
-  void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
-  void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
-  Timestamp deadline() {
-    MutexLock lock(&deadline_mu_);
-    return deadline_;
   }
 
   // Accept the stats from the context (call once we have proof the transport is
@@ -2139,51 +2032,10 @@ class BasicPromiseBasedCall : public Call,
   // Contexts for various subsystems (security, tracing, ...).
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_call_stats final_stats_{};
-  // Current deadline.
-  Mutex deadline_mu_;
-  Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
-  grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
-      deadline_mu_) deadline_task_;
   Slice final_message_;
   grpc_status_code final_status_ = GRPC_STATUS_UNKNOWN;
   grpc_completion_queue* cq_;
 };
-
-void BasicPromiseBasedCall::UpdateDeadline(Timestamp deadline) {
-  MutexLock lock(&deadline_mu_);
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[call] UpdateDeadline from=%s to=%s",
-            DebugTag().c_str(), deadline_.ToString().c_str(),
-            deadline.ToString().c_str());
-  }
-  if (deadline >= deadline_) return;
-  auto* const event_engine = channel()->event_engine();
-  if (deadline_ != Timestamp::InfFuture()) {
-    if (!event_engine->Cancel(deadline_task_)) return;
-  } else {
-    InternalRef("deadline");
-  }
-  deadline_ = deadline;
-  deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
-}
-
-void BasicPromiseBasedCall::ResetDeadline() {
-  {
-    MutexLock lock(&deadline_mu_);
-    if (deadline_ == Timestamp::InfFuture()) return;
-    auto* const event_engine = channel()->event_engine();
-    if (!event_engine->Cancel(deadline_task_)) return;
-    deadline_ = Timestamp::InfFuture();
-  }
-  InternalUnref("deadline[reset]");
-}
-
-void BasicPromiseBasedCall::Run() {
-  ApplicationCallbackExecCtx callback_exec_ctx;
-  ExecCtx exec_ctx;
-  CancelWithError(absl::DeadlineExceededError("Deadline exceeded"));
-  InternalUnref("deadline[run]");
-}
 
 class PromiseBasedCall : public BasicPromiseBasedCall {
  public:
@@ -2679,12 +2531,6 @@ void CallContext::IncrementRefCount(const char* reason) {
 }
 
 void CallContext::Unref(const char* reason) { call_->InternalUnref(reason); }
-
-void CallContext::UpdateDeadline(Timestamp deadline) {
-  call_->UpdateDeadline(deadline);
-}
-
-Timestamp CallContext::deadline() const { return call_->deadline(); }
 
 ServerCallContext* CallContext::server_call_context() {
   return call_->server_call_context();
@@ -3697,7 +3543,12 @@ ServerPromiseBasedCall::MakeTopOfServerCallPromise(
   server_to_client_messages_ = call_args.server_to_client_messages;
   client_to_server_messages_ = call_args.client_to_server_messages;
   server_initial_metadata_ = call_args.server_initial_metadata;
-  set_send_deadline(deadline());
+  absl::optional<Timestamp> deadline =
+      client_initial_metadata_->get(GrpcTimeoutMetadata());
+  if (deadline.has_value()) {
+    set_send_deadline(*deadline);
+    UpdateDeadline(*deadline);
+  }
   ProcessIncomingInitialMetadata(*client_initial_metadata_);
   ExternalRef();
   publish(c_ptr());

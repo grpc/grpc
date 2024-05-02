@@ -27,11 +27,17 @@ from tests.unit.framework.common import test_constants
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x01"
 
-_UNARY_UNARY = "/test/UnaryUnary"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
 
 
 def _handle_unary_unary(unused_request, unused_servicer_context):
     return _RESPONSE
+
+
+_METHOD_HANDLERS = {
+    _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
+}
 
 
 class ReconnectTest(unittest.TestCase):
@@ -48,12 +54,15 @@ class ReconnectTest(unittest.TestCase):
         options = (("grpc.so_reuseport", 1),)
         with bound_socket() as (host, port):
             addr = "{}:{}".format(host, port)
-            server = grpc.server(server_pool, (handler,), options=options)
+            server = grpc.server(server_pool, options=options)
+            server.add_registered_method_handlers(
+                _SERVICE_NAME, _METHOD_HANDLERS
+            )
             server.add_insecure_port(addr)
             server.start()
         channel = grpc.insecure_channel(addr)
         multi_callable = channel.unary_unary(
-            _UNARY_UNARY,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=True,
         )
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))

@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
@@ -215,7 +216,7 @@ static int is_metadata_server_reachable() {
   auto uri =
       grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
                              {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());  // params are hardcoded
+  CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
       grpc_core::Timestamp::Now() + max_detection_delay,
@@ -317,7 +318,7 @@ static grpc_error_handle create_default_creds_from_path(
   result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
 
 end:
-  GPR_ASSERT((result == nullptr) + (error.ok()) == 1);
+  CHECK((result == nullptr) + (error.ok()) == 1);
   *creds = result;
   return error;
 }
@@ -395,7 +396,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     // Create google default credentials.
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    GPR_ASSERT(ssl_creds != nullptr);
+    CHECK_NE(ssl_creds, nullptr);
     grpc_alts_credentials_options* options =
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* alts_creds =
@@ -407,7 +408,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
             grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
     result = grpc_composite_channel_credentials_create(
         creds.get(), call_creds.get(), nullptr);
-    GPR_ASSERT(result != nullptr);
+    CHECK_NE(result, nullptr);
   } else {
     gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
             grpc_core::StatusToString(error).c_str());

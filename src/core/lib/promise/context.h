@@ -17,6 +17,7 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 
 #include <grpc/support/log.h>
@@ -114,7 +115,7 @@ bool HasContext() {
 template <typename T>
 T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  GPR_ASSERT(p != nullptr);
+  CHECK_NE(p, nullptr);
   return p;
 }
 

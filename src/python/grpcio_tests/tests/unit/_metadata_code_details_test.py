@@ -174,8 +174,8 @@ class _Servicer(object):
             return self._received_client_metadata
 
 
-def _generic_handler(servicer):
-    method_handlers = {
+def get_method_handlers(servicer):
+    return {
         _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(
             servicer.unary_unary,
             request_deserializer=_REQUEST_DESERIALIZER,
@@ -193,15 +193,14 @@ def _generic_handler(servicer):
             response_serializer=_RESPONSE_SERIALIZER,
         ),
     }
-    return grpc.method_handlers_generic_handler(_SERVICE, method_handlers)
 
 
 class MetadataCodeDetailsTest(unittest.TestCase):
     def setUp(self):
         self._servicer = _Servicer()
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers(
-            (_generic_handler(self._servicer),)
+        self._server.add_registered_method_handlers(
+            _SERVICE, get_method_handlers(self._servicer)
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
@@ -829,8 +828,8 @@ class InspectContextTest(unittest.TestCase):
     def setUp(self):
         self._servicer = _InspectServicer()
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers(
-            (_generic_handler(self._servicer),)
+        self._server.add_registered_method_handlers(
+            _SERVICE, get_method_handlers(self._servicer)
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()

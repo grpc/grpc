@@ -395,7 +395,7 @@ for dirname in [
     "test/core/backoff",
     "test/core/experiments",
     "test/core/uri",
-    "test/core/util",
+    "test/core/test_util",
     "test/core/end2end",
     "test/core/event_engine",
     "test/core/filters",

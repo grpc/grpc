@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/handshaker/security/secure_endpoint.h"
 
 #include <fcntl.h>
 #include <sys/types.h>
@@ -34,7 +34,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "test/core/iomgr/endpoint_tests.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;

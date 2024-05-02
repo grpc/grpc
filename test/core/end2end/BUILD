@@ -41,7 +41,7 @@ grpc_cc_library(
         "//:grpc",
         "//src/core:match",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -88,7 +88,7 @@ grpc_cc_library(
         "//src/core:slice_refcount",
         "//src/core:status_helper",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -104,7 +104,7 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -142,7 +142,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:time",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -189,7 +189,7 @@ grpc_cc_library(
         "//src/core:grpc_tls_credentials",
         "//src/core:grpc_transport_inproc",
         "//src/core:slice",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -229,7 +229,7 @@ grpc_cc_library(
         "//src/core:grpc_fake_credentials",
         "//src/core:iomgr_port",
         "//src/core:no_destruct",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
     alwayslink = 1,
 )
@@ -252,7 +252,7 @@ grpc_cc_library(
         "end2end_test_suites",
         "fixture_support",
         "//:config_vars",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -280,8 +280,8 @@ grpc_cc_library(
         "fixture_support",
         "//:config_vars",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/util:fuzz_config_vars",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fuzz_config_vars",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -516,7 +516,7 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:slice",
         "//src/core:status_helper",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -532,7 +532,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -556,7 +556,7 @@ grpc_cc_test(
         "//src/core:error",
         "//src/core:iomgr_port",
         "//src/core:resolved_address",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -589,7 +589,7 @@ grpc_cc_test(
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
         "//src/core:time",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -603,7 +603,7 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_public_hdrs",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -614,7 +614,7 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -639,7 +639,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:grpc_service_config",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -678,7 +678,7 @@ grpc_cc_test(
         "//src/core:slice",
         "//src/core:time",
         "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -709,7 +709,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:error",
         "//src/core:useful",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -740,7 +740,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:error",
         "//src/core:useful",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -750,6 +750,6 @@ grpc_proto_library(
     has_services = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "//test/core/util:fuzz_config_vars_proto",
+        "//test/core/test_util:fuzz_config_vars_proto",
     ],
 )
