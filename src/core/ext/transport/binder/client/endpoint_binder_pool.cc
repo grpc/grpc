@@ -42,7 +42,7 @@ Java_io_grpc_binder_cpp_GrpcBinderConnection_notifyConnected__Ljava_lang_String_
       grpc_binder::FromJavaBinder(jni_env, ibinder);
   gpr_log(GPR_INFO, "%s got aibinder = %p", __func__, aibinder.get());
   auto b = std::make_unique<grpc_binder::BinderAndroid>(aibinder);
-  CHECK_NE(b, nullptr);
+  CHECK(b != nullptr);
   grpc_binder::GetEndpointBinderPool()->AddEndpointBinder(conn_id,
                                                           std::move(b));
   if (isCopy == JNI_TRUE) {
@@ -77,14 +77,14 @@ void EndpointBinderPool::GetEndpointBinder(
       return;
     }
   }
-  CHECK_NE(b, nullptr);
+  CHECK(b != nullptr);
   cb(std::move(b));
 }
 
 void EndpointBinderPool::AddEndpointBinder(
     std::string conn_id, std::unique_ptr<grpc_binder::Binder> b) {
   gpr_log(GPR_INFO, "EndpointBinder added. conn_id = %s", conn_id.c_str());
-  CHECK_NE(b, nullptr);
+  CHECK(b != nullptr);
   // cb will be set in the following block if there is a pending callback
   std::function<void(std::unique_ptr<grpc_binder::Binder>)> cb = nullptr;
   {
