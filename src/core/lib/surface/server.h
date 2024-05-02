@@ -379,6 +379,8 @@ class Server : public ServerInterface,
     using is_transparent = void;
   };
 
+  class TransportConnectivityWatcher;
+
   RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
                                         const absl::string_view& path);
   void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
@@ -504,6 +506,9 @@ class Server : public ServerInterface,
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
+  absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
+      ABSL_GUARDED_BY(mu_global_);
+  size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
   std::list<Listener> listeners_;
   size_t listeners_destroyed_ = 0;
