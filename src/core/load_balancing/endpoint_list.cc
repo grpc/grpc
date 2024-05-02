@@ -87,7 +87,7 @@ class EndpointList::Endpoint::Helper final
 // EndpointList::Endpoint
 //
 
-void EndpointList::Endpoint::Init(
+absl::Status EndpointList::Endpoint::Init(
     const EndpointAddresses& addresses, const ChannelArgs& args,
     std::shared_ptr<WorkSerializer> work_serializer) {
   ChannelArgs child_args =
@@ -123,9 +123,7 @@ void EndpointList::Endpoint::Init(
   update_args.addresses = std::make_shared<SingleEndpointIterator>(addresses);
   update_args.args = child_args;
   update_args.config = std::move(*config);
-  // TODO(roth): If the child reports a non-OK status with the update,
-  // we need to propagate that back to the resolver somehow.
-  (void)child_policy_->UpdateLocked(std::move(update_args));
+  return child_policy_->UpdateLocked(std::move(update_args));
 }
 
 void EndpointList::Endpoint::Orphan() {

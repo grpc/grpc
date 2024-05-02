@@ -23,7 +23,7 @@
 #include <grpc/slice.h>
 
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
