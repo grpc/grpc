@@ -482,6 +482,15 @@ typedef struct grpc_transport_op {
   grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
 
+// Allocate a grpc_transport_op, and preconfigure the on_complete closure to
+// \a on_complete and then delete the returned transport op
+grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
+// Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
+// closure
+// to \a on_complete and then delete the returned transport op
+grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
+    grpc_closure* on_complete);
+
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
@@ -508,6 +517,21 @@ class Transport : public InternallyRefCounted<Transport> {
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
+  // Though internally ref counted transports expose their "Ref" method to
+  // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
+  // singleton decision maker on whether the transport should be destroyed or
+  // not.
+  // TODO(ctiller): consider moving to a DualRefCounted model (with the
+  // disadvantage that we would accidentally have many strong owners which is
+  // unneccessary for this type).
+  RefCountedPtr<Transport> Ref() {
+    return InternallyRefCounted<Transport>::Ref();
+  }
+  template <typename T>
+  RefCountedPtr<T> RefAsSubclass() {
+    return InternallyRefCounted<Transport>::RefAsSubclass<T>();
+  }
+
   virtual FilterStackTransport* filter_stack_transport() = 0;
   virtual ClientTransport* client_transport() = 0;
   virtual ServerTransport* server_transport() = 0;
@@ -527,6 +551,13 @@ class Transport : public InternallyRefCounted<Transport> {
 
   // implementation of grpc_transport_perform_op
   virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  void StartConnectivityWatch(
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->start_connectivity_watch = std::move(watcher);
+    PerformOp(op);
+  }
 
   // implementation of grpc_transport_get_endpoint
   virtual grpc_endpoint* GetEndpoint() = 0;
@@ -592,15 +623,6 @@ class ServerTransport : public Transport {
 };
 
 }  // namespace grpc_core
-
-// Allocate a grpc_transport_op, and preconfigure the on_complete closure to
-// \a on_complete and then delete the returned transport op
-grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
-// Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
-// closure
-// to \a on_complete and then delete the returned transport op
-grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
-    grpc_closure* on_complete);
 
 namespace grpc_core {
 // This is the key to be used for loading/storing keepalive_throttling in the

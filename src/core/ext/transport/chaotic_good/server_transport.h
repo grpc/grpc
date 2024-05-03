@@ -86,7 +86,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
       HPackParser hpack_parser, HPackCompressor hpack_encoder);
-  ~ChaoticGoodServerTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -96,7 +95,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
   grpc_endpoint* GetEndpoint() override { return nullptr; }
-  void Orphan() override { Unref(); }
+  void Orphan() override;
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;

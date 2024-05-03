@@ -381,13 +381,17 @@ void ChaoticGoodServerTransport::SetCallDestination(
   got_acceptor_.Set();
 }
 
-ChaoticGoodServerTransport::~ChaoticGoodServerTransport() {
-  if (writer_ != nullptr) {
-    writer_.reset();
+void ChaoticGoodServerTransport::Orphan() {
+  ActivityPtr writer;
+  ActivityPtr reader;
+  {
+    MutexLock lock(&mu_);
+    writer = std::move(writer_);
+    reader = std::move(reader_);
   }
-  if (reader_ != nullptr) {
-    reader_.reset();
-  }
+  writer.reset();
+  reader.reset();
+  Unref();
 }
 
 void ChaoticGoodServerTransport::AbortWithError() {

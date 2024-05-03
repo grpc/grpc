@@ -56,6 +56,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -731,6 +732,31 @@ class ChannelBroadcaster {
 }  // namespace
 
 //
+// Server::TransportConnectivityWatcher
+//
+
+class Server::TransportConnectivityWatcher
+    : public AsyncConnectivityStateWatcherInterface {
+ public:
+  TransportConnectivityWatcher(RefCountedPtr<ServerTransport> transport,
+                               RefCountedPtr<Server> server)
+      : transport_(std::move(transport)), server_(std::move(server)) {}
+
+ private:
+  void OnConnectivityStateChange(grpc_connectivity_state new_state,
+                                 const absl::Status& /*status*/) override {
+    // Don't do anything until we are being shut down.
+    if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
+    // Shut down channel.
+    MutexLock lock(&server_->mu_global_);
+    server_->connections_.erase(transport_.get());
+  }
+
+  RefCountedPtr<ServerTransport> transport_;
+  RefCountedPtr<Server> server_;
+};
+
+//
 // Server
 //
 
@@ -947,6 +973,8 @@ grpc_error_handle Server::SetupTransport(
       return absl_status_to_grpc_error(destination.status());
     }
     t->SetCallDestination(std::move(*destination));
+    t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
+        t->RefAsSubclass<ServerTransport>(), Ref()));
     MutexLock lock(&mu_global_);
     connections_.emplace(std::move(t));
     ++connections_open_;
@@ -1317,29 +1345,6 @@ class Server::ChannelData::ConnectivityWatcher
 
   ChannelData* const chand_;
   const RefCountedPtr<Channel> channel_;
-};
-
-//
-// Server::TransportConnectivityWatcher
-//
-
-class Server::TransportConnectivityWatcher
-    : public AsyncConnectivityStateWatcherInterface {
- public:
-  explicit TransportConnectivityWatcher(ServerTransport* transport)
-      : transport_(transport) {}
-
- private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                 const absl::Status& /*status*/) override {
-    // Don't do anything until we are being shut down.
-    if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
-    // Shut down channel.
-    MutexLock lock(&chand_->server_->mu_global_);
-    chand_->Destroy();
-  }
-
-  ServerTransport* transport_;
 };
 
 //
