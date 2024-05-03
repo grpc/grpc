@@ -148,6 +148,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
         });
     channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
   }
+  if (!config.service_config.empty()) {
+    channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
+  }
   reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
   grpc_init();
   grpc::ServerBuilder builder;
