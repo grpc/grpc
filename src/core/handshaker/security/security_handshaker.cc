@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -381,7 +382,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    GPR_ASSERT(bytes_to_send_size == 0);
+    CHECK_EQ(bytes_to_send_size, 0u);
     grpc_endpoint_read(
         args_->endpoint, args_->read_buffer,
         GRPC_CLOSURE_INIT(
@@ -405,7 +406,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
-    GPR_ASSERT(handshaker_result_ == nullptr);
+    CHECK_EQ(handshaker_result_, nullptr);
     handshaker_result_ = handshaker_result;
   }
   if (bytes_to_send_size > 0) {

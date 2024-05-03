@@ -3476,6 +3476,7 @@ grpc_cc_library(
     srcs = ["load_balancing/lb_policy_registry.cc"],
     hdrs = ["load_balancing/lb_policy_registry.h"],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3722,7 +3723,10 @@ grpc_cc_library(
     hdrs = [
         "lib/security/certificate_provider/certificate_provider_registry.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings",
+    ],
     deps = [
         "certificate_provider_factory",
         "//:gpr",
@@ -3741,6 +3745,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3841,6 +3846,7 @@ grpc_cc_library(
         "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3886,6 +3892,7 @@ grpc_cc_library(
         "lib/security/security_connector/insecure/insecure_security_connector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
@@ -3940,6 +3947,7 @@ grpc_cc_library(
         "lib/security/security_connector/local/local_security_connector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4381,6 +4389,7 @@ grpc_cc_library(
         "lib/security/authorization/rbac_policy.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4797,6 +4806,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4913,6 +4923,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/hash",
+        "absl/log:check",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5308,6 +5319,7 @@ grpc_cc_library(
         "load_balancing/xds/cds.cc",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5367,6 +5379,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5528,6 +5541,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5574,6 +5588,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
@@ -5610,6 +5625,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/algorithm:container",
+        "absl/log:check",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5730,6 +5746,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5779,6 +5796,7 @@ grpc_cc_library(
         "load_balancing/round_robin/round_robin.cc",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -5816,6 +5834,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/types:optional",
         "absl/types:span",
     ],
@@ -5830,6 +5849,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -5899,6 +5919,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -5947,6 +5968,7 @@ grpc_cc_library(
         "load_balancing/priority/priority.cc",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -5994,6 +6016,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -6042,6 +6065,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
