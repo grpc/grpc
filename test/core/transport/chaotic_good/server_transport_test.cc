@@ -84,7 +84,7 @@ ServerMetadataHandle TestTrailingMetadata() {
 
 class MockCallDestination : public UnstartedCallDestination {
  public:
-  virtual ~MockCallDestination() = default;
+  ~MockCallDestination() override = default;
   MOCK_METHOD(void, Orphaned, (), (override));
   MOCK_METHOD(void, StartCall, (UnstartedCallHandler unstarted_call_handler),
               (override));

@@ -142,8 +142,9 @@ class InprocClientTransport final : public ClientTransport {
                 child_call_handler](ClientMetadataHandle md) {
                  auto server_call_initiator =
                      server_transport->AcceptCall(std::move(md));
-                 if (!server_call_initiator.ok())
+                 if (!server_call_initiator.ok()) {
                    return server_call_initiator.status();
+                 }
                  ForwardCall(child_call_handler,
                              std::move(*server_call_initiator));
                  return absl::OkStatus();
