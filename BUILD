@@ -3563,6 +3563,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "@com_google_protobuf//upb:base",
@@ -3604,6 +3605,7 @@ grpc_cc_library(
         "//src/core:load_balancing/child_policy_handler.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
