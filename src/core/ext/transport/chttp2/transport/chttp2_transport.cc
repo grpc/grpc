@@ -1121,19 +1121,17 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
-  t->goaway_error = grpc_error_set_str(
+  t->goaway_error = grpc_error_set_int(
       grpc_error_set_int(
-          grpc_error_set_int(
-              grpc_core::StatusCreate(
-                  absl::StatusCode::kUnavailable,
-                  absl::StrFormat(
-                      "GOAWAY received; Error code: %u; Debug Text: %s",
-                      goaway_error, goaway_text),
-                  DEBUG_LOCATION, {}),
-              grpc_core::StatusIntProperty::kHttp2Error,
-              static_cast<intptr_t>(goaway_error)),
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kRawBytes, goaway_text);
+          grpc_core::StatusCreate(
+              absl::StatusCode::kUnavailable,
+              absl::StrFormat(
+                  "GOAWAY received; Error code: %u; Debug Text: %s",
+                  goaway_error, goaway_text),
+              DEBUG_LOCATION, {}),
+          grpc_core::StatusIntProperty::kHttp2Error,
+          static_cast<intptr_t>(goaway_error)),
+      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "transport %p got goaway with last stream id %d", t,

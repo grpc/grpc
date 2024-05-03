@@ -76,8 +76,6 @@ enum class StatusStrProperty {
   kFile,
   /// peer that we were trying to communicate when this error occurred
   kGrpcMessage,
-  /// hex dump (or similar) with the data that generated this error
-  kRawBytes,
   /// filename that we were trying to read/write when this error occurred
   kFilename,
 };

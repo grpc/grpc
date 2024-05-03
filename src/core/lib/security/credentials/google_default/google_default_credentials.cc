@@ -26,6 +26,7 @@
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -282,9 +283,9 @@ static grpc_error_handle create_default_creds_from_path(
     json = std::move(*json_or);
   }
   if (json.type() != Json::Type::kObject) {
-    error = grpc_error_set_str(GRPC_ERROR_CREATE("Failed to parse JSON"),
-                               grpc_core::StatusStrProperty::kRawBytes,
-                               creds_data->as_string_view());
+    error = GRPC_ERROR_CREATE(
+        absl::StrCat("Failed to parse JSON \"", creds_data->as_string_view(),
+                     "\""));
     goto end;
   }
 
