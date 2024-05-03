@@ -23,6 +23,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 
@@ -109,7 +110,7 @@ void DefaultHealthCheckService::UnregisterWatch(
 
 DefaultHealthCheckService::HealthCheckServiceImpl*
 DefaultHealthCheckService::GetHealthCheckService() {
-  GPR_ASSERT(impl_ == nullptr);
+  CHECK(impl_ == nullptr);
   impl_ = std::make_unique<HealthCheckServiceImpl>(this);
   return impl_.get();
 }
