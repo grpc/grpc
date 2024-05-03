@@ -77,6 +77,7 @@ size_t EncodedSizeOfKey(Key, const typename Key::ValueType& value) {
 // should not need to.
 struct GrpcTimeoutMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using ValueType = Timestamp;
   using MementoType = Duration;
   using CompressionTraits = TimeoutCompressor;
@@ -93,6 +94,7 @@ struct GrpcTimeoutMetadata {
 // TE metadata trait.
 struct TeMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   // HTTP2 says that TE can either be empty or "trailers".
   // Empty means this trait is not included, "trailers" means kTrailers, and
   // kInvalid is used to remember an invalid value.
@@ -122,6 +124,7 @@ inline size_t EncodedSizeOfKey(TeMetadata, TeMetadata::ValueType x) {
 // content-type metadata trait.
 struct ContentTypeMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = true;
   // gRPC says that content-type can be application/grpc[;something]
   // Core has only ever verified the prefix.
   // IF we want to start verifying more, we can expand this type.
@@ -150,6 +153,7 @@ struct ContentTypeMetadata {
 // scheme metadata trait.
 struct HttpSchemeMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   enum ValueType : uint8_t {
     kHttp,
     kHttps,
@@ -179,6 +183,7 @@ size_t EncodedSizeOfKey(HttpSchemeMetadata, HttpSchemeMetadata::ValueType x);
 // method metadata trait.
 struct HttpMethodMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   enum ValueType : uint8_t {
     kPost,
     kGet,
@@ -227,6 +232,7 @@ struct CompressionAlgorithmBasedMetadata {
 // grpc-encoding metadata trait.
 struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits =
       SmallIntegralValuesCompressor<GRPC_COMPRESS_ALGORITHMS_COUNT>;
   static absl::string_view key() { return "grpc-encoding"; }
@@ -235,6 +241,7 @@ struct GrpcEncodingMetadata : public CompressionAlgorithmBasedMetadata {
 // grpc-internal-encoding-request metadata trait.
 struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "grpc-internal-encoding-request"; }
 };
@@ -242,6 +249,7 @@ struct GrpcInternalEncodingRequest : public CompressionAlgorithmBasedMetadata {
 // grpc-accept-encoding metadata trait.
 struct GrpcAcceptEncodingMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "grpc-accept-encoding"; }
   using ValueType = CompressionAlgorithmSet;
   using MementoType = ValueType;
@@ -260,6 +268,7 @@ struct GrpcAcceptEncodingMetadata {
 // user-agent metadata trait.
 struct UserAgentMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = StableValueCompressor;
   static absl::string_view key() { return "user-agent"; }
 };
@@ -267,6 +276,7 @@ struct UserAgentMetadata : public SimpleSliceBasedMetadata {
 // grpc-message metadata trait.
 struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "grpc-message"; }
 };
@@ -274,6 +284,7 @@ struct GrpcMessageMetadata : public SimpleSliceBasedMetadata {
 // host metadata trait.
 struct HostMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "host"; }
 };
@@ -281,6 +292,7 @@ struct HostMetadata : public SimpleSliceBasedMetadata {
 // endpoint-load-metrics-bin metadata trait.
 struct EndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "endpoint-load-metrics-bin"; }
 };
@@ -288,6 +300,7 @@ struct EndpointLoadMetricsBinMetadata : public SimpleSliceBasedMetadata {
 // grpc-server-stats-bin metadata trait.
 struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "grpc-server-stats-bin"; }
 };
@@ -295,6 +308,7 @@ struct GrpcServerStatsBinMetadata : public SimpleSliceBasedMetadata {
 // grpc-trace-bin metadata trait.
 struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;
   static absl::string_view key() { return "grpc-trace-bin"; }
 };
@@ -302,6 +316,7 @@ struct GrpcTraceBinMetadata : public SimpleSliceBasedMetadata {
 // grpc-tags-bin metadata trait.
 struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = FrequentKeyWithNoValueCompressionCompressor;
   static absl::string_view key() { return "grpc-tags-bin"; }
 };
@@ -309,6 +324,7 @@ struct GrpcTagsBinMetadata : public SimpleSliceBasedMetadata {
 // XEnvoyPeerMetadata
 struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = true;
   using CompressionTraits = StableValueCompressor;
   static absl::string_view key() { return "x-envoy-peer-metadata"; }
 };
@@ -316,6 +332,7 @@ struct XEnvoyPeerMetadata : public SimpleSliceBasedMetadata {
 // :authority metadata trait.
 struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallSetOfValuesCompressor;
   static absl::string_view key() { return ":authority"; }
 };
@@ -323,6 +340,7 @@ struct HttpAuthorityMetadata : public SimpleSliceBasedMetadata {
 // :path metadata trait.
 struct HttpPathMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallSetOfValuesCompressor;
   static absl::string_view key() { return ":path"; }
 };
@@ -357,6 +375,7 @@ struct SimpleIntBasedMetadata : public SimpleIntBasedMetadataBase<Int> {
 struct GrpcStatusMetadata
     : public SimpleIntBasedMetadata<grpc_status_code, GRPC_STATUS_UNKNOWN> {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = SmallIntegralValuesCompressor<16>;
   static absl::string_view key() { return "grpc-status"; }
 };
@@ -365,6 +384,7 @@ struct GrpcStatusMetadata
 struct GrpcPreviousRpcAttemptsMetadata
     : public SimpleIntBasedMetadata<uint32_t, 0> {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "grpc-previous-rpc-attempts"; }
 };
@@ -372,6 +392,7 @@ struct GrpcPreviousRpcAttemptsMetadata
 // grpc-retry-pushback-ms metadata trait.
 struct GrpcRetryPushbackMsMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "grpc-retry-pushback-ms"; }
   using ValueType = Duration;
   using MementoType = Duration;
@@ -389,6 +410,7 @@ struct GrpcRetryPushbackMsMetadata {
 // TODO(ctiller): consider moving to uint16_t
 struct HttpStatusMetadata : public SimpleIntBasedMetadata<uint32_t, 0> {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = true;
   using CompressionTraits = HttpStatusCompressor;
   static absl::string_view key() { return ":status"; }
 };
@@ -399,6 +421,7 @@ class GrpcLbClientStats;
 
 struct GrpcLbClientStatsMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "grpclb_client_stats"; }
   using ValueType = GrpcLbClientStats*;
   using MementoType = ValueType;
@@ -423,6 +446,7 @@ inline size_t EncodedSizeOfKey(GrpcLbClientStatsMetadata,
 // lb-token metadata
 struct LbTokenMetadata : public SimpleSliceBasedMetadata {
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   using CompressionTraits = NoCompressionCompressor;
   static absl::string_view key() { return "lb-token"; }
 };
@@ -430,6 +454,7 @@ struct LbTokenMetadata : public SimpleSliceBasedMetadata {
 // lb-cost-bin metadata
 struct LbCostBinMetadata {
   static constexpr bool kRepeatable = true;
+  static constexpr bool kTransferOnTrailersOnly = false;
   static absl::string_view key() { return "lb-cost-bin"; }
   struct ValueType {
     double cost;
@@ -451,6 +476,7 @@ struct LbCostBinMetadata {
 struct GrpcStreamNetworkState {
   static absl::string_view DebugKey() { return "GrpcStreamNetworkState"; }
   static constexpr bool kRepeatable = false;
+  static constexpr bool kTransferOnTrailersOnly = false;
   enum ValueType : uint8_t {
     kNotSentOnWire,
     kNotSeenByServer,
@@ -1149,6 +1175,9 @@ MetadataValueAsSlice(typename Which::ValueType value) {
 // struct GrpcXyzMetadata {
 //   // Can this metadata field be repeated?
 //   static constexpr bool kRepeatable = ...;
+//   // Should this metadata be transferred from server headers to trailers on
+//   // Trailers-Only response?
+//   static constexpr bool kTransferOnTrailersOnly = ...;
 //   // The type that's stored on MetadataBatch
 //   using ValueType = ...;
 //   // The type that's stored in compression/decompression tables
