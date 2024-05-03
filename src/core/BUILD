@@ -1602,6 +1602,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/status",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
