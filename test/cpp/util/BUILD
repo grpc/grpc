@@ -78,6 +78,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
         "protobuf",
     ],
     deps = [
