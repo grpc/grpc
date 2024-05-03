@@ -3165,6 +3165,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
              client_initial_metadata->get(GrpcTimeoutMetadata())
                  .value_or(Timestamp::InfFuture()),
              call_handler.event_engine()),
+        DualRefCounted<ServerCall>("ServerCall"),
         call_handler_(std::move(call_handler)),
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),

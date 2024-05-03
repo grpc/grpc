@@ -857,7 +857,6 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
               MakeServerCall(call_handler, std::move(md), this,
                              rc->cq_bound_to_call, rc->initial_metadata);
           *rc->call = call;
-          grpc_call_ref(call);
           // TODO(ctiller): publish metadata
           return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
                      [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
