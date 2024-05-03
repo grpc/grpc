@@ -95,6 +95,8 @@ class OpenTelemetryPlugin::ClientCallTracer
                           grpc_core::RefCountedStringValue value) override;
 
    private:
+    void PopulateLabelInjectors(grpc_metadata_batch* metadata);
+
     const ClientCallTracer* parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
@@ -106,6 +108,7 @@ class OpenTelemetryPlugin::ClientCallTracer
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
+    bool is_trailers_only_ = false;
   };
 
   ClientCallTracer(

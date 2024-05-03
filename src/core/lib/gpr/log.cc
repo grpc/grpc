@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/globals.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
@@ -38,6 +39,7 @@
 #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
 #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
 
+static constexpr int g_absl_vlog_level_for_gpr_verbosity_debug = 2;
 static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
@@ -83,8 +85,9 @@ void gpr_default_log(gpr_log_func_args* args) {
   }
   switch (args->severity) {
     case GPR_LOG_SEVERITY_DEBUG:
-      //  Log DEBUG messages as VLOG(2).
-      VLOG(2).AtLocation(args->file, args->line) << args->message;
+      VLOG(g_absl_vlog_level_for_gpr_verbosity_debug)
+              .AtLocation(args->file, args->line)
+          << args->message;
       return;
     case GPR_LOG_SEVERITY_INFO:
       LOG(INFO).AtLocation(args->file, args->line) << args->message;
@@ -145,6 +148,12 @@ void gpr_log_verbosity_init() {
           parse_log_severity(verbosity, min_severity_to_print);
     }
     gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);
+    if (grpc_core::ConfigVars::Get().AbslLogging() &&
+        min_severity_to_print == GPR_LOG_SEVERITY_DEBUG) {
+      // Matches full file paths that include a `*grpc*` folder, including
+      // grpcpp.
+      absl::SetVLogLevel("*grpc*/*", g_absl_vlog_level_for_gpr_verbosity_debug);
+    }
   }
   // init stacktrace_minloglevel when it hasn't been set
   if ((gpr_atm_no_barrier_load(&g_min_severity_to_print_stacktrace)) ==
