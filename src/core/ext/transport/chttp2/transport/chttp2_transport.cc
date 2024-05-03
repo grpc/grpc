@@ -1293,10 +1293,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
           "Error in HTTP transport completing operation: ", desc,
           " write_state=", write_state_name(t->write_state), " refs=",
           closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
-          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT));
-      cl_err = grpc_error_set_str(cl_err,
-                                  grpc_core::StatusStrProperty::kTargetAddress,
-                                  std::string(t->peer_string.as_string_view()));
+          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT,
+          " peer_address=", t->peer_string.as_string_view()));
     }
     cl_err = grpc_error_add_child(cl_err, error);
     closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);

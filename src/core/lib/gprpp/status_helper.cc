@@ -85,8 +85,6 @@ const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
       return TYPE_URL(TYPE_STR_TAG "description");
     case StatusStrProperty::kFile:
       return TYPE_URL(TYPE_STR_TAG "file");
-    case StatusStrProperty::kTargetAddress:
-      return TYPE_URL(TYPE_STR_TAG "target_address");
     case StatusStrProperty::kGrpcMessage:
       return TYPE_URL(TYPE_STR_TAG "grpc_message");
     case StatusStrProperty::kRawBytes:

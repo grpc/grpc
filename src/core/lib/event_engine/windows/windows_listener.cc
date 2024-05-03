@@ -269,11 +269,11 @@ WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     CHECK(!error.ok());
     auto addr_uri = ResolvedAddressToURI(addr);
     error = grpc_error_set_int(
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
-                                          &error, 1),
-            grpc_core::StatusStrProperty::kTargetAddress,
-            addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
+        GRPC_ERROR_CREATE_REFERENCING(
+            absl::StrCat(
+                "Failed to prepare server socket, peer_address=",
+                addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
+            &error, 1),
         grpc_core::StatusIntProperty::kFd, static_cast<intptr_t>(sock));
     if (sock != INVALID_SOCKET) closesocket(sock);
     return error;

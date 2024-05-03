@@ -467,11 +467,13 @@ static grpc_error_handle error_for_fd(int fd,
                                       const grpc_resolved_address* addr) {
   if (fd >= 0) return absl::OkStatus();
   auto addr_str = grpc_sockaddr_to_string(addr, false);
-  grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"),
-      grpc_core::StatusStrProperty::kTargetAddress,
-      addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
-  return err;
+  return StatusCreate(
+      absl::StatusCode::kUnknown,
+      absl::StrCat(
+          "socket: ", grpc_core::StrError(errno), " (", errno,
+          "), peer_address=",
+          addr_str.ok() ? addr_str.value() : addr_str.status().ToString()),
+      DEBUG_LOCATION, {});
 }
 
 grpc_error_handle grpc_create_dualstack_socket(

@@ -246,10 +246,11 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 
 failure:
   CHECK(!error.ok());
-  grpc_error_handle final_error = grpc_error_set_str(
-      GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1),
-      grpc_core::StatusStrProperty::kTargetAddress,
-      addr_uri.ok() ? *addr_uri : addr_uri.status().ToString());
+  grpc_error_handle final_error = GRPC_ERROR_CREATE_REFERENCING(
+      absl::StrCat(
+          "Failed to connect (peer_address=",
+          addr_uri.ok() ? *addr_uri : addr_uri.status().ToString(), ")"),
+      &error, 1);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);
   } else if (sock != INVALID_SOCKET) {

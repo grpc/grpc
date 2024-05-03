@@ -106,14 +106,14 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   // parse name, splitting it into host and port parts
   SplitHostPort(name, &host, &port);
   if (host.empty()) {
-    err = grpc_error_set_str(GRPC_ERROR_CREATE("unparseable host:port"),
-                             StatusStrProperty::kTargetAddress, name);
+    err = GRPC_ERROR_CREATE(
+        absl::StrCat("unparseable host:port \"", name, "\""));
     goto done;
   }
   if (port.empty()) {
     if (default_port.empty()) {
-      err = grpc_error_set_str(GRPC_ERROR_CREATE("no port in name"),
-                               StatusStrProperty::kTargetAddress, name);
+      err = GRPC_ERROR_CREATE(
+          absl::StrCat("no port in name \"", name, "\""));
       goto done;
     }
     port = std::string(default_port);
@@ -139,10 +139,8 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     }
   }
   if (s != 0) {
-    err = grpc_error_set_str(
-        absl::UnknownError(absl::StrCat(
-            "getaddrinfo(\"", name, "\"): ", gai_strerror(s), " (", s, ")")),
-        StatusStrProperty::kTargetAddress, name);
+    err = absl::UnknownError(absl::StrCat(
+        "getaddrinfo(\"", name, "\"): ", gai_strerror(s), " (", s, ")"));
     goto done;
   }
   // Success path: fill in addrs
