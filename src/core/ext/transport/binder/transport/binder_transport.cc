@@ -757,7 +757,7 @@ grpc_core::Transport* grpc_create_binder_transport_server(
         security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  CHECK_NE(client_binder, nullptr);
+  CHECK(client_binder != nullptr);
   CHECK_NE(security_policy, nullptr);
 
   grpc_binder_transport* t = new grpc_binder_transport(

@@ -27,14 +27,14 @@ void SecurityPolicySetting::Set(
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy) {
   grpc_core::MutexLock l(&m_);
-  CHECK_EQ(security_policy_map_.count(std::string(connection_id)), 0);
+  CHECK_EQ(security_policy_map_.count(std::string(connection_id)), 0u);
   security_policy_map_[std::string(connection_id)] = security_policy;
 }
 
 std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
 SecurityPolicySetting::Get(absl::string_view connection_id) {
   grpc_core::MutexLock l(&m_);
-  CHECK_NE(security_policy_map_.count(std::string(connection_id)), 0);
+  CHECK_NE(security_policy_map_.count(std::string(connection_id)), 0u);
   return security_policy_map_[std::string(connection_id)];
 }
 
