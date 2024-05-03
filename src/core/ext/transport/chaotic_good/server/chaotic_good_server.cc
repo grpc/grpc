@@ -62,11 +62,11 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/server/server.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -102,8 +102,8 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
             str.ok() ? str->c_str() : str.status().ToString().c_str());
   }
   EventEngine::Listener::AcceptCallback accept_cb =
-      [self = Ref()](std::unique_ptr<EventEngine::Endpoint> ep,
-                     MemoryAllocator) {
+      [self = RefAsSubclass<ChaoticGoodServerListener>()](
+          std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
         ExecCtx exec_ctx;
         MutexLock lock(&self->mu_);
         if (self->shutdown_) return;
@@ -148,7 +148,8 @@ absl::Status ChaoticGoodServerListener::StartListening() {
 ChaoticGoodServerListener::ActiveConnection::ActiveConnection(
     RefCountedPtr<ChaoticGoodServerListener> listener,
     std::unique_ptr<EventEngine::Endpoint> endpoint)
-    : memory_allocator_(listener->memory_allocator_), listener_(listener) {
+    : memory_allocator_(listener->memory_allocator_),
+      listener_(std::move(listener)) {
   handshaking_state_ = MakeRefCounted<HandshakingState>(Ref());
   handshaking_state_->Start(std::move(endpoint));
 }

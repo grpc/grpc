@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/server_config_selector")
+grpc_package(name = "test/core/server")
 
 grpc_cc_test(
     name = "server_config_selector_test",
@@ -32,6 +32,25 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//src/core:grpc_server_config_selector",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_channel_stack_modifier_test",
+    srcs = ["xds_channel_stack_modifier_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    tags = ["no_test_ios"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base",
+        "//:grpc_opencensus_plugin",
+        "//src/core:channel_args",
+        "//src/core:grpc_xds_channel_stack_modifier",
         "//test/core/test_util:grpc_test_util",
     ],
 )

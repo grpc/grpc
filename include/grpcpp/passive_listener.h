@@ -1,4 +1,4 @@
-// Copyright 2024 The gRPC Authors.
+// Copyright 2024 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,18 +11,17 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPCPP_PASSIVE_LISTENER_H
+#define GRPCPP_PASSIVE_LISTENER_H
 
-#ifndef GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
-#define GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
+#include <grpc/passive_listener.h>
 
-#include <grpc/support/port_platform.h>
+namespace grpc {
+namespace experimental {
 
-#include "src/core/lib/config/core_configuration.h"
+using grpc_core::experimental::PassiveListener;
 
-namespace grpc_core {
+}  // namespace experimental
+}  // namespace grpc
 
-void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder);
-
-}  // namespace grpc_core
-
-#endif  // GRPC_SRC_CORE_LIB_CHANNEL_SERVER_CALL_TRACER_FILTER_H
+#endif  // GRPCPP_PASSIVE_LISTENER_H
