@@ -366,11 +366,11 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
-    grpc_error_handle error = StatusCreate(
-        absl::StatusCode::kUnknown,
-        absl::StrCat("connect: ", grpc_core::StrError(connect_errno), " (",
-                     connect_errno, ") peer_address=", *addr_uri),
-        DEBUG_LOCATION, {});
+    grpc_error_handle error =
+        StatusCreate(absl::StatusCode::kUnknown,
+                     absl::StrCat("connect: ", strerror(connect_errno), " (",
+                                  connect_errno, ") peer_address=", *addr_uri),
+                     DEBUG_LOCATION, {});
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
