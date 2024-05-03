@@ -38,6 +38,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.12'
   s.tvos.deployment_target = '12.0'
   s.watchos.deployment_target = '6.0'
+  s.visionos.deployment_target = '1.0'
 
   s.requires_arc = false
 
@@ -175,6 +176,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/service_type.h',
                       'include/grpcpp/impl/status.h',
                       'include/grpcpp/impl/sync.h',
+                      'include/grpcpp/passive_listener.h',
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/audit_logging.h',
                       'include/grpcpp/security/auth_context.h',
@@ -243,6 +245,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
+    ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -962,7 +965,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/experiments/config.h',
                       'src/core/lib/experiments/experiments.h',
                       'src/core/lib/gpr/alloc.h',
-                      'src/core/lib/gpr/log_internal.h',
                       'src/core/lib/gpr/spinlock.h',
                       'src/core/lib/gpr/string.h',
                       'src/core/lib/gpr/time_precise.h',
@@ -2232,7 +2234,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/experiments/config.h',
                               'src/core/lib/experiments/experiments.h',
                               'src/core/lib/gpr/alloc.h',
-                              'src/core/lib/gpr/log_internal.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/time_precise.h',

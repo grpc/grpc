@@ -86,6 +86,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
+    Options& set_service_config(std::string svc_cfg) {
+      service_config = std::move(svc_cfg);
+      return *this;
+    }
+
     Options& set_channel_scope_filter(
         absl::AnyInvocable<bool(
             const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
@@ -138,6 +143,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
              grpc_core::RefCountedStringValue>
         labels_to_inject;
+    std::string service_config;
     absl::AnyInvocable<bool(
         const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
         channel_scope_filter;
