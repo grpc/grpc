@@ -3504,12 +3504,12 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           metadata->Set(GrpcMessageMetadata(),
                         Slice(grpc_slice_copy(*details)));
         }
-        CHECK_NE(metadata, nullptr);
+        CHECK(metadata != nullptr);
         return [this, metadata = std::move(metadata)]() mutable {
-          CHECK_NE(metadata, nullptr);
+          CHECK(metadata != nullptr);
           return [this,
                   metadata = std::move(metadata)]() mutable -> Poll<Success> {
-            CHECK_NE(metadata, nullptr);
+            CHECK(metadata != nullptr);
             call_handler_.PushServerTrailingMetadata(std::move(metadata));
             return Success{};
           };
