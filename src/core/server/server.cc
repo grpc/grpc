@@ -802,7 +802,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
   return channelz_node;
 }
 
-static absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
+absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
     ValueOrFailure<ClientMetadataHandle> md) {
   if (!md.ok()) {
     return absl::InternalError("Missing metadata");
