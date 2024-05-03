@@ -1,4 +1,5 @@
-# Copyright 2021 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,20 +12,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -eo pipefail
 
-# Config file for the internal CI (in protobuf text format)
+# Input parameters to psm:: methods of the install script.
+readonly GRPC_LANGUAGE="cpp"
+readonly BUILD_SCRIPT_DIR="$(dirname "$0")"
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/psm-interop-test-cpp.sh"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "artifacts/**/*sponge_log.xml"
-    regex: "artifacts/**/*.log"
-    strip_prefix: "artifacts"
-  }
-}
-env_vars {
-  key: "PSM_TEST_SUITE"
-  value: "security"
-}
+source "${BUILD_SCRIPT_DIR}/psm-interop-install-lib.sh"
+psm::lang::source_install_lib
+source "${BUILD_SCRIPT_DIR}/psm-interop-build-${GRPC_LANGUAGE}.sh"
+psm::run "${PSM_TEST_SUITE}"
