@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
@@ -71,7 +72,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
         engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
     // Get slice from request.
     Slice slice;
-    GPR_ASSERT(request_buffer->DumpToSingleSlice(&slice).ok());
+    CHECK(request_buffer->DumpToSingleSlice(&slice).ok());
     // Parse request proto.
     upb::Arena arena;
     xds_service_orca_v3_OrcaLoadReportRequest* request =
@@ -173,7 +174,7 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
                          Options options)
     : server_metric_recorder_(server_metric_recorder),
       min_report_duration_(options.min_report_duration) {
-  GPR_ASSERT(server_metric_recorder_ != nullptr);
+  CHECK_NE(server_metric_recorder_, nullptr);
   AddMethod(new internal::RpcServiceMethod(
       "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
       internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));

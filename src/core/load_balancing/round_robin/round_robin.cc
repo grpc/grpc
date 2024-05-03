@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -219,8 +220,8 @@ RoundRobin::~RoundRobin() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO, "[RR %p] Destroying Round Robin policy", this);
   }
-  GPR_ASSERT(endpoint_list_ == nullptr);
-  GPR_ASSERT(latest_pending_endpoint_list_ == nullptr);
+  CHECK(endpoint_list_ == nullptr);
+  CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void RoundRobin::ShutdownLocked() {
@@ -338,20 +339,20 @@ void RoundRobin::RoundRobinEndpointList::UpdateStateCountersLocked(
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.
   if (old_state.has_value()) {
-    GPR_ASSERT(*old_state != GRPC_CHANNEL_SHUTDOWN);
+    CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
     if (*old_state == GRPC_CHANNEL_READY) {
-      GPR_ASSERT(num_ready_ > 0);
+      CHECK_GT(num_ready_, 0u);
       --num_ready_;
     } else if (*old_state == GRPC_CHANNEL_CONNECTING ||
                *old_state == GRPC_CHANNEL_IDLE) {
-      GPR_ASSERT(num_connecting_ > 0);
+      CHECK_GT(num_connecting_, 0u);
       --num_connecting_;
     } else if (*old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      GPR_ASSERT(num_transient_failure_ > 0);
+      CHECK_GT(num_transient_failure_, 0u);
       --num_transient_failure_;
     }
   }
-  GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
+  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING ||
@@ -408,7 +409,7 @@ void RoundRobin::RoundRobinEndpointList::
         pickers.push_back(endpoint->picker());
       }
     }
-    GPR_ASSERT(!pickers.empty());
+    CHECK(!pickers.empty());
     round_robin->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::OkStatus(),
         MakeRefCounted<Picker>(round_robin, std::move(pickers)));

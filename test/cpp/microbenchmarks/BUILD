@@ -382,25 +382,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bm_chttp2_transport",
-    srcs = ["bm_chttp2_transport.cc"],
-    args = grpc_benchmark_args(),
-    external_deps = [
-        "absl/log:check",
-    ],
-    tags = [
-        "no_mac",
-        "no_windows",
-        "nomsan",
-    ],
-    deps = [
-        ":helpers",
-        "//src/core:closure",
-        "//src/core:slice",
-    ],
-)
-
-grpc_cc_test(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
     args = grpc_benchmark_args(),
