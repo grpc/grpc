@@ -1559,6 +1559,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/hash",
+        "absl/log:check",
         "absl/strings",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -1579,6 +1580,9 @@ grpc_cc_library(
     hdrs = [
         "lib/slice/slice_buffer.h",
         "//:include/grpc/slice_buffer.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         "slice",
@@ -2877,6 +2881,9 @@ grpc_cc_library(
     hdrs = [
         "lib/slice/percent_encoding.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "bitset",
         "slice",
@@ -3041,6 +3048,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/strings",
         "absl/types:optional",
     ],
