@@ -19,6 +19,8 @@
 #include <memory>
 #include <type_traits>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -157,7 +159,7 @@ template <typename T>
 struct ResultOr {
   ResultOr(T ok, ServerMetadataHandle error)
       : ok(std::move(ok)), error(std::move(error)) {
-    GPR_ASSERT((this->ok == nullptr) ^ (this->error == nullptr));
+    CHECK((this->ok == nullptr) ^ (this->error == nullptr));
   }
   T ok;
   ServerMetadataHandle error;
@@ -990,13 +992,13 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
-    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
+    DCHECK(p == &FilterType::Call::OnFinalize);
   }
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*)) {
-    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
+    DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1011,7 +1013,7 @@ struct StackData {
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*,
                                                 FilterType*)) {
-    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
+    DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1041,11 +1043,11 @@ class OperationExecutor {
   OperationExecutor(OperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
   }
   OperationExecutor& operator=(OperationExecutor&& other) noexcept {
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
-    GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
+    DCHECK_EQ(promise_data_, nullptr);
     ops_ = other.ops_;
     end_ops_ = other.end_ops_;
     return *this;
@@ -1094,12 +1096,12 @@ class InfallibleOperationExecutor {
   InfallibleOperationExecutor(InfallibleOperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
   }
   InfallibleOperationExecutor& operator=(
       InfallibleOperationExecutor&& other) noexcept {
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
-    GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
+    DCHECK_EQ(promise_data_, nullptr);
     ops_ = other.ops_;
     end_ops_ = other.end_ops_;
     return *this;
@@ -1432,12 +1434,12 @@ class CallFilters {
      public:
       Push(CallFilters* filters, T x)
           : filters_(filters), value_(std::move(x)) {
-        GPR_ASSERT(value_ != nullptr);
+        CHECK(value_ != nullptr);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
           gpr_log(GPR_INFO, "BeginPush[%p|%p]: %s", &state(), this,
                   state().DebugString().c_str());
         }
-        GPR_ASSERT(push_slot() == nullptr);
+        CHECK_EQ(push_slot(), nullptr);
         state().BeginPush();
         push_slot() = this;
       }
@@ -1446,7 +1448,7 @@ class CallFilters {
           if (value_ != nullptr) {
             state().DropPush();
           }
-          GPR_ASSERT(push_slot() == this);
+          CHECK(push_slot() == this);
           push_slot() = nullptr;
         }
       }
@@ -1457,7 +1459,7 @@ class CallFilters {
           : filters_(std::exchange(other.filters_, nullptr)),
             value_(std::move(other.value_)) {
         if (filters_ != nullptr) {
-          GPR_DEBUG_ASSERT(push_slot() == &other);
+          DCHECK(push_slot() == &other);
           push_slot() = this;
         }
       }
@@ -1466,7 +1468,7 @@ class CallFilters {
 
       Poll<StatusFlag> operator()() {
         if (value_ == nullptr) {
-          GPR_ASSERT(filters_ == nullptr);
+          CHECK_EQ(filters_, nullptr);
           if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
             gpr_log(GPR_INFO, "Push[|%p]: already done", this);
           }
@@ -1501,8 +1503,8 @@ class CallFilters {
           gpr_log(GPR_INFO, "Push[%p|%p]: take value; %s", &state(), this,
                   state().DebugString().c_str());
         }
-        GPR_ASSERT(value_ != nullptr);
-        GPR_ASSERT(filters_ != nullptr);
+        CHECK(value_ != nullptr);
+        CHECK(filters_ != nullptr);
         push_slot() = nullptr;
         filters_ = nullptr;
         return std::move(value_);
@@ -1580,7 +1582,7 @@ class CallFilters {
           Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
-        GPR_DEBUG_ASSERT(!executor_.IsRunning());
+        DCHECK(!executor_.IsRunning());
         state().AckPull();
         if (r->ok != nullptr) return std::move(r->ok);
         filters_->PushServerTrailingMetadata(std::move(r->error));
@@ -1608,7 +1610,7 @@ class CallFilters {
       PullMessage& operator=(PullMessage&&) = delete;
 
       Poll<ValueOrFailure<absl::optional<MessageHandle>>> operator()() {
-        GPR_ASSERT(filters_ != nullptr);
+        CHECK(filters_ != nullptr);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
           gpr_log(GPR_INFO, "PullMessage[%p|%p]: %s executor:%d", &state(),
                   this, state().DebugString().c_str(), executor_.IsRunning());
@@ -1636,7 +1638,7 @@ class CallFilters {
           return Failure{};
         }
         if (!**r) return absl::nullopt;
-        GPR_ASSERT(filters_ != nullptr);
+        CHECK(filters_ != nullptr);
         return FinishOperationExecutor(executor_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
       }
@@ -1653,7 +1655,7 @@ class CallFilters {
       FinishOperationExecutor(Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
-        GPR_DEBUG_ASSERT(!executor_.IsRunning());
+        DCHECK(!executor_.IsRunning());
         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
           gpr_log(GPR_INFO, "PullMessage[%p|%p] executor done: %s", &state(),
                   this, state().DebugString().c_str());
@@ -1702,7 +1704,7 @@ class CallFilters {
         filters_->CancelDueToFailedPipeOperation();
         return Failure{};
       }
-      GPR_ASSERT(filters_->client_initial_metadata_ != nullptr);
+      CHECK(filters_->client_initial_metadata_ != nullptr);
       return FinishOperationExecutor(executor_.Start(
           &filters_->stack_->data_.client_initial_metadata,
           std::move(filters_->client_initial_metadata_), filters_->call_data_));
@@ -1717,7 +1719,7 @@ class CallFilters {
         Poll<filters_detail::ResultOr<ClientMetadataHandle>> p) {
       auto* r = p.value_if_ready();
       if (r == nullptr) return Pending{};
-      GPR_DEBUG_ASSERT(!executor_.IsRunning());
+      DCHECK(!executor_.IsRunning());
       state().AckPull();
       if (r->ok != nullptr) return std::move(r->ok);
       filters_->PushServerTrailingMetadata(std::move(r->error));
@@ -1847,7 +1849,7 @@ inline auto CallFilters::PullClientInitialMetadata() {
 }
 
 inline auto CallFilters::PushServerInitialMetadata(ServerMetadataHandle md) {
-  GPR_ASSERT(md != nullptr);
+  CHECK(md != nullptr);
   return [p = ServerInitialMetadataPromises::Push{
               this, std::move(md)}]() mutable { return p(); };
 }
@@ -1857,7 +1859,7 @@ inline auto CallFilters::PullServerInitialMetadata() {
 }
 
 inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
-  GPR_ASSERT(message != nullptr);
+  CHECK(message != nullptr);
   return [p = ClientToServerMessagePromises::Push{
               this, std::move(message)}]() mutable { return p(); };
 }
@@ -1867,7 +1869,7 @@ inline auto CallFilters::PullClientToServerMessage() {
 }
 
 inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
-  GPR_ASSERT(message != nullptr);
+  CHECK(message != nullptr);
   return [p = ServerToClientMessagePromises::Push{
               this, std::move(message)}]() mutable { return p(); };
 }

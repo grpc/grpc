@@ -24,7 +24,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "python_census_context.h"
+#include "python_observability_context.h"
 
 #include <grpc/support/time.h>
 
@@ -96,7 +96,8 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   explicit PythonOpenCensusCallTracer(const char* method, const char* target,
                                       const char* trace_id,
                                       const char* parent_span_id,
-                                      bool tracing_enabled);
+                                      bool tracing_enabled,
+                                      bool registered_method);
   ~PythonOpenCensusCallTracer() override;
 
   std::string TraceId() override {
@@ -127,6 +128,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   absl::string_view target_;
   PythonCensusContext context_;
   bool tracing_enabled_;
+  const bool registered_method_;
   mutable grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

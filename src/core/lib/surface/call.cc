@@ -98,13 +98,13 @@
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server_interface.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 #include "src/core/lib/transport/batch_builder.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server_interface.h"
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
@@ -330,12 +330,19 @@ void Call::HandleCompressionAlgorithmDisabled(
 }
 
 void Call::UpdateDeadline(Timestamp deadline) {
-  MutexLock lock(&deadline_mu_);
+  ReleasableMutexLock lock(&deadline_mu_);
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
             deadline_.ToString().c_str(), deadline.ToString().c_str());
   }
   if (deadline >= deadline_) return;
+  if (deadline < Timestamp::Now()) {
+    lock.Release();
+    CancelWithError(grpc_error_set_int(
+        absl::DeadlineExceededError("Deadline Exceeded"),
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
+    return;
+  }
   if (deadline_ != Timestamp::InfFuture()) {
     if (!event_engine_->Cancel(deadline_task_)) return;
   } else {

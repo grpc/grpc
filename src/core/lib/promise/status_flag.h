@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 #define GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -127,7 +128,7 @@ struct StatusCastImpl<absl::Status, const StatusFlag&> {
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
   static absl::StatusOr<T> Cast(StatusFlag flag) {
-    GPR_DEBUG_ASSERT(!flag.ok());
+    DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -135,7 +136,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
   static absl::StatusOr<T> Cast(StatusFlag flag) {
-    GPR_DEBUG_ASSERT(!flag.ok());
+    DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -143,7 +144,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, const StatusFlag&> {
   static absl::StatusOr<T> Cast(StatusFlag flag) {
-    GPR_DEBUG_ASSERT(!flag.ok());
+    DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -157,7 +158,7 @@ class ValueOrFailure {
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrFailure(Failure) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ValueOrFailure(StatusFlag status) { GPR_ASSERT(!status.ok()); }
+  ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
 
   static ValueOrFailure FromOptional(absl::optional<T> value) {
     return ValueOrFailure{std::move(value)};
@@ -217,7 +218,7 @@ struct StatusCastImpl<ValueOrFailure<T>, Failure> {
 template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
   static ValueOrFailure<T> Cast(StatusFlag f) {
-    GPR_ASSERT(!f.ok());
+    CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };
@@ -225,7 +226,7 @@ struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
 template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag> {
   static ValueOrFailure<T> Cast(StatusFlag f) {
-    GPR_ASSERT(!f.ok());
+    CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };

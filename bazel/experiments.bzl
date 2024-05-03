@@ -58,9 +58,15 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "event_engine_client",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
