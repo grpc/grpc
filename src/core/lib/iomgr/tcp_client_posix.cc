@@ -198,8 +198,8 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (!error.ok()) {
-    absl::Status status(
-        error.code(), absl::StrCat(error.message(), " (Timeout occurred)"));
+    absl::Status status(error.code(),
+                        absl::StrCat(error.message(), " (Timeout occurred)"));
     error.ForEachPayload([&](absl::string_view uri, const absl::Cord& value) {
       status.SetPayload(uri, value);
     });
@@ -368,9 +368,8 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     // attempts.
     grpc_error_handle error = StatusCreate(
         absl::StatusCode::kUnknown,
-        absl::StrCat(
-            "connect: ", grpc_core::StrError(connect_errno), " (",
-            connect_errno, ") peer_address=", *addr_uri),
+        absl::StrCat("connect: ", grpc_core::StrError(connect_errno), " (",
+                     connect_errno, ") peer_address=", *addr_uri),
         DEBUG_LOCATION, {});
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);

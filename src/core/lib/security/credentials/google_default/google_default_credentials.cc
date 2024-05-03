@@ -283,9 +283,8 @@ static grpc_error_handle create_default_creds_from_path(
     json = std::move(*json_or);
   }
   if (json.type() != Json::Type::kObject) {
-    error = GRPC_ERROR_CREATE(
-        absl::StrCat("Failed to parse JSON \"", creds_data->as_string_view(),
-                     "\""));
+    error = GRPC_ERROR_CREATE(absl::StrCat("Failed to parse JSON \"",
+                                           creds_data->as_string_view(), "\""));
     goto end;
   }
 

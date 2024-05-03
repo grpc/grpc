@@ -317,8 +317,8 @@ grpc_error_handle on_handshake_next_done(
   }
   if (result != TSI_OK) {
     notification_signal(fixture);
-    return GRPC_ERROR_CREATE(absl::StrCat(
-        "Handshake failed (", tsi_result_to_string(result), ")"));
+    return GRPC_ERROR_CREATE(
+        absl::StrCat("Handshake failed (", tsi_result_to_string(result), ")"));
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {

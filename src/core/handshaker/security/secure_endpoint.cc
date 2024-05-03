@@ -339,8 +339,9 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
   if (result != TSI_OK) {
     grpc_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(ep, GRPC_ERROR_CREATE(absl::StrCat(
-        "Unwrap failed (", tsi_result_to_string(result), ")")));
+    call_read_cb(
+        ep, GRPC_ERROR_CREATE(absl::StrCat("Unwrap failed (",
+                                           tsi_result_to_string(result), ")")));
     return;
   }
 

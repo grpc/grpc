@@ -1125,9 +1125,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
       grpc_error_set_int(
           grpc_core::StatusCreate(
               absl::StatusCode::kUnavailable,
-              absl::StrFormat(
-                  "GOAWAY received; Error code: %u; Debug Text: %s",
-                  goaway_error, goaway_text),
+              absl::StrFormat("GOAWAY received; Error code: %u; Debug Text: %s",
+                              goaway_error, goaway_text),
               DEBUG_LOCATION, {}),
           grpc_core::StatusIntProperty::kHttp2Error,
           static_cast<intptr_t>(goaway_error)),
@@ -1289,9 +1288,9 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     if (cl_err.ok()) {
       cl_err = GRPC_ERROR_CREATE(absl::StrCat(
           "Error in HTTP transport completing operation: ", desc,
-          " write_state=", write_state_name(t->write_state), " refs=",
-          closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
-          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT,
+          " write_state=", write_state_name(t->write_state),
+          " refs=", closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT,
+          " flags=", closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT,
           " peer_address=", t->peer_string.as_string_view()));
     }
     cl_err = grpc_error_add_child(cl_err, error);
@@ -2606,9 +2605,9 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   if (parse_error.ok() &&
       (parse_error = grpc_http_parser_eof(&parser)) == absl::OkStatus()) {
     error = grpc_error_set_int(
-        GRPC_ERROR_CREATE(absl::StrCat(
-            "Trying to connect an http1.x server (HTTP status ",
-            response.status, ")")),
+        GRPC_ERROR_CREATE(
+            absl::StrCat("Trying to connect an http1.x server (HTTP status ",
+                         response.status, ")")),
         grpc_core::StatusIntProperty::kRpcStatus,
         grpc_http2_status_to_grpc_status(response.status));
   }

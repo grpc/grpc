@@ -882,13 +882,12 @@ grpc_error_handle grpc_dns_lookup_ares_continued(
   // parse name, splitting it into host and port parts
   grpc_core::SplitHostPort(name, host, port);
   if (host->empty()) {
-    error = GRPC_ERROR_CREATE(
-        absl::StrCat("unparseable host:port \"", name, "\""));
+    error =
+        GRPC_ERROR_CREATE(absl::StrCat("unparseable host:port \"", name, "\""));
     return error;
   } else if (check_port && port->empty()) {
     if (default_port == nullptr || strlen(default_port) == 0) {
-      error =
-          GRPC_ERROR_CREATE(absl::StrCat("no port in name \"", name, "\""));
+      error = GRPC_ERROR_CREATE(absl::StrCat("no port in name \"", name, "\""));
       return error;
     }
     *port = default_port;

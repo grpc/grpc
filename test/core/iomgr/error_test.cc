@@ -87,16 +87,16 @@ TEST(ErrorTest, CopyAndUnRef) {
   EXPECT_EQ(str, "message");
 
   // this gives error3 a ref to the new error, and decrements error1 to one ref
-  grpc_error_handle error3 = grpc_error_set_str(
-      error1, grpc_core::StatusStrProperty::kFile, "file");
+  grpc_error_handle error3 =
+      grpc_error_set_str(error1, grpc_core::StatusStrProperty::kFile, "file");
   EXPECT_NE(error3, error1);  // should not be the same because of extra ref
   EXPECT_TRUE(grpc_error_get_str(
       error3, grpc_core::StatusStrProperty::kGrpcMessage, &str));
   EXPECT_EQ(str, "message");
 
   // error 1 should not have a syscall but 3 should
-  EXPECT_TRUE(!grpc_error_get_str(
-      error1, grpc_core::StatusStrProperty::kFile, &str));
+  EXPECT_TRUE(
+      !grpc_error_get_str(error1, grpc_core::StatusStrProperty::kFile, &str));
   EXPECT_TRUE(
       grpc_error_get_str(error3, grpc_core::StatusStrProperty::kFile, &str));
   EXPECT_EQ(str, "file");
@@ -134,8 +134,8 @@ TEST(ErrorTest, PrintErrorString) {
   grpc_error_handle error = grpc_error_set_int(
       GRPC_ERROR_CREATE("Error"), grpc_core::StatusIntProperty::kRpcStatus,
       GRPC_STATUS_UNIMPLEMENTED);
-  error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error,
-                             666);
+  error =
+      grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error, 666);
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "message");
   // gpr_log(GPR_DEBUG, "%s", grpc_core::StatusToString(error).c_str());

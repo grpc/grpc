@@ -213,9 +213,9 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 
 absl::Status PosixOSError(int error_no, absl::string_view call_name,
                           absl::string_view peer_address) {
-  return absl::UnknownError(absl::StrCat(
-      call_name, ": ", grpc_core::StrError(error_no), " (", error_no,
-      ") peer_address=", peer_address));
+  return absl::UnknownError(
+      absl::StrCat(call_name, ": ", grpc_core::StrError(error_no), " (",
+                   error_no, ") peer_address=", peer_address));
 }
 
 }  // namespace
@@ -559,9 +559,8 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
     }
   } else {
     if (!memory_owner_.is_valid() && status.ok()) {
-      status = TcpAnnotateError(absl::UnknownError(
-          absl::StrCat("Shutting down endpoint, peer_address=",
-                       PeerAddress())));
+      status = TcpAnnotateError(absl::UnknownError(absl::StrCat(
+          "Shutting down endpoint, peer_address=", PeerAddress())));
     }
     incoming_buffer_->Clear();
     last_read_buffer_.Clear();

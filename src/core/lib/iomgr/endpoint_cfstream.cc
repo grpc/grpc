@@ -166,10 +166,9 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(ep->read_stream);
     if (stream_error != nullptr) {
-      error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(
-              stream_error,
-              absl::StrCat("Read error on peer_address=", ep->peer_string)));
+      error = CFStreamAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
+          stream_error,
+          absl::StrCat("Read error on peer_address=", ep->peer_string)));
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("Read error");
@@ -178,10 +177,8 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     EP_UNREF(ep, "read");
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
-    CallReadCb(ep,
-               CFStreamAnnotateError(GRPC_ERROR_CREATE(
-                   absl::StrCat("Socket closed on peer_address=",
-                                ep->peer_string))));
+    CallReadCb(ep, CFStreamAnnotateError(GRPC_ERROR_CREATE(absl::StrCat(
+                       "Socket closed on peer_address=", ep->peer_string))));
     EP_UNREF(ep, "read");
   } else {
     if (read_size < static_cast<CFIndex>(len)) {
@@ -209,10 +206,9 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     grpc_slice_buffer_reset_and_unref(ep->write_slices);
     CFErrorRef stream_error = CFWriteStreamCopyError(ep->write_stream);
     if (stream_error != nullptr) {
-      error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(
-              stream_error,
-              absl::StrCat("Write failed on peer_address=", ep->peer_string)));
+      error = CFStreamAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
+          stream_error,
+          absl::StrCat("Write failed on peer_address=", ep->peer_string)));
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("write failed.");
