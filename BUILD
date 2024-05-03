@@ -1003,6 +1003,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3910,6 +3911,7 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/alts/alts_security_connector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -4188,6 +4190,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

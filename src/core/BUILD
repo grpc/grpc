@@ -3722,7 +3722,10 @@ grpc_cc_library(
     hdrs = [
         "lib/security/certificate_provider/certificate_provider_registry.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings",
+    ],
     deps = [
         "certificate_provider_factory",
         "//:gpr",
@@ -3741,6 +3744,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3841,6 +3845,7 @@ grpc_cc_library(
         "load_balancing/grpclb/grpclb.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3886,6 +3891,7 @@ grpc_cc_library(
         "lib/security/security_connector/insecure/insecure_security_connector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
@@ -3940,6 +3946,7 @@ grpc_cc_library(
         "lib/security/security_connector/local/local_security_connector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4381,6 +4388,7 @@ grpc_cc_library(
         "lib/security/authorization/rbac_policy.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
