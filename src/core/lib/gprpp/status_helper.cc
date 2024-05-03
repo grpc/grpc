@@ -87,8 +87,6 @@ const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
       return TYPE_URL(TYPE_STR_TAG "file");
     case StatusStrProperty::kGrpcMessage:
       return TYPE_URL(TYPE_STR_TAG "grpc_message");
-    case StatusStrProperty::kFilename:
-      return TYPE_URL(TYPE_STR_TAG "filename");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }

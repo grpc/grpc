@@ -76,8 +76,6 @@ enum class StatusStrProperty {
   kFile,
   /// peer that we were trying to communicate when this error occurred
   kGrpcMessage,
-  /// filename that we were trying to read/write when this error occurred
-  kFilename,
 };
 
 /// This enum should have the same value of grpc_error_times
