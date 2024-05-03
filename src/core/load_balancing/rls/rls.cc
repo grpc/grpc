@@ -41,6 +41,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -863,7 +864,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   auto child_policy_config = InsertOrUpdateChildPolicyField(
       lb_policy_->config_->child_policy_config_target_field_name(), target_,
       lb_policy_->config_->child_policy_config(), &errors);
-  GPR_ASSERT(child_policy_config.has_value());
+  CHECK(child_policy_config.has_value());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(
         GPR_INFO,
@@ -953,7 +954,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
       return;
     }
     wrapper_->connectivity_state_ = state;
-    GPR_DEBUG_ASSERT(picker != nullptr);
+    DCHECK(picker != nullptr);
     if (picker != nullptr) {
       wrapper_->picker_ = std::move(picker);
     }
@@ -976,7 +977,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (it == key_builder_map.end()) {
     // Didn't find exact match, try method wildcard.
     last_slash_pos = path.rfind('/');
-    GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
+    DCHECK(last_slash_pos != path.npos);
     if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     std::string service(path.substr(0, last_slash_pos + 1));
     it = key_builder_map.find(service);
@@ -1010,7 +1011,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (!key_builder->service_key.empty()) {
     if (last_slash_pos == path.npos) {
       last_slash_pos = path.rfind('/');
-      GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
+      DCHECK(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
     key_map[key_builder->service_key] =
@@ -1020,7 +1021,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (!key_builder->method_key.empty()) {
     if (last_slash_pos == path.npos) {
       last_slash_pos = path.rfind('/');
-      GPR_DEBUG_ASSERT(last_slash_pos != path.npos);
+      DCHECK(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
     key_map[key_builder->method_key] =
@@ -1224,7 +1225,7 @@ void RlsLb::Cache::Entry::Orphan() {
 
 size_t RlsLb::Cache::Entry::Size() const {
   // lru_iterator_ is not valid once we're shut down.
-  GPR_ASSERT(!is_shutdown_);
+  CHECK(!is_shutdown_);
   return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
@@ -1510,7 +1511,7 @@ void RlsLb::Cache::MaybeShrinkSize(size_t bytes) {
     auto lru_it = lru_list_.begin();
     if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
     auto map_it = map_.find(*lru_it);
-    GPR_ASSERT(map_it != map_.end());
+    CHECK(map_it != map_.end());
     if (!map_it->second->CanEvict()) break;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
       gpr_log(GPR_INFO, "[rlslb %p] LRU eviction: removing entry %p %s",
@@ -1665,7 +1666,7 @@ void RlsLb::RlsChannel::Orphan() {
     // Remove channelz linkage.
     if (parent_channelz_node_ != nullptr) {
       channelz::ChannelNode* child_channelz_node = channel_->channelz_node();
-      GPR_ASSERT(child_channelz_node != nullptr);
+      CHECK_NE(child_channelz_node, nullptr);
       parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
     }
     // Stop connectivity watch.
@@ -1701,7 +1702,7 @@ void RlsLb::RlsChannel::ReportResponseLocked(bool response_succeeded) {
 }
 
 void RlsLb::RlsChannel::ResetBackoff() {
-  GPR_DEBUG_ASSERT(channel_ != nullptr);
+  DCHECK(channel_ != nullptr);
   channel_->ResetConnectionBackoff();
 }
 
@@ -1735,7 +1736,7 @@ RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
       absl::OkStatus());
 }
 
-RlsLb::RlsRequest::~RlsRequest() { GPR_ASSERT(call_ == nullptr); }
+RlsLb::RlsRequest::~RlsRequest() { CHECK_EQ(call_, nullptr); }
 
 void RlsLb::RlsRequest::Orphan() {
   if (call_ != nullptr) {
@@ -1798,7 +1799,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
   Ref(DEBUG_LOCATION, "OnRlsCallComplete").release();
   auto call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &call_complete_cb_);
-  GPR_ASSERT(call_error == GRPC_CALL_OK);
+  CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {

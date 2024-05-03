@@ -42,6 +42,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.12'
   s.tvos.deployment_target = '12.0'
   s.watchos.deployment_target = '6.0'
+  s.visionos.deployment_target = '1.0'
 
   s.requires_arc = false
 
@@ -167,6 +168,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/propagation_bits.h',
                       'include/grpc/impl/slice_type.h',
                       'include/grpc/load_reporting.h',
+                      'include/grpc/passive_listener.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -215,6 +217,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
+    ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -1433,7 +1436,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/linux/cpu.cc',
                       'src/core/lib/gpr/linux/log.cc',
                       'src/core/lib/gpr/log.cc',
-                      'src/core/lib/gpr/log_internal.h',
                       'src/core/lib/gpr/msys/tmpfile.cc',
                       'src/core/lib/gpr/posix/cpu.cc',
                       'src/core/lib/gpr/posix/log.cc',
@@ -3041,7 +3043,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/experiments/config.h',
                               'src/core/lib/experiments/experiments.h',
                               'src/core/lib/gpr/alloc.h',
-                              'src/core/lib/gpr/log_internal.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/time_precise.h',

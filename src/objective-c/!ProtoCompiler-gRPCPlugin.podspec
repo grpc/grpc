@@ -108,6 +108,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.12'
   s.tvos.deployment_target = '12.0'
   s.watchos.deployment_target = '6.0'
+  s.visionos.deployment_target = '1.0'
 
   # Restrict the gRPC runtime version to the one supported by this plugin.
   s.dependency 'gRPC-ProtoRPC', v
