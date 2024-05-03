@@ -407,7 +407,6 @@ class ChannelBasedCall : public Call {
     return channel_->event_engine();
   }
 
- protected:
   grpc_compression_options compression_options() override {
     return channel_->compression_options();
   }
