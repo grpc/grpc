@@ -48,7 +48,6 @@
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
-#include "src/core/handshaker/security/tsi_error.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
@@ -260,10 +259,10 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   tsi_result result = tsi_handshaker_result_get_unused_bytes(
       handshaker_result_, &unused_bytes, &unused_bytes_size);
   if (result != TSI_OK) {
-    HandshakeFailedLocked(grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE(
-            "TSI handshaker result does not provide unused bytes"),
-        result));
+    HandshakeFailedLocked(
+        GRPC_ERROR_CREATE(absl::StrCat(
+            "TSI handshaker result does not provide unused bytes (",
+            tsi_result_to_string(result), ")")));
     return;
   }
   // Check whether we need to wrap the endpoint.
@@ -271,10 +270,11 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
   result = tsi_handshaker_result_get_frame_protector_type(
       handshaker_result_, &frame_protector_type);
   if (result != TSI_OK) {
-    HandshakeFailedLocked(grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE("TSI handshaker result does not implement "
-                          "get_frame_protector_type"),
-        result));
+    HandshakeFailedLocked(
+        GRPC_ERROR_CREATE(absl::StrCat(
+            "TSI handshaker result does not implement "
+            "get_frame_protector_type (",
+            tsi_result_to_string(result), ")")));
     return;
   }
   tsi_zero_copy_grpc_protector* zero_copy_protector = nullptr;
@@ -288,9 +288,10 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
           handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
           &zero_copy_protector);
       if (result != TSI_OK) {
-        HandshakeFailedLocked(grpc_set_tsi_error_result(
-            GRPC_ERROR_CREATE("Zero-copy frame protector creation failed"),
-            result));
+        HandshakeFailedLocked(
+            GRPC_ERROR_CREATE(absl::StrCat(
+                "Zero-copy frame protector creation failed (",
+                tsi_result_to_string(result), ")")));
         return;
       }
       break;
@@ -300,8 +301,10 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error_handle error) {
           handshaker_result_, max_frame_size_ == 0 ? nullptr : &max_frame_size_,
           &protector);
       if (result != TSI_OK) {
-        HandshakeFailedLocked(grpc_set_tsi_error_result(
-            GRPC_ERROR_CREATE("Frame protector creation failed"), result));
+        HandshakeFailedLocked(
+            GRPC_ERROR_CREATE(absl::StrCat(
+                "Frame protector creation failed (",
+                tsi_result_to_string(result), ")")));
         return;
       }
       break;
@@ -356,8 +359,8 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
   tsi_result result =
       tsi_handshaker_result_extract_peer(handshaker_result_, &peer);
   if (result != TSI_OK) {
-    return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE("Peer extraction failed"), result);
+    return GRPC_ERROR_CREATE(absl::StrCat(
+        "Peer extraction failed (", tsi_result_to_string(result), ")"));
   }
   connector_->check_peer(peer, args_->endpoint, args_->args, &auth_context_,
                          &on_peer_checked_);
@@ -398,11 +401,10 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     if (security_connector != nullptr) {
       connector_type = security_connector->type().name();
     }
-    return grpc_set_tsi_error_result(
-        GRPC_ERROR_CREATE(absl::StrCat(
-            connector_type, " handshake failed",
-            (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_)),
-        result);
+    return GRPC_ERROR_CREATE(absl::StrCat(
+        connector_type, " handshake failed (", tsi_result_to_string(result),
+        ")", (tsi_handshake_error_.empty() ? "" : ": "),
+        tsi_handshake_error_));
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {

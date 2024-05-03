@@ -37,7 +37,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/handshaker/security/tsi_error.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 
@@ -318,8 +317,8 @@ grpc_error_handle on_handshake_next_done(
   }
   if (result != TSI_OK) {
     notification_signal(fixture);
-    return grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Handshake failed"),
-                                     result);
+    return GRPC_ERROR_CREATE(absl::StrCat(
+        "Handshake failed (", tsi_result_to_string(result), ")"));
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {

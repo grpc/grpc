@@ -817,7 +817,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/tsi_error.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -1665,7 +1664,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
-  - src/core/handshaker/security/tsi_error.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
@@ -2322,7 +2320,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/tsi_error.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -2791,7 +2788,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
-  - src/core/handshaker/security/tsi_error.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
@@ -4411,7 +4407,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/tsi_error.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -4756,7 +4751,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
-  - src/core/handshaker/security/tsi_error.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc

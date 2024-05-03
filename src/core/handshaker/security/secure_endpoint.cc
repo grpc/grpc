@@ -40,7 +40,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/handshaker/security/tsi_error.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -340,8 +339,8 @@ static void on_read(void* user_data, grpc_error_handle error) {
 
   if (result != TSI_OK) {
     grpc_slice_buffer_reset_and_unref(ep->read_buffer);
-    call_read_cb(ep, grpc_set_tsi_error_result(
-                         GRPC_ERROR_CREATE("Unwrap failed"), result));
+    call_read_cb(ep, GRPC_ERROR_CREATE(absl::StrCat(
+        "Unwrap failed (", tsi_result_to_string(result), ")")));
     return;
   }
 
@@ -484,7 +483,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
-        grpc_set_tsi_error_result(GRPC_ERROR_CREATE("Wrap failed"), result));
+        GRPC_ERROR_CREATE(
+            absl::StrCat("Wrap failed (", tsi_result_to_string(result), ")")));
     return;
   }
 

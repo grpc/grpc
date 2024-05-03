@@ -40,16 +40,9 @@ TEST(ErrorTest, SetGetInt) {
   EXPECT_TRUE(i);  // line set will never be 0
 #endif
   EXPECT_TRUE(
-      !grpc_error_get_int(error, grpc_core::StatusIntProperty::kErrorNo, &i));
-  EXPECT_TRUE(
-      !grpc_error_get_int(error, grpc_core::StatusIntProperty::kSize, &i));
-
-  intptr_t errnumber = 314;
-  error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kErrorNo,
-                             errnumber);
-  EXPECT_TRUE(
-      grpc_error_get_int(error, grpc_core::StatusIntProperty::kErrorNo, &i));
-  EXPECT_EQ(i, errnumber);
+      !grpc_error_get_int(error, grpc_core::StatusIntProperty::kStreamId, &i));
+  EXPECT_TRUE(!grpc_error_get_int(
+      error, grpc_core::StatusIntProperty::kHttp2Error, &i));
 
   intptr_t http = 2;
   error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error,
@@ -63,10 +56,6 @@ TEST(ErrorTest, SetGetStr) {
   grpc_error_handle error = GRPC_ERROR_CREATE("Test");
 
   std::string str;
-  EXPECT_TRUE(
-      !grpc_error_get_str(error, grpc_core::StatusStrProperty::kSyscall, &str));
-  EXPECT_TRUE(!grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kTsiError, &str));
 #ifndef NDEBUG
   // grpc_core::StatusStrProperty::kFile   is for debug only
   EXPECT_TRUE(
@@ -99,7 +88,7 @@ TEST(ErrorTest, CopyAndUnRef) {
 
   // this gives error3 a ref to the new error, and decrements error1 to one ref
   grpc_error_handle error3 = grpc_error_set_str(
-      error1, grpc_core::StatusStrProperty::kSyscall, "syscall");
+      error1, grpc_core::StatusStrProperty::kFile, "file");
   EXPECT_NE(error3, error1);  // should not be the same because of extra ref
   EXPECT_TRUE(grpc_error_get_str(
       error3, grpc_core::StatusStrProperty::kGrpcMessage, &str));
@@ -107,10 +96,10 @@ TEST(ErrorTest, CopyAndUnRef) {
 
   // error 1 should not have a syscall but 3 should
   EXPECT_TRUE(!grpc_error_get_str(
-      error1, grpc_core::StatusStrProperty::kSyscall, &str));
+      error1, grpc_core::StatusStrProperty::kFile, &str));
   EXPECT_TRUE(
-      grpc_error_get_str(error3, grpc_core::StatusStrProperty::kSyscall, &str));
-  EXPECT_EQ(str, "syscall");
+      grpc_error_get_str(error3, grpc_core::StatusStrProperty::kFile, &str));
+  EXPECT_EQ(str, "file");
 }
 
 TEST(ErrorTest, CreateReferencing) {
@@ -145,7 +134,8 @@ TEST(ErrorTest, PrintErrorString) {
   grpc_error_handle error = grpc_error_set_int(
       GRPC_ERROR_CREATE("Error"), grpc_core::StatusIntProperty::kRpcStatus,
       GRPC_STATUS_UNIMPLEMENTED);
-  error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kSize, 666);
+  error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error,
+                             666);
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "message");
   // gpr_log(GPR_DEBUG, "%s", grpc_core::StatusToString(error).c_str());
@@ -175,16 +165,8 @@ TEST(ErrorTest, TestOsError) {
   int fake_errno = 5;
   const char* syscall = "syscall name";
   grpc_error_handle error = GRPC_OS_ERROR(fake_errno, syscall);
-
-  intptr_t i = 0;
-  EXPECT_TRUE(
-      grpc_error_get_int(error, grpc_core::StatusIntProperty::kErrorNo, &i));
-  EXPECT_EQ(i, fake_errno);
-
-  std::string str;
-  EXPECT_TRUE(
-      grpc_error_get_str(error, grpc_core::StatusStrProperty::kSyscall, &str));
-  EXPECT_EQ(str, syscall);
+  EXPECT_EQ(error.message(),
+            absl::StrCat("syscall name: ", grpc_core::StrError(5), " (5)"));
 }
 
 int main(int argc, char** argv) {

@@ -48,8 +48,6 @@ namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
 enum class StatusIntProperty {
-  /// 'errno' from the operating system
-  kErrorNo,
   /// __LINE__ from the call site creating the error
   kFileLine,
   /// stream identifier: for errors that are associated with an individual
@@ -58,17 +56,8 @@ enum class StatusIntProperty {
   /// grpc status code representing this error
   // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
   kRpcStatus,
-  /// offset into some binary blob (usually represented by
-  /// RAW_BYTES) where the error occurred
-  kOffset,
-  /// context sensitive index associated with the error
-  kIndex,
-  /// context sensitive size associated with the error
-  kSize,
   /// http2 error code associated with the error (see the HTTP2 RFC)
   kHttp2Error,
-  /// TSI status code associated with the error
-  kTsiCode,
   /// WSAGetLastError() reported when this error occurred
   kWsaError,
   /// File descriptor associated with this error
@@ -89,24 +78,14 @@ enum class StatusStrProperty {
   kDescription,
   /// source file in which this error occurred
   kFile,
-  /// operating system description of this error
-  kOsError,
-  /// syscall that generated this error
-  kSyscall,
   /// peer that we were trying to communicate when this error occurred
   kTargetAddress,
   /// grpc status message associated with this error
   kGrpcMessage,
   /// hex dump (or similar) with the data that generated this error
   kRawBytes,
-  /// tsi error string associated with this error
-  kTsiError,
   /// filename that we were trying to read/write when this error occurred
   kFilename,
-  /// key associated with the error
-  kKey,
-  /// value associated with the error
-  kValue,
 };
 
 /// This enum should have the same value of grpc_error_times

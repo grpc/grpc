@@ -212,13 +212,8 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 #endif  // GRPC_LINUX_ERRQUEUE
 
 absl::Status PosixOSError(int error_no, const char* call_name) {
-  absl::Status s = absl::UnknownError(grpc_core::StrError(error_no));
-  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, error_no);
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
-                          grpc_core::StrError(error_no));
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
-                          call_name);
-  return s;
+  return absl::UnknownError(absl::StrCat(
+      call_name, ": ", grpc_core::StrError(error_no), " (", error_no, ")"));
 }
 
 }  // namespace

@@ -2245,7 +2245,6 @@ add_library(grpc
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
-  src/core/handshaker/security/tsi_error.cc
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
@@ -3013,7 +3012,6 @@ add_library(grpc_unsecure
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
-  src/core/handshaker/security/tsi_error.cc
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
@@ -5132,7 +5130,6 @@ add_library(grpc_authorization_provider
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
-  src/core/handshaker/security/tsi_error.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc

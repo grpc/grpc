@@ -1120,8 +1120,6 @@
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/security_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/security_handshaker.h" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/security/tsi_error.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/handshaker/security/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/tcp_connect/tcp_connect_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.cc" role="src" />

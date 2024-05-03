@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/status.h>
@@ -58,15 +59,10 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
 
 absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
-  auto err_string = grpc_core::StrError(err);
-  absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, err_string, location, {});
-  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
-                          err_string);
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
-                          call_name);
-  return s;
+  return StatusCreate(
+      absl::StatusCode::kUnknown,
+      absl::StrCat(call_name, ": ", grpc_core::StrError(err), " (", err, ")"),
+      location, {});
 }
 
 #ifdef GPR_WINDOWS

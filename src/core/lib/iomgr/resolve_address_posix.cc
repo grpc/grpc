@@ -140,12 +140,8 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
   }
   if (s != 0) {
     err = grpc_error_set_str(
-        grpc_error_set_str(
-            grpc_error_set_str(
-                grpc_error_set_int(GRPC_ERROR_CREATE(gai_strerror(s)),
-                                   StatusIntProperty::kErrorNo, s),
-                StatusStrProperty::kOsError, gai_strerror(s)),
-            StatusStrProperty::kSyscall, "getaddrinfo"),
+        absl::UnknownError(absl::StrCat(
+            "getaddrinfo(\"", name, "\"): ", gai_strerror(s), " (", s, ")")),
         StatusStrProperty::kTargetAddress, name);
     goto done;
   }

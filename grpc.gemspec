@@ -1138,8 +1138,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/handshaker/security/secure_endpoint.h )
   s.files += %w( src/core/handshaker/security/security_handshaker.cc )
   s.files += %w( src/core/handshaker/security/security_handshaker.h )
-  s.files += %w( src/core/handshaker/security/tsi_error.cc )
-  s.files += %w( src/core/handshaker/security/tsi_error.h )
   s.files += %w( src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc )
   s.files += %w( src/core/handshaker/tcp_connect/tcp_connect_handshaker.h )
   s.files += %w( src/core/lib/address_utils/parse_address.cc )

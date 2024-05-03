@@ -198,8 +198,12 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (!error.ok()) {
-    error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kOsError,
-                               "Timeout occurred");
+    absl::Status status(
+        error.code(), absl::StrCat(error.message(), " (Timeout occurred)"));
+    error.ForEachPayload([&](absl::string_view uri, const absl::Cord& value) {
+      status.SetPayload(uri, value);
+    });
+    error = std::move(status);
     goto finish;
   }
 
