@@ -5018,6 +5018,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
+        "lib/security/credentials/xds/xds_credentials.cc",
         "xds/grpc/certificate_provider_store.cc",
         "xds/grpc/file_watcher_certificate_provider_factory.cc",
         "xds/grpc/xds_audit_logger_registry.cc",
@@ -5038,9 +5039,9 @@ grpc_cc_library(
         "xds/grpc/xds_route_config.cc",
         "xds/grpc/xds_routing.cc",
         "xds/grpc/xds_transport_grpc.cc",
-        "lib/security/credentials/xds/xds_credentials.cc",
     ],
     hdrs = [
+        "lib/security/credentials/xds/xds_credentials.h",
         "xds/grpc/certificate_provider_store.h",
         "xds/grpc/file_watcher_certificate_provider_factory.h",
         "xds/grpc/xds_audit_logger_registry.h",
@@ -5061,7 +5062,6 @@ grpc_cc_library(
         "xds/grpc/xds_route_config.h",
         "xds/grpc/xds_routing.h",
         "xds/grpc/xds_transport_grpc.h",
-        "lib/security/credentials/xds/xds_credentials.h",
     ],
     external_deps = [
         "absl/base:core_headers",
