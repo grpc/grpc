@@ -3578,9 +3578,12 @@ grpc_call* MakeServerCall(CallHandler call_handler,
                           grpc_metadata_array* publish_initial_metadata) {
   PublishMetadataArray(client_initial_metadata.get(), publish_initial_metadata,
                        false);
-  return call_handler.arena()
-      ->New<ServerCall>(std::move(client_initial_metadata),
-                        std::move(call_handler), server, cq)
+  // TODO(ctiller): ideally we'd put this in the arena with the CallHandler,
+  // but there's an ownership problem: CallHandler owns the arena, and so would
+  // get destroyed before the base class Call destructor runs, leading to
+  // UB/crash. Investigate another path.
+  return (new ServerCall(std::move(client_initial_metadata),
+                         std::move(call_handler), server, cq))
       ->c_ptr();
 }
 
