@@ -69,8 +69,6 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
       return TYPE_URL(TYPE_INT_TAG "http2_error");
     case StatusIntProperty::kFd:
       return TYPE_URL(TYPE_INT_TAG "fd");
-    case StatusIntProperty::kHttpStatus:
-      return TYPE_URL(TYPE_INT_TAG "http_status");
     case StatusIntProperty::kOccurredDuringWrite:
       return TYPE_URL(TYPE_INT_TAG "occurred_during_write");
     case StatusIntProperty::ChannelConnectivityState:

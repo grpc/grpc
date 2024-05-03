@@ -2610,9 +2610,9 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   if (parse_error.ok() &&
       (parse_error = grpc_http_parser_eof(&parser)) == absl::OkStatus()) {
     error = grpc_error_set_int(
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
-            grpc_core::StatusIntProperty::kHttpStatus, response.status),
+        GRPC_ERROR_CREATE(absl::StrCat(
+            "Trying to connect an http1.x server (HTTP status ",
+            response.status, ")")),
         grpc_core::StatusIntProperty::kRpcStatus,
         grpc_http2_status_to_grpc_status(response.status));
   }
