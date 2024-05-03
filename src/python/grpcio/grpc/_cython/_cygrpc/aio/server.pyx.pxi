@@ -777,7 +777,7 @@ async def _schedule_rpc_coro(object rpc_coro,
         rpc_state,
         rpc_coro,
         loop,
-    ))
+    ), name="HandleExceptions[%s]" % _decode(rpc_state.method()))
     _add_callback_handler(rpc_task, rpc_state)
     await _handle_cancellation_from_core(rpc_task, rpc_state, loop)
 
