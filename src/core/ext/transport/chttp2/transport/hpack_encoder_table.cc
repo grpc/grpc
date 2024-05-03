@@ -81,7 +81,7 @@ void HPackEncoderTable::EvictOne() {
 
 void HPackEncoderTable::Rebuild(uint32_t capacity) {
   decltype(elem_size_) new_elem_size(capacity);
-  CHECK_LT(table_elems_, capacity);
+  CHECK_LE(table_elems_, capacity);
   for (uint32_t i = 0; i < table_elems_; i++) {
     uint32_t ofs = tail_remote_index_ + i + 1;
     new_elem_size[ofs % capacity] = elem_size_[ofs % elem_size_.size()];

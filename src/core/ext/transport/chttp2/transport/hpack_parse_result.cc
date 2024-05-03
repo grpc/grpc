@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/port_platform.h>
