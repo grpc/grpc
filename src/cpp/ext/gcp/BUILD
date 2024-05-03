@@ -156,6 +156,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",

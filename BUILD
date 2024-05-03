@@ -1003,6 +1003,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -1193,7 +1194,10 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/client/secure_credentials.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings",
+    ],
     language = "c++",
     deps = [
         "exec_ctx",
@@ -1214,6 +1218,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/cpp/server/secure_server_credentials.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     language = "c++",
     public_hdrs = [
@@ -2125,6 +2132,9 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/constants.h",
         "src/cpp/server/load_reporter/load_data_store.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "c++",
     deps = [
         "gpr",
@@ -2183,6 +2193,7 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporter_async_service_impl.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/memory",
         "protobuf_headers",
     ],
@@ -2224,6 +2235,7 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporter.h",
     ],
     external_deps = [
+        "absl/log:check",
         "opencensus-stats",
         "opencensus-tags",
         "protobuf_headers",
@@ -2698,6 +2710,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/strings",
         "absl/time",
         "absl/types:optional",
@@ -2856,6 +2869,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/base:endian",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3550,6 +3564,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "@com_google_protobuf//upb:base",
@@ -3591,6 +3606,7 @@ grpc_cc_library(
         "//src/core:load_balancing/child_policy_handler.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
@@ -3898,6 +3914,7 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/alts/alts_security_connector.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
@@ -4176,6 +4193,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

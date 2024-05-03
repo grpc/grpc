@@ -24,6 +24,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -132,7 +133,7 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
       state_ = GRPC_CHANNEL_CONNECTING;
       status_ = absl::OkStatus();
     } else {
-      GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
+      CHECK(state_ == GRPC_CHANNEL_CONNECTING);
     }
     // Start the health watch stream.
     StartHealthStreamLocked();
