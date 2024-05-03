@@ -788,11 +788,8 @@ grpc_cc_library(
         "absl/base:log_severity",
         "absl/functional:any_invocable",
         "absl/log",
-<<<<<<< HEAD
         "absl/log:check",
-=======
         "absl/log:globals",
->>>>>>> master
         "absl/memory",
         "absl/random",
         "absl/status",
