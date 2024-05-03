@@ -310,6 +310,10 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       pending_filter_stack_.front().calld->KillZombie();
       pending_filter_stack_.pop();
     }
+    while (!pending_promises_.empty()) {
+      pending_promises_.front()->Finish(absl::InternalError("Server closed"));
+      pending_promises_.pop();
+    }
   }
 
   void KillRequests(grpc_error_handle error) override {
