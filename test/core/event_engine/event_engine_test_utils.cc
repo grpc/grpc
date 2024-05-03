@@ -41,16 +41,7 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#include <sanitizer/lsan_interface.h>
-#define GRPC_FORCE_LEAK_CHECK() __lsan_do_leak_check()
-#endif
-#endif
-#ifndef GRPC_FORCE_LEAK_CHECK
-#define GRPC_FORCE_LEAK_CHECK()
-#endif
+#include "test/core/test_util/build.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -90,7 +81,7 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
   int n = 0;
   while (engine.use_count() > 1) {
     ++n;
-    if (n == 500) GRPC_FORCE_LEAK_CHECK();
+    if (n == 100) AsanAssertNoLeaks();
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));

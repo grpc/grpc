@@ -12,6 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "build.h"
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+#define GRPC_BUILD_HAS_ASAN 1
+#else
+#define GRPC_BUILD_HAS_ASAN 0
+#endif
+#else
+#ifdef ADDRESS_SANITIZER
+#define GRPC_BUILD_HAS_ASAN 1
+#else
+#define GRPC_BUILD_HAS_ASAN 0
+#endif
+#endif
+
+#if GRPC_BUILD_HAS_ASAN
+#include <sanitizer/lsan_interface.h>
+#endif
+
 bool BuiltUnderValgrind() {
 #ifdef RUNNING_ON_VALGRIND
   return true;
@@ -36,19 +55,11 @@ bool BuiltUnderTsan() {
 #endif
 }
 
-bool BuiltUnderAsan() {
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-  return true;
-#else
-  return false;
-#endif
-#else
-#ifdef ADDRESS_SANITIZER
-  return true;
-#else
-  return false;
-#endif
+bool BuiltUnderAsan() { return GRPC_BUILD_HAS_ASAN != 0; }
+
+void AsanAssertNoLeaks() {
+#if GRPC_BUILD_HAS_ASAN
+  __lsan_do_leak_check();
 #endif
 }
 

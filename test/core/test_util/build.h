@@ -30,4 +30,7 @@ bool BuiltUnderMsan();
 // Returns whether this is built under UndefinedBehaviorSanitizer
 bool BuiltUnderUbsan();
 
+// Force a leak check if built under ASAN. If there are leaks, crash.
+void AsanAssertNoLeaks();
+
 #endif  // GRPC_TEST_CORE_TEST_UTIL_BUILD_H
