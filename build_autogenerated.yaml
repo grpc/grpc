@@ -56,7 +56,6 @@ libs:
   - src/core/lib/config/load_config.h
   - src/core/lib/event_engine/thread_local.h
   - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/log_internal.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tmpfile.h
@@ -130,6 +129,8 @@ libs:
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/log:check
+  - absl/log:globals
   - absl/log:log
   - absl/memory:memory
   - absl/random:random
@@ -197,6 +198,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -255,8 +257,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.h
   - src/core/ext/filters/rbac/rbac_filter.h
   - src/core/ext/filters/rbac/rbac_service_config_parser.h
-  - src/core/ext/filters/server_config_selector/server_config_selector.h
-  - src/core/ext/filters/server_config_selector/server_config_selector_filter.h
   - src/core/ext/filters/stateful_session/stateful_session_filter.h
   - src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h
   - src/core/ext/gcp/metadata_query.h
@@ -786,7 +786,6 @@ libs:
   - src/core/ext/xds/xds_bootstrap_grpc.h
   - src/core/ext/xds/xds_certificate_provider.h
   - src/core/ext/xds/xds_channel_args.h
-  - src/core/ext/xds/xds_channel_stack_modifier.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_grpc.h
   - src/core/ext/xds/xds_client_stats.h
@@ -838,7 +837,6 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/server_call_tracer_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
@@ -1137,8 +1135,6 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -1207,6 +1203,12 @@ libs:
   - src/core/resolver/xds/xds_dependency_manager.h
   - src/core/resolver/xds/xds_resolver_attributes.h
   - src/core/resolver/xds/xds_resolver_trace.h
+  - src/core/server/server.h
+  - src/core/server/server_call_tracer_filter.h
+  - src/core/server/server_config_selector.h
+  - src/core/server/server_config_selector_filter.h
+  - src/core/server/server_interface.h
+  - src/core/server/xds_channel_stack_modifier.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_impl.h
@@ -1276,7 +1278,6 @@ libs:
   - src/core/ext/filters/message_size/message_size_filter.cc
   - src/core/ext/filters/rbac/rbac_filter.cc
   - src/core/ext/filters/rbac/rbac_service_config_parser.cc
-  - src/core/ext/filters/server_config_selector/server_config_selector_filter.cc
   - src/core/ext/filters/stateful_session/stateful_session_filter.cc
   - src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
   - src/core/ext/gcp/metadata_query.cc
@@ -1639,7 +1640,6 @@ libs:
   - src/core/ext/xds/xds_bootstrap.cc
   - src/core/ext/xds/xds_bootstrap_grpc.cc
   - src/core/ext/xds/xds_certificate_provider.cc
-  - src/core/ext/xds/xds_channel_stack_modifier.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_grpc.cc
   - src/core/ext/xds/xds_client_stats.cc
@@ -1656,7 +1656,6 @@ libs:
   - src/core/ext/xds/xds_listener.cc
   - src/core/ext/xds/xds_route_config.cc
   - src/core/ext/xds/xds_routing.cc
-  - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/ext/xds/xds_transport_grpc.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
@@ -1682,7 +1681,6 @@ libs:
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -1936,7 +1934,6 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
@@ -2008,6 +2005,11 @@ libs:
   - src/core/resolver/xds/xds_dependency_manager.cc
   - src/core/resolver/xds/xds_resolver.cc
   - src/core/resolver/xds/xds_resolver_trace.cc
+  - src/core/server/server.cc
+  - src/core/server/server_call_tracer_filter.cc
+  - src/core/server/server_config_selector_filter.cc
+  - src/core/server/xds_channel_stack_modifier.cc
+  - src/core/server/xds_server_config_fetcher.cc
   - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
@@ -2055,7 +2057,6 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -2182,6 +2183,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -2340,7 +2342,6 @@ libs:
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
   - src/core/lib/channel/promise_based_filter.h
-  - src/core/lib/channel/server_call_tracer_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/channel/tcp_tracer.h
   - src/core/lib/compression/compression_internal.h
@@ -2603,8 +2604,6 @@ libs:
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
-  - src/core/lib/surface/server.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -2667,6 +2666,9 @@ libs:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/server/server.h
+  - src/core/server/server_call_tracer_filter.h
+  - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_impl.h
@@ -2805,7 +2807,6 @@ libs:
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
-  - src/core/lib/channel/server_call_tracer_filter.cc
   - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -3020,7 +3021,6 @@ libs:
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
-  - src/core/lib/surface/server.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
   - src/core/lib/surface/wait_for_cq_end_op.cc
@@ -3082,6 +3082,8 @@ libs:
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
   - src/core/resolver/sockaddr/sockaddr_resolver.cc
+  - src/core/server/server.cc
+  - src/core/server/server_call_tracer_filter.cc
   - src/core/service_config/service_config_channel_arg_filter.cc
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
@@ -3114,7 +3116,6 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3592,7 +3593,6 @@ libs:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -3788,6 +3788,7 @@ libs:
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
+  - include/grpcpp/passive_listener.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4015,7 +4016,6 @@ libs:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -4216,6 +4216,7 @@ libs:
   - include/grpcpp/impl/service_type.h
   - include/grpcpp/impl/status.h
   - include/grpcpp/impl/sync.h
+  - include/grpcpp/passive_listener.h
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/audit_logging.h
   - include/grpcpp/security/auth_context.h
@@ -4364,6 +4365,7 @@ libs:
   - include/grpc/impl/propagation_bits.h
   - include/grpc/impl/slice_type.h
   - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
   - include/grpc/slice.h
   - include/grpc/slice_buffer.h
   - include/grpc/status.h
@@ -4680,7 +4682,6 @@ libs:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -4713,6 +4714,7 @@ libs:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
@@ -5028,7 +5030,6 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -5119,7 +5120,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5172,7 +5172,6 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_benchmark.cc
   deps:
   - absl/algorithm:container
-  - absl/log:check
   - absl/types:span
   - benchmark
   - gpr
@@ -5191,7 +5190,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5280,7 +5278,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5344,7 +5341,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5535,7 +5531,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5651,7 +5646,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5693,7 +5687,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5754,7 +5747,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5890,7 +5882,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -5929,7 +5920,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -6253,7 +6243,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -6520,7 +6509,6 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -7279,7 +7267,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7497,7 +7484,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7604,7 +7590,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7634,7 +7619,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -7775,7 +7759,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -8047,7 +8030,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -8103,7 +8085,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -8270,7 +8251,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -8965,7 +8945,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9022,7 +9001,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9054,7 +9032,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9084,7 +9061,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9257,7 +9233,6 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -9449,7 +9424,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -9900,7 +9874,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -10036,7 +10009,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -10069,7 +10041,6 @@ targets:
   - test/core/event_engine/forkable_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -10083,7 +10054,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10313,7 +10283,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10354,7 +10323,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10385,7 +10353,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10561,7 +10528,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10631,7 +10597,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10661,7 +10626,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10691,7 +10655,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10721,7 +10684,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -10751,7 +10713,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11062,7 +11023,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11104,7 +11064,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11135,7 +11094,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11166,7 +11124,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11504,7 +11461,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -11843,7 +11799,6 @@ targets:
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
-  - src/core/lib/surface/server_interface.h
   - src/core/lib/surface/validate_metadata.h
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
@@ -11878,6 +11833,7 @@ targets:
   - src/core/resolver/resolver_factory.h
   - src/core/resolver/resolver_registry.h
   - src/core/resolver/server_address.h
+  - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
@@ -12160,7 +12116,6 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -12291,7 +12246,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12496,7 +12450,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -12527,7 +12480,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -12975,7 +12927,6 @@ targets:
   - absl/base:config
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13002,7 +12953,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -13338,7 +13288,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -13379,7 +13328,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -13979,7 +13927,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -14176,7 +14123,6 @@ targets:
   - upb_message_lib
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -14211,7 +14157,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -14254,7 +14199,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -14348,7 +14292,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15005,7 +14948,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15259,7 +15201,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15296,7 +15237,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15328,7 +15268,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -15365,7 +15304,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17745,7 +17683,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17776,7 +17713,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17851,12 +17787,12 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17867,6 +17803,7 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - src/proto/grpc/testing/xds/v3/orca_load_report.proto
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -17895,7 +17832,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -17951,7 +17887,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/server_config_selector/server_config_selector_test.cc
+  - test/core/server/server_config_selector_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -18085,7 +18021,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18240,7 +18175,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18691,7 +18625,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18831,7 +18764,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -18991,7 +18923,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19074,7 +19005,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19119,7 +19049,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19169,7 +19098,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19203,7 +19131,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19335,7 +19262,6 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
-  - absl/log:check
   - absl/status:statusor
   - gpr
   uses_polling: false
@@ -19389,7 +19315,6 @@ targets:
   deps:
   - gtest
   - absl/hash:hash
-  - absl/log:check
   - absl/status:statusor
   - absl/utility:utility
   - gpr
@@ -19428,7 +19353,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19459,7 +19383,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19489,7 +19412,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19877,7 +19799,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -19974,7 +19895,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -20871,7 +20791,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h
@@ -21258,7 +21177,6 @@ targets:
   - test/core/test_util/fuzzer_util.h
   - test/core/test_util/grpc_profiler.h
   - test/core/test_util/histogram.h
-  - test/core/test_util/mock_authorization_endpoint.h
   - test/core/test_util/mock_endpoint.h
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/resolve_localhost_ip46.h

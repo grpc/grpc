@@ -20,6 +20,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -162,7 +163,7 @@ struct TrySeqTraitsWithSfinae<
   }
   template <typename R>
   static R ReturnValue(T&& status) {
-    GPR_DEBUG_ASSERT(!IsStatusOk(status));
+    DCHECK(!IsStatusOk(status));
     return FailureStatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>

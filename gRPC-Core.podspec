@@ -42,6 +42,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.12'
   s.tvos.deployment_target = '12.0'
   s.watchos.deployment_target = '6.0'
+  s.visionos.deployment_target = '1.0'
 
   s.requires_arc = false
 
@@ -167,6 +168,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/propagation_bits.h',
                       'include/grpc/impl/slice_type.h',
                       'include/grpc/load_reporting.h',
+                      'include/grpc/passive_listener.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -215,6 +217,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
+    ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
@@ -301,9 +304,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/rbac/rbac_filter.h',
                       'src/core/ext/filters/rbac/rbac_service_config_parser.cc',
                       'src/core/ext/filters/rbac/rbac_service_config_parser.h',
-                      'src/core/ext/filters/server_config_selector/server_config_selector.h',
-                      'src/core/ext/filters/server_config_selector/server_config_selector_filter.cc',
-                      'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                       'src/core/ext/filters/stateful_session/stateful_session_filter.cc',
                       'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                       'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc',
@@ -1195,8 +1195,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_certificate_provider.cc',
                       'src/core/ext/xds/xds_certificate_provider.h',
                       'src/core/ext/xds/xds_channel_args.h',
-                      'src/core/ext/xds/xds_channel_stack_modifier.cc',
-                      'src/core/ext/xds/xds_channel_stack_modifier.h',
                       'src/core/ext/xds/xds_client.cc',
                       'src/core/ext/xds/xds_client.h',
                       'src/core/ext/xds/xds_client_grpc.cc',
@@ -1232,7 +1230,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_route_config.h',
                       'src/core/ext/xds/xds_routing.cc',
                       'src/core/ext/xds/xds_routing.h',
-                      'src/core/ext/xds/xds_server_config_fetcher.cc',
                       'src/core/ext/xds/xds_transport.h',
                       'src/core/ext/xds/xds_transport_grpc.cc',
                       'src/core/ext/xds/xds_transport_grpc.h',
@@ -1290,8 +1287,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/metrics.h',
                       'src/core/lib/channel/promise_based_filter.cc',
                       'src/core/lib/channel/promise_based_filter.h',
-                      'src/core/lib/channel/server_call_tracer_filter.cc',
-                      'src/core/lib/channel/server_call_tracer_filter.h',
                       'src/core/lib/channel/status_util.cc',
                       'src/core/lib/channel/status_util.h',
                       'src/core/lib/channel/tcp_tracer.h',
@@ -1441,7 +1436,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/linux/cpu.cc',
                       'src/core/lib/gpr/linux/log.cc',
                       'src/core/lib/gpr/log.cc',
-                      'src/core/lib/gpr/log_internal.h',
                       'src/core/lib/gpr/msys/tmpfile.cc',
                       'src/core/lib/gpr/posix/cpu.cc',
                       'src/core/lib/gpr/posix/log.cc',
@@ -1913,9 +1907,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/legacy_channel.cc',
                       'src/core/lib/surface/legacy_channel.h',
                       'src/core/lib/surface/metadata_array.cc',
-                      'src/core/lib/surface/server.cc',
-                      'src/core/lib/surface/server.h',
-                      'src/core/lib/surface/server_interface.h',
                       'src/core/lib/surface/validate_metadata.cc',
                       'src/core/lib/surface/validate_metadata.h',
                       'src/core/lib/surface/version.cc',
@@ -2055,6 +2046,17 @@ Pod::Spec.new do |s|
                       'src/core/resolver/xds/xds_resolver_attributes.h',
                       'src/core/resolver/xds/xds_resolver_trace.cc',
                       'src/core/resolver/xds/xds_resolver_trace.h',
+                      'src/core/server/server.cc',
+                      'src/core/server/server.h',
+                      'src/core/server/server_call_tracer_filter.cc',
+                      'src/core/server/server_call_tracer_filter.h',
+                      'src/core/server/server_config_selector.h',
+                      'src/core/server/server_config_selector_filter.cc',
+                      'src/core/server/server_config_selector_filter.h',
+                      'src/core/server/server_interface.h',
+                      'src/core/server/xds_channel_stack_modifier.cc',
+                      'src/core/server/xds_channel_stack_modifier.h',
+                      'src/core/server/xds_server_config_fetcher.cc',
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
                       'src/core/service_config/service_config_channel_arg_filter.cc',
@@ -2382,8 +2384,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/message_size/message_size_filter.h',
                               'src/core/ext/filters/rbac/rbac_filter.h',
                               'src/core/ext/filters/rbac/rbac_service_config_parser.h',
-                              'src/core/ext/filters/server_config_selector/server_config_selector.h',
-                              'src/core/ext/filters/server_config_selector/server_config_selector_filter.h',
                               'src/core/ext/filters/stateful_session/stateful_session_filter.h',
                               'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h',
                               'src/core/ext/gcp/metadata_query.h',
@@ -2913,7 +2913,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_bootstrap_grpc.h',
                               'src/core/ext/xds/xds_certificate_provider.h',
                               'src/core/ext/xds/xds_channel_args.h',
-                              'src/core/ext/xds/xds_channel_stack_modifier.h',
                               'src/core/ext/xds/xds_client.h',
                               'src/core/ext/xds/xds_client_grpc.h',
                               'src/core/ext/xds/xds_client_stats.h',
@@ -2965,7 +2964,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/context.h',
                               'src/core/lib/channel/metrics.h',
                               'src/core/lib/channel/promise_based_filter.h',
-                              'src/core/lib/channel/server_call_tracer_filter.h',
                               'src/core/lib/channel/status_util.h',
                               'src/core/lib/channel/tcp_tracer.h',
                               'src/core/lib/compression/compression_internal.h',
@@ -3045,7 +3043,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/experiments/config.h',
                               'src/core/lib/experiments/experiments.h',
                               'src/core/lib/gpr/alloc.h',
-                              'src/core/lib/gpr/log_internal.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
                               'src/core/lib/gpr/time_precise.h',
@@ -3289,8 +3286,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/init_internally.h',
                               'src/core/lib/surface/lame_client.h',
                               'src/core/lib/surface/legacy_channel.h',
-                              'src/core/lib/surface/server.h',
-                              'src/core/lib/surface/server_interface.h',
                               'src/core/lib/surface/validate_metadata.h',
                               'src/core/lib/surface/wait_for_cq_end_op.h',
                               'src/core/lib/transport/batch_builder.h',
@@ -3359,6 +3354,12 @@ Pod::Spec.new do |s|
                               'src/core/resolver/xds/xds_dependency_manager.h',
                               'src/core/resolver/xds/xds_resolver_attributes.h',
                               'src/core/resolver/xds/xds_resolver_trace.h',
+                              'src/core/server/server.h',
+                              'src/core/server/server_call_tracer_filter.h',
+                              'src/core/server/server_config_selector.h',
+                              'src/core/server/server_config_selector_filter.h',
+                              'src/core/server/server_interface.h',
+                              'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
                               'src/core/service_config/service_config_impl.h',

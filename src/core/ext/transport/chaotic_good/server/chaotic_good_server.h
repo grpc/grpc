@@ -44,14 +44,12 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/server/server.h"
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodServerListener final
-    : public Server::ListenerInterface,
-      public RefCounted<ChaoticGoodServerListener> {
+class ChaoticGoodServerListener final : public Server::ListenerInterface {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
     return [bitgen = absl::BitGen()]() mutable {
