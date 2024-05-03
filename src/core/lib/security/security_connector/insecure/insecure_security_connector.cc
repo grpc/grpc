@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -70,7 +72,7 @@ void InsecureChannelSecurityConnector::add_handshakers(
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
-  GPR_ASSERT(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+  CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
   handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
 }
 
@@ -97,7 +99,7 @@ void InsecureServerSecurityConnector::add_handshakers(
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
-  GPR_ASSERT(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+  CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
   handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
 }
 

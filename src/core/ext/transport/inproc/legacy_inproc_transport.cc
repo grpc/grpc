@@ -27,6 +27,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -1266,7 +1267,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
-      GPR_ASSERT(!channel);
+      CHECK(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
               grpc_core::StatusToString(error).c_str());
       intptr_t integer;
@@ -1284,7 +1285,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       channel = new_channel->release()->c_ptr();
     }
   } else {
-    GPR_ASSERT(!channel);
+    CHECK(!channel);
     gpr_log(GPR_ERROR, "Failed to create server channel: %s",
             grpc_core::StatusToString(error).c_str());
     intptr_t integer;

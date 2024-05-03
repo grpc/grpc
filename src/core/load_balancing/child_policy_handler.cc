@@ -19,6 +19,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -114,12 +115,12 @@ class ChildPolicyHandler::Helper final
 
  private:
   bool CalledByPendingChild() const {
-    GPR_ASSERT(child_ != nullptr);
+    CHECK_NE(child_, nullptr);
     return child_ == parent()->pending_child_policy_.get();
   }
 
   bool CalledByCurrentChild() const {
-    GPR_ASSERT(child_ != nullptr);
+    CHECK_NE(child_, nullptr);
     return child_ == parent()->child_policy_.get();
   };
 
@@ -240,7 +241,7 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
                            ? pending_child_policy_.get()
                            : child_policy_.get();
   }
-  GPR_ASSERT(policy_to_update != nullptr);
+  CHECK_NE(policy_to_update, nullptr);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "[child_policy_handler %p] updating %schild policy %p",
