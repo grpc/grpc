@@ -3218,7 +3218,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
     return call_handler_.legacy_context()[elem].value;
   }
 
-  void SetCompletionQueue(grpc_completion_queue* cq) override {
+  void SetCompletionQueue(grpc_completion_queue*) override {
     Crash("unimplemented");
   }
 

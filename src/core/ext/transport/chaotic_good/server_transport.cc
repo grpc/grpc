@@ -376,8 +376,8 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
 
 void ChaoticGoodServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
-  CHECK_EQ(call_destination_, nullptr);
-  CHECK_NE(call_destination, nullptr);
+  CHECK(call_destination_ == nullptr);
+  CHECK(call_destination != nullptr);
   call_destination_ = call_destination;
   got_acceptor_.Set();
 }
