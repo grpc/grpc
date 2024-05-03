@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "build.h"
+#include "test/core/test_util/build.h"
 #if defined(__has_feature)
 #if __has_feature(address_sanitizer)
 #define GRPC_BUILD_HAS_ASAN 1
