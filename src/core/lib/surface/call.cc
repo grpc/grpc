@@ -3176,10 +3176,11 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
 
   void CancelWithError(grpc_error_handle error) override {
     call_handler_.SpawnInfallible(
-        "CancelWithError", [this, error = std::move(error)] {
+        "CancelWithError",
+        [self = WeakRefAsSubclass<ServerCall>(), error = std::move(error)] {
           auto status = ServerMetadataFromStatus(error);
           status->Set(GrpcCallWasCancelled(), true);
-          call_handler_.PushServerTrailingMetadata(std::move(status));
+          self->call_handler_.PushServerTrailingMetadata(std::move(status));
           return Empty{};
         });
   }
