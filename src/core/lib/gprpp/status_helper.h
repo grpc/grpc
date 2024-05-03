@@ -58,8 +58,6 @@ enum class StatusIntProperty {
   kRpcStatus,
   /// http2 error code associated with the error (see the HTTP2 RFC)
   kHttp2Error,
-  /// WSAGetLastError() reported when this error occurred
-  kWsaError,
   /// File descriptor associated with this error
   kFd,
   /// HTTP status (i.e. 404)

@@ -67,8 +67,6 @@ const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
       return TYPE_URL(TYPE_INT_TAG "grpc_status");
     case StatusIntProperty::kHttp2Error:
       return TYPE_URL(TYPE_INT_TAG "http2_error");
-    case StatusIntProperty::kWsaError:
-      return TYPE_URL(TYPE_INT_TAG "wsa_error");
     case StatusIntProperty::kFd:
       return TYPE_URL(TYPE_INT_TAG "fd");
     case StatusIntProperty::kHttpStatus:

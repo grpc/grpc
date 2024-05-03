@@ -100,15 +100,14 @@ std::string WSAErrorToShortDescription(int err) {
 absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
                             absl::string_view call_name) {
   char* utf8_message = gpr_format_message(err);
-  absl::Status s = StatusCreate(absl::StatusCode::kUnavailable,
-                                WSAErrorToShortDescription(err), location, {});
-  StatusSetInt(&s, grpc_core::StatusIntProperty::kWsaError, err);
-  StatusSetInt(&s, grpc_core::StatusIntProperty::kRpcStatus,
+  absl::Status status = StatusCreate(
+      absl::StatusCode::kUnavailable,
+      absl::StrCat(call_name, ": ", WSAErrorToShortDescription(err), " (",
+                   utf8_message, " -- ", err, ")"));
+  StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
                GRPC_STATUS_UNAVAILABLE);
-  StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError, utf8_message);
-  StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall, call_name);
   gpr_free(utf8_message);
-  return s;
+  return status;
 }
 #endif
 
