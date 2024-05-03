@@ -88,17 +88,13 @@ OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::CallAttemptTracer(
 
 void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
-  parent_->scope_config_->active_plugin_options_view().ForEach(
-      [&](const InternalOpenTelemetryPluginOption& plugin_option,
-          size_t /*index*/) {
-        auto* labels_injector = plugin_option.labels_injector();
-        if (labels_injector != nullptr) {
-          injected_labels_from_plugin_options_.push_back(
-              labels_injector->GetLabels(recv_initial_metadata));
-        }
-        return true;
-      },
-      parent_->otel_plugin_);
+  if (recv_initial_metadata != nullptr &&
+      recv_initial_metadata->get(grpc_core::GrpcTrailersOnly())
+          .value_or(false)) {
+    is_trailers_only_ = true;
+    return;
+  }
+  PopulateLabelInjectors(recv_initial_metadata);
 }
 
 void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
@@ -143,8 +139,11 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
 
 void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
     RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
+        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) {
+  if (is_trailers_only_) {
+    PopulateLabelInjectors(recv_trailing_metadata);
+  }
   std::array<std::pair<absl::string_view, absl::string_view>, 3>
       additional_labels = {
           {{OpenTelemetryMethodKey(), parent_->MethodForStats()},
@@ -212,6 +211,21 @@ void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::SetOptionalLabel(
     OptionalLabelKey key, grpc_core::RefCountedStringValue value) {
   GPR_ASSERT(key < OptionalLabelKey::kSize);
   optional_labels_[static_cast<size_t>(key)] = std::move(value);
+}
+
+void OpenTelemetryPlugin::ClientCallTracer::CallAttemptTracer::
+    PopulateLabelInjectors(grpc_metadata_batch* metadata) {
+  parent_->scope_config_->active_plugin_options_view().ForEach(
+      [&](const InternalOpenTelemetryPluginOption& plugin_option,
+          size_t /*index*/) {
+        auto* labels_injector = plugin_option.labels_injector();
+        if (labels_injector != nullptr) {
+          injected_labels_from_plugin_options_.push_back(
+              labels_injector->GetLabels(metadata));
+        }
+        return true;
+      },
+      parent_->otel_plugin_);
 }
 
 //

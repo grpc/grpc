@@ -73,7 +73,6 @@ grpc_cc_library(
         "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
-        "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "resolve_localhost_ip46.h",
