@@ -21,6 +21,8 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/byte_buffer.h>
@@ -49,14 +51,14 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
-  GPR_ASSERT(type ==
-             ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
+  CHECK(type ==
+        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
 ExternalConnectionAcceptorImpl::GetAcceptor() {
   grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(!has_acceptor_);
+  CHECK(!has_acceptor_);
   has_acceptor_ = true;
   return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
       new AcceptorWrapper(shared_from_this()));
@@ -85,9 +87,9 @@ void ExternalConnectionAcceptorImpl::Shutdown() {
 
 void ExternalConnectionAcceptorImpl::Start() {
   grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(!started_);
-  GPR_ASSERT(has_acceptor_);
-  GPR_ASSERT(!shutdown_);
+  CHECK(!started_);
+  CHECK(has_acceptor_);
+  CHECK(!shutdown_);
   started_ = true;
 }
 

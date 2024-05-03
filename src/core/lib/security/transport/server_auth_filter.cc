@@ -23,6 +23,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -216,7 +217,7 @@ ServerAuthFilter::ServerAuthFilter(
 absl::StatusOr<std::unique_ptr<ServerAuthFilter>> ServerAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
-  GPR_ASSERT(auth_context != nullptr);
+  CHECK(auth_context != nullptr);
   auto creds = args.GetObjectRef<grpc_server_credentials>();
   return std::make_unique<ServerAuthFilter>(std::move(creds),
                                             std::move(auth_context));
