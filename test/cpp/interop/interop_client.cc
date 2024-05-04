@@ -1286,16 +1286,12 @@ void InteropClient::PerformSoakTest(
     LOG(INFO) << "(server_uri: " << server_uri
               << ") soak test ran: " << soak_iterations
               << " iterations. total_failures: " << total_failures
-              << " is within "
-                 "max_failures_threshold: "
-              << max_failures << ". "
-              << "median_soak_iteration_latency: " << latency_ms_median
-              << " ms. "
-              << "90th_soak_iteration_latency: " << latency_ms_90th << " ms. "
-              << "worst_soak_iteration_latency: " << latency_ms_worst << " ms. "
-              << "See breakdown above for which iterations succeeded, failed, "
-                 "and "
-                 "why for more info.";
+              << " is within max_failures_threshold: " << max_failures
+              << ". median_soak_iteration_latency: " << latency_ms_median
+              << " ms. 90th_soak_iteration_latency: " << latency_ms_90th
+              << " ms. worst_soak_iteration_latency: " << latency_ms_worst
+              << " ms. See breakdown above for which iterations succeeded, "
+                 "failed, and why for more info.";
   }
 }
 
