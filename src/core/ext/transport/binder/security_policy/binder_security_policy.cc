@@ -23,6 +23,8 @@
 #include <jni.h>
 #include <unistd.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/client/jni_utils.h"
@@ -61,8 +63,8 @@ JNIEnv* GetEnv(JavaVM* vm) {
   JNIEnv* result = nullptr;
   jint attach = vm->AttachCurrentThread(&result, nullptr);
 
-  GPR_ASSERT(JNI_OK == attach);
-  GPR_ASSERT(nullptr != result);
+  CHECK(JNI_OK == attach);
+  CHECK_NE(result, nullptr);
   return result;
 }
 }  // namespace
@@ -70,14 +72,14 @@ JNIEnv* GetEnv(JavaVM* vm) {
 SameSignatureSecurityPolicy::SameSignatureSecurityPolicy(JavaVM* jvm,
                                                          jobject context)
     : jvm_(jvm) {
-  GPR_ASSERT(jvm != nullptr);
-  GPR_ASSERT(context != nullptr);
+  CHECK_NE(jvm, nullptr);
+  CHECK_NE(context, nullptr);
 
   JNIEnv* env = GetEnv(jvm_);
 
   // Make sure the context is still valid when IsAuthorized() is called
   context_ = env->NewGlobalRef(context);
-  GPR_ASSERT(context_ != nullptr);
+  CHECK_NE(context_, nullptr);
 }
 
 SameSignatureSecurityPolicy::~SameSignatureSecurityPolicy() {
