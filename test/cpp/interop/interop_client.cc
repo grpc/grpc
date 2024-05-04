@@ -209,7 +209,7 @@ bool InteropClient::AssertStatusCode(const Status& s, StatusCode expected_code,
   LOG(ERROR) << "Error status code: " << s.error_code()
              << " (expected: " << expected_code
              << "), message: " << s.error_message()
-             << ", debug string: " << optional_debug_string << ".";
+             << ", debug string: " << optional_debug_string;
 
   // In case of transient transient/retryable failures (like a broken
   // connection) we may or may not abort (see TransientFailureOrAbort())
@@ -520,7 +520,7 @@ bool InteropClient::DoResponseStreaming() {
     // most likely due to connection failure.
     LOG(ERROR) << "DoResponseStreaming(): Read fewer streams (" << i
                << ") than response_stream_sizes.size() ("
-               << response_stream_sizes.size() << ").";
+               << response_stream_sizes.size() << ")";
     return TransientFailureOrAbort();
   }
 
@@ -549,7 +549,7 @@ bool InteropClient::DoClientCompressedStreaming() {
       serviceStub_.Get()->StreamingInputCall(&probe_context, &probe_res));
 
   if (!probe_stream->Write(probe_req)) {
-    LOG(ERROR) << __func__ << "(): stream->Write() failed.";
+    LOG(ERROR) << __func__ << "(): stream->Write() failed";
     return TransientFailureOrAbort();
   }
   Status s = probe_stream->Finish();
@@ -583,7 +583,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   request.mutable_expect_compressed()->set_value(false);
   VLOG(2) << "Sending streaming request with compression disabled";
   if (!stream->Write(request, wopts)) {
-    LOG(ERROR) << __func__ << "(): stream->Write() failed.";
+    LOG(ERROR) << __func__ << "(): stream->Write() failed";
     return TransientFailureOrAbort();
   }
   CHECK(stream->WritesDone());
@@ -606,7 +606,7 @@ bool InteropClient::DoServerCompressedStreaming() {
         absl::StrFormat("(compression=%s; size=%d)",
                         compressions[i] ? "true" : "false", sizes[i]);
 
-    VLOG(2) << "Sending request streaming rpc " << log_suffix.c_str() << ".";
+    VLOG(2) << "Sending request streaming rpc " << log_suffix.c_str();
 
     ResponseParameters* const response_parameter =
         request.add_response_parameters();
@@ -705,7 +705,7 @@ bool InteropClient::DoHalfDuplex() {
     response_parameter->set_size(response_stream_sizes[i]);
 
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoHalfDuplex(): stream->Write() failed. i=" << i << ".";
+      LOG(ERROR) << "DoHalfDuplex(): stream->Write() failed. i=" << i;
       return TransientFailureOrAbort();
     }
   }
@@ -756,12 +756,12 @@ bool InteropClient::DoPingPong() {
     payload->set_body(std::string(request_stream_sizes[i], '\0'));
 
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoPingPong(): stream->Write() failed. i: " << i << ".";
+      LOG(ERROR) << "DoPingPong(): stream->Write() failed. i: " << i;
       return TransientFailureOrAbort();
     }
 
     if (!stream->Read(&response)) {
-      LOG(ERROR) << "DoPingPong(): stream->Read() failed. i:" << i << ".";
+      LOG(ERROR) << "DoPingPong(): stream->Read() failed. i:" << i;
       return TransientFailureOrAbort();
     }
 
@@ -820,12 +820,12 @@ bool InteropClient::DoCancelAfterFirstResponse() {
   StreamingOutputCallResponse response;
 
   if (!stream->Write(request)) {
-    LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Write() failed.";
+    LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Write() failed";
     return TransientFailureOrAbort();
   }
 
   if (!stream->Read(&response)) {
-    LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Read failed.";
+    LOG(ERROR) << "DoCancelAfterFirstResponse(): stream->Read failed";
     return TransientFailureOrAbort();
   }
   CHECK(response.payload().body() == std::string(31415, '\0'));
@@ -969,7 +969,7 @@ bool InteropClient::DoPickFirstUnary() {
     }
     if (response.server_id() != server_id) {
       LOG(ERROR) << "#" << i << " rpc hits server_id " << response.server_id()
-                 << ", expect server_id " << server_id << ".";
+                 << ", expect server_id " << server_id;
       return false;
     }
   }
@@ -1032,11 +1032,11 @@ bool InteropClient::DoOrcaOob() {
     orca_report->mutable_utilization()->emplace("util", 0.30499);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Write() failed.";
+      LOG(ERROR) << "DoOrcaOob(): stream->Write() failed";
       return TransientFailureOrAbort();
     }
     if (!stream->Read(&response)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Read failed.";
+      LOG(ERROR) << "DoOrcaOob(): stream->Read failed";
       return TransientFailureOrAbort();
     }
     CHECK(load_report_tracker_
@@ -1061,11 +1061,11 @@ bool InteropClient::DoOrcaOob() {
     orca_report->mutable_utilization()->emplace("util", 0.2039);
     StreamingOutputCallResponse response;
     if (!stream->Write(request)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Write() failed.";
+      LOG(ERROR) << "DoOrcaOob(): stream->Write() failed";
       return TransientFailureOrAbort();
     }
     if (!stream->Read(&response)) {
-      LOG(ERROR) << "DoOrcaOob(): stream->Read failed.";
+      LOG(ERROR) << "DoOrcaOob(): stream->Read failed";
       return TransientFailureOrAbort();
     }
     CHECK(
