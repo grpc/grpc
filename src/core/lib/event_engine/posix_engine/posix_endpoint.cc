@@ -360,7 +360,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       incoming_buffer_->Clear();
       if (read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError(
-            absl::StrCat("Socket closed, peer_address=", PeerAddress()));
+            absl::StrCat("Socket closed, peer_address=", PeerAddress())));
       } else {
         status = TcpAnnotateError(absl::InternalError(
             absl::StrCat("recvmsg:", grpc_core::StrError(errno),
