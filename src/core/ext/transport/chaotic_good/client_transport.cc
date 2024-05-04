@@ -21,6 +21,7 @@
 #include <tuple>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
@@ -279,7 +280,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                     message_length % aligned_bytes == 0
                         ? 0
                         : aligned_bytes - message_length % aligned_bytes;
-                GPR_ASSERT((message_length + padding) % aligned_bytes == 0);
+                CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
                 frame.message = FragmentMessage(std::move(message), padding,
                                                 message_length);
                 return send_fragment(std::move(frame));
