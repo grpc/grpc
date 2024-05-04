@@ -273,8 +273,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
 bool InteropClient::DoComputeEngineCreds(
     const std::string& default_service_account,
     const std::string& oauth_scope) {
-  VLOG(2) <<
-          "Sending a large unary rpc with compute engine credentials ...");
+  VLOG(2) << "Sending a large unary rpc with compute engine credentials ...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -297,8 +296,7 @@ bool InteropClient::DoComputeEngineCreds(
 
 bool InteropClient::DoOauth2AuthToken(const std::string& username,
                                       const std::string& oauth_scope) {
-  VLOG(2) <<
-          "Sending a unary rpc with raw oauth2 access token credentials ...");
+  VLOG(2) << "Sending a unary rpc with raw oauth2 access token credentials ...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -347,8 +345,7 @@ bool InteropClient::DoPerRpcCreds(const std::string& json_key) {
 }
 
 bool InteropClient::DoJwtTokenCreds(const std::string& username) {
-  VLOG(2) <<
-          "Sending a large unary rpc with JWT token credentials ...");
+  VLOG(2) << "Sending a large unary rpc with JWT token credentials ...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -365,8 +362,7 @@ bool InteropClient::DoJwtTokenCreds(const std::string& username) {
 
 bool InteropClient::DoGoogleDefaultCredentials(
     const std::string& default_service_account) {
-  VLOG(2) <<
-          "Sending a large unary rpc with GoogleDefaultCredentials...");
+  VLOG(2) << "Sending a large unary rpc with GoogleDefaultCredentials...";
   SimpleRequest request;
   SimpleResponse response;
   request.set_fill_username(true);
@@ -421,8 +417,7 @@ bool InteropClient::DoClientCompressedUnary() {
     std::string log_suffix =
         absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
-    VLOG(2) << "Sending compressed unary request " <<
-            log_suffix.c_str());
+    VLOG(2) << "Sending compressed unary request " << log_suffix;
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_expect_compressed()->set_value(compressions[i]);
@@ -431,8 +426,7 @@ bool InteropClient::DoClientCompressedUnary() {
       return false;
     }
 
-    VLOG(2) << "Compressed unary request failed " <<
-            log_suffix.c_str());
+    VLOG(2) << "Compressed unary request failed " << log_suffix;
   }
 
   return true;
@@ -444,8 +438,7 @@ bool InteropClient::DoServerCompressedUnary() {
     std::string log_suffix =
         absl::StrFormat("(compression=%s)", compressions[i] ? "true" : "false");
 
-    VLOG(2) << "Sending unary request for compressed response "
-            << log_suffix.c_str();
+    VLOG(2) << "Sending unary request for compressed response " << log_suffix;
     SimpleRequest request;
     SimpleResponse response;
     request.mutable_response_compressed()->set_value(compressions[i]);
@@ -455,7 +448,7 @@ bool InteropClient::DoServerCompressedUnary() {
       return false;
     }
 
-    VLOG(2) << "Request for compressed unary failed " << log_suffix.c_str();
+    VLOG(2) << "Request for compressed unary failed " << log_suffix;
   }
 
   return true;
