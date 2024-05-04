@@ -20,6 +20,7 @@
 
 #include <stddef.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -37,7 +38,7 @@ grpc_slice grpc_chttp2_window_update_create(
   stats->framing_bytes += frame_size;
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
-  GPR_ASSERT(window_delta);
+  CHECK(window_delta);
 
   *p++ = 0;
   *p++ = 0;
@@ -93,7 +94,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
       return GRPC_ERROR_CREATE(
           absl::StrCat("invalid window update bytes: ", p->amount));
     }
-    GPR_ASSERT(is_last);
+    CHECK(is_last);
 
     if (t->incoming_stream_id != 0) {
       if (s != nullptr) {
