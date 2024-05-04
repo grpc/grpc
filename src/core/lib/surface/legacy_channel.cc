@@ -19,6 +19,7 @@
 #include "src/core/lib/surface/legacy_channel.h"
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -166,8 +167,8 @@ grpc_call* LegacyChannel::CreateCall(
     grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
     Slice path, absl::optional<Slice> authority, Timestamp deadline,
     bool registered_method) {
-  GPR_ASSERT(is_client_);
-  GPR_ASSERT(!(cq != nullptr && pollset_set_alternative != nullptr));
+  CHECK(is_client_);
+  CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
   args.channel = Ref();
   args.server = nullptr;
@@ -213,7 +214,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
         cq_(cq),
         tag_(tag),
         state_(last_observed_state) {
-    GPR_ASSERT(grpc_cq_begin_op(cq, tag));
+    CHECK(grpc_cq_begin_op(cq, tag));
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
     ClientChannelFilter* client_channel = channel_->GetClientChannelFilter();
     if (client_channel == nullptr) {
@@ -343,14 +344,14 @@ void LegacyChannel::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
   auto* client_channel = GetClientChannelFilter();
-  GPR_ASSERT(client_channel != nullptr);
+  CHECK_NE(client_channel, nullptr);
   client_channel->AddConnectivityWatcher(initial_state, std::move(watcher));
 }
 
 void LegacyChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
   auto* client_channel = GetClientChannelFilter();
-  GPR_ASSERT(client_channel != nullptr);
+  CHECK_NE(client_channel, nullptr);
   client_channel->RemoveConnectivityWatcher(watcher);
 }
 
@@ -394,7 +395,7 @@ void LegacyChannel::Ping(grpc_completion_queue* cq, void* tag) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->send_ping.on_ack = &pr->closure;
   op->bind_pollset = grpc_cq_pollset(cq);
-  GPR_ASSERT(grpc_cq_begin_op(cq, tag));
+  CHECK(grpc_cq_begin_op(cq, tag));
   grpc_channel_element* top_elem =
       grpc_channel_stack_element(channel_stack_.get(), 0);
   top_elem->filter->start_transport_op(top_elem, op);

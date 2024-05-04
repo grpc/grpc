@@ -18,6 +18,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -78,7 +79,7 @@ ChaoticGoodConnector::ChaoticGoodConnector(
       handshake_mgr_(std::make_shared<HandshakeManager>()) {}
 
 ChaoticGoodConnector::~ChaoticGoodConnector() {
-  GPR_ASSERT(notify_ == nullptr);
+  CHECK_EQ(notify_, nullptr);
   if (connect_activity_ != nullptr) {
     connect_activity_.reset();
   }
@@ -224,7 +225,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
     MutexLock lock(&mu_);
     result_ = result;
     if (is_shutdown_) {
-      GPR_ASSERT(notify_ == nullptr);
+      CHECK_EQ(notify_, nullptr);
       ExecCtx::Run(DEBUG_LOCATION, notify,
                    GRPC_ERROR_CREATE("connector shutdown"));
       return;
@@ -235,7 +236,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
   resolved_addr_ = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args_.address->addr),
       args_.address->len);
-  GPR_ASSERT(resolved_addr_.value().address() != nullptr);
+  CHECK_NE(resolved_addr_.value().address(), nullptr);
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect =
       [self = RefAsSubclass<ChaoticGoodConnector>()](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
@@ -299,7 +300,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
     }
   }
   if (args->endpoint != nullptr) {
-    GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+    CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
         args->endpoint));
     self->control_endpoint_ = PromiseEndpoint(
         grpc_event_engine::experimental::
