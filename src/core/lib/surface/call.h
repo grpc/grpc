@@ -164,7 +164,7 @@ class Call : public CppImplOf<Call, grpc_call>,
         send_deadline_(send_deadline),
         is_client_(is_client) {
     CHECK_NE(arena_, nullptr);
-    CHECK_NE(channel_, nullptr);
+    CHECK(channel_ != nullptr);
   }
   ~Call() override = default;
 
