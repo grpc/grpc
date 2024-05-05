@@ -24,6 +24,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -162,8 +163,8 @@ class Call : public CppImplOf<Call, grpc_call>,
         arena_(arena),
         send_deadline_(send_deadline),
         is_client_(is_client) {
-    GPR_DEBUG_ASSERT(arena_ != nullptr);
-    GPR_DEBUG_ASSERT(channel_ != nullptr);
+    CHECK_NE(arena_, nullptr);
+    CHECK_NE(channel_, nullptr);
   }
   ~Call() override = default;
 
@@ -172,7 +173,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
   Channel* channel() const {
-    GPR_DEBUG_ASSERT(channel_ != nullptr);
+    CHECK_NE(channel_, nullptr);
     return channel_.get();
   }
 
