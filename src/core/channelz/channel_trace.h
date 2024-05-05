@@ -22,14 +22,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "absl/base/thread_annotations.h"
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
@@ -112,26 +110,25 @@ class ChannelTrace {
     size_t memory_usage() const { return memory_usage_; }
 
    private:
-    const gpr_timespec timestamp_;
-    const Severity severity_;
-    const grpc_slice data_;
-    const size_t memory_usage_;
+    Severity severity_;
+    grpc_slice data_;
+    gpr_timespec timestamp_;
+    TraceEvent* next_;
     // the tracer object for the (sub)channel that this trace event refers to.
-    const RefCountedPtr<BaseNode> referenced_entity_;
-    TraceEvent* next_ = nullptr;
+    RefCountedPtr<BaseNode> referenced_entity_;
+    size_t memory_usage_;
   };  // TraceEvent
 
   // Internal helper to add and link in a trace event
   void AddTraceEventHelper(TraceEvent* new_trace_event);
 
-  const size_t max_event_memory_;
-  const gpr_timespec time_created_;
-
-  mutable Mutex mu_;
-  uint64_t num_events_logged_ ABSL_GUARDED_BY(mu_) = 0;
-  size_t event_list_memory_usage_ ABSL_GUARDED_BY(mu_) = 0;
-  TraceEvent* head_trace_ ABSL_GUARDED_BY(mu_) = nullptr;
-  TraceEvent* tail_trace_ ABSL_GUARDED_BY(mu_) = nullptr;
+  gpr_mu tracer_mu_;
+  uint64_t num_events_logged_;
+  size_t event_list_memory_usage_;
+  size_t max_event_memory_;
+  TraceEvent* head_trace_;
+  TraceEvent* tail_trace_;
+  gpr_timespec time_created_;
 };
 
 }  // namespace channelz
