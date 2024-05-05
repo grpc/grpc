@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -268,7 +269,7 @@ class WriteContext {
       grpc_core::Http2Frame frame(std::move(*update));
       Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
       if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
-        GPR_ASSERT(
+        CHECK(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
         // We base settings timeout on keepalive timeout, but double it to allow
@@ -290,7 +291,7 @@ class WriteContext {
     // simple writes are queued to qbuf, and flushed here
     grpc_slice_buffer_move_into(&t_->qbuf, t_->outbuf.c_slice_buffer());
     t_->num_pending_induced_frames = 0;
-    GPR_ASSERT(t_->qbuf.count == 0);
+    CHECK_EQ(t_->qbuf.count, 0u);
   }
 
   void FlushWindowUpdates() {
