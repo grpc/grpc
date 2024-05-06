@@ -74,8 +74,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
@@ -112,8 +110,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
@@ -151,8 +147,6 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
@@ -188,7 +182,6 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdPeerStateBasedFraming,
-  kExperimentIdPendingQueueCap,
   kExperimentIdPickFirstNew,
   kExperimentIdPromiseBasedClientCall,
   kExperimentIdChaoticGood,
@@ -259,10 +252,6 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PEER_STATE_BASED_FRAMING
 inline bool IsPeerStateBasedFramingEnabled() {
   return IsExperimentEnabled(kExperimentIdPeerStateBasedFraming);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() {
-  return IsExperimentEnabled(kExperimentIdPendingQueueCap);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() {
