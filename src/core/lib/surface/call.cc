@@ -384,7 +384,7 @@ class ChannelBasedCall : public Call {
       : Call(is_client, send_deadline, channel->event_engine()),
         arena_(arena),
         channel_(std::move(channel)) {
-    GPR_DEBUG_ASSERT(arena_ != nullptr);
+    DCHECK_NE(arena_, nullptr);
   }
 
   Arena* arena() final { return arena_; }
