@@ -399,7 +399,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    deps = ["//:gpr_platform"],
+    deps = ["//:gpr"],
 )
 
 grpc_cc_library(
