@@ -338,7 +338,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       // matching calls
       struct NextPendingCall {
         RequestedCall* rc = nullptr;
-        CallData* pending_filter_stack;
+        CallData* pending_filter_stack = nullptr;
         PendingCallPromises pending_promise;
       };
       while (true) {
