@@ -38,7 +38,7 @@ void ValidationErrors::PopField() { fields_.pop_back(); }
 
 void ValidationErrors::AddError(absl::string_view error) {
   auto key = absl::StrJoin(fields_, "");
-  if (field_errors_[key].size() > max_error_count_) {
+  if (field_errors_[key].size() >= max_error_count_) {
     gpr_log(GPR_DEBUG,
             "Ignoring validation error: too many errors found (%" PRIuPTR ")",
             max_error_count_);
