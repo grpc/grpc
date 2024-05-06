@@ -24,6 +24,7 @@
 #include <algorithm>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -93,7 +94,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   }
 
   if (p->byte == 8) {
-    GPR_ASSERT(is_last);
+    CHECK(is_last);
     if (p->is_ack) {
       if (grpc_ping_trace.enabled()) {
         gpr_log(GPR_INFO, "%s[%p]: received ping ack %" PRIx64,

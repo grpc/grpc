@@ -45,6 +45,7 @@ grpc_cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
+    external_deps = ["absl/log:log"],
     deps = [
         "//:grpc++",
         "//:grpc++_config_proto",
@@ -78,6 +79,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
         "protobuf",
     ],
     deps = [
@@ -141,6 +143,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
         "protobuf",
         "protobuf_clib",
     ],
@@ -175,6 +178,7 @@ grpc_cc_library(
     hdrs = [
         "metrics_server.h",
     ],
+    external_deps = ["absl/log:log"],
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:metrics_proto",
@@ -338,6 +342,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
     ],
     language = "c++",
@@ -364,6 +369,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,
