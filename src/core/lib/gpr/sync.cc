@@ -22,6 +22,8 @@
 
 #include <assert.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -59,11 +61,11 @@ void gpr_event_init(gpr_event* ev) {
 void gpr_event_set(gpr_event* ev, void* value) {
   struct sync_array_s* s = hash(ev);
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(gpr_atm_acq_load(&ev->state) == 0);
+  CHECK_EQ(gpr_atm_acq_load(&ev->state), 0);
   gpr_atm_rel_store(&ev->state, (gpr_atm)value);
   gpr_cv_broadcast(&s->cv);
   gpr_mu_unlock(&s->mu);
-  GPR_ASSERT(value != nullptr);
+  CHECK_NE(value, nullptr);
 }
 
 void* gpr_event_get(gpr_event* ev) {
@@ -102,7 +104,7 @@ void gpr_refn(gpr_refcount* r, int n) {
 
 int gpr_unref(gpr_refcount* r) {
   gpr_atm prior = gpr_atm_full_fetch_add(&r->count, -1);
-  GPR_ASSERT(prior > 0);
+  CHECK_GT(prior, 0);
   return prior == 1;
 }
 

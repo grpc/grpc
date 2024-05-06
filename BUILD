@@ -786,6 +786,8 @@ grpc_cc_library(
         "absl/base:log_severity",
         "absl/functional:any_invocable",
         "absl/log",
+        "absl/log:check",
+        "absl/log:globals",
         "absl/memory",
         "absl/random",
         "absl/status",
@@ -2962,6 +2964,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log:check",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -4836,6 +4839,7 @@ grpc_cc_library(
         "//src/core:lib/gpr/subprocess.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "absl/types:span",
     ],
