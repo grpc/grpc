@@ -103,7 +103,8 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
   absl::Status status = StatusCreate(
       absl::StatusCode::kUnavailable,
       absl::StrCat(call_name, ": ", WSAErrorToShortDescription(err), " (",
-                   utf8_message, " -- ", err, ")"));
+                   utf8_message, " -- ", err, ")"),
+      location, {});
   StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
                GRPC_STATUS_UNAVAILABLE);
   gpr_free(utf8_message);
