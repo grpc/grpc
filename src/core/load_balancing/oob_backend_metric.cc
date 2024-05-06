@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
@@ -224,7 +225,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  GPR_ASSERT(subchannel_ != nullptr);  // Should not be called before Start().
+  CHECK(subchannel_ != nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }

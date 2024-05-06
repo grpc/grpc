@@ -168,7 +168,6 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/propagation_bits.h',
                       'include/grpc/impl/slice_type.h',
                       'include/grpc/load_reporting.h',
-                      'include/grpc/passive_listener.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -217,7 +216,6 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
-    ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version

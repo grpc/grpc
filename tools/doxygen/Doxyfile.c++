@@ -928,7 +928,6 @@ include/grpc/impl/grpc_types.h \
 include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
-include/grpc/passive_listener.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -1041,7 +1040,6 @@ include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
-include/grpcpp/passive_listener.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \

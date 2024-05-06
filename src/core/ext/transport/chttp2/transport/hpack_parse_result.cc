@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/port_platform.h>
@@ -53,7 +54,7 @@ class MetadataSizeLimitExceededEncoder {
 };
 
 absl::Status MakeStreamError(absl::Status error) {
-  GPR_DEBUG_ASSERT(!error.ok());
+  DCHECK(!error.ok());
   return grpc_error_set_int(std::move(error), StatusIntProperty::kStreamId, 0);
 }
 }  // namespace
