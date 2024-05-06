@@ -44,6 +44,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
