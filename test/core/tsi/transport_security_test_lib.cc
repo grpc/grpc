@@ -32,6 +32,7 @@
 #include <openssl/x509v3.h>
 
 #include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -39,6 +40,7 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/error.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {
   gpr_mu_lock(&fixture->mu);
