@@ -269,6 +269,7 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
                            allocator->MakeArena(), allocator, nullptr);
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
+  EXPECT_EQ(handled, 1);
 }
 
 }  // namespace

@@ -862,7 +862,6 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
               MakeServerCall(call_handler, std::move(md), this,
                              rc->cq_bound_to_call, rc->initial_metadata);
           *rc->call = call;
-          // TODO(ctiller): publish metadata
           return Map(WaitForCqEndOp(false, rc->tag, absl::OkStatus(), mr.cq()),
                      [rc = std::unique_ptr<RequestedCall>(rc)](Empty) {
                        return absl::OkStatus();
@@ -965,7 +964,6 @@ grpc_error_handle Server::SetupTransport(
   intptr_t channelz_socket_uuid = 0;
   if (socket_node != nullptr) {
     channelz_socket_uuid = socket_node->uuid();
-    channelz_node_->AddChildSocket(socket_node);
   }
   if (transport->server_transport() != nullptr) {
     // Take ownership
@@ -1004,6 +1002,9 @@ grpc_error_handle Server::SetupTransport(
     // Initialize chand.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
+  }
+  if (socket_node != nullptr) {
+    channelz_node_->AddChildSocket(socket_node);
   }
   return absl::OkStatus();
 }
