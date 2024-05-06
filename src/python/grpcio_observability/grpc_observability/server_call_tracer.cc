@@ -76,10 +76,8 @@ void GetO11yMetadata(const grpc_metadata_batch* b, ServerO11yMetadata* som) {
 }
 
 bool KeyInLabels(std::string key, const std::vector<Label>& labels) {
-  const auto it = std::find_if(labels.begin(), labels.end(), 
-                       [&key](const Label& l) {
-                           return l.key == key; 
-                       });
+  const auto it = std::find_if(labels.begin(), labels.end(),
+                               [&key](const Label& l) { return l.key == key; });
 
   if (it == labels.end()) {
     return false;
@@ -94,7 +92,7 @@ bool KeyInLabels(std::string key, const std::vector<Label>& labels) {
 //
 
 void PythonOpenCensusServerCallTracer::RecordSendInitialMetadata(
-      grpc_metadata_batch* send_initial_metadata) {
+    grpc_metadata_batch* send_initial_metadata) {
   // Only add labels if exchange is needed.
   for (const auto& key : MetadataExchangeKeyNames) {
     if (KeyInLabels(key, labels_from_peer_)) {
@@ -118,8 +116,8 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
           .value_or(nullptr) != nullptr;
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
-    RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, context_.Labels(), identifier_,
-                    registered_method_);
+    RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, context_.Labels(),
+                    identifier_, registered_method_);
   }
 
   labels_from_peer_ = labels_injector_.GetExchangeLabels(recv_initial_metadata);
@@ -141,33 +139,35 @@ void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
   }
 }
 
-void PythonOpenCensusServerCallTracer::RecordSendMessage(const grpc_core::SliceBuffer& send_message) {
-    RecordAnnotation(
-        absl::StrFormat("Send message: %ld bytes", send_message.Length()));
-    ++sent_message_count_;
+void PythonOpenCensusServerCallTracer::RecordSendMessage(
+    const grpc_core::SliceBuffer& send_message) {
+  RecordAnnotation(
+      absl::StrFormat("Send message: %ld bytes", send_message.Length()));
+  ++sent_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
-      const grpc_core::SliceBuffer& send_compressed_message) {
-    RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
-                                     send_compressed_message.Length()));
+    const grpc_core::SliceBuffer& send_compressed_message) {
+  RecordAnnotation(absl::StrFormat("Send compressed message: %ld bytes",
+                                   send_compressed_message.Length()));
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) {
-    RecordAnnotation(
-        absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
-    ++recv_message_count_;
+    const grpc_core::SliceBuffer& recv_message) {
+  RecordAnnotation(
+      absl::StrFormat("Received message: %ld bytes", recv_message.Length()));
+  ++recv_message_count_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
-      const grpc_core::SliceBuffer& recv_decompressed_message) {
-    RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
-                                     recv_decompressed_message.Length()));
+    const grpc_core::SliceBuffer& recv_decompressed_message) {
+  RecordAnnotation(absl::StrFormat("Received decompressed message: %ld bytes",
+                                   recv_decompressed_message.Length()));
 }
 
-void PythonOpenCensusServerCallTracer::RecordCancel(grpc_error_handle /*cancel_error*/) {
-    elapsed_time_ = absl::Now() - start_time_;
+void PythonOpenCensusServerCallTracer::RecordCancel(
+    grpc_error_handle /*cancel_error*/) {
+  elapsed_time_ = absl::Now() - start_time_;
 }
 
 void PythonOpenCensusServerCallTracer::RecordEnd(
@@ -181,7 +181,7 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
         kServerStatus,
         std::string(StatusCodeToString(final_info->final_status)));
     for (const auto& label : labels_from_peer_) {
-        context_.Labels().emplace_back(label);
+      context_.Labels().emplace_back(label);
     }
     RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName,
                        static_cast<double>(response_size), context_.Labels(),
@@ -194,9 +194,11 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, context_.Labels(),
                     identifier_, registered_method_);
     RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName,
-                    sent_message_count_, context_.Labels(), identifier_, registered_method_);
+                    sent_message_count_, context_.Labels(), identifier_,
+                    registered_method_);
     RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName,
-                    recv_message_count_, context_.Labels(), identifier_, registered_method_);
+                    recv_message_count_, context_.Labels(), identifier_,
+                    registered_method_);
   }
   if (PythonCensusTracingEnabled()) {
     context_.EndSpan();
@@ -210,30 +212,33 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
   delete this;
 }
 
-void PythonOpenCensusServerCallTracer::RecordAnnotation(absl::string_view annotation) {
-    if (!context_.GetSpanContext().IsSampled()) {
-      return;
-    }
-    context_.AddSpanAnnotation(annotation);
+void PythonOpenCensusServerCallTracer::RecordAnnotation(
+    absl::string_view annotation) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
+  context_.AddSpanAnnotation(annotation);
 }
 
-void PythonOpenCensusServerCallTracer::RecordAnnotation(const Annotation& annotation) {
-    if (!context_.GetSpanContext().IsSampled()) {
-      return;
-    }
+void PythonOpenCensusServerCallTracer::RecordAnnotation(
+    const Annotation& annotation) {
+  if (!context_.GetSpanContext().IsSampled()) {
+    return;
+  }
 
-    switch (annotation.type()) {
-      // Annotations are expensive to create. We should only create it if the
-      // call is being sampled by default.
-      default:
-        if (IsSampled()) {
-          context_.AddSpanAnnotation(annotation.ToString());
-        }
-        break;
-    }
+  switch (annotation.type()) {
+    // Annotations are expensive to create. We should only create it if the
+    // call is being sampled by default.
+    default:
+      if (IsSampled()) {
+        context_.AddSpanAnnotation(annotation.ToString());
+      }
+      break;
+  }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+std::shared_ptr<grpc_core::TcpTracerInterface>
+PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
   return nullptr;
 }
 
@@ -258,8 +263,9 @@ bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(
   return true;
 }
 
-PythonOpenCensusServerCallTracerFactory::PythonOpenCensusServerCallTracerFactory(
-  const std::vector<Label>& exchange_labels, const char* identifier)
+PythonOpenCensusServerCallTracerFactory::
+    PythonOpenCensusServerCallTracerFactory(
+        const std::vector<Label>& exchange_labels, const char* identifier)
     : exchange_labels_(exchange_labels), identifier_(identifier) {}
 
 }  // namespace grpc_observability

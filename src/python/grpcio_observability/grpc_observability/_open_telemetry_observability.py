@@ -24,12 +24,12 @@ from grpc_observability import _cyobservability
 from grpc_observability import _observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._cyobservability import MetricsName
+from grpc_observability._cyobservability import PLUGIN_IDENTIFIER_SEP
+from grpc_observability._observability import OptionalLabelType
 from grpc_observability._observability import StatsData
 from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
-from grpc_observability._cyobservability import PLUGIN_IDENTIFIER_SEP
-from grpc_observability._observability import OptionalLabelType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +39,9 @@ ServerCallTracerFactoryCapsule = (
 )
 grpc_observability = Any  # grpc_observability.py imports this module.
 OpenTelemetryPlugin = Any  # _open_telemetry_plugin.py imports this module.
-OpenTelemetryPluginOption = Any  # _open_telemetry_plugin.py imports this module.
+OpenTelemetryPluginOption = (
+    Any  # _open_telemetry_plugin.py imports this module.
+)
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
@@ -139,7 +141,7 @@ class _OpenTelemetryPlugin:
         # Check if _enabled_client_plugin_options is None so we don't set it multiple times.
         if self._enabled_client_plugin_options is None:
             self._enabled_client_plugin_options = []
-            for plugin_option in self._plugin._get_plugin_options():
+            for plugin_option in self._plugin.plugin_options:
                 if hasattr(
                     plugin_option, "is_active_on_client_channel"
                 ) and plugin_option.is_active_on_client_channel(target_str):
@@ -159,7 +161,7 @@ class _OpenTelemetryPlugin:
         # Check if _enabled_server_plugin_options is None so we don't set it multiple times.
         if self._enabled_server_plugin_options is None:
             self._enabled_server_plugin_options = []
-            for plugin_option in self._plugin._get_plugin_options():
+            for plugin_option in self._plugin.plugin_options:
                 if hasattr(
                     plugin_option, "is_active_on_server"
                 ) and plugin_option.is_active_on_server(xds):
@@ -331,7 +333,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     This is class is part of an EXPERIMENTAL API.
 
     Args:
-      plugin: _OpenTelemetryPlugin to enable.
+      plugins: _OpenTelemetryPlugins to enable.
     """
 
     _exporter: "grpc_observability.Exporter"
@@ -345,6 +347,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     ):
         self._exporter = _OpenTelemetryExporterDelegator(plugins)
         self._registered_methods = set()
+        self._plugins = plugins
 
     def observability_init(self):
         try:

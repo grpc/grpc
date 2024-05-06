@@ -69,6 +69,7 @@ class StatsData:
     identifiers: Set[str] = field(default_factory=set)
     registered_method: bool = False
 
+
 @dataclass(frozen=True)
 class TracingData:
     """A data class representing tracing data.

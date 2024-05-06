@@ -185,31 +185,24 @@ class TestOpenTelemetryPluginOption(OpenTelemetryPluginOption):
 
 
 class TestOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
-    _provider: MeterProvider
-    _plugin_options: List[OpenTelemetryPluginOption]
-    _enabled_optional_labels: List[OptionalLabelType]
+    _enabled_optional_labels: Iterable[OptionalLabelType]
 
     def __init__(
         self,
-        provider: MeterProvider,
-        plugin_options: Optional[List[OpenTelemetryPluginOption]] = None,
-        enabled_optional_labels: Optional[List[OptionalLabelType]] = None,
+        *,
+        plugin_options: Iterable[OpenTelemetryPluginOption] = [],
+        meter_provider: Optional[MeterProvider] = None,
+        target_attribute_filter: Optional[Callable[[str], bool]] = None,
+        generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
+        enabled_optional_labels: Iterable[OptionalLabelType] = [],
     ):
-        self._provider = provider
-        self._enabled_optional_labels = []
-        self._plugin_options = []
-        if enabled_optional_labels:
-            self._enabled_optional_labels = enabled_optional_labels
-        if plugin_options:
-            self._plugin_options = plugin_options
-
-    def get_meter_provider(self) -> Optional[MeterProvider]:
-        return self._provider
-
-    def _get_plugin_options(
-        self,
-    ) -> Iterable[OpenTelemetryPluginOption]:
-        return self._plugin_options
+        super().__init__(
+            plugin_options=plugin_options,
+            meter_provider=meter_provider,
+            target_attribute_filter=target_attribute_filter,
+            generic_method_attribute_filter=generic_method_attribute_filter,
+        )
+        self._enabled_optional_labels = enabled_optional_labels
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return self._enabled_optional_labels
@@ -219,7 +212,7 @@ class TestOpenTelemetryPlugin(grpc_observability.OpenTelemetryPlugin):
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
 )
-class CSMObservabilityTest(unittest.TestCase):
+class ObservabilityPluginTest(unittest.TestCase):
     def setUp(self):
         self.all_metrics = defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)
@@ -237,16 +230,14 @@ class CSMObservabilityTest(unittest.TestCase):
 
     def testEnableOptionalXdsServiceLabel(self):
         otel_plugin = TestOpenTelemetryPlugin(
-            provider=self._provider,
+            meter_provider=self._provider,
             enabled_optional_labels=[OptionalLabelType.XDS_SERVICE_LABELS],
         )
 
-        grpc_observability.start_open_telemetry_observability(
-            plugins=[otel_plugin]
-        )
+        otel_plugin.register_global()
         self._server, port = _test_server.start_server()
         _test_server.unary_unary_call(port=port)
-        grpc_observability.end_open_telemetry_observability()
+        otel_plugin.deregister_global()
 
         self._validate_metrics_exist(self.all_metrics)
         for name, label_list in self.all_metrics.items():
@@ -263,16 +254,14 @@ class CSMObservabilityTest(unittest.TestCase):
         plugin_option = TestOpenTelemetryPluginOption(
             label_injector=label_injector
         )
-        otel_plugin = TestOpenTelemetryPlugin(
-            provider=self._provider, plugin_options=[plugin_option]
+        otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
         )
 
-        grpc_observability.start_open_telemetry_observability(
-            plugins=[otel_plugin]
-        )
+        otel_plugin.register_global()
         self._server, port = _test_server.start_server()
         _test_server.unary_unary_call(port=port)
-        grpc_observability.end_open_telemetry_observability()
+        otel_plugin.deregister_global()
 
         self._validate_metrics_exist(self.all_metrics)
         for name, label_list in self.all_metrics.items():
@@ -286,17 +275,15 @@ class CSMObservabilityTest(unittest.TestCase):
         plugin_option = TestOpenTelemetryPluginOption(
             label_injector=label_injector, active_on_server=False
         )
-        otel_plugin = TestOpenTelemetryPlugin(
-            provider=self._provider, plugin_options=[plugin_option]
+        otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
         )
 
-        grpc_observability.start_open_telemetry_observability(
-            plugins=[otel_plugin]
-        )
+        otel_plugin.register_global()
         server, port = _test_server.start_server()
         self._server = server
         _test_server.unary_unary_call(port=port)
-        grpc_observability.end_open_telemetry_observability()
+        otel_plugin.deregister_global()
 
         self._validate_metrics_exist(self.all_metrics)
         for name, label_list in self.all_metrics.items():
@@ -318,17 +305,15 @@ class CSMObservabilityTest(unittest.TestCase):
         plugin_option = TestOpenTelemetryPluginOption(
             label_injector=label_injector, active_on_client=False
         )
-        otel_plugin = TestOpenTelemetryPlugin(
-            provider=self._provider, plugin_options=[plugin_option]
+        otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
         )
 
-        grpc_observability.start_open_telemetry_observability(
-            plugins=[otel_plugin]
-        )
+        otel_plugin.register_global()
         server, port = _test_server.start_server()
         self._server = server
         _test_server.unary_unary_call(port=port)
-        grpc_observability.end_open_telemetry_observability()
+        otel_plugin.deregister_global()
 
         self._validate_metrics_exist(self.all_metrics)
         for name, label_list in self.all_metrics.items():
@@ -360,16 +345,14 @@ class CSMObservabilityTest(unittest.TestCase):
         plugin_option = TestOpenTelemetryPluginOption(
             label_injector=label_injector
         )
-        otel_plugin = TestOpenTelemetryPlugin(
-            provider=self._provider, plugin_options=[plugin_option]
+        otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
         )
 
-        grpc_observability.start_open_telemetry_observability(
-            plugins=[otel_plugin]
-        )
+        otel_plugin.register_global()
         self._server, port = _test_server.start_server()
         _test_server.unary_unary_call(port=port)
-        grpc_observability.end_open_telemetry_observability()
+        otel_plugin.deregister_global()
 
         self._validate_metrics_exist(self.all_metrics)
         for name, label_list in self.all_metrics.items():

@@ -15,8 +15,8 @@
 #ifndef GRPC_PYTHON_OBSERVABILITY_CONSTANTS_H
 #define GRPC_PYTHON_OBSERVABILITY_CONSTANTS_H
 
-#include <string>
 #include <set>
+#include <string>
 
 namespace grpc_observability {
 

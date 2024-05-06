@@ -28,9 +28,9 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
-#include "python_census_context.h"
 #include "constants.h"
+#include "python_observability_context.h"
+
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_observability {
@@ -45,13 +45,13 @@ class PythonLabelsInjector {
       grpc_metadata_batch* incoming_initial_metadata) const;
 
   // Add metadata_to_exchange_ to the outgoing initial metadata.
-  void AddExchangeLabelsToMetadata(grpc_metadata_batch* outgoing_initial_metadata) const;
+  void AddExchangeLabelsToMetadata(
+      grpc_metadata_batch* outgoing_initial_metadata) const;
 
   // Add optional xds labels from optional_labels_span to labels.
   void AddXdsOptionalLabels(
       bool is_client,
-      absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-          optional_labels_span,
+      absl::Span<const grpc_core::RefCountedStringValue> optional_labels_span,
       std::vector<Label>& labels);
 
  private:

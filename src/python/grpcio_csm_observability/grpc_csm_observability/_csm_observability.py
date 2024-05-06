@@ -17,23 +17,14 @@ from typing import Iterable, Optional
 from grpc_csm_observability._csm_observability_plugin import (
     CsmOpenTelemetryPlugin,
 )
-from grpc_csm_observability._csm_observability_plugin import (
-    _CsmOpenTelemetryPlugin,
-)
 from grpc_observability import OpenTelemetryObservability
 from grpc_observability import _open_telemetry_observability
 
-# pytype: disable=pyi-error
-from grpc_observability._open_telemetry_plugin import _OpenTelemetryPlugin
-
 
 def start_csm_observability(
-    *,
-    plugins: Optional[Iterable[CsmOpenTelemetryPlugin]] = None
+    *, plugins: Optional[Iterable[CsmOpenTelemetryPlugin]] = None
 ) -> None:
-    csm_o11y = CsmObservability(
-        plugins=plugins
-    )
+    csm_o11y = CsmObservability(plugins=plugins)
     _open_telemetry_observability.init_open_telemetry_observability(csm_o11y)
 
 
@@ -58,7 +49,11 @@ class CsmObservability(OpenTelemetryObservability):
         *,
         plugins: Optional[Iterable[CsmOpenTelemetryPlugin]] = None,
     ):
-        self._exporter = _open_telemetry_observability._OpenTelemetryExporterDelegator(plugins)
+        self._exporter = (
+            _open_telemetry_observability._OpenTelemetryExporterDelegator(
+                plugins
+            )
+        )
         self._registered_methods = set()
 
     def is_server_traced(self, xds: bool) -> bool:

@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
 import json
 import os
-from typing import AnyStr, Dict, Iterable, List, Optional, Union
+from typing import AnyStr, Dict, Iterable, List
 
 from google.protobuf import struct_pb2
 
@@ -287,15 +286,3 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return [OptionalLabelType.XDS_SERVICE_LABELS]
-
-
-# pylint: disable=no-self-use
-class _CsmOpenTelemetryPlugin(CsmOpenTelemetryPlugin):
-    """Describes a Plugin for OpenTelemetry observability.
-
-    This is class is part of an EXPERIMENTAL API.
-    """
-
-    def get_meter_provider(self) -> Optional[MeterProvider]:
-        # This should return a StackDriver MeterProvider
-        return None
