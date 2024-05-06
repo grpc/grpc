@@ -24,6 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -31,7 +33,7 @@
 
 int gpr_time_cmp(gpr_timespec a, gpr_timespec b) {
   int cmp = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
-  GPR_ASSERT(a.clock_type == b.clock_type);
+  CHECK(a.clock_type == b.clock_type);
   if (cmp == 0 && a.tv_sec != INT64_MAX && a.tv_sec != INT64_MIN) {
     cmp = (a.tv_nsec > b.tv_nsec) - (a.tv_nsec < b.tv_nsec);
   }
@@ -79,7 +81,7 @@ static gpr_timespec to_seconds_from_sub_second_time(int64_t time_in_units,
   } else if (time_in_units == INT64_MIN) {
     out = gpr_inf_past(type);
   } else {
-    GPR_DEBUG_ASSERT(GPR_NS_PER_SEC % units_per_sec == 0);
+    DCHECK_EQ(GPR_NS_PER_SEC % units_per_sec, 0);
 
     out.tv_sec = time_in_units / units_per_sec;
     out.tv_nsec =
@@ -139,11 +141,11 @@ gpr_timespec gpr_time_from_hours(int64_t h, gpr_clock_type clock_type) {
 gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) {
   gpr_timespec sum;
   int64_t inc = 0;
-  GPR_ASSERT(b.clock_type == GPR_TIMESPAN);
+  CHECK(b.clock_type == GPR_TIMESPAN);
   // tv_nsec in a timespan is always +ve. -ve timespan is represented as (-ve
   // tv_sec, +ve tv_nsec). For example, timespan = -2.5 seconds is represented
   // as {-3, 5e8, GPR_TIMESPAN}
-  GPR_ASSERT(b.tv_nsec >= 0);
+  CHECK_GE(b.tv_nsec, 0);
   sum.clock_type = a.clock_type;
   sum.tv_nsec = a.tv_nsec + b.tv_nsec;
   if (sum.tv_nsec >= GPR_NS_PER_SEC) {
@@ -177,9 +179,9 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
     // tv_nsec in a timespan is always +ve. -ve timespan is represented as (-ve
     // tv_sec, +ve tv_nsec). For example, timespan = -2.5 seconds is represented
     // as {-3, 5e8, GPR_TIMESPAN}
-    GPR_ASSERT(b.tv_nsec >= 0);
+    CHECK_GE(b.tv_nsec, 0);
   } else {
-    GPR_ASSERT(a.clock_type == b.clock_type);
+    CHECK(a.clock_type == b.clock_type);
     diff.clock_type = GPR_TIMESPAN;
   }
   diff.tv_nsec = a.tv_nsec - b.tv_nsec;
@@ -210,8 +212,8 @@ gpr_timespec gpr_time_sub(gpr_timespec a, gpr_timespec b) {
 int gpr_time_similar(gpr_timespec a, gpr_timespec b, gpr_timespec threshold) {
   int cmp_ab;
 
-  GPR_ASSERT(a.clock_type == b.clock_type);
-  GPR_ASSERT(threshold.clock_type == GPR_TIMESPAN);
+  CHECK(a.clock_type == b.clock_type);
+  CHECK(threshold.clock_type == GPR_TIMESPAN);
 
   cmp_ab = gpr_time_cmp(a, b);
   if (cmp_ab == 0) return 1;

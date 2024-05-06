@@ -25,6 +25,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -42,7 +44,7 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   if (tmp_filename != nullptr) *tmp_filename = nullptr;
 
   gpr_asprintf(&filename_template, "/tmp/%s_XXXXXX", prefix);
-  GPR_ASSERT(filename_template != nullptr);
+  CHECK_NE(filename_template, nullptr);
 
   fd = mkstemp(filename_template);
   if (fd == -1) {

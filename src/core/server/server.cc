@@ -961,10 +961,6 @@ grpc_error_handle Server::SetupTransport(
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.
-  intptr_t channelz_socket_uuid = 0;
-  if (socket_node != nullptr) {
-    channelz_socket_uuid = socket_node->uuid();
-  }
   if (transport->server_transport() != nullptr) {
     // Take ownership
     // TODO(ctiller): post-v3-transition make this method take an
@@ -974,6 +970,7 @@ grpc_error_handle Server::SetupTransport(
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
+    // TODO(ctiller): add channelz node
     t->SetCallDestination(std::move(*destination));
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
@@ -999,12 +996,14 @@ grpc_error_handle Server::SetupTransport(
       // Completion queue not found.  Pick a random one to publish new calls to.
       cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
     }
+    intptr_t channelz_socket_uuid = 0;
+    if (socket_node != nullptr) {
+      channelz_socket_uuid = socket_node->uuid();
+      channelz_node_->AddChildSocket(socket_node);
+    }
     // Initialize chand.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
-  }
-  if (socket_node != nullptr) {
-    channelz_node_->AddChildSocket(socket_node);
   }
   return absl::OkStatus();
 }
