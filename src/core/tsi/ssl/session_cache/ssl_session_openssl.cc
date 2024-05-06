@@ -15,8 +15,8 @@
 // limitations under the License.
 //
 //
+#include "absl/log/check.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -43,11 +43,11 @@ class OpenSslCachedSession : public SslCachedSession {
  public:
   OpenSslCachedSession(SslSessionPtr session) {
     int size = i2d_SSL_SESSION(session.get(), nullptr);
-    GPR_ASSERT(size > 0);
+    CHECK_GT(size, 0);
     grpc_slice slice = grpc_slice_malloc(size_t(size));
     unsigned char* start = GRPC_SLICE_START_PTR(slice);
     int second_size = i2d_SSL_SESSION(session.get(), &start);
-    GPR_ASSERT(size == second_size);
+    CHECK(size == second_size);
     serialized_session_ = slice;
   }
 
