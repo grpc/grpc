@@ -29,9 +29,9 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"

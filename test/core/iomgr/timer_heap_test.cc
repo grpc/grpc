@@ -26,9 +26,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
 static gpr_atm random_deadline(void) { return rand(); }

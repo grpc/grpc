@@ -218,7 +218,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "useful",
-    hdrs = ["lib/gpr/useful.h"],
+    hdrs = ["util/useful.h"],
     external_deps = [
         "absl/strings",
         "absl/types:variant",
@@ -243,7 +243,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_atm",
     srcs = [
-        "lib/gpr/atm.cc",
+        "util/atm.cc",
     ],
     language = "c++",
     public_hdrs = [
@@ -279,7 +279,7 @@ grpc_cc_library(
     name = "gpr_spinlock",
     srcs = [],
     hdrs = [
-        "lib/gpr/spinlock.h",
+        "util/spinlock.h",
     ],
     language = "c++",
     deps = [

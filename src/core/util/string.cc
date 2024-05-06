@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/string.h"
+#include "src/core/util/string.h"
 
 #include <ctype.h>
 #include <limits.h>
@@ -34,8 +34,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/useful.h"
 
 char* gpr_strdup(const char* src) {
   char* dst;

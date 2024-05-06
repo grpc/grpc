@@ -27,7 +27,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
 TEST(CompressionTest, CompressionAlgorithmParse) {

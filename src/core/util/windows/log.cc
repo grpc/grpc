@@ -29,9 +29,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/examine_stack.h"
+#include "src/core/util/string.h"
 
 int gpr_should_log_stacktrace(gpr_log_severity severity);
 

@@ -47,8 +47,8 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/server_interceptor.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
 namespace grpc {

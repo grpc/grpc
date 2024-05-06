@@ -1242,38 +1242,6 @@
     <file baseinstalldir="/" name="src/core/lib/experiments/config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/android/log.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/atm.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/iphone/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/linux/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/linux/log.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/log.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/msys/tmpfile.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/posix/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/posix/log.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/posix/string.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/posix/sync.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/posix/time.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/posix/tmpfile.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/string.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/sync.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/sync_abseil.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/time.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/windows/cpu.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/windows/log.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/windows/string.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/windows/string_util.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/windows/sync.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/windows/time.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/windows/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/bitset.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/chunked_vector.h" role="src" />
@@ -1936,6 +1904,38 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/alloc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/alloc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/android/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/atm.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/iphone/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/linux/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/linux/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/msys/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/posix/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/posix/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/posix/string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/posix/sync.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/posix/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/spinlock.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/string.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/sync.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/sync_abseil.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/time_precise.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/time_precise.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/tmpfile.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/useful.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/windows/log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/windows/string.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/windows/string_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/windows/sync.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/windows/time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/windows/tmpfile.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.cc" role="src" />
