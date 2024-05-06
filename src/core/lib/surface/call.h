@@ -163,8 +163,8 @@ class Call : public CppImplOf<Call, grpc_call>,
         arena_(arena),
         send_deadline_(send_deadline),
         is_client_(is_client) {
-    CHECK_NE(arena_, nullptr);
-    CHECK(channel_ != nullptr);
+    DCHECK_NE(arena_, nullptr);
+    DCHECK(channel_ != nullptr);
   }
   ~Call() override = default;
 
@@ -173,7 +173,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
   Channel* channel() const {
-    CHECK(channel_ != nullptr);
+    DCHECK(channel_ != nullptr);
     return channel_.get();
   }
 
