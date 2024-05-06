@@ -28,6 +28,7 @@
 
 #include <iostream>
 
+#include "absl/log/check.h"
 #include "absl/strings/substitute.h"
 
 #include <grpc/support/alloc.h>
@@ -81,8 +82,8 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
   int stdout_pipe[2];
   int p0 = pipe(stdin_pipe);
   int p1 = pipe(stdout_pipe);
-  GPR_ASSERT(p0 != -1);
-  GPR_ASSERT(p1 != -1);
+  CHECK_NE(p0, -1);
+  CHECK_NE(p1, -1);
   pid = fork();
   if (pid == -1) {
     return nullptr;
@@ -145,7 +146,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
         continue;
       } else {
         std::cerr << "select: " << strerror(errno) << std::endl;
-        GPR_ASSERT(0);
+        CHECK(0);
       }
     }
 
@@ -192,7 +193,7 @@ bool gpr_subprocess_communicate(gpr_subprocess* p, std::string& input_data,
   while (waitpid(p->pid, &status, 0) == -1) {
     if (errno != EINTR) {
       std::cerr << "waitpid: " << strerror(errno) << std::endl;
-      GPR_ASSERT(0);
+      CHECK(0);
     }
   }
 

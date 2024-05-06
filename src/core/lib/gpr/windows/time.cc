@@ -26,6 +26,8 @@
 #include <process.h>
 #include <sys/timeb.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
@@ -97,7 +99,8 @@ void gpr_sleep_until(gpr_timespec until) {
     delta = gpr_time_sub(until, now);
     sleep_millis =
         delta.tv_sec * GPR_MS_PER_SEC + delta.tv_nsec / GPR_NS_PER_MS;
-    GPR_ASSERT((sleep_millis >= 0) && (sleep_millis <= INT_MAX));
+    CHECK_GE(sleep_millis, 0);
+    CHECK_LE(sleep_millis, INT_MAX);
     Sleep((DWORD)sleep_millis);
   }
 }
