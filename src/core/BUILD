@@ -329,6 +329,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "chunked_vector",
     hdrs = ["lib/gprpp/chunked_vector.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "arena",
         "gpr_manual_constructor",
@@ -352,6 +355,7 @@ grpc_cc_library(
         "lib/gprpp/status_helper.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",
@@ -1648,6 +1652,7 @@ grpc_cc_library(
         "lib/gprpp/time.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
@@ -3084,6 +3089,9 @@ grpc_cc_library(
     name = "single_set_ptr",
     hdrs = [
         "lib/gprpp/single_set_ptr.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     language = "c++",
     deps = ["//:gpr"],
