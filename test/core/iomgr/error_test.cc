@@ -82,17 +82,16 @@ TEST(ErrorTest, SetGetStr) {
 
 TEST(ErrorTest, CopyAndUnRef) {
   // error1 has one ref
-  grpc_error_handle error1 =
-      grpc_error_set_int(GRPC_ERROR_CREATE("Test"),
-                         grpc_core::StatusIntProperty::kStreamId, 1);
+  grpc_error_handle error1 = grpc_error_set_int(
+      GRPC_ERROR_CREATE("Test"), grpc_core::StatusIntProperty::kStreamId, 1);
   intptr_t i;
-  EXPECT_TRUE(grpc_error_get_int(
-      error1, grpc_core::StatusIntProperty::kStreamId, &i));
+  EXPECT_TRUE(
+      grpc_error_get_int(error1, grpc_core::StatusIntProperty::kStreamId, &i));
   EXPECT_EQ(i, 1);
 
   // this gives error3 a ref to the new error, and decrements error1 to one ref
-  grpc_error_handle error3 = grpc_error_set_int(
-      error1, grpc_core::StatusIntProperty::kHttp2Error, 2);
+  grpc_error_handle error3 =
+      grpc_error_set_int(error1, grpc_core::StatusIntProperty::kHttp2Error, 2);
   EXPECT_NE(error3, error1);  // should not be the same because of extra ref
   EXPECT_TRUE(grpc_error_get_int(
       error3, grpc_core::StatusIntProperty::kHttp2Error, &i));
