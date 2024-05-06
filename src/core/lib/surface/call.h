@@ -173,7 +173,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   ParentCall* GetOrCreateParentCall();
   ParentCall* parent_call();
   Channel* channel() const {
-    CHECK_NE(channel_, nullptr);
+    CHECK(channel_ != nullptr);
     return channel_.get();
   }
 
