@@ -3082,6 +3082,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "//:channelz",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
 )
