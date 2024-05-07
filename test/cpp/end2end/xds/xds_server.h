@@ -286,7 +286,7 @@ class AdsServiceImpl
           did_work = true;
           LOG(INFO) << "ADS[" << debug_label_ << "]: Received request for type "
                     << request.type_url() << " with content "
-                    << request.DebugString() ;
+                    << request.DebugString();
           SentState& sent_state = sent_state_map[request.type_url()];
           // Process request.
           ProcessRequest(request, &update_queue, &subscription_map, &sent_state,
@@ -295,7 +295,7 @@ class AdsServiceImpl
       }
       if (response.has_value()) {
         LOG(INFO) << "ADS[" << debug_label_
-                  << "]: Sending response: " << response->DebugString() ;
+                  << "]: Sending response: " << response->DebugString();
         stream->Write(response.value());
       }
       response.reset();
@@ -316,8 +316,7 @@ class AdsServiceImpl
       }
       if (response.has_value()) {
         LOG(INFO) << "ADS[" << debug_label_
-                  << "]: Sending update response: " << response->DebugString()
-                  ;
+                  << "]: Sending update response: " << response->DebugString();
         stream->Write(response.value());
       }
       {
@@ -384,7 +383,7 @@ class AdsServiceImpl
         response_state.state = ResponseState::ACKED;
         LOG(INFO) << "ADS[" << debug_label_
                   << "]: client ACKed resource_type=" << request.type_url()
-                  << " version=" << request.version_info() ;
+                  << " version=" << request.version_info();
       } else {
         response_state.state = ResponseState::NACKED;
         if (check_nack_status_code_ != nullptr) {
@@ -395,7 +394,7 @@ class AdsServiceImpl
         LOG(INFO) << "ADS[" << debug_label_
                   << "]: client NACKed resource_type=" << request.type_url()
                   << " version=" << request.version_info() << ": "
-                  << response_state.error_message ;
+                  << response_state.error_message;
       }
       resource_type_response_state_[request.type_url()].emplace_back(
           std::move(response_state));
@@ -427,7 +426,7 @@ class AdsServiceImpl
                                     sent_state->resource_type_version)) {
         LOG(INFO) << "ADS[" << debug_label_
                   << "]: Sending update for type=" << request.type_url()
-                  << " name=" << resource_name ;
+                  << " name=" << resource_name;
         resources_added_to_response.emplace(resource_name);
         if (!response->has_value()) response->emplace();
         if (resource_state.resource.has_value()) {
@@ -442,7 +441,7 @@ class AdsServiceImpl
       } else {
         LOG(INFO) << "ADS[" << debug_label_
                   << "]: client does not need update for type="
-                  << request.type_url() << " name=" << resource_name ;
+                  << request.type_url() << " name=" << resource_name;
       }
     }
     // Process unsubscriptions for any resource no longer
@@ -467,7 +466,7 @@ class AdsServiceImpl
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
     LOG(INFO) << "ADS[" << debug_label_
               << "]: Received update for type=" << resource_type
-              << " name=" << resource_name ;
+              << " name=" << resource_name;
     auto& subscription_name_map = (*subscription_map)[resource_type];
     auto& resource_type_state = resource_map_[resource_type];
     auto& resource_name_map = resource_type_state.resource_name_map;
@@ -478,7 +477,7 @@ class AdsServiceImpl
                                     sent_state->resource_type_version)) {
         LOG(INFO) << "ADS[" << debug_label_
                   << "]: Sending update for type=" << resource_type
-                  << " name=" << resource_name ;
+                  << " name=" << resource_name;
         response->emplace();
         if (resource_state.resource.has_value()) {
           auto* resource = (*response)->add_resources();
@@ -778,7 +777,7 @@ class LrsServiceImpl
       while (stream->Read(&request)) {
         LOG(INFO) << "LRS[" << debug_label_
                   << "]: received client load report message: "
-                  << request.DebugString() ;
+                  << request.DebugString();
         std::vector<ClientStats> stats;
         for (const auto& cluster_stats : request.cluster_stats()) {
           stats.emplace_back(cluster_stats);
