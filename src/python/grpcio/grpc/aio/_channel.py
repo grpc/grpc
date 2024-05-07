@@ -354,8 +354,11 @@ class Channel(_base_channel.Channel):
         if interceptors is not None:
             for interceptor in interceptors:
                 if not isinstance(interceptor, valid_classes):
-                    msg = " or ".join(x.__name__ for x in valid_classes)
-                    raise ValueError(f"Interceptor {interceptor} must be {msg}")
+                    raise ValueError(f"Interceptor {interceptor} must be an instance of at least one of ["
+                                     f"{UnaryUnaryClientInterceptor.__name__}, "
+                                     f"{UnaryStreamClientInterceptor.__name__}, "
+                                     f"{StreamUnaryClientInterceptor.__name__}, "
+                                     f"{StreamStreamClientInterceptor.__name__}]")
                 if isinstance(interceptor, UnaryUnaryClientInterceptor):
                     self._unary_unary_interceptors.append(interceptor)
                 if isinstance(interceptor, UnaryStreamClientInterceptor):
