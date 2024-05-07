@@ -81,7 +81,7 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
   int n = 0;
   while (engine.use_count() > 1) {
     ++n;
-    if (n == 100) AsanAssertNoLeaks();
+    if (n % 100 == 0) AsanAssertNoLeaks();
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));
