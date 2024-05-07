@@ -25,11 +25,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "google/protobuf/timestamp.pb.h"
-#include "third_party/absl/log/check.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>

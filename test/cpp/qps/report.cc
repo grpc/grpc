@@ -20,7 +20,8 @@
 
 #include <fstream>
 
-#include <grpc/support/log.h>
+#include "absl/log/check.h"
+
 #include <grpcpp/client_context.h>
 
 #include "src/core/lib/gprpp/crash.h"
