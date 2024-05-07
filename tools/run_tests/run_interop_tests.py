@@ -1220,7 +1220,7 @@ def build_interop_image_jobspec(language, tag=None):
         cmdline=["tools/run_tests/dockerize/build_interop_image.sh"],
         environ=env,
         shortname="build_docker_%s" % (language),
-        timeout_seconds=30 * 60,
+        timeout_seconds=45 * 60,
     )
     build_job.tag = tag
     return build_job

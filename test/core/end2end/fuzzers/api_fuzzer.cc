@@ -400,7 +400,7 @@ namespace testing {
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
-  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine()));
+  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 

@@ -242,11 +242,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "grateful"  # @unused
+g_stands_for = "gnarly"  # @unused
 
 core_version = "41.0.0"  # @unused
 
-version = "1.64.0-dev"  # @unused
+version = "1.65.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -4317,21 +4317,21 @@ grpc_cc_library(
 grpc_cc_library(
     name = "xds_client",
     srcs = [
-        "//src/core:ext/xds/xds_api.cc",
-        "//src/core:ext/xds/xds_bootstrap.cc",
-        "//src/core:ext/xds/xds_client.cc",
-        "//src/core:ext/xds/xds_client_stats.cc",
+        "//src/core:xds/xds_client/xds_api.cc",
+        "//src/core:xds/xds_client/xds_bootstrap.cc",
+        "//src/core:xds/xds_client/xds_client.cc",
+        "//src/core:xds/xds_client/xds_client_stats.cc",
     ],
     hdrs = [
-        "//src/core:ext/xds/xds_api.h",
-        "//src/core:ext/xds/xds_bootstrap.h",
-        "//src/core:ext/xds/xds_channel_args.h",
-        "//src/core:ext/xds/xds_client.h",
-        "//src/core:ext/xds/xds_client_stats.h",
-        "//src/core:ext/xds/xds_metrics.h",
-        "//src/core:ext/xds/xds_resource_type.h",
-        "//src/core:ext/xds/xds_resource_type_impl.h",
-        "//src/core:ext/xds/xds_transport.h",
+        "//src/core:xds/xds_client/xds_api.h",
+        "//src/core:xds/xds_client/xds_bootstrap.h",
+        "//src/core:xds/xds_client/xds_channel_args.h",
+        "//src/core:xds/xds_client/xds_client.h",
+        "//src/core:xds/xds_client/xds_client_stats.h",
+        "//src/core:xds/xds_client/xds_metrics.h",
+        "//src/core:xds/xds_client/xds_resource_type.h",
+        "//src/core:xds/xds_client/xds_resource_type_impl.h",
+        "//src/core:xds/xds_client/xds_transport.h",
     ],
     external_deps = [
         "absl/base:core_headers",
