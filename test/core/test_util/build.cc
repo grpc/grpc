@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/test_util/build.h"
-
 // Define GRPC_BUILD_HAS_ASAN as 1 or 0 depending on if we're building under
 // ASAN.
 #if defined(__has_feature)
