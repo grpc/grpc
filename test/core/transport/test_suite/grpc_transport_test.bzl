@@ -16,7 +16,6 @@
 Generate one transport test & associated fuzzer
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_test")
 
 def grpc_transport_test(name, deps):
