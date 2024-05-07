@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/xds/grpc/xds_certificate_provider.h"
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"

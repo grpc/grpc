@@ -18,7 +18,7 @@
 // - tests for DumpClientConfigBinary()
 // - tests for load-reporting APIs?  (or maybe move those out of XdsClient?)
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
 #include <stdint.h>
 
@@ -47,8 +47,6 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
@@ -58,6 +56,8 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_resource_type_impl.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
 #include "test/core/test_util/scoped_env_var.h"

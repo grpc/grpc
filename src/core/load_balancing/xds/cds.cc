@@ -37,9 +37,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -64,6 +61,9 @@
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/xds/grpc/xds_cluster.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_health_status.h"
 
 namespace grpc_core {
 
