@@ -16,19 +16,19 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name="test/core/transport")
+grpc_package(name = "test/core/transport")
 
 grpc_cc_test(
-    name="bdp_estimator_test",
-    srcs=["bdp_estimator_test.cc"],
-    external_deps=[
+    name = "bdp_estimator_test",
+    srcs = ["bdp_estimator_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    tags=["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
-    uses_event_engine=False,
-    uses_polling=False,
-    deps=[
+    language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -36,45 +36,45 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name="interception_chain_test",
-    srcs=["interception_chain_test.cc"],
-    external_deps=[
+    name = "interception_chain_test",
+    srcs = ["interception_chain_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    uses_event_engine=False,
-    uses_polling=False,
-    deps=[
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc_base",
         "//src/core:interception_chain",
         "//src/core:resource_quota",
-        "//:grpc_base",
         "//test/core/promise:poll_matcher",
     ],
 )
 
 grpc_cc_test(
-    name="call_filters_test",
-    srcs=["call_filters_test.cc"],
-    external_deps=[
+    name = "call_filters_test",
+    srcs = ["call_filters_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    uses_event_engine=False,
-    uses_polling=False,
-    deps=[
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
         "//src/core:call_filters",
         "//test/core/promise:poll_matcher",
     ],
 )
 
 grpc_cc_test(
-    name="connectivity_state_test",
-    srcs=["connectivity_state_test.cc"],
-    external_deps=[
+    name = "connectivity_state_test",
+    srcs = ["connectivity_state_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    deps=[
+    language = "C++",
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -83,13 +83,13 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name="error_utils_test",
-    srcs=["error_utils_test.cc"],
-    external_deps=[
+    name = "error_utils_test",
+    srcs = ["error_utils_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    deps=[
+    language = "C++",
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -98,13 +98,13 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name="metadata_map_test",
-    srcs=["metadata_map_test.cc"],
-    external_deps=[
+    name = "metadata_map_test",
+    srcs = ["metadata_map_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    deps=[
+    language = "C++",
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -113,14 +113,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name="parsed_metadata_test",
-    srcs=["parsed_metadata_test.cc"],
-    external_deps=[
+    name = "parsed_metadata_test",
+    srcs = ["parsed_metadata_test.cc"],
+    external_deps = [
         "absl/log:check",
         "gtest",
     ],
-    language="C++",
-    deps=[
+    language = "C++",
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -128,13 +128,13 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name="promise_endpoint_test",
-    srcs=["promise_endpoint_test.cc"],
-    external_deps=[
+    name = "promise_endpoint_test",
+    srcs = ["promise_endpoint_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    deps=[
+    language = "C++",
+    deps = [
         "//:grpc",
         "//src/core:activity",
         "//src/core:grpc_promise_endpoint",
@@ -145,13 +145,13 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name="status_conversion_test",
-    srcs=["status_conversion_test.cc"],
-    external_deps=["gtest"],
-    language="C++",
-    uses_event_engine=False,
-    uses_polling=False,
-    deps=[
+    name = "status_conversion_test",
+    srcs = ["status_conversion_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
@@ -160,15 +160,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name="timeout_encoding_test",
-    srcs=["timeout_encoding_test.cc"],
-    external_deps=[
+    name = "timeout_encoding_test",
+    srcs = ["timeout_encoding_test.cc"],
+    external_deps = [
         "gtest",
     ],
-    language="C++",
-    uses_event_engine=False,
-    uses_polling=False,
-    deps=[
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
