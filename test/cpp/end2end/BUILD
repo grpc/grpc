@@ -584,6 +584,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:test_lb_policies",
