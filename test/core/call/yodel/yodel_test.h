@@ -437,7 +437,7 @@ class YodelTest : public ::testing::Test {
   int YodelTest_##name::registered_ =                                        \
       (grpc_core::NoDestructSingleton<                                       \
            grpc_core::yodel_detail::ParameterizedTestRegistry<               \
-               grpc_core::test_type, parameter_type>>::Get()                 \
+               grpc_core::test_type, (parameter_type)>>::Get()               \
            ->RegisterTest(#name, &Create),                                   \
        0);                                                                   \
   void YodelTest_##name::TestImpl()
@@ -446,8 +446,8 @@ class YodelTest : public ::testing::Test {
   int YodelTestParam_##name =                                    \
       (grpc_core::NoDestructSingleton<                           \
            grpc_core::yodel_detail::ParameterizedTestRegistry<   \
-               grpc_core::test_type, parameter_type>>::Get()     \
+               grpc_core::test_type, (parameter_type)>>::Get()   \
            ->RegisterParameter(#name, value),                    \
        0)
 
-#endif
+#endif  // GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
