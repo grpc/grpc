@@ -14,11 +14,12 @@
 
 import json
 import os
-from typing import AnyStr, Dict, Iterable, List
+from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 
 from google.protobuf import struct_pb2
 
 # pytype: disable=pyi-error
+from grpc_observability import _open_telemetry_observability
 from grpc_observability._observability import OptionalLabelType
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
@@ -274,15 +275,73 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
 
 # pylint: disable=no-self-use
 class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
-    """Describes a Plugin for OpenTelemetry observability.
+    """Describes a Plugin for CSM OpenTelemetry observability.
 
     This is class is part of an EXPERIMENTAL API.
     """
 
-    def _get_plugin_options(
+    plugin_options: Iterable[OpenTelemetryPluginOption]
+    meter_provider: Optional[MeterProvider]
+    target_attribute_filter: Callable[[str], bool]
+    generic_method_attribute_filter: Callable[[str], bool]
+    _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
+
+    def __init__(
         self,
-    ) -> Iterable[OpenTelemetryPluginOption]:
-        return [CsmOpenTelemetryPluginOption()]
+        *,
+        plugin_options: Iterable[OpenTelemetryPluginOption] = [],
+        meter_provider: Optional[MeterProvider] = None,
+        target_attribute_filter: Optional[Callable[[str], bool]] = None,
+        generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
+        disable_csm_diagnostic_reporting: bool = True,
+    ):
+        """
+        Args:
+          plugin_options: An Iterable of OpenTelemetryPluginOption which will be
+        enabled for this OpenTelemetryPlugin.
+          meter_provider: A MeterProvider which will be used to collect telemetry data,
+        or None which means no metrics will be collected.
+          target_attribute_filter: Once provided, this will be called per channel to decide
+        whether to record the target attribute on client or to replace it with "other".
+        This helps reduce the cardinality on metrics in cases where many channels
+        are created with different targets in the same binary (which might happen
+        for example, if the channel target string uses IP addresses directly).
+        Return True means the original target string will be used, False means target string
+        will be replaced with "other".
+          generic_method_attribute_filter: Once provided, this will be called with a generic
+        method type to decide whether to record the method name or to replace it with
+        "other". Note that pre-registered methods will always be recorded no matter what
+        this function returns.
+        Return True means the original method name will be used, False means method name will
+        be replaced with "other".
+          disable_csm_diagnostic_reporting: Disables CSM diagnostic reporting for access by
+        CSM service team. This is enabled by default.
+        """
+        self.plugin_options = list(plugin_options).append(
+            CsmOpenTelemetryPluginOption()
+        )
+        self.meter_provider = meter_provider
+        if target_attribute_filter:
+            self.target_attribute_filter = target_attribute_filter
+        else:
+            self.target_attribute_filter = lambda target: True
+        if generic_method_attribute_filter:
+            self.generic_method_attribute_filter = (
+                generic_method_attribute_filter
+            )
+        else:
+            self.generic_method_attribute_filter = lambda method: False
+
+        self._plugins = [
+            _open_telemetry_observability._OpenTelemetryPlugin(self)
+        ]
+        if disable_csm_diagnostic_reporting:
+            self._plugins.append(_get_csm_diagnostic_plugin())
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return [OptionalLabelType.XDS_SERVICE_LABELS]
+
+
+def _get_csm_diagnostic_plugin():
+    # TODO: This should return a plugin with StackDriver MeterProvider.
+    return OpenTelemetryPlugin()

@@ -91,7 +91,7 @@ class OpenTelemetryPlugin:
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
-    _plugin: _open_telemetry_observability._OpenTelemetryPlugin
+    _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
 
     def __init__(
         self,
@@ -135,7 +135,9 @@ class OpenTelemetryPlugin:
             )
         else:
             self.generic_method_attribute_filter = lambda method: False
-        self._plugin = _open_telemetry_observability._OpenTelemetryPlugin(self)
+        self._plugins = [
+            _open_telemetry_observability._OpenTelemetryPlugin(self)
+        ]
 
     def register_global(self) -> None:
         """
@@ -145,7 +147,7 @@ class OpenTelemetryPlugin:
             RuntimeError: If a global plugin was already registered.
         """
         _open_telemetry_observability.start_open_telemetry_observability(
-            plugins=[self._plugin]
+            plugins=self._plugins
         )
 
     def deregister_global(self) -> None:
@@ -159,7 +161,7 @@ class OpenTelemetryPlugin:
 
     def __enter__(self) -> None:
         _open_telemetry_observability.start_open_telemetry_observability(
-            plugins=[self._plugin]
+            plugins=self._plugins
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
