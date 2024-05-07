@@ -19,6 +19,7 @@
 #include <tuple>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -73,7 +74,7 @@ auto ChaoticGoodServerTransport::TransportWriteLoop(
 auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     CallInitiator call_initiator, ClientFragmentFrame frame,
     uint32_t stream_id) {
-  GPR_DEBUG_ASSERT(frame.headers == nullptr);
+  DCHECK(frame.headers == nullptr);
   if (grpc_chaotic_good_trace.enabled()) {
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
             frame.ToString().c_str());
@@ -168,7 +169,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
             message_length % aligned_bytes == 0
                 ? 0
                 : aligned_bytes - message_length % aligned_bytes;
-        GPR_ASSERT((message_length + padding) % aligned_bytes == 0);
+        CHECK_EQ((message_length + padding) % aligned_bytes, 0u);
         frame.message =
             FragmentMessage(std::move(message), padding, message_length);
         frame.stream_id = stream_id;
@@ -385,8 +386,8 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
 }
 
 void ChaoticGoodServerTransport::SetAcceptor(Acceptor* acceptor) {
-  GPR_ASSERT(acceptor_ == nullptr);
-  GPR_ASSERT(acceptor != nullptr);
+  CHECK_EQ(acceptor_, nullptr);
+  CHECK_NE(acceptor, nullptr);
   acceptor_ = acceptor;
   got_acceptor_.Set();
 }

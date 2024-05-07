@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
 namespace grpc_core {

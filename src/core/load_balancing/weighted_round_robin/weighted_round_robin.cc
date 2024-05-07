@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -221,11 +222,16 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
      public:
       WrrEndpoint(RefCountedPtr<EndpointList> endpoint_list,
                   const EndpointAddresses& addresses, const ChannelArgs& args,
-                  std::shared_ptr<WorkSerializer> work_serializer)
+                  std::shared_ptr<WorkSerializer> work_serializer,
+                  std::vector<std::string>* errors)
           : Endpoint(std::move(endpoint_list)),
             weight_(policy<WeightedRoundRobin>()->GetOrCreateWeight(
                 addresses.addresses())) {
-        Init(addresses, args, std::move(work_serializer));
+        absl::Status status = Init(addresses, args, std::move(work_serializer));
+        if (!status.ok()) {
+          errors->emplace_back(absl::StrCat("endpoint ", addresses.ToString(),
+                                            ": ", status.ToString()));
+        }
       }
 
       RefCountedPtr<EndpointWeight> weight() const { return weight_; }
@@ -261,7 +267,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
 
     WrrEndpointList(RefCountedPtr<WeightedRoundRobin> wrr,
                     EndpointAddressesIterator* endpoints,
-                    const ChannelArgs& args)
+                    const ChannelArgs& args, std::vector<std::string>* errors)
         : EndpointList(std::move(wrr),
                        GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)
                            ? "WrrEndpointList"
@@ -271,7 +277,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
                const EndpointAddresses& addresses, const ChannelArgs& args) {
              return MakeOrphanable<WrrEndpoint>(
                  std::move(endpoint_list), addresses, args,
-                 policy<WeightedRoundRobin>()->work_serializer());
+                 policy<WeightedRoundRobin>()->work_serializer(), errors);
            });
     }
 
@@ -566,7 +572,7 @@ void WeightedRoundRobin::Picker::Orphaned() {
 
 WeightedRoundRobin::PickResult WeightedRoundRobin::Picker::Pick(PickArgs args) {
   size_t index = PickIndex();
-  GPR_ASSERT(index < endpoints_.size());
+  CHECK(index < endpoints_.size());
   auto& endpoint_info = endpoints_[index];
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO,
@@ -700,8 +706,8 @@ WeightedRoundRobin::~WeightedRoundRobin() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_wrr_trace)) {
     gpr_log(GPR_INFO, "[WRR %p] Destroying Round Robin policy", this);
   }
-  GPR_ASSERT(endpoint_list_ == nullptr);
-  GPR_ASSERT(latest_pending_endpoint_list_ == nullptr);
+  CHECK(endpoint_list_ == nullptr);
+  CHECK(latest_pending_endpoint_list_ == nullptr);
 }
 
 void WeightedRoundRobin::ShutdownLocked() {
@@ -767,8 +773,9 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     gpr_log(GPR_INFO, "[WRR %p] replacing previous pending endpoint list %p",
             this, latest_pending_endpoint_list_.get());
   }
+  std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<WrrEndpointList>(
-      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args);
+      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args, &errors);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -791,6 +798,10 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   // endpoint_list_.
   if (endpoint_list_.get() == nullptr) {
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
+  }
+  if (!errors.empty()) {
+    return absl::UnavailableError(absl::StrCat(
+        "errors from children: [", absl::StrJoin(errors, "; "), "]"));
   }
   return absl::OkStatus();
 }
@@ -903,20 +914,20 @@ void WeightedRoundRobin::WrrEndpointList::UpdateStateCountersLocked(
   // We treat IDLE the same as CONNECTING, since it will immediately
   // transition into that state anyway.
   if (old_state.has_value()) {
-    GPR_ASSERT(*old_state != GRPC_CHANNEL_SHUTDOWN);
+    CHECK(*old_state != GRPC_CHANNEL_SHUTDOWN);
     if (*old_state == GRPC_CHANNEL_READY) {
-      GPR_ASSERT(num_ready_ > 0);
+      CHECK_GT(num_ready_, 0u);
       --num_ready_;
     } else if (*old_state == GRPC_CHANNEL_CONNECTING ||
                *old_state == GRPC_CHANNEL_IDLE) {
-      GPR_ASSERT(num_connecting_ > 0);
+      CHECK_GT(num_connecting_, 0u);
       --num_connecting_;
     } else if (*old_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      GPR_ASSERT(num_transient_failure_ > 0);
+      CHECK_GT(num_transient_failure_, 0u);
       --num_transient_failure_;
     }
   }
-  GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
+  CHECK(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING ||

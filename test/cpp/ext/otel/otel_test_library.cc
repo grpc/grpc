@@ -34,8 +34,8 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 
@@ -147,6 +147,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
                                                   &AddLabelsFilter::kFilter);
         });
     channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
+  }
+  if (!config.service_config.empty()) {
+    channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
   reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
   grpc_init();

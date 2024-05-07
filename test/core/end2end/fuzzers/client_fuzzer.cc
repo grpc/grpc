@@ -41,8 +41,8 @@
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/mock_endpoint.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/mock_endpoint.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -60,7 +60,7 @@ class ClientFuzzer final : public BasicFuzzer {
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
     UpdateMinimumRunTime(
-        ScheduleReads(msg.network_input()[0], mock_endpoint_, engine()));
+        ScheduleReads(msg.network_input()[0], mock_endpoint_, engine().get()));
     ChannelArgs args =
         CoreConfiguration::Get()
             .channel_args_preconditioning()
@@ -92,7 +92,7 @@ class ClientFuzzer final : public BasicFuzzer {
   grpc_server* server() override { return nullptr; }
   grpc_channel* channel() override { return channel_; }
 
-  grpc_endpoint* mock_endpoint_ = grpc_mock_endpoint_create(discard_write);
+  grpc_endpoint* mock_endpoint_ = grpc_mock_endpoint_create(engine());
   grpc_channel* channel_ = nullptr;
 };
 

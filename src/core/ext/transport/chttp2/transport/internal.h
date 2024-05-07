@@ -219,14 +219,18 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport final : public grpc_core::Transport,
-                                     public grpc_core::FilterStackTransport,
+struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
                                      public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport() override;
 
   void Orphan() override;
+
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> Ref() {
+    return grpc_core::FilterStackTransport::RefAsSubclass<
+        grpc_chttp2_transport>();
+  }
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;

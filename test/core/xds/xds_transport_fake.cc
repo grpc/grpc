@@ -29,12 +29,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/test_config.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 

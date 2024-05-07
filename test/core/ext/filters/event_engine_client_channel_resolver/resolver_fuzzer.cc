@@ -20,6 +20,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -45,8 +46,8 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/ext/filters/event_engine_client_channel_resolver/resolver_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzzing_channel_args.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzzing_channel_args.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
@@ -240,7 +241,7 @@ grpc_core::ResolverArgs ConstructResolverArgs(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_core::ResolverArgs resolver_args;
   auto uri = grpc_core::URI::Parse("dns:localhost");
-  GPR_ASSERT(uri.ok());
+  CHECK(uri.ok());
   resolver_args.uri = *uri;
   resolver_args.args = channel_args;
   resolver_args.pollset_set = nullptr;

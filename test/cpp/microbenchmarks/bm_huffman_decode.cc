@@ -23,7 +23,7 @@
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/huffman_geometries/index.h"
 
 std::vector<uint8_t> MakeInput(int min, int max) {

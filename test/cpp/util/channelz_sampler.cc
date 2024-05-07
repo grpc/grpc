@@ -28,6 +28,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "google/protobuf/text_format.h"
@@ -49,7 +50,7 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -133,8 +134,8 @@ class ChannelzSampler final {
     Status status = channelz_stub_->GetChannel(
         &get_channel_context, get_channel_request, &get_channel_response);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "GetChannelRPC failed: %s",
-              get_channel_context.debug_error_string().c_str());
+      LOG(ERROR) << "GetChannelRPC failed: "
+                 << get_channel_context.debug_error_string();
       CHECK(0);
     }
     return get_channel_response.channel();
@@ -152,8 +153,8 @@ class ChannelzSampler final {
                                                   get_subchannel_request,
                                                   &get_subchannel_response);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "GetSubchannelRPC failed: %s",
-              get_subchannel_context.debug_error_string().c_str());
+      LOG(ERROR) << "GetSubchannelRPC failed: "
+                 << get_subchannel_context.debug_error_string();
       CHECK(0);
     }
     return get_subchannel_response.subchannel();
@@ -170,8 +171,8 @@ class ChannelzSampler final {
     Status status = channelz_stub_->GetSocket(
         &get_socket_context, get_socket_request, &get_socket_response);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "GetSocketRPC failed: %s",
-              get_socket_context.debug_error_string().c_str());
+      LOG(ERROR) << "GetSocketRPC failed: "
+                 << get_socket_context.debug_error_string();
       CHECK(0);
     }
     return get_socket_response.socket();
@@ -297,10 +298,9 @@ class ChannelzSampler final {
         grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
             custom_credentials_type, &channel_args);
     if (!channel_creds) {
-      gpr_log(GPR_ERROR,
-              "Wrong user credential type: %s. Allowed credential types: "
-              "INSECURE_CREDENTIALS, ssl, alts, google_default_credentials.",
-              custom_credentials_type.c_str());
+      LOG(ERROR) << "Wrong user credential type: " << custom_credentials_type
+                 << ". Allowed credential types: INSECURE_CREDENTIALS, ssl, "
+                    "alts, google_default_credentials.";
       CHECK(0);
     }
     std::shared_ptr<grpc::Channel> channel =
@@ -324,15 +324,14 @@ class ChannelzSampler final {
           &get_servers_context, get_servers_request, &get_servers_response);
       if (!status.ok()) {
         if (status.error_code() == StatusCode::UNIMPLEMENTED) {
-          gpr_log(GPR_ERROR,
-                  "Error status UNIMPLEMENTED. Please check and make sure "
-                  "channelz has been registered on the server being queried.");
+          LOG(ERROR) << "Error status UNIMPLEMENTED. Please check and make "
+                        "sure channelz has been registered on the server being "
+                        "queried.";
         } else {
-          gpr_log(GPR_ERROR,
-                  "GetServers RPC with GetServersRequest.server_start_id=%d, "
-                  "failed: %s",
-                  static_cast<int>(server_start_id),
-                  get_servers_context.debug_error_string().c_str());
+          LOG(ERROR) << "GetServers RPC with "
+                        "GetServersRequest.server_start_id="
+                     << server_start_id << ", failed: "
+                     << get_servers_context.debug_error_string();
         }
         CHECK(0);
       }
@@ -384,11 +383,10 @@ class ChannelzSampler final {
           &get_top_channels_context, get_top_channels_request,
           &get_top_channels_response);
       if (!status.ok()) {
-        gpr_log(GPR_ERROR,
-                "GetTopChannels RPC with "
-                "GetTopChannelsRequest.channel_start_id=%d failed: %s",
-                static_cast<int>(channel_start_id),
-                get_top_channels_context.debug_error_string().c_str());
+        LOG(ERROR) << "GetTopChannels RPC with "
+                      "GetTopChannelsRequest.channel_start_id="
+                   << channel_start_id << " failed: "
+                   << get_top_channels_context.debug_error_string();
         CHECK(0);
       }
       for (const auto& _topchannel : get_top_channels_response.channel()) {

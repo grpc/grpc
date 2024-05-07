@@ -16,6 +16,7 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
 
@@ -95,7 +96,7 @@ absl::optional<uint64_t> Chttp2PingCallbacks::OnPingTimeout(
     Duration ping_timeout,
     grpc_event_engine::experimental::EventEngine* event_engine,
     Callback callback) {
-  GPR_ASSERT(started_new_ping_without_setting_timeout_);
+  CHECK(started_new_ping_without_setting_timeout_);
   started_new_ping_without_setting_timeout_ = false;
   auto it = inflight_.find(most_recent_inflight_);
   if (it == inflight_.end()) return absl::nullopt;

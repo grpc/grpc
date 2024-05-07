@@ -499,7 +499,40 @@ std::string grpc_transport_op_string(grpc_transport_op* op);
 
 namespace grpc_core {
 
-class FilterStackTransport {
+class FilterStackTransport;
+class ClientTransport;
+class ServerTransport;
+
+class Transport : public InternallyRefCounted<Transport> {
+ public:
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
+
+  virtual FilterStackTransport* filter_stack_transport() = 0;
+  virtual ClientTransport* client_transport() = 0;
+  virtual ServerTransport* server_transport() = 0;
+
+  // name of this transport implementation
+  virtual absl::string_view GetTransportName() const = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollset(grpc_stream* stream, grpc_pollset* pollset) = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollsetSet(grpc_stream* stream,
+                             grpc_pollset_set* pollset_set) = 0;
+
+  void SetPollingEntity(grpc_stream* stream,
+                        grpc_polling_entity* pollset_or_pollset_set);
+
+  // implementation of grpc_transport_perform_op
+  virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  // implementation of grpc_transport_get_endpoint
+  virtual grpc_endpoint* GetEndpoint() = 0;
+};
+
+class FilterStackTransport : public Transport {
  public:
   // Memory required for a single stream element - this is allocated by upper
   // layers and initialized by the transport
@@ -537,19 +570,18 @@ class FilterStackTransport {
                              grpc_closure* then_schedule_closure) = 0;
 
  protected:
-  ~FilterStackTransport() = default;
+  ~FilterStackTransport() override = default;
 };
 
-// FIXME: should this just be an alias for CallDestination?
-class ClientTransport {
+class ClientTransport : public Transport {
  public:
   virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
-  ~ClientTransport() = default;
+  ~ClientTransport() override = default;
 };
 
-class ServerTransport {
+class ServerTransport : public Transport {
  public:
   // Called once slightly after transport setup to register the accept function.
   virtual void SetCallDestination(

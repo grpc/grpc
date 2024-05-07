@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -37,12 +38,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_endpoint.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -72,6 +67,12 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/xds_endpoint.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_client_stats.h"
 
 namespace grpc_core {
 
@@ -328,7 +329,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
     locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
     call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
 #ifndef NDEBUG
-    GPR_DEBUG_ASSERT(!started_);
+    DCHECK(!started_);
 #endif
   }
 
@@ -553,7 +554,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // different priority child name if that happens, which means that this
   // policy instance will get replaced instead of being updated.
   if (config_ != nullptr) {
-    GPR_ASSERT(config_->cluster_name() == new_config->cluster_name());
+    CHECK(config_->cluster_name() == new_config->cluster_name());
   }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();

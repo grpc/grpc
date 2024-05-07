@@ -24,8 +24,8 @@
 #include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/otel_plugin.h>
 
-#include "src/core/ext/xds/xds_enabled_server.h"
-#include "test/core/util/test_config.h"
+#include "src/core/xds/grpc/xds_enabled_server.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {

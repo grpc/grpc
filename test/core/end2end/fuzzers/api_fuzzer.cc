@@ -67,8 +67,8 @@
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzzing_channel_args.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzzing_channel_args.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -400,7 +400,7 @@ namespace testing {
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
-  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine()));
+  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 

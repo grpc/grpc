@@ -26,8 +26,8 @@
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/server/server.h"
 
 // TODO(waynetu): This is part of the public API and should be moved to the
 // include/ folder.

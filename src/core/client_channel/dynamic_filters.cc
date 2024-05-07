@@ -23,6 +23,7 @@
 #include <new>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/support/log.h>
@@ -82,8 +83,8 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
 }
 
 void DynamicFilters::Call::SetAfterCallStackDestroy(grpc_closure* closure) {
-  GPR_ASSERT(after_call_stack_destroy_ == nullptr);
-  GPR_ASSERT(closure != nullptr);
+  CHECK_EQ(after_call_stack_destroy_, nullptr);
+  CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 

@@ -16,6 +16,8 @@
 
 #include "src/core/lib/surface/channel.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -113,7 +115,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_completion_queue* completion_queue,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
@@ -131,7 +133,7 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GRPC_API_TRACE(
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->RegisterCall(method, host);
@@ -154,7 +156,7 @@ grpc_call* grpc_channel_create_registered_call(
       (channel, parent_call, (unsigned)propagation_mask, completion_queue,
        registered_call_handle, deadline.tv_sec, deadline.tv_nsec,
        (int)deadline.clock_type, reserved));
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
@@ -228,6 +230,6 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_channel_ping(channel=%p, cq=%p, tag=%p, reserved=%p)", 4,
                  (channel, cq, tag, reserved));
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   grpc_core::Channel::FromC(channel)->Ping(cq, tag);
 }

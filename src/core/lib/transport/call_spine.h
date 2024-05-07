@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -60,7 +62,7 @@ class CallSpine final : public Party {
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
+    DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {

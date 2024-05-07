@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
@@ -83,7 +84,7 @@ struct CallbackAlternativeCQ {
                                    gpr_time_from_millis(100, GPR_TIMESPAN)));
                   continue;
                 }
-                GPR_DEBUG_ASSERT(ev.type == GRPC_OP_COMPLETE);
+                DCHECK(ev.type == GRPC_OP_COMPLETE);
                 // We can always execute the callback inline rather than
                 // pushing it to another Executor thread because this
                 // thread is definitely running on a background thread, does not
@@ -169,7 +170,7 @@ CompletionQueue::CompletionQueueTLSCache::CompletionQueueTLSCache(
 }
 
 CompletionQueue::CompletionQueueTLSCache::~CompletionQueueTLSCache() {
-  GPR_ASSERT(flushed_);
+  CHECK(flushed_);
 }
 
 bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
@@ -199,7 +200,7 @@ void CompletionQueue::ReleaseCallbackAlternativeCQ(CompletionQueue* cq)
   (void)cq;
   // This accesses g_callback_alternative_cq without acquiring the mutex
   // but it's considered safe because it just reads the pointer address.
-  GPR_DEBUG_ASSERT(cq == g_callback_alternative_cq.cq);
+  DCHECK(cq == g_callback_alternative_cq.cq);
   g_callback_alternative_cq.Unref();
 }
 

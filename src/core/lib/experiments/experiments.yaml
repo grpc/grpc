@@ -178,7 +178,7 @@
     (ie when all filters in a stack are promise based)
   expiry: 2024/06/14
   owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "logging_test"]
+  test_tags: ["core_end2end_test", "logging_test"]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration

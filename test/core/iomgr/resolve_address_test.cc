@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/strings/match.h"
 
 #include <grpc/grpc.h>
@@ -42,9 +43,9 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 namespace {
@@ -546,7 +547,7 @@ int main(int argc, char** argv) {
   } else if (absl::StrContains(std::string(argv[0]), "using_ares_resolver")) {
     g_resolver_type = "ares";
   } else {
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   grpc_core::ConfigVars::Overrides overrides;
   overrides.dns_resolver = g_resolver_type;

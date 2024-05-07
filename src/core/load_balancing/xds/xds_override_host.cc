@@ -31,6 +31,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -48,7 +49,6 @@
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
-#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -81,6 +81,7 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/xds/grpc/xds_health_status.h"
 
 namespace grpc_core {
 
@@ -228,7 +229,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     // already has an owned subchannel.
     void SetOwnedSubchannel(RefCountedPtr<SubchannelWrapper> subchannel)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
-      GPR_DEBUG_ASSERT(!HasOwnedSubchannel());
+      DCHECK(!HasOwnedSubchannel());
       subchannel_ = std::move(subchannel);
     }
 
@@ -474,7 +475,7 @@ XdsOverrideHostLb::Picker::Picker(
 absl::optional<LoadBalancingPolicy::PickResult>
 XdsOverrideHostLb::Picker::PickOverridenHost(
     XdsOverrideHostAttribute* override_host_attr) const {
-  GPR_ASSERT(override_host_attr != nullptr);
+  CHECK_NE(override_host_attr, nullptr);
   auto cookie_address_list = override_host_attr->cookie_address_list();
   if (cookie_address_list.empty()) return absl::nullopt;
   // The cookie has an address list, so look through the addresses in order.
@@ -994,7 +995,7 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
             std::string(address).c_str());
   }
   auto addr = StringToSockaddr(address);
-  GPR_ASSERT(addr.ok());
+  CHECK(addr.ok());
   // Note: We don't currently have any cases where per_address_args need to
   // be passed through.  If we encounter any such cases in the future, we
   // will need to change this to store those attributes from the resolver

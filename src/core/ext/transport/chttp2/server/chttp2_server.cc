@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -50,6 +51,8 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -78,12 +81,10 @@
 #include "src/core/lib/security/credentials/insecure/insecure_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/handshaker.h"
-#include "src/core/lib/transport/handshaker_registry.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/server/server.h"
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -308,7 +309,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
     void set_connections(
         std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>>
             connections) {
-      GPR_ASSERT(connections_.empty());
+      CHECK(connections_.empty());
       connections_ = std::move(connections);
     }
 
@@ -334,7 +335,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
             StatusToString(error).c_str());
     // TODO(yashykt): We wouldn't need to assert here if we bound to the
     // port earlier during AddPort.
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   listener_->StartListening();
   {
@@ -1000,7 +1001,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
         if (*port_num == -1) {
           *port_num = port_temp;
         } else {
-          GPR_ASSERT(*port_num == port_temp);
+          CHECK(*port_num == port_temp);
         }
       }
     }
@@ -1139,7 +1140,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
 void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
                                      grpc_server_credentials* /* creds */) {
-  GPR_ASSERT(0);
+  CHECK(0);
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD

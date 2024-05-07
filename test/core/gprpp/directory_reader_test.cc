@@ -23,7 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static constexpr absl::string_view kCrlDirectory =
     "test/core/tsi/test_creds/crl_data/crls/";

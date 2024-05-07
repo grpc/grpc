@@ -38,7 +38,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
-#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -46,8 +45,9 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/xds/grpc/xds_health_status.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

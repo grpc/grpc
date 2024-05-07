@@ -14,6 +14,8 @@
 
 #include "src/core/ext/transport/binder/client/jni_utils.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
@@ -41,7 +43,7 @@ jclass FindNativeConnectionHelper(
     }
     jclass global_cl = static_cast<jclass>(env->NewGlobalRef(cl));
     env->DeleteLocalRef(cl);
-    GPR_ASSERT(global_cl != nullptr);
+    CHECK_NE(global_cl, nullptr);
     return global_cl;
   };
   static jclass connection_helper_class = do_find();

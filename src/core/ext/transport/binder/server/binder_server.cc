@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
@@ -30,8 +31,8 @@
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/server/server.h"
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
@@ -212,7 +213,7 @@ class BinderServerListener : public Server::ListenerInterface {
     // grpc_create_binder_transport_server().
     Transport* server_transport = grpc_create_binder_transport_server(
         std::move(client_binder), security_policy_);
-    GPR_ASSERT(server_transport);
+    CHECK(server_transport);
     grpc_error_handle error = server_->SetupTransport(
         server_transport, nullptr, server_->channel_args(), nullptr);
     return grpc_error_to_absl_status(error);

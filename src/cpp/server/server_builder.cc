@@ -25,6 +25,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
@@ -160,7 +162,7 @@ void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
 void ServerBuilder::experimental_type::EnableCallMetricRecording(
     experimental::ServerMetricRecorder* server_metric_recorder) {
   builder_->AddChannelArgument(GRPC_ARG_SERVER_CALL_METRIC_RECORDING, 1);
-  GPR_ASSERT(builder_->server_metric_recorder_ == nullptr);
+  CHECK_EQ(builder_->server_metric_recorder_, nullptr);
   builder_->server_metric_recorder_ = server_metric_recorder;
 }
 

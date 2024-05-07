@@ -67,7 +67,7 @@ class BackendMetricsLbPolicy : public LoadBalancingPolicy {
       : LoadBalancingPolicy(std::move(args), /*initial_refcount=*/2) {
     load_report_tracker_ =
         channel_args().GetPointer<LoadReportTracker>(kMetricsTrackerArgument);
-    CHECK(load_report_tracker_ != nullptr);
+    CHECK_NE(load_report_tracker_, nullptr);
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
     delegate_args.args = channel_args();

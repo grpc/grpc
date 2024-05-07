@@ -26,9 +26,9 @@
 
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
 #include "test/core/transport/binder/end2end/testing_channel_create.h"
-#include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc_binder {

@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -49,7 +51,7 @@ class VarintWriter {
   explicit VarintWriter(size_t value)
       : value_(value),
         length_(value < kMaxInPrefix ? 1 : VarintLength(value - kMaxInPrefix)) {
-    GPR_ASSERT(value <= UINT32_MAX);
+    CHECK(value <= UINT32_MAX);
   }
 
   size_t value() const { return value_; }
