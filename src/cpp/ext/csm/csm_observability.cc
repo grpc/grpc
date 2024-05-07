@@ -34,9 +34,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpcpp/ext/csm_observability.h>
 
-#include "src/core/ext/xds/xds_enabled_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/xds/grpc/xds_enabled_server.h"
 #include "src/cpp/ext/csm/metadata_exchange.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
