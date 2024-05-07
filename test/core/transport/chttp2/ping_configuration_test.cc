@@ -41,18 +41,15 @@ namespace {
 class ConfigurationTest : public ::testing::Test {
  protected:
   ConfigurationTest() {
-    mock_endpoint_ = grpc_mock_endpoint_create(DiscardWrite);
+    auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+    mock_endpoint_ = grpc_mock_endpoint_create(engine);
     grpc_mock_endpoint_finish_put_reads(mock_endpoint_);
     args_ = args_.SetObject(ResourceQuota::Default());
-    args_ = args_.SetObject(
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+    args_ = args_.SetObject(std::move(engine));
   }
 
   grpc_endpoint* mock_endpoint_ = nullptr;
   ChannelArgs args_;
-
- private:
-  static void DiscardWrite(grpc_slice /*slice*/) {}
 };
 
 TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {

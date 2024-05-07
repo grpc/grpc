@@ -63,7 +63,7 @@ class ServerFuzzer final : public BasicFuzzer {
     grpc_server_start(server_);
     for (const auto& input : msg.network_input()) {
       UpdateMinimumRunTime(ScheduleConnection(
-          input, engine(), FuzzingEnvironment{resource_quota()}, 1234));
+          input, engine().get(), FuzzingEnvironment{resource_quota()}, 1234));
     }
   }
 

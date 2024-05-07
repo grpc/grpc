@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.64.0dev</release>
-  <api>1.64.0dev</api>
+  <release>1.65.0dev</release>
+  <api>1.65.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.64.0 update
+- gRPC Core 1.65.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -1047,60 +1047,6 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/certificate_provider_store.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/file_watcher_certificate_provider_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/upb_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_audit_logger_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_audit_logger_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap_grpc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_bootstrap_grpc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_certificate_provider.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_channel_args.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_grpc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_cluster_specifier_plugin.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_common_types.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_endpoint.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_health_status.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_health_status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_rbac_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_stateful_session_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_stateful_session_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_lb_policy_registry.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_listener.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_metrics.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_resource_type_impl.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_route_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_routing.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/xds/xds_transport_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/endpoint_info/endpoint_info_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/handshaker.cc" role="src" />
@@ -1993,6 +1939,60 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/upb_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_certificate_provider.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_certificate_provider.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_client_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_client_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_cluster.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_cluster.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_cluster_specifier_plugin.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_cluster_specifier_plugin.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_common_types.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_common_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_endpoint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_health_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filters.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filters.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_rbac_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_rbac_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_stateful_session_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_stateful_session_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_lb_policy_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_lb_policy_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_listener.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_route_config.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_routing.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_routing.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_transport_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_bootstrap.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_bootstrap.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_channel_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_metrics.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_resource_type_impl.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/xds_client/xds_transport.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.c" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/byte_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/call.c" role="src" />
