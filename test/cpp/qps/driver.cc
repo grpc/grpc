@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "google/protobuf/timestamp.pb.h"
 
 #include <grpc/support/alloc.h>
