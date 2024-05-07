@@ -17,7 +17,7 @@
 #ifndef GRPC_SRC_CORE_SERVER_SERVER_INTERFACE_H
 #define GRPC_SRC_CORE_SERVER_SERVER_INTERFACE_H
 
-#include <grpc/compression.h>
+#include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"

@@ -58,6 +58,7 @@
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
@@ -175,6 +176,8 @@ class RlsEnd2endTest : public ::testing::Test {
 
   static void TearDownTestSuite() {
     grpc_shutdown_blocking();
+    WaitForSingleOwner(
+        grpc_event_engine::experimental::GetDefaultEventEngine());
     grpc_core::CoreConfiguration::Reset();
   }
 
