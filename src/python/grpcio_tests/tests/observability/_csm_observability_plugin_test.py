@@ -14,14 +14,20 @@
 
 from collections import defaultdict
 import datetime
+import json
 import logging
 import os
+import random
 import sys
 import time
-from typing import Any, AnyStr, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 import unittest
+from unittest import mock
 
-from google.protobuf import struct_pb2
+from grpc_csm_observability import CsmOpenTelemetryPlugin
+from grpc_csm_observability._csm_observability_plugin import (
+    CSMOpenTelemetryLabelInjector,
+)
 import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
@@ -37,9 +43,12 @@ from tests.observability import _test_server
 
 logger = logging.getLogger(__name__)
 
-STREAM_LENGTH = 5
 OTEL_EXPORT_INTERVAL_S = 0.5
-CSM_METADATA_EXCHANGE_LABEL_KEY = "exchange_labels_key"
+# We only expect basic labels to be exchanged.
+CSM_METADATA_EXCHANGE_DEFAULT_LABELS = [
+    "csm.remote_workload_type",
+    "csm.remote_workload_canonical_service",
+]
 
 # The following metrics should have optional labels when optional
 # labels is enabled through OpenTelemetryPlugin.
@@ -113,51 +122,6 @@ class OTelMetricExporter(MetricExporter):
                         )
 
 
-class TestLabelInjector(OpenTelemetryLabelInjector):
-    _exchange_labels: Dict[str, AnyStr]
-    _local_labels: Dict[str, str]
-
-    def __init__(
-        self, local_labels: Dict[str, str], exchange_labels: Dict[str, str]
-    ):
-        self._exchange_labels = exchange_labels
-        self._local_labels = local_labels
-
-    def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
-        return self._exchange_labels
-
-    def get_additional_labels(self) -> Dict[str, str]:
-        return self._local_labels
-
-    def deserialize_labels(
-        self, labels: Dict[str, AnyStr]
-    ) -> Dict[str, AnyStr]:
-        deserialized_labels = {}
-        for key, value in labels.items():
-            if "XEnvoyPeerMetadata" == key:
-                struct = struct_pb2.Struct()
-                struct.ParseFromString(value)
-
-                exchange_labels_value = self._get_value_from_struct(
-                    CSM_METADATA_EXCHANGE_LABEL_KEY, struct
-                )
-                deserialized_labels[
-                    CSM_METADATA_EXCHANGE_LABEL_KEY
-                ] = exchange_labels_value
-            else:
-                deserialized_labels[key] = value
-
-        return deserialized_labels
-
-    def _get_value_from_struct(
-        self, key: str, struct: struct_pb2.Struct
-    ) -> str:
-        value = struct.fields.get(key)
-        if not value:
-            return "unknown"
-        return value.string_value
-
-
 class TestOpenTelemetryPluginOption(OpenTelemetryPluginOption):
     _label_injector: OpenTelemetryLabelInjector
     _active_on_client: bool
@@ -203,87 +167,144 @@ class ObservabilityPluginTest(unittest.TestCase):
         if self._server:
             self._server.stop(0)
 
-    def testLabelInjectorWithLocalLabels(self):
-        """Local labels in label injector should be added to all metrics."""
-        label_injector = TestLabelInjector(
-            local_labels={"local_labels_key": "local_labels_value"},
-            exchange_labels={},
-        )
-        plugin_option = TestOpenTelemetryPluginOption(
-            label_injector=label_injector
-        )
-        otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider, plugin_options=[plugin_option]
+    def testOptionalXdsServiceLabelExist(self):
+        csm_plugin = CsmOpenTelemetryPlugin(
+            meter_provider=self._provider,
         )
 
-        otel_plugin.register_global()
+        csm_plugin.register_global()
         self._server, port = _test_server.start_server()
         _test_server.unary_unary_call(port=port)
-        otel_plugin.deregister_global()
+        csm_plugin.deregister_global()
 
         self._validate_metrics_exist(self.all_metrics)
         for name, label_list in self.all_metrics.items():
-            self._validate_label_exist(name, label_list, ["local_labels_key"])
+            if name in METRIC_NAME_WITH_OPTIONAL_LABEL:
+                self._validate_label_exist(
+                    name, label_list, CSM_OPTIONAL_LABEL_KEYS
+                )
 
-    def testClientSidePluginOption(self):
-        label_injector = TestLabelInjector(
-            local_labels={"local_labels_key": "local_labels_value"},
-            exchange_labels={},
-        )
+    def testMetadataExchange(self):
         plugin_option = TestOpenTelemetryPluginOption(
-            label_injector=label_injector, active_on_server=False
+            label_injector=CSMOpenTelemetryLabelInjector()
         )
-        otel_plugin = grpc_observability.OpenTelemetryPlugin(
+        # Have to manually create csm_plugin so that we can enable it for all
+        # channels.
+        csm_plugin = grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._provider, plugin_options=[plugin_option]
         )
 
-        otel_plugin.register_global()
-        server, port = _test_server.start_server()
-        self._server = server
+        csm_plugin.register_global()
+        self._server, port = _test_server.start_server()
         _test_server.unary_unary_call(port=port)
-        otel_plugin.deregister_global()
+        csm_plugin.deregister_global()
 
         self._validate_metrics_exist(self.all_metrics)
         for name, label_list in self.all_metrics.items():
-            if "grpc.client" in name:
+            if name in METRIC_NAME_WITH_EXCHANGE_LABEL:
                 self._validate_label_exist(
-                    name, label_list, ["local_labels_key"]
+                    name, label_list, CSM_METADATA_EXCHANGE_DEFAULT_LABELS
                 )
-        for name, label_list in self.all_metrics.items():
-            if "grpc.server" in name:
                 self._validate_label_not_exist(
-                    name, label_list, ["local_labels_key"]
+                    name, label_list, ["XEnvoyPeerMetadata"]
                 )
 
-    def testServerSidePluginOption(self):
-        label_injector = TestLabelInjector(
-            local_labels={"local_labels_key": "local_labels_value"},
-            exchange_labels={},
+    def testPluginOptionOnlyEnabledForXdsTargets(self):
+        csm_plugin = CsmOpenTelemetryPlugin(
+            meter_provider=self._provider,
         )
-        plugin_option = TestOpenTelemetryPluginOption(
-            label_injector=label_injector, active_on_client=False
+        csm_plugin_option = csm_plugin.plugin_options[0]
+        self.assertFalse(
+            csm_plugin_option.is_active_on_client_channel("foo.bar.google.com")
         )
-        otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider, plugin_options=[plugin_option]
+        self.assertFalse(
+            csm_plugin_option.is_active_on_client_channel(
+                "dns:///foo.bar.google.com"
+            )
+        )
+        self.assertFalse(
+            csm_plugin_option.is_active_on_client_channel(
+                "dns:///foo.bar.google.com:1234"
+            )
+        )
+        self.assertFalse(
+            csm_plugin_option.is_active_on_client_channel(
+                "dns://authority/foo.bar.google.com:1234"
+            )
+        )
+        self.assertFalse(
+            csm_plugin_option.is_active_on_client_channel("xds://authority/foo")
         )
 
-        otel_plugin.register_global()
-        server, port = _test_server.start_server()
-        self._server = server
-        _test_server.unary_unary_call(port=port)
-        otel_plugin.deregister_global()
+        self.assertTrue(
+            csm_plugin_option.is_active_on_client_channel("xds:///foo")
+        )
+        self.assertTrue(
+            csm_plugin_option.is_active_on_client_channel(
+                "xds://traffic-director-global.xds.googleapis.com/foo"
+            )
+        )
+        self.assertTrue(
+            csm_plugin_option.is_active_on_client_channel(
+                "xds://traffic-director-global.xds.googleapis.com/foo.bar"
+            )
+        )
 
-        self._validate_metrics_exist(self.all_metrics)
-        for name, label_list in self.all_metrics.items():
-            if "grpc.client" in name:
-                self._validate_label_not_exist(
-                    name, label_list, ["local_labels_key"]
-                )
-        for name, label_list in self.all_metrics.items():
-            if "grpc.server" in name:
-                self._validate_label_exist(
-                    name, label_list, ["local_labels_key"]
-                )
+    def testGetMeshIdFromConfig(self):
+        config_json = {
+            "node": {
+                "id": "projects/12345/networks/mesh:test_mesh_id/nodes/abcdefg"
+            }
+        }
+        config_str = json.dumps(config_json)
+        with mock.patch.dict(
+            os.environ, {"GRPC_XDS_BOOTSTRAP_CONFIG": config_str}
+        ):
+            csm_plugin = CsmOpenTelemetryPlugin(
+                meter_provider=self._provider,
+            )
+            csm_label_injector = csm_plugin.plugin_options[
+                0
+            ].get_label_injector()
+            mesh_id = csm_label_injector._local_labels["csm.mesh_id"]
+            self.assertEqual(mesh_id, "test_mesh_id")
+
+    def testGetMeshIdFromFile(self):
+        config_json = {
+            "node": {
+                "id": "projects/12345/networks/mesh:test_mesh_id/nodes/abcdefg"
+            }
+        }
+        config_file_path = "/tmp/" + str(random.randint(0, 100000))
+        with open(config_file_path, "w", encoding="utf-8") as f:
+            f.write(json.dumps(config_json))
+
+        with mock.patch.dict(
+            os.environ, {"GRPC_XDS_BOOTSTRAP": config_file_path}
+        ):
+            csm_plugin = CsmOpenTelemetryPlugin(
+                meter_provider=self._provider,
+            )
+            csm_label_injector = csm_plugin.plugin_options[
+                0
+            ].get_label_injector()
+            mesh_id = csm_label_injector._local_labels["csm.mesh_id"]
+            self.assertEqual(mesh_id, "test_mesh_id")
+
+    def testGetMeshIdFromInvalidConfig(self):
+        config_json = {"node": {"id": "12345"}}
+        config_str = json.dumps(config_json)
+        with mock.patch.dict(
+            os.environ, {"GRPC_XDS_BOOTSTRAP_CONFIG": config_str}
+        ):
+            csm_plugin = CsmOpenTelemetryPlugin(
+                meter_provider=self._provider,
+            )
+            csm_label_injector = csm_plugin.plugin_options[
+                0
+            ].get_label_injector()
+            mesh_id = csm_label_injector._local_labels["csm.mesh_id"]
+            self.assertEqual(mesh_id, "unknown")
 
     def assert_eventually(
         self,

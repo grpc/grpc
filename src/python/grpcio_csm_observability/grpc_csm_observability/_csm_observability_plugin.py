@@ -14,6 +14,7 @@
 
 import json
 import os
+import re
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 
 from google.protobuf import struct_pb2
@@ -119,7 +120,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             fields["project_id"] = struct_pb2.Value(
                 string_value=project_id_value
             )
-        else:
+        elif resource_type_value == "GCE":
             fields["workload_name"] = struct_pb2.Value(
                 string_value=workload_name_value
             )
@@ -159,7 +160,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
                         remote_key
                     ] = self._get_value_from_struct(key, pb_struct)
 
-                if TYPE_GCE in remote_type:
+                if TYPE_GKE in remote_type:
                     for (
                         key,
                         remote_key,
@@ -167,7 +168,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
                         deserialized_labels[
                             remote_key
                         ] = self._get_value_from_struct(key, pb_struct)
-                else:
+                elif TYPE_GCE in remote_type:
                     for (
                         key,
                         remote_key,
@@ -252,8 +253,13 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         # CSM channels should have an "xds" scheme
         if not target.startswith("xds"):
             return False
-        # If scheme is correct, the authority should be TD
-        return TRAFFIC_DIRECTOR_AUTHORITY in target
+        # If scheme is correct, the authority should be TD if exist
+        authority_pattern = r"^xds:\/\/([^/]+)"
+        match = re.search(authority_pattern, target)
+        if match:
+            return TRAFFIC_DIRECTOR_AUTHORITY in match.group(1)
+        else:
+            return True
 
     def is_active_on_server(self, xds: bool) -> bool:
         """Determines whether this plugin option is active on a given server.
@@ -293,7 +299,6 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
         meter_provider: Optional[MeterProvider] = None,
         target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
-        disable_csm_diagnostic_reporting: bool = True,
     ):
         """
         Args:
@@ -314,12 +319,10 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
         this function returns.
         Return True means the original method name will be used, False means method name will
         be replaced with "other".
-          disable_csm_diagnostic_reporting: Disables CSM diagnostic reporting for access by
-        CSM service team. This is enabled by default.
         """
-        self.plugin_options = list(plugin_options).append(
+        self.plugin_options = list(plugin_options) + [
             CsmOpenTelemetryPluginOption()
-        )
+        ]
         self.meter_provider = meter_provider
         if target_attribute_filter:
             self.target_attribute_filter = target_attribute_filter
@@ -331,17 +334,9 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
             )
         else:
             self.generic_method_attribute_filter = lambda method: False
-
         self._plugins = [
             _open_telemetry_observability._OpenTelemetryPlugin(self)
         ]
-        if disable_csm_diagnostic_reporting:
-            self._plugins.append(_get_csm_diagnostic_plugin())
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return [OptionalLabelType.XDS_SERVICE_LABELS]
-
-
-def _get_csm_diagnostic_plugin():
-    # TODO: This should return a plugin with StackDriver MeterProvider.
-    return OpenTelemetryPlugin()

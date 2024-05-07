@@ -139,7 +139,7 @@ class _OpenTelemetryPlugin:
     def get_client_exchange_labels(self, target: bytes) -> Dict[str, AnyStr]:
         target_str = target.decode("utf-8", "replace")
         # Check if _enabled_client_plugin_options is None so we don't set it multiple times.
-        if self._enabled_client_plugin_options is None:
+        if not self._enabled_client_plugin_options:
             self._enabled_client_plugin_options = []
             for plugin_option in self._plugin.plugin_options:
                 if hasattr(
@@ -159,7 +159,7 @@ class _OpenTelemetryPlugin:
 
     def get_server_exchange_labels(self, xds: bool) -> Dict[str, str]:
         # Check if _enabled_server_plugin_options is None so we don't set it multiple times.
-        if self._enabled_server_plugin_options is None:
+        if not self._enabled_server_plugin_options:
             self._enabled_server_plugin_options = []
             for plugin_option in self._plugin.plugin_options:
                 if hasattr(
