@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   absl::BitGen bitgen;
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_core::NoDestruct<
+  static grpc_core::NoDestruct<
       std::vector<grpc_core::yodel_detail::TestRegistry::Test>>
       tests{grpc_core::yodel_detail::TestRegistry::AllTests()};
   CHECK(!tests->empty());

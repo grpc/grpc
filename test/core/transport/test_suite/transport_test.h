@@ -60,6 +60,11 @@ class TransportTest : public YodelTest {
     std::queue<CallHandler> handlers_;
   };
 
+  void Shutdown() override {
+    transport_pair_.client.reset();
+    transport_pair_.server.reset();
+  }
+
   RefCountedPtr<ServerCallDestination> server_call_destination_ =
       MakeRefCounted<ServerCallDestination>();
   ClientAndServerTransportPair transport_pair_;

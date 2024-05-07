@@ -81,7 +81,7 @@ std::vector<TestRegistry::Test> TestRegistry::AllTests() {
   }
   std::sort(out.begin(), out.end(),
             [](const Test& a, const Test& b) { return a.name < b.name; });
-  return tests;
+  return out;
 }
 
 }  // namespace yodel_detail
@@ -127,6 +127,7 @@ void YodelTest::RunTest() {
   EXPECT_EQ(pending_actions_.size(), 0)
       << "There are still pending actions: did you forget to call "
          "WaitForAllPendingWork()?";
+  Shutdown();
   event_engine_->TickUntilIdle();
   event_engine_->UnsetGlobalHooks();
 }

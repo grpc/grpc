@@ -197,8 +197,7 @@ auto SpawnerForContext(
              absl::string_view name, Promise<Empty> promise) mutable {
     // Pass new promises via event engine to allow fuzzers to explore
     // reorderings of possibly interleaved spawns.
-    event_engine->Run([name, context = std::move(context),
-                       promise = std::move(promise)]() mutable {
+    event_engine->Run([name, context, promise = std::move(promise)]() mutable {
       context.SpawnInfallible(name, std::move(promise));
     });
   };
@@ -385,6 +384,9 @@ class YodelTest : public ::testing::Test {
 
   void Timeout();
   void TickUntilTrue(absl::FunctionRef<bool()> poll);
+
+  // Called after the test has run, but before the event engine is shut down.
+  virtual void Shutdown() {}
 
   grpc::testing::TestGrpcScope grpc_scope_;
   absl::BitGenRef rng_;
