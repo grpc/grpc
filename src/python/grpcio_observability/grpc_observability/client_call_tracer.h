@@ -96,6 +96,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
                static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_array_;
     std::vector<Label> labels_from_peer_;
+    bool is_trailers_only_ = false;
   };
 
   explicit PythonOpenCensusCallTracer(

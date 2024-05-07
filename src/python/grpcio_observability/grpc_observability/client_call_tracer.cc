@@ -190,6 +190,12 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedInitialMetadata(grpc_metadata_batch* recv_initial_metadata) {
+  if (recv_initial_metadata != nullptr &&
+      recv_initial_metadata->get(grpc_core::GrpcTrailersOnly())
+          .value_or(false)) {
+    is_trailers_only_ = true;
+    return;
+  }
   labels_from_peer_ =
       parent_->labels_injector_.GetExchangeLabels(recv_initial_metadata);
 }
@@ -244,6 +250,10 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
         const grpc_transport_stream_stats* transport_stream_stats) {
   if (!PythonCensusStatsEnabled()) {
     return;
+  }
+  if (is_trailers_only_) {
+    labels_from_peer_ =
+        parent_->labels_injector_.GetExchangeLabels(recv_trailing_metadata);
   }
   auto status_code_ = status.code();
   uint64_t elapsed_time = 0;

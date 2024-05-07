@@ -43,7 +43,7 @@ OTEL_EXPORT_INTERVAL_S = 0.5
 CSM_METADATA_EXCHANGE_LABEL_KEY = "exchange_labels_key"
 
 # The following metrics should have optional labels when optional
-# labels flow is enabled through OpenTelemetryPlugin.
+# labels is enabled through OpenTelemetryPlugin.
 METRIC_NAME_WITH_OPTIONAL_LABEL = [
     "grpc.client.attempt.duration"
     "grpc.client.attempt.sent_total_compressed_message_size",
@@ -247,6 +247,7 @@ class ObservabilityPluginTest(unittest.TestCase):
                 )
 
     def testLabelInjectorWithLocalLabels(self):
+        """Local labels in label injector should be added to all metrics."""
         label_injector = TestLabelInjector(
             local_labels={"local_labels_key": "local_labels_value"},
             exchange_labels={},
@@ -328,8 +329,8 @@ class ObservabilityPluginTest(unittest.TestCase):
                 )
 
     def testMetadataExchange(self):
-        """Test that when client triggers
-        Metadata exchange flow.
+        """Test that Metadata exchange flow can be triggered by client
+        enabling labelInjector with exchange_labels.
         """
         fields = {}
         fields["exchange_labels_key"] = struct_pb2.Value(
