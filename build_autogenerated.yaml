@@ -8656,6 +8656,20 @@ targets:
   - linux
   - posix
   - mac
+- name: dump_args_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/dump_args.h
+  src:
+  - src/core/lib/gprpp/dump_args.cc
+  - test/core/gprpp/dump_args_test.cc
+  deps:
+  - gtest
+  - absl/functional:any_invocable
+  - absl/log:check
+  uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
