@@ -18,7 +18,6 @@
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 
 #include <inttypes.h>
-#include <unistd.h>
 
 #include <atomic>
 #include <chrono>
