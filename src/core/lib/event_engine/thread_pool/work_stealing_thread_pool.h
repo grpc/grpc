@@ -105,7 +105,6 @@ class WorkStealingThreadPool final : public ThreadPool {
       : public std::enable_shared_from_this<WorkStealingThreadPoolImpl> {
    public:
     explicit WorkStealingThreadPoolImpl(size_t reserve_threads);
-    ~WorkStealingThreadPoolImpl();
     // Start all threads.
     void Start();
     // Add a closure to a work queue, preferably a thread-local queue if

@@ -229,12 +229,6 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::WorkStealingThreadPoolImpl(
     size_t reserve_threads)
     : reserve_threads_(reserve_threads), queue_(this) {}
 
-WorkStealingThreadPool::WorkStealingThreadPoolImpl::
-    ~WorkStealingThreadPoolImpl() {
-  grpc_core::MutexLock lock(&lifeguard_ptr_mu_);
-  lifeguard_.reset();
-}
-
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
   for (size_t i = 0; i < reserve_threads_; i++) {
     StartThread();
@@ -245,7 +239,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Start() {
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Run(
     EventEngine::Closure* closure) {
-  DCHECK(!IsQuiesced());
+  CHECK(!IsQuiesced());
   if (g_local_queue != nullptr && g_local_queue->owner() == this) {
     g_local_queue->Add(closure);
   } else {
