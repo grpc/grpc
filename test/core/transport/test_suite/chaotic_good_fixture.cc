@@ -23,7 +23,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-#include "test/core/transport/test_suite/fixture.h"
+#include "test/core/transport/test_suite/transport_test.h"
 
 using grpc_event_engine::experimental::EndpointConfig;
 using grpc_event_engine::experimental::EventEngine;

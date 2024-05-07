@@ -21,7 +21,6 @@ import "test/core/test_util/fuzz_config_vars.proto";
 
 message Msg {
     uint32 test_id = 1;
-    uint32 fixture_id = 2;
 
     fuzzing_event_engine.Actions event_engine_actions = 10;
     grpc.testing.FuzzConfigVars config_vars = 11;
