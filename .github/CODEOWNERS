@@ -1,11 +1,12 @@
-/**/OWNERS @markdroth @a11r
 /bazel/** @veblush @gnossen
 /bazel/experiments.yaml
 /cmake/** @veblush @apolcyn
-/src/core/ext/filters/client_channel/** @markdroth
+/src/core/client_channel/** @markdroth
 /src/core/ext/transport/chttp2/transport/** @ctiller
-/src/core/ext/xds/** @markdroth
-/src/core/lib/resolver/** @markdroth
-/src/core/lib/service_config/** @markdroth
+/src/core/load_balancing/** @markdroth
+/src/core/resolver/** @markdroth
+/src/core/server/xds* @markdroth
+/src/core/service_config/** @markdroth
+/src/core/xds/** @markdroth
 /tools/dockerfile/** @drfloob @apolcyn @gnossen
 /tools/run_tests/xds_k8s_test_driver/** @sergiitk @XuanWang-Amos @gnossen

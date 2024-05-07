@@ -24,7 +24,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {
 namespace testing {
