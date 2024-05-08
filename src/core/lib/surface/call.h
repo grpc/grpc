@@ -130,6 +130,8 @@ class Call : public CppImplOf<Call, grpc_call>,
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() final;
 
+  gpr_cycle_counter start_time() const { return start_time_; }
+
  protected:
   // The maximum number of concurrent batches possible.
   // Based upon the maximum number of individually queueable ops in the batch
@@ -208,8 +210,6 @@ class Call : public CppImplOf<Call, grpc_call>,
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
   void HandleCompressionAlgorithmNotAccepted(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
-
-  gpr_cycle_counter start_time() const { return start_time_; }
 
   virtual grpc_compression_options compression_options() = 0;
 

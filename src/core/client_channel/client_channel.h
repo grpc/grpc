@@ -154,7 +154,7 @@ class ClientChannel : public Channel {
   // May modify call context and client_initial_metadata.
   absl::Status ApplyServiceConfigToCall(
       ConfigSelector& config_selector,
-      ClientMetadataHandle& client_initial_metadata) const;
+      ClientMetadata& client_initial_metadata) const;
 
   // Does an LB pick for a call.  Returns one of the following things:
   // - Continue{}, meaning to queue the pick
@@ -199,7 +199,7 @@ class ClientChannel : public Channel {
   //
   struct ResolverDataForCalls {
     RefCountedPtr<ConfigSelector> config_selector;
-    RefCountedPtr<CallDestination> call_destination;
+    RefCountedPtr<UnstartedCallDestination> call_destination;
   };
   Observable<absl::StatusOr<ResolverDataForCalls>> resolver_data_for_calls_;
 

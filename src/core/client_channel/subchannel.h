@@ -64,7 +64,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel final : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {

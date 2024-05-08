@@ -64,6 +64,7 @@ EXTERNAL_DEPS = {
     "absl/functional/bind_front.h": "absl/functional:bind_front",
     "absl/functional/function_ref.h": "absl/functional:function_ref",
     "absl/hash/hash.h": "absl/hash",
+    "absl/log/check.h": "absl/log:check",
     "absl/log/log.h": "absl/log",
     "absl/memory/memory.h": "absl/memory",
     "absl/meta/type_traits.h": "absl/meta:type_traits",

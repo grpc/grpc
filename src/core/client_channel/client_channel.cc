@@ -48,9 +48,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <grpc/support/metrics.h>
 
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/client_channel/config_selector.h"
@@ -60,10 +60,8 @@
 #include "src/core/client_channel/retry_filter.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
-#include "src/core/ext/filters/channel_idle/channel_idle_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/status_util.h"
@@ -78,7 +76,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/json/json.h"
@@ -113,6 +110,7 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 
 namespace grpc_core {
 
@@ -207,7 +205,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     }
   }
 
-  void Orphan() override {
+  void Orphaned() override {
     // Make sure we clean up the channel's subchannel maps inside the
     // WorkSerializer.
     WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION,
@@ -647,7 +645,7 @@ ClientCallTracer::CallAttemptTracer* GetCallAttemptTracerFromContext() {
 // call tracker inside the LB call.
 // FIXME: move this to its own file, register only when call v3
 // experiment is enabled
-class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
+class LbCallTracingFilter {
  public:
   static absl::StatusOr<LbCallTracingFilter> Create(const ChannelArgs&,
                                                     ChannelFilter::Args) {
@@ -674,13 +672,12 @@ class LbCallTracingFilter : public ImplementChannelFilter<LbCallTracingFilter> {
     static const NoInterceptor OnClientToServerMessage;
     static const NoInterceptor OnServerToClientMessage;
 
-    // FIXME(ctiller): Add this hook to the L1 filter API
-    void OnClientToServerMessagesClosed() {
+    void OnClientToServerHalfClose() {
       auto* tracer = GetCallAttemptTracerFromContext();
       if (tracer == nullptr) return;
       // TODO(roth): Change CallTracer API to not pass metadata
       // batch to this method, since the batch is always empty.
-      grpc_metadata_batch metadata(GetContext<Arena>());
+      grpc_metadata_batch metadata;
       tracer->RecordSendTrailingMetadata(&metadata);
     }
 
@@ -781,18 +778,18 @@ const NoInterceptor LbCallTracingFilter::Call::OnServerToClientMessage;
 
 }  // namespace
 
-class ClientChannel::LoadBalancedCallDestination : public CallDestination {
+class ClientChannel::LoadBalancedCallDestination : public UnstartedCallDestination {
  public:
   explicit LoadBalancedCallDestination(
       RefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
-  void Orphan() override {}
+  void Orphaned() override {}
 
   void StartCall(UnstartedCallHandler unstarted_handler) override {
     // If there is a call tracer, create a call attempt tracer.
     bool* is_transparent_retry_metadata =
-        unstarted_handler.UnprocessedClientInitialMetadata()->get_pointer(
+        unstarted_handler.UnprocessedClientInitialMetadata().get_pointer(
             IsTransparentRetry());
     bool is_transparent_retry = is_transparent_retry_metadata != nullptr
                                     ? *is_transparent_retry_metadata
@@ -873,76 +870,6 @@ ClientChannelServiceConfigCallData* GetServiceConfigCallDataFromContext() {
   return static_cast<ClientChannelServiceConfigCallData*>(
       legacy_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
 }
-
-// A call destination that does not support retries.
-// To be used as an L2 filter.
-class NoRetryCallDestination : public DelegatingCallDestination {
- public:
-  NoRetryCallDestination(RefCountedPtr<CallDestination> next,
-                         RefCountedPtr<CallFilters::Stack> filter_stack,
-                         const ChannelArgs& channel_args)
-      : DelegatingCallDestination(std::move(next)),
-        filter_stack_(std::move(filter_stack)),
-        call_size_estimator_(1024),
-        allocator_(channel_args.GetObject<ResourceQuota>()
-                       ->memory_quota()
-                       ->CreateMemoryOwner()) {}
-
-  void Orphan() override {}
-
-  void StartCall(UnstartedCallHandler unstarted_handler) override {
-    // Start the parent call.  We take ownership of the handler.
-    CallHandler handler = unstarted_handler.StartCall(filter_stack_);
-    // Start a promise to drain the client initial metadata from the
-    // parent call, create a new child call, and forward between them.
-    handler.SpawnGuarded(
-        "drain_send_initial_metadata",
-        [self = RefAsSubclass<NoRetryCallDestination>(), handler]() mutable {
-          return Map(
-              handler.PullClientInitialMetadata(),
-              [self = std::move(self),
-               handler](ValueOrFailure<ClientMetadataHandle>
-                            client_initial_metadata) mutable -> StatusFlag {
-                if (!client_initial_metadata.ok()) return Failure{};
-                // Indicate that this is not a transparent retry.
-                *(*client_initial_metadata)
-                     ->GetOrCreatePointer(IsTransparentRetry()) = false;
-                // Set on_commit callback in context.
-                handler.SetContext<LbOnCommit>(
-                    []() { GetServiceConfigCallDataFromContext()->Commit(); });
-                // Create an arena for the child call.
-                const size_t initial_size =
-                    self->call_size_estimator_.CallSizeEstimate();
-                // FIXME: do we want to do this for LB calls, or do we want a
-                // separate stat for this?
-                // global_stats().IncrementCallInitialSize(initial_size);
-                Arena* arena = Arena::Create(initial_size, &self->allocator_);
-                // Create an initiator/unstarted-handler pair using the arena.
-                // FIXME: pass in a callback that the CallSpine will use to
-                // destroy the arena:
-                // [](Arena* arena) {
-                //   call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
-                //   arena->Destroy();
-                // }
-                auto child_call = MakeCall(std::move(*client_initial_metadata),
-                                           GetContext<EventEngine>(), arena);
-                // Pass the child call's unstarted handler to the next
-                // destination.
-                self->wrapped_destination()->StartCall(
-                    std::move(child_call.unstarted_handler));
-                // Forward everything from the parent call to the child call.
-                ForwardCall(std::move(handler),
-                            std::move(child_call.initiator));
-                return Success{};
-              });
-        });
-  }
-
- private:
-  RefCountedPtr<CallFilters::Stack> filter_stack_;
-  CallSizeEstimator call_size_estimator_;
-  MemoryAllocator allocator_;
-};
 
 }  // namespace
 
@@ -1049,7 +976,7 @@ ClientChannel::ClientChannel(
     default_authority_ = std::move(*default_authority);
   }
   // Get stats plugins for channel.
-  StatsPlugin::ChannelScope scope(this->target(), default_authority_);
+experimental::  StatsPluginChannelScope scope(this->target(), default_authority_);
   stats_plugin_group_ =
       GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
 }
@@ -1268,18 +1195,18 @@ CallInitiator ClientChannel::CreateCall(
   // Exit IDLE if needed.
   CheckConnectivityState(/*try_to_connect=*/true);
   // Create an initiator/unstarted-handler pair.
-  auto call = MakeCall(std::move(client_initial_metadata),
-                       GetContext<EventEngine>(), arena);
+  auto call = MakeCallPair(std::move(client_initial_metadata),
+                       GetContext<EventEngine>(), arena, nullptr, GetContext<grpc_call_context_element>());
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuarded(
       "wait-for-name-resolution",
       [self = RefAsSubclass<ClientChannel>(),
-       unstarted_handler = std::move(call.unstarted_handler),
+       unstarted_handler = std::move(call.handler),
        was_queued = false]() mutable {
         const bool wait_for_ready =
             unstarted_handler.UnprocessedClientInitialMetadata()
-                ->GetOrCreatePointer(WaitForReady())
+                .GetOrCreatePointer(WaitForReady())
                 ->value;
         return Map(
             // Wait for the resolver result.
@@ -1695,7 +1622,8 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
   // Construct filter stack.
-  CallFilters::StackBuilder builder;
+  // TODO(roth): Add service_config to channel_args_.
+  InterceptionChainBuilder builder(channel_args_.SetObject(this));
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
@@ -1712,20 +1640,19 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       DynamicFilters::Create(new_args, std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);
 #endif
-  auto filter_stack = builder.Build();
   // Create call destination.
-  RefCountedPtr<CallDestination> call_destination;
+  RefCountedPtr<UnstartedCallDestination> call_destination;
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
     Crash("call v3 stack does not yet support retries");
   } else {
-    call_destination = MakeRefCounted<NoRetryCallDestination>(
+    call_destination = 
         MakeRefCounted<LoadBalancedCallDestination>(
-            RefAsSubclass<ClientChannel>()),
-        std::move(filter_stack), channel_args_);
+            RefAsSubclass<ClientChannel>());
   }
+  auto filter_stack = builder.Build(call_destination);
   // Send result to data plane.
   resolver_data_for_calls_.Set(ResolverDataForCalls{
       std::move(config_selector), std::move(call_destination)});
@@ -1794,7 +1721,7 @@ void ClientChannel::StartIdleTimer() {
 
 absl::Status ClientChannel::ApplyServiceConfigToCall(
     ConfigSelector& config_selector,
-    ClientMetadataHandle& client_initial_metadata) const {
+    ClientMetadata& client_initial_metadata) const {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: %sapplying service config to call",
             this, GetContext<Activity>()->DebugTag().c_str());
@@ -1809,7 +1736,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
           GetContext<Arena>(), GetContext<grpc_call_context_element>());
   // Use the ConfigSelector to determine the config for the call.
   absl::Status call_config_status = config_selector.GetCallConfig(
-      {client_initial_metadata.get(), GetContext<Arena>(),
+      {&client_initial_metadata, GetContext<Arena>(),
        service_config_call_data});
   if (!call_config_status.ok()) {
     return MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector");
@@ -1822,16 +1749,16 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
     // If the service config specifies a deadline, update the call's
     // deadline timer.
     if (method_params->timeout() != Duration::Zero()) {
-      CallContext* call_context = GetContext<CallContext>();
+      Call* call = GetContext<Call>();
       const Timestamp per_method_deadline =
-          Timestamp::FromCycleCounterRoundUp(call_context->call_start_time()) +
+          Timestamp::FromCycleCounterRoundUp(call->start_time()) +
           method_params->timeout();
-      call_context->UpdateDeadline(per_method_deadline);
+      call->UpdateDeadline(per_method_deadline);
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.
     auto* wait_for_ready =
-        client_initial_metadata->GetOrCreatePointer(WaitForReady());
+        client_initial_metadata.GetOrCreatePointer(WaitForReady());
     if (method_params->wait_for_ready().has_value() &&
         !wait_for_ready->explicitly_set) {
       wait_for_ready->value = method_params->wait_for_ready().value();
@@ -1870,12 +1797,12 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
   auto& client_initial_metadata =
       unstarted_handler.UnprocessedClientInitialMetadata();
   LoadBalancingPolicy::PickArgs pick_args;
-  Slice* path = client_initial_metadata->get_pointer(HttpPathMetadata());
+  Slice* path = client_initial_metadata.get_pointer(HttpPathMetadata());
   GPR_ASSERT(path != nullptr);
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state;
   pick_args.call_state = &lb_call_state;
-  LbMetadata initial_metadata(client_initial_metadata.get());
+  LbMetadata initial_metadata(&client_initial_metadata);
   pick_args.initial_metadata = &initial_metadata;
   auto result = picker.Pick(pick_args);
   // Handle result.
@@ -1940,7 +1867,7 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
         // If wait_for_ready is false, then the error indicates the RPC
         // attempt's final status.
         if (!unstarted_handler.UnprocessedClientInitialMetadata()
-                 ->GetOrCreatePointer(WaitForReady())
+                 .GetOrCreatePointer(WaitForReady())
                  ->value) {
           return MaybeRewriteIllegalStatusCode(std::move(fail_pick->status),
                                                "LB pick");

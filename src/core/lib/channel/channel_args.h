@@ -83,6 +83,15 @@ inline int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
 // before the crt refcount base class.
 template <typename T>
 using RefType = absl::remove_cvref_t<decltype(*std::declval<T>().Ref())>;
+
+template <typename T, typename Ignored = void /* for SFINAE */>
+struct IsRawPointerTagged {
+  static constexpr bool kValue = false;
+};
+template <typename T>
+struct IsRawPointerTagged<T, absl::void_t<typename T::RawPointerChannelArgTag>> {
+  static constexpr bool kValue = true;
+};
 }  // namespace channel_args_detail
 
 // Specialization for ref-counted pointers.
@@ -91,13 +100,14 @@ using RefType = absl::remove_cvref_t<decltype(*std::declval<T>().Ref())>;
 template <typename T>
 struct ChannelArgTypeTraits<
     T, absl::enable_if_t<
+    !channel_args_detail::IsRawPointerTagged<T>::kValue &&(
            std::is_base_of<RefCounted<channel_args_detail::RefType<T>>,
                            channel_args_detail::RefType<T>>::value ||
                std::is_base_of<RefCounted<channel_args_detail::RefType<T>,
                                           NonPolymorphicRefCount>,
                                channel_args_detail::RefType<T>>::value ||
                std::is_base_of<DualRefCounted<channel_args_detail::RefType<T>>,
-                               channel_args_detail::RefType<T>>::value,
+                               channel_args_detail::RefType<T>>::value),
            void>> {
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
