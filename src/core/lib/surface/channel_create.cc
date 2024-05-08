@@ -22,10 +22,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
+#include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/legacy_channel.h"
@@ -77,8 +79,12 @@ absl::StatusOr<OrphanablePtr<Channel>> ChannelCreate(
   if (optional_transport != nullptr) {
     args = args.SetObject(optional_transport);
   }
-  // Delegate to legacy channel impl.
-  return LegacyChannel::Create(std::move(target), std::move(args),
+  // Delegate to appropriate channel impl.
+  if (!IsCallV3Enabled()) {
+    return LegacyChannel::Create(std::move(target), std::move(args),
+                                 channel_stack_type);
+  }
+  return ClientChannel::Create(std::move(target), std::move(args),
                                channel_stack_type);
 }
 

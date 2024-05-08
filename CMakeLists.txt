@@ -1829,6 +1829,7 @@ add_library(grpc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/client_channel/backup_poller.cc
+  src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
@@ -2925,6 +2926,7 @@ add_library(grpc_unsecure
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/client_channel/backup_poller.cc
+  src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc

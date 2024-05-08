@@ -226,6 +226,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
   - src/core/client_channel/client_channel_internal.h
@@ -1008,6 +1009,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -1250,6 +1252,7 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
   - src/core/client_channel/client_channel_plugin.cc
@@ -2213,6 +2216,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
   - src/core/client_channel/client_channel_internal.h
@@ -2540,6 +2544,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -2706,6 +2711,7 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
   - src/core/client_channel/client_channel_plugin.cc

@@ -45,6 +45,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
     src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
     src/core/client_channel/client_channel_plugin.cc \

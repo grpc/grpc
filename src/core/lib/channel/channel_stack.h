@@ -230,6 +230,7 @@ struct grpc_channel_stack {
   // full C++-ification for now.
   void IncrementRefCount();
   void Unref();
+  void Unref(const grpc_core::DebugLocation& location, const char* reason);
   grpc_core::RefCountedPtr<grpc_channel_stack> Ref() {
     IncrementRefCount();
     return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
@@ -343,6 +344,11 @@ inline void grpc_channel_stack::IncrementRefCount() {
 
 inline void grpc_channel_stack::Unref() {
   GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
+}
+
+inline void grpc_channel_stack::Unref(const grpc_core::DebugLocation&,
+                                      const char* reason) {
+  GRPC_CHANNEL_STACK_UNREF(this, reason);
 }
 
 inline void grpc_call_stack::IncrementRefCount() {

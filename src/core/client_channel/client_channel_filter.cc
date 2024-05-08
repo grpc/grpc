@@ -1109,7 +1109,7 @@ class ClientChannelFilter::ClientChannelControlHelper final
       const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    ChannelArgs subchannel_args = ClientChannelFilter::MakeSubchannelArgs(
+    ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
     // Create subchannel.
@@ -1357,31 +1357,6 @@ ClientChannelFilter::CreateLoadBalancedCallPromise(
           this, std::move(on_commit), is_transparent_retry));
   auto* call_ptr = lb_call.get();
   return call_ptr->MakeCallPromise(std::move(call_args), std::move(lb_call));
-}
-
-ChannelArgs ClientChannelFilter::MakeSubchannelArgs(
-    const ChannelArgs& channel_args, const ChannelArgs& address_args,
-    const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
-    const std::string& channel_default_authority) {
-  // Note that we start with the channel-level args and then apply the
-  // per-address args, so that if a value is present in both, the one
-  // in the channel-level args is used.  This is particularly important
-  // for the GRPC_ARG_DEFAULT_AUTHORITY arg, which we want to allow
-  // resolvers to set on a per-address basis only if the application
-  // did not explicitly set it at the channel level.
-  return channel_args.UnionWith(address_args)
-      .SetObject(subchannel_pool)
-      // If we haven't already set the default authority arg (i.e., it
-      // was not explicitly set by the application nor overridden by
-      // the resolver), add it from the channel's default.
-      .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, channel_default_authority)
-      // Remove channel args that should not affect subchannel
-      // uniqueness.
-      .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
-      .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
-      .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
-      // Remove all keys with the no-subchannel prefix.
-      .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
 }
 
 void ClientChannelFilter::ReprocessQueuedResolverCalls() {

@@ -7483,6 +7483,8 @@ grpc_cc_library(
         "1999",
         "call_arena_allocator",
         "call_filters",
+        "call_final_info",
+        "dual_ref_counted",
         "for_each",
         "if",
         "latch",

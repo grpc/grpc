@@ -18,7 +18,6 @@
 
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
-    "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
@@ -44,6 +43,8 @@ EXPERIMENT_ENABLES = {
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
+    "call_v3": "call_v3,event_engine_client,event_engine_listener,work_serializer_dispatch",
+    "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
 }
 
 EXPERIMENT_POLLERS = [
