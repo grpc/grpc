@@ -275,11 +275,11 @@ def grpc_deps():
     if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
             name = "com_googlesource_code_re2",
-            sha256 = "1ae8ccfdb1066a731bba6ee0881baad5efd2cd661acd9569b689f2586e1a50e9",
-            strip_prefix = "re2-2022-04-01",
+            sha256 = "fef2f366578401eada34f5603679fb2aebe9b409de8d275a482ce5f2cbac2492",
+            strip_prefix = "re2-2024-05-01",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2022-04-01.tar.gz",
-                "https://github.com/google/re2/archive/2022-04-01.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/2024-05-01.tar.gz",
+                "https://github.com/google/re2/archive/2024-05-01.tar.gz",
             ],
         )
 
