@@ -3292,6 +3292,7 @@ class MaybeOpImpl {
   ~MaybeOpImpl() {
     switch (state_) {
       case State::kDismissed:
+        break;
       case State::kPromiseFactory:
         Destruct(&promise_factory_);
         break;
@@ -3306,6 +3307,7 @@ class MaybeOpImpl {
   MaybeOpImpl(MaybeOpImpl&& other) noexcept : state_(other.state_) {
     switch (state_) {
       case State::kDismissed:
+        break;
       case State::kPromiseFactory:
         Construct(&promise_factory_, std::move(other.promise_factory_));
         break;
