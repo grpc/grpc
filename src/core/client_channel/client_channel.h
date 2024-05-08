@@ -23,8 +23,8 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/client_channel_factory.h"
+#include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
@@ -61,12 +61,11 @@ class ClientChannel : public Channel {
                         Slice path, absl::optional<Slice> authority,
                         Timestamp deadline, bool registered_method) override;
 
-  grpc_event_engine::experimental::EventEngine* event_engine()
-      const override {
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_.get();
   }
 
-// FIXME: should we support lame channels somehow?
+  // FIXME: should we support lame channels somehow?
   bool IsLame() const override { return false; }
 
   bool SupportsConnectivityWatcher() const override { return true; }
@@ -75,9 +74,9 @@ class ClientChannel : public Channel {
   // triggers a connection attempt if not already connected.
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect) override;
 
-  void WatchConnectivityState(
-      grpc_connectivity_state last_observed_state, Timestamp deadline,
-      grpc_completion_queue* cq, void* tag) override;
+  void WatchConnectivityState(grpc_connectivity_state last_observed_state,
+                              Timestamp deadline, grpc_completion_queue* cq,
+                              void* tag) override;
 
   // Starts and stops a connectivity watch.  The watcher will be initially
   // notified as soon as the state changes from initial_state and then on

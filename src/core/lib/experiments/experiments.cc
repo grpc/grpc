@@ -126,24 +126,12 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-<<<<<<< HEAD
-=======
 const char* const description_call_v3 = "Promise-based call version 3.";
 const char* const additional_constraints_call_v3 = "{}";
 const uint8_t required_experiments_call_v3[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 }  // namespace
 
 namespace grpc_core {
@@ -152,13 +140,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-<<<<<<< HEAD
      true, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
-=======
-     kDefaultForDebugOnly, true},
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -220,13 +202,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-<<<<<<< HEAD
-=======
     {"call_v3", description_call_v3, additional_constraints_call_v3,
      required_experiments_call_v3, 3, false, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 };
 
 }  // namespace grpc_core
@@ -335,24 +312,12 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-<<<<<<< HEAD
-=======
 const char* const description_call_v3 = "Promise-based call version 3.";
 const char* const additional_constraints_call_v3 = "{}";
 const uint8_t required_experiments_call_v3[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 }  // namespace
 
 namespace grpc_core {
@@ -361,13 +326,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-<<<<<<< HEAD
      true, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
-=======
-     kDefaultForDebugOnly, true},
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -429,13 +388,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-<<<<<<< HEAD
-=======
     {"call_v3", description_call_v3, additional_constraints_call_v3,
      required_experiments_call_v3, 3, false, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 };
 
 }  // namespace grpc_core
@@ -544,24 +498,12 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-<<<<<<< HEAD
-=======
 const char* const description_call_v3 = "Promise-based call version 3.";
 const char* const additional_constraints_call_v3 = "{}";
 const uint8_t required_experiments_call_v3[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
-const char* const description_wrr_delegate_to_pick_first =
-    "Change WRR code to delegate to pick_first as per dualstack backend "
-    "design.";
-const char* const additional_constraints_wrr_delegate_to_pick_first = "{}";
-#ifdef NDEBUG
-const bool kDefaultForDebugOnly = false;
-#else
-const bool kDefaultForDebugOnly = true;
-#endif
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 }  // namespace
 
 namespace grpc_core {
@@ -570,13 +512,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"call_status_override_on_cancellation",
      description_call_status_override_on_cancellation,
      additional_constraints_call_status_override_on_cancellation, nullptr, 0,
-<<<<<<< HEAD
      true, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3, nullptr, 0,
-     false, true},
-=======
-     kDefaultForDebugOnly, true},
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
     {"client_privacy", description_client_privacy,
@@ -638,13 +574,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, true, true},
-<<<<<<< HEAD
-=======
     {"call_v3", description_call_v3, additional_constraints_call_v3,
      required_experiments_call_v3, 3, false, true},
-    {"wrr_delegate_to_pick_first", description_wrr_delegate_to_pick_first,
-     additional_constraints_wrr_delegate_to_pick_first, nullptr, 0, true, true},
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 };
 
 }  // namespace grpc_core

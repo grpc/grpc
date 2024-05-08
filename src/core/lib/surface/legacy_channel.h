@@ -39,11 +39,8 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-<<<<<<< HEAD
 #include "src/core/lib/transport/call_arena_allocator.h"
-=======
 #include "src/core/lib/transport/transport.h"
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 
 namespace grpc_core {
 
@@ -60,19 +57,6 @@ class LegacyChannel final : public Channel {
 
   void Orphan() override;
 
-<<<<<<< HEAD
-  Arena* CreateArena() override {
-    const size_t initial_size = call_size_estimator_.CallSizeEstimate();
-    global_stats().IncrementCallInitialSize(initial_size);
-    return Arena::Create(initial_size, &allocator_);
-  }
-  void DestroyArena(Arena* arena) override {
-    call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
-    arena->Destroy();
-  }
-
-=======
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
   bool IsLame() const override;
 
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
@@ -121,11 +105,6 @@ class LegacyChannel final : public Channel {
   const bool is_client_;
   const bool is_promising_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
-<<<<<<< HEAD
-  CallSizeEstimator call_size_estimator_{1024};
-  grpc_event_engine::experimental::MemoryAllocator allocator_;
-=======
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
 };
 
 }  // namespace grpc_core

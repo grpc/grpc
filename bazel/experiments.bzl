@@ -44,7 +44,6 @@ EXPERIMENT_ENABLES = {
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
     "call_v3": "call_v3,event_engine_client,event_engine_listener,work_serializer_dispatch",
-    "wrr_delegate_to_pick_first": "wrr_delegate_to_pick_first",
 }
 
 EXPERIMENT_POLLERS = [

@@ -113,14 +113,7 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
     : Channel(std::move(target), channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
-<<<<<<< HEAD
-      channel_stack_(std::move(channel_stack)),
-      allocator_(channel_args.GetObject<ResourceQuota>()
-                     ->memory_quota()
-                     ->CreateMemoryOwner()) {
-=======
       channel_stack_(std::move(channel_stack)) {
->>>>>>> 513bd21ea9db49d061e0382289319ddb126f812c
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
