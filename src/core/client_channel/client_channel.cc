@@ -1629,8 +1629,8 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
     });
   }
-// FIXME: add filters registered for CLIENT_CHANNEL plus filters returned
-// by config selector
+  CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(GRPC_CLIENT_CHANNEL, builder);
+// FIXME: add filters returned by config selector
 #if 0
   std::vector<const grpc_channel_filter*> filters =
       config_selector->GetFilters();
