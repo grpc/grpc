@@ -167,25 +167,16 @@ class ClientChannel : public Channel {
       LoadBalancingPolicy::SubchannelPicker& picker,
       UnstartedCallHandler& unstarted_handler);
 
-  //
-  // Fields set at construction and never modified.
-  //
-  ChannelArgs channel_args_;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
-  std::string uri_to_resolve_;
+  const ChannelArgs channel_args_;
+  const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+      event_engine_;
+  const std::string uri_to_resolve_;
   const size_t service_config_parser_index_;
-  RefCountedPtr<ServiceConfig> default_service_config_;
-  ClientChannelFactory* client_channel_factory_;
-  std::string default_authority_;
-  channelz::ChannelNode* channelz_node_;
+  const RefCountedPtr<ServiceConfig> default_service_config_;
+  ClientChannelFactory* const client_channel_factory_;
+  const std::string default_authority_;
+  channelz::ChannelNode* const channelz_node_;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
-  grpc_pollset_set* interested_parties_;
-
-  //
-  // State for LB calls.
-  //
-  CallSizeEstimator lb_call_size_estimator_;
-  MemoryAllocator lb_call_allocator_;
 
   //
   // Idleness state.

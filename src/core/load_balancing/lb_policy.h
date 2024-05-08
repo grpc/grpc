@@ -488,10 +488,11 @@ namespace promise_detail {
 
 template <>
 struct OldStyleContext<LoadBalancingPolicy::SubchannelCallTrackerInterface> {
-  static constexpr grpc_context_index kIndex = GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE;
+  static constexpr grpc_context_index kIndex =
+      GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE;
 };
 
-}
+}  // namespace promise_detail
 
 }  // namespace grpc_core
 

@@ -40,7 +40,7 @@
 
 namespace grpc_core {
 
-  Duration GetClientIdleTimeout(const ChannelArgs& args) ;
+Duration GetClientIdleTimeout(const ChannelArgs& args);
 
 class LegacyChannelIdleFilter : public ChannelFilter {
  public:

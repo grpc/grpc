@@ -108,7 +108,8 @@ class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {
             .value);
   }
   static void set(T* value) {
-    auto& elem = GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex];
+    auto& elem =
+        GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex];
     if (elem.destroy != nullptr) {
       elem.destroy(elem.value);
       elem.destroy = nullptr;
