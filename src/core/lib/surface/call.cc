@@ -3282,6 +3282,8 @@ class MaybeOpImpl {
   using SetupResult = decltype(std::declval<SetupFn>()(grpc_op()));
   using PromiseFactory = promise_detail::OncePromiseFactory<void, SetupResult>;
   using Promise = typename PromiseFactory::Promise;
+  static_assert(!std::is_same<Promise, void>::value,
+                "PromiseFactory must return a promise");
   struct Dismissed {};
   using State = absl::variant<Dismissed, PromiseFactory, Promise>;
 
@@ -3328,9 +3330,6 @@ class MaybeOpImpl {
   }
 
  private:
-  GPR_NO_UNIQUE_ADDRESS State state_;
-  GPR_NO_UNIQUE_ADDRESS grpc_op_type op_;
-
   static std::string OpName(grpc_op_type op) {
     switch (op) {
       case GRPC_OP_SEND_INITIAL_METADATA:
@@ -3358,6 +3357,9 @@ class MaybeOpImpl {
     // Can't move after first poll => Promise is not an option
     return std::move(absl::get<PromiseFactory>(state));
   }
+
+  GPR_NO_UNIQUE_ADDRESS State state_;
+  GPR_NO_UNIQUE_ADDRESS grpc_op_type op_;
 };
 
 // MaybeOp captures a fairly complicated dance we need to do for the batch
