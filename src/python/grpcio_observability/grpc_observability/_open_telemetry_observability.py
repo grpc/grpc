@@ -99,15 +99,17 @@ class _OpenTelemetryPlugin:
 
     def _record_stats_data(self, stats_data: StatsData) -> None:
         recorder = self._metric_to_recorder[stats_data.name]
-        plugin_options = []
+        enabled_plugin_options = []
         if GRPC_CLIENT_METRIC_PREFIX in recorder.name:
-            plugin_options = self._enabled_client_plugin_options
+            enabled_plugin_options = self._enabled_client_plugin_options
         else:
-            plugin_options = self._enabled_server_plugin_options
+            enabled_plugin_options = self._enabled_server_plugin_options
         deserialized_labels = self._deserialize_labels(
-            stats_data.labels, plugin_options
+            stats_data.labels, enabled_plugin_options
         )
-        labels = self._maybe_add_labels(deserialized_labels, plugin_options)
+        labels = self._maybe_add_labels(
+            deserialized_labels, enabled_plugin_options
+        )
         decoded_labels = self.decode_labels(labels)
 
         target = decoded_labels.get(GRPC_TARGET_LABEL, "")
@@ -137,6 +139,7 @@ class _OpenTelemetryPlugin:
             self._record_stats_data(stats_data)
 
     def get_client_exchange_labels(self, target: bytes) -> Dict[str, AnyStr]:
+        """Get labels used for client side Metadata Exchange."""
         target_str = target.decode("utf-8", "replace")
         # Check if _enabled_client_plugin_options is None so we don't set it multiple times.
         if not self._enabled_client_plugin_options:
@@ -158,6 +161,7 @@ class _OpenTelemetryPlugin:
         return labels_for_exchange
 
     def get_server_exchange_labels(self, xds: bool) -> Dict[str, str]:
+        """Get labels used for server side Metadata Exchange."""
         # Check if _enabled_server_plugin_options is None so we don't set it multiple times.
         if not self._enabled_server_plugin_options:
             self._enabled_server_plugin_options = []
@@ -297,13 +301,13 @@ def start_open_telemetry_observability(
     *,
     plugins: Iterable[_OpenTelemetryPlugin],
 ) -> None:
-    init_open_telemetry_observability(
+    _start_open_telemetry_observability(
         OpenTelemetryObservability(plugins=plugins)
     )
 
 
 def end_open_telemetry_observability() -> None:
-    deinit_open_telemetry_observability()
+    _end_open_telemetry_observability()
 
 
 class _OpenTelemetryExporterDelegator(_observability.Exporter):
@@ -454,7 +458,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             )
         return client_exchange_labels
 
-    def _get_server_exchange_labels(self, xds: bool) -> Dict[str, str]:
+    def _get_server_exchange_labels(self, xds: bool) -> Dict[str, AnyStr]:
         server_exchange_labels = {}
         for _plugin in self._plugins:
             server_exchange_labels.update(
@@ -469,15 +473,15 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
 
     def is_server_traced(
-        self, xds: bool
-    ) -> bool:  # pylint: disable=unused-argument
+        self, xds: bool  # pylint: disable=unused-argument
+    ) -> bool:
         return True
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []
 
 
-def init_open_telemetry_observability(
+def _start_open_telemetry_observability(
     otel_o11y: OpenTelemetryObservability,
 ) -> None:
     global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
@@ -491,7 +495,7 @@ def init_open_telemetry_observability(
             )
 
 
-def deinit_open_telemetry_observability() -> None:
+def _end_open_telemetry_observability() -> None:
     global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
     with _observability_lock:
         if not _OPEN_TELEMETRY_OBSERVABILITY:

@@ -14,4 +14,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_csm_observability/grpc_version.py.template`!!!
 
-VERSION = '1.64.0.dev0'
+VERSION = '1.65.0.dev0'

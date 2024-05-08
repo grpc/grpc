@@ -18,13 +18,13 @@ import re
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 
 from google.protobuf import struct_pb2
-
-# pytype: disable=pyi-error
 from grpc_observability import _open_telemetry_observability
 from grpc_observability._observability import OptionalLabelType
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPluginOption
+
+# pytype: disable=pyi-error
 from opentelemetry.metrics import MeterProvider
 from opentelemetry.resourcedetector.gcp_resource_detector import (
     GoogleCloudResourceDetector,
@@ -34,9 +34,6 @@ from opentelemetry.sdk.resources import get_aggregated_resources
 from opentelemetry.semconv.resource import ResourceAttributes
 
 TRAFFIC_DIRECTOR_AUTHORITY = "traffic-director-global.xds.googleapis.com"
-GRPC_METHOD_LABEL = "grpc.method"
-GRPC_TARGET_LABEL = "grpc.target"
-GRPC_OTHER_LABEL_VALUE = "other"
 UNKNOWN_VALUE = "unknown"
 TYPE_GCE = "gcp_compute_engine"
 TYPE_GKE = "gcp_kubernetes_engine"

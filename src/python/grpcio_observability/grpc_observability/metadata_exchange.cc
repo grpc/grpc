@@ -105,7 +105,7 @@ void PythonLabelsInjector::AddXdsOptionalLabels(
     service_name = "unknown";
   }
   if (service_namespace.empty()) {
-    service_name = "unknown";
+    service_namespace = "unknown";
   }
   labels.emplace_back("csm.service_name", std::string(service_name));
   labels.emplace_back("csm.service_namespace_name",

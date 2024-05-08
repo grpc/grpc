@@ -93,7 +93,8 @@ bool KeyInLabels(std::string key, const std::vector<Label>& labels) {
 
 void PythonOpenCensusServerCallTracer::RecordSendInitialMetadata(
     grpc_metadata_batch* send_initial_metadata) {
-  // Only add labels if exchange is needed.
+  // Only add labels if exchange is needed (Client send metadata with keys in 
+  // MetadataExchangeKeyNames).
   for (const auto& key : MetadataExchangeKeyNames) {
     if (KeyInLabels(key, labels_from_peer_)) {
       labels_injector_.AddExchangeLabelsToMetadata(send_initial_metadata);
@@ -258,8 +259,7 @@ PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
 
 bool PythonOpenCensusServerCallTracerFactory::IsServerTraced(
     const grpc_core::ChannelArgs& args) {
-  // Return true only if there is no server selector registered or if the server
-  // selector returns true.
+  // Returns true if a server is to be traced, false otherwise.
   return true;
 }
 

@@ -1407,13 +1407,13 @@ def _augment_options(
     xds: bool,
 ) -> Sequence[ChannelArgumentType]:
     compression_option = _compression.create_channel_option(compression)
-    server_call_tracer_factory_option = (
+    maybe_server_call_tracer_factory_option = (
         _observability.create_server_call_tracer_factory_option(xds)
     )
     return (
         tuple(base_options)
         + compression_option
-        + server_call_tracer_factory_option
+        + maybe_server_call_tracer_factory_option
     )
 
 

@@ -39,7 +39,7 @@ INSTALL_REQUIRES = (
     "opentelemetry-sdk>=1.21.0",
     "opentelemetry-resourcedetector-gcp>=1.6.0a0",
     "grpcio=={version}".format(version=grpc_version.VERSION),
-    "protobuf>=4.21.6,<5.0dev",
+    "protobuf>=5.26.1,<6.0dev",
 )
 
 setuptools.setup(
