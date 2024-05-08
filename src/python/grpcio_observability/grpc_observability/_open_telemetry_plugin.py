@@ -54,6 +54,7 @@ class OpenTelemetryLabelInjector(abc.ABC):
         """
         raise NotImplementedError()
 
+    # pylint: disable=no-self-use
     def deserialize_labels(
         self, labels: Dict[str, AnyStr]
     ) -> Dict[str, AnyStr]:
@@ -69,7 +70,8 @@ class OpenTelemetryLabelInjector(abc.ABC):
 
         This method should deserialize xds_peer_metadata_label and return labels as:
 
-            labels: {"labelA": b"valueA", "xds_label_A": "xds_label_A", "xds_label_B": "xds_label_B"}
+            labels: {"labelA": b"valueA", "xds_label_A": "xds_label_A",
+                     "xds_label_B": "xds_label_B"}
 
         Returns:
           A dict of deserialized labels.

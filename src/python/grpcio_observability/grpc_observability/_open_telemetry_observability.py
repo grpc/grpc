@@ -468,7 +468,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             plugin_identifiers.append(_plugin.identifier)
         return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
 
-    def is_server_traced(self, xds: bool) -> bool:
+    def is_server_traced(self, xds: bool) -> bool:  # pylint: disable=unused-argument
         return True
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:

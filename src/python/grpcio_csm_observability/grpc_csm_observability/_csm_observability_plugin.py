@@ -206,7 +206,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             # projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
             node_id_parts = config_json.get("node", {}).get("id", "").split("/")
             if len(node_id_parts) == 6 and "mesh:" in node_id_parts[3]:
-                return node_id_parts[3].removeprefix("mesh:")
+                return node_id_parts[3][len("mesh:"):]
         except json.decoder.JSONDecodeError:
             return UNKNOWN_VALUE
 
