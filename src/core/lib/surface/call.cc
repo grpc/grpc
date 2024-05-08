@@ -3292,6 +3292,7 @@ class MaybeOpImpl {
   ~MaybeOpImpl() {
     switch (state_) {
       case State::kDismissed:
+        break;
       case State::kPromiseFactory:
         Destruct(&promise_factory_);
         break;
@@ -3306,6 +3307,7 @@ class MaybeOpImpl {
   MaybeOpImpl(MaybeOpImpl&& other) noexcept : state_(other.state_) {
     switch (state_) {
       case State::kDismissed:
+        break;
       case State::kPromiseFactory:
         Construct(&promise_factory_, std::move(other.promise_factory_));
         break;
@@ -3390,7 +3392,8 @@ class MaybeOpImpl {
 // Once we express our surface API in terms of core internal types this whole
 // dance will go away.
 template <grpc_op_type op_type, typename SetupFn>
-auto MaybeOp(const grpc_op* ops, const std::array<uint8_t, 8>& idxs, SetupFn setup) {
+auto MaybeOp(const grpc_op* ops, const std::array<uint8_t, 8>& idxs,
+             SetupFn setup) {
   using SetupResult = decltype(std::declval<SetupFn>()(grpc_op()));
   if (idxs[op_type] == 255) {
     return MaybeOpImpl<SetupResult, op_type>();
