@@ -484,6 +484,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   ChannelArgs channel_args_;
 };
 
+namespace promise_detail {
+
+template <>
+struct OldStyleContext<LoadBalancingPolicy::SubchannelCallTrackerInterface> {
+  static constexpr grpc_context_index kIndex = GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE;
+};
+
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H

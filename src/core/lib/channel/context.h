@@ -59,6 +59,9 @@ typedef enum {
   /// the server.
   GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
 
+  /// A LoadBalancingPolicy::SubchannelCallTrackerInterface
+  GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE,
+
   /// Special Google context
   GRPC_CONTEXT_GOOGLE,
 
@@ -103,6 +106,14 @@ class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {
     return static_cast<T*>(
         GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex]
             .value);
+  }
+  static void set(T* value) {
+    auto& elem = GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex];
+    if (elem.destroy != nullptr) {
+      elem.destroy(elem.value);
+      elem.destroy = nullptr;
+    }
+    elem.value = value;
   }
 };
 

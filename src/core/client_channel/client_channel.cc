@@ -1842,8 +1842,7 @@ ClientChannel::PickSubchannel(LoadBalancingPolicy::SubchannelPicker& picker,
         // it when the call finishes.
         if (complete_pick->subchannel_call_tracker != nullptr) {
           complete_pick->subchannel_call_tracker->Start();
-          unstarted_handler.SetContext(
-              complete_pick->subchannel_call_tracker.release());
+          SetContext(complete_pick->subchannel_call_tracker.release());
         }
         // Return the connected subchannel.
         return connected_subchannel;
