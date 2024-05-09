@@ -246,7 +246,7 @@ g_stands_for = "grateful"  # @unused
 
 core_version = "41.0.0"  # @unused
 
-version = "1.64.0-pre1"  # @unused
+version = "1.64.0-pre2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
