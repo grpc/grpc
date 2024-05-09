@@ -1,0 +1,343 @@
+# Copyright 2024 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# File format:
+# Each config var must have a name, a default, and a description.
+# Optionally, a `debug-only: true` flag can be added to ensure that these flags
+# are only enabled in debug builds.
+
+api:
+  default: false
+  description: null
+auth_context_refcount:
+  debug_only: true
+  default: false
+  description: null
+backend_metric:
+  default: false
+  description: null
+backend_metric_filter:
+  default: false
+  description: null
+bdp_estimator:
+  default: false
+  description: null
+call:
+  default: false
+  description: null
+call_combiner:
+  debug_only: true
+  default: false
+  description: null
+call_error:
+  default: false
+  description: null
+call_refcount:
+  debug_only: true
+  default: false
+  description: null
+cares_address_sorting:
+  default: false
+  description: null
+cares_resolver:
+  default: false
+  description: null
+cds_lb:
+  default: false
+  description: null
+channel:
+  default: false
+  description: null
+channel_stack:
+  default: false
+  description: null
+chaotic_good:
+  default: false
+  description: null
+chttp2_hpack_parser:
+  default: false
+  description: null
+chttp2_new_stream:
+  default: false
+  description: null
+client_channel:
+  default: false
+  description: null
+client_channel_call:
+  default: false
+  description: null
+client_channel_lb_call:
+  default: false
+  description: null
+client_idle_filter:
+  default: false
+  description: null
+closure:
+  debug_only: true
+  default: false
+  description: null
+combiner:
+  debug_only: true
+  default: false
+  description: null
+compression:
+  default: false
+  description: null
+connectivity_state:
+  default: false
+  description: null
+cq_refcount:
+  debug_only: true
+  default: false
+  description: null
+cronet:
+  default: false
+  description: null
+dns_resolver:
+  default: false
+  description: null
+environment_autodetect:
+  default: false
+  description: null
+error_refcount:
+  debug_only: true
+  default: false
+  description: null
+event_engine:
+  default: false
+  description: null
+event_engine_client_channel_resolver:
+  default: false
+  description: null
+event_engine_dns:
+  default: false
+  description: null
+event_engine_endpoint:
+  default: false
+  description: null
+event_engine_endpoint_data:
+  default: false
+  description: null
+event_engine_poller:
+  default: false
+  description: null
+executor:
+  default: false
+  description: null
+fault_injection_filter:
+  default: false
+  description: null
+fd_refcount:
+  debug_only: true
+  default: false
+  description: null
+fd_trace:
+  debug_only: true
+  default: false
+  description: null
+flowctl:
+  default: false
+  description: null
+fork:
+  default: false
+  description: null
+glb:
+  default: false
+  description: null
+grpc_authz_api:
+  default: false
+  description: null
+handshaker:
+  default: false
+  description: null
+health_check_client:
+  default: false
+  description: null
+http:
+  default: false
+  description: null
+http1:
+  default: false
+  description: null
+http2_ping:
+  default: false
+  description: null
+http2_stream_state:
+  default: false
+  description: null
+http_keepalive:
+  default: false
+  description: null
+inproc:
+  default: false
+  description: null
+lb_policy_refcount:
+  debug_only: true
+  default: false
+  description: null
+metadata_query:
+  default: false
+  description: null
+op_failure:
+  default: false
+  description: null
+orca_client:
+  default: false
+  description: null
+outlier_detection_lb:
+  default: false
+  description: null
+party_state:
+  debug_only: true
+  default: false
+  description: null
+pending_tags:
+  debug_only: true
+  default: false
+  description: null
+pick_first:
+  default: false
+  description: null
+plugin_credentials:
+  default: false
+  description: null
+polling:
+  debug_only: true
+  default: false
+  description: null
+polling_api:
+  debug_only: true
+  default: false
+  description: null
+priority_lb:
+  default: false
+  description: null
+promise_primitives:
+  debug_only: true
+  default: false
+  description: null
+queue_pluck:
+  default: false
+  description: null
+resolver_refcount:
+  debug_only: true
+  default: false
+  description: null
+resource_quota:
+  default: false
+  description: null
+retry:
+  default: false
+  description: null
+ring_hash_lb:
+  default: false
+  description: null
+rls_lb:
+  default: false
+  description: null
+round_robin:
+  default: false
+  description: null
+secure_endpoint:
+  default: false
+  description: null
+security_connector_refcount:
+  debug_only: true
+  default: false
+  description: null
+server_channel:
+  default: false
+  description: null
+slice_refcount:
+  debug_only: true
+  default: false
+  description: null
+stateful_session_filter:
+  default: false
+  description: null
+stream_refcount:
+  debug_only: true
+  default: false
+  description: null
+subchannel:
+  default: false
+  description: null
+subchannel_pool:
+  default: false
+  description: null
+subchannel_refcount:
+  debug_only: true
+  default: false
+  description: null
+tcp:
+  default: false
+  description: null
+timer:
+  default: false
+  description: null
+timer_check:
+  default: false
+  description: null
+tsi:
+  default: false
+  description: null
+weighted_round_robin_lb:
+  default: false
+  description: null
+weighted_target_lb:
+  default: false
+  description: null
+work_serializer:
+  debug_only: true
+  default: false
+  description: null
+xds_client:
+  default: false
+  description: null
+xds_client_refcount:
+  default: false
+  description: null
+xds_cluster_impl_lb:
+  default: false
+  description: null
+xds_cluster_manager_lb:
+  default: false
+  description: null
+xds_cluster_resource_type_test:
+  default: true
+  description: null
+xds_common_types_test:
+  default: true
+  description: null
+xds_endpoint_resource_type_test:
+  default: true
+  description: null
+xds_listener_resource_type_test:
+  default: true
+  description: null
+xds_override_host_lb:
+  default: false
+  description: null
+xds_resolver:
+  default: false
+  description: null
+xds_route_config_resource_type_test:
+  default: true
+  description: null
+xds_server_config_fetcher:
+  default: false
+  description: null
+xds_wrr_locality_lb:
+  default: false
+  description: null
