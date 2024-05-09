@@ -102,8 +102,8 @@ class OpenTelemetryPluginBuilder {
   /// For example, the grpc.target attribute on pick first lb policy metrics
   /// defined in
   /// https://github.com/grpc/proposal/blob/master/A78-grpc-metrics-wrr-pf-xds.md
-  /// will not be filtered. Please contact the grpc team if this filtration
-  /// would be of interest to you.
+  /// will not be filtered. Please contact the grpc team if this filtration is
+  /// of interest to you.
   GRPC_DEPRECATED(
       "Does not work as expected. Please raise an issue on "
       "https://github.com/grpc/grpc if this would be of use to you.")
