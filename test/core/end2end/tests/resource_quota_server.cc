@@ -146,11 +146,11 @@ CORE_END2END_TEST(ResourceQuotaTest, ResourceQuota) {
       cancelled_calls_on_server++;
     }
   }
-  gpr_log(GPR_INFO,
-          "Done. %d total calls: %d cancelled at server, %d cancelled at "
-          "client, %d timed out, %d unavailable.",
-          kNumCalls, cancelled_calls_on_server, cancelled_calls_on_client,
-          deadline_exceeded, unavailable);
+  LOG(INFO) << "Done. " << kNumCalls
+            << " total calls: " << cancelled_calls_on_server
+            << " cancelled at server, " << cancelled_calls_on_client
+            << " cancelled at client, " << deadline_exceeded << " timed out, "
+            << unavailable << " unavailable.";
 
   ShutdownServerAndNotify(0);
   Expect(0, PerformAction{[this](bool success) {
