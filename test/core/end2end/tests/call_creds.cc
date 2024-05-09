@@ -47,17 +47,17 @@ const char overridden_fake_md_value[] = "overridden_fake_value";
 void PrintAuthContext(bool is_client, const grpc_auth_context* ctx) {
   const grpc_auth_property* p;
   grpc_auth_property_iterator it;
-  gpr_log(GPR_INFO, "%s peer:", is_client ? "client" : "server");
-  gpr_log(GPR_INFO, "\tauthenticated: %s",
-          grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
+  LOG(INFO) << (is_client ? "client" : "server") << " peer:";
+  LOG(INFO) << "\tauthenticated: "
+            << (grpc_auth_context_peer_is_authenticated(ctx) ? "YES" : "NO");
   it = grpc_auth_context_peer_identity(ctx);
   while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
+    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
   }
-  gpr_log(GPR_INFO, "\tall properties:");
+  LOG(INFO) << "\tall properties:";
   it = grpc_auth_context_property_iterator(ctx);
   while ((p = grpc_auth_property_iterator_next(&it)) != nullptr) {
-    gpr_log(GPR_INFO, "\t\t%s: %s", p->name, p->value);
+    LOG(INFO) << "\t\t" << p->name << ": " << p->value;
   }
 }
 

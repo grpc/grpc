@@ -53,7 +53,7 @@ grpc_error_handle init_call_elem(grpc_call_element* elem,
                                  const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->context = args->context;
-  gpr_log(GPR_INFO, "init_call_elem(): context=%p", args->context);
+  LOG(INFO) << "init_call_elem(): context=" << args->context;
   return absl::OkStatus();
 }
 
@@ -63,8 +63,8 @@ void start_transport_stream_op_batch(grpc_call_element* elem,
   // If batch payload context is not null (which will happen in some
   // cancellation cases), make sure we get the same context here that we
   // saw in init_call_elem().
-  gpr_log(GPR_INFO, "start_transport_stream_op_batch(): context=%p",
-          batch->payload->context);
+  LOG(INFO) << "start_transport_stream_op_batch(): context="
+            << batch->payload->context;
   if (batch->payload->context != nullptr) {
     CHECK(calld->context == batch->payload->context);
   }
