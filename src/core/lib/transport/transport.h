@@ -502,7 +502,7 @@ class FilterStackTransport;
 class ClientTransport;
 class ServerTransport;
 
-class Transport : public InternallyRefCounted<Transport> {
+class Transport : public Orphanable {
  public:
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }

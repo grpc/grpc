@@ -85,7 +85,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override {
     AbortWithError();
-    Unref();
+    delete this;
   }
 
   void StartCall(CallHandler call_handler) override;
