@@ -34,7 +34,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/cpp/interop/http2_client.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 
