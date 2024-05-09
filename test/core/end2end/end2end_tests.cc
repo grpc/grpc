@@ -23,6 +23,7 @@
 #include <tuple>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 

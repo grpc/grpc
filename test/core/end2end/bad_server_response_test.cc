@@ -24,7 +24,7 @@
 #include <string>
 #include <vector>
 
-#include "third_party/absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -35,7 +35,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
