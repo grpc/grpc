@@ -82,7 +82,7 @@ BANNED_EXCEPT = {
         "src/core/load_balancing/rls/rls.cc",
         "src/core/resolver/google_c2p/google_c2p_resolver.cc",
     ],
-    # use absl CHECK instead
+    # use 'absl CHECK' instead
     "GPR_ASSERT": [],
     # Use `std::exchange()` instead.
     "absl::exchange": [],
