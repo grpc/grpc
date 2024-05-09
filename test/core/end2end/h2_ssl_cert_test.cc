@@ -245,9 +245,7 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
 
 class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfigWrapper> {
  protected:
-  H2SslCertTest() {
-    gpr_log(GPR_INFO, "SSL_CERT_tests/%s", GetParam().config.name);
-  }
+  H2SslCertTest() { LOG(INFO) << "SSL_CERT_tests/" << GetParam().config.name; }
   void SetUp() override {
     fixture_ = GetParam().config.create_fixture(grpc_core::ChannelArgs(),
                                                 grpc_core::ChannelArgs());
