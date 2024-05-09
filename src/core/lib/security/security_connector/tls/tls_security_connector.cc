@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
 #include <string.h>
@@ -27,6 +25,7 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -34,8 +33,10 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -47,7 +48,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 namespace grpc_core {
@@ -64,7 +64,7 @@ char* CopyCoreString(char* src, size_t length) {
 void PendingVerifierRequestInit(
     const char* target_name, tsi_peer peer,
     grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
+  CHECK_NE(request, nullptr);
   // The verifier holds a ref to the security connector, so it's fine to
   // directly point this to the name cached in the security connector.
   request->target_name = target_name;
@@ -176,7 +176,7 @@ void PendingVerifierRequestInit(
 
 void PendingVerifierRequestDestroy(
     grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
+  CHECK_NE(request, nullptr);
   if (request->peer_info.common_name != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.common_name));
   }
@@ -220,13 +220,13 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
   size_t num_key_cert_pairs = cert_pair_list.size();
   if (num_key_cert_pairs > 0) {
-    GPR_ASSERT(cert_pair_list.data() != nullptr);
+    CHECK_NE(cert_pair_list.data(), nullptr);
     tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
         gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    GPR_ASSERT(!cert_pair_list[i].private_key().empty());
-    GPR_ASSERT(!cert_pair_list[i].cert_chain().empty());
+    CHECK(!cert_pair_list[i].private_key().empty());
+    CHECK(!cert_pair_list[i].cert_chain().empty());
     tsi_pairs[i].cert_chain =
         gpr_strdup(cert_pair_list[i].cert_chain().c_str());
     tsi_pairs[i].private_key =
@@ -377,7 +377,7 @@ void TlsChannelSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  GPR_ASSERT(options_->certificate_verifier() != nullptr);
+  CHECK_NE(options_->certificate_verifier(), nullptr);
   auto* pending_request = new ChannelPendingVerifierRequest(
       RefAsSubclass<TlsChannelSecurityConnector>(), on_peer_checked, peer,
       target_name);
@@ -436,7 +436,7 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
     OnCertificatesChanged(absl::optional<absl::string_view> root_certs,
                           absl::optional<PemKeyCertPairList> key_cert_pairs) {
-  GPR_ASSERT(security_connector_ != nullptr);
+  CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
     security_connector_->pem_root_certs_ = root_certs;
@@ -701,7 +701,7 @@ int TlsServerSecurityConnector::cmp(
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
     OnCertificatesChanged(absl::optional<absl::string_view> root_certs,
                           absl::optional<PemKeyCertPairList> key_cert_pairs) {
-  GPR_ASSERT(security_connector_ != nullptr);
+  CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
     security_connector_->pem_root_certs_ = root_certs;
@@ -800,8 +800,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   // The identity certs on the server side shouldn't be empty.
-  GPR_ASSERT(pem_key_cert_pair_list_.has_value());
-  GPR_ASSERT(!(*pem_key_cert_pair_list_).empty());
+  CHECK(pem_key_cert_pair_list_.has_value());
+  CHECK(!(*pem_key_cert_pair_list_).empty());
   std::string pem_root_certs;
   if (pem_root_certs_.has_value()) {
     // TODO(ZhenLian): update the underlying TSI layer to use C++ types like

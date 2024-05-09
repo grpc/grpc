@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/csm/metadata_exchange.h"
 
 #include <stddef.h>
@@ -27,6 +25,7 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -34,12 +33,11 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
 #include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/env.h"
@@ -54,8 +52,8 @@
 namespace grpc {
 namespace internal {
 
-using OptionalLabelComponent =
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelComponent;
+using OptionalLabelKey =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
 
 namespace {
 
@@ -91,7 +89,24 @@ constexpr absl::string_view kPeerCanonicalServiceAttribute =
 constexpr absl::string_view kGkeType = "gcp_kubernetes_engine";
 constexpr absl::string_view kGceType = "gcp_compute_engine";
 
-enum class GcpResourceType : std::uint8_t { kGke, kGce, kUnknown };
+// A helper method that decodes the remote metadata \a slice as a protobuf
+// Struct allocated on \a arena.
+google_protobuf_Struct* DecodeMetadata(grpc_core::Slice slice,
+                                       upb_Arena* arena) {
+  // Treat an empty slice as an invalid metadata value.
+  if (slice.empty()) {
+    return nullptr;
+  }
+  // Decode the slice.
+  std::string decoded_metadata;
+  bool metadata_decoded =
+      absl::Base64Unescape(slice.as_string_view(), &decoded_metadata);
+  if (metadata_decoded) {
+    return google_protobuf_Struct_parse(decoded_metadata.c_str(),
+                                        decoded_metadata.size(), arena);
+  }
+  return nullptr;
+}
 
 // A minimal class for helping with the information we need from the xDS
 // bootstrap file for GSM Observability reasons.
@@ -145,13 +160,14 @@ std::string GetXdsBootstrapContents() {
   return "";
 }
 
-GcpResourceType StringToGcpResourceType(absl::string_view type) {
+MeshLabelsIterable::GcpResourceType StringToGcpResourceType(
+    absl::string_view type) {
   if (type == kGkeType) {
-    return GcpResourceType::kGke;
+    return MeshLabelsIterable::GcpResourceType::kGke;
   } else if (type == kGceType) {
-    return GcpResourceType::kGce;
+    return MeshLabelsIterable::GcpResourceType::kGce;
   }
-  return GcpResourceType::kUnknown;
+  return MeshLabelsIterable::GcpResourceType::kUnknown;
 }
 
 upb_StringView AbslStrToUpbStr(absl::string_view str) {
@@ -203,147 +219,96 @@ absl::string_view GetStringValueFromUpbStruct(google_protobuf_Struct* struct_pb,
   return "unknown";
 }
 
-class MeshLabelsIterable : public LabelsIterable {
- public:
-  explicit MeshLabelsIterable(
-      const std::vector<std::pair<absl::string_view, std::string>>&
-          local_labels,
-      grpc_core::Slice remote_metadata)
-      : local_labels_(local_labels), metadata_(std::move(remote_metadata)) {}
-
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
-      override {
-    auto& struct_pb = GetDecodedMetadata();
-    size_t local_labels_size = local_labels_.size();
-    if (pos_ < local_labels_size) {
-      return local_labels_[pos_++];
-    }
-    const size_t fixed_attribute_end =
-        local_labels_size + kFixedAttributes.size();
-    if (pos_ < fixed_attribute_end) {
-      return NextFromAttributeList(struct_pb, kFixedAttributes,
-                                   local_labels_size);
-    }
-    return NextFromAttributeList(struct_pb, GetAttributesForType(remote_type_),
-                                 fixed_attribute_end);
-  }
-
-  size_t Size() const override {
-    return local_labels_.size() + kFixedAttributes.size() +
-           GetAttributesForType(remote_type_).size();
-  }
-
-  void ResetIteratorPosition() override { pos_ = 0; }
-
-  // Returns true if the peer sent a non-empty base64 encoded
-  // "x-envoy-peer-metadata" metadata.
-  bool GotRemoteLabels() const {
-    return GetDecodedMetadata().struct_pb != nullptr;
-  }
-
- private:
-  struct RemoteAttribute {
-    absl::string_view otel_attribute;
-    absl::string_view metadata_attribute;
-  };
-
-  struct StructPb {
-    upb::Arena arena;
-    google_protobuf_Struct* struct_pb = nullptr;
-  };
-
-  static constexpr std::array<RemoteAttribute, 2> kFixedAttributes = {
-      RemoteAttribute{kPeerTypeAttribute, kMetadataExchangeTypeKey},
-      RemoteAttribute{kPeerCanonicalServiceAttribute,
-                      kMetadataExchangeCanonicalServiceKey},
-  };
-
-  static constexpr std::array<RemoteAttribute, 5> kGkeAttributeList = {
-      RemoteAttribute{kPeerWorkloadNameAttribute,
-                      kMetadataExchangeWorkloadNameKey},
-      RemoteAttribute{kPeerNamespaceNameAttribute,
-                      kMetadataExchangeNamespaceNameKey},
-      RemoteAttribute{kPeerClusterNameAttribute,
-                      kMetadataExchangeClusterNameKey},
-      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
-      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
-  };
-  static constexpr std::array<RemoteAttribute, 3> kGceAttributeList = {
-      RemoteAttribute{kPeerWorkloadNameAttribute,
-                      kMetadataExchangeWorkloadNameKey},
-      RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
-      RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
-  };
-
-  static absl::Span<const RemoteAttribute> GetAttributesForType(
-      GcpResourceType remote_type) {
-    switch (remote_type) {
-      case GcpResourceType::kGke:
-        return kGkeAttributeList;
-      case GcpResourceType::kGce:
-        return kGceAttributeList;
-      default:
-        return {};
-    }
-  }
-
-  absl::optional<std::pair<absl::string_view, absl::string_view>>
-  NextFromAttributeList(const StructPb& struct_pb,
-                        absl::Span<const RemoteAttribute> attributes,
-                        size_t start_index) {
-    GPR_DEBUG_ASSERT(pos_ >= start_index);
-    const size_t index = pos_ - start_index;
-    if (index >= attributes.size()) return absl::nullopt;
-    ++pos_;
-    const auto& attribute = attributes[index];
-    return std::make_pair(attribute.otel_attribute,
-                          GetStringValueFromUpbStruct(
-                              struct_pb.struct_pb, attribute.metadata_attribute,
-                              struct_pb.arena.ptr()));
-  }
-
-  StructPb& GetDecodedMetadata() const {
-    auto* slice = absl::get_if<grpc_core::Slice>(&metadata_);
-    if (slice == nullptr) {
-      return absl::get<StructPb>(metadata_);
-    }
-    // Treat an empty slice as an invalid metadata value.
-    if (slice->empty()) {
-      metadata_ = StructPb{};
-      auto& struct_pb = absl::get<StructPb>(metadata_);
-      return struct_pb;
-    }
-    std::string decoded_metadata;
-    bool metadata_decoded =
-        absl::Base64Unescape(slice->as_string_view(), &decoded_metadata);
-    metadata_ = StructPb{};
-    auto& struct_pb = absl::get<StructPb>(metadata_);
-    if (metadata_decoded) {
-      struct_pb.struct_pb = google_protobuf_Struct_parse(
-          decoded_metadata.c_str(), decoded_metadata.size(),
-          struct_pb.arena.ptr());
-      remote_type_ = StringToGcpResourceType(GetStringValueFromUpbStruct(
-          struct_pb.struct_pb, kMetadataExchangeTypeKey,
-          struct_pb.arena.ptr()));
-    }
-    return struct_pb;
-  }
-
-  const std::vector<std::pair<absl::string_view, std::string>>& local_labels_;
-  // Holds either the metadata slice or the decoded proto struct.
-  mutable absl::variant<grpc_core::Slice, StructPb> metadata_;
-  mutable GcpResourceType remote_type_ = GcpResourceType::kUnknown;
-  uint32_t pos_ = 0;
+struct RemoteAttribute {
+  absl::string_view otel_attribute;
+  absl::string_view metadata_attribute;
 };
 
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 2>
-    MeshLabelsIterable::kFixedAttributes;
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 5>
-    MeshLabelsIterable::kGkeAttributeList;
-constexpr std::array<MeshLabelsIterable::RemoteAttribute, 3>
-    MeshLabelsIterable::kGceAttributeList;
+constexpr std::array<RemoteAttribute, 2> kFixedAttributes = {
+    RemoteAttribute{kPeerTypeAttribute, kMetadataExchangeTypeKey},
+    RemoteAttribute{kPeerCanonicalServiceAttribute,
+                    kMetadataExchangeCanonicalServiceKey},
+};
+
+constexpr std::array<RemoteAttribute, 5> kGkeAttributeList = {
+    RemoteAttribute{kPeerWorkloadNameAttribute,
+                    kMetadataExchangeWorkloadNameKey},
+    RemoteAttribute{kPeerNamespaceNameAttribute,
+                    kMetadataExchangeNamespaceNameKey},
+    RemoteAttribute{kPeerClusterNameAttribute, kMetadataExchangeClusterNameKey},
+    RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+    RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
+};
+
+constexpr std::array<RemoteAttribute, 3> kGceAttributeList = {
+    RemoteAttribute{kPeerWorkloadNameAttribute,
+                    kMetadataExchangeWorkloadNameKey},
+    RemoteAttribute{kPeerLocationAttribute, kMetadataExchangeLocationKey},
+    RemoteAttribute{kPeerProjectIdAttribute, kMetadataExchangeProjectIdKey},
+};
+
+absl::Span<const RemoteAttribute> GetAttributesForType(
+    MeshLabelsIterable::GcpResourceType remote_type) {
+  switch (remote_type) {
+    case MeshLabelsIterable::GcpResourceType::kGke:
+      return kGkeAttributeList;
+    case MeshLabelsIterable::GcpResourceType::kGce:
+      return kGceAttributeList;
+    default:
+      return {};
+  }
+}
+
+absl::optional<std::pair<absl::string_view, absl::string_view>>
+NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
+                      size_t start_index, size_t curr,
+                      google_protobuf_Struct* decoded_metadata,
+                      upb_Arena* arena) {
+  DCHECK_GE(curr, start_index);
+  const size_t index = curr - start_index;
+  if (index >= attributes.size()) return absl::nullopt;
+  const auto& attribute = attributes[index];
+  return std::make_pair(
+      attribute.otel_attribute,
+      GetStringValueFromUpbStruct(decoded_metadata,
+                                  attribute.metadata_attribute, arena));
+}
 
 }  // namespace
+
+//
+// MeshLabelsIterable
+//
+
+MeshLabelsIterable::MeshLabelsIterable(
+    const std::vector<std::pair<absl::string_view, std::string>>& local_labels,
+    grpc_core::Slice remote_metadata)
+    : struct_pb_(DecodeMetadata(std::move(remote_metadata), arena_.ptr())),
+      local_labels_(local_labels),
+      remote_type_(StringToGcpResourceType(GetStringValueFromUpbStruct(
+          struct_pb_, kMetadataExchangeTypeKey, arena_.ptr()))) {}
+
+absl::optional<std::pair<absl::string_view, absl::string_view>>
+MeshLabelsIterable::Next() {
+  size_t local_labels_size = local_labels_.size();
+  if (pos_ < local_labels_size) {
+    return local_labels_[pos_++];
+  }
+  const size_t fixed_attribute_end =
+      local_labels_size + kFixedAttributes.size();
+  if (pos_ < fixed_attribute_end) {
+    return NextFromAttributeList(kFixedAttributes, local_labels_size, pos_++,
+                                 struct_pb_, arena_.ptr());
+  }
+  return NextFromAttributeList(GetAttributesForType(remote_type_),
+                               fixed_attribute_end, pos_++, struct_pb_,
+                               arena_.ptr());
+}
+
+size_t MeshLabelsIterable::Size() const {
+  return local_labels_.size() + kFixedAttributes.size() +
+         GetAttributesForType(remote_type_).size();
+}
 
 // Returns the mesh ID by reading and parsing the bootstrap file. Returns
 // "unknown" if for some reason, mesh ID could not be figured out.
@@ -369,6 +334,10 @@ std::string GetMeshId() {
   }
   return std::string(mesh_id);
 }
+
+//
+// ServiceMeshLabelsInjector
+//
 
 ServiceMeshLabelsInjector::ServiceMeshLabelsInjector(
     const opentelemetry::sdk::common::AttributeMap& map) {
@@ -459,8 +428,7 @@ void ServiceMeshLabelsInjector::AddLabels(
 
 bool ServiceMeshLabelsInjector::AddOptionalLabels(
     bool is_client,
-    absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>
-        optional_labels_span,
+    absl::Span<const grpc_core::RefCountedStringValue> optional_labels,
     opentelemetry::nostd::function_ref<
         bool(opentelemetry::nostd::string_view,
              opentelemetry::common::AttributeValue)>
@@ -469,35 +437,26 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
     // Currently the CSM optional labels are only set on client.
     return true;
   }
-  // According to the CSM Observability Metric spec, if the control plane fails
-  // to provide these labels, the client will set their values to "unknown".
-  // These default values are set below.
-  absl::string_view service_name = "unknown";
-  absl::string_view service_namespace = "unknown";
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
-  if (optional_labels_span.size() >
-      static_cast<size_t>(OptionalLabelComponent::kXdsServiceLabels)) {
-    const auto& optional_labels = optional_labels_span[static_cast<size_t>(
-        OptionalLabelComponent::kXdsServiceLabels)];
-    if (optional_labels != nullptr) {
-      auto it = optional_labels->find("service_name");
-      if (it != optional_labels->end()) service_name = it->second;
-      it = optional_labels->find("service_namespace");
-      if (it != optional_labels->end()) service_namespace = it->second;
-    }
-  }
+  absl::string_view service_name =
+      optional_labels[static_cast<size_t>(
+                          grpc_core::ClientCallTracer::CallAttemptTracer::
+                              OptionalLabelKey::kXdsServiceName)]
+          .as_string_view();
+  absl::string_view service_namespace =
+      optional_labels[static_cast<size_t>(
+                          grpc_core::ClientCallTracer::CallAttemptTracer::
+                              OptionalLabelKey::kXdsServiceNamespace)]
+          .as_string_view();
   return callback("csm.service_name",
-                  AbslStrViewToOpenTelemetryStrView(service_name)) &&
+                  service_name.empty()
+                      ? "unknown"
+                      : AbslStrViewToOpenTelemetryStrView(service_name)) &&
          callback("csm.service_namespace_name",
-                  AbslStrViewToOpenTelemetryStrView(service_namespace));
-}
-
-size_t ServiceMeshLabelsInjector::GetOptionalLabelsSize(
-    bool is_client,
-    absl::Span<const std::shared_ptr<std::map<std::string, std::string>>>)
-    const {
-  return is_client ? 2 : 0;
+                  service_namespace.empty()
+                      ? "unknown"
+                      : AbslStrViewToOpenTelemetryStrView(service_namespace));
 }
 
 }  // namespace internal

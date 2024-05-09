@@ -16,20 +16,20 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 
 #include <memory>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 
@@ -246,7 +246,7 @@ class EnvironmentAutoDetectHelper
 
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    GPR_ASSERT(!attributes_to_fetch_.empty());
+    CHECK(!attributes_to_fetch_.empty());
     for (auto& element : attributes_to_fetch_) {
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::MetadataQuery>(
           element.first, &pollent_,
@@ -331,7 +331,9 @@ EnvironmentAutoDetect* g_autodetect = nullptr;
 }  // namespace
 
 void EnvironmentAutoDetect::Create(std::string project_id) {
-  GPR_ASSERT(g_autodetect == nullptr && !project_id.empty());
+  CHECK_EQ(g_autodetect, nullptr);
+  CHECK(!project_id.empty());
+
   g_autodetect = new EnvironmentAutoDetect(project_id);
 }
 
@@ -339,7 +341,7 @@ EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return *g_autodetect; }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
     : project_id_(std::move(project_id)) {
-  GPR_ASSERT(!project_id_.empty());
+  CHECK(!project_id_.empty());
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {

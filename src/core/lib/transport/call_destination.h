@@ -22,12 +22,33 @@
 
 namespace grpc_core {
 
-// CallDestination is responsible for the processing of a CallHandler.
-// It might be a transport, the server API, or a subchannel on the client (for
-// instance).
-class CallDestination : public Orphanable {
+// UnstartedCallDestination is responsible for starting an UnstartedCallHandler
+// and then processing operations on the resulting CallHandler.
+//
+// Examples of UnstartedCallDestinations include:
+// - a load-balanced call in the client channel
+// - a hijacking filter (see Interceptor)
+class UnstartedCallDestination
+    : public DualRefCounted<UnstartedCallDestination> {
  public:
-  virtual void StartCall(CallHandler call_handler) = 0;
+  ~UnstartedCallDestination() override = default;
+  // Start a call. The UnstartedCallHandler will be consumed by the Destination
+  // and started.
+  // Must be called from the party owned by the call, eg the following must
+  // hold:
+  // CHECK(GetContext<Activity>() == unstarted_call_handler.party());
+  virtual void StartCall(UnstartedCallHandler unstarted_call_handler) = 0;
+};
+
+// CallDestination is responsible for handling processing of an already started
+// call.
+//
+// Examples of CallDestinations include:
+// - a client transport
+// - the server API
+class CallDestination : public DualRefCounted<CallDestination> {
+ public:
+  virtual void HandleCall(CallHandler unstarted_call_handler) = 0;
 };
 
 }  // namespace grpc_core

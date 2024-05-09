@@ -43,11 +43,6 @@
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_resource_type.h"
-#include "src/core/ext/xds/xds_route_config.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -56,6 +51,11 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/matchers/matchers.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
@@ -66,8 +66,8 @@
 #include "src/proto/grpc/testing/xds/v3/route.pb.h"
 #include "src/proto/grpc/testing/xds/v3/string.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
 
 using envoy::config::route::v3::RouteConfiguration;
 using grpc::lookup::v1::RouteLookupClusterSpecifier;
@@ -83,7 +83,8 @@ class XdsRouteConfigTest : public ::testing::Test {
  protected:
   XdsRouteConfigTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
                         &xds_route_config_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
@@ -106,7 +107,8 @@ class XdsRouteConfigTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 

@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
@@ -37,7 +39,7 @@ extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 static gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
-  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  CHECK(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
   ts.clock_type = clock_type;
   return ts;

@@ -37,9 +37,9 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/util/parse_hexstring.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/parse_hexstring.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
 
 grpc_core::HPackCompressor* g_compressor;
 
@@ -159,7 +159,7 @@ grpc_slice EncodeHeaderIntoBytes(
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
 
   for (const auto& field : header_fields) {
     b.Append(field.first,
@@ -309,7 +309,7 @@ static void verify_continuation_headers(const char* key, const char* value,
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_slice_buffer output;
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   b.Append(key, grpc_core::Slice::FromStaticString(value), CrashOnAppendError);
   grpc_slice_buffer_init(&output);
 
@@ -349,7 +349,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   // Haiku by Bard
   b.Append("grpc-trace-bin",
            grpc_core::Slice::FromStaticString(
@@ -379,7 +379,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
   auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch b(arena.get());
+  grpc_metadata_batch b;
   // Haiku by Bard
   b.Append("grpc-trace-bin",
            grpc_core::Slice::FromStaticString(

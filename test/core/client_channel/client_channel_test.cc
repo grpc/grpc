@@ -14,20 +14,19 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

@@ -15,8 +15,6 @@
 // limitations under the License.
 //
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/completion_queue.h"
 
 #include <inttypes.h>
@@ -29,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -37,6 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -179,7 +179,7 @@ grpc_error_handle non_polling_poller_kick(
 
 void non_polling_poller_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   non_polling_poller* p = reinterpret_cast<non_polling_poller*>(pollset);
-  GPR_ASSERT(closure != nullptr);
+  CHECK_NE(closure, nullptr);
   p->shutdown = closure;
   if (p->root == nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
@@ -257,7 +257,7 @@ class CqEventQueue {
 
 struct cq_next_data {
   ~cq_next_data() {
-    GPR_ASSERT(queue.num_items() == 0);
+    CHECK_EQ(queue.num_items(), 0);
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
       gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
@@ -287,8 +287,7 @@ struct cq_pluck_data {
   }
 
   ~cq_pluck_data() {
-    GPR_ASSERT(completed_head.next ==
-               reinterpret_cast<uintptr_t>(&completed_head));
+    CHECK(completed_head.next == reinterpret_cast<uintptr_t>(&completed_head));
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
       gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
@@ -656,7 +655,7 @@ static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
     gpr_mu_unlock(cq->mu);
   }
 
-  GPR_ASSERT(found);
+  CHECK(found);
 }
 #else
 static void cq_check_tag(grpc_completion_queue* /*cq*/, void* /*tag*/,
@@ -906,7 +905,7 @@ class ExecCtxNext : public grpc_core::ExecCtx {
         static_cast<cq_is_finished_arg*>(check_ready_to_finish_arg_);
     grpc_completion_queue* cq = a->cq;
     cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
-    GPR_ASSERT(a->stolen_completion == nullptr);
+    CHECK_EQ(a->stolen_completion, nullptr);
 
     intptr_t current_last_seen_things_queued_ever =
         cqd->things_queued_ever.load(std::memory_order_relaxed);
@@ -963,7 +962,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
       5,
       (cq, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
        reserved));
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
 
   dump_pending_tags(cq);
 
@@ -1069,7 +1068,7 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
   GRPC_CQ_INTERNAL_UNREF(cq, "next");
 
-  GPR_ASSERT(is_finished_arg.stolen_completion == nullptr);
+  CHECK_EQ(is_finished_arg.stolen_completion, nullptr);
 
   return ret;
 }
@@ -1083,8 +1082,8 @@ static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
 static void cq_finish_shutdown_next(grpc_completion_queue* cq) {
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
 
-  GPR_ASSERT(cqd->shutdown_called);
-  GPR_ASSERT(cqd->pending_events.load(std::memory_order_relaxed) == 0);
+  CHECK(cqd->shutdown_called);
+  CHECK_EQ(cqd->pending_events.load(std::memory_order_relaxed), 0);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
 }
@@ -1157,7 +1156,7 @@ class ExecCtxPluck : public grpc_core::ExecCtx {
     grpc_completion_queue* cq = a->cq;
     cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
-    GPR_ASSERT(a->stolen_completion == nullptr);
+    CHECK_EQ(a->stolen_completion, nullptr);
     gpr_atm current_last_seen_things_queued_ever =
         cqd->things_queued_ever.load(std::memory_order_relaxed);
     if (current_last_seen_things_queued_ever !=
@@ -1208,7 +1207,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
         (cq, tag, deadline.tv_sec, deadline.tv_nsec, (int)deadline.clock_type,
          reserved));
   }
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
 
   dump_pending_tags(cq);
 
@@ -1299,7 +1298,7 @@ done:
   GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, &ret);
   GRPC_CQ_INTERNAL_UNREF(cq, "pluck");
 
-  GPR_ASSERT(is_finished_arg.stolen_completion == nullptr);
+  CHECK_EQ(is_finished_arg.stolen_completion, nullptr);
 
   return ret;
 }
@@ -1312,8 +1311,8 @@ grpc_event grpc_completion_queue_pluck(grpc_completion_queue* cq, void* tag,
 static void cq_finish_shutdown_pluck(grpc_completion_queue* cq) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
-  GPR_ASSERT(cqd->shutdown_called);
-  GPR_ASSERT(!cqd->shutdown.load(std::memory_order_relaxed));
+  CHECK(cqd->shutdown_called);
+  CHECK(!cqd->shutdown.load(std::memory_order_relaxed));
   cqd->shutdown.store(true, std::memory_order_relaxed);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
@@ -1349,7 +1348,7 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
   auto* callback = cqd->shutdown_callback;
 
-  GPR_ASSERT(cqd->shutdown_called);
+  CHECK(cqd->shutdown_called);
 
   cq->poller_vtable->shutdown(POLLSET_FROM_CQ(cq), &cq->pollset_shutdown_done);
   if (grpc_iomgr_is_any_background_poller_thread()) {

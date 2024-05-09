@@ -22,6 +22,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -43,7 +44,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -104,7 +105,7 @@ TEST_F(EventEngineServerTest, ServerConnectExchangeBidiDataTransferTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;

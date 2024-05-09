@@ -25,6 +25,7 @@
 
 #include "absl/strings/escaping.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -35,7 +36,7 @@
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_core::Json;
 

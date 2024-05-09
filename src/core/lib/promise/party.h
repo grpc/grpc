@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PARTY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -26,10 +24,12 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -41,7 +41,6 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
-#include "src/core/lib/resource_quota/arena.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.
@@ -117,7 +116,7 @@ class PartySyncUsingAtomics {
                                     std::memory_order_acquire);
       LogStateChange("Run", prev_state,
                      prev_state & (kRefMask | kLocked | kAllocatedMask));
-      GPR_ASSERT(prev_state & kLocked);
+      CHECK(prev_state & kLocked);
       if (prev_state & kDestroying) return true;
       // From the previous state, extract which participants we're to wakeup.
       uint64_t wakeups = prev_state & kWakeupMask;
@@ -130,7 +129,10 @@ class PartySyncUsingAtomics {
         if (poll_one_participant(i)) {
           const uint64_t allocated_bit = (1u << i << kAllocatedShift);
           prev_state &= ~allocated_bit;
-          state_.fetch_and(~allocated_bit, std::memory_order_release);
+          uint64_t finished_prev_state =
+              state_.fetch_and(~allocated_bit, std::memory_order_release);
+          LogStateChange("Run:ParticipantComplete", finished_prev_state,
+                         finished_prev_state & ~allocated_bit);
         }
       }
       // Try to CAS the state we expected to have (with no wakeups or adds)
@@ -194,7 +196,7 @@ class PartySyncUsingAtomics {
         slots[n++] = bit;
         allocated |= 1 << bit;
       }
-      GPR_ASSERT(n == count);
+      CHECK(n == count);
       // Try to allocate this slot and take a ref (atomically).
       // Ref needs to be taken because once we store the participant it could be
       // spuriously woken up and unref the party.
@@ -208,7 +210,8 @@ class PartySyncUsingAtomics {
 
     // Now we need to wake up the party.
     state = state_.fetch_or(wakeup_mask | kLocked, std::memory_order_release);
-    LogStateChange("AddParticipantsAndRef:Wakeup", state, state | kLocked);
+    LogStateChange("AddParticipantsAndRef:Wakeup", state,
+                   state | wakeup_mask | kLocked);
 
     // If the party was already locked, we're done.
     return ((state & kLocked) == 0);
@@ -229,7 +232,7 @@ class PartySyncUsingAtomics {
   void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
                       DebugLocation loc = {}) {
     if (grpc_trace_party_state.enabled()) {
-      gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_DEBUG,
+      gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
               "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
               prev_state, new_state);
     }
@@ -291,7 +294,7 @@ class PartySyncUsingMutex {
     WakeupMask freed = 0;
     while (true) {
       ReleasableMutexLock lock(&mu_);
-      GPR_ASSERT(locked_);
+      CHECK(locked_);
       allocated_ &= ~std::exchange(freed, 0);
       auto wakeup = std::exchange(wakeups_, 0);
       if (wakeup == 0) {
@@ -320,7 +323,7 @@ class PartySyncUsingMutex {
       wakeup_mask |= 1 << bit;
       allocated_ |= 1 << bit;
     }
-    GPR_ASSERT(n == count);
+    CHECK(n == count);
     store(slots);
     wakeups_ |= wakeup_mask;
     return !std::exchange(locked_, true);
@@ -388,7 +391,7 @@ class Party : public Activity, private Wakeable {
   // Activity implementation: not allowed to be overridden by derived types.
   void ForceImmediateRepoll(WakeupMask mask) final;
   WakeupMask CurrentParticipant() const final {
-    GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+    DCHECK(currently_polling_ != kNotPolling);
     return 1u << currently_polling_;
   }
   Waker MakeOwningWaker() final;
@@ -404,17 +407,15 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
-  Arena* arena() const { return arena_; }
-
   // Return a promise that resolves to Empty{} when the current party poll is
   // complete.
   // This is useful for implementing batching and the like: we can hold some
   // action until the rest of the party resolves itself.
   auto AfterCurrentPoll() {
-    GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
+    DCHECK(GetContext<Activity>() == this);
     sync_.WakeAfterPoll(CurrentParticipant());
     return [this, iteration = sync_.iteration()]() -> Poll<Empty> {
-      GPR_DEBUG_ASSERT(GetContext<Activity>() == this);
+      DCHECK(GetContext<Activity>() == this);
       if (iteration == sync_.iteration()) return Pending{};
       return Empty{};
     };
@@ -438,8 +439,7 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
-  explicit Party(Arena* arena, size_t initial_refs)
-      : sync_(initial_refs), arena_(arena) {}
+  explicit Party(size_t initial_refs) : sync_(initial_refs) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
@@ -491,13 +491,13 @@ class Party : public Activity, private Wakeable {
       auto p = promise_();
       if (auto* r = p.value_if_ready()) {
         on_complete_(std::move(*r));
-        GetContext<Arena>()->DeletePooled(this);
+        delete this;
         return true;
       }
       return false;
     }
 
-    void Destroy() override { GetContext<Arena>()->DeletePooled(this); }
+    void Destroy() override { delete this; }
 
    private:
     union {
@@ -626,7 +626,6 @@ class Party : public Activity, private Wakeable {
 #error No synchronization method defined
 #endif
 
-  Arena* const arena_;
   uint8_t currently_polling_ = kNotPolling;
   // All current participants, using a tagged format.
   // If the lower bit is unset, then this is a Participant*.
@@ -646,9 +645,8 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
     gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
             party_->DebugTag().c_str(), this, std::string(name).c_str());
   }
-  participants_[num_participants_++] =
-      party_->arena_->NewPooled<ParticipantImpl<Factory, OnComplete>>(
-          name, std::move(promise_factory), std::move(on_complete));
+  participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
+      name, std::move(promise_factory), std::move(on_complete));
 }
 
 template <typename Factory, typename OnComplete>

@@ -19,16 +19,16 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 #define GRPC_SRC_CORE_LIB_IOMGR_ERROR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stdbool.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -75,7 +75,7 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name);
 
 inline absl::Status grpc_assert_never_ok(absl::Status error) {
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   return error;
 }
 

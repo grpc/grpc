@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/core/xds/xds_transport_fake.h"
 
 #include <functional>
@@ -25,15 +23,18 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/test_config.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
@@ -49,10 +50,11 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
     MutexLock lock(&mu_);
     if (transport_->abort_on_undrained_messages()) {
       for (const auto& message : from_client_messages_) {
-        gpr_log(GPR_ERROR, "From client message left in queue: %s",
+        gpr_log(GPR_ERROR, "[%s] %p From client message left in queue: %s",
+                transport_->server()->server_uri().c_str(), this,
                 message.c_str());
       }
-      GPR_ASSERT(from_client_messages_.empty());
+      CHECK(from_client_messages_.empty());
     }
   }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
@@ -79,7 +81,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
-  GPR_ASSERT(!orphaned_);
+  CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   cv_client_msg_.Signal();
   if (transport_->auto_complete_messages_from_client()) {
@@ -122,7 +124,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::
 
 void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
     bool ok) {
-  GPR_ASSERT(!transport_->auto_complete_messages_from_client());
+  CHECK(!transport_->auto_complete_messages_from_client());
   MutexLock lock(&mu_);
   CompleteSendMessageFromClientLocked(ok);
 }
@@ -280,7 +282,7 @@ FakeXdsTransportFactory::Create(
     absl::Status* /*status*/) {
   MutexLock lock(&mu_);
   auto& entry = transport_map_[server.Key()];
-  GPR_ASSERT(entry == nullptr);
+  CHECK(entry == nullptr);
   auto transport = MakeOrphanable<FakeXdsTransport>(
       RefAsSubclass<FakeXdsTransportFactory>(), server,
       std::move(on_connectivity_failure), auto_complete_messages_from_client_,

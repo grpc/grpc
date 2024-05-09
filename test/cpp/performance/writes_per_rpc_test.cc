@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -41,12 +43,13 @@
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/lib/surface/channel_create.h"
+#include "src/core/server/server.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -78,16 +81,16 @@ class InProcessCHTTP2 {
           listener_endpoint = std::move(ep);
           listener_started.Notify();
         },
-        [](absl::Status status) { GPR_ASSERT(status.ok()); }, config,
+        [](absl::Status status) { CHECK(status.ok()); }, config,
         std::make_unique<grpc_core::MemoryQuota>("foo"));
     if (!listener.ok()) {
       grpc_core::Crash(absl::StrCat("failed to start listener: ",
                                     listener.status().ToString()));
     }
     auto target_addr = URIToResolvedAddress(addr);
-    GPR_ASSERT(target_addr.ok());
-    GPR_ASSERT((*listener)->Bind(*target_addr).ok());
-    GPR_ASSERT((*listener)->Start().ok());
+    CHECK(target_addr.ok());
+    CHECK((*listener)->Bind(*target_addr).ok());
+    CHECK((*listener)->Start().ok());
     // Creating the client
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
     grpc_core::Notification client_connected;
@@ -95,7 +98,7 @@ class InProcessCHTTP2 {
         std::make_unique<grpc_core::MemoryQuota>("client");
     std::ignore = fuzzing_engine->Connect(
         [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-          GPR_ASSERT(endpoint.ok());
+          CHECK(endpoint.ok());
           client_endpoint = std::move(*endpoint);
           client_connected.Notify();
         },
@@ -123,7 +126,7 @@ class InProcessCHTTP2 {
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(iomgr_server_endpoint, pollset);
       }
-      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
                                       core_server->channel_args(), nullptr)));
@@ -142,10 +145,10 @@ class InProcessCHTTP2 {
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
           args, grpc_event_engine_endpoint_create(std::move(client_endpoint)),
           /*is_client=*/true);
-      GPR_ASSERT(transport);
+      CHECK(transport);
       grpc_channel* channel =
-          grpc_core::Channel::Create("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
-                                     transport)
+          grpc_core::ChannelCreate("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
+                                   transport)
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -233,20 +236,20 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
     void* t;
     bool ok;
     response_reader->Finish(&recv_response, &recv_status, tag(4));
-    GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-    GPR_ASSERT(ok);
-    GPR_ASSERT(t == tag(0) || t == tag(1));
+    CHECK(fixture->cq()->Next(&t, &ok));
+    CHECK(ok);
+    CHECK(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      GPR_ASSERT(ok);
+      CHECK(fixture->cq()->Next(&t, &ok));
+      CHECK(ok);
       int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
-      GPR_ASSERT(i & (1 << tagnum));
+      CHECK(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
-    GPR_ASSERT(recv_status.ok());
+    CHECK(recv_status.ok());
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();

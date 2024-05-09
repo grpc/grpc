@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -26,11 +24,14 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -467,11 +468,11 @@ class PromiseActivity final
     // We shouldn't destruct without calling Cancel() first, and that must get
     // us to be done_, so we assume that and have no logic to destruct the
     // promise here.
-    GPR_ASSERT(done_);
+    CHECK(done_);
   }
 
   void RunScheduledWakeup() {
-    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
+    CHECK(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
     Step();
     WakeupComplete();
   }
@@ -535,7 +536,7 @@ class PromiseActivity final
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
   void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    GPR_ASSERT(!std::exchange(done_, true));
+    CHECK(!std::exchange(done_, true));
     ScopedContext contexts(this);
     Destruct(&promise_holder_.promise);
   }
@@ -580,10 +581,10 @@ class PromiseActivity final
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
   absl::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    GPR_ASSERT(is_current());
+    CHECK(is_current());
     while (true) {
       // Run the promise.
-      GPR_ASSERT(!done_);
+      CHECK(!done_);
       auto r = promise_holder_.promise();
       if (auto* status = r.value_if_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.

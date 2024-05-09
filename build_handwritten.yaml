@@ -12,11 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 39.0.0
+  core_version: 41.0.0
   csharp_major_version: 2
-  g_stands_for: giggle
-  protobuf_version: 3.25.1
-  version: 1.63.0-dev
+  g_stands_for: gnarly
+  protobuf_version: 3.26.1
+  version: 1.65.0-dev
 configs:
   asan:
     CC: clang
@@ -29,7 +29,7 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+      LSAN_OPTIONS: suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
@@ -53,7 +53,7 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+      LSAN_OPTIONS: suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
   c++-compat:
     CFLAGS: -Wc++-compat
     CPPFLAGS: -O0
@@ -115,7 +115,7 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      TSAN_OPTIONS: suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+      TSAN_OPTIONS: suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
   ubsan:
     CC: clang
     CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined
@@ -127,12 +127,8 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/test_util/ubsan_suppressions.txt
 defaults:
-  abseil:
-    CPPFLAGS: -g -Ithird_party/abseil-cpp
-  benchmark:
-    CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
     CFLAGS: -g
     CPPFLAGS: -Ithird_party/boringssl-with-bazel/src/include -fvisibility=hidden -DOPENSSL_NO_ASM
@@ -150,7 +146,8 @@ defaults:
     COREFLAGS: -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2
       -Ithird_party/upb -Isrc/core/ext/upb-gen -Isrc/core/ext/upbdefs-gen -Ithird_party/utf8_range
-      -Ithird_party/xxhash
+      -Ithird_party/xxhash -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
+      -Ithird_party/address_sorting/include
     LDFLAGS: -g
   zlib:
     CFLAGS: -fvisibility=hidden
@@ -202,6 +199,9 @@ ruby_gem:
   - boringssl
   - re2
   - z
+swift_boringssl_package:
+  deps:
+  - boringssl
 swift_package:
   deps:
   - grpc

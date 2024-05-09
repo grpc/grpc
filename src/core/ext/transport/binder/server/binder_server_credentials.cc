@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
@@ -32,7 +34,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
   explicit BinderServerCredentialsImpl(
       std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
           security_policy)
-      : security_policy_(security_policy) {}
+      : ServerCredentials(nullptr), security_policy_(security_policy) {}
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_core::AddBinderPort(
@@ -50,14 +52,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
   }
 #endif  // GPR_SUPPORT_BINDER_TRANSPORT
 
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    grpc_core::Crash("unreachable");
-  }
-
  private:
-  bool IsInsecure() const override { return true; }
-
   std::shared_ptr<grpc::experimental::binder::SecurityPolicy> security_policy_;
 };
 
@@ -66,7 +61,7 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
 std::shared_ptr<ServerCredentials> BinderServerCredentials(
     std::shared_ptr<grpc::experimental::binder::SecurityPolicy>
         security_policy) {
-  GPR_ASSERT(security_policy != nullptr);
+  CHECK_NE(security_policy, nullptr);
   return std::shared_ptr<ServerCredentials>(
       new BinderServerCredentialsImpl(security_policy));
 }

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/init.h"
 
 #include "absl/base/thread_annotations.h"
@@ -26,6 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -72,20 +71,13 @@ void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  if (IsV3ServerAuthFilterEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  } else {
-    builder->channel_init()
-        ->RegisterFilter<LegacyServerAuthFilter>(GRPC_SERVER_CHANNEL)
-        .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
-  }
+  builder->channel_init()
+      ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
+      .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);
   builder->channel_init()
       ->RegisterFilter<GrpcServerAuthzFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER)
-      .After<ServerAuthFilter>()
-      .After<LegacyServerAuthFilter>();
+      .After<ServerAuthFilter>();
 }
 }  // namespace grpc_core
 

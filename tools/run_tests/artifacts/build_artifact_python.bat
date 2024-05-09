@@ -19,19 +19,9 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-@rem check if building for Python3.7 in windows
-set IS_PYTHON_37=false
-If "%1" == "Python37_32bit" set IS_PYTHON_37=true
-If "%1" == "Python37" set IS_PYTHON_37=true
-
-@rem Python3.7 in windows doesn't support high version of setuptools
-if "%IS_PYTHON_37%" == "true" (
-python -m pip install --upgrade six
-python -m pip install --upgrade setuptools==59.6.0
-) else (
-python -m pip install --upgrade pip six setuptools wheel
-)
-
+python -m pip install --upgrade pip six
+@rem Ping to a single version to make sure we're building the same artifacts
+python -m pip install setuptools==69.5.1 wheel==0.43.0
 python -m pip install --upgrade "cython<3.0.0rc1"
 python -m pip install -rrequirements.txt --user
 

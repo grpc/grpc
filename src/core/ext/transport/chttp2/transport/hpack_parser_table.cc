@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
 #include <stdlib.h>
@@ -27,11 +25,13 @@
 #include <cstring>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
@@ -42,7 +42,7 @@
 namespace grpc_core {
 
 void HPackTable::MementoRingBuffer::Put(Memento m) {
-  GPR_ASSERT(num_entries_ < max_entries_);
+  CHECK_LT(num_entries_, max_entries_);
   if (entries_.size() < max_entries_) {
     ++num_entries_;
     return entries_.push_back(std::move(m));
@@ -53,7 +53,7 @@ void HPackTable::MementoRingBuffer::Put(Memento m) {
 }
 
 auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
-  GPR_ASSERT(num_entries_ > 0);
+  CHECK_GT(num_entries_, 0u);
   size_t index = first_entry_ % max_entries_;
   ++first_entry_;
   --num_entries_;
@@ -91,7 +91,7 @@ void HPackTable::MementoRingBuffer::ForEach(
 // Evict one element from the table
 void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
-  GPR_ASSERT(first_entry.md.transport_size() <= mem_used_);
+  CHECK(first_entry.md.transport_size() <= mem_used_);
   mem_used_ -= first_entry.md.transport_size();
 }
 

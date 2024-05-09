@@ -55,6 +55,7 @@ BANNED_EXCEPT = {
     "grpc_call_cancel(": ["src/core/lib/surface/call.cc"],
     "grpc_channel_destroy(": [
         "src/core/lib/surface/channel.cc",
+        "src/core/lib/surface/legacy_channel.cc",
         "src/core/tsi/alts/handshaker/alts_shared_resource.cc",
     ],
     "grpc_closure_create(": [
@@ -81,8 +82,8 @@ BANNED_EXCEPT = {
         "src/core/load_balancing/rls/rls.cc",
         "src/core/resolver/google_c2p/google_c2p_resolver.cc",
     ],
-    # use 'grpc_core::Crash' instead
-    "GPR_ASSERT(false": [],
+    # use 'absl CHECK' instead
+    "GPR_ASSERT": [],
     # Use `std::exchange()` instead.
     "absl::exchange": [],
     # Use `std::make_unique()` instead.

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -26,6 +24,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -36,6 +35,7 @@
 
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/json/json.h"
@@ -280,14 +280,14 @@ bool JsonReader::StartContainer(Json::Type type) {
   if (type == Json::Type::kObject) {
     scope.data = Json::Object();
   } else {
-    GPR_ASSERT(type == Json::Type::kArray);
+    CHECK(type == Json::Type::kArray);
     scope.data = Json::Array();
   }
   return true;
 }
 
 void JsonReader::EndContainer() {
-  GPR_ASSERT(!stack_.empty());
+  CHECK(!stack_.empty());
   Scope scope = std::move(stack_.back());
   stack_.pop_back();
   key_ = std::move(scope.parent_object_key);

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -31,8 +29,8 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/resolver/polling_resolver.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -43,10 +41,11 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_DNS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_DNS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -59,7 +58,7 @@ namespace {
 
 TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
 
-class NativeClientChannelDNSResolver : public PollingResolver {
+class NativeClientChannelDNSResolver final : public PollingResolver {
  public:
   NativeClientChannelDNSResolver(ResolverArgs args,
                                  Duration min_time_between_resolutions);
@@ -71,7 +70,7 @@ class NativeClientChannelDNSResolver : public PollingResolver {
   // No-op request class, used so that the PollingResolver code knows
   // when there is a request in flight, even if the request is not
   // actually cancellable.
-  class Request : public Orphanable {
+  class Request final : public Orphanable {
    public:
     Request() = default;
 
@@ -145,7 +144,7 @@ void NativeClientChannelDNSResolver::OnResolved(
 // Factory
 //
 
-class NativeClientChannelDNSResolverFactory : public ResolverFactory {
+class NativeClientChannelDNSResolverFactory final : public ResolverFactory {
  public:
   absl::string_view scheme() const override { return "dns"; }
 

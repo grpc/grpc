@@ -16,8 +16,6 @@
 // is % allowed in string
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/thread_manager/thread_manager.h"
 
 #include <atomic>
@@ -29,10 +27,11 @@
 #include <gtest/gtest.h>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace {

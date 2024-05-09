@@ -17,26 +17,26 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 #define GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_endpoint.h"
-#include "src/core/ext/xds/xds_listener.h"
-#include "src/core/ext/xds/xds_route_config.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/xds_cluster.h"
+#include "src/core/xds/grpc/xds_endpoint.h"
+#include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_route_config.h"
 
 namespace grpc_core {
 
 // Watches all xDS resources and handles dependencies between them.
 // Reports updates only when all necessary resources have been obtained.
-class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
-                             public Orphanable {
+class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
+                                   public Orphanable {
  public:
   struct XdsConfig : public RefCounted<XdsConfig> {
     // Listener resource.  Always non-null.
@@ -117,18 +117,18 @@ class XdsDependencyManager : public RefCounted<XdsDependencyManager>,
     virtual void OnResourceDoesNotExist(std::string context) = 0;
   };
 
-  class ClusterSubscription : public DualRefCounted<ClusterSubscription> {
+  class ClusterSubscription final : public DualRefCounted<ClusterSubscription> {
    public:
     ClusterSubscription(absl::string_view cluster_name,
                         RefCountedPtr<XdsDependencyManager> dependency_mgr)
         : cluster_name_(cluster_name),
           dependency_mgr_(std::move(dependency_mgr)) {}
 
-    void Orphan() override;
-
     absl::string_view cluster_name() const { return cluster_name_; }
 
    private:
+    void Orphaned() override;
+
     std::string cluster_name_;
     RefCountedPtr<XdsDependencyManager> dependency_mgr_;
   };

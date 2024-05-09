@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 
 #include <inttypes.h>
@@ -35,12 +33,13 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "test/core/util/build.h"
+#include "test/core/test_util/build.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
   // Calls grpc_slice_create for various lengths and verifies the internals for

@@ -21,22 +21,25 @@ import grpc
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 
-_METHOD = "/ANY/METHOD"
+_SERVICE_NAME = "test"
+_METHOD = "METHOD"
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = _REQUEST
 
 
-class GenericHandler(grpc.GenericRpcHandler):
-    def service(self, unused_handler_details):
-        return grpc.unary_unary_rpc_method_handler(
-            lambda request, unused_context: request,
-        )
+_METHOD_HANDLERS = {
+    _METHOD: grpc.unary_unary_rpc_method_handler(
+        lambda request, unused_context: request,
+    )
+}
 
 
 class DNSResolverTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers((GenericHandler(),))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, _METHOD_HANDLERS
+        )
         self._port = self._server.add_insecure_port("[::]:0")
         self._server.start()
 
@@ -56,7 +59,7 @@ class DNSResolverTest(unittest.TestCase):
         ) as channel:
             self.assertEqual(
                 channel.unary_unary(
-                    _METHOD,
+                    grpc._common.fully_qualified_method(_SERVICE_NAME, _METHOD),
                     _registered_method=True,
                 )(
                     _REQUEST,

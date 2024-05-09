@@ -17,8 +17,6 @@
 // This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
 // in the call context per call for direct channels.
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <memory>
 #include <string>
@@ -30,6 +28,7 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -42,26 +41,26 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/service_config/service_config_parser.h"
-#include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 namespace {
 
-class ServiceConfigChannelArgFilter
+class ServiceConfigChannelArgFilter final
     : public ImplementChannelFilter<ServiceConfigChannelArgFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServiceConfigChannelArgFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServiceConfigChannelArgFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
-    return ServiceConfigChannelArgFilter(args);
+    return std::make_unique<ServiceConfigChannelArgFilter>(args);
   }
 
   explicit ServiceConfigChannelArgFilter(const ChannelArgs& args) {

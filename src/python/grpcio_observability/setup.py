@@ -50,7 +50,7 @@ O11Y_CC_SRCS = [
     "server_call_tracer.cc",
     "client_call_tracer.cc",
     "observability_util.cc",
-    "python_census_context.cc",
+    "python_observability_context.cc",
     "sampler.cc",
     "rpc_encoding.cc",
 ]
@@ -286,11 +286,11 @@ setuptools.setup(
     classifiers=CLASSIFIERS,
     ext_modules=extension_modules(),
     packages=list(PACKAGES),
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=[
         "grpcio=={version}".format(version=grpc_version.VERSION),
         "setuptools>=59.6.0",
-        "opentelemetry-api==1.21.0",
+        "opentelemetry-api>=1.21.0",
     ],
     cmdclass={
         "build_ext": BuildExt,

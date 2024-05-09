@@ -72,8 +72,8 @@ grpc_cc_library(
         "//src/core:env",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite:event_engine_test_framework",
-        "//test/core/util:fake_udp_and_tcp_server",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:fake_udp_and_tcp_server",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:get_grpc_test_runfile_dir",
         "//test/cpp/util:test_util",
         "//test/cpp/util/windows:manifest_file",
@@ -86,6 +86,7 @@ grpc_cc_library(
     testonly = True,
     srcs = ["client_test.cc"],
     hdrs = ["client_test.h"],
+    external_deps = ["absl/log:check"],
     deps = [
         "//src/core:channel_args",
         "//test/core/event_engine:event_engine_test_utils",

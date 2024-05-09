@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
@@ -27,10 +28,10 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -38,10 +39,11 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -108,8 +110,8 @@ class SockpairFixture : public CoreTestFixture {
     auto* client_endpoint = std::exchange(ep_.client, nullptr);
     EXPECT_NE(client_endpoint, nullptr);
     transport = grpc_create_chttp2_transport(args, client_endpoint, true);
-    auto channel = Channel::Create("socketpair-target", args,
-                                   GRPC_CLIENT_DIRECT_CHANNEL, transport);
+    auto channel = ChannelCreate("socketpair-target", args,
+                                 GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel* client;
     if (channel.ok()) {
       client = channel->release()->c_ptr();
@@ -120,7 +122,7 @@ class SockpairFixture : public CoreTestFixture {
           "lame channel");
       transport->Orphan();
     }
-    GPR_ASSERT(client);
+    CHECK(client);
     return client;
   }
 

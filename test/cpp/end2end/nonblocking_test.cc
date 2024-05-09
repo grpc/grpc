@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 
 #include <grpcpp/channel.h>
@@ -29,8 +30,8 @@
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -52,7 +53,7 @@ int maybe_assert_non_blocking_poll(struct pollfd* pfds, nfds_t nfds,
   // Only assert that this poll should have zero timeout if we're in the
   // middle of a zero-timeout CQ Next.
   if (g_is_nonblocking_poll) {
-    GPR_ASSERT(timeout == 0);
+    CHECK_EQ(timeout, 0);
   }
   return poll(pfds, nfds, timeout);
 }

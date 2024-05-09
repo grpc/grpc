@@ -24,6 +24,7 @@
 
 #include <new>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -48,7 +49,7 @@ extern grpc_core::TraceFlag grpc_retry_trace;
 
 namespace grpc_core {
 
-class RetryFilter {
+class RetryFilter final {
  public:
   static const grpc_channel_filter kVtable;
 
@@ -92,8 +93,8 @@ class RetryFilter {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
-    GPR_ASSERT(args->is_last);
-    GPR_ASSERT(elem->filter == &kVtable);
+    CHECK(args->is_last);
+    CHECK(elem->filter == &kVtable);
     grpc_error_handle error;
     new (elem->channel_data) RetryFilter(args->channel_args, &error);
     return error;

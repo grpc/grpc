@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/compression/compression_internal.h"
 
 #include <stdlib.h>
@@ -25,11 +23,14 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/log/check.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
+#include <grpc/compression.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -120,7 +121,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     return GRPC_COMPRESS_NONE;
   }
 
-  GPR_ASSERT(level > 0);
+  CHECK_GT(level, 0);
 
   // Establish a "ranking" or compression algorithms in increasing order of
   // compression.
@@ -237,6 +238,38 @@ DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
     return ParseCompressionAlgorithm(sval->as_string_view());
   }
   return absl::nullopt;
+}
+
+grpc_compression_options CompressionOptionsFromChannelArgs(
+    const ChannelArgs& args) {
+  // Set compression options.
+  grpc_compression_options compression_options;
+  grpc_compression_options_init(&compression_options);
+  auto default_level = args.GetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL);
+  if (default_level.has_value()) {
+    compression_options.default_level.is_set = true;
+    compression_options.default_level.level = Clamp(
+        static_cast<grpc_compression_level>(*default_level),
+        GRPC_COMPRESS_LEVEL_NONE,
+        static_cast<grpc_compression_level>(GRPC_COMPRESS_LEVEL_COUNT - 1));
+  }
+  auto default_algorithm =
+      args.GetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
+  if (default_algorithm.has_value()) {
+    compression_options.default_algorithm.is_set = true;
+    compression_options.default_algorithm.algorithm =
+        Clamp(static_cast<grpc_compression_algorithm>(*default_algorithm),
+              GRPC_COMPRESS_NONE,
+              static_cast<grpc_compression_algorithm>(
+                  GRPC_COMPRESS_ALGORITHMS_COUNT - 1));
+  }
+  auto enabled_algorithms_bitset =
+      args.GetInt(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET);
+  if (enabled_algorithms_bitset.has_value()) {
+    compression_options.enabled_algorithms_bitset =
+        *enabled_algorithms_bitset | 1 /* always support no compression */;
+  }
+  return compression_options;
 }
 
 }  // namespace grpc_core

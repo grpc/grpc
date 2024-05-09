@@ -25,6 +25,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -58,12 +59,7 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(roth): This can go back to being a constant when the experiment
-// is removed.
-Duration DefaultIdleTimeout() {
-  if (IsClientIdlenessEnabled()) return Duration::Minutes(30);
-  return Duration::Infinity();
-}
+constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
 // If these settings change, make sure that we are not sending a GOAWAY for
 // inproc transport, since a GOAWAY to inproc ends up destroying the transport.
@@ -86,7 +82,7 @@ namespace {
 
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
-      .value_or(DefaultIdleTimeout());
+      .value_or(kDefaultIdleTimeout);
 }
 
 }  // namespace
@@ -133,19 +129,24 @@ struct LegacyMaxAgeFilter::Config {
   }
 };
 
-absl::StatusOr<LegacyClientIdleFilter> LegacyClientIdleFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyClientIdleFilter filter(filter_args.channel_stack(),
-                                GetClientIdleTimeout(args));
-  return absl::StatusOr<LegacyClientIdleFilter>(std::move(filter));
+// We need access to the channel stack here to send a goaway - but that access
+// is deprecated and will be removed when call-v3 is fully enabled. This filter
+// will be removed at that time also, so just disable the deprecation warning
+// for now.
+ABSL_INTERNAL_DISABLE_DEPRECATED_DECLARATION_WARNING
+absl::StatusOr<std::unique_ptr<LegacyClientIdleFilter>>
+LegacyClientIdleFilter::Create(const ChannelArgs& args,
+                               ChannelFilter::Args filter_args) {
+  return std::make_unique<LegacyClientIdleFilter>(filter_args.channel_stack(),
+                                                  GetClientIdleTimeout(args));
 }
 
-absl::StatusOr<LegacyMaxAgeFilter> LegacyMaxAgeFilter::Create(
+absl::StatusOr<std::unique_ptr<LegacyMaxAgeFilter>> LegacyMaxAgeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
-  LegacyMaxAgeFilter filter(filter_args.channel_stack(),
-                            Config::FromChannelArgs(args));
-  return absl::StatusOr<LegacyMaxAgeFilter>(std::move(filter));
+  return std::make_unique<LegacyMaxAgeFilter>(filter_args.channel_stack(),
+                                              Config::FromChannelArgs(args));
 }
+ABSL_INTERNAL_RESTORE_DEPRECATED_DECLARATION_WARNING
 
 void LegacyMaxAgeFilter::Shutdown() {
   max_age_activity_.Reset();
@@ -300,20 +301,21 @@ const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
         "max_age");
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
-  if (IsV3ChannelIdleFiltersEnabled()) return;
   builder->channel_init()
-      ->RegisterFilter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
+      ->RegisterV2Filter<LegacyClientIdleFilter>(GRPC_CLIENT_CHANNEL)
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
-  builder->channel_init()
-      ->RegisterFilter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-      .ExcludeFromMinimalStack()
-      .If([](const ChannelArgs& channel_args) {
-        return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
-            .enable();
-      });
+  if (!IsChaoticGoodEnabled()) {
+    builder->channel_init()
+        ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+        .ExcludeFromMinimalStack()
+        .If([](const ChannelArgs& channel_args) {
+          return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
+              .enable();
+        });
+  }
 }
 
 LegacyMaxAgeFilter::LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/xds_certificate_provider.h"
+#include "src/core/xds/grpc/xds_certificate_provider.h"
 
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
@@ -29,8 +29,8 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 namespace grpc_core {
 namespace testing {

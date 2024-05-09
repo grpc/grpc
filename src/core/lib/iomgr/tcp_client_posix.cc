@@ -29,6 +29,7 @@
 #include <unistd.h>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -102,7 +103,7 @@ static grpc_error_handle prepare_socket(
     const grpc_core::PosixTcpOptions& options) {
   grpc_error_handle err;
 
-  GPR_ASSERT(fd >= 0);
+  CHECK_GE(fd, 0);
 
   err = grpc_set_socket_nonblocking(fd, 1);
   if (!err.ok()) goto error;
@@ -187,7 +188,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   }
 
   gpr_mu_lock(&ac->mu);
-  GPR_ASSERT(ac->fd);
+  CHECK(ac->fd);
   fd = ac->fd;
   ac->fd = nullptr;
   bool connect_cancelled = ac->connect_cancelled;
@@ -274,7 +275,7 @@ finish:
     std::string str;
     bool ret = grpc_error_get_str(
         error, grpc_core::StatusStrProperty::kDescription, &str);
-    GPR_ASSERT(ret);
+    CHECK(ret);
     std::string description =
         absl::StrCat("Failed to connect to remote host: ", str);
     error = grpc_error_set_str(
@@ -446,7 +447,7 @@ static bool tcp_cancel_connect(int64_t connection_handle) {
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;
-      GPR_ASSERT(ac != nullptr);
+      CHECK_NE(ac, nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
       // the on_writable method tries to acquire the two mutexes used
       // here in the reverse order. But we dont need to acquire ac->mu before

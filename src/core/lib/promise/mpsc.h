@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <algorithm>
@@ -24,8 +22,10 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -180,10 +180,10 @@ class MpscReceiver {
   // a non-empty buffer during a legal move!
   MpscReceiver(MpscReceiver&& other) noexcept
       : center_(std::move(other.center_)) {
-    GPR_DEBUG_ASSERT(other.buffer_.empty());
+    DCHECK(other.buffer_.empty());
   }
   MpscReceiver& operator=(MpscReceiver&& other) noexcept {
-    GPR_DEBUG_ASSERT(other.buffer_.empty());
+    DCHECK(other.buffer_.empty());
     center_ = std::move(other.center_);
     return *this;
   }

@@ -16,13 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/call_combiner.h"
 
 #include <inttypes.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -87,7 +88,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   if (lock != nullptr) {
     TSAN_ANNOTATE_RWLOCK_RELEASED(&lock->taken, true);
     bool prev = true;
-    GPR_ASSERT(lock->taken.compare_exchange_strong(prev, false));
+    CHECK(lock->taken.compare_exchange_strong(prev, false));
   }
 }
 #endif
@@ -155,7 +156,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
     gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size - 1);
   }
-  GPR_ASSERT(prev_size >= 1);
+  CHECK_GE(prev_size, 1u);
   if (prev_size > 1) {
     while (true) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {

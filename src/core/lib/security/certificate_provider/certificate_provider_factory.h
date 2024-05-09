@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_FACTORY_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CERTIFICATE_PROVIDER_CERTIFICATE_PROVIDER_FACTORY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 
 #include "absl/strings/string_view.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

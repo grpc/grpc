@@ -16,14 +16,16 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/bdp_estimator.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
 
 #include <algorithm>
+
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
 
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 
@@ -53,7 +55,7 @@ Timestamp BdpEstimator::CompletePing() {
             std::string(name_).c_str(), accumulator_, estimate_, dt,
             bw / 125000.0, bw_est_ / 125000.0);
   }
-  GPR_ASSERT(ping_state_ == PingState::STARTED);
+  CHECK(ping_state_ == PingState::STARTED);
   if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
     estimate_ = std::max(accumulator_, estimate_ * 2);
     bw_est_ = bw;

@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/types/span.h"
 
 #include <grpc/grpc.h>
@@ -63,7 +64,7 @@ inline Validator* MakeValidator(std::function<void(bool)> impl) {
 
 inline Validator* AssertSuccessAndDecrement(int* counter) {
   return MakeValidator([counter](bool success) {
-    GPR_ASSERT(success);
+    CHECK(success);
     --*counter;
   });
 }
@@ -99,7 +100,7 @@ class BasicFuzzer {
   void ShutdownCalls();
   void ResetServerState() {
     server_shutdown_ = false;
-    GPR_ASSERT(pending_server_shutdowns_ == 0);
+    CHECK_EQ(pending_server_shutdowns_, 0);
   }
 
   // Poll any created completion queue to drive the RPC forward.
@@ -110,8 +111,9 @@ class BasicFuzzer {
 
   RefCountedPtr<ResourceQuota> resource_quota() { return resource_quota_; }
 
-  grpc_event_engine::experimental::FuzzingEventEngine* engine() {
-    return engine_.get();
+  std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+  engine() {
+    return engine_;
   }
 
   grpc_completion_queue* cq() { return cq_; }
@@ -135,8 +137,6 @@ class BasicFuzzer {
   Result WatchConnectivity(uint32_t duration_us);
   // Verify that the channel target can be reliably queried.
   Result ValidateChannelTarget();
-  // Send a http ping on the channel.
-  Result SendPingOnChannel();
 
   // Server specific actions
   // Create an active server.
@@ -183,7 +183,6 @@ class BasicFuzzer {
   bool server_shutdown_ = false;
   int pending_server_shutdowns_ = 0;
   int pending_channel_watches_ = 0;
-  int pending_pings_ = 0;
   int paused_ = 0;
   std::vector<std::shared_ptr<Call>> calls_;
   RefCountedPtr<ResourceQuota> resource_quota_;

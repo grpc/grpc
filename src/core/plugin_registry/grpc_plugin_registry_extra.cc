@@ -14,12 +14,10 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/builtins.h"
 
 namespace grpc_core {
 #ifndef GRPC_NO_XDS

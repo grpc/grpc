@@ -35,7 +35,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -64,17 +64,17 @@ class MetadataMapTest : public ::testing::Test {
 
 TEST_F(MetadataMapTest, Noop) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  EmptyMetadataMap(arena.get());
+  EmptyMetadataMap();
 }
 
 TEST_F(MetadataMapTest, NoopWithDeadline) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap(arena.get());
+  TimeoutOnlyMetadataMap();
 }
 
 TEST_F(MetadataMapTest, SimpleOps) {
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   EXPECT_EQ(map.get_pointer(GrpcTimeoutMetadata()), nullptr);
   EXPECT_EQ(map.get(GrpcTimeoutMetadata()), absl::nullopt);
   map.Set(GrpcTimeoutMetadata(),
@@ -113,7 +113,7 @@ class FakeEncoder {
 TEST_F(MetadataMapTest, EmptyEncodeTest) {
   FakeEncoder encoder;
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   map.Encode(&encoder);
   EXPECT_EQ(encoder.output(), "");
 }
@@ -121,7 +121,7 @@ TEST_F(MetadataMapTest, EmptyEncodeTest) {
 TEST_F(MetadataMapTest, TimeoutEncodeTest) {
   FakeEncoder encoder;
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  TimeoutOnlyMetadataMap map(arena.get());
+  TimeoutOnlyMetadataMap map;
   map.Set(GrpcTimeoutMetadata(),
           Timestamp::FromMillisecondsAfterProcessEpoch(1234));
   map.Encode(&encoder);
@@ -135,7 +135,7 @@ TEST_F(MetadataMapTest, NonEncodableTrait) {
     }
   };
   auto arena = MakeScopedArena(1024, &memory_allocator_);
-  StreamNetworkStateMetadataMap map(arena.get());
+  StreamNetworkStateMetadataMap map;
   map.Set(GrpcStreamNetworkState(), GrpcStreamNetworkState::kNotSentOnWire);
   EXPECT_EQ(map.get(GrpcStreamNetworkState()),
             GrpcStreamNetworkState::kNotSentOnWire);

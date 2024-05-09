@@ -16,14 +16,15 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -32,7 +33,7 @@ void CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(
   absl::string_view name = factory->name();
   gpr_log(GPR_DEBUG, "registering certificate provider factory for \"%s\"",
           std::string(name).c_str());
-  GPR_ASSERT(factories_.emplace(name, std::move(factory)).second);
+  CHECK(factories_.emplace(name, std::move(factory)).second);
 }
 
 CertificateProviderRegistry CertificateProviderRegistry::Builder::Build() {

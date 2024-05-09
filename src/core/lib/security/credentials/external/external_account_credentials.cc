@@ -13,8 +13,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
 
 #include <stdint.h>
@@ -24,6 +22,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -37,11 +36,13 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
@@ -110,7 +111,7 @@ bool MatchWorkforcePoolAudience(absl::string_view audience) {
 RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
     const Json& json, std::vector<std::string> scopes,
     grpc_error_handle* error) {
-  GPR_ASSERT(error->ok());
+  CHECK(error->ok());
   Options options;
   options.type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json.type() != Json::Type::kObject) {
@@ -301,7 +302,7 @@ void ExternalAccountCredentials::fetch_oauth2(
     grpc_credentials_metadata_request* metadata_req,
     grpc_polling_entity* pollent, grpc_iomgr_cb_func response_cb,
     Timestamp deadline) {
-  GPR_ASSERT(ctx_ == nullptr);
+  CHECK_EQ(ctx_, nullptr);
   ctx_ = new HTTPRequestContext(pollent, deadline);
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
@@ -381,7 +382,7 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnExchangeToken, this, nullptr);
-  GPR_ASSERT(http_request_ == nullptr);
+  CHECK(http_request_ == nullptr);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(
@@ -483,7 +484,7 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnImpersenateServiceAccount, this, nullptr);
   // TODO(ctiller): Use the callers resource quota.
-  GPR_ASSERT(http_request_ == nullptr);
+  CHECK(http_request_ == nullptr);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (uri->scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(

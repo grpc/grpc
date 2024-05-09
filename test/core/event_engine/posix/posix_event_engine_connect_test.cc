@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -47,8 +48,8 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -145,7 +146,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
@@ -174,7 +175,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();

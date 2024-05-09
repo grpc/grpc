@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <stdlib.h>
@@ -33,14 +31,17 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/impl/service_type.h>
@@ -56,10 +57,10 @@
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
 
 namespace {
 
@@ -143,8 +144,8 @@ class TestServer {
     grpc_server_register_completion_queue(server_, server_cq_, nullptr);
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
-    GPR_ASSERT(grpc_server_add_http2_port(server_, server_addr_.c_str(),
-                                          server_creds));
+    CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
+                                     server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
@@ -167,8 +168,8 @@ class TestServer {
   static void PollUntilShutdown(const TestServer* self) {
     grpc_event ev = grpc_completion_queue_next(
         self->server_cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(ev.tag == self);
+    CHECK(ev.type == GRPC_OP_COMPLETE);
+    CHECK(ev.tag == self);
     gpr_log(GPR_DEBUG, "TestServer %p stop polling", self);
   }
 

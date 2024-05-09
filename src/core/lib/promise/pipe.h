@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -24,11 +22,13 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -64,7 +64,7 @@ class NextResult final {
   NextResult() : center_(nullptr) {}
   explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
       : center_(std::move(center)) {
-    GPR_ASSERT(center_ != nullptr);
+    CHECK(center_ != nullptr);
   }
   explicit NextResult(bool cancelled)
       : center_(nullptr), cancelled_(cancelled) {}
@@ -80,17 +80,17 @@ class NextResult final {
   bool has_value() const;
   // Only valid if has_value()
   const T& value() const {
-    GPR_ASSERT(has_value());
+    CHECK(has_value());
     return **this;
   }
   T& value() {
-    GPR_ASSERT(has_value());
+    CHECK(has_value());
     return **this;
   }
   const T& operator*() const;
   T& operator*();
   // Only valid if !has_value()
-  bool cancelled() { return cancelled_; }
+  bool cancelled() const { return cancelled_; }
 
  private:
   RefCountedPtr<pipe_detail::Center<T>> center_;
@@ -122,7 +122,7 @@ class Center : public InterceptorList<T> {
       gpr_log(GPR_DEBUG, "%s", DebugOpString("IncrementRefCount").c_str());
     }
     refs_++;
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
   }
 
   RefCountedPtr<Center> Ref() {
@@ -136,7 +136,7 @@ class Center : public InterceptorList<T> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_DEBUG, "%s", DebugOpString("Unref").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ > 0);
+    DCHECK_GT(refs_, 0);
     refs_--;
     if (0 == refs_) {
       this->~Center();
@@ -151,7 +151,7 @@ class Center : public InterceptorList<T> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Push").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
@@ -175,7 +175,7 @@ class Center : public InterceptorList<T> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollAck").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kClosed:
         return true;
@@ -203,7 +203,7 @@ class Center : public InterceptorList<T> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -229,7 +229,7 @@ class Center : public InterceptorList<T> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForSender").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -252,7 +252,7 @@ class Center : public InterceptorList<T> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForReceiver").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -273,7 +273,7 @@ class Center : public InterceptorList<T> {
     if (grpc_trace_promise_primitives.enabled()) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollEmpty").c_str());
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kReady:
       case ValueState::kReadyClosed:
@@ -669,7 +669,7 @@ class Push {
         return Pending{};
       }
     }
-    GPR_DEBUG_ASSERT(absl::holds_alternative<AwaitingAck>(state_));
+    DCHECK(absl::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 

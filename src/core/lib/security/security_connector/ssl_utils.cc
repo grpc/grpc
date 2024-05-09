@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
 #include <stdint.h>
@@ -27,15 +25,18 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
@@ -191,7 +192,7 @@ absl::Status SslCheckCallHost(absl::string_view host,
 }  // namespace grpc_core
 
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
-  GPR_ASSERT(num_alpn_protocols != nullptr);
+  CHECK_NE(num_alpn_protocols, nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char** alpn_protocol_strings = static_cast<const char**>(
       gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
@@ -252,7 +253,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   const char* peer_identity_property_name = nullptr;
 
   // The caller has checked the certificate type property.
-  GPR_ASSERT(peer->property_count >= 1);
+  CHECK_GE(peer->property_count, 1u);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
@@ -319,14 +320,14 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     }
   }
   if (peer_identity_property_name != nullptr) {
-    GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
-                   ctx.get(), peer_identity_property_name) == 1);
+    CHECK(grpc_auth_context_set_peer_identity_property_name(
+              ctx.get(), peer_identity_property_name) == 1);
   }
   // A valid SPIFFE certificate can only have exact one URI SAN field.
   if (has_spiffe_id) {
     if (uri_count == 1) {
-      GPR_ASSERT(spiffe_length > 0);
-      GPR_ASSERT(spiffe_data != nullptr);
+      CHECK_GT(spiffe_length, 0u);
+      CHECK_NE(spiffe_data, nullptr);
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
                                      spiffe_data, spiffe_length);
@@ -587,7 +588,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     char* pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
-      GPR_ASSERT(pem_root_certs != nullptr);
+      CHECK_NE(pem_root_certs, nullptr);
       result = Slice::FromCopiedBuffer(
           pem_root_certs,
           strlen(pem_root_certs) + 1);  // nullptr terminator.

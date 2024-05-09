@@ -36,7 +36,17 @@ class TransportTest : public ::testing::Test {
     return event_engine_;
   }
 
-  MemoryAllocator* memory_allocator() { return &allocator_; }
+  Arena* MakeArena() { return call_arena_allocator_->MakeArena(); }
+
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator() {
+    return call_arena_allocator_;
+  }
+
+  auto MakeCall(ClientMetadataHandle client_initial_metadata) {
+    auto* arena = call_arena_allocator_->MakeArena();
+    return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
+                        arena, call_arena_allocator_, nullptr);
+  }
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
@@ -49,9 +59,12 @@ class TransportTest : public ::testing::Test {
                 return options;
               }(),
               fuzzing_event_engine::Actions())};
-  MemoryAllocator allocator_ = MakeResourceQuota("test-quota")
-                                   ->memory_quota()
-                                   ->CreateMemoryAllocator("test-allocator");
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_{
+      MakeRefCounted<CallArenaAllocator>(
+          MakeResourceQuota("test-quota")
+              ->memory_quota()
+              ->CreateMemoryAllocator("test-allocator"),
+          1024)};
 };
 
 grpc_event_engine::experimental::Slice SerializedFrameHeader(

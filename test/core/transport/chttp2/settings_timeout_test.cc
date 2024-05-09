@@ -24,11 +24,13 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -56,8 +58,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace test {
@@ -97,10 +99,10 @@ class ServerThread {
     grpc_completion_queue* shutdown_cq =
         grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
-    GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                           grpc_timeout_seconds_to_deadline(1),
-                                           nullptr)
-                   .type == GRPC_OP_COMPLETE);
+    CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                      grpc_timeout_seconds_to_deadline(1),
+                                      nullptr)
+              .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
     grpc_completion_queue_destroy(cq_);

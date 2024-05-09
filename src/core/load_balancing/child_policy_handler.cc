@@ -14,29 +14,29 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/child_policy_handler.h"
 
 #include <memory>
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
-#include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
 
@@ -44,7 +44,7 @@ namespace grpc_core {
 // ChildPolicyHandler::Helper
 //
 
-class ChildPolicyHandler::Helper
+class ChildPolicyHandler::Helper final
     : public LoadBalancingPolicy::ParentOwningDelegatingChannelControlHelper<
           ChildPolicyHandler> {
  public:
@@ -115,12 +115,12 @@ class ChildPolicyHandler::Helper
 
  private:
   bool CalledByPendingChild() const {
-    GPR_ASSERT(child_ != nullptr);
+    CHECK_NE(child_, nullptr);
     return child_ == parent()->pending_child_policy_.get();
   }
 
   bool CalledByCurrentChild() const {
-    GPR_ASSERT(child_ != nullptr);
+    CHECK_NE(child_, nullptr);
     return child_ == parent()->child_policy_.get();
   };
 
@@ -241,7 +241,7 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
                            ? pending_child_policy_.get()
                            : child_policy_.get();
   }
-  GPR_ASSERT(policy_to_update != nullptr);
+  CHECK_NE(policy_to_update, nullptr);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "[child_policy_handler %p] updating %schild policy %p",

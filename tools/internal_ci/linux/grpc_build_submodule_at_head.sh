@@ -69,9 +69,21 @@ then
   src/abseil-cpp/preprocessed_builds.yaml.gen.py
 fi
 
+if [ "${SUBMODULE_NAME}" == "protobuf" ]
+then
+  # update upb
+  rm -rf third_party/upb/upb
+  cp -r third_party/protobuf/upb third_party/upb
+  tools/codegen/core/gen_upb_api.sh
+  # update utf8_range
+  rm -rf third_party/utf8_range
+  cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
+fi
+
 tools/buildgen/generate_projects.sh
 
 # commit so that changes are passed to Docker
-git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule' --allow-empty
+git add -A
+git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
 
 tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --internal_ci --build_only

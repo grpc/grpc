@@ -20,6 +20,7 @@
 #include <thread>  // NOLINT
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -37,7 +38,7 @@
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/ext/filters/census/library.h"
 
 namespace grpc {
@@ -517,8 +518,8 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
             ::testing::ElementsAre(client_method_name_), ::testing::Eq(0))));
     auto data = client_retry_delay_per_call_view.GetData().distribution_data();
     for (const auto& entry : data) {
-      gpr_log(GPR_ERROR, "Mean Retry Delay %s: %lf ms", entry.first[0].c_str(),
-              entry.second.mean());
+      LOG(ERROR) << "Mean Retry Delay " << entry.first[0] << ": "
+                 << entry.second.mean() << " ms";
     }
     // We expect the retry delay to be around 100ms.
     EXPECT_THAT(
@@ -1007,95 +1008,94 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
 // This test verifies that users depending on src/cpp/ext/filters/census header
 // files can continue using the non-experimental names.
 TEST(StatsPluginDeclarationTest, Declarations) {
-  gpr_log(GPR_INFO, "%p", ClientMethodTagKey);
-  gpr_log(GPR_INFO, "%p", ClientStatusTagKey);
-  gpr_log(GPR_INFO, "%p", ServerMethodTagKey);
-  gpr_log(GPR_INFO, "%p", ServerStatusTagKey);
+  LOG(INFO) << ClientMethodTagKey;
+  LOG(INFO) << ClientStatusTagKey;
+  LOG(INFO) << ServerMethodTagKey;
+  LOG(INFO) << ServerStatusTagKey;
 
-  gpr_log(GPR_INFO, "%p", kRpcClientReceivedBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientReceivedMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientRetriesPerCallMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientRetryDelayPerCallMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientRoundtripLatencyMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientSentBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientSentMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientServerLatencyMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcClientStartedRpcsMeasureName.data());
-  gpr_log(GPR_INFO, "%p",
-          kRpcClientTransparentRetriesPerCallMeasureName.data());
+  LOG(INFO) << kRpcClientReceivedBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientReceivedMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientRetriesPerCallMeasureName.data();
+  LOG(INFO) << kRpcClientRetryDelayPerCallMeasureName.data();
+  LOG(INFO) << kRpcClientRoundtripLatencyMeasureName.data();
+  LOG(INFO) << kRpcClientSentBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientSentMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcClientServerLatencyMeasureName.data();
+  LOG(INFO) << kRpcClientStartedRpcsMeasureName.data();
+  LOG(INFO) << kRpcClientTransparentRetriesPerCallMeasureName.data();
 
-  gpr_log(GPR_INFO, "%p", kRpcServerReceivedBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerReceivedMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerSentBytesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerSentMessagesPerRpcMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerServerLatencyMeasureName.data());
-  gpr_log(GPR_INFO, "%p", kRpcServerStartedRpcsMeasureName.data());
+  LOG(INFO) << kRpcServerReceivedBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerReceivedMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerSentBytesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerSentMessagesPerRpcMeasureName.data();
+  LOG(INFO) << kRpcServerServerLatencyMeasureName.data();
+  LOG(INFO) << kRpcServerStartedRpcsMeasureName.data();
 
-  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsCumulative);
-  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRetriesCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallCumulative);
-  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyCumulative);
-  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ClientServerLatencyCumulative);
-  gpr_log(GPR_INFO, "%p", ClientStartedRpcsCumulative);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesCumulative);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallCumulative);
+  LOG(INFO) << ClientCompletedRpcsCumulative;
+  LOG(INFO) << ClientReceivedBytesPerRpcCumulative;
+  LOG(INFO) << ClientReceivedMessagesPerRpcCumulative;
+  LOG(INFO) << ClientRetriesCumulative;
+  LOG(INFO) << ClientRetriesPerCallCumulative;
+  LOG(INFO) << ClientRetryDelayPerCallCumulative;
+  LOG(INFO) << ClientRoundtripLatencyCumulative;
+  LOG(INFO) << ClientSentBytesPerRpcCumulative;
+  LOG(INFO) << ClientSentMessagesPerRpcCumulative;
+  LOG(INFO) << ClientServerLatencyCumulative;
+  LOG(INFO) << ClientStartedRpcsCumulative;
+  LOG(INFO) << ClientTransparentRetriesCumulative;
+  LOG(INFO) << ClientTransparentRetriesPerCallCumulative;
 
-  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsCumulative);
-  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcCumulative);
-  gpr_log(GPR_INFO, "%p", ServerServerLatencyCumulative);
-  gpr_log(GPR_INFO, "%p", ServerStartedRpcsCumulative);
+  LOG(INFO) << ServerCompletedRpcsCumulative;
+  LOG(INFO) << ServerReceivedBytesPerRpcCumulative;
+  LOG(INFO) << ServerReceivedMessagesPerRpcCumulative;
+  LOG(INFO) << ServerSentBytesPerRpcCumulative;
+  LOG(INFO) << ServerSentMessagesPerRpcCumulative;
+  LOG(INFO) << ServerServerLatencyCumulative;
+  LOG(INFO) << ServerStartedRpcsCumulative;
 
-  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsMinute);
-  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientRetriesMinute);
-  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallMinute);
-  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallMinute);
-  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyMinute);
-  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ClientServerLatencyMinute);
-  gpr_log(GPR_INFO, "%p", ClientStartedRpcsMinute);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesMinute);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallMinute);
+  LOG(INFO) << ClientCompletedRpcsMinute;
+  LOG(INFO) << ClientReceivedBytesPerRpcMinute;
+  LOG(INFO) << ClientReceivedMessagesPerRpcMinute;
+  LOG(INFO) << ClientRetriesMinute;
+  LOG(INFO) << ClientRetriesPerCallMinute;
+  LOG(INFO) << ClientRetryDelayPerCallMinute;
+  LOG(INFO) << ClientRoundtripLatencyMinute;
+  LOG(INFO) << ClientSentBytesPerRpcMinute;
+  LOG(INFO) << ClientSentMessagesPerRpcMinute;
+  LOG(INFO) << ClientServerLatencyMinute;
+  LOG(INFO) << ClientStartedRpcsMinute;
+  LOG(INFO) << ClientTransparentRetriesMinute;
+  LOG(INFO) << ClientTransparentRetriesPerCallMinute;
 
-  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsMinute);
-  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcMinute);
-  gpr_log(GPR_INFO, "%p", ServerServerLatencyMinute);
-  gpr_log(GPR_INFO, "%p", ServerStartedRpcsMinute);
+  LOG(INFO) << ServerCompletedRpcsMinute;
+  LOG(INFO) << ServerReceivedBytesPerRpcMinute;
+  LOG(INFO) << ServerReceivedMessagesPerRpcMinute;
+  LOG(INFO) << ServerSentBytesPerRpcMinute;
+  LOG(INFO) << ServerSentMessagesPerRpcMinute;
+  LOG(INFO) << ServerServerLatencyMinute;
+  LOG(INFO) << ServerStartedRpcsMinute;
 
-  gpr_log(GPR_INFO, "%p", ClientCompletedRpcsHour);
-  gpr_log(GPR_INFO, "%p", ClientReceivedBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientReceivedMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientRetriesHour);
-  gpr_log(GPR_INFO, "%p", ClientRetriesPerCallHour);
-  gpr_log(GPR_INFO, "%p", ClientRetryDelayPerCallHour);
-  gpr_log(GPR_INFO, "%p", ClientRoundtripLatencyHour);
-  gpr_log(GPR_INFO, "%p", ClientSentBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientSentMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ClientServerLatencyHour);
-  gpr_log(GPR_INFO, "%p", ClientStartedRpcsHour);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesHour);
-  gpr_log(GPR_INFO, "%p", ClientTransparentRetriesPerCallHour);
+  LOG(INFO) << ClientCompletedRpcsHour;
+  LOG(INFO) << ClientReceivedBytesPerRpcHour;
+  LOG(INFO) << ClientReceivedMessagesPerRpcHour;
+  LOG(INFO) << ClientRetriesHour;
+  LOG(INFO) << ClientRetriesPerCallHour;
+  LOG(INFO) << ClientRetryDelayPerCallHour;
+  LOG(INFO) << ClientRoundtripLatencyHour;
+  LOG(INFO) << ClientSentBytesPerRpcHour;
+  LOG(INFO) << ClientSentMessagesPerRpcHour;
+  LOG(INFO) << ClientServerLatencyHour;
+  LOG(INFO) << ClientStartedRpcsHour;
+  LOG(INFO) << ClientTransparentRetriesHour;
+  LOG(INFO) << ClientTransparentRetriesPerCallHour;
 
-  gpr_log(GPR_INFO, "%p", ServerCompletedRpcsHour);
-  gpr_log(GPR_INFO, "%p", ServerReceivedBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerReceivedMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerSentBytesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerSentMessagesPerRpcHour);
-  gpr_log(GPR_INFO, "%p", ServerServerLatencyHour);
-  gpr_log(GPR_INFO, "%p", ServerStartedRpcsHour);
+  LOG(INFO) << ServerCompletedRpcsHour;
+  LOG(INFO) << ServerReceivedBytesPerRpcHour;
+  LOG(INFO) << ServerReceivedMessagesPerRpcHour;
+  LOG(INFO) << ServerSentBytesPerRpcHour;
+  LOG(INFO) << ServerSentMessagesPerRpcHour;
+  LOG(INFO) << ServerServerLatencyHour;
+  LOG(INFO) << ServerStartedRpcsHour;
 }
 
 }  // namespace

@@ -24,14 +24,16 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 namespace grpc_core {
 
@@ -133,17 +135,17 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
-      GPR_ASSERT(!root_cert_error.ok() || !identity_cert_error.ok());
+      CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       std::string identity_error_str;
       if (!root_cert_error.ok()) {
-        GPR_ASSERT(grpc_error_get_str(
+        CHECK(grpc_error_get_str(
             root_cert_error, StatusStrProperty::kDescription, &root_error_str));
       }
       if (!identity_cert_error.ok()) {
-        GPR_ASSERT(grpc_error_get_str(identity_cert_error,
-                                      StatusStrProperty::kDescription,
-                                      &identity_error_str));
+        CHECK(grpc_error_get_str(identity_cert_error,
+                                 StatusStrProperty::kDescription,
+                                 &identity_error_str));
       }
       state_->error_queue.emplace_back(std::move(root_error_str),
                                        std::move(identity_error_str));

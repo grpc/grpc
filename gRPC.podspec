@@ -20,7 +20,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.63.0-dev'
+  version = '1.65.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'https://grpc.io'
@@ -49,6 +49,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.12'
   s.tvos.deployment_target = '12.0'
   s.watchos.deployment_target = '6.0'
+  s.visionos.deployment_target = '1.0'
 
   # Exposes the privacy manifest. Depended on by any subspecs containing
   # non-interface files.
@@ -83,6 +84,7 @@ Pod::Spec.new do |s|
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
   end
 
   s.subspec 'Interface' do |ss|
@@ -118,6 +120,7 @@ Pod::Spec.new do |s|
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
   end
 
   s.subspec 'GRPCCore' do |ss|
@@ -155,6 +158,7 @@ Pod::Spec.new do |s|
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
   end
 
   s.subspec 'GRPCCoreCronet' do |ss|
@@ -179,6 +183,7 @@ Pod::Spec.new do |s|
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
   end
 
   s.subspec 'InternalTesting' do |ss|
@@ -191,5 +196,6 @@ Pod::Spec.new do |s|
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
   end
 end

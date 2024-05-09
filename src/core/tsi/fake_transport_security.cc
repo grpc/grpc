@@ -16,15 +16,16 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/fake_transport_security.h"
 
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -125,7 +126,8 @@ static void store32_little_endian(uint32_t value, unsigned char* buf) {
 }
 
 static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
-  GPR_ASSERT(sb != nullptr && sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
+  CHECK(sb != nullptr);
+  CHECK(sb->length >= TSI_FAKE_FRAME_HEADER_SIZE);
   uint8_t frame_size_buffer[TSI_FAKE_FRAME_HEADER_SIZE];
   uint8_t* buf = frame_size_buffer;
   // Copies the first 4 bytes to a temporary buffer.
@@ -142,7 +144,7 @@ static uint32_t read_frame_size(const grpc_slice_buffer* sb) {
       remaining -= slice_length;
     }
   }
-  GPR_ASSERT(remaining == 0);
+  CHECK_EQ(remaining, 0u);
   return load32_little_endian(frame_size_buffer);
 }
 

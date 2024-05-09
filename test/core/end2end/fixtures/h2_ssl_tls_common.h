@@ -17,6 +17,9 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -30,7 +33,7 @@
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 class SslTlsFixture : public SecureFixture {
  public:
@@ -95,7 +98,7 @@ class SslTlsFixture : public SecureFixture {
                                    size_t /*md_count*/,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
-    GPR_ASSERT(state == nullptr);
+    CHECK_EQ(state, nullptr);
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

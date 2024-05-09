@@ -17,17 +17,18 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_VERIFIER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <map>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -58,7 +59,7 @@ struct grpc_tls_certificate_verifier
   // If this method returns 0, it means that gRPC can treat the two certificate
   // verifiers as effectively the same.
   int Compare(const grpc_tls_certificate_verifier* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

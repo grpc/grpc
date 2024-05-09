@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 
 #include <string.h>
@@ -25,8 +23,11 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
@@ -85,7 +86,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
       remaining -= slice_length;
     }
   }
-  GPR_ASSERT(remaining == 0);
+  CHECK_EQ(remaining, 0u);
   // Gets little-endian frame size.
   uint32_t frame_size = (static_cast<uint32_t>(frame_size_buffer[3]) << 24) |
                         (static_cast<uint32_t>(frame_size_buffer[2]) << 16) |
@@ -295,7 +296,7 @@ tsi_result alts_zero_copy_grpc_protector_create(
       impl->max_unprotected_data_size =
           alts_grpc_record_protocol_max_unprotected_data_size(
               impl->record_protocol, max_protected_frame_size_to_set);
-      GPR_ASSERT(impl->max_unprotected_data_size > 0);
+      CHECK_GT(impl->max_unprotected_data_size, 0u);
       // Allocates internal slice buffers.
       grpc_slice_buffer_init(&impl->unprotected_staging_sb);
       grpc_slice_buffer_init(&impl->protected_sb);

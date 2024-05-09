@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/http/httpcli.h"
 
 #include <limits.h>
@@ -26,6 +24,7 @@
 #include <utility>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -33,7 +32,10 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/handshaker_registry.h"
+#include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
@@ -50,8 +52,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/handshaker_registry.h"
-#include "src/core/lib/transport/tcp_connect_handshaker.h"
 
 namespace grpc_core {
 
@@ -184,7 +184,7 @@ HttpRequest::HttpRequest(
   GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
                     ContinueDoneWriteAfterScheduleOnExecCtx, this,
                     grpc_schedule_on_exec_ctx);
-  GPR_ASSERT(pollent);
+  CHECK(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
 }
 
@@ -217,7 +217,7 @@ void HttpRequest::Start() {
 void HttpRequest::Orphan() {
   {
     MutexLock lock(&mu_);
-    GPR_ASSERT(!cancelled_);
+    CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (dns_request_handle_.has_value() &&

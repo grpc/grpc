@@ -170,7 +170,6 @@ EXTERNAL_DEPS = {
     "upb/mem/arena.hpp": "upb_mem_lib",
     "upb/text/encode.h": "upb_textformat_lib",
     "upb/reflection/def.hpp": "upb_reflection",
-    "upb/upb.h": "upb_amalgamation_lib",
     "xxhash.h": "xxhash",
     "zlib.h": "madler_zlib",
 }
@@ -396,7 +395,7 @@ for dirname in [
     "test/core/backoff",
     "test/core/experiments",
     "test/core/uri",
-    "test/core/util",
+    "test/core/test_util",
     "test/core/end2end",
     "test/core/event_engine",
     "test/core/filters",
@@ -439,6 +438,7 @@ for dirname in [
             "grpc_package": lambda **kwargs: None,
             "filegroup": lambda name, **kwargs: None,
             "sh_library": lambda name, **kwargs: None,
+            "platform": lambda name, **kwargs: None,
         },
         {},
     )

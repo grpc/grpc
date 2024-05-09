@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_TCP_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -28,6 +26,8 @@
 
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -131,8 +131,12 @@ class TcpTracerInterface {
   };
 
   virtual ~TcpTracerInterface() = default;
+  // Records a per-message event with an optional snapshot of connection
+  // metrics.
   virtual void RecordEvent(Type type, absl::Time time, size_t byte_offset,
                            absl::optional<ConnectionMetrics> metrics) = 0;
+  // Records a snapshot of connection metrics.
+  virtual void RecordConnectionMetrics(ConnectionMetrics metrics) = 0;
 };
 
 }  // namespace grpc_core

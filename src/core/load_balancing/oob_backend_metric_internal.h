@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_OOB_BACKEND_METRIC_INTERNAL_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_OOB_BACKEND_METRIC_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <set>
 #include <utility>
@@ -27,9 +25,8 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/load_balancing/backend_metric_data.h"
-#include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
@@ -38,6 +35,8 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/load_balancing/oob_backend_metric.h"
 
 namespace grpc_core {
 
@@ -46,11 +45,9 @@ class OrcaWatcher;
 // This producer is registered with a subchannel.  It creates a
 // streaming ORCA call and reports the resulting backend metrics to all
 // registered watchers.
-class OrcaProducer : public Subchannel::DataProducerInterface {
+class OrcaProducer final : public Subchannel::DataProducerInterface {
  public:
   void Start(RefCountedPtr<Subchannel> subchannel);
-
-  void Orphan() override;
 
   static UniqueTypeName Type() {
     static UniqueTypeName::Factory kFactory("orca");
@@ -66,6 +63,8 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
  private:
   class ConnectivityWatcher;
   class OrcaStreamEventHandler;
+
+  void Orphaned() override;
 
   // Returns the minimum requested reporting interval across all watchers.
   Duration GetMinIntervalLocked() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
@@ -92,7 +91,7 @@ class OrcaProducer : public Subchannel::DataProducerInterface {
 
 // This watcher is returned to the LB policy and added to the
 // client channel SubchannelWrapper.
-class OrcaWatcher : public InternalSubchannelDataWatcherInterface {
+class OrcaWatcher final : public InternalSubchannelDataWatcherInterface {
  public:
   OrcaWatcher(Duration report_interval,
               std::unique_ptr<OobBackendMetricWatcher> watcher)

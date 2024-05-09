@@ -25,7 +25,8 @@ import grpc
 
 from tests.unit import test_common
 
-_UNARY_UNARY = "/test/UnaryUnary"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
 _REQUEST = b"0000"
 
 
@@ -42,12 +43,9 @@ def contextvars_supported():
         return False
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return grpc.unary_unary_rpc_method_handler(_unary_unary_handler)
-        else:
-            raise NotImplementedError()
+_METHOD_HANDLERS = {
+    _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(_unary_unary_handler)
+}
 
 
 @contextlib.contextmanager
@@ -56,7 +54,7 @@ def _server():
         server = test_common.test_server()
         target = "localhost:0"
         port = server.add_insecure_port(target)
-        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server.start()
         yield port
     finally:
@@ -117,7 +115,9 @@ class ContextVarsPropagationTest(unittest.TestCase):
             )
             with grpc.secure_channel(target, composite_credentials) as channel:
                 stub = channel.unary_unary(
-                    _UNARY_UNARY,
+                    grpc._common.fully_qualified_method(
+                        _SERVICE_NAME, _UNARY_UNARY
+                    ),
                     _registered_method=True,
                 )
                 response = stub(_REQUEST, wait_for_ready=True)
@@ -146,7 +146,9 @@ class ContextVarsPropagationTest(unittest.TestCase):
                         target, composite_credentials
                     ) as channel:
                         stub = channel.unary_unary(
-                            _UNARY_UNARY,
+                            grpc._common.fully_qualified_method(
+                                _SERVICE_NAME, _UNARY_UNARY
+                            ),
                             _registered_method=True,
                         )
                         wait_group.done()

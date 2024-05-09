@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -79,7 +80,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
-  GPR_ASSERT(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
+  CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
   /// Check if this is a wildcard port, and if so, try to keep the port the same
@@ -100,7 +101,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
     }
   }
 
-  auto used_port = ResolvedAddressIsWildcard(res_addr);
+  auto used_port = MaybeGetWildcardPortFromAddress(res_addr);
   // Update the callback. Any subsequent new sockets created and added to
   // acceptors_ in this function will invoke the new callback.
   acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
@@ -303,7 +304,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
 absl::Status PosixEngineListenerImpl::Start() {
   grpc_core::MutexLock lock(&this->mu_);
   // Start each asynchronous acceptor.
-  GPR_ASSERT(!this->started_);
+  CHECK(!this->started_);
   this->started_ = true;
   for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
     (*it)->Start();

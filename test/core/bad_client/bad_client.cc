@@ -21,6 +21,8 @@
 #include <inttypes.h>
 #include <limits.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -28,10 +30,10 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -41,10 +43,10 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #define MIN_HTTP2_FRAME_SIZE 9
 
@@ -76,7 +78,7 @@ static void server_setup_transport(void* ts, grpc_core::Transport* transport) {
   thd_args* a = static_cast<thd_args*>(ts);
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Server* core_server = grpc_core::Server::FromC(a->server);
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+  CHECK(GRPC_LOG_IF_ERROR(
       "SetupTransport",
       core_server->SetupTransport(transport, /*accepting_pollset=*/nullptr,
                                   core_server->channel_args(),
@@ -135,8 +137,7 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
   // Await completion, unless the request is large and write may not finish
   // before the peer shuts down.
   if (!(flags & GRPC_BAD_CLIENT_LARGE_REQUEST)) {
-    GPR_ASSERT(
-        gpr_event_wait(&done_write, grpc_timeout_seconds_to_deadline(5)));
+    CHECK(gpr_event_wait(&done_write, grpc_timeout_seconds_to_deadline(5)));
   }
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
@@ -161,13 +162,13 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                            /*urgent=*/true, /*min_progress_size=*/1);
         grpc_core::ExecCtx::Get()->Flush();
         do {
-          GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
+          CHECK_GT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)), 0);
           // Perform a cq next just to provide a thread that can read incoming
           // bytes on the client fd
-          GPR_ASSERT(grpc_completion_queue_next(
-                         client_cq, grpc_timeout_milliseconds_to_deadline(100),
-                         nullptr)
-                         .type == GRPC_QUEUE_TIMEOUT);
+          CHECK(grpc_completion_queue_next(
+                    client_cq, grpc_timeout_milliseconds_to_deadline(100),
+                    nullptr)
+                    .type == GRPC_QUEUE_TIMEOUT);
         } while (!gpr_event_get(&read_done_event));
         if (arg->client_validator(&incoming, arg->client_validator_arg)) break;
         gpr_log(GPR_INFO,
@@ -187,10 +188,9 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
 
   // Make sure that the client is done writing
   while (!gpr_event_get(&done_write)) {
-    GPR_ASSERT(
-        grpc_completion_queue_next(
-            client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
+    CHECK(grpc_completion_queue_next(
+              client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
   }
 
   grpc_slice_buffer_destroy(&outgoing);
@@ -238,7 +238,7 @@ void grpc_run_bad_client_test(
   grpc_endpoint_add_to_pollset(sfd.server, grpc_cq_pollset(a.cq));
 
   // Check a ground truth
-  GPR_ASSERT(grpc_core::Server::FromC(a.server)->HasOpenConnections());
+  CHECK(grpc_core::Server::FromC(a.server)->HasOpenConnections());
 
   gpr_event_init(&a.done_thd);
   a.validator = server_validator;
@@ -251,17 +251,16 @@ void grpc_run_bad_client_test(
                                    &sfd, client_cq);
   }
   // Wait for server thread to finish
-  GPR_ASSERT(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(5)));
+  CHECK(gpr_event_wait(&a.done_thd, grpc_timeout_seconds_to_deadline(5)));
 
   // Shutdown.
   shutdown_client(&sfd.client);
   server_validator_thd.Join();
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
-  GPR_ASSERT(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                         grpc_timeout_seconds_to_deadline(1),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  CHECK(grpc_completion_queue_pluck(
+            shutdown_cq, nullptr, grpc_timeout_seconds_to_deadline(1), nullptr)
+            .type == GRPC_OP_COMPLETE);
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);
@@ -301,7 +300,7 @@ bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
   grpc_slice_buffer_init(&last_frame_buffer);
   grpc_slice_buffer_trim_end(incoming, kExpectedFrameLength,
                              &last_frame_buffer);
-  GPR_ASSERT(last_frame_buffer.count == 1);
+  CHECK_EQ(last_frame_buffer.count, 1u);
   grpc_slice last_frame = last_frame_buffer.slices[0];
 
   const uint8_t* p = GRPC_SLICE_START_PTR(last_frame);
@@ -340,12 +339,12 @@ void server_verifier_request_call(grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo/bar"), 0);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);

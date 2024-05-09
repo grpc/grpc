@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
 
 #include <string.h>
@@ -22,11 +20,13 @@
 #include <limits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/gprpp/bitset.h"
@@ -153,8 +153,8 @@ absl::StatusOr<Arena::PoolPtr<Metadata>> ReadMetadata(
     Arena* arena) {
   if (!maybe_slices.ok()) return maybe_slices.status();
   auto& slices = *maybe_slices;
-  GPR_ASSERT(arena != nullptr);
-  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>(arena);
+  CHECK_NE(arena, nullptr);
+  Arena::PoolPtr<Metadata> metadata = Arena::MakePooled<Metadata>();
   parser->BeginFrame(
       metadata.get(), std::numeric_limits<uint32_t>::max(),
       std::numeric_limits<uint32_t>::max(),
@@ -276,7 +276,7 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  GPR_ASSERT(stream_id != 0);
+  CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
@@ -355,7 +355,7 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
 }
 
 BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
-  GPR_ASSERT(stream_id != 0);
+  CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
     encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
@@ -400,7 +400,7 @@ absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
 }
 
 BufferPair CancelFrame::Serialize(HPackCompressor*) const {
-  GPR_ASSERT(stream_id != 0);
+  CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kCancel, stream_id);
   return serializer.Finish();
 }

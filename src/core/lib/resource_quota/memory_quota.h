@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <array>
@@ -30,12 +28,14 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -138,7 +138,7 @@ class ReclaimerQueue {
     explicit Handle(F reclaimer, std::shared_ptr<State> state)
         : sweep_(new SweepFn<F>(std::move(reclaimer), std::move(state))) {}
     ~Handle() override {
-      GPR_DEBUG_ASSERT(sweep_.load(std::memory_order_relaxed) == nullptr);
+      DCHECK_EQ(sweep_.load(std::memory_order_relaxed), nullptr);
     }
 
     Handle(const Handle&) = delete;
@@ -439,7 +439,7 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   template <typename F>
   void PostReclaimer(ReclamationPass pass, F fn) {
     MutexLock lock(&reclaimer_mu_);
-    GPR_ASSERT(!shutdown_);
+    CHECK(!shutdown_);
     InsertReclaimer(static_cast<size_t>(pass), std::move(fn));
   }
 

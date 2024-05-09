@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -46,7 +47,7 @@
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
@@ -239,7 +240,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
           port_(grpc_pick_unused_port_or_die()),
           use_xds_enabled_server_(use_xds_enabled_server) {}
 
-    virtual ~ServerThread() { Shutdown(); }
+    virtual ~ServerThread() {
+      // Shutdown should be called manually. Shutdown calls virtual methods and
+      // can't be called from the base class destructor.
+      CHECK(!running_);
+    }
 
     void Start();
     void Shutdown();
@@ -248,6 +253,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       return std::make_shared<SecureServerCredentials>(
           grpc_fake_transport_security_server_credentials_create());
     }
+
+    std::string target() const { return absl::StrCat("localhost:", port_); }
 
     int port() const { return port_; }
 
@@ -299,10 +306,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         auto peer_identity = context->auth_context()->GetPeerIdentity();
         CountedService<
             TestMultipleServiceImpl<RpcService>>::IncreaseRequestCount();
-        const auto status = TestMultipleServiceImpl<RpcService>::Echo(
-            context, request, response);
-        CountedService<
-            TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
         {
           grpc_core::MutexLock lock(&mu_);
           clients_.insert(context->peer());
@@ -322,6 +325,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
             recorder->RecordNamedMetric(key, p.second);
           }
         }
+        const auto status = TestMultipleServiceImpl<RpcService>::Echo(
+            context, request, response);
+        CountedService<
+            TestMultipleServiceImpl<RpcService>>::IncreaseResponseCount();
         return status;
       }
 
@@ -398,7 +405,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // A server thread for the xDS server.
   class BalancerServerThread : public ServerThread {
    public:
-    explicit BalancerServerThread(XdsEnd2endTest* test_obj);
+    explicit BalancerServerThread(XdsEnd2endTest* test_obj,
+                                  absl::string_view debug_label);
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
@@ -439,7 +447,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Creates and starts a new balancer, running in its own thread.
   // Most tests will not need to call this; instead, they can use
   // balancer_, which is already populated with default resources.
-  std::unique_ptr<BalancerServerThread> CreateAndStartBalancer();
+  std::unique_ptr<BalancerServerThread> CreateAndStartBalancer(
+      absl::string_view debug_label = "");
 
   // Sets the Listener and RouteConfiguration resource on the specified
   // balancer.  If RDS is in use, they will be set as separate resources;
@@ -566,9 +575,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Initializes global state for the client, such as the bootstrap file
   // and channel args for the XdsClient.  Then calls ResetStub().
   // All tests must call this exactly once at the start of the test.
-  void InitClient(XdsBootstrapBuilder builder = XdsBootstrapBuilder(),
+  void InitClient(absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
                   std::string lb_expected_authority = "",
                   int xds_resource_does_not_exist_timeout_ms = 0);
+
+  XdsBootstrapBuilder MakeBootstrapBuilder() {
+    return XdsBootstrapBuilder().SetServers(
+        {absl::StrCat("localhost:", balancer_->port())});
+  }
 
   // Sets channel_, stub_, stub1_, and stub2_.
   void ResetStub(int failover_timeout_ms = 0, ChannelArguments* args = nullptr);
@@ -599,6 +613,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
     absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
+    bool server_notify_client_when_started = false;
 
     RpcOptions() {}
 
@@ -661,6 +676,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     RpcOptions& set_backend_metrics(
         absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
       backend_metrics = std::move(metrics);
+      return *this;
+    }
+
+    RpcOptions& set_server_notify_client_when_started(
+        bool rpc_server_notify_client_when_started) {
+      server_notify_client_when_started = rpc_server_notify_client_when_started;
       return *this;
     }
 
@@ -920,7 +941,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // use a uniform distribution instead. We need a better estimate of how many
   // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
-    GPR_ASSERT(p >= 0 && p <= 1);
+    CHECK_GE(p, 0);
+    CHECK_LE(p, 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
     num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.

@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <stdio.h>
+
+#include <grpc/support/port_platform.h>
 
 #if defined(GPR_LINUX) || defined(GPR_FREEBSD) || defined(GPR_APPLE) || \
     defined(GPR_WINDOWS)
@@ -46,7 +46,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace {

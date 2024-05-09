@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
 #include <stdlib.h>
@@ -29,18 +27,21 @@
 #include <memory>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
@@ -395,7 +396,7 @@ class grpc_compute_engine_token_fetcher_credentials
     auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
                                       {} /* query params */, "" /* fragment */);
-    GPR_ASSERT(uri.ok());  // params are hardcoded
+    CHECK(uri.ok());  // params are hardcoded
     http_request_ = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, pollent, &request,
         deadline,
@@ -424,7 +425,7 @@ grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved) {
   GRPC_API_TRACE("grpc_compute_engine_credentials_create(reserved=%p)", 1,
                  (reserved));
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<
              grpc_compute_engine_token_fetcher_credentials>()
       .release();
@@ -461,7 +462,7 @@ void grpc_google_refresh_token_credentials::fetch_oauth2(
   auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());  // params are hardcoded
+  CHECK(uri.ok());  // params are hardcoded
   http_request_ = grpc_core::HttpRequest::Post(
       std::move(*uri), nullptr /* channel args */, pollent, &request, deadline,
       GRPC_CLOSURE_INIT(&http_post_cb_closure_, response_cb, metadata_req,
@@ -517,7 +518,7 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
             "reserved=%p)",
             create_loggable_refresh_token(&token).c_str(), reserved);
   }
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
       .release();
 }
@@ -700,7 +701,7 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
 
 grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved) {
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   absl::StatusOr<grpc_core::URI> sts_url =
       grpc_core::ValidateStsCredentialsOptions(options);
   if (!sts_url.ok()) {
@@ -747,7 +748,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
       "grpc_access_token_credentials_create(access_token=<redacted>, "
       "reserved=%p)",
       1, (reserved));
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
       .release();
 }

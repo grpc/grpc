@@ -38,7 +38,7 @@ grpc_cc_test(
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_utils",
         "//src/core:windows_iocp",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -60,7 +60,7 @@ grpc_cc_test(
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
         "//src/core:windows_event_engine",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -82,7 +82,7 @@ grpc_cc_test(
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
         "//src/core:windows_endpoint",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -90,7 +90,10 @@ grpc_cc_library(
     name = "create_sockpair",
     srcs = ["create_sockpair.cc"],
     hdrs = ["create_sockpair.h"],
-    external_deps = ["absl/status"],
+    external_deps = [
+        "absl/log:check",
+        "absl/status",
+    ],
     language = "C++",
     tags = [
         "no_linux",

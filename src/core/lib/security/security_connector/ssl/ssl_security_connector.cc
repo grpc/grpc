@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 
 #include <stdint.h>
@@ -26,6 +24,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -33,7 +32,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -50,8 +52,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -331,7 +331,7 @@ class grpc_ssl_server_security_connector
     tsi_ssl_server_handshaker_factory* new_handshaker_factory = nullptr;
     const grpc_ssl_server_credentials* server_creds =
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
-    GPR_DEBUG_ASSERT(config->pem_root_certs != nullptr);
+    DCHECK_NE(config->pem_root_certs, nullptr);
     tsi_ssl_server_handshaker_options options;
     options.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
@@ -395,7 +395,7 @@ grpc_ssl_channel_security_connector_create(
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials) {
-  GPR_ASSERT(server_credentials != nullptr);
+  CHECK(server_credentials != nullptr);
   grpc_core::RefCountedPtr<grpc_ssl_server_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_server_security_connector>(
           std::move(server_credentials));

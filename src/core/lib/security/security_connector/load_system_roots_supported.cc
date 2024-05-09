@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <string>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)

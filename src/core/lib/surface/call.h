@@ -19,13 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CALL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
@@ -33,6 +32,7 @@
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -50,15 +50,15 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server_interface.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
 
 typedef struct grpc_call_create_args {
   grpc_core::RefCountedPtr<grpc_core::Channel> channel;
-  grpc_core::Server* server;
+  grpc_core::ServerInterface* server;
 
   grpc_call* parent;
   uint32_t propagation_mask;
@@ -77,6 +77,179 @@ typedef struct grpc_call_create_args {
 } grpc_call_create_args;
 
 namespace grpc_core {
+
+class Call : public CppImplOf<Call, grpc_call>,
+             public grpc_event_engine::experimental::EventEngine::
+                 Closure /* for deadlines */ {
+ public:
+  Arena* arena() { return arena_; }
+  bool is_client() const { return is_client_; }
+
+  virtual void ContextSet(grpc_context_index elem, void* value,
+                          void (*destroy)(void* value)) = 0;
+  virtual void* ContextGet(grpc_context_index elem) const = 0;
+  virtual bool Completed() = 0;
+  void CancelWithStatus(grpc_status_code status, const char* description);
+  virtual void CancelWithError(grpc_error_handle error) = 0;
+  virtual void SetCompletionQueue(grpc_completion_queue* cq) = 0;
+  char* GetPeer();
+  virtual grpc_call_error StartBatch(const grpc_op* ops, size_t nops,
+                                     void* notify_tag,
+                                     bool is_notify_tag_closure) = 0;
+  virtual bool failed_before_recv_message() const = 0;
+  virtual bool is_trailers_only() const = 0;
+  virtual absl::string_view GetServerAuthority() const = 0;
+  virtual void ExternalRef() = 0;
+  virtual void ExternalUnref() = 0;
+  virtual void InternalRef(const char* reason) = 0;
+  virtual void InternalUnref(const char* reason) = 0;
+
+  void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  Timestamp deadline() {
+    MutexLock lock(&deadline_mu_);
+    return deadline_;
+  }
+
+  grpc_compression_algorithm test_only_compression_algorithm() {
+    return incoming_compression_algorithm_;
+  }
+  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
+  CompressionAlgorithmSet encodings_accepted_by_peer() {
+    return encodings_accepted_by_peer_;
+  }
+
+  // This should return nullptr for the promise stack (and alternative means
+  // for that functionality be invented)
+  virtual grpc_call_stack* call_stack() = 0;
+
+  // Return the EventEngine used for this call's async execution.
+  virtual grpc_event_engine::experimental::EventEngine* event_engine()
+      const = 0;
+
+  // Implementation of EventEngine::Closure, called when deadline expires
+  void Run() final;
+
+ protected:
+  // The maximum number of concurrent batches possible.
+  // Based upon the maximum number of individually queueable ops in the batch
+  // api:
+  //    - initial metadata send
+  //    - message send
+  //    - status/close send (depending on client/server)
+  //    - initial metadata recv
+  //    - message recv
+  //    - status/close recv (depending on client/server)
+  static constexpr size_t kMaxConcurrentBatches = 6;
+
+  struct ParentCall {
+    Mutex child_list_mu;
+    Call* first_child ABSL_GUARDED_BY(child_list_mu) = nullptr;
+  };
+
+  struct ChildCall {
+    explicit ChildCall(Call* parent) : parent(parent) {}
+    Call* parent;
+    /// siblings: children of the same parent form a list, and this list is
+    /// protected under
+    /// parent->mu
+    Call* sibling_next = nullptr;
+    Call* sibling_prev = nullptr;
+  };
+
+  Call(Arena* arena, bool is_client, Timestamp send_deadline,
+       RefCountedPtr<Channel> channel)
+      : channel_(std::move(channel)),
+        arena_(arena),
+        send_deadline_(send_deadline),
+        is_client_(is_client) {
+    DCHECK_NE(arena_, nullptr);
+    DCHECK(channel_ != nullptr);
+  }
+  ~Call() override = default;
+
+  void DeleteThis();
+
+  ParentCall* GetOrCreateParentCall();
+  ParentCall* parent_call();
+  Channel* channel() const {
+    DCHECK(channel_ != nullptr);
+    return channel_.get();
+  }
+
+  absl::Status InitParent(Call* parent, uint32_t propagation_mask);
+  void PublishToParent(Call* parent);
+  void MaybeUnpublishFromParent();
+  void PropagateCancellationToChildren();
+
+  Timestamp send_deadline() const { return send_deadline_; }
+  void set_send_deadline(Timestamp send_deadline) {
+    send_deadline_ = send_deadline;
+  }
+
+  Slice GetPeerString() const {
+    MutexLock lock(&peer_mu_);
+    return peer_string_.Ref();
+  }
+
+  void SetPeerString(Slice peer_string) {
+    MutexLock lock(&peer_mu_);
+    peer_string_ = std::move(peer_string);
+  }
+
+  void ClearPeerString() { SetPeerString(Slice(grpc_empty_slice())); }
+
+  // TODO(ctiller): cancel_func is for cancellation of the call - filter stack
+  // holds no mutexes here, promise stack does, and so locking is different.
+  // Remove this and cancel directly once promise conversion is done.
+  void ProcessIncomingInitialMetadata(grpc_metadata_batch& md);
+  // Fixup outgoing metadata before sending - adds compression, protects
+  // internal headers against external modification.
+  void PrepareOutgoingInitialMetadata(const grpc_op& op,
+                                      grpc_metadata_batch& md);
+  void NoteLastMessageFlags(uint32_t flags) {
+    test_only_last_message_flags_ = flags;
+  }
+  grpc_compression_algorithm incoming_compression_algorithm() const {
+    return incoming_compression_algorithm_;
+  }
+
+  void HandleCompressionAlgorithmDisabled(
+      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
+  void HandleCompressionAlgorithmNotAccepted(
+      grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
+
+  gpr_cycle_counter start_time() const { return start_time_; }
+
+ private:
+  RefCountedPtr<Channel> channel_;
+  Arena* const arena_;
+  std::atomic<ParentCall*> parent_call_{nullptr};
+  ChildCall* child_ = nullptr;
+  Timestamp send_deadline_;
+  const bool is_client_;
+  // flag indicating that cancellation is inherited
+  bool cancellation_is_inherited_ = false;
+  // Compression algorithm for *incoming* data
+  grpc_compression_algorithm incoming_compression_algorithm_ =
+      GRPC_COMPRESS_NONE;
+  // Supported encodings (compression algorithms), a bitset.
+  // Always support no compression.
+  CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
+  uint32_t test_only_last_message_flags_ = 0;
+  // Peer name is protected by a mutex because it can be accessed by the
+  // application at the same moment as it is being set by the completion
+  // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
+  mutable Mutex peer_mu_;
+  Slice peer_string_;
+  // Current deadline.
+  Mutex deadline_mu_;
+  Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
+  grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
+      deadline_mu_) deadline_task_;
+  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
+};
+
 class BasicPromiseBasedCall;
 class ServerPromiseBasedCall;
 
@@ -106,10 +279,6 @@ class ServerCallContext {
 class CallContext {
  public:
   explicit CallContext(BasicPromiseBasedCall* call) : call_(call) {}
-
-  // Update the deadline (if deadline < the current deadline).
-  void UpdateDeadline(Timestamp deadline);
-  Timestamp deadline() const;
 
   // Run some action in the call activity context. This is needed to adapt some
   // legacy systems to promises, and will likely disappear once that conversion
@@ -159,9 +328,10 @@ class CallContext {
 template <>
 struct ContextType<CallContext> {};
 
-RefCountedPtr<CallSpineInterface> MakeServerCall(Server* server,
-                                                 Channel* channel,
-                                                 Arena* arena);
+// TODO(ctiller): remove once call-v3 finalized
+RefCountedPtr<CallSpineInterface> MakeServerCall(
+    ClientMetadataHandle client_initial_metadata, ServerInterface* server,
+    Channel* channel, Arena* arena);
 
 }  // namespace grpc_core
 

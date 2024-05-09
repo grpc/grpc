@@ -16,19 +16,20 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/log/check.h"
 #include "upb/mem/arena.hpp"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
@@ -36,6 +37,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
@@ -91,14 +93,14 @@ static tsi_result handshaker_result_extract_peer(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  GPR_ASSERT(kTsiAltsNumOfPeerProperties == 5);
+  CHECK_EQ(kTsiAltsNumOfPeerProperties, 5u);
   tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, peer);
   int index = 0;
   if (ok != TSI_OK) {
     gpr_log(GPR_ERROR, "Failed to construct tsi peer");
     return ok;
   }
-  GPR_ASSERT(&peer->properties[index] != nullptr);
+  CHECK_NE(&peer->properties[index], nullptr);
   ok = tsi_construct_string_peer_property_from_cstring(
       TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
       &peer->properties[index]);
@@ -108,7 +110,7 @@ static tsi_result handshaker_result_extract_peer(
     return ok;
   }
   index++;
-  GPR_ASSERT(&peer->properties[index] != nullptr);
+  CHECK_NE(&peer->properties[index], nullptr);
   ok = tsi_construct_string_peer_property_from_cstring(
       TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY, result->peer_identity,
       &peer->properties[index]);
@@ -117,7 +119,7 @@ static tsi_result handshaker_result_extract_peer(
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");
   }
   index++;
-  GPR_ASSERT(&peer->properties[index] != nullptr);
+  CHECK_NE(&peer->properties[index], nullptr);
   ok = tsi_construct_string_peer_property(
       TSI_ALTS_RPC_VERSIONS,
       reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->rpc_versions)),
@@ -127,7 +129,7 @@ static tsi_result handshaker_result_extract_peer(
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");
   }
   index++;
-  GPR_ASSERT(&peer->properties[index] != nullptr);
+  CHECK_NE(&peer->properties[index], nullptr);
   ok = tsi_construct_string_peer_property(
       TSI_ALTS_CONTEXT,
       reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->serialized_context)),
@@ -137,7 +139,7 @@ static tsi_result handshaker_result_extract_peer(
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");
   }
   index++;
-  GPR_ASSERT(&peer->properties[index] != nullptr);
+  CHECK_NE(&peer->properties[index], nullptr);
   ok = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY,
       tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
@@ -146,7 +148,7 @@ static tsi_result handshaker_result_extract_peer(
     tsi_peer_destruct(peer);
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");
   }
-  GPR_ASSERT(++index == kTsiAltsNumOfPeerProperties);
+  CHECK(++index == kTsiAltsNumOfPeerProperties);
   return ok;
 }
 
@@ -422,7 +424,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
           handshaker->handshaker_service_url);
       handshaker->interested_parties =
           grpc_alts_get_shared_resource_dedicated()->interested_parties;
-      GPR_ASSERT(handshaker->interested_parties != nullptr);
+      CHECK_NE(handshaker->interested_parties, nullptr);
     }
     grpc_iomgr_cb_func grpc_cb = handshaker->channel == nullptr
                                      ? on_handshaker_service_resp_recv_dedicated
@@ -444,7 +446,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     }
     {
       grpc_core::MutexLock lock(&handshaker->mu);
-      GPR_ASSERT(handshaker->client == nullptr);
+      CHECK_EQ(handshaker->client, nullptr);
       handshaker->client = client;
       if (handshaker->shutdown) {
         gpr_log(GPR_INFO, "TSI handshake shutdown");
@@ -456,8 +458,8 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
   }
   if (handshaker->channel == nullptr &&
       handshaker->client_vtable_for_testing == nullptr) {
-    GPR_ASSERT(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
-                                handshaker->client));
+    CHECK(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
+                           handshaker->client));
   }
   grpc_slice slice = (received_bytes == nullptr || received_bytes_size == 0)
                          ? grpc_empty_slice()
@@ -499,7 +501,7 @@ static void alts_tsi_handshaker_create_channel(
   alts_tsi_handshaker_continue_handshaker_next_args* next_args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
-  GPR_ASSERT(handshaker->channel == nullptr);
+  CHECK_EQ(handshaker->channel, nullptr);
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   // Disable retries so that we quickly get a signal when the
   // handshake server is not reachable.
@@ -591,7 +593,7 @@ static tsi_result handshaker_next_dedicated(
 }
 
 static void handshaker_shutdown(tsi_handshaker* self) {
-  GPR_ASSERT(self != nullptr);
+  CHECK_NE(self, nullptr);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   grpc_core::MutexLock lock(&handshaker->mu);
@@ -637,7 +639,7 @@ static const tsi_handshaker_vtable handshaker_vtable_dedicated = {
     handshaker_shutdown};
 
 bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker) {
-  GPR_ASSERT(handshaker != nullptr);
+  CHECK_NE(handshaker, nullptr);
   grpc_core::MutexLock lock(&handshaker->mu);
   return handshaker->shutdown;
 }
@@ -675,7 +677,8 @@ tsi_result alts_tsi_handshaker_create(
 void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
                                                  grpc_slice* recv_bytes,
                                                  size_t bytes_consumed) {
-  GPR_ASSERT(recv_bytes != nullptr && result != nullptr);
+  CHECK(recv_bytes != nullptr);
+  CHECK_NE(result, nullptr);
   if (GRPC_SLICE_LENGTH(*recv_bytes) == bytes_consumed) {
     return;
   }
@@ -694,19 +697,19 @@ namespace internal {
 
 bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
     alts_tsi_handshaker* handshaker) {
-  GPR_ASSERT(handshaker != nullptr);
+  CHECK_NE(handshaker, nullptr);
   return handshaker->has_sent_start_message;
 }
 
 void alts_tsi_handshaker_set_client_vtable_for_testing(
     alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable) {
-  GPR_ASSERT(handshaker != nullptr);
+  CHECK_NE(handshaker, nullptr);
   handshaker->client_vtable_for_testing = vtable;
 }
 
 bool alts_tsi_handshaker_get_is_client_for_testing(
     alts_tsi_handshaker* handshaker) {
-  GPR_ASSERT(handshaker != nullptr);
+  CHECK_NE(handshaker, nullptr);
   return handshaker->is_client;
 }
 

@@ -118,11 +118,12 @@
     s.osx.deployment_target = '10.12'
     s.tvos.deployment_target = '12.0'
     s.watchos.deployment_target = '6.0'
+    s.visionos.deployment_target = '1.0'
 
     s.requires_arc = false
 
     name = 'grpc'
-    abseil_version = '1.20240116.1'
+    abseil_version = '~> 1.20240116.2'
 
     # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
     # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -198,7 +199,7 @@
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Privacy", version
-      ss.dependency 'BoringSSL-GRPC', '0.0.32'
+      ss.dependency 'BoringSSL-GRPC', '0.0.34'
       % for abseil_spec in grpc_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

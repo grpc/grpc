@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
 #include <openssl/crypto.h>
@@ -25,8 +23,11 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -68,7 +69,7 @@ void LogSslErrorStack(void) {
 
 tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
                       size_t unprotected_bytes_size) {
-  GPR_ASSERT(unprotected_bytes_size <= INT_MAX);
+  CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int ssl_write_result = SSL_write(ssl, unprotected_bytes,
                                    static_cast<int>(unprotected_bytes_size));
@@ -89,7 +90,7 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
 
 tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
                      size_t* unprotected_bytes_size) {
-  GPR_ASSERT(*unprotected_bytes_size <= INT_MAX);
+  CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int read_from_ssl = SSL_read(ssl, unprotected_bytes,
                                static_cast<int>(*unprotected_bytes_size));
@@ -134,7 +135,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   int pending_in_ssl = static_cast<int>(BIO_pending(network_io));
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
-    GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
+    CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
     read_from_ssl = BIO_read(network_io, protected_output_frames,
                              static_cast<int>(*protected_output_frames_size));
     if (read_from_ssl < 0) {
@@ -161,7 +162,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   result = DoSslWrite(ssl, buffer, buffer_size);
   if (result != TSI_OK) return result;
 
-  GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
+  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl < 0) {
@@ -191,11 +192,11 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
-  GPR_ASSERT(pending >= 0);
+  CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   if (*still_pending_size == 0) return TSI_OK;
 
-  GPR_ASSERT(*protected_output_frames_size <= INT_MAX);
+  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl <= 0) {
@@ -204,7 +205,7 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(network_io));
-  GPR_ASSERT(pending >= 0);
+  CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   return TSI_OK;
 }
@@ -232,7 +233,7 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   *unprotected_bytes_size = output_bytes_size - output_bytes_offset;
 
   // Then, try to write some data to ssl.
-  GPR_ASSERT(*protected_frames_bytes_size <= INT_MAX);
+  CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
   written_into_ssl = BIO_write(network_io, protected_frames_bytes,
                                static_cast<int>(*protected_frames_bytes_size));
   if (written_into_ssl < 0) {
@@ -259,12 +260,19 @@ bool VerifyCrlSignature(X509_CRL* crl, X509* issuer) {
   if (ikey == nullptr) {
     // Can't verify signature because we couldn't get the pubkey, fail the
     // check.
+    gpr_log(GPR_DEBUG, "Could not public key from certificate.");
     EVP_PKEY_free(ikey);
     return false;
   }
-  bool ret = X509_CRL_verify(crl, ikey) == 1;
+  int ret = X509_CRL_verify(crl, ikey);
+  if (ret < 0) {
+    gpr_log(GPR_DEBUG,
+            "There was an unexpected problem checking the CRL signature.");
+  } else if (ret == 0) {
+    gpr_log(GPR_DEBUG, "CRL failed verification.");
+  }
   EVP_PKEY_free(ikey);
-  return ret;
+  return ret == 1;
 }
 
 bool VerifyCrlCertIssuerNamesMatch(X509_CRL* crl, X509* cert) {

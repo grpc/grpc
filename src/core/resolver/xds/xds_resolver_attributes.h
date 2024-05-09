@@ -17,16 +17,16 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
 #define GRPC_SRC_CORE_RESOLVER_XDS_XDS_RESOLVER_ATTRIBUTES_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
-class XdsClusterAttribute
+class XdsClusterAttribute final
     : public ServiceConfigCallData::CallAttributeInterface {
  public:
   static UniqueTypeName TypeName() {

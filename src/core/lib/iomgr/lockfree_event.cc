@@ -16,11 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/lockfree_event.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -80,7 +81,7 @@ void LockfreeEvent::DestroyEvent() {
     if (curr & kShutdownBit) {
       internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
-      GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
+      CHECK(curr == kClosureNotReady || curr == kClosureReady);
     }
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit

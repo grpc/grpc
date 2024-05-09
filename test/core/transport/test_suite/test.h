@@ -86,10 +86,11 @@ class ActionState {
   explicit ActionState(NameAndLocation name_and_location);
 
   State Get() const { return state_; }
-  void Set(State state) {
+  void Set(State state, SourceLocation whence = {}) {
     gpr_log(GPR_INFO, "%s",
             absl::StrCat(StateString(state), " ", name(), " [", step(), "] ",
-                         file(), ":", line())
+                         file(), ":", line(), " @ ", whence.file(), ":",
+                         whence.line())
                 .c_str());
     state_ = state;
   }
@@ -130,9 +131,9 @@ PromiseSpawner SpawnerForContext(
 template <typename Arg>
 using NextSpawner = absl::AnyInvocable<void(Arg)>;
 
-template <typename R>
+template <typename R, typename P>
 Promise<Empty> WrapPromiseAndNext(std::shared_ptr<ActionState> action_state,
-                                  Promise<R> promise, NextSpawner<R> next) {
+                                  P promise, NextSpawner<R> next) {
   return Promise<Empty>(OnCancel(
       [action_state, promise = std::move(promise),
        next = std::move(next)]() mutable -> Poll<Empty> {
@@ -172,8 +173,7 @@ NextSpawner<Arg> WrapFollowUps(NameAndLocation loc,
     action_state->Set(ActionState::kNotStarted);
     spawner(name,
             WrapPromiseAndNext(std::move(action_state),
-                               Promise<Result>(factory.Make(std::move(arg))),
-                               std::move(next)));
+                               factory.Make(std::move(arg)), std::move(next)));
   };
 }
 
@@ -191,9 +191,9 @@ void StartSeq(NameAndLocation loc, ActionStateFactory action_state_factory,
       [spawner, first = Factory(std::move(first)), next = std::move(next),
        action_state = std::move(action_state), name = loc.name()]() mutable {
         action_state->Set(ActionState::kNotStarted);
+        auto promise = first.Make();
         spawner(name, WrapPromiseAndNext(std::move(action_state),
-                                         Promise<Result>(first.Make()),
-                                         std::move(next)));
+                                         std::move(promise), std::move(next)));
         return Empty{};
       });
 }
@@ -221,7 +221,7 @@ class TransportTest : public ::testing::Test {
         rng_(rng) {}
 
   void SetServerAcceptor();
-  CallInitiator CreateCall();
+  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
 
   std::string RandomString(int min_length, int max_length,
                            absl::string_view character_set);
@@ -237,6 +237,12 @@ class TransportTest : public ::testing::Test {
 
   CallHandler TickUntilServerCall();
   void WaitForAllPendingWork();
+
+  auto MakeCall(ClientMetadataHandle client_initial_metadata) {
+    auto* arena = call_arena_allocator_->MakeArena();
+    return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
+                        arena, call_arena_allocator_, nullptr);
+  }
 
   // Alternative for Seq for test driver code.
   // Registers each step so that WaitForAllPendingWork() can report progress,
@@ -266,19 +272,16 @@ class TransportTest : public ::testing::Test {
 
   class Acceptor final : public ServerTransport::Acceptor {
    public:
-    Acceptor(grpc_event_engine::experimental::EventEngine* event_engine,
-             MemoryAllocator* allocator)
-        : event_engine_(event_engine), allocator_(allocator) {}
+    explicit Acceptor(TransportTest* test) : test_(test) {}
 
     Arena* CreateArena() override;
     absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) override;
+        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
     absl::optional<CallHandler> PopHandler();
 
    private:
     std::queue<CallHandler> handlers_;
-    grpc_event_engine::experimental::EventEngine* const event_engine_;
-    MemoryAllocator* const allocator_;
+    TransportTest* const test_;
   };
 
   class WatchDog {
@@ -304,10 +307,13 @@ class TransportTest : public ::testing::Test {
               }(),
               fuzzing_event_engine::Actions())};
   std::unique_ptr<TransportFixture> fixture_;
-  MemoryAllocator allocator_ = MakeResourceQuota("test-quota")
-                                   ->memory_quota()
-                                   ->CreateMemoryAllocator("test-allocator");
-  Acceptor acceptor_{event_engine_.get(), &allocator_};
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_{
+      MakeRefCounted<CallArenaAllocator>(
+          MakeResourceQuota("test-quota")
+              ->memory_quota()
+              ->CreateMemoryAllocator("test-allocator"),
+          1024)};
+  Acceptor acceptor_{this};
   TransportFixture::ClientAndServerTransportPair transport_pair_ =
       fixture_->CreateTransportPair(event_engine_);
   std::queue<std::shared_ptr<transport_test_detail::ActionState>>

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
 #include <limits.h>
@@ -37,10 +35,13 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
+
+#include <grpc/support/port_platform.h>
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/param_build.h>
 #endif
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -53,7 +54,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -68,7 +68,6 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
-#include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/uri/uri_parser.h"
@@ -114,19 +113,9 @@ static const EVP_MD* evp_md_from_alg(const char* alg) {
 
 static Json parse_json_part_from_jwt(const char* str, size_t len) {
   std::string string;
-  if (!grpc_core::IsAbslBase64Enabled()) {
-    grpc_slice slice = grpc_base64_decode_with_len(str, len, 1);
-    if (GRPC_SLICE_IS_EMPTY(slice)) {
-      gpr_log(GPR_ERROR, "Invalid base64.");
-      return Json();  // JSON null
-    }
-    string = std::string(grpc_core::StringViewFromSlice(slice));
-    grpc_core::CSliceUnref(slice);
-  } else {
-    if (!absl::WebSafeBase64Unescape(absl::string_view(str, len), &string)) {
-      gpr_log(GPR_ERROR, "Invalid base64.");
-      return Json();  // JSON null
-    }
+  if (!absl::WebSafeBase64Unescape(absl::string_view(str, len), &string)) {
+    gpr_log(GPR_ERROR, "Invalid base64.");
+    return Json();  // JSON null
   }
   auto json = grpc_core::JsonParse(string);
   if (!json.ok()) {
@@ -325,7 +314,7 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
   gpr_timespec skewed_now;
   int audience_ok;
 
-  GPR_ASSERT(claims != nullptr);
+  CHECK_NE(claims, nullptr);
 
   skewed_now =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
@@ -471,7 +460,7 @@ static EVP_PKEY* extract_pkey_from_x509(const char* x509_str) {
   EVP_PKEY* result = nullptr;
   BIO* bio = BIO_new(BIO_s_mem());
   size_t len = strlen(x509_str);
-  GPR_ASSERT(len < INT_MAX);
+  CHECK_LT(len, static_cast<size_t>(INT_MAX));
   BIO_write(bio, x509_str, static_cast<int>(len));
   x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
   if (x509 == nullptr) {
@@ -491,18 +480,6 @@ end:
 
 static BIGNUM* bignum_from_base64(const char* b64) {
   if (b64 == nullptr) return nullptr;
-  if (!grpc_core::IsAbslBase64Enabled()) {
-    grpc_slice bin = grpc_base64_decode(b64, 1);
-    if (GRPC_SLICE_IS_EMPTY(bin)) {
-      gpr_log(GPR_ERROR, "Invalid base64 for big num.");
-      return nullptr;
-    }
-    BIGNUM* result =
-        BN_bin2bn(GRPC_SLICE_START_PTR(bin),
-                  TSI_SIZE_AS_SIZE(GRPC_SLICE_LENGTH(bin)), nullptr);
-    grpc_core::CSliceUnref(bin);
-    return result;
-  }
   std::string string;
   if (!absl::WebSafeBase64Unescape(b64, &string)) {
     gpr_log(GPR_ERROR, "Invalid base64 for big num.");
@@ -554,8 +531,8 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   BIGNUM* tmp_e = nullptr;
   Json::Object::const_iterator it;
 
-  GPR_ASSERT(json.type() == Json::Type::kObject);
-  GPR_ASSERT(kty != nullptr);
+  CHECK(json.type() == Json::Type::kObject);
+  CHECK_NE(kty, nullptr);
   if (strcmp(kty, "RSA") != 0) {
     gpr_log(GPR_ERROR, "Unsupported key type %s.", kty);
     goto end;
@@ -682,7 +659,7 @@ static int verify_jwt_signature(EVP_PKEY* key, const char* alg,
   const EVP_MD* md = evp_md_from_alg(alg);
   int result = 0;
 
-  GPR_ASSERT(md != nullptr);  // Checked before.
+  CHECK_NE(md, nullptr);  // Checked before.
   if (md_ctx == nullptr) {
     gpr_log(GPR_ERROR, "Could not create EVP_MD_CTX.");
     goto end;
@@ -821,7 +798,7 @@ static email_key_mapping* verifier_get_mapping(grpc_jwt_verifier* v,
 static void verifier_put_mapping(grpc_jwt_verifier* v, const char* email_domain,
                                  const char* key_url_prefix) {
   email_key_mapping* mapping = verifier_get_mapping(v, email_domain);
-  GPR_ASSERT(v->num_mappings < v->allocated_mappings);
+  CHECK(v->num_mappings < v->allocated_mappings);
   if (mapping != nullptr) {
     gpr_free(mapping->key_url_prefix);
     mapping->key_url_prefix = gpr_strdup(key_url_prefix);
@@ -830,7 +807,7 @@ static void verifier_put_mapping(grpc_jwt_verifier* v, const char* email_domain,
   v->mappings[v->num_mappings].email_domain = gpr_strdup(email_domain);
   v->mappings[v->num_mappings].key_url_prefix = gpr_strdup(key_url_prefix);
   v->num_mappings++;
-  GPR_ASSERT(v->num_mappings <= v->allocated_mappings);
+  CHECK(v->num_mappings <= v->allocated_mappings);
 }
 
 // Very non-sophisticated way to detect an email address. Should be good
@@ -842,7 +819,7 @@ const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   if (*email_domain == '\0') return nullptr;
   const char* dot = strrchr(email_domain, '.');
   if (dot == nullptr || dot == email_domain) return email_domain;
-  GPR_ASSERT(dot > email_domain);
+  CHECK(dot > email_domain);
   // There may be a subdomain, we just want the domain.
   dot = static_cast<const char*>(
       gpr_memrchr(email_domain, '.', static_cast<size_t>(dot - email_domain)));
@@ -863,8 +840,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   char* path;
   absl::StatusOr<grpc_core::URI> uri;
 
-  GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
-             ctx->claims != nullptr);
+  CHECK(ctx != nullptr && ctx->header != nullptr && ctx->claims != nullptr);
   iss = ctx->claims->iss;
   if (ctx->header->kid == nullptr) {
     gpr_log(GPR_ERROR, "Missing kid in jose header.");
@@ -883,7 +859,7 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   email_domain = grpc_jwt_issuer_email_domain(iss);
   if (email_domain != nullptr) {
     email_key_mapping* mapping;
-    GPR_ASSERT(ctx->verifier != nullptr);
+    CHECK_NE(ctx->verifier, nullptr);
     mapping = verifier_get_mapping(ctx->verifier, email_domain);
     if (mapping == nullptr) {
       gpr_log(GPR_ERROR, "Missing mapping for issuer email.");
@@ -948,9 +924,10 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   size_t signed_jwt_len;
   const char* cur = jwt;
   Json json;
+  std::string signature_str;
 
-  GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr &&
-             cb != nullptr);
+  CHECK(verifier != nullptr && jwt != nullptr && audience != nullptr &&
+        cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));
@@ -969,14 +946,8 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   signed_jwt_len = static_cast<size_t>(dot - jwt);
   cur = dot + 1;
 
-  if (!grpc_core::IsAbslBase64Enabled()) {
-    signature = grpc_base64_decode(cur, 1);
-    if (GRPC_SLICE_IS_EMPTY(signature)) goto error;
-  } else {
-    std::string signature_str;
-    if (!absl::WebSafeBase64Unescape(cur, &signature_str)) goto error;
-    signature = grpc_slice_from_cpp_string(std::move(signature_str));
-  }
+  if (!absl::WebSafeBase64Unescape(cur, &signature_str)) goto error;
+  signature = grpc_slice_from_cpp_string(std::move(signature_str));
   retrieve_key_and_verify(
       verifier_cb_ctx_create(verifier, pollset, header, claims, audience,
                              signature, jwt, signed_jwt_len, user_data, cb));

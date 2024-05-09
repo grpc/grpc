@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/log.h>
@@ -45,7 +47,7 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
   for (const auto& a : other.args_) {
     grpc_arg ap;
     ap.type = a.type;
-    GPR_ASSERT(list_it_src->c_str() == a.key);
+    CHECK(list_it_src->c_str() == a.key);
     ap.key = const_cast<char*>(list_it_dst->c_str());
     ++list_it_src;
     ++list_it_dst;
@@ -54,7 +56,7 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
         ap.value.integer = a.value.integer;
         break;
       case GRPC_ARG_STRING:
-        GPR_ASSERT(list_it_src->c_str() == a.value.string);
+        CHECK(list_it_src->c_str() == a.value.string);
         ap.value.string = const_cast<char*>(list_it_dst->c_str());
         ++list_it_src;
         ++list_it_dst;
@@ -101,7 +103,7 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   for (auto& arg : args_) {
     if (arg.type == mutator_arg.type &&
         std::string(arg.key) == std::string(mutator_arg.key)) {
-      GPR_ASSERT(!replaced);
+      CHECK(!replaced);
       arg.value.pointer.vtable->destroy(arg.value.pointer.p);
       arg.value.pointer = mutator_arg.value.pointer;
       replaced = true;
@@ -130,7 +132,7 @@ void ChannelArguments::SetUserAgentPrefix(
     ++strings_it;
     if (arg.type == GRPC_ARG_STRING) {
       if (std::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
-        GPR_ASSERT(arg.value.string == strings_it->c_str());
+        CHECK(arg.value.string == strings_it->c_str());
         *(strings_it) = user_agent_prefix + " " + arg.value.string;
         arg.value.string = const_cast<char*>(strings_it->c_str());
         replaced = true;
@@ -215,6 +217,19 @@ void ChannelArguments::SetChannelArgs(grpc_channel_args* channel_args) const {
   if (channel_args->num_args > 0) {
     channel_args->args = const_cast<grpc_arg*>(&args_[0]);
   }
+}
+
+void ChannelArguments::SetSslTargetNameOverride(const std::string& name) {
+  SetString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, name);
+}
+
+std::string ChannelArguments::GetSslTargetNameOverride() const {
+  for (unsigned int i = 0; i < args_.size(); i++) {
+    if (std::string(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == args_[i].key) {
+      return args_[i].value.string;
+    }
+  }
+  return "";
 }
 
 }  // namespace grpc

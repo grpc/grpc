@@ -19,11 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_MPSCQ_H
 #define GRPC_SRC_CORE_LIB_GPRPP_MPSCQ_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/sync.h"
 
@@ -41,8 +42,8 @@ class MultiProducerSingleConsumerQueue {
 
   MultiProducerSingleConsumerQueue() : head_{&stub_}, tail_(&stub_) {}
   ~MultiProducerSingleConsumerQueue() {
-    GPR_ASSERT(head_.load(std::memory_order_relaxed) == &stub_);
-    GPR_ASSERT(tail_ == &stub_);
+    CHECK(head_.load(std::memory_order_relaxed) == &stub_);
+    CHECK(tail_ == &stub_);
   }
 
   // Push a node

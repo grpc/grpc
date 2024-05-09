@@ -34,13 +34,13 @@
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/substitute.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpcpp/impl/grpc_library.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
@@ -103,8 +103,8 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
     const ChannelArguments& args) {
   grpc_init();
 
-  GPR_ASSERT(jni_env_void != nullptr);
-  GPR_ASSERT(security_policy != nullptr);
+  CHECK_NE(jni_env_void, nullptr);
+  CHECK_NE(security_policy, nullptr);
 
   // Generate an unique connection ID that identifies this connection (Useful
   // for mapping connection between Java and C++ code).
@@ -121,33 +121,21 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   grpc_binder::TryEstablishConnectionWithUri(static_cast<JNIEnv*>(jni_env_void),
                                              context, uri, connection_id);
 
-  grpc_channel_args channel_args;
-  args.SetChannelArgs(&channel_args);
+  grpc_binder::GetSecurityPolicySetting()->Set(connection_id, security_policy);
 
   // Set server URI to a URI that contains connection id. The URI will be used
   // by subchannel connector to obtain correct endpoint binder from
   // `EndpointBinderPool`.
-  grpc_channel_args* new_args;
-  {
-    string server_uri = "binder:" + connection_id;
-    grpc_arg server_uri_arg =
-        grpc_channel_arg_string_create(const_cast<char*>(GRPC_ARG_SERVER_URI),
-                                       const_cast<char*>(server_uri.c_str()));
-    const char* to_remove[] = {GRPC_ARG_SERVER_URI};
-    new_args = grpc_channel_args_copy_and_add_and_remove(
-        &channel_args, to_remove, 1, &server_uri_arg, 1);
-  }
+  string server_uri = "binder:" + connection_id;
 
-  grpc_binder::GetSecurityPolicySetting()->Set(connection_id, security_policy);
+  grpc_channel_args channel_args;
+  args.SetChannelArgs(&channel_args);
 
-  auto channel = CreateChannelInternal(
-      "", grpc::internal::CreateClientBinderChannelImpl(new_args),
+  return CreateChannelInternal(
+      "",
+      grpc::internal::CreateClientBinderChannelImpl(server_uri, &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-
-  grpc_channel_args_destroy(new_args);
-
-  return channel;
 }
 
 bool InitializeBinderChannelJavaClass(void* jni_env_void) {
@@ -176,7 +164,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -188,7 +176,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -199,7 +187,7 @@ std::shared_ptr<grpc::Channel> CreateBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -211,7 +199,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -220,7 +208,7 @@ bool InitializeBinderChannelJavaClass(void* jni_env_void) {
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 
@@ -230,7 +218,7 @@ bool InitializeBinderChannelJavaClass(
           "This APK is compiled with Android API level = %d, which is not "
           "supported. See port_platform.h for supported versions.",
           __ANDROID_API__);
-  GPR_ASSERT(0);
+  CHECK(0);
   return {};
 }
 

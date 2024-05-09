@@ -35,13 +35,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_cluster.h"
-#include "src/core/ext/xds/xds_common_types.h"
-#include "src/core/ext/xds/xds_health_status.h"
-#include "src/core/ext/xds/xds_resource_type.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -50,6 +43,13 @@
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_cluster.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_health_status.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
@@ -64,7 +64,7 @@
 #include "src/proto/grpc/testing/xds/v3/tls.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
@@ -85,7 +85,8 @@ class XdsClusterTest : public ::testing::Test {
  protected:
   XdsClusterTest()
       : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(), xds_client_->bootstrap().server(),
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
                         &xds_cluster_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
@@ -117,7 +118,8 @@ class XdsClusterTest : public ::testing::Test {
     }
     return MakeRefCounted<XdsClient>(std::move(*bootstrap),
                                      /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr, "foo agent",
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "foo agent",
                                      "foo version");
   }
 
@@ -1106,7 +1108,7 @@ TEST_F(LrsTest, Valid) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_TRUE(resource.lrs_load_reporting_server.has_value());
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            xds_client_->bootstrap().server());
+            *xds_client_->bootstrap().servers().front());
 }
 
 TEST_F(LrsTest, NotSelfConfigSource) {
@@ -1633,10 +1635,8 @@ TEST_F(TelemetryLabelTest, ValidServiceLabelsConfig) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(*resource.telemetry_labels,
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair("service_name", "abc"),
-                  ::testing::Pair("service_namespace", "xyz")));
+  EXPECT_EQ(resource.service_telemetry_label.as_string_view(), "abc");
+  EXPECT_EQ(resource.namespace_telemetry_label.as_string_view(), "xyz");
 }
 
 TEST_F(TelemetryLabelTest, MissingMetadataField) {
@@ -1651,7 +1651,10 @@ TEST_F(TelemetryLabelTest, MissingMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.telemetry_labels, nullptr);
+  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
+              ::testing::IsEmpty());
+  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
+              ::testing::IsEmpty());
 }
 
 TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
@@ -1669,10 +1672,13 @@ TEST_F(TelemetryLabelTest, MissingCsmFilterMetadataField) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_EQ(resource.telemetry_labels, nullptr);
+  EXPECT_THAT(resource.service_telemetry_label.as_string_view(),
+              ::testing::IsEmpty());
+  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
+              ::testing::IsEmpty());
 }
 
-TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
+TEST_F(TelemetryLabelTest, IgnoreNonServiceLabelEntries) {
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
@@ -1682,6 +1688,7 @@ TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
   label_map["bool_value"].set_bool_value(true);
   label_map["number_value"].set_number_value(3.14);
   *label_map["string_value"].mutable_string_value() = "abc";
+  *label_map["service_name"].mutable_string_value() = "service";
   label_map["null_value"].set_null_value(::google::protobuf::NULL_VALUE);
   auto& list_value_values =
       *label_map["list_value"].mutable_list_value()->mutable_values();
@@ -1698,9 +1705,9 @@ TEST_F(TelemetryLabelTest, IgnoreNonStringEntries) {
   ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
-  EXPECT_THAT(
-      *resource.telemetry_labels,
-      ::testing::UnorderedElementsAre(::testing::Pair("string_value", "abc")));
+  EXPECT_THAT(resource.service_telemetry_label.as_string_view(), "service");
+  EXPECT_THAT(resource.namespace_telemetry_label.as_string_view(),
+              ::testing::IsEmpty());
 }
 
 }  // namespace

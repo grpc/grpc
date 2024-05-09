@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_PROMISE_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/down_cast.h"
 
@@ -36,7 +36,7 @@ struct ContextType;
 
 // Some contexts can be subclassed. If the subclass is set as that context
 // then GetContext<Base>() will return the base, and GetContext<Derived>() will
-// down_cast to the derived type.
+// DownCast to the derived type.
 // Specializations of this type should be created for each derived type, and
 // should have a single using statement Base pointing to the derived base class.
 // Example:
@@ -84,7 +84,7 @@ class Context<T, absl::void_t<typename ContextSubclass<T>::Base>>
  public:
   using Context<typename ContextSubclass<T>::Base>::Context;
   static T* get() {
-    return down_cast<T*>(Context<typename ContextSubclass<T>::Base>::get());
+    return DownCast<T*>(Context<typename ContextSubclass<T>::Base>::get());
   }
 };
 
@@ -115,7 +115,7 @@ bool HasContext() {
 template <typename T>
 T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  GPR_ASSERT(p != nullptr);
+  CHECK_NE(p, nullptr);
   return p;
 }
 

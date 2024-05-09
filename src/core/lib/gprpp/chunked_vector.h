@@ -15,13 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_CHUNKED_VECTOR_H
 #define GRPC_SRC_CORE_LIB_GPRPP_CHUNKED_VECTOR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstddef>
 #include <iterator>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -87,9 +88,9 @@ class ChunkedVector {
 
   // Remove the last element and return it.
   T PopBack() {
-    GPR_ASSERT(append_ != nullptr);
+    CHECK_NE(append_, nullptr);
     if (append_->count == 0) {
-      GPR_ASSERT(first_ != append_);
+      CHECK(first_ != append_);
       Chunk* chunk = first_;
       while (chunk->next != append_) {
         chunk = chunk->next;
@@ -235,7 +236,7 @@ class ChunkedVector {
  private:
   ManualConstructor<T>* AppendSlot() {
     if (append_ == nullptr) {
-      GPR_ASSERT(first_ == nullptr);
+      CHECK_EQ(first_, nullptr);
       first_ = arena_->New<Chunk>();
       append_ = first_;
     } else if (append_->count == kChunkSize) {

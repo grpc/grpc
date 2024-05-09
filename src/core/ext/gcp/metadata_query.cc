@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/gcp/metadata_query.h"
 
 #include <string.h>
@@ -25,14 +23,17 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -73,7 +74,7 @@ MetadataQuery::MetadataQuery(
   GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
   auto uri = URI::Create("http", std::move(metadata_server_name), attribute_,
                          {} /* query params */, "" /* fragment */);
-  GPR_ASSERT(uri.ok());  // params are hardcoded
+  CHECK(uri.ok());  // params are hardcoded
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),

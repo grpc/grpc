@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 #include <set>
@@ -26,16 +24,18 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "opencensus/stats/testing/test_utils.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/server/load_reporter/constants.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -60,7 +60,7 @@ class MockCensusViewProvider : public CensusViewProvider {
 
   const ViewDescriptor& FindViewDescriptor(const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
-    GPR_ASSERT(it != view_descriptor_map().end());
+    CHECK(it != view_descriptor_map().end());
     return it->second;
   }
 };

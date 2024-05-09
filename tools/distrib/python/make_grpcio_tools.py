@@ -71,7 +71,9 @@ PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
     os.path.join("third_party", "abseil-cpp"),
+    os.path.join("third_party", "protobuf"),
     os.path.join("third_party", "protobuf", "src"),
+    os.path.join("third_party", "protobuf", "upb"),
     os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
 ]
 
@@ -88,6 +90,11 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("src/compiler", "grpc_root/src/compiler"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/src", "third_party/protobuf/src"),
+    ("third_party/protobuf/upb", "third_party/protobuf/upb"),
+    (
+        "third_party/protobuf/upb_generator",
+        "third_party/protobuf/upb_generator",
+    ),
     (
         "third_party/protobuf/third_party/utf8_range",
         "third_party/protobuf/third_party/utf8_range",
@@ -181,7 +188,7 @@ def _generate_deps_file_content():
     # Collect .cc files (that will be later included in the native extension build)
     cc_files = []
     for name in cc_files_output:
-        if name.endswith(".cc"):
+        if name.endswith(".c") or name.endswith(".cc"):
             filepath = _bazel_name_to_file_path(name)
             if filepath:
                 cc_files.append(filepath)

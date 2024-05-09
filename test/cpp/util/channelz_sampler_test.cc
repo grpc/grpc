@@ -15,8 +15,6 @@
 // limitations under the License.
 //
 //
-#include <grpc/support/port_platform.h>
-
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -26,11 +24,14 @@
 #include <string>
 #include <thread>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -45,8 +46,8 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -85,7 +86,7 @@ void RunClient(const std::string& client_id, gpr_event* done_ev) {
   std::unique_ptr<grpc::testing::TestService::Stub> stub =
       grpc::testing::TestService::NewStub(
           grpc::CreateChannel(server_address, channel_creds));
-  gpr_log(GPR_INFO, "Client %s is echoing!", client_id.c_str());
+  LOG(INFO) << "Client " << client_id << " is echoing!";
   while (true) {
     if (gpr_event_wait(done_ev, grpc_timeout_seconds_to_deadline(1)) !=
         nullptr) {
@@ -96,8 +97,8 @@ void RunClient(const std::string& client_id, gpr_event* done_ev) {
     ClientContext context;
     Status status = stub->EmptyCall(&context, request, &response);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "Client echo failed.");
-      GPR_ASSERT(0);
+      LOG(ERROR) << "Client echo failed.";
+      CHECK(0);
     }
   }
 }
@@ -125,7 +126,7 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   builder.AddListeningPort(server_address, server_creds);
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.c_str());
+  LOG(INFO) << "Server listening on " << server_address;
   const int kWaitForServerSeconds = 10;
   ASSERT_TRUE(WaitForConnection(kWaitForServerSeconds));
   // client threads
@@ -144,20 +145,18 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   int status = test_driver->Join();
   if (WIFEXITED(status)) {
     if (WEXITSTATUS(status)) {
-      gpr_log(GPR_ERROR,
-              "Channelz sampler test test-runner exited with code %d",
-              WEXITSTATUS(status));
-      GPR_ASSERT(0);  // log the line number of the assertion failure
+      LOG(ERROR) << "Channelz sampler test test-runner exited with code "
+                 << WEXITSTATUS(status);
+      CHECK(0);  // log the line number of the assertion failure
     }
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_ERROR, "Channelz sampler test test-runner ended from signal %d",
-            WTERMSIG(status));
-    GPR_ASSERT(0);
+    LOG(ERROR) << "Channelz sampler test test-runner ended from signal "
+               << WTERMSIG(status);
+    CHECK(0);
   } else {
-    gpr_log(GPR_ERROR,
-            "Channelz sampler test test-runner ended with unknown status %d",
-            status);
-    GPR_ASSERT(0);
+    LOG(ERROR) << "Channelz sampler test test-runner ended with unknown status "
+               << status;
+    CHECK(0);
   }
   delete test_driver;
   gpr_event_set(&done_ev1, reinterpret_cast<void*>(1));

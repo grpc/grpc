@@ -17,20 +17,20 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_PROVIDER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <map>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -66,7 +66,7 @@ struct grpc_tls_certificate_provider
   // be reused when two different `grpc_tls_certificate_provider` objects are
   // used but they compare as equal (assuming other channel args match).
   int Compare(const grpc_tls_certificate_provider* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/channel_init.h"
 
 #include <string.h>
@@ -28,12 +26,14 @@
 #include <string>
 #include <type_traits>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"
@@ -138,19 +138,19 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     }
     filter_to_registration[registration->filter_] = registration.get();
     if (registration->terminal_) {
-      GPR_ASSERT(registration->after_.empty());
-      GPR_ASSERT(registration->before_.empty());
-      GPR_ASSERT(!registration->before_all_);
-      terminal_filters.emplace_back(registration->filter_, nullptr,
-                                    std::move(registration->predicates_),
-                                    registration->registration_source_);
+      CHECK(registration->after_.empty());
+      CHECK(registration->before_.empty());
+      CHECK(!registration->before_all_);
+      terminal_filters.emplace_back(
+          registration->filter_, nullptr, std::move(registration->predicates_),
+          registration->skip_v3_, registration->registration_source_);
     } else {
       dependencies[registration->filter_];  // Ensure it's in the map.
     }
   }
   for (const auto& registration : registrations) {
     if (registration->terminal_) continue;
-    GPR_ASSERT(filter_to_registration.count(registration->filter_) > 0);
+    CHECK_GT(filter_to_registration.count(registration->filter_), 0u);
     for (F after : registration->after_) {
       if (filter_to_registration.count(after) == 0) {
         gpr_log(
@@ -223,9 +223,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
     auto* registration = filter_to_registration[filter];
-    filters.emplace_back(filter, registration->vtable_,
-                         std::move(registration->predicates_),
-                         registration->registration_source_);
+    filters.emplace_back(
+        filter, registration->vtable_, std::move(registration->predicates_),
+        registration->skip_v3_, registration->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
     }
@@ -414,6 +414,7 @@ absl::StatusOr<ChannelInit::StackSegment> ChannelInit::CreateStackSegment(
   size_t channel_data_alignment = 0;
   // Based on predicates build a list of filters to include in this segment.
   for (const auto& filter : stack_config.filters) {
+    if (filter.skip_v3) continue;
     if (!filter.CheckPredicates(args)) continue;
     if (filter.vtable == nullptr) {
       return absl::InvalidArgumentError(

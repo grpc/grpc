@@ -24,6 +24,8 @@
 
 #import <CoreFoundation/CoreFoundation.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -150,7 +152,7 @@ static void CallWriteCb(CFStreamEndpoint* ep, grpc_error_handle error) {
 
 static void ReadAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
-  GPR_ASSERT(ep->read_cb != nullptr);
+  CHECK_NE(ep->read_cb, nullptr);
   if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
     CallReadCb(ep, error);
@@ -158,7 +160,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     return;
   }
 
-  GPR_ASSERT(ep->read_slices->count == 1);
+  CHECK_EQ(ep->read_slices->count, 1);
   grpc_slice slice = ep->read_slices->slices[0];
   size_t len = GRPC_SLICE_LENGTH(slice);
   CFIndex read_size =
@@ -191,7 +193,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
 
 static void WriteAction(void* arg, grpc_error_handle error) {
   CFStreamEndpoint* ep = static_cast<CFStreamEndpoint*>(arg);
-  GPR_ASSERT(ep->write_cb != nullptr);
+  CHECK_NE(ep->write_cb, nullptr);
   if (!error.ok()) {
     grpc_slice_buffer_reset_and_unref(ep->write_slices);
     CallWriteCb(ep, error);
@@ -247,7 +249,7 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p read (%p, %p) length:%zu", ep_impl,
             slices, cb, slices->length);
   }
-  GPR_ASSERT(ep_impl->read_cb == nullptr);
+  CHECK_EQ(ep_impl->read_cb, nullptr);
   ep_impl->read_cb = cb;
   ep_impl->read_slices = slices;
   grpc_slice_buffer_reset_and_unref(slices);
@@ -265,7 +267,7 @@ static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p write (%p, %p) length:%zu",
             ep_impl, slices, cb, slices->length);
   }
-  GPR_ASSERT(ep_impl->write_cb == nullptr);
+  CHECK_EQ(ep_impl->write_cb, nullptr);
   ep_impl->write_cb = cb;
   ep_impl->write_slices = slices;
   EP_REF(ep_impl, "write");

@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/batch_builder.h"
 
 #include <type_traits>
+
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
@@ -66,25 +68,16 @@ BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
 }
 
 BatchBuilder::Batch::~Batch() {
-  auto* arena = party->arena();
   if (grpc_call_trace.enabled()) {
     gpr_log(GPR_DEBUG, "%s[connected] [batch %p] Destroy",
             GetContext<Activity>()->DebugTag().c_str(), this);
   }
-  if (pending_receive_message != nullptr) {
-    arena->DeletePooled(pending_receive_message);
-  }
-  if (pending_receive_initial_metadata != nullptr) {
-    arena->DeletePooled(pending_receive_initial_metadata);
-  }
-  if (pending_receive_trailing_metadata != nullptr) {
-    arena->DeletePooled(pending_receive_trailing_metadata);
-  }
-  if (pending_sends != nullptr) {
-    arena->DeletePooled(pending_sends);
-  }
+  delete pending_receive_message;
+  delete pending_receive_initial_metadata;
+  delete pending_receive_trailing_metadata;
+  delete pending_sends;
   if (batch.cancel_stream) {
-    arena->DeletePooled(batch.payload);
+    delete batch.payload;
   }
 #ifndef NDEBUG
   grpc_stream_unref(stream_refcount, "pending-batch");
@@ -105,13 +98,13 @@ BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
     batch_ = GetContext<Arena>()->NewPooled<Batch>(payload_,
                                                    target_->stream_refcount);
   }
-  GPR_ASSERT(batch_ != nullptr);
+  CHECK_NE(batch_, nullptr);
   return batch_;
 }
 
 void BatchBuilder::FlushBatch() {
-  GPR_ASSERT(batch_ != nullptr);
-  GPR_ASSERT(target_.has_value());
+  CHECK_NE(batch_, nullptr);
+  CHECK(target_.has_value());
   if (grpc_call_trace.enabled()) {
     gpr_log(
         GPR_DEBUG, "%sPerform transport stream op batch: %p %s",
@@ -171,8 +164,8 @@ BatchBuilder::Batch* BatchBuilder::MakeCancel(
 
 void BatchBuilder::Cancel(Target target, absl::Status status) {
   auto* batch = MakeCancel(target.stream_refcount, std::move(status));
-  batch->batch.on_complete = NewClosure(
-      [batch](absl::Status) { batch->party->arena()->DeletePooled(batch); });
+  batch->batch.on_complete =
+      NewClosure([batch](absl::Status) { delete batch; });
   batch->PerformWith(target);
 }
 

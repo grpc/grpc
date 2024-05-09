@@ -15,18 +15,18 @@
 // limitations under the License.
 //
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/error.h"
 
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -228,7 +228,7 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
-  GPR_DEBUG_ASSERT(!error.ok());
+  DCHECK(!error.ok());
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,
           grpc_core::StatusToString(error).c_str());
   return false;

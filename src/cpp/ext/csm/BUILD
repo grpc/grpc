@@ -41,6 +41,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
@@ -49,12 +50,13 @@ grpc_cc_library(
         "otel/api",
         "otel/sdk/src/metrics",
         "otel/sdk:headers",
-        "upb_base_lib",
-        "upb_mem_lib",
+        "@com_google_protobuf//upb:base",
+        "@com_google_protobuf//upb:mem",
     ],
     language = "c++",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//:call_tracer",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_base",

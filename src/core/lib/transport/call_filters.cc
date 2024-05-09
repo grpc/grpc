@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/call_filters.h"
 
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
 
@@ -42,7 +45,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::Start(
   if (layout->promise_size == 0) {
     // No call state ==> instantaneously ready
     auto r = InitStep(std::move(input), call_data);
-    GPR_ASSERT(r.ready());
+    CHECK(r.ready());
     return r;
   }
   promise_data_ =
@@ -52,6 +55,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::Start(
 
 template <typename T>
 Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
+  CHECK(input != nullptr);
   while (true) {
     if (ops_ == end_ops_) {
       return ResultOr<T>{std::move(input), nullptr};
@@ -71,7 +75,7 @@ Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
 
 template <typename T>
 Poll<ResultOr<T>> OperationExecutor<T>::Step(void* call_data) {
-  GPR_DEBUG_ASSERT(promise_data_ != nullptr);
+  DCHECK_NE(promise_data_, nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
     gpr_free_aligned(promise_data_);
@@ -107,7 +111,7 @@ Poll<T> InfallibleOperationExecutor<T>::Start(
   if (layout->promise_size == 0) {
     // No call state ==> instantaneously ready
     auto r = InitStep(std::move(input), call_data);
-    GPR_ASSERT(r.ready());
+    CHECK(r.ready());
     return r;
   }
   promise_data_ =
@@ -135,7 +139,7 @@ Poll<T> InfallibleOperationExecutor<T>::InitStep(T input, void* call_data) {
 
 template <typename T>
 Poll<T> InfallibleOperationExecutor<T>::Step(void* call_data) {
-  GPR_DEBUG_ASSERT(promise_data_ != nullptr);
+  DCHECK_NE(promise_data_, nullptr);
   auto p = ContinueStep(call_data);
   if (p.ready()) {
     gpr_free_aligned(promise_data_);
@@ -165,21 +169,10 @@ template class InfallibleOperationExecutor<ServerMetadataHandle>;
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters
 
-CallFilters::CallFilters() : stack_(nullptr), call_data_(nullptr) {}
-
-CallFilters::CallFilters(RefCountedPtr<Stack> stack)
-    : stack_(std::move(stack)),
-      call_data_(gpr_malloc_aligned(stack_->data_.call_data_size,
-                                    stack_->data_.call_data_alignment)) {
-  for (const auto& constructor : stack_->data_.filter_constructor) {
-    constructor.call_init(Offset(call_data_, constructor.call_offset),
-                          constructor.channel_data);
-  }
-  client_initial_metadata_state_.Start();
-  client_to_server_message_state_.Start();
-  server_initial_metadata_state_.Start();
-  server_to_client_message_state_.Start();
-}
+CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
+    : stack_(nullptr),
+      call_data_(nullptr),
+      client_initial_metadata_(std::move(client_initial_metadata)) {}
 
 CallFilters::~CallFilters() {
   if (call_data_ != nullptr) {
@@ -191,7 +184,7 @@ CallFilters::~CallFilters() {
 }
 
 void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
-  GPR_ASSERT(call_data_ == nullptr);
+  CHECK_EQ(call_data_, nullptr);
   stack_ = std::move(stack);
   call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
                                   stack_->data_.call_data_alignment);
@@ -212,14 +205,53 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
   }
 }
 
-void CallFilters::CancelDueToFailedPipeOperation() {
+void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (server_trailing_metadata_ == nullptr) return;
-  gpr_log(GPR_DEBUG, "Cancelling due to failed pipe operation");
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+    gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
+            "Cancelling due to failed pipe operation: %s",
+            DebugString().c_str());
+  }
   server_trailing_metadata_ =
       ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
   server_trailing_metadata_waiter_.Wake();
 }
+
+void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
+  CHECK(md != nullptr);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+    gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
+            GetContext<Activity>()->DebugTag().c_str(), this,
+            md->DebugString().c_str(), DebugString().c_str());
+  }
+  CHECK(md != nullptr);
+  if (server_trailing_metadata_ != nullptr) return;
+  server_trailing_metadata_ = std::move(md);
+  client_initial_metadata_state_.CloseWithError();
+  server_initial_metadata_state_.CloseSending();
+  client_to_server_message_state_.CloseWithError();
+  server_to_client_message_state_.CloseSending();
+  server_trailing_metadata_waiter_.Wake();
+}
+
+std::string CallFilters::DebugString() const {
+  std::vector<std::string> components = {
+      absl::StrFormat("this:%p", this),
+      absl::StrCat("client_initial_metadata:",
+                   client_initial_metadata_state_.DebugString()),
+      ServerInitialMetadataPromises::DebugString("server_initial_metadata",
+                                                 this),
+      ClientToServerMessagePromises::DebugString("client_to_server_message",
+                                                 this),
+      ServerToClientMessagePromises::DebugString("server_to_client_message",
+                                                 this),
+      absl::StrCat("server_trailing_metadata:",
+                   server_trailing_metadata_ == nullptr
+                       ? "not-set"
+                       : server_trailing_metadata_->DebugString())};
+  return absl::StrCat("CallFilters{", absl::StrJoin(components, ", "), "}");
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters::Stack
@@ -256,9 +288,52 @@ RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
 // CallFilters::PipeState
 
 void filters_detail::PipeState::Start() {
-  GPR_DEBUG_ASSERT(!started_);
+  DCHECK(!started_);
   started_ = true;
   wait_recv_.Wake();
+}
+
+void filters_detail::PipeState::CloseWithError() {
+  if (state_ == ValueState::kClosed) return;
+  state_ = ValueState::kError;
+  wait_recv_.Wake();
+  wait_send_.Wake();
+}
+
+Poll<bool> filters_detail::PipeState::PollClosed() {
+  switch (state_) {
+    case ValueState::kIdle:
+    case ValueState::kWaiting:
+    case ValueState::kQueued:
+    case ValueState::kReady:
+    case ValueState::kProcessing:
+      return wait_recv_.pending();
+    case ValueState::kClosed:
+      return false;
+    case ValueState::kError:
+      return true;
+  }
+  GPR_UNREACHABLE_CODE(return Pending{});
+}
+
+void filters_detail::PipeState::CloseSending() {
+  switch (state_) {
+    case ValueState::kIdle:
+      state_ = ValueState::kClosed;
+      break;
+    case ValueState::kWaiting:
+      state_ = ValueState::kClosed;
+      wait_recv_.Wake();
+      break;
+    case ValueState::kClosed:
+    case ValueState::kError:
+      break;
+    case ValueState::kQueued:
+    case ValueState::kReady:
+    case ValueState::kProcessing:
+      Crash("Only one push allowed to be outstanding");
+      break;
+  }
 }
 
 void filters_detail::PipeState::BeginPush() {
@@ -287,6 +362,10 @@ void filters_detail::PipeState::DropPush() {
     case ValueState::kReady:
     case ValueState::kProcessing:
     case ValueState::kWaiting:
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        gpr_log(GPR_INFO, "%p drop push in state %s", this,
+                DebugString().c_str());
+      }
       state_ = ValueState::kError;
       wait_recv_.Wake();
       break;
@@ -303,6 +382,10 @@ void filters_detail::PipeState::DropPull() {
     case ValueState::kReady:
     case ValueState::kProcessing:
     case ValueState::kWaiting:
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        gpr_log(GPR_INFO, "%p drop pull in state %s", this,
+                DebugString().c_str());
+      }
       state_ = ValueState::kError;
       wait_send_.Wake();
       break;
@@ -315,9 +398,12 @@ void filters_detail::PipeState::DropPull() {
 
 Poll<StatusFlag> filters_detail::PipeState::PollPush() {
   switch (state_) {
-    case ValueState::kIdle:
     // Read completed and new read started => we see waiting here
     case ValueState::kWaiting:
+      state_ = ValueState::kReady;
+      wait_recv_.Wake();
+      return wait_send_.pending();
+    case ValueState::kIdle:
     case ValueState::kClosed:
       return Success{};
     case ValueState::kQueued:
@@ -330,7 +416,7 @@ Poll<StatusFlag> filters_detail::PipeState::PollPush() {
   GPR_UNREACHABLE_CODE(return Pending{});
 }
 
-Poll<StatusFlag> filters_detail::PipeState::PollPull() {
+Poll<ValueOrFailure<bool>> filters_detail::PipeState::PollPull() {
   switch (state_) {
     case ValueState::kWaiting:
       return wait_recv_.pending();
@@ -341,10 +427,11 @@ Poll<StatusFlag> filters_detail::PipeState::PollPull() {
     case ValueState::kQueued:
       if (!started_) return wait_recv_.pending();
       state_ = ValueState::kProcessing;
-      return Success{};
+      return true;
     case ValueState::kProcessing:
       Crash("Only one pull allowed to be outstanding");
     case ValueState::kClosed:
+      return false;
     case ValueState::kError:
       return Failure{};
   }
@@ -366,6 +453,34 @@ void filters_detail::PipeState::AckPull() {
     case ValueState::kError:
       break;
   }
+}
+
+std::string filters_detail::PipeState::DebugString() const {
+  const char* state_str = "<<invalid-value>>";
+  switch (state_) {
+    case ValueState::kIdle:
+      state_str = "Idle";
+      break;
+    case ValueState::kWaiting:
+      state_str = "Waiting";
+      break;
+    case ValueState::kQueued:
+      state_str = "Queued";
+      break;
+    case ValueState::kReady:
+      state_str = "Ready";
+      break;
+    case ValueState::kProcessing:
+      state_str = "Processing";
+      break;
+    case ValueState::kClosed:
+      state_str = "Closed";
+      break;
+    case ValueState::kError:
+      state_str = "Error";
+      break;
+  }
+  return absl::StrCat(state_str, started_ ? "" : " (not started)");
 }
 
 }  // namespace grpc_core

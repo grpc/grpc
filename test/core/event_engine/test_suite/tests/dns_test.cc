@@ -15,8 +15,6 @@
 // IWYU pragma: no_include <ratio>
 // IWYU pragma: no_include <arpa/inet.h>
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -34,6 +32,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -41,8 +40,8 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 #include "test/cpp/util/subprocess.h"
 

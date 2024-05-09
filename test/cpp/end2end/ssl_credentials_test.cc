@@ -22,6 +22,7 @@
 
 #include "absl/synchronization/notification.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -29,9 +30,9 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {

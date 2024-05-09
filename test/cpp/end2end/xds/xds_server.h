@@ -23,9 +23,12 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpcpp/support/status.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -38,7 +41,7 @@
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
 
 namespace grpc {
@@ -75,9 +78,12 @@ class AdsServiceImpl
   explicit AdsServiceImpl(
       std::function<void(const DiscoveryRequest& request)> check_first_request =
           nullptr,
-      std::function<void(absl::StatusCode)> check_nack_status_code = nullptr)
+      std::function<void(absl::StatusCode)> check_nack_status_code = nullptr,
+      absl::string_view debug_label = "")
       : check_first_request_(std::move(check_first_request)),
-        check_nack_status_code_(std::move(check_nack_status_code)) {}
+        check_nack_status_code_(std::move(check_nack_status_code)),
+        debug_label_(absl::StrFormat(
+            "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label)) {}
 
   void set_wrap_resources(bool wrap_resources) {
     grpc_core::MutexLock lock(&ads_mu_);
@@ -174,6 +180,11 @@ class AdsServiceImpl
     forced_ads_failure_ = std::move(status);
   }
 
+  void ClearADSFailure() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    forced_ads_failure_ = absl::nullopt;
+  }
+
  private:
   // A queue of resource type/name pairs that have changed since the client
   // subscribed to them.
@@ -223,15 +234,16 @@ class AdsServiceImpl
 
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
+    LOG(INFO) << "ADS[" << debug_label_
+              << "]: StreamAggregatedResources starts";
     {
       grpc_core::MutexLock lock(&ads_mu_);
       if (forced_ads_failure_.has_value()) {
-        gpr_log(GPR_INFO,
-                "ADS[%p]: StreamAggregatedResources forcing early failure "
-                "with status code: %d, message: %s",
-                this, forced_ads_failure_.value().error_code(),
-                forced_ads_failure_.value().error_message().c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: StreamAggregatedResources forcing early failure "
+                     "with status code: "
+                  << forced_ads_failure_.value().error_code() << ", message: "
+                  << forced_ads_failure_.value().error_message();
         return forced_ads_failure_.value();
       }
     }
@@ -272,9 +284,9 @@ class AdsServiceImpl
           DiscoveryRequest request = std::move(requests.front());
           requests.pop_front();
           did_work = true;
-          gpr_log(GPR_INFO,
-                  "ADS[%p]: Received request for type %s with content %s", this,
-                  request.type_url().c_str(), request.DebugString().c_str());
+          LOG(INFO) << "ADS[" << debug_label_ << "]: Received request for type "
+                    << request.type_url() << " with content "
+                    << request.DebugString();
           SentState& sent_state = sent_state_map[request.type_url()];
           // Process request.
           ProcessRequest(request, &update_queue, &subscription_map, &sent_state,
@@ -282,8 +294,8 @@ class AdsServiceImpl
         }
       }
       if (response.has_value()) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending response: %s", this,
-                response->DebugString().c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: Sending response: " << response->DebugString();
         stream->Write(response.value());
       }
       response.reset();
@@ -303,8 +315,8 @@ class AdsServiceImpl
         }
       }
       if (response.has_value()) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending update response: %s", this,
-                response->DebugString().c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: Sending update response: " << response->DebugString();
         stream->Write(response.value());
       }
       {
@@ -338,7 +350,7 @@ class AdsServiceImpl
         }
       }
     }
-    gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources done", this);
+    LOG(INFO) << "ADS[" << debug_label_ << "]: StreamAggregatedResources done";
     RemoveClient(context->peer());
     return Status::OK;
   }
@@ -355,8 +367,8 @@ class AdsServiceImpl
     if (request.response_nonce().empty()) {
       int client_resource_type_version = 0;
       if (!request.version_info().empty()) {
-        GPR_ASSERT(absl::SimpleAtoi(request.version_info(),
-                                    &client_resource_type_version));
+        CHECK(absl::SimpleAtoi(request.version_info(),
+                               &client_resource_type_version));
       }
       if (check_version_callack_ != nullptr) {
         check_version_callack_(request.type_url(),
@@ -364,14 +376,14 @@ class AdsServiceImpl
       }
     } else {
       int client_nonce;
-      GPR_ASSERT(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
+      CHECK(absl::SimpleAtoi(request.response_nonce(), &client_nonce));
       // Check for ACK or NACK.
       ResponseState response_state;
       if (!request.has_error_detail()) {
         response_state.state = ResponseState::ACKED;
-        gpr_log(GPR_INFO, "ADS[%p]: client ACKed resource_type=%s version=%s",
-                this, request.type_url().c_str(),
-                request.version_info().c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: client ACKed resource_type=" << request.type_url()
+                  << " version=" << request.version_info();
       } else {
         response_state.state = ResponseState::NACKED;
         if (check_nack_status_code_ != nullptr) {
@@ -379,10 +391,10 @@ class AdsServiceImpl
               static_cast<absl::StatusCode>(request.error_detail().code()));
         }
         response_state.error_message = request.error_detail().message();
-        gpr_log(GPR_INFO,
-                "ADS[%p]: client NACKed resource_type=%s version=%s: %s", this,
-                request.type_url().c_str(), request.version_info().c_str(),
-                response_state.error_message.c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: client NACKed resource_type=" << request.type_url()
+                  << " version=" << request.version_info() << ": "
+                  << response_state.error_message;
       }
       resource_type_response_state_[request.type_url()].emplace_back(
           std::move(response_state));
@@ -412,8 +424,9 @@ class AdsServiceImpl
                          &resource_state, update_queue) ||
           ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                     sent_state->resource_type_version)) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
-                request.type_url().c_str(), resource_name.c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: Sending update for type=" << request.type_url()
+                  << " name=" << resource_name;
         resources_added_to_response.emplace(resource_name);
         if (!response->has_value()) response->emplace();
         if (resource_state.resource.has_value()) {
@@ -426,9 +439,9 @@ class AdsServiceImpl
           }
         }
       } else {
-        gpr_log(GPR_INFO,
-                "ADS[%p]: client does not need update for type=%s name=%s",
-                this, request.type_url().c_str(), resource_name.c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: client does not need update for type="
+                  << request.type_url() << " name=" << resource_name;
       }
     }
     // Process unsubscriptions for any resource no longer
@@ -451,8 +464,9 @@ class AdsServiceImpl
                      SubscriptionMap* subscription_map, SentState* sent_state,
                      absl::optional<DiscoveryResponse>* response)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(ads_mu_) {
-    gpr_log(GPR_INFO, "ADS[%p]: Received update for type=%s name=%s", this,
-            resource_type.c_str(), resource_name.c_str());
+    LOG(INFO) << "ADS[" << debug_label_
+              << "]: Received update for type=" << resource_type
+              << " name=" << resource_name;
     auto& subscription_name_map = (*subscription_map)[resource_type];
     auto& resource_type_state = resource_map_[resource_type];
     auto& resource_name_map = resource_type_state.resource_name_map;
@@ -461,8 +475,9 @@ class AdsServiceImpl
       ResourceState& resource_state = resource_name_map[resource_name];
       if (ClientNeedsResourceUpdate(resource_type_state, resource_state,
                                     sent_state->resource_type_version)) {
-        gpr_log(GPR_INFO, "ADS[%p]: Sending update for type=%s name=%s", this,
-                resource_type.c_str(), resource_name.c_str());
+        LOG(INFO) << "ADS[" << debug_label_
+                  << "]: Sending update for type=" << resource_type
+                  << " name=" << resource_name;
         response->emplace();
         if (resource_state.resource.has_value()) {
           auto* resource = (*response)->add_resources();
@@ -493,7 +508,7 @@ class AdsServiceImpl
         requests->emplace_back(std::move(request));
       }
     }
-    gpr_log(GPR_INFO, "ADS[%p]: Null read, stream closed", this);
+    LOG(INFO) << "ADS[" << debug_label_ << "]: Null read, stream closed";
     grpc_core::MutexLock lock(&ads_mu_);
     *stream_closed = true;
   }
@@ -564,6 +579,7 @@ class AdsServiceImpl
 
   std::function<void(const DiscoveryRequest& request)> check_first_request_;
   std::function<void(absl::StatusCode)> check_nack_status_code_;
+  std::string debug_label_;
 
   grpc_core::CondVar ads_cond_;
   grpc_core::Mutex ads_mu_;
@@ -700,12 +716,15 @@ class LrsServiceImpl
                  std::set<std::string> cluster_names,
                  std::function<void()> stream_started_callback = nullptr,
                  std::function<void(const LoadStatsRequest& request)>
-                     check_first_request = nullptr)
+                     check_first_request = nullptr,
+                 absl::string_view debug_label = "")
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds),
         cluster_names_(std::move(cluster_names)),
         stream_started_callback_(std::move(stream_started_callback)),
-        check_first_request_(std::move(check_first_request)) {}
+        check_first_request_(std::move(check_first_request)),
+        debug_label_(absl::StrFormat(
+            "%p%s%s", this, debug_label.empty() ? "" : ":", debug_label)) {}
 
   // Must be called before the LRS call is started.
   void set_send_all_clusters(bool send_all_clusters) {
@@ -729,7 +748,7 @@ class LrsServiceImpl
   using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
   Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
+    LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats starts";
     if (stream_started_callback_ != nullptr) stream_started_callback_();
     // Take a reference of the LrsServiceImpl object, reference will go
     // out of scope after this method exits.
@@ -756,8 +775,9 @@ class LrsServiceImpl
       // Wait for report.
       request.Clear();
       while (stream->Read(&request)) {
-        gpr_log(GPR_INFO, "LRS[%p]: received client load report message: %s",
-                this, request.DebugString().c_str());
+        LOG(INFO) << "LRS[" << debug_label_
+                  << "]: received client load report message: "
+                  << request.DebugString();
         std::vector<ClientStats> stats;
         for (const auto& cluster_stats : request.cluster_stats()) {
           stats.emplace_back(cluster_stats);
@@ -774,7 +794,7 @@ class LrsServiceImpl
         lrs_cv_.Wait(&lrs_mu_);
       }
     }
-    gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats done", this);
+    LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats done";
     return Status::OK;
   }
 
@@ -783,6 +803,7 @@ class LrsServiceImpl
   std::set<std::string> cluster_names_;
   std::function<void()> stream_started_callback_;
   std::function<void(const LoadStatsRequest& request)> check_first_request_;
+  std::string debug_label_;
 
   grpc_core::CondVar lrs_cv_;
   grpc_core::Mutex lrs_mu_;

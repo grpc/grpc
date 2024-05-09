@@ -36,7 +36,7 @@ grpc_cc_test(
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
         "//src/core:env",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -49,7 +49,7 @@ grpc_cc_test(
         ":alts_handshaker_service_api_test_lib",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -61,7 +61,7 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -72,7 +72,7 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -81,7 +81,10 @@ grpc_cc_test(
     srcs = [
         "alts_concurrent_connectivity_test.cc",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     flaky = True,
     language = "C++",
     # TODO(apolcyn): make the fake TCP server used in this
@@ -94,8 +97,8 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:slice",
         "//test/core/end2end:cq_verifier",
+        "//test/core/test_util:fake_udp_and_tcp_server",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi/alts/fake_handshaker:fake_handshaker_lib",
-        "//test/core/util:fake_udp_and_tcp_server",
-        "//test/core/util:grpc_test_util",
     ],
 )

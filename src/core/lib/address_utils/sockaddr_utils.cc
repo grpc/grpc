@@ -16,12 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
 #include <inttypes.h>
+
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
 #endif
@@ -110,7 +112,7 @@ static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
 
 int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
                               grpc_resolved_address* resolved_addr4_out) {
-  GPR_ASSERT(resolved_addr != resolved_addr4_out);
+  CHECK(resolved_addr != resolved_addr4_out);
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   grpc_sockaddr_in* addr4_out =
@@ -140,7 +142,7 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
 
 int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* resolved_addr,
                               grpc_resolved_address* resolved_addr6_out) {
-  GPR_ASSERT(resolved_addr != resolved_addr6_out);
+  CHECK(resolved_addr != resolved_addr6_out);
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   grpc_sockaddr_in6* addr6_out =
@@ -203,7 +205,8 @@ void grpc_sockaddr_make_wildcard4(int port,
                                   grpc_resolved_address* resolved_wild_out) {
   grpc_sockaddr_in* wild_out =
       reinterpret_cast<grpc_sockaddr_in*>(resolved_wild_out->addr);
-  GPR_ASSERT(port >= 0 && port < 65536);
+  CHECK(port >= 0);
+  CHECK(port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin_family = GRPC_AF_INET;
   wild_out->sin_port = grpc_htons(static_cast<uint16_t>(port));
@@ -214,7 +217,8 @@ void grpc_sockaddr_make_wildcard6(int port,
                                   grpc_resolved_address* resolved_wild_out) {
   grpc_sockaddr_in6* wild_out =
       reinterpret_cast<grpc_sockaddr_in6*>(resolved_wild_out->addr);
-  GPR_ASSERT(port >= 0 && port < 65536);
+  CHECK(port >= 0);
+  CHECK(port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin6_family = GRPC_AF_INET6;
   wild_out->sin6_port = grpc_htons(static_cast<uint16_t>(port));
@@ -378,12 +382,14 @@ int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case GRPC_AF_INET:
-      GPR_ASSERT(port >= 0 && port < 65536);
+      CHECK(port >= 0);
+      CHECK(port < 65536);
       (reinterpret_cast<grpc_sockaddr_in*>(addr))->sin_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
     case GRPC_AF_INET6:
-      GPR_ASSERT(port >= 0 && port < 65536);
+      CHECK(port >= 0);
+      CHECK(port < 65536);
       (reinterpret_cast<grpc_sockaddr_in6*>(addr))->sin6_port =
           grpc_htons(static_cast<uint16_t>(port));
       return 1;
@@ -437,7 +443,7 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
     // We cannot use s6_addr32 since it is not defined on all platforms that we
     // need it on.
     uint32_t address_parts[4];
-    GPR_ASSERT(sizeof(addr6->sin6_addr) == sizeof(address_parts));
+    CHECK(sizeof(addr6->sin6_addr) == sizeof(address_parts));
     memcpy(address_parts, &addr6->sin6_addr, sizeof(grpc_in6_addr));
     if (mask_bits <= 32) {
       uint32_t mask_ip_addr = (~(uint32_t{0})) << (32 - mask_bits);

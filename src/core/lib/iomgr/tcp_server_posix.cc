@@ -16,11 +16,10 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
@@ -44,6 +43,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -90,7 +90,7 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 
 static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(s->shutdown);
+  CHECK(s->shutdown);
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
@@ -235,7 +235,7 @@ static grpc_error_handle CreateEventEngineListener(
     listener = engine->CreateListener(
         std::move(accept_cb),
         [s, ee = keeper, shutdown_complete](absl::Status status) {
-          GPR_ASSERT(gpr_atm_no_barrier_load(&s->refs.count) == 0);
+          CHECK_EQ(gpr_atm_no_barrier_load(&s->refs.count), 0);
           grpc_event_engine::experimental::RunEventEngineClosure(
               shutdown_complete, absl_status_to_grpc_error(status));
           finish_shutdown(s);
@@ -288,8 +288,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->nports = 0;
   s->options = ::TcpOptionsFromEndpointConfig(config);
   s->fd_handler = nullptr;
-  GPR_ASSERT(s->options.resource_quota != nullptr);
-  GPR_ASSERT(s->on_accept_cb);
+  CHECK(s->options.resource_quota != nullptr);
+  CHECK(s->on_accept_cb);
   s->memory_quota = s->options.resource_quota->memory_quota();
   s->pre_allocated_fd = -1;
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
@@ -311,7 +311,7 @@ static void destroyed_port(void* server, grpc_error_handle /*error*/) {
     gpr_mu_unlock(&s->mu);
     finish_shutdown(s);
   } else {
-    GPR_ASSERT(s->destroyed_ports < s->nports);
+    CHECK(s->destroyed_ports < s->nports);
     gpr_mu_unlock(&s->mu);
   }
 }
@@ -323,7 +323,7 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
   // delete ALL the things
   gpr_mu_lock(&s->mu);
 
-  GPR_ASSERT(s->shutdown);
+  CHECK(s->shutdown);
 
   if (s->head) {
     grpc_tcp_listener* sp;
@@ -352,7 +352,7 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
 
 static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(!s->shutdown);
+  CHECK(!s->shutdown);
   s->shutdown = true;
   // shutdown all fd's
   if (s->active_ports) {
@@ -564,7 +564,8 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   } else {
     grpc_error_handle root_err =
         GRPC_ERROR_CREATE("Failed to add any wildcard listeners");
-    GPR_ASSERT(!v6_err.ok() && !v4_err.ok());
+    CHECK(!v6_err.ok());
+    CHECK(!v4_err.ok());
     root_err = grpc_error_add_child(root_err, v6_err);
     root_err = grpc_error_add_child(root_err, v4_err);
     return root_err;
@@ -615,7 +616,7 @@ static grpc_error_handle clone_port(grpc_tcp_listener* listener,
     sp->port = port;
     sp->port_index = listener->port_index;
     sp->fd_index = listener->fd_index + count - i;
-    GPR_ASSERT(sp->emfd);
+    CHECK(sp->emfd);
     grpc_tcp_server_listener_initialize_retry_timer(sp);
     while (listener->server->tail->next != nullptr) {
       listener->server->tail = listener->server->tail->next;
@@ -647,7 +648,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
             if (!listen_fd.ok()) {
               return;
             }
-            GPR_DEBUG_ASSERT(*listen_fd > 0);
+            DCHECK_GT(*listen_fd, 0);
             s->listen_fd_to_index_map.insert_or_assign(
                 *listen_fd, std::make_tuple(s->n_bind_ports, fd_index++));
           });
@@ -662,7 +663,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     gpr_mu_unlock(&s->mu);
     return port.status();
   }
-  GPR_ASSERT(addr->len <= GRPC_MAX_SOCKADDR_SIZE);
+  CHECK(addr->len <= GRPC_MAX_SOCKADDR_SIZE);
   grpc_tcp_listener* sp;
   grpc_resolved_address sockname_temp;
   grpc_resolved_address addr6_v4mapped;
@@ -790,12 +791,12 @@ static void tcp_server_start(grpc_tcp_server* s,
   size_t i;
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(s->on_accept_cb);
-  GPR_ASSERT(s->active_ports == 0);
+  CHECK(s->on_accept_cb);
+  CHECK_EQ(s->active_ports, 0u);
   s->pollsets = pollsets;
   if (grpc_event_engine::experimental::UseEventEngineListener()) {
-    GPR_ASSERT(!s->shutdown_listeners);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("listener_start", s->ee_listener->Start()));
+    CHECK(!s->shutdown_listeners);
+    CHECK(GRPC_LOG_IF_ERROR("listener_start", s->ee_listener->Start()));
     gpr_mu_unlock(&s->mu);
     return;
   }
@@ -803,7 +804,7 @@ static void tcp_server_start(grpc_tcp_server* s,
   while (sp != nullptr) {
     if (s->so_reuseport && !grpc_is_unix_socket(&sp->addr) &&
         !grpc_is_vsock(&sp->addr) && pollsets->size() > 1) {
-      GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      CHECK(GRPC_LOG_IF_ERROR(
           "clone_port", clone_port(sp, (unsigned)(pollsets->size() - 1))));
       for (i = 0; i < pollsets->size(); i++) {
         grpc_pollset_add_fd((*pollsets)[i], sp->emfd);
@@ -895,17 +896,16 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
           grpc_event_engine::experimental::QueryExtension<
               grpc_event_engine::experimental::ListenerSupportsFdExtension>(
               s_->ee_listener.get());
-      GPR_ASSERT(listener_supports_fd != nullptr);
+      CHECK_NE(listener_supports_fd, nullptr);
       grpc_event_engine::experimental::SliceBuffer pending_data;
       if (buf != nullptr) {
         pending_data =
             grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
                 buf->data.raw.slice_buffer);
       }
-      GPR_ASSERT(
-          GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                            listener_supports_fd->HandleExternalConnection(
-                                listener_fd, fd, &pending_data)));
+      CHECK(GRPC_LOG_IF_ERROR("listener_handle_external_connection",
+                              listener_supports_fd->HandleExternalConnection(
+                                  listener_fd, fd, &pending_data)));
       return;
     }
     grpc_pollset* read_notifier_pollset;

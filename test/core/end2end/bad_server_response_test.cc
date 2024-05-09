@@ -24,6 +24,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/propagation_bits.h>
@@ -50,9 +53,9 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/test_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_tcp_server.h"
 
 #define HTTP1_RESP_400                       \
   "HTTP/1.0 400 Bad Request\n"               \
@@ -109,13 +112,13 @@ static grpc_closure on_write;
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(void* /*arg*/, grpc_error_handle error) {
-  GPR_ASSERT(error.ok());
+  CHECK_OK(error);
   gpr_atm_rel_store(&state.done_atm, 1);
 }
 
 static void done_writing_settings_frame(void* /* arg */,
                                         grpc_error_handle error) {
-  GPR_ASSERT(error.ok());
+  CHECK_OK(error);
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
 }
@@ -254,15 +257,15 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops),
                                 tag(1), nullptr);
 
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(tag(1), true);
   cqv.Verify();
 
-  GPR_ASSERT(status == expected_status);
+  CHECK_EQ(status, expected_status);
   if (expected_detail != nullptr) {
-    GPR_ASSERT(-1 != grpc_slice_slice(details, grpc_slice_from_static_string(
-                                                   expected_detail)));
+    CHECK_NE(-1, grpc_slice_slice(
+                     details, grpc_slice_from_static_string(expected_detail)));
   }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -352,7 +355,7 @@ static void run_test(bool http2_response, bool send_settings,
   thdptr->Join();
   state.on_connect_done->WaitForNotification();
   // Proof that the server accepted the TCP connection.
-  GPR_ASSERT(state.connection_attempt_made == true);
+  CHECK_EQ(state.connection_attempt_made, true);
   // clean up
   grpc_endpoint_shutdown(state.tcp, GRPC_ERROR_CREATE("Test Shutdown"));
   grpc_endpoint_destroy(state.tcp);

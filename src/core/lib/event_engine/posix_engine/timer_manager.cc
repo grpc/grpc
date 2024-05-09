@@ -16,17 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -69,8 +69,8 @@ void TimerManager::MainLoop() {
   grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
   absl::optional<std::vector<experimental::EventEngine::Closure*>>
       check_result = timer_list_->TimerCheck(&next);
-  GPR_ASSERT(check_result.has_value() &&
-             "ERROR: More than one MainLoop is running.");
+  CHECK(check_result.has_value())
+      << "ERROR: More than one MainLoop is running.";
   bool timers_found = !check_result->empty();
   if (timers_found) {
     RunSomeTimers(std::move(*check_result));
@@ -146,7 +146,7 @@ void TimerManager::Kick() {
 
 void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(GPR_LIKELY(shutdown_));
+  CHECK(GPR_LIKELY(shutdown_));
   if (grpc_event_engine_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG, "TimerManager::%p restarting after shutdown", this);
   }

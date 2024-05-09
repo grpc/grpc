@@ -27,11 +27,10 @@
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.grpc.pb.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/scoped_env_var.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -47,12 +46,6 @@ class WrrTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
     // No-op -- tests must explicitly call InitClient().
-  }
-
-  static std::string LocalityNameString(absl::string_view sub_zone) {
-    return absl::StrFormat("{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                           kDefaultLocalityRegion, kDefaultLocalityZone,
-                           sub_zone);
   }
 };
 
@@ -108,7 +101,6 @@ TEST_P(WrrTest, Basic) {
 }
 
 TEST_P(WrrTest, MetricsHaveLocalityLabel) {
-  if (!grpc_core::IsWrrDelegateToPickFirstEnabled()) return;
   const auto kEndpointWeights =
       grpc_core::GlobalInstrumentsRegistryTestPeer::
           FindDoubleHistogramHandleByName("grpc.lb.wrr.endpoint_weights")

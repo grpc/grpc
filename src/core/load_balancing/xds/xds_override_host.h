@@ -17,9 +17,9 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_XDS_XDS_OVERRIDE_HOST_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_XDS_XDS_OVERRIDE_HOST_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -31,7 +31,7 @@
 namespace grpc_core {
 
 // Config for stateful session LB policy.
-class XdsOverrideHostLbConfig : public LoadBalancingPolicy::Config {
+class XdsOverrideHostLbConfig final : public LoadBalancingPolicy::Config {
  public:
   XdsOverrideHostLbConfig() = default;
 

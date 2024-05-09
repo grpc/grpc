@@ -16,14 +16,15 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 
 #include <inttypes.h>
 
 #include <google/protobuf/repeated_ptr_field.h>
 
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/support/status.h>
 
@@ -35,8 +36,8 @@ namespace grpc {
 namespace load_reporter {
 
 void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
-  GPR_ASSERT(handler_function_ != nullptr);
-  GPR_ASSERT(handler_ != nullptr);
+  CHECK(handler_function_ != nullptr);
+  CHECK_NE(handler_, nullptr);
   handler_function_(std::move(handler_), ok);
 }
 
@@ -110,7 +111,7 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
   while (true) {
     if (!service->cq_->Next(&tag, &ok)) {
       // The completion queue is shutting down.
-      GPR_ASSERT(service->shutdown_);
+      CHECK(service->shutdown_);
       break;
     }
     if (tag == service) {
@@ -165,7 +166,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
     // tag will not pop out if the call never starts (
     // https://github.com/grpc/grpc/issues/10136). So we need to manually
     // release the ownership of the handler in this case.
-    GPR_ASSERT(on_done_notified_.ReleaseHandler() != nullptr);
+    CHECK_NE(on_done_notified_.ReleaseHandler(), nullptr);
   }
   if (!ok || shutdown_) {
     // The value of ok being false means that the server is shutting down.
@@ -326,7 +327,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
     std::shared_ptr<ReportLoadHandler> self, bool ok) {
-  GPR_ASSERT(ok);
+  CHECK(ok);
   done_notified_ = true;
   if (ctx_.IsCancelled()) {
     is_cancelled_ = true;

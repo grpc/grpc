@@ -22,6 +22,7 @@
 #include <limits>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 
@@ -36,7 +37,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 #if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
@@ -111,7 +112,7 @@ FuzzingEventEngine::FuzzingEventEngine(
   // Whilst a fuzzing EventEngine is active we override grpc's now function.
   g_orig_gpr_now_impl = gpr_now_impl;
   gpr_now_impl = GlobalNowImpl;
-  GPR_ASSERT(g_fuzzing_event_engine == nullptr);
+  CHECK_EQ(g_fuzzing_event_engine, nullptr);
   g_fuzzing_event_engine = this;
   grpc_core::TestOnlySetProcessEpoch(NowAsTimespec(GPR_CLOCK_MONOTONIC));
 
@@ -136,7 +137,7 @@ void FuzzingEventEngine::FuzzingDone() {
 gpr_timespec FuzzingEventEngine::NowAsTimespec(gpr_clock_type clock_type) {
   // TODO(ctiller): add a facility to track realtime and monotonic clocks
   // separately to simulate divergence.
-  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  CHECK(clock_type != GPR_TIMESPAN);
   const Duration d = now_.time_since_epoch();
   auto secs = std::chrono::duration_cast<std::chrono::seconds>(d);
   return {secs.count(), static_cast<int32_t>((d - secs).count()), clock_type};
@@ -166,7 +167,7 @@ void FuzzingEventEngine::Tick(Duration max_time) {
         incr = std::max(incr, std::chrono::duration_cast<Duration>(
                                   std::chrono::milliseconds(1)));
         now_ += incr;
-        GPR_ASSERT(now_.time_since_epoch().count() >= 0);
+        CHECK_GE(now_.time_since_epoch().count(), 0);
         ++current_tick_;
         incremented_time = true;
       }
@@ -299,7 +300,7 @@ absl::Status FuzzingEventEngine::FuzzingListener::Start() {
 }
 
 bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
-  GPR_ASSERT(!closed[index]);
+  CHECK(!closed[index]);
   const int peer_index = 1 - index;
   if (data->Length() == 0) return true;
   size_t write_len = std::numeric_limits<size_t>::max();
@@ -345,8 +346,8 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
     const WriteArgs*) {
   grpc_core::global_stats().IncrementSyscallWrite();
   grpc_core::MutexLock lock(&*mu_);
-  GPR_ASSERT(!middle_->closed[my_index()]);
-  GPR_ASSERT(!middle_->writing[my_index()]);
+  CHECK(!middle_->closed[my_index()]);
+  CHECK(!middle_->writing[my_index()]);
   // If the write succeeds immediately, then we return true.
   if (middle_->Write(data, my_index())) return true;
   middle_->writing[my_index()] = true;
@@ -361,7 +362,7 @@ void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
       RunType::kWrite, [middle = std::move(middle), index, data,
                         on_writable = std::move(on_writable)]() mutable {
         grpc_core::ReleasableMutexLock lock(&*mu_);
-        GPR_ASSERT(middle->writing[index]);
+        CHECK(middle->writing[index]);
         if (middle->closed[index]) {
           g_fuzzing_event_engine->RunLocked(
               RunType::kRunAfter,
@@ -409,7 +410,7 @@ bool FuzzingEventEngine::FuzzingEndpoint::Read(
     const ReadArgs*) {
   buffer->Clear();
   grpc_core::MutexLock lock(&*mu_);
-  GPR_ASSERT(!middle_->closed[my_index()]);
+  CHECK(!middle_->closed[my_index()]);
   if (middle_->pending[peer_index()].empty()) {
     // If the endpoint is closed, fail asynchronously.
     if (middle_->closed[peer_index()]) {
@@ -589,7 +590,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
 
 bool FuzzingEventEngine::Cancel(TaskHandle handle) {
   grpc_core::MutexLock lock(&*mu_);
-  GPR_ASSERT(handle.keys[1] == kTaskHandleSalt);
+  CHECK(handle.keys[1] == kTaskHandleSalt);
   const intptr_t id = handle.keys[0];
   auto it = tasks_by_id_.find(id);
   if (it == tasks_by_id_.end()) {
@@ -609,7 +610,7 @@ gpr_timespec FuzzingEventEngine::GlobalNowImpl(gpr_clock_type clock_type) {
   if (g_fuzzing_event_engine == nullptr) {
     return gpr_inf_future(clock_type);
   }
-  GPR_ASSERT(g_fuzzing_event_engine != nullptr);
+  CHECK_NE(g_fuzzing_event_engine, nullptr);
   grpc_core::MutexLock lock(&*now_mu_);
   return g_fuzzing_event_engine->NowAsTimespec(clock_type);
 }
@@ -623,7 +624,7 @@ void FuzzingEventEngine::UnsetGlobalHooks() {
 }
 
 FuzzingEventEngine::ListenerInfo::~ListenerInfo() {
-  GPR_ASSERT(g_fuzzing_event_engine != nullptr);
+  CHECK_NE(g_fuzzing_event_engine, nullptr);
   g_fuzzing_event_engine->Run(
       [on_shutdown = std::move(on_shutdown),
        shutdown_status = std::move(shutdown_status)]() mutable {

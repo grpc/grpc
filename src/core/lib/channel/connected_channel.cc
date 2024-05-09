@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/connected_channel.h"
 
 #include <inttypes.h>
@@ -28,6 +26,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -36,6 +35,7 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -225,7 +225,7 @@ static void connected_channel_destroy_call_elem(
 static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
-  GPR_ASSERT(args->is_last);
+  CHECK(args->is_last);
   cd->transport = args->channel_args.GetObject<grpc_core::Transport>();
   return absl::OkStatus();
 }
@@ -464,8 +464,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
       [](absl::Status) {});
   // Start a promise to receive server initial metadata and then forward it up
   // through the receiving pipe.
-  auto server_initial_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto server_initial_metadata = Arena::MakePooled<ServerMetadata>();
   party->Spawn(
       "recv_initial_metadata",
       TrySeq(GetContext<BatchBuilder>()->ReceiveServerInitialMetadata(
@@ -502,28 +501,25 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
   // Create a promise that will receive server trailing metadata.
   // If this fails, we massage the error into metadata that we can report
   // upwards.
-  auto server_trailing_metadata =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
-  auto recv_trailing_metadata =
-      Map(GetContext<BatchBuilder>()->ReceiveServerTrailingMetadata(
-              stream->batch_target()),
-          [](absl::StatusOr<ServerMetadataHandle> status) mutable {
-            if (!status.ok()) {
-              auto server_trailing_metadata =
-                  GetContext<Arena>()->MakePooled<ServerMetadata>(
-                      GetContext<Arena>());
-              grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
-              std::string message;
-              grpc_error_get_status(status.status(), Timestamp::InfFuture(),
-                                    &status_code, &message, nullptr, nullptr);
-              server_trailing_metadata->Set(GrpcStatusMetadata(), status_code);
-              server_trailing_metadata->Set(GrpcMessageMetadata(),
-                                            Slice::FromCopiedString(message));
-              return server_trailing_metadata;
-            } else {
-              return std::move(*status);
-            }
-          });
+  auto server_trailing_metadata = Arena::MakePooled<ServerMetadata>();
+  auto recv_trailing_metadata = Map(
+      GetContext<BatchBuilder>()->ReceiveServerTrailingMetadata(
+          stream->batch_target()),
+      [](absl::StatusOr<ServerMetadataHandle> status) mutable {
+        if (!status.ok()) {
+          auto server_trailing_metadata = Arena::MakePooled<ServerMetadata>();
+          grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
+          std::string message;
+          grpc_error_get_status(status.status(), Timestamp::InfFuture(),
+                                &status_code, &message, nullptr, nullptr);
+          server_trailing_metadata->Set(GrpcStatusMetadata(), status_code);
+          server_trailing_metadata->Set(GrpcMessageMetadata(),
+                                        Slice::FromCopiedString(message));
+          return server_trailing_metadata;
+        } else {
+          return std::move(*status);
+        }
+      });
   // Finally the main call promise.
   // Concurrently: send initial metadata and receive messages, until BOTH
   // complete (or one fails).
@@ -786,9 +782,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
             if (status.ok()) {
               trailing_metadata = std::move(*status);
             } else {
-              trailing_metadata =
-                  GetContext<Arena>()->MakePooled<ClientMetadata>(
-                      GetContext<Arena>());
+              trailing_metadata = Arena::MakePooled<ClientMetadata>();
               grpc_status_code status_code = GRPC_STATUS_UNKNOWN;
               std::string message;
               grpc_error_get_status(status.status(), Timestamp::InfFuture(),
@@ -891,19 +885,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientTransportCallPromise(
     Transport* transport, CallArgs call_args, NextPromiseFactory) {
   auto spine = GetContext<CallContext>()->MakeCallSpine(std::move(call_args));
   transport->client_transport()->StartCall(CallHandler{spine});
-  return Map(spine->server_trailing_metadata().receiver.Next(),
-             [](NextResult<ServerMetadataHandle> r) {
-               if (r.has_value()) {
-                 auto md = std::move(r.value());
-                 md->Set(GrpcStatusFromWire(), true);
-                 return md;
-               }
-               auto m = GetContext<Arena>()->MakePooled<ServerMetadata>(
-                   GetContext<Arena>());
-               m->Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
-               m->Set(GrpcCallWasCancelled(), true);
-               return m;
-             });
+  return spine->PullServerTrailingMetadata();
 }
 
 const grpc_channel_filter kClientPromiseBasedTransportFilter =

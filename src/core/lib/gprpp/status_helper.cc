@@ -16,14 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/status_helper.h"
 
 #include <string.h>
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -37,6 +36,7 @@
 #include "upb/mem/arena.hpp"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
@@ -154,7 +154,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
   while (buf.size() - cur >= sizeof(uint32_t)) {
     size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
     cur += sizeof(uint32_t);
-    GPR_ASSERT(buf.size() - cur >= msg_size);
+    CHECK(buf.size() - cur >= msg_size);
     google_rpc_Status* msg =
         google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
     cur += msg_size;

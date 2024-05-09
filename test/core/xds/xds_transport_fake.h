@@ -17,8 +17,6 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 #define GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <deque>
@@ -34,12 +32,14 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_transport.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 
 namespace grpc_core {
 
@@ -213,6 +213,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
     FakeXdsTransportFactory* factory() const { return factory_.get(); }
+
+    const XdsBootstrap::XdsServer* server() const { return &server_; }
 
    private:
     class RefCountedOnConnectivityFailure

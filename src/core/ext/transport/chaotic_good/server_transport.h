@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_TRANSPORT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 #include <stdio.h>
 
@@ -45,6 +43,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
@@ -79,8 +78,7 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-class ChaoticGoodServerTransport final : public Transport,
-                                         public ServerTransport {
+class ChaoticGoodServerTransport final : public ServerTransport {
  public:
   ChaoticGoodServerTransport(
       const ChannelArgs& args, PromiseEndpoint control_endpoint,
@@ -98,7 +96,7 @@ class ChaoticGoodServerTransport final : public Transport,
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
   grpc_endpoint* GetEndpoint() override { return nullptr; }
-  void Orphan() override { delete this; }
+  void Orphan() override { Unref(); }
 
   void SetAcceptor(Acceptor* acceptor) override;
   void AbortWithError();
@@ -115,7 +113,8 @@ class ChaoticGoodServerTransport final : public Transport,
   auto SendCallBody(uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
                     CallInitiator call_initiator);
   static auto SendFragment(ServerFragmentFrame frame,
-                           MpscSender<ServerFrame> outgoing_frames);
+                           MpscSender<ServerFrame> outgoing_frames,
+                           CallInitiator call_initiator);
   auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
   auto OnTransportActivityDone(absl::string_view activity);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
@@ -133,9 +132,10 @@ class ChaoticGoodServerTransport final : public Transport,
       FrameHeader frame_header, BufferPair buffers,
       ChaoticGoodTransport& transport);
   auto MaybePushFragmentIntoCall(absl::optional<CallInitiator> call_initiator,
-                                 absl::Status error, ClientFragmentFrame frame);
+                                 absl::Status error, ClientFragmentFrame frame,
+                                 uint32_t stream_id);
   auto PushFragmentIntoCall(CallInitiator call_initiator,
-                            ClientFragmentFrame frame);
+                            ClientFragmentFrame frame, uint32_t stream_id);
 
   Acceptor* acceptor_ = nullptr;
   InterActivityLatch<void> got_acceptor_;

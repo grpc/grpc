@@ -15,17 +15,17 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/activity.h"
@@ -57,13 +57,52 @@ struct Done<StatusFlag> {
   static StatusFlag Make(bool cancelled) { return StatusFlag(!cancelled); }
 };
 
+template <typename T, typename SfinaeVoid = void>
+struct NextValueTraits;
+
+enum class NextValueType {
+  kValue,
+  kEndOfStream,
+  kError,
+};
+
+template <typename T>
+struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
+  using Value = typename T::value_type;
+
+  static NextValueType Type(const T& t) {
+    if (t.has_value()) return NextValueType::kValue;
+    if (t.cancelled()) return NextValueType::kError;
+    return NextValueType::kEndOfStream;
+  }
+
+  static Value& MutableValue(T& t) { return *t; }
+};
+
+template <typename T>
+struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
+  using Value = T;
+
+  static NextValueType Type(const ValueOrFailure<absl::optional<T>>& t) {
+    if (t.ok()) {
+      if (t.value().has_value()) return NextValueType::kValue;
+      return NextValueType::kEndOfStream;
+    }
+    return NextValueType::kError;
+  }
+
+  static Value& MutableValue(ValueOrFailure<absl::optional<T>>& t) {
+    return **t;
+  }
+};
+
 template <typename Reader, typename Action>
 class ForEach {
  private:
   using ReaderNext = decltype(std::declval<Reader>().Next());
   using ReaderResult =
       typename PollTraits<decltype(std::declval<ReaderNext>()())>::Type;
-  using ReaderResultValue = typename ReaderResult::value_type;
+  using ReaderResultValue = typename NextValueTraits<ReaderResult>::Value;
   using ActionFactory =
       promise_detail::RepeatedPromiseFactory<ReaderResultValue, Action>;
   using ActionPromise = typename ActionFactory::Promise;
@@ -71,8 +110,10 @@ class ForEach {
  public:
   using Result =
       typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
-  ForEach(Reader reader, Action action)
-      : reader_(std::move(reader)), action_factory_(std::move(action)) {
+  ForEach(Reader reader, Action action, DebugLocation whence = {})
+      : reader_(std::move(reader)),
+        action_factory_(std::move(action)),
+        whence_(whence) {
     Construct(&reader_next_, reader_.Next());
   }
   ~ForEach() {
@@ -87,17 +128,19 @@ class ForEach {
   ForEach& operator=(const ForEach&) = delete;
   ForEach(ForEach&& other) noexcept
       : reader_(std::move(other.reader_)),
-        action_factory_(std::move(other.action_factory_)) {
-    GPR_DEBUG_ASSERT(reading_next_);
-    GPR_DEBUG_ASSERT(other.reading_next_);
+        action_factory_(std::move(other.action_factory_)),
+        whence_(other.whence_) {
+    DCHECK(reading_next_);
+    DCHECK(other.reading_next_);
     Construct(&reader_next_, std::move(other.reader_next_));
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    GPR_DEBUG_ASSERT(reading_next_);
-    GPR_DEBUG_ASSERT(other.reading_next_);
+    DCHECK(reading_next_);
+    DCHECK(other.reading_next_);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
     reader_next_ = std::move(other.reader_next_);
+    whence_ = other.whence_;
     return *this;
   }
 
@@ -116,27 +159,43 @@ class ForEach {
 
   std::string DebugTag() {
     return absl::StrCat(GetContext<Activity>()->DebugTag(), " FOR_EACH[0x",
-                        reinterpret_cast<uintptr_t>(this), "]: ");
+                        reinterpret_cast<uintptr_t>(this), "@", whence_.file(),
+                        ":", whence_.line(), "]: ");
   }
 
   Poll<Result> PollReaderNext() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s PollReaderNext", DebugTag().c_str());
+      gpr_log(GPR_INFO, "%s PollReaderNext", DebugTag().c_str());
     }
     auto r = reader_next_();
     if (auto* p = r.value_if_ready()) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        gpr_log(GPR_DEBUG, "%s PollReaderNext: got has_value=%s",
-                DebugTag().c_str(), p->has_value() ? "true" : "false");
-      }
-      if (p->has_value()) {
-        Destruct(&reader_next_);
-        auto action = action_factory_.Make(std::move(**p));
-        Construct(&in_action_, std::move(action), std::move(*p));
-        reading_next_ = false;
-        return PollAction();
-      } else {
-        return Done<Result>::Make(p->cancelled());
+      switch (NextValueTraits<ReaderResult>::Type(*p)) {
+        case NextValueType::kValue: {
+          if (grpc_trace_promise_primitives.enabled()) {
+            gpr_log(GPR_INFO, "%s PollReaderNext: got value",
+                    DebugTag().c_str());
+          }
+          Destruct(&reader_next_);
+          auto action = action_factory_.Make(
+              std::move(NextValueTraits<ReaderResult>::MutableValue(*p)));
+          Construct(&in_action_, std::move(action), std::move(*p));
+          reading_next_ = false;
+          return PollAction();
+        }
+        case NextValueType::kEndOfStream: {
+          if (grpc_trace_promise_primitives.enabled()) {
+            gpr_log(GPR_INFO, "%s PollReaderNext: got end of stream",
+                    DebugTag().c_str());
+          }
+          return Done<Result>::Make(false);
+        }
+        case NextValueType::kError: {
+          if (grpc_trace_promise_primitives.enabled()) {
+            gpr_log(GPR_INFO, "%s PollReaderNext: got error",
+                    DebugTag().c_str());
+          }
+          return Done<Result>::Make(true);
+        }
       }
     }
     return Pending();
@@ -144,7 +203,7 @@ class ForEach {
 
   Poll<Result> PollAction() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s PollAction", DebugTag().c_str());
+      gpr_log(GPR_INFO, "%s PollAction", DebugTag().c_str());
     }
     auto r = in_action_.promise();
     if (auto* p = r.value_if_ready()) {
@@ -162,6 +221,7 @@ class ForEach {
 
   GPR_NO_UNIQUE_ADDRESS Reader reader_;
   GPR_NO_UNIQUE_ADDRESS ActionFactory action_factory_;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence_;
   bool reading_next_ = true;
   union {
     ReaderNext reader_next_;
@@ -173,9 +233,10 @@ class ForEach {
 
 /// For each item acquired by calling Reader::Next, run the promise Action.
 template <typename Reader, typename Action>
-for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action) {
+for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action,
+                                                 DebugLocation whence = {}) {
   return for_each_detail::ForEach<Reader, Action>(std::move(reader),
-                                                  std::move(action));
+                                                  std::move(action), whence);
 }
 
 }  // namespace grpc_core

@@ -19,6 +19,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "test/core/promise/poll_matcher.h"
+
 using testing::Mock;
 using testing::StrictMock;
 
@@ -57,34 +59,6 @@ class MockActivity : public Activity, public Wakeable {
   std::unique_ptr<ScopedActivity> scoped_activity_;
 };
 
-MATCHER(IsPending, "") {
-  if (arg.ready()) {
-    *result_listener << "is ready";
-    return false;
-  }
-  return true;
-}
-
-MATCHER(IsReady, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  return true;
-}
-
-MATCHER_P(IsReady, value, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  if (arg.value() != value) {
-    *result_listener << "is " << ::testing::PrintToString(arg.value());
-    return false;
-  }
-  return true;
-}
-
 }  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -119,7 +93,7 @@ namespace filters_detail {
 
 TEST(StackDataTest, Empty) {
   StackData d;
-  EXPECT_EQ(d.call_data_alignment, 0u);
+  EXPECT_EQ(d.call_data_alignment, 1u);
   EXPECT_EQ(d.call_data_size, 0u);
 }
 
@@ -354,10 +328,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoid) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto memory_allocator =
-      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
-  auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
@@ -392,10 +363,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningVoidTakingChannelPtr) {
   EXPECT_EQ(d.client_initial_metadata.ops[0].poll, nullptr);
   EXPECT_EQ(d.client_initial_metadata.ops[0].early_destroy, nullptr);
   // Check promise init
-  auto memory_allocator =
-      MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
-  auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.client_initial_metadata.ops[0].promise_init(
@@ -442,7 +410,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -453,7 +421,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -502,7 +470,7 @@ TEST(StackDataTest,
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -513,7 +481,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -561,7 +529,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -572,7 +540,7 @@ TEST(StackDataTest, InstantClientInitialMetadataReturningServerMetadata) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -623,7 +591,7 @@ TEST(StackDataTest,
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -634,7 +602,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       nullptr, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -683,7 +651,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -701,7 +669,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -714,7 +682,7 @@ TEST(StackDataTest, PromiseClientInitialMetadataReturningAbslStatus) {
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   // A cancelled call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -766,7 +734,7 @@ TEST(StackDataTest,
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ClientMetadata>(arena.get());
+  auto md = Arena::MakePooled<ClientMetadata>();
   promise_detail::Context<Arena> ctx(arena.get());
   // A succeeding call
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
@@ -784,7 +752,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "hello");
   // A failing call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -797,7 +765,7 @@ TEST(StackDataTest,
   EXPECT_EQ(r.value().ok, nullptr);
   EXPECT_EQ(r.value().error->get(GrpcStatusMetadata()), GRPC_STATUS_CANCELLED);
   // A cancelled call
-  md = Arena::MakePooled<ClientMetadata>(arena.get());
+  md = Arena::MakePooled<ClientMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = d.client_initial_metadata.ops[0].promise_init(
       promise_data, call_data, d.client_initial_metadata.ops[0].channel_data,
@@ -836,7 +804,7 @@ TEST(StackDataTest, InstantServerInitialMetadataReturningVoid) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.server_initial_metadata.ops[0].promise_init(
@@ -943,7 +911,7 @@ TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.server_trailing_metadata.ops[0].promise_init(
@@ -983,7 +951,7 @@ TEST(StackDataTest,
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
-  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
   auto r = d.server_trailing_metadata.ops[0].promise_init(
@@ -1075,7 +1043,7 @@ TEST(OperationExecutorTest, InstantTwo) {
   auto arena = MakeScopedArena(1024, &memory_allocator);
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds
-  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
       transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
@@ -1083,7 +1051,7 @@ TEST(OperationExecutorTest, InstantTwo) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
   // Second fails
-  md = Arena::MakePooled<ServerMetadata>(arena.get());
+  md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
   EXPECT_TRUE(r.ready());
@@ -1140,7 +1108,7 @@ TEST(OperationExecutorTest, PromiseTwo) {
   auto arena = MakeScopedArena(1024, &memory_allocator);
   promise_detail::Context<Arena> ctx(arena.get());
   // First call succeeds after two sets of two step delays.
-  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
       transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
@@ -1156,7 +1124,7 @@ TEST(OperationExecutorTest, PromiseTwo) {
   EXPECT_EQ(r.value().ok->get_pointer(HttpPathMetadata())->as_string_view(),
             "world");
   // Second fails after one set of two step delays.
-  md = Arena::MakePooled<ServerMetadata>(arena.get());
+  md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   r = transformer.Start(&d.client_initial_metadata, std::move(md), call_data1);
   EXPECT_FALSE(r.ready());
@@ -1211,7 +1179,7 @@ TEST(InfallibleOperationExecutor, InstantTwo) {
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
   promise_detail::Context<Arena> ctx(arena.get());
-  auto md = Arena::MakePooled<ServerMetadata>(arena.get());
+  auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   auto r =
       transformer.Start(&d.server_trailing_metadata, std::move(md), call_data);
@@ -1249,7 +1217,7 @@ TEST(PipeStateTest, OnePull) {
   ps.BeginPush();
   Mock::VerifyAndClearExpectations(&activity);
   // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   // push should be pending though!
   EXPECT_THAT(ps.PollPush(), IsPending());
   // ack the pull, should see a wakeup
@@ -1257,7 +1225,7 @@ TEST(PipeStateTest, OnePull) {
   ps.AckPull();
   Mock::VerifyAndClearExpectations(&activity);
   // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
   ps.DropPush();
   ps.DropPull();
   EXPECT_FALSE(ps.holds_error());
@@ -1276,7 +1244,7 @@ TEST(PipeStateTest, StartThenPull) {
   ps.BeginPush();
   Mock::VerifyAndClearExpectations(&activity);
   // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   // push should be pending though!
   EXPECT_THAT(ps.PollPush(), IsPending());
   // ack the pull, should see a wakeup
@@ -1284,7 +1252,7 @@ TEST(PipeStateTest, StartThenPull) {
   ps.AckPull();
   Mock::VerifyAndClearExpectations(&activity);
   // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
   ps.DropPush();
   ps.DropPull();
   EXPECT_FALSE(ps.holds_error());
@@ -1300,7 +1268,7 @@ TEST(PipeStateTest, PushFirst) {
   // push should be pending
   EXPECT_THAT(ps.PollPush(), IsPending());
   // pull should immediately see a value
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   // push should still be pending though!
   EXPECT_THAT(ps.PollPush(), IsPending());
   // ack the pull, should see a wakeup
@@ -1308,7 +1276,7 @@ TEST(PipeStateTest, PushFirst) {
   ps.AckPull();
   Mock::VerifyAndClearExpectations(&activity);
   // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
   ps.DropPush();
   ps.DropPull();
   EXPECT_FALSE(ps.holds_error());
@@ -1345,7 +1313,7 @@ TEST(PipeStateTest, DropProcessing) {
   activity.Activate();
   ps.Start();
   ps.BeginPush();
-  EXPECT_THAT(ps.PollPull(), IsReady(Success{}));
+  EXPECT_THAT(ps.PollPull(), IsReady(true));
   ps.DropPull();
   EXPECT_TRUE(ps.holds_error());
   EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
@@ -1408,24 +1376,18 @@ TEST(CallFiltersTest, UnaryCall) {
   CallFilters::StackBuilder builder;
   builder.Add(&f1);
   builder.Add(&f2);
-  CallFilters filters(builder.Build());
   auto memory_allocator =
       MakeMemoryQuota("test-quota")->CreateMemoryAllocator("foo");
   auto arena = MakeScopedArena(1024, &memory_allocator);
+  CallFilters filters(Arena::MakePooled<ClientMetadata>());
+  filters.SetStack(builder.Build());
   promise_detail::Context<Arena> ctx(arena.get());
   StrictMock<MockActivity> activity;
   activity.Activate();
-  // Push client initial metadata
-  auto push_client_initial_metadata = filters.PushClientInitialMetadata(
-      Arena::MakePooled<ClientMetadata>(arena.get()));
-  EXPECT_THAT(push_client_initial_metadata(), IsPending());
+  // Pull client initial metadata
   auto pull_client_initial_metadata = filters.PullClientInitialMetadata();
-  // Pull client initial metadata, expect a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
   EXPECT_THAT(pull_client_initial_metadata(), IsReady());
   Mock::VerifyAndClearExpectations(&activity);
-  // Push should be done
-  EXPECT_THAT(push_client_initial_metadata(), IsReady(Success{}));
   // Push client to server message
   auto push_client_to_server_message = filters.PushClientToServerMessage(
       Arena::MakePooled<Message>(SliceBuffer(), 0));
@@ -1438,8 +1400,8 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push should be done
   EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
   // Push server initial metadata
-  auto push_server_initial_metadata = filters.PushServerInitialMetadata(
-      Arena::MakePooled<ServerMetadata>(arena.get()));
+  auto push_server_initial_metadata =
+      filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
   EXPECT_THAT(push_server_initial_metadata(), IsPending());
   auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
   // Pull server initial metadata, expect a wakeup
@@ -1460,8 +1422,7 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push should be done
   EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
   // Push server trailing metadata
-  filters.PushServerTrailingMetadata(
-      Arena::MakePooled<ServerMetadata>(arena.get()));
+  filters.PushServerTrailingMetadata(Arena::MakePooled<ServerMetadata>());
   // Pull server trailing metadata
   auto pull_server_trailing_metadata = filters.PullServerTrailingMetadata();
   // Should be done

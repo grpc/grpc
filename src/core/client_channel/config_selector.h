@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -36,9 +37,9 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/service_config/service_config.h"
 
 // Channel arg key for ConfigSelector.
 #define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
@@ -90,21 +91,21 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.
-class DefaultConfigSelector : public ConfigSelector {
+class DefaultConfigSelector final : public ConfigSelector {
  public:
   explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
       : service_config_(std::move(service_config)) {
     // The client channel code ensures that this will never be null.
     // If neither the resolver nor the client application provide a
     // config, a default empty config will be used.
-    GPR_DEBUG_ASSERT(service_config_ != nullptr);
+    DCHECK(service_config_ != nullptr);
   }
 
   const char* name() const override { return "default"; }
 
   absl::Status GetCallConfig(GetCallConfigArgs args) override {
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
-    GPR_ASSERT(path != nullptr);
+    CHECK_NE(path, nullptr);
     auto* parsed_method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
     args.service_config_call_data->SetServiceConfig(service_config_,

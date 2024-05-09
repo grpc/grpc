@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -31,7 +33,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
-#include "test/core/util/cmdline.h"
+#include "test/core/test_util/cmdline.h"
 
 typedef struct {
   grpc_pollset* pollset;
@@ -55,13 +57,13 @@ static void on_jwt_verification_done(void* user_data,
 
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
-    GPR_ASSERT(claims != nullptr);
+    CHECK_NE(claims, nullptr);
     std::string claims_str =
         grpc_core::JsonDump(*grpc_jwt_claims_json(claims), /*indent=*/2);
     printf("Claims: \n\n%s\n", claims_str.c_str());
     grpc_jwt_claims_destroy(claims);
   } else {
-    GPR_ASSERT(claims == nullptr);
+    CHECK_EQ(claims, nullptr);
     fprintf(stderr, "Verification failed with error %s\n",
             grpc_jwt_verifier_status_to_string(status));
     fflush(stderr);

@@ -316,7 +316,7 @@ def server_credentials_ssl_dynamic_cert_config(initial_cert_config,
   return credentials
 
 cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
-        void* user_data, grpc_ssl_server_certificate_config **config) with gil:
+        void* user_data, grpc_ssl_server_certificate_config **config) noexcept with gil:
   # This is a credentials.ServerCertificateConfig
   cdef ServerCertificateConfig cert_config = None
   if not user_data:
@@ -437,8 +437,9 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
       raise ValueError("Call credentials may not be NULL.")
 
   cdef grpc_channel_credentials *c(self) except *:
-    self._c_creds = grpc_google_default_credentials_create(self._call_creds)
-    return self._c_creds
+    with nogil:
+      self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+      return self._c_creds
 
 
 def channel_credentials_compute_engine(call_creds):

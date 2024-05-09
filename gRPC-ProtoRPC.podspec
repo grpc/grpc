@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.63.0-dev'
+  version = '1.65.0-dev'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'https://grpc.io'
@@ -37,6 +37,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.12'
   s.tvos.deployment_target = '12.0'
   s.watchos.deployment_target = '6.0'
+  s.visionos.deployment_target = '1.0'
 
   name = 'ProtoRPC'
   s.module_name = name

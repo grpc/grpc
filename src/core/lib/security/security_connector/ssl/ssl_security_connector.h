@@ -18,13 +18,13 @@
 
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_SSL_SECURITY_CONNECTOR_H
 #define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SSL_SSL_SECURITY_CONNECTOR_H
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"

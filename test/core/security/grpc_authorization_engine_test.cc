@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 
 #include <memory>
@@ -23,11 +21,12 @@
 
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
-#include "test/core/util/audit_logging_utils.h"
-#include "test/core/util/evaluate_args_test_util.h"
+#include "test/core/test_util/audit_logging_utils.h"
+#include "test/core/test_util/evaluate_args_test_util.h"
 
 namespace grpc_core {
 

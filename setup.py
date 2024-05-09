@@ -101,7 +101,6 @@ CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -393,6 +392,11 @@ if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
         if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM
         else sysconfig.get_platform()
     )
+    if "i686" in boringssl_asm_platform:
+        print("Enabling SSE2 on %s platform" % boringssl_asm_platform)
+        EXTRA_COMPILE_ARGS.append("-msse2")
+    else:
+        print("SSE2 not enabled on %s platform" % boringssl_asm_platform)
     # BoringSSL's gas-compatible assembly files are all internally conditioned
     # by the preprocessor. Provided the platform has a gas-compatible assembler
     # (i.e. not Windows), we can include the assembly files and let BoringSSL
@@ -540,7 +544,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=0.23,<3.0.0rc1",)
+        SETUP_REQUIRES += ("cython>=3.0.0",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,
@@ -592,7 +596,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 #define GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 
-#include <grpc/support/port_platform.h>
-
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/detail/status.h"
 
@@ -128,7 +128,7 @@ struct StatusCastImpl<absl::Status, const StatusFlag&> {
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
   static absl::StatusOr<T> Cast(StatusFlag flag) {
-    GPR_DEBUG_ASSERT(!flag.ok());
+    DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -136,7 +136,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
   static absl::StatusOr<T> Cast(StatusFlag flag) {
-    GPR_DEBUG_ASSERT(!flag.ok());
+    DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -144,7 +144,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag&> {
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, const StatusFlag&> {
   static absl::StatusOr<T> Cast(StatusFlag flag) {
-    GPR_DEBUG_ASSERT(!flag.ok());
+    DCHECK(!flag.ok());
     return absl::CancelledError();
   }
 };
@@ -158,7 +158,7 @@ class ValueOrFailure {
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrFailure(Failure) {}
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ValueOrFailure(StatusFlag status) { GPR_ASSERT(!status.ok()); }
+  ValueOrFailure(StatusFlag status) { CHECK(!status.ok()); }
 
   static ValueOrFailure FromOptional(absl::optional<T> value) {
     return ValueOrFailure{std::move(value)};
@@ -175,6 +175,14 @@ class ValueOrFailure {
   bool operator==(const ValueOrFailure& other) const {
     return value_ == other.value_;
   }
+
+  bool operator!=(const ValueOrFailure& other) const {
+    return value_ != other.value_;
+  }
+
+  bool operator==(const T& other) const { return value_ == other; }
+
+  bool operator!=(const T& other) const { return value_ != other; }
 
  private:
   absl::optional<T> value_;
@@ -208,7 +216,7 @@ struct StatusCastImpl<ValueOrFailure<T>, Failure> {
 template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
   static ValueOrFailure<T> Cast(StatusFlag f) {
-    GPR_ASSERT(!f.ok());
+    CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };
@@ -216,7 +224,7 @@ struct StatusCastImpl<ValueOrFailure<T>, StatusFlag&> {
 template <typename T>
 struct StatusCastImpl<ValueOrFailure<T>, StatusFlag> {
   static ValueOrFailure<T> Cast(StatusFlag f) {
-    GPR_ASSERT(!f.ok());
+    CHECK(!f.ok());
     return ValueOrFailure<T>(Failure{});
   }
 };
