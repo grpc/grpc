@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2019 gRPC authors.
+// Copyright 2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,240 +16,214 @@
 //
 //
 
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <inttypes.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#include "test/cpp/interop/http2_client.h"
 
-#include <chrono>
-#include <cstdlib>
-#include <memory>
-#include <string>
+#include <grpc/support/alloc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+
 #include <thread>
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-#include "absl/time/time.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/channel_arguments.h>
-
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
-#include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "src/proto/grpc/testing/test.pb.h"
+#include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
-#include "test/cpp/util/test_credentials_provider.h"
 
-ABSL_FLAG(std::string, custom_credentials_type, "",
-          "User provided credentials type.");
-ABSL_FLAG(std::string, server_uri, "localhost:1000", "Server URI target");
-ABSL_FLAG(std::string, induce_fallback_cmd, "exit 1",
-          "Shell command to induce fallback, e.g. by unrouting addresses");
-ABSL_FLAG(int, fallback_deadline_seconds, 1,
-          "Number of seconds to wait for fallback to occur after inducing it");
-ABSL_FLAG(std::string, test_case, "",
-          "Test case to run. Valid options are:\n\n"
-          "fallback_before_startup : fallback before making RPCs to backends"
-          "fallback_after_startup : fallback after making RPCs to backends");
-
-#ifdef LINUX_VERSION_CODE
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 37)
-#define SOCKET_SUPPORTS_TCP_USER_TIMEOUT
-#endif
-#endif
-
-#ifdef SOCKET_SUPPORTS_TCP_USER_TIMEOUT
-using grpc::testing::GrpclbRouteType;
-using grpc::testing::SimpleRequest;
-using grpc::testing::SimpleResponse;
-using grpc::testing::TestService;
+namespace grpc {
+namespace testing {
 
 namespace {
+const int kLargeRequestSize = 271828;
+const int kLargeResponseSize = 314159;
+}  // namespace
 
-enum RpcMode {
-  FailFast,
-  WaitForReady,
-};
+Http2Client::ServiceStub::ServiceStub(const std::shared_ptr<Channel>& channel)
+    : channel_(channel) {
+  stub_ = TestService::NewStub(channel);
+}
 
-GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
-                                RpcMode rpc_mode) {
-  gpr_log(GPR_INFO, "DoRPCAndGetPath deadline_seconds:%d rpc_mode:%d",
-          deadline_seconds, rpc_mode);
+TestService::Stub* Http2Client::ServiceStub::Get() { return stub_.get(); }
+
+Http2Client::Http2Client(const std::shared_ptr<Channel>& channel)
+    : serviceStub_(channel),
+      channel_(channel),
+      defaultRequest_(BuildDefaultRequest()) {}
+
+bool Http2Client::AssertStatusCode(const Status& s, StatusCode expected_code) {
+  if (s.error_code() == expected_code) {
+    return true;
+  }
+
+  grpc_core::Crash(absl::StrFormat(
+      "Error status code: %d (expected: %d), message: %s", s.error_code(),
+      expected_code, s.error_message().c_str()));
+}
+
+Status Http2Client::SendUnaryCall(SimpleResponse* response) {
+  ClientContext context;
+  return serviceStub_.Get()->UnaryCall(&context, defaultRequest_, response);
+}
+
+SimpleRequest Http2Client::BuildDefaultRequest() {
   SimpleRequest request;
+  request.set_response_size(kLargeResponseSize);
+  std::string payload(kLargeRequestSize, '\0');
+  request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+  return request;
+}
+
+bool Http2Client::DoRstAfterHeader() {
+  VLOG(2) << "Sending RPC and expecting reset stream after header";
+
   SimpleResponse response;
-  grpc::ClientContext context;
-  if (rpc_mode == WaitForReady) {
-    context.set_wait_for_ready(true);
-  }
-  request.set_fill_grpclb_route_type(true);
-  std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::seconds(deadline_seconds);
-  context.set_deadline(deadline);
-  grpc::Status s = stub->UnaryCall(&context, request, &response);
-  if (!s.ok()) {
-    gpr_log(GPR_INFO, "DoRPCAndGetPath failed. status-message: %s",
-            s.error_message().c_str());
-    return GrpclbRouteType::GRPCLB_ROUTE_TYPE_UNKNOWN;
-  }
-  CHECK(response.grpclb_route_type() ==
-            GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
-        response.grpclb_route_type() ==
-            GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
-  gpr_log(GPR_INFO, "DoRPCAndGetPath done. grpclb_route_type:%d",
-          response.grpclb_route_type());
-  return response.grpclb_route_type();
-}
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
+  CHECK(!response.has_payload());  // no data should be received
 
-GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds) {
-  return DoRPCAndGetPath(stub, deadline_seconds, FailFast);
-}
-
-bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
-  int timeout = 20000;  // 20 seconds
-  gpr_log(GPR_INFO, "Setting socket option TCP_USER_TIMEOUT on fd: %d", fd);
-  if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
-                      sizeof(timeout))) {
-    grpc_core::Crash("Failed to set socket option TCP_USER_TIMEOUT");
-  }
-  int newval;
-  socklen_t len = sizeof(newval);
-  if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len) ||
-      newval != timeout) {
-    grpc_core::Crash("Failed to get expected socket option TCP_USER_TIMEOUT");
-  }
+  VLOG(2) << "Done testing reset stream after header";
   return true;
 }
 
-int TcpUserTimeoutCompare(grpc_socket_mutator* /*a*/,
-                          grpc_socket_mutator* /*b*/) {
-  return 0;
+bool Http2Client::DoRstAfterData() {
+  VLOG(2) << "Sending RPC and expecting reset stream after data";
+
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
+  // There is no guarantee that data would be received.
+
+  VLOG(2) << "Done testing reset stream after data";
+  return true;
 }
 
-void TcpUserTimeoutDestroy(grpc_socket_mutator* mutator) { delete mutator; }
+bool Http2Client::DoRstDuringData() {
+  VLOG(2) << "Sending RPC and expecting reset stream during data";
 
-const grpc_socket_mutator_vtable kTcpUserTimeoutMutatorVtable =
-    grpc_socket_mutator_vtable{TcpUserTimeoutMutateFd, TcpUserTimeoutCompare,
-                               TcpUserTimeoutDestroy, nullptr};
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
+  CHECK(!response.has_payload());  // no data should be received
 
-std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
-  grpc::ChannelArguments channel_args;
-  grpc_socket_mutator* tcp_user_timeout_mutator = new grpc_socket_mutator();
-  grpc_socket_mutator_init(tcp_user_timeout_mutator,
-                           &kTcpUserTimeoutMutatorVtable);
-  channel_args.SetSocketMutator(tcp_user_timeout_mutator);
-  // Allow LB policy to be configured by service config
-  channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
-  std::shared_ptr<grpc::ChannelCredentials> channel_creds =
-      grpc::testing::GetCredentialsProvider()->GetChannelCredentials(
-          absl::GetFlag(FLAGS_custom_credentials_type), &channel_args);
-  return TestService::NewStub(grpc::CreateCustomChannel(
-      absl::GetFlag(FLAGS_server_uri), channel_creds, channel_args));
+  VLOG(2) << "Done testing reset stream during data";
+  return true;
 }
 
-void RunCommand(const std::string& command) {
-  gpr_log(GPR_INFO, "RunCommand: |%s|", command.c_str());
-  int out = std::system(command.c_str());
-  if (WIFEXITED(out)) {
-    int code = WEXITSTATUS(out);
-    if (code != 0) {
-      grpc_core::Crash(
-          absl::StrFormat("RunCommand failed exit code:%d command:|%s|", code,
-                          command.c_str()));
-    }
-  } else {
-    grpc_core::Crash(
-        absl::StrFormat("RunCommand failed command:|%s|", command.c_str()));
+bool Http2Client::DoGoaway() {
+  VLOG(2) << "Sending two RPCs and expecting goaway";
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+
+  // Sleep for one second to give time for client to receive goaway frame.
+  gpr_timespec sleep_time = gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(1, GPR_TIMESPAN));
+  gpr_sleep_until(sleep_time);
+
+  response.Clear();
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+  VLOG(2) << "Done testing goaway";
+  return true;
+}
+
+bool Http2Client::DoPing() {
+  VLOG(2) << "Sending RPC and expecting ping";
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+  VLOG(2) << "Done testing ping";
+  return true;
+}
+
+void Http2Client::MaxStreamsWorker(
+    const std::shared_ptr<grpc::Channel>& /*channel*/) {
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+}
+
+bool Http2Client::DoMaxStreams() {
+  VLOG(2) << "Testing max streams";
+
+  // Make an initial call on the channel to ensure the server's max streams
+  // setting is received
+  SimpleResponse response;
+  AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+  CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+
+  std::vector<std::thread> test_threads;
+  test_threads.reserve(10);
+  for (int i = 0; i < 10; i++) {
+    test_threads.emplace_back(
+        std::thread(&Http2Client::MaxStreamsWorker, this, channel_));
   }
-}
 
-void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
-  int fallback_retry_count = 0;
-  bool fallback = false;
-  absl::Time fallback_deadline =
-      absl::Now() +
-      absl::Seconds(absl::GetFlag(FLAGS_fallback_deadline_seconds));
-  while (absl::Now() < fallback_deadline) {
-    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 1);
-    if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
-      gpr_log(GPR_ERROR,
-              "Got grpclb route type backend. Backends are "
-              "supposed to be unreachable, so this test is broken");
-      CHECK(0);
-    }
-    if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_INFO,
-              "Made one successful RPC to a fallback. Now expect the same for "
-              "the rest.");
-      fallback = true;
-      break;
-    } else {
-      gpr_log(GPR_ERROR, "Retryable RPC failure on iteration: %d",
-              fallback_retry_count);
-    }
-    fallback_retry_count++;
+  for (auto it = test_threads.begin(); it != test_threads.end(); it++) {
+    it->join();
   }
-  if (!fallback) {
-    gpr_log(GPR_ERROR, "Didn't fall back within deadline");
-    CHECK(0);
-  }
-  for (int i = 0; i < 30; i++) {
-    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 20);
-    CHECK(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  }
+
+  VLOG(2) << "Done testing max streams";
+  return true;
 }
 
-void DoFallbackBeforeStartupTest() {
-  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
-  RunCommand(absl::GetFlag(FLAGS_induce_fallback_cmd));
-  WaitForFallbackAndDoRPCs(stub.get());
-}
+}  // namespace testing
+}  // namespace grpc
 
-void DoFallbackAfterStartupTest() {
-  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
-  GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
-  CHECK(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
-  RunCommand(absl::GetFlag(FLAGS_induce_fallback_cmd));
-  WaitForFallbackAndDoRPCs(stub.get());
-}
-
-}  // namespace
+ABSL_FLAG(int32_t, server_port, 0, "Server port.");
+ABSL_FLAG(std::string, server_host, "localhost", "Server host to connect to");
+ABSL_FLAG(std::string, test_case, "rst_after_header",
+          "Configure different test cases. Valid options are:\n\n"
+          "goaway\n"
+          "max_streams\n"
+          "ping\n"
+          "rst_after_data\n"
+          "rst_after_header\n"
+          "rst_during_data\n");
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing: %s", absl::GetFlag(FLAGS_test_case).c_str());
-  if (absl::GetFlag(FLAGS_test_case) == "fallback_before_startup") {
-    DoFallbackBeforeStartupTest();
-    gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
-  } else if (absl::GetFlag(FLAGS_test_case) == "fallback_after_startup") {
-    DoFallbackAfterStartupTest();
-    gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
+  CHECK(absl::GetFlag(FLAGS_server_port));
+  const int host_port_buf_size = 1024;
+  char host_port[host_port_buf_size];
+  snprintf(host_port, host_port_buf_size, "%s:%d",
+           absl::GetFlag(FLAGS_server_host).c_str(),
+           absl::GetFlag(FLAGS_server_port));
+  std::shared_ptr<grpc::Channel> channel =
+      grpc::CreateTestChannel(host_port, grpc::testing::INSECURE);
+  CHECK(channel->WaitForConnected(gpr_time_add(
+      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(300, GPR_TIMESPAN))));
+  grpc::testing::Http2Client client(channel);
+  LOG(INFO) << "Testing case: " << absl::GetFlag(FLAGS_test_case);
+  int ret = 0;
+  if (absl::GetFlag(FLAGS_test_case) == "rst_after_header") {
+    client.DoRstAfterHeader();
+  } else if (absl::GetFlag(FLAGS_test_case) == "rst_after_data") {
+    client.DoRstAfterData();
+  } else if (absl::GetFlag(FLAGS_test_case) == "rst_during_data") {
+    client.DoRstDuringData();
+  } else if (absl::GetFlag(FLAGS_test_case) == "goaway") {
+    client.DoGoaway();
+  } else if (absl::GetFlag(FLAGS_test_case) == "ping") {
+    client.DoPing();
+  } else if (absl::GetFlag(FLAGS_test_case) == "max_streams") {
+    client.DoMaxStreams();
   } else {
-    grpc_core::Crash(absl::StrFormat("Invalid test case: %s",
-                                     absl::GetFlag(FLAGS_test_case).c_str()));
+    const char* testcases[] = {
+        "goaway",         "max_streams",      "ping",
+        "rst_after_data", "rst_after_header", "rst_during_data"};
+    char* joined_testcases =
+        gpr_strjoin_sep(testcases, GPR_ARRAY_SIZE(testcases), "\n", nullptr);
+
+    LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
+               << ". Valid options are\n"
+               << joined_testcases;
+    gpr_free(joined_testcases);
+    ret = 1;
   }
+
+  return ret;
 }
-
-#else
-
-int main(int argc, char** argv) {
-  grpc::testing::InitTest(&argc, &argv, true);
-  grpc_core::Crash(
-      "This test requires TCP_USER_TIMEOUT, which isn't available");
-}
-
-#endif  // SOCKET_SUPPORTS_TCP_USER_TIMEOUT
