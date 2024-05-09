@@ -99,7 +99,8 @@ class OpenTelemetryPluginBuilder {
   /// grpc.client.attempt.duration
   /// grpc.client.attempt.sent_total_compressed_message_size
   /// grpc.client.attempt.rcvd_total_compressed_message_size
-  /// For example, the pick first lb policy metrics defined in
+  /// For example, the grpc.target attribute on pick first lb policy metrics
+  /// defined in
   /// https://github.com/grpc/proposal/blob/master/A78-grpc-metrics-wrr-pf-xds.md
   /// will not be filtered. Please contact the grpc team if this filtration
   /// would be of interest to you.
