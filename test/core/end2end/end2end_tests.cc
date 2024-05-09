@@ -19,6 +19,10 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+
 #include <regex>
 #include <tuple>
 
@@ -26,11 +30,6 @@
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
-
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -118,7 +117,7 @@ void CoreEnd2endTest::TearDown() {
     // This will wait until gRPC shutdown has actually happened to make sure
     // no gRPC resources (such as thread) are active. (timeout = 10s)
     if (!grpc_wait_until_shutdown(10)) {
-      gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+      LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
     }
   }
   CHECK_EQ(client_, nullptr);
@@ -154,8 +153,8 @@ std::string CoreEnd2endTest::IncomingMessage::payload() const {
     grpc_slice_buffer decompressed_buffer;
     grpc_slice_buffer_init(&decompressed_buffer);
     CHECK(grpc_msg_decompress(payload_->data.raw.compression,
-                                   &payload_->data.raw.slice_buffer,
-                                   &decompressed_buffer));
+                              &payload_->data.raw.slice_buffer,
+                              &decompressed_buffer));
     grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
         decompressed_buffer.slices, decompressed_buffer.count);
     grpc_byte_buffer_reader reader;

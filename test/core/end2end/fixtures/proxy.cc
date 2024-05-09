@@ -106,8 +106,8 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(
   proxy->proxy_port = grpc_core::JoinHostPort("localhost", proxy_port);
   proxy->server_port = grpc_core::JoinHostPort("localhost", server_port);
 
-  gpr_log(GPR_DEBUG, "PROXY ADDR:%s BACKEND:%s", proxy->proxy_port.c_str(),
-          proxy->server_port.c_str());
+  VLOG(2) << "PROXY ADDR:" << proxy->proxy_port
+          << " BACKEND:" << proxy->server_port;
 
   proxy->cq = grpc_completion_queue_create_for_next(nullptr);
   proxy->server = def->create_server(proxy->proxy_port.c_str(), server_args);
