@@ -28,13 +28,20 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 <<<<<<< Updated upstream
+#include <grpc/support/alloc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+    <<<<<<< Updated upstream
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
-    =======
+    == == ==
+    =
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -44,7 +51,7 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 
-    namespace grpc {
+        namespace grpc {
   namespace testing {
 
   namespace {
@@ -106,8 +113,100 @@
     AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
     // There is no guarantee that data would be received.
 
+<<<<<<< Updated upstream
     VLOG(2) << "Done testing reset stream after data";
     return true;
+=======
+    SimpleRequest Http2Client::BuildDefaultRequest() {
+      SimpleRequest request;
+      request.set_response_size(kLargeResponseSize);
+      std::string payload(kLargeRequestSize, '\0');
+      request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
+      return request;
+    }
+
+    bool Http2Client::DoRstAfterHeader() {
+      VLOG(2) << "Sending RPC and expecting reset stream after header";
+
+      SimpleResponse response;
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
+      CHECK(!response.has_payload());  // no data should be received
+
+      VLOG(2) << "Done testing reset stream after header";
+      return true;
+    }
+
+    bool Http2Client::DoRstAfterData() {
+      VLOG(2) << "Sending RPC and expecting reset stream after data";
+
+      SimpleResponse response;
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
+      // There is no guarantee that data would be received.
+
+      VLOG(2) << "Done testing reset stream after data";
+      return true;
+    }
+
+    bool Http2Client::DoRstDuringData() {
+      VLOG(2) << "Sending RPC and expecting reset stream during data";
+
+      SimpleResponse response;
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::INTERNAL);
+      CHECK(!response.has_payload());  // no data should be received
+
+      VLOG(2) << "Done testing reset stream during data";
+      return true;
+    }
+
+    bool Http2Client::DoGoaway() {
+      VLOG(2) << "Sending two RPCs and expecting goaway";
+      SimpleResponse response;
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+      CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+
+      // Sleep for one second to give time for client to receive goaway frame.
+      gpr_timespec sleep_time = gpr_time_add(
+          gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(1, GPR_TIMESPAN));
+      gpr_sleep_until(sleep_time);
+
+      response.Clear();
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+      CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+      VLOG(2) << "Done testing goaway";
+      return true;
+    }
+
+    bool Http2Client::DoPing() {
+      VLOG(2) << "Sending RPC and expecting ping";
+      SimpleResponse response;
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+      CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+      VLOG(2) << "Done testing ping";
+      return true;
+    }
+
+    void Http2Client::MaxStreamsWorker(
+        const std::shared_ptr<grpc::Channel>& /*channel*/) {
+      SimpleResponse response;
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+      CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+    }
+
+    bool Http2Client::DoMaxStreams() {
+      VLOG(2) << "Testing max streams";
+
+      // Make an initial call on the channel to ensure the server's max streams
+      // setting is received
+      SimpleResponse response;
+      AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
+      CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+
+      std::vector<std::thread> test_threads;
+      test_threads.reserve(10);
+      for (int i = 0; i < 10; i++) {
+        test_threads.emplace_back(
+            std::thread(&Http2Client::MaxStreamsWorker, this, channel_));
+>>>>>>> Stashed changes
   }
 
   bool Http2Client::DoRstDuringData() {
@@ -121,11 +220,17 @@
     return true;
   }
 
+<<<<<<< Updated upstream
   bool Http2Client::DoGoaway() {
     VLOG(2) << "Sending two RPCs and expecting goaway";
     SimpleResponse response;
     AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
     CHECK(response.payload().body() == std::string(kLargeResponseSize, '\0'));
+=======
+      VLOG(2) << "Done testing max streams";
+      return true;
+    }
+>>>>>>> Stashed changes
 
     // Sleep for one second to give time for client to receive goaway frame.
     gpr_timespec sleep_time = gpr_time_add(
