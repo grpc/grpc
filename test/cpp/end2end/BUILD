@@ -529,6 +529,7 @@ grpc_cc_test(
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,  # TODO(b/151315347)
@@ -620,6 +621,7 @@ grpc_cc_test(
     srcs = ["grpclb_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
