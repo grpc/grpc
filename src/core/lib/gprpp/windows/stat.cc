@@ -22,6 +22,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -31,8 +33,8 @@
 namespace grpc_core {
 
 absl::Status GetFileModificationTime(const char* filename, time_t* timestamp) {
-  GPR_ASSERT(filename != nullptr);
-  GPR_ASSERT(timestamp != nullptr);
+  CHECK_NE(filename, nullptr);
+  CHECK_NE(timestamp, nullptr);
   struct _stat buf;
   if (_stat(filename, &buf) != 0) {
     std::string error_msg = StrError(errno);

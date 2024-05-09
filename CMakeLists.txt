@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.64.0-dev")
+set(PACKAGE_VERSION       "1.65.0-dev")
 set(gRPC_CORE_VERSION     "41.0.0")
 set(gRPC_CORE_SOVERSION   "41")
-set(gRPC_CPP_VERSION      "1.64.0-dev")
-set(gRPC_CPP_SOVERSION    "1.64")
+set(gRPC_CPP_VERSION      "1.65.0-dev")
+set(gRPC_CPP_SOVERSION    "1.65")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -2213,30 +2213,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
-  src/core/ext/xds/certificate_provider_store.cc
-  src/core/ext/xds/file_watcher_certificate_provider_factory.cc
-  src/core/ext/xds/xds_api.cc
-  src/core/ext/xds/xds_audit_logger_registry.cc
-  src/core/ext/xds/xds_bootstrap.cc
-  src/core/ext/xds/xds_bootstrap_grpc.cc
-  src/core/ext/xds/xds_certificate_provider.cc
-  src/core/ext/xds/xds_client.cc
-  src/core/ext/xds/xds_client_grpc.cc
-  src/core/ext/xds/xds_client_stats.cc
-  src/core/ext/xds/xds_cluster.cc
-  src/core/ext/xds/xds_cluster_specifier_plugin.cc
-  src/core/ext/xds/xds_common_types.cc
-  src/core/ext/xds/xds_endpoint.cc
-  src/core/ext/xds/xds_health_status.cc
-  src/core/ext/xds/xds_http_fault_filter.cc
-  src/core/ext/xds/xds_http_filters.cc
-  src/core/ext/xds/xds_http_rbac_filter.cc
-  src/core/ext/xds/xds_http_stateful_session_filter.cc
-  src/core/ext/xds/xds_lb_policy_registry.cc
-  src/core/ext/xds/xds_listener.cc
-  src/core/ext/xds/xds_route_config.cc
-  src/core/ext/xds/xds_routing.cc
-  src/core/ext/xds/xds_transport_grpc.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -2622,6 +2598,30 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/xds/grpc/certificate_provider_store.cc
+  src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
+  src/core/xds/grpc/xds_audit_logger_registry.cc
+  src/core/xds/grpc/xds_bootstrap_grpc.cc
+  src/core/xds/grpc/xds_certificate_provider.cc
+  src/core/xds/grpc/xds_client_grpc.cc
+  src/core/xds/grpc/xds_cluster.cc
+  src/core/xds/grpc/xds_cluster_specifier_plugin.cc
+  src/core/xds/grpc/xds_common_types.cc
+  src/core/xds/grpc/xds_endpoint.cc
+  src/core/xds/grpc/xds_health_status.cc
+  src/core/xds/grpc/xds_http_fault_filter.cc
+  src/core/xds/grpc/xds_http_filters.cc
+  src/core/xds/grpc/xds_http_rbac_filter.cc
+  src/core/xds/grpc/xds_http_stateful_session_filter.cc
+  src/core/xds/grpc/xds_lb_policy_registry.cc
+  src/core/xds/grpc/xds_listener.cc
+  src/core/xds/grpc/xds_route_config.cc
+  src/core/xds/grpc/xds_routing.cc
+  src/core/xds/grpc/xds_transport_grpc.cc
+  src/core/xds/xds_client/xds_api.cc
+  src/core/xds/xds_client/xds_bootstrap.cc
+  src/core/xds/xds_client/xds_client.cc
+  src/core/xds/xds_client/xds_client_stats.cc
 )
 
 target_compile_features(grpc PUBLIC cxx_std_14)
@@ -2746,7 +2746,6 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
-  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -3447,7 +3446,6 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
-  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -4316,7 +4314,6 @@ foreach(_hdr
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
-  include/grpcpp/passive_listener.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5057,7 +5054,6 @@ foreach(_hdr
   include/grpcpp/impl/service_type.h
   include/grpcpp/impl/status.h
   include/grpcpp/impl/sync.h
-  include/grpcpp/passive_listener.h
   include/grpcpp/resource_quota.h
   include/grpcpp/security/audit_logging.h
   include/grpcpp/security/auth_context.h
@@ -5508,7 +5504,6 @@ foreach(_hdr
   include/grpc/impl/propagation_bits.h
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
-  include/grpc/passive_listener.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -26342,6 +26337,7 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/test_lb_policies.cc
   test/cpp/end2end/rls_end2end_test.cc
@@ -26837,7 +26833,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
-    test/core/event_engine/event_engine_test_utils.cc
     test/core/test_util/cmdline.cc
     test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc

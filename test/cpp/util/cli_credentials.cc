@@ -19,6 +19,7 @@
 #include "test/cpp/util/cli_credentials.h"
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
@@ -97,9 +98,9 @@ CliCredentials::GetChannelCredentials() const {
       auto cert = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_cert),
                                       /*add_null_terminator=*/false);
       if (!cert.ok()) {
-        gpr_log(GPR_ERROR, "error loading file %s: %s",
-                absl::GetFlag(FLAGS_ssl_client_cert).c_str(),
-                cert.status().ToString().c_str());
+        LOG(ERROR) << "error loading file "
+                   << absl::GetFlag(FLAGS_ssl_client_cert) << ": "
+                   << cert.status();
       } else {
         ssl_creds_options.pem_cert_chain = std::string(cert->as_string_view());
       }
@@ -108,9 +109,9 @@ CliCredentials::GetChannelCredentials() const {
       auto key = grpc_core::LoadFile(absl::GetFlag(FLAGS_ssl_client_key),
                                      /*add_null_terminator=*/false);
       if (!key.ok()) {
-        gpr_log(GPR_ERROR, "error loading file %s: %s",
-                absl::GetFlag(FLAGS_ssl_client_key).c_str(),
-                key.status().ToString().c_str());
+        LOG(ERROR) << "error loading file "
+                   << absl::GetFlag(FLAGS_ssl_client_key) << ": "
+                   << key.status();
       } else {
         ssl_creds_options.pem_private_key = std::string(key->as_string_view());
       }

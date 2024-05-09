@@ -329,6 +329,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "chunked_vector",
     hdrs = ["lib/gprpp/chunked_vector.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
     deps = [
         "arena",
         "gpr_manual_constructor",
@@ -352,6 +355,7 @@ grpc_cc_library(
         "lib/gprpp/status_helper.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/strings:cord",
@@ -395,7 +399,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     language = "c++",
-    deps = ["//:gpr_platform"],
+    deps = ["//:gpr"],
 )
 
 grpc_cc_library(
@@ -1648,6 +1652,7 @@ grpc_cc_library(
         "lib/gprpp/time.h",
     ],
     external_deps = [
+        "absl/log:check",
         "absl/strings:str_format",
         "absl/types:optional",
     ],
@@ -3084,6 +3089,9 @@ grpc_cc_library(
     name = "single_set_ptr",
     hdrs = [
         "lib/gprpp/single_set_ptr.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     language = "c++",
     deps = ["//:gpr"],
@@ -4997,7 +5005,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "upb_utils",
     hdrs = [
-        "ext/xds/upb_utils.h",
+        "xds/grpc/upb_utils.h",
     ],
     external_deps = [
         "absl/strings",
@@ -5010,7 +5018,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "xds_enabled_server",
     hdrs = [
-        "ext/xds/xds_enabled_server.h",
+        "xds/grpc/xds_enabled_server.h",
     ],
     language = "c++",
 )
@@ -5018,50 +5026,50 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
-        "ext/xds/certificate_provider_store.cc",
-        "ext/xds/file_watcher_certificate_provider_factory.cc",
-        "ext/xds/xds_audit_logger_registry.cc",
-        "ext/xds/xds_bootstrap_grpc.cc",
-        "ext/xds/xds_certificate_provider.cc",
-        "ext/xds/xds_client_grpc.cc",
-        "ext/xds/xds_cluster.cc",
-        "ext/xds/xds_cluster_specifier_plugin.cc",
-        "ext/xds/xds_common_types.cc",
-        "ext/xds/xds_endpoint.cc",
-        "ext/xds/xds_health_status.cc",
-        "ext/xds/xds_http_fault_filter.cc",
-        "ext/xds/xds_http_filters.cc",
-        "ext/xds/xds_http_rbac_filter.cc",
-        "ext/xds/xds_http_stateful_session_filter.cc",
-        "ext/xds/xds_lb_policy_registry.cc",
-        "ext/xds/xds_listener.cc",
-        "ext/xds/xds_route_config.cc",
-        "ext/xds/xds_routing.cc",
-        "ext/xds/xds_transport_grpc.cc",
         "lib/security/credentials/xds/xds_credentials.cc",
+        "xds/grpc/certificate_provider_store.cc",
+        "xds/grpc/file_watcher_certificate_provider_factory.cc",
+        "xds/grpc/xds_audit_logger_registry.cc",
+        "xds/grpc/xds_bootstrap_grpc.cc",
+        "xds/grpc/xds_certificate_provider.cc",
+        "xds/grpc/xds_client_grpc.cc",
+        "xds/grpc/xds_cluster.cc",
+        "xds/grpc/xds_cluster_specifier_plugin.cc",
+        "xds/grpc/xds_common_types.cc",
+        "xds/grpc/xds_endpoint.cc",
+        "xds/grpc/xds_health_status.cc",
+        "xds/grpc/xds_http_fault_filter.cc",
+        "xds/grpc/xds_http_filters.cc",
+        "xds/grpc/xds_http_rbac_filter.cc",
+        "xds/grpc/xds_http_stateful_session_filter.cc",
+        "xds/grpc/xds_lb_policy_registry.cc",
+        "xds/grpc/xds_listener.cc",
+        "xds/grpc/xds_route_config.cc",
+        "xds/grpc/xds_routing.cc",
+        "xds/grpc/xds_transport_grpc.cc",
     ],
     hdrs = [
-        "ext/xds/certificate_provider_store.h",
-        "ext/xds/file_watcher_certificate_provider_factory.h",
-        "ext/xds/xds_audit_logger_registry.h",
-        "ext/xds/xds_bootstrap_grpc.h",
-        "ext/xds/xds_certificate_provider.h",
-        "ext/xds/xds_client_grpc.h",
-        "ext/xds/xds_cluster.h",
-        "ext/xds/xds_cluster_specifier_plugin.h",
-        "ext/xds/xds_common_types.h",
-        "ext/xds/xds_endpoint.h",
-        "ext/xds/xds_health_status.h",
-        "ext/xds/xds_http_fault_filter.h",
-        "ext/xds/xds_http_filters.h",
-        "ext/xds/xds_http_rbac_filter.h",
-        "ext/xds/xds_http_stateful_session_filter.h",
-        "ext/xds/xds_lb_policy_registry.h",
-        "ext/xds/xds_listener.h",
-        "ext/xds/xds_route_config.h",
-        "ext/xds/xds_routing.h",
-        "ext/xds/xds_transport_grpc.h",
         "lib/security/credentials/xds/xds_credentials.h",
+        "xds/grpc/certificate_provider_store.h",
+        "xds/grpc/file_watcher_certificate_provider_factory.h",
+        "xds/grpc/xds_audit_logger_registry.h",
+        "xds/grpc/xds_bootstrap_grpc.h",
+        "xds/grpc/xds_certificate_provider.h",
+        "xds/grpc/xds_client_grpc.h",
+        "xds/grpc/xds_cluster.h",
+        "xds/grpc/xds_cluster_specifier_plugin.h",
+        "xds/grpc/xds_common_types.h",
+        "xds/grpc/xds_endpoint.h",
+        "xds/grpc/xds_health_status.h",
+        "xds/grpc/xds_http_fault_filter.h",
+        "xds/grpc/xds_http_filters.h",
+        "xds/grpc/xds_http_rbac_filter.h",
+        "xds/grpc/xds_http_stateful_session_filter.h",
+        "xds/grpc/xds_lb_policy_registry.h",
+        "xds/grpc/xds_listener.h",
+        "xds/grpc/xds_route_config.h",
+        "xds/grpc/xds_routing.h",
+        "xds/grpc/xds_transport_grpc.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -6598,6 +6606,9 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/transport/hpack_encoder_table.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "c++",
     deps = [
         "hpack_constants",
@@ -6615,6 +6626,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
@@ -6664,6 +6676,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",
+        "absl/log:check",
         "absl/meta:type_traits",
         "absl/random:bit_gen_ref",
         "absl/random:distributions",
@@ -6685,6 +6698,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "ext/transport/chttp2/transport/write_size_policy.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         "time",
@@ -6723,6 +6739,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "ext/transport/chttp2/transport/max_concurrent_streams_policy.h",
+    ],
+    external_deps = [
+        "absl/log:check",
     ],
     deps = [
         "//:gpr",
@@ -6781,6 +6800,9 @@ grpc_cc_library(
     hdrs = [
         "ext/transport/chttp2/alpn/alpn.h",
     ],
+    external_deps = [
+        "absl/log:check",
+    ],
     language = "c++",
     deps = [
         "useful",
@@ -6798,6 +6820,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
@@ -6854,6 +6877,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6868,8 +6892,6 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
-        "event_engine_extensions",
-        "event_engine_query_extensions",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
