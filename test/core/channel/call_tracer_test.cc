@@ -29,8 +29,8 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -94,6 +94,7 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   attempt_tracer->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
+  attempt_tracer->RecordEnd(gpr_timespec());
 }
 
 TEST_F(CallTracerTest, BasicServerCallTracerTest) {

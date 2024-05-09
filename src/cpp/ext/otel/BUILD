@@ -47,6 +47,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
+        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -57,7 +58,7 @@ grpc_cc_library(
         "otel/api",
     ],
     language = "c++",
-    visibility = ["//:__subpackages__"],
+    visibility = ["@grpc:otel_plugin"],
     deps = [
         "//:call_tracer",
         "//:config",

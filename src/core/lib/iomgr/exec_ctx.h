@@ -28,6 +28,8 @@
 #include <TargetConditionals.h>
 #endif
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
@@ -314,8 +316,8 @@ class GRPC_DLL ApplicationCallbackExecCtx {
         Fork::DecExecCtxCount();
       }
     } else {
-      GPR_DEBUG_ASSERT(head_ == nullptr);
-      GPR_DEBUG_ASSERT(tail_ == nullptr);
+      DCHECK_EQ(head_, nullptr);
+      DCHECK_EQ(tail_, nullptr);
     }
   }
 

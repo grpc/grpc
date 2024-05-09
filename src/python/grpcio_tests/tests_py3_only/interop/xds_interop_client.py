@@ -529,7 +529,6 @@ def _run(
         _XdsUpdateClientConfigureServicer(channel_configs, args.qps),
         _global_server,
     )
-    channelz.add_channelz_servicer(_global_server)
     grpc_admin.add_admin_servicers(_global_server)
     _global_server.start()
     _global_server.wait_for_termination()

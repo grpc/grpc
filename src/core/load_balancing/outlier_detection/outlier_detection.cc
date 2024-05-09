@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 
 #include <inttypes.h>
@@ -33,6 +31,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -43,6 +42,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -334,7 +334,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           --multiplier_;
         }
       } else {
-        GPR_ASSERT(ejection_time_.has_value());
+        CHECK(ejection_time_.has_value());
         auto change_time = ejection_time_.value() +
                            Duration::Milliseconds(std::min(
                                base_ejection_time_in_millis * multiplier_,

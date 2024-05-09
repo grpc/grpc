@@ -22,6 +22,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-const char* grpc_version_string(void) { return "40.0.0"; }
+const char* grpc_version_string(void) { return "41.0.0"; }
 
-const char* grpc_g_stands_for(void) { return "grateful"; }
+const char* grpc_g_stands_for(void) { return "gnarly"; }

@@ -445,6 +445,9 @@ cdef extern from "grpc/grpc.h":
       grpc_channel *channel, grpc_connectivity_state last_observed_state,
       gpr_timespec deadline, grpc_completion_queue *cq, void *tag) nogil
   char *grpc_channel_get_target(grpc_channel *channel) nogil
+  grpc_channel *grpc_channel_create(
+      const char *target, grpc_channel_credentials *creds,
+      const grpc_channel_args *args) nogil
   void grpc_channel_destroy(grpc_channel *channel) nogil
 
   grpc_server *grpc_server_create(
@@ -454,9 +457,23 @@ cdef extern from "grpc/grpc.h":
       grpc_metadata_array *request_metadata, grpc_completion_queue
       *cq_bound_to_call, grpc_completion_queue *cq_for_notification, void
       *tag_new) nogil
+  grpc_call_error grpc_server_request_registered_call(
+      grpc_server* server, void* registered_method, grpc_call** call,
+      gpr_timespec* deadline, grpc_metadata_array* request_metadata,
+      grpc_byte_buffer** optional_payload,
+      grpc_completion_queue* cq_bound_to_call,
+      grpc_completion_queue* cq_for_notification, void* tag_new) nogil
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
+
+  ctypedef enum grpc_server_register_method_payload_handling:
+    GRPC_SRM_PAYLOAD_NONE
+    GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+
+  void *grpc_server_register_method(grpc_server* server, const char* method,
+    const char* host, grpc_server_register_method_payload_handling payload_handling,
+    uint32_t flags) nogil
 
   ctypedef struct grpc_server_config_fetcher:
     pass
@@ -493,24 +510,11 @@ cdef extern from "grpc/grpc.h":
 
   grpc_slice grpc_dump_xds_configs() nogil
 
+  ctypedef struct grpc_server_credentials:
+    # We don't care about the internals (and in fact don't know them)
+    pass
 
-cdef extern from "grpc/grpc_security.h":
-
-  # Declare this as an enum, this is the only way to make it a const in
-  # cython
-  enum: GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX
-
-  ctypedef enum grpc_ssl_roots_override_result:
-    GRPC_SSL_ROOTS_OVERRIDE_OK
-    GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
-    GRPC_SSL_ROOTS_OVERRIDE_FAILED
-
-  ctypedef enum grpc_ssl_client_certificate_request_type:
-    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
-    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
-    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
-    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
-    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+cdef extern from "grpc/grpc_security_constants.h":
 
   ctypedef enum grpc_security_level:
     GRPC_SECURITY_MIN
@@ -519,10 +523,37 @@ cdef extern from "grpc/grpc_security.h":
     GRPC_PRIVACY_AND_INTEGRITY
     GRPC_SECURITY_MAX = GRPC_PRIVACY_AND_INTEGRITY
 
+  ctypedef enum grpc_ssl_client_certificate_request_type:
+    GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
+    GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
+
+  ctypedef enum grpc_ssl_roots_override_result:
+    GRPC_SSL_ROOTS_OVERRIDE_OK
+    GRPC_SSL_ROOTS_OVERRIDE_FAILED_PERMANENTLY
+    GRPC_SSL_ROOTS_OVERRIDE_FAILED
+
   ctypedef enum grpc_ssl_certificate_config_reload_status:
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
     GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+
+  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
+    void *user_data,
+    grpc_ssl_server_certificate_config **config)
+
+  ctypedef struct grpc_auth_property_iterator:
+    pass
+
+  ctypedef struct grpc_auth_property:
+    char *name
+    char *value
+    size_t value_length
+
+
+cdef extern from "grpc/credentials.h":
 
   ctypedef struct grpc_ssl_server_certificate_config:
     # We don't care about the internals
@@ -538,10 +569,6 @@ cdef extern from "grpc/grpc_security.h":
     size_t num_key_cert_pairs)
 
   void grpc_ssl_server_certificate_config_destroy(grpc_ssl_server_certificate_config *config)
-
-  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
-    void *user_data,
-    grpc_ssl_server_certificate_config **config)
 
   grpc_ssl_server_credentials_options *grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_client_certificate_request_type client_certificate_request,
@@ -567,23 +594,12 @@ cdef extern from "grpc/grpc_security.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  ctypedef struct grpc_ssl_session_cache:
-    # We don't care about the internals (and in fact don't know them)
-    pass
-
   ctypedef struct verify_peer_options:
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  ctypedef void (*grpc_ssl_roots_override_callback)(char **pem_root_certs)
-
-  grpc_ssl_session_cache *grpc_ssl_session_cache_create_lru(size_t capacity)
-  void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache)
-
-  void grpc_set_ssl_roots_override_callback(
-      grpc_ssl_roots_override_callback cb) nogil
-
   grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
+
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
       verify_peer_options *verify_options, void *reserved) nogil
@@ -605,33 +621,22 @@ cdef extern from "grpc/grpc_security.h":
   grpc_call_credentials *grpc_composite_call_credentials_create(
       grpc_call_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved) nogil
+
   grpc_call_credentials *grpc_google_compute_engine_credentials_create(
       void *reserved) nogil
+
   grpc_call_credentials *grpc_service_account_jwt_access_credentials_create(
       const char *json_key,
       gpr_timespec token_lifetime, void *reserved) nogil
+
   grpc_call_credentials *grpc_google_refresh_token_credentials_create(
       const char *json_refresh_token, void *reserved) nogil
+
   grpc_call_credentials *grpc_google_iam_credentials_create(
       const char *authorization_token, const char *authority_selector,
       void *reserved) nogil
+
   void grpc_call_credentials_release(grpc_call_credentials *creds) nogil
-
-  grpc_channel *grpc_channel_create(
-      const char *target, grpc_channel_credentials *creds,
-      const grpc_channel_args *args) nogil
-
-  ctypedef struct grpc_server_credentials:
-    # We don't care about the internals (and in fact don't know them)
-    pass
-
-  void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
-
-  int grpc_server_add_http2_port(grpc_server *server, const char *addr,
-                                        grpc_server_credentials *creds) nogil
-
-  grpc_call_error grpc_call_set_credentials(grpc_call *call,
-                                            grpc_call_credentials *creds) nogil
 
   ctypedef struct grpc_auth_context:
     # We don't care about the internals (and in fact don't know them)
@@ -645,6 +650,10 @@ cdef extern from "grpc/grpc_security.h":
   ctypedef void (*grpc_credentials_plugin_metadata_cb)(
       void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
       grpc_status_code status, const char *error_details) nogil
+
+  # Declare this as an enum, this is the only way to make it a const in
+  # cython
+  enum: GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX
 
   ctypedef struct grpc_metadata_credentials_plugin:
     int (*get_metadata)(
@@ -660,13 +669,47 @@ cdef extern from "grpc/grpc_security.h":
   grpc_call_credentials *grpc_metadata_credentials_create_from_plugin(
       grpc_metadata_credentials_plugin plugin, grpc_security_level min_security_level, void *reserved) nogil
 
-  ctypedef struct grpc_auth_property_iterator:
+  grpc_channel_credentials *grpc_local_credentials_create(
+    grpc_local_connect_type type)
+  grpc_server_credentials *grpc_local_server_credentials_create(
+    grpc_local_connect_type type)
+
+  ctypedef struct grpc_alts_credentials_options:
+    # We don't care about the internals (and in fact don't know them)
     pass
 
-  ctypedef struct grpc_auth_property:
-    char *name
-    char *value
-    size_t value_length
+  grpc_channel_credentials *grpc_alts_credentials_create(
+    const grpc_alts_credentials_options *options)
+  grpc_server_credentials *grpc_alts_server_credentials_create(
+    const grpc_alts_credentials_options *options)
+
+  grpc_alts_credentials_options* grpc_alts_credentials_client_options_create()
+  grpc_alts_credentials_options* grpc_alts_credentials_server_options_create()
+  void grpc_alts_credentials_options_destroy(grpc_alts_credentials_options *options)
+  void grpc_alts_credentials_client_options_add_target_service_account(grpc_alts_credentials_options *options, const char *service_account)
+
+
+cdef extern from "grpc/grpc_security.h":
+
+  ctypedef struct grpc_ssl_session_cache:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  ctypedef void (*grpc_ssl_roots_override_callback)(char **pem_root_certs)
+
+  grpc_ssl_session_cache *grpc_ssl_session_cache_create_lru(size_t capacity)
+  void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache)
+
+  void grpc_set_ssl_roots_override_callback(
+      grpc_ssl_roots_override_callback cb) nogil
+
+  void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
+
+  int grpc_server_add_http2_port(grpc_server *server, const char *addr,
+                                        grpc_server_credentials *creds) nogil
+
+  grpc_call_error grpc_call_set_credentials(grpc_call *call,
+                                            grpc_call_credentials *creds) nogil
 
   grpc_auth_property *grpc_auth_property_iterator_next(
       grpc_auth_property_iterator *it)
@@ -689,26 +732,6 @@ cdef extern from "grpc/grpc_security.h":
   grpc_auth_context *grpc_call_auth_context(grpc_call *call)
 
   void grpc_auth_context_release(grpc_auth_context *context)
-
-  grpc_channel_credentials *grpc_local_credentials_create(
-    grpc_local_connect_type type)
-  grpc_server_credentials *grpc_local_server_credentials_create(
-    grpc_local_connect_type type)
-
-  ctypedef struct grpc_alts_credentials_options:
-    # We don't care about the internals (and in fact don't know them)
-    pass
- 
-  grpc_channel_credentials *grpc_alts_credentials_create(
-    const grpc_alts_credentials_options *options)
-  grpc_server_credentials *grpc_alts_server_credentials_create(
-    const grpc_alts_credentials_options *options)
-
-  grpc_alts_credentials_options* grpc_alts_credentials_client_options_create()
-  grpc_alts_credentials_options* grpc_alts_credentials_server_options_create()
-  void grpc_alts_credentials_options_destroy(grpc_alts_credentials_options *options)
-  void grpc_alts_credentials_client_options_add_target_service_account(grpc_alts_credentials_options *options, const char *service_account)
-
 
 
 cdef extern from "grpc/compression.h":

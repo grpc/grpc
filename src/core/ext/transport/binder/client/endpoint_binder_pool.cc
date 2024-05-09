@@ -12,9 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"
+
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
@@ -35,12 +37,12 @@ Java_io_grpc_binder_cpp_GrpcBinderConnection_notifyConnected__Ljava_lang_String_
   jboolean isCopy;
   const char* conn_id = jni_env->GetStringUTFChars(conn_id_jstring, &isCopy);
   gpr_log(GPR_INFO, "%s invoked with conn_id = %s", __func__, conn_id);
-  GPR_ASSERT(ibinder != nullptr);
+  CHECK_NE(ibinder, nullptr);
   grpc_binder::ndk_util::SpAIBinder aibinder =
       grpc_binder::FromJavaBinder(jni_env, ibinder);
   gpr_log(GPR_INFO, "%s got aibinder = %p", __func__, aibinder.get());
   auto b = std::make_unique<grpc_binder::BinderAndroid>(aibinder);
-  GPR_ASSERT(b != nullptr);
+  CHECK(b != nullptr);
   grpc_binder::GetEndpointBinderPool()->AddEndpointBinder(conn_id,
                                                           std::move(b));
   if (isCopy == JNI_TRUE) {
@@ -63,7 +65,7 @@ void EndpointBinderPool::GetEndpointBinder(
     if (binder_map_.count(conn_id)) {
       b = std::move(binder_map_[conn_id]);
       binder_map_.erase(conn_id);
-      GPR_ASSERT(b != nullptr);
+      CHECK(b != nullptr);
     } else {
       if (pending_requests_.count(conn_id) != 0) {
         gpr_log(GPR_ERROR,
@@ -75,14 +77,14 @@ void EndpointBinderPool::GetEndpointBinder(
       return;
     }
   }
-  GPR_ASSERT(b != nullptr);
+  CHECK(b != nullptr);
   cb(std::move(b));
 }
 
 void EndpointBinderPool::AddEndpointBinder(
     std::string conn_id, std::unique_ptr<grpc_binder::Binder> b) {
   gpr_log(GPR_INFO, "EndpointBinder added. conn_id = %s", conn_id.c_str());
-  GPR_ASSERT(b != nullptr);
+  CHECK(b != nullptr);
   // cb will be set in the following block if there is a pending callback
   std::function<void(std::unique_ptr<grpc_binder::Binder>)> cb = nullptr;
   {

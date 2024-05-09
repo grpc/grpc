@@ -17,12 +17,12 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/chunked_vector.h"

@@ -16,6 +16,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 
@@ -25,11 +27,11 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/transport/test_suite/fixture.h"
 #include "test/core/transport/test_suite/fuzzer.pb.h"
 #include "test/core/transport/test_suite/test.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/proto_bit_gen.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
@@ -37,8 +39,8 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   const auto& tests = grpc_core::TransportTestRegistry::Get().tests();
   const auto& fixtures = grpc_core::TransportFixtureRegistry::Get().fixtures();
-  GPR_ASSERT(!tests.empty());
-  GPR_ASSERT(!fixtures.empty());
+  CHECK(!tests.empty());
+  CHECK(!fixtures.empty());
   const int test_id = msg.test_id() % tests.size();
   const int fixture_id = msg.fixture_id() % fixtures.size();
 
@@ -62,5 +64,5 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
                             msg.event_engine_actions(), bitgen);
   test->RunTest();
   delete test;
-  GPR_ASSERT(!::testing::Test::HasFailure());
+  CHECK(!::testing::Test::HasFailure());
 }

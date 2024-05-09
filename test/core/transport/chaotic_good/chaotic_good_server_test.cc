@@ -18,6 +18,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
@@ -35,11 +36,11 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/server/server.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -66,8 +67,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
     auto ev = grpc_completion_queue_pluck(
         shutdown_cq, nullptr, grpc_timeout_milliseconds_to_deadline(15000),
         nullptr);
-    GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
-    GPR_ASSERT(ev.tag == nullptr);
+    CHECK(ev.type == GRPC_OP_COMPLETE);
+    CHECK_EQ(ev.tag, nullptr);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
   }
@@ -82,8 +83,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
 
   void ConstructConnector() {
     auto uri = URI::Parse("ipv6:" + addr_);
-    GPR_ASSERT(uri.ok());
-    GPR_ASSERT(grpc_parse_uri(*uri, &resolved_addr_));
+    CHECK_OK(uri);
+    CHECK(grpc_parse_uri(*uri, &resolved_addr_));
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();

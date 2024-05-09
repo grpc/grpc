@@ -16,6 +16,8 @@
 
 #include <type_traits>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/poll.h"
@@ -96,13 +98,13 @@ BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
     batch_ = GetContext<Arena>()->NewPooled<Batch>(payload_,
                                                    target_->stream_refcount);
   }
-  GPR_ASSERT(batch_ != nullptr);
+  CHECK_NE(batch_, nullptr);
   return batch_;
 }
 
 void BatchBuilder::FlushBatch() {
-  GPR_ASSERT(batch_ != nullptr);
-  GPR_ASSERT(target_.has_value());
+  CHECK_NE(batch_, nullptr);
+  CHECK(target_.has_value());
   if (grpc_call_trace.enabled()) {
     gpr_log(
         GPR_DEBUG, "%sPerform transport stream op batch: %p %s",

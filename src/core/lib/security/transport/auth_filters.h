@@ -21,6 +21,7 @@
 
 #include "absl/status/statusor.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
@@ -42,18 +43,18 @@ class ClientAuthFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientAuthFilter> Create(const ChannelArgs& args,
-                                                 ChannelFilter::Args);
+  ClientAuthFilter(
+      RefCountedPtr<grpc_channel_security_connector> security_connector,
+      RefCountedPtr<grpc_auth_context> auth_context);
+
+  static absl::StatusOr<std::unique_ptr<ClientAuthFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
 
   // Construct a promise for one call.
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
 
  private:
-  ClientAuthFilter(
-      RefCountedPtr<grpc_channel_security_connector> security_connector,
-      RefCountedPtr<grpc_auth_context> auth_context);
-
   ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
       CallArgs call_args);
 
@@ -63,9 +64,6 @@ class ClientAuthFilter final : public ChannelFilter {
 
 class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
  private:
-  ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
-                   RefCountedPtr<grpc_auth_context> auth_context);
-
   class RunApplicationCode {
    public:
     RunApplicationCode(ServerAuthFilter* filter, ClientMetadata& metadata);
@@ -98,8 +96,11 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerAuthFilter> Create(const ChannelArgs& args,
-                                                 ChannelFilter::Args);
+  ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
+                   RefCountedPtr<grpc_auth_context> auth_context);
+
+  static absl::StatusOr<std::unique_ptr<ServerAuthFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
 
   class Call {
    public:

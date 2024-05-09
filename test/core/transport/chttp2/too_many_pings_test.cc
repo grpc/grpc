@@ -32,6 +32,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -58,9 +59,9 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
 
 namespace {
 
@@ -441,7 +442,7 @@ grpc_core::Resolver::Result BuildResolverResult(
     if (!uri.ok()) {
       gpr_log(GPR_ERROR, "Failed to parse uri. Error: %s",
               uri.status().ToString().c_str());
-      CHECK(uri.ok());
+      CHECK_OK(uri);
     }
     grpc_resolved_address address;
     CHECK(grpc_parse_uri(*uri, &address));
@@ -701,8 +702,8 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   cqv.Verify();
 
   CHECK(status == GRPC_STATUS_OK);
-  CHECK(0 == grpc_slice_str_cmp(details, "xyz"));
-  CHECK(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
+  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
   CHECK_EQ(was_cancelled, 0);
   CHECK(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 

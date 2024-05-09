@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -64,7 +65,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
@@ -575,7 +576,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy DNS lookup", error);
     return;
   }
-  GPR_ASSERT(!addresses_or->empty());
+  CHECK(!addresses_or->empty());
   // Connect to requested address.
   // The connection callback inherits our reference to conn.
   const grpc_core::Timestamp deadline =
@@ -679,7 +680,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
       nullptr,
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(channel_args),
       on_accept, proxy, &proxy->server);
-  GPR_ASSERT(error.ok());
+  CHECK_OK(error);
   // Bind to port.
   grpc_resolved_address resolved_addr;
   grpc_sockaddr_in* addr =
@@ -690,8 +691,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_sockaddr_set_port(&resolved_addr, proxy_port);
   int port;
   error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
-  GPR_ASSERT(error.ok());
-  GPR_ASSERT(port == proxy_port);
+  CHECK_OK(error);
+  CHECK(port == proxy_port);
   // Start server.
   auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &proxy->mu);

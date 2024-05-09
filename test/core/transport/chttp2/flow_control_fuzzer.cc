@@ -43,8 +43,8 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -246,7 +246,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
           bdp->AddIncomingBytes(stream_write.size);
         }
         StreamFlowControl::IncomingUpdateContext upd(&stream->fc);
-        CHECK(upd.RecvData(stream_write.size).ok());
+        CHECK_OK(upd.RecvData(stream_write.size));
         PerformAction(upd.MakeAction(), stream);
       }
       send_from_remote_.pop_front();

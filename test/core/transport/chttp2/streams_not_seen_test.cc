@@ -38,6 +38,7 @@
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -73,9 +74,9 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/test_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_tcp_server.h"
 
 namespace grpc_core {
 namespace {
@@ -364,7 +365,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    CHECK(error.ok());
+    CHECK_OK(error);
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }

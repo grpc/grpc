@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/file_watcher_certificate_provider_factory.h"
+#include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
 #include <utility>
 
@@ -28,7 +28,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/json/json_reader.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

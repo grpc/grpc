@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 
 #include <string.h>
@@ -29,6 +27,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -41,9 +40,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/load_balancing/address_filtering.h"
-#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -60,6 +58,8 @@
 #include "src/core/lib/json/json_args.h"
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/load_balancing/address_filtering.h"
+#include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
@@ -275,7 +275,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
     }
   }
   if (index == 0) index = start_index;
-  GPR_ASSERT(pickers_[index].first > key);
+  CHECK(pickers_[index].first > key);
   // Delegate to the child picker.
   return pickers_[index].second->Pick(args);
 }
@@ -421,7 +421,7 @@ void WeightedTargetLb::UpdateStateLocked() {
     }
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        GPR_ASSERT(child->weight() > 0);
+        CHECK_GT(child->weight(), 0u);
         ready_end += child->weight();
         ready_picker_list.emplace_back(ready_end, std::move(child_picker));
         break;
@@ -435,7 +435,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        GPR_ASSERT(child->weight() > 0);
+        CHECK_GT(child->weight(), 0u);
         tf_end += child->weight();
         tf_picker_list.emplace_back(tf_end, std::move(child_picker));
         break;
@@ -514,7 +514,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
-  GPR_ASSERT(timer_handle_.has_value());
+  CHECK(timer_handle_.has_value());
   timer_handle_.reset();
   weighted_child_->weighted_target_policy_->targets_.erase(
       weighted_child_->name_);

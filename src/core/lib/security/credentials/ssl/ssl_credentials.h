@@ -20,6 +20,9 @@
 
 #include <stddef.h>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -115,7 +118,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 
   grpc_ssl_certificate_config_reload_status FetchCertConfig(
       grpc_ssl_server_certificate_config** config) {
-    GPR_DEBUG_ASSERT(has_cert_config_fetcher());
+    DCHECK(has_cert_config_fetcher());
     return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,
                                           config);
   }

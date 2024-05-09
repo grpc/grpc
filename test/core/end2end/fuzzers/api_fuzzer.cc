@@ -27,13 +27,17 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -63,8 +67,8 @@
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/fuzzing_channel_args.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzzing_channel_args.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -89,8 +93,7 @@ static void finish_resolve(addr_req r) {
   if (0 == strcmp(r.addr, "server")) {
     *r.addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address fake_resolved_address;
-    GPR_ASSERT(
-        grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
+    CHECK(grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
     (*r.addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done, absl::OkStatus());
@@ -157,9 +160,18 @@ class FuzzerDNSResolver : public grpc_core::DNSResolver {
   }
 
   absl::StatusOr<std::vector<grpc_resolved_address>> LookupHostnameBlocking(
-      absl::string_view /* name */,
-      absl::string_view /* default_port */) override {
-    GPR_ASSERT(0);
+      absl::string_view name, absl::string_view default_port) override {
+    // To mimic the resolution delay
+    absl::SleepFor(absl::Seconds(1));
+    if (name == "server") {
+      std::vector<grpc_resolved_address> addrs;
+      grpc_resolved_address addr;
+      memset(&addr, 0, sizeof(addr));
+      addrs.push_back(addr);
+      return addrs;
+    } else {
+      return absl::UnknownError("Resolution failed");
+    }
   }
 
   TaskHandle LookupSRV(
@@ -219,7 +231,7 @@ grpc_ares_request* my_dns_lookup_ares(
 }
 
 static void my_cancel_ares_request(grpc_ares_request* request) {
-  GPR_ASSERT(request == nullptr);
+  CHECK_EQ(request, nullptr);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -388,17 +400,17 @@ namespace testing {
 
 ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
     : BasicFuzzer(actions) {
-  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine()));
+  ResetDNSResolver(std::make_unique<FuzzerDNSResolver>(engine().get()));
   grpc_dns_lookup_hostname_ares = my_dns_lookup_ares;
   grpc_cancel_ares_request = my_cancel_ares_request;
 
-  GPR_ASSERT(channel_ == nullptr);
-  GPR_ASSERT(server_ == nullptr);
+  CHECK_EQ(channel_, nullptr);
+  CHECK_EQ(server_, nullptr);
 }
 
 ApiFuzzer::~ApiFuzzer() {
-  GPR_ASSERT(channel_ == nullptr);
-  GPR_ASSERT(server_ == nullptr);
+  CHECK_EQ(channel_, nullptr);
+  CHECK_EQ(server_, nullptr);
 }
 
 void ApiFuzzer::Tick() {
@@ -446,7 +458,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
                             creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
   }
-  GPR_ASSERT(channel_ != nullptr);
+  CHECK_NE(channel_, nullptr);
   channel_force_delete_ = false;
   return Result::kComplete;
 }
@@ -461,7 +473,7 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
         create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
-    GPR_ASSERT(server_ != nullptr);
+    CHECK_NE(server_, nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     for (const auto& http2_port : create_server.http2_ports()) {
       auto* creds = ReadServerCreds(http2_port.server_creds());

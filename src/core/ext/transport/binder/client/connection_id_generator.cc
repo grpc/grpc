@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/client/connection_id_generator.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 namespace {
@@ -55,7 +56,7 @@ std::string ConnectionIdGenerator::Generate(absl::string_view uri) {
     // Insert a hyphen before serial number
     ret = absl::StrCat(s, "-", ++count_);
   }
-  GPR_ASSERT(ret.length() < kPathLengthLimit);
+  CHECK_LT(ret.length(), kPathLengthLimit);
   return ret;
 }
 

@@ -34,8 +34,8 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 
@@ -50,9 +50,15 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<AddLabelsFilter> Create(
+  explicit AddLabelsFilter(
+      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+               grpc_core::RefCountedStringValue>
+          labels_to_inject)
+      : labels_to_inject_(std::move(labels_to_inject)) {}
+
+  static absl::StatusOr<std::unique_ptr<AddLabelsFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
-    return AddLabelsFilter(
+    return absl::make_unique<AddLabelsFilter>(
         *args.GetPointer<std::map<
              grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
              grpc_core::RefCountedStringValue>>(GRPC_ARG_LABELS_TO_INJECT));
@@ -73,12 +79,6 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
   }
 
  private:
-  explicit AddLabelsFilter(
-      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-               grpc_core::RefCountedStringValue>
-          labels_to_inject)
-      : labels_to_inject_(std::move(labels_to_inject)) {}
-
   const std::map<
       grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
       grpc_core::RefCountedStringValue>
@@ -147,6 +147,9 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
                                                   &AddLabelsFilter::kFilter);
         });
     channel_args.SetPointer(GRPC_ARG_LABELS_TO_INJECT, &labels_to_inject_);
+  }
+  if (!config.service_config.empty()) {
+    channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
   reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
   grpc_init();

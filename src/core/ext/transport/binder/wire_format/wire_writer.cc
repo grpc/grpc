@@ -12,15 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
 #include "absl/types/variant.h"
 
 #include <grpc/support/log.h>
@@ -122,7 +123,7 @@ absl::Status WireWriterImpl::MakeBinderTransaction(
     gpr_log(GPR_INFO, "Total outgoing bytes: %" PRId64,
             num_outgoing_bytes_.load());
   }
-  GPR_ASSERT(!is_transacting_);
+  CHECK(!is_transacting_);
   is_transacting_ = true;
   absl::Status result = binder_->Transact(tx_code);
   is_transacting_ = false;
@@ -155,10 +156,10 @@ absl::Status WireWriterImpl::RunStreamTx(
     bool* is_last_chunk) {
   Transaction* tx = stream_tx->tx.get();
   // Transaction without data flag should go to fast path.
-  GPR_ASSERT(tx->GetFlags() & kFlagMessageData);
+  CHECK(tx->GetFlags() & kFlagMessageData);
 
   absl::string_view data = tx->GetMessageData();
-  GPR_ASSERT(stream_tx->bytes_sent <= static_cast<int64_t>(data.size()));
+  CHECK(stream_tx->bytes_sent <= static_cast<int64_t>(data.size()));
 
   int flags = kFlagMessageData;
 
@@ -206,7 +207,7 @@ absl::Status WireWriterImpl::RunStreamTx(
 }
 
 void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
-  GPR_ASSERT(args->writer == this);
+  CHECK(args->writer == this);
   if (absl::holds_alternative<RunScheduledTxArgs::AckTx>(args->tx)) {
     int64_t num_bytes =
         absl::get<RunScheduledTxArgs::AckTx>(args->tx).num_bytes;
@@ -223,7 +224,7 @@ void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
     delete args;
     return;
   }
-  GPR_ASSERT(absl::holds_alternative<RunScheduledTxArgs::StreamTx>(args->tx));
+  CHECK(absl::holds_alternative<RunScheduledTxArgs::StreamTx>(args->tx));
   RunScheduledTxArgs::StreamTx* stream_tx =
       &absl::get<RunScheduledTxArgs::StreamTx>(args->tx);
   // Be reservative. Decrease CombinerTxCount after the data size of this
@@ -232,7 +233,7 @@ void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
   auto decrease_combiner_tx_count = absl::MakeCleanup([this]() {
     {
       grpc_core::MutexLock lock(&flow_control_mu_);
-      GPR_ASSERT(num_non_acked_tx_in_combiner_ > 0);
+      CHECK_GT(num_non_acked_tx_in_combiner_, 0);
       num_non_acked_tx_in_combiner_--;
     }
     // New transaction might be ready to be scheduled.
@@ -271,7 +272,7 @@ void WireWriterImpl::RunScheduledTxInternal(RunScheduledTxArgs* args) {
 
 absl::Status WireWriterImpl::RpcCall(std::unique_ptr<Transaction> tx) {
   // TODO(mingcl): check tx_code <= last call id
-  GPR_ASSERT(tx->GetTxCode() >= kFirstCallId);
+  CHECK(tx->GetTxCode() >= kFirstCallId);
   auto args = new RunScheduledTxArgs();
   args->writer = this;
   args->tx = RunScheduledTxArgs::StreamTx();

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/transport/binder_transport.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/substitute.h"
@@ -142,7 +143,7 @@ static void cancel_stream_locked(grpc_binder_transport* transport,
                                  grpc_error_handle error) {
   gpr_log(GPR_INFO, "cancel_stream_locked");
   if (!stream->is_closed) {
-    GPR_ASSERT(stream->cancel_self_error.ok());
+    CHECK(stream->cancel_self_error.ok());
     stream->is_closed = true;
     stream->cancel_self_error = error;
     transport->transport_stream_receiver->CancelStream(stream->tx_code);
@@ -196,8 +197,8 @@ static void recv_initial_metadata_locked(void* arg,
 
   if (!stream->is_closed) {
     grpc_error_handle error = [&] {
-      GPR_ASSERT(stream->recv_initial_metadata);
-      GPR_ASSERT(stream->recv_initial_metadata_ready);
+      CHECK(stream->recv_initial_metadata);
+      CHECK(stream->recv_initial_metadata_ready);
       if (!args->initial_metadata.ok()) {
         gpr_log(GPR_ERROR, "Failed to parse initial metadata");
         return absl_status_to_grpc_error(args->initial_metadata.status());
@@ -233,8 +234,8 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
 
   if (!stream->is_closed) {
     grpc_error_handle error = [&] {
-      GPR_ASSERT(stream->recv_message);
-      GPR_ASSERT(stream->recv_message_ready);
+      CHECK(stream->recv_message);
+      CHECK(stream->recv_message_ready);
       if (!args->message.ok()) {
         gpr_log(GPR_ERROR, "Failed to receive message");
         if (args->message.status().message() ==
@@ -277,8 +278,8 @@ static void recv_trailing_metadata_locked(void* arg,
 
   if (!stream->is_closed) {
     grpc_error_handle error = [&] {
-      GPR_ASSERT(stream->recv_trailing_metadata);
-      GPR_ASSERT(stream->recv_trailing_metadata_finished);
+      CHECK(stream->recv_trailing_metadata);
+      CHECK(stream->recv_trailing_metadata_finished);
       if (!args->trailing_metadata.ok()) {
         gpr_log(GPR_ERROR, "Failed to receive trailing metadata");
         return absl_status_to_grpc_error(args->trailing_metadata.status());
@@ -339,11 +340,11 @@ class MetadataEncoder {
   void Encode(grpc_core::HttpPathMetadata, const grpc_core::Slice& value) {
     // TODO(b/192208403): Figure out if it is correct to simply drop '/'
     // prefix and treat it as rpc method name
-    GPR_ASSERT(value[0] == '/');
+    CHECK(value[0] == '/');
     std::string path = std::string(value.as_string_view().substr(1));
 
     // Only client send method ref.
-    GPR_ASSERT(is_client_);
+    CHECK(is_client_);
     tx_->SetMethodRef(path);
   }
 
@@ -390,9 +391,9 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_binder_transport* transport = stream->t;
   if (op->cancel_stream) {
     // TODO(waynetu): Is this true?
-    GPR_ASSERT(!op->send_initial_metadata && !op->send_message &&
-               !op->send_trailing_metadata && !op->recv_initial_metadata &&
-               !op->recv_message && !op->recv_trailing_metadata);
+    CHECK(!op->send_initial_metadata && !op->send_message &&
+          !op->send_trailing_metadata && !op->recv_initial_metadata &&
+          !op->recv_message && !op->recv_trailing_metadata);
     gpr_log(GPR_INFO, "cancel_stream is_client = %d", stream->is_client);
     if (!stream->is_client) {
       // Send trailing metadata to inform the other end about the cancellation,
@@ -741,8 +742,8 @@ grpc_core::Transport* grpc_create_binder_transport_client(
         security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  GPR_ASSERT(endpoint_binder != nullptr);
-  GPR_ASSERT(security_policy != nullptr);
+  CHECK(endpoint_binder != nullptr);
+  CHECK_NE(security_policy, nullptr);
 
   grpc_binder_transport* t = new grpc_binder_transport(
       std::move(endpoint_binder), /*is_client=*/true, security_policy);
@@ -756,8 +757,8 @@ grpc_core::Transport* grpc_create_binder_transport_server(
         security_policy) {
   gpr_log(GPR_INFO, __func__);
 
-  GPR_ASSERT(client_binder != nullptr);
-  GPR_ASSERT(security_policy != nullptr);
+  CHECK(client_binder != nullptr);
+  CHECK_NE(security_policy, nullptr);
 
   grpc_binder_transport* t = new grpc_binder_transport(
       std::move(client_binder), /*is_client=*/false, security_policy);

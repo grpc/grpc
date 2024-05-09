@@ -56,12 +56,15 @@ void TransportTest::SetServerAcceptor() {
   transport_pair_.server->server_transport()->SetAcceptor(&acceptor_);
 }
 
-CallInitiator TransportTest::CreateCall() {
-  auto call = MakeCall(event_engine_.get(), Arena::Create(1024, &allocator_));
-  call.handler.SpawnInfallible("start-call", [this, handler = call.handler]() {
-    transport_pair_.client->client_transport()->StartCall(handler);
-    return Empty{};
-  });
+CallInitiator TransportTest::CreateCall(
+    ClientMetadataHandle client_initial_metadata) {
+  auto call = MakeCall(std::move(client_initial_metadata));
+  call.handler.SpawnInfallible(
+      "start-call", [this, handler = call.handler]() mutable {
+        transport_pair_.client->client_transport()->StartCall(
+            handler.V2HackToStartCallWithoutACallFilterStack());
+        return Empty{};
+      });
   return std::move(call.initiator);
 }
 
@@ -227,13 +230,15 @@ std::string TransportTest::RandomMessage() {
 // TransportTest::Acceptor
 
 Arena* TransportTest::Acceptor::CreateArena() {
-  return Arena::Create(1024, allocator_);
+  return test_->call_arena_allocator_->MakeArena();
 }
 
 absl::StatusOr<CallInitiator> TransportTest::Acceptor::CreateCall(
-    ClientMetadata&, Arena* arena) {
-  auto call = MakeCall(event_engine_, arena);
-  handlers_.push(std::move(call.handler));
+    ClientMetadataHandle client_initial_metadata, Arena* arena) {
+  auto call = MakeCallPair(std::move(client_initial_metadata),
+                           test_->event_engine_.get(), arena,
+                           test_->call_arena_allocator_, nullptr);
+  handlers_.push(call.handler.V2HackToStartCallWithoutACallFilterStack());
   return std::move(call.initiator);
 }
 

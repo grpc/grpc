@@ -15,14 +15,14 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_TRANSACTION_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_TRANSACTION_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -46,33 +46,33 @@ class Transaction {
   // TODO(mingcl): Consider using string_view
   void SetPrefix(Metadata prefix_metadata) {
     prefix_metadata_ = prefix_metadata;
-    GPR_ASSERT((flags_ & kFlagPrefix) == 0);
+    CHECK_EQ((flags_ & kFlagPrefix), 0);
     flags_ |= kFlagPrefix;
   }
   void SetMethodRef(std::string method_ref) {
-    GPR_ASSERT(is_client_);
+    CHECK(is_client_);
     method_ref_ = method_ref;
   }
   void SetData(std::string message_data) {
     message_data_ = message_data;
-    GPR_ASSERT((flags_ & kFlagMessageData) == 0);
+    CHECK_EQ((flags_ & kFlagMessageData), 0);
     flags_ |= kFlagMessageData;
   }
   void SetSuffix(Metadata suffix_metadata) {
-    if (is_client_) GPR_ASSERT(suffix_metadata.empty());
+    if (is_client_) CHECK(suffix_metadata.empty());
     suffix_metadata_ = suffix_metadata;
-    GPR_ASSERT((flags_ & kFlagSuffix) == 0);
+    CHECK_EQ((flags_ & kFlagSuffix), 0);
     flags_ |= kFlagSuffix;
   }
   void SetStatusDescription(std::string status_desc) {
-    GPR_ASSERT(!is_client_);
-    GPR_ASSERT((flags_ & kFlagStatusDescription) == 0);
+    CHECK(!is_client_);
+    CHECK_EQ((flags_ & kFlagStatusDescription), 0);
     status_desc_ = status_desc;
   }
   void SetStatus(int status) {
-    GPR_ASSERT(!is_client_);
-    GPR_ASSERT((flags_ >> 16) == 0);
-    GPR_ASSERT(status < (1 << 16));
+    CHECK(!is_client_);
+    CHECK_EQ((flags_ >> 16), 0);
+    CHECK(status < (1 << 16));
     flags_ |= (status << 16);
   }
 

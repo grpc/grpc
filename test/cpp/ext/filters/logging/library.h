@@ -38,8 +38,8 @@
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {

@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -31,8 +29,8 @@
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
@@ -52,6 +50,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/xds/xds_client/xds_client_stats.h"
 
 namespace grpc_core {
 

@@ -26,6 +26,7 @@
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -47,8 +48,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 // TODO(yashykt): When our macos testing infrastructure becomes good enough, we
 // wouldn't need to reduce the number of threads on MacOS

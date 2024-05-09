@@ -21,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -35,6 +36,7 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 #include "src/core/ext/transport/chaotic_good/settings_metadata.h"
+#include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -61,12 +63,11 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/server/server.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -116,7 +117,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
               StatusToString(status).c_str());
     }
   };
-  GPR_ASSERT(event_engine_ != nullptr);
+  CHECK_NE(event_engine_, nullptr);
   auto ee_listener = event_engine_->CreateListener(
       std::move(accept_cb), std::move(shutdown_cb),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
@@ -135,7 +136,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
 }
 
 absl::Status ChaoticGoodServerListener::StartListening() {
-  GPR_ASSERT(ee_listener_ != nullptr);
+  CHECK(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
   if (!status.ok()) {
     gpr_log(GPR_ERROR, "Start listening failed: %s", status.ToString().c_str());
@@ -383,7 +384,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
-  GPR_ASSERT(args != nullptr);
+  CHECK_NE(args, nullptr);
   RefCountedPtr<HandshakingState> self(
       static_cast<HandshakingState*>(args->user_data));
   grpc_slice_buffer_destroy(args->read_buffer);
@@ -397,7 +398,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     self->connection_->Done("Server handshake done but has empty endpoint.");
     return;
   }
-  GPR_ASSERT(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+  CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
       args->endpoint));
   auto ee_endpoint =
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
@@ -502,7 +503,7 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
     if (port_num == 0) {
       port_num = bind_result.value();
     } else {
-      GPR_ASSERT(port_num == bind_result.value());
+      CHECK(port_num == bind_result.value());
     }
     core_server->AddListener(std::move(listener));
   }

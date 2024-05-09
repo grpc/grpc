@@ -22,6 +22,9 @@
 
 #include <algorithm>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -192,7 +195,7 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
     while (it->index < it->ctx->properties().count) {
       const grpc_auth_property* prop =
           &it->ctx->properties().array[it->index++];
-      GPR_ASSERT(prop->name != nullptr);
+      CHECK_NE(prop->name, nullptr);
       if (strcmp(it->name, prop->name) == 0) {
         return prop;
       }

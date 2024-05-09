@@ -29,10 +29,12 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
@@ -223,8 +225,8 @@ static char* dot_concat_and_free_strings(char* str1, char* str2) {
   *(current++) = '.';
   memcpy(current, str2, str2_len);
   current += str2_len;
-  GPR_ASSERT(current >= result);
-  GPR_ASSERT((uintptr_t)(current - result) == result_len);
+  CHECK(current >= result);
+  CHECK((uintptr_t)(current - result) == result_len);
   *current = '\0';
   gpr_free(str1);
   gpr_free(str2);

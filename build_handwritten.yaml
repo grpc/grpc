@@ -12,11 +12,11 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 40.0.0
+  core_version: 41.0.0
   csharp_major_version: 2
-  g_stands_for: grateful
+  g_stands_for: gnarly
   protobuf_version: 3.26.1
-  version: 1.64.0-dev
+  version: 1.65.0-dev
 configs:
   asan:
     CC: clang
@@ -29,7 +29,7 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+      LSAN_OPTIONS: suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
@@ -53,7 +53,7 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+      LSAN_OPTIONS: suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
   c++-compat:
     CFLAGS: -Wc++-compat
     CPPFLAGS: -O0
@@ -115,7 +115,7 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      TSAN_OPTIONS: suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+      TSAN_OPTIONS: suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
   ubsan:
     CC: clang
     CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined
@@ -127,7 +127,7 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/test_util/ubsan_suppressions.txt
 defaults:
   boringssl:
     CFLAGS: -g

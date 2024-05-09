@@ -44,11 +44,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -61,9 +61,9 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {

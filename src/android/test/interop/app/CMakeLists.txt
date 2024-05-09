@@ -114,10 +114,10 @@ add_library(grpc-interop
   ${GRPC_SRC_DIR}/test/cpp/interop/backend_metrics_lb_policy.cc
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.h
   ${GRPC_SRC_DIR}/test/cpp/interop/interop_client.cc
-  ${GRPC_SRC_DIR}/test/core/util/histogram.h
-  ${GRPC_SRC_DIR}/test/core/util/histogram.cc
-  ${GRPC_SRC_DIR}/test/core/util/test_lb_policies.h
-  ${GRPC_SRC_DIR}/test/core/util/test_lb_policies.cc)
+  ${GRPC_SRC_DIR}/test/core/test_util/histogram.h
+  ${GRPC_SRC_DIR}/test/core/test_util/histogram.cc
+  ${GRPC_SRC_DIR}/test/core/test_util/test_lb_policies.h
+  ${GRPC_SRC_DIR}/test/core/test_util/test_lb_policies.cc)
 
 target_link_libraries(grpc-interop
   messages_proto_lib

@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -217,7 +218,7 @@ class ChannelInit {
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {
       auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      GPR_ASSERT(slot_value == nullptr);
+      CHECK(slot_value == nullptr);
       slot_value = std::move(post_processor);
     }
 
@@ -285,6 +286,11 @@ class ChannelInit {
       grpc_channel_stack_type type, const ChannelArgs& args) const;
 
  private:
+  // The type of object returned by a filter's Create method.
+  template <typename T>
+  using CreatedType =
+      typename decltype(T::Create(ChannelArgs(), {}))::value_type;
+
   struct Filter {
     Filter(const grpc_channel_filter* filter, const ChannelFilterVtable* vtable,
            std::vector<InclusionPredicate> predicates, bool skip_v3,
@@ -328,17 +334,17 @@ class ChannelInit {
 template <typename T>
 const ChannelInit::ChannelFilterVtable
     ChannelInit::VtableForType<T, absl::void_t<typename T::Call>>::kVtable = {
-        sizeof(T), alignof(T),
+        sizeof(CreatedType<T>), alignof(CreatedType<T>),
         [](void* data, const ChannelArgs& args) -> absl::Status {
           // TODO(ctiller): fill in ChannelFilter::Args (2nd arg)
-          absl::StatusOr<T> r = T::Create(args, {});
+          absl::StatusOr<CreatedType<T>> r = T::Create(args, {});
           if (!r.ok()) return r.status();
-          new (data) T(std::move(*r));
+          new (data) CreatedType<T>(std::move(*r));
           return absl::OkStatus();
         },
-        [](void* data) { static_cast<T*>(data)->~T(); },
+        [](void* data) { Destruct(static_cast<CreatedType<T>*>(data)); },
         [](void* data, CallFilters::StackBuilder& builder) {
-          builder.Add(static_cast<T*>(data));
+          builder.Add(static_cast<CreatedType<T>*>(data)->get());
         }};
 
 }  // namespace grpc_core

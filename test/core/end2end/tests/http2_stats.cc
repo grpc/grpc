@@ -51,14 +51,14 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/fake_stats_plugin.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 
 namespace grpc_core {
 namespace {
 
 Mutex* g_mu;
-Notification* g_client_call_ended_notify;
-Notification* g_server_call_ended_notify;
+CoreEnd2endTest::TestNotification* g_client_call_ended_notify;
+CoreEnd2endTest::TestNotification* g_server_call_ended_notify;
 
 class FakeCallTracer : public ClientCallTracer {
  public:
@@ -193,9 +193,13 @@ class NewFakeStatsPlugin : public FakeStatsPlugin {
 
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
+  if (!IsHttp2StatsFixEnabled()) {
+    GTEST_SKIP() << "Test needs http2_stats_fix experiment to be enabled";
+  }
   g_mu = new Mutex();
-  g_client_call_ended_notify = new Notification();
-  g_server_call_ended_notify = new Notification();
+  g_client_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
+  g_server_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
+  GlobalStatsPluginRegistryTestPeer::ResetGlobalStatsPluginRegistry();
   GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<NewFakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
@@ -262,8 +266,6 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   EXPECT_GE(server_transport_stats.incoming.framing_bytes, 32);
   EXPECT_LE(server_transport_stats.incoming.framing_bytes, 58);
 
-  delete ServerCallTracerFactory::Get(ChannelArgs());
-  ServerCallTracerFactory::RegisterGlobal(nullptr);
   delete g_client_call_ended_notify;
   g_client_call_ended_notify = nullptr;
   delete g_server_call_ended_notify;

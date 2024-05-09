@@ -18,7 +18,7 @@
 // - tests for DumpClientConfigBinary()
 // - tests for load-reporting APIs?  (or maybe move those out of XdsClient?)
 
-#include "src/core/ext/xds/xds_client.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
 #include <stdint.h>
 
@@ -47,8 +47,6 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_resource_type_impl.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
@@ -58,10 +56,12 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_resource_type_impl.h"
 #include "src/proto/grpc/testing/xds/v3/base.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.pb.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
 
@@ -627,10 +627,12 @@ class XdsClientTest : public ::testing::Test {
         uint64_t>;
     using ServerFailureMap = std::map<std::string /*xds_server*/, uint64_t>;
 
-    const ResourceUpdateMap& resource_updates_valid() const {
+    ResourceUpdateMap resource_updates_valid() const {
+      MutexLock lock(&mu_);
       return resource_updates_valid_;
     }
-    const ResourceUpdateMap& resource_updates_invalid() const {
+    ResourceUpdateMap resource_updates_invalid() const {
+      MutexLock lock(&mu_);
       return resource_updates_invalid_;
     }
     const ServerFailureMap& server_failures() const { return server_failures_; }
@@ -640,6 +642,7 @@ class XdsClientTest : public ::testing::Test {
                                absl::string_view resource_type,
                                uint64_t num_resources_valid,
                                uint64_t num_resources_invalid) override {
+      MutexLock lock(&mu_);
       auto key =
           std::make_pair(std::string(xds_server), std::string(resource_type));
       if (num_resources_valid > 0) {
@@ -651,12 +654,14 @@ class XdsClientTest : public ::testing::Test {
     }
 
     void ReportServerFailure(absl::string_view xds_server) override {
+      MutexLock lock(&mu_);
       ++server_failures_[std::string(xds_server)];
     }
 
-    ResourceUpdateMap resource_updates_valid_;
-    ResourceUpdateMap resource_updates_invalid_;
-    ServerFailureMap server_failures_;
+    mutable Mutex mu_;
+    ResourceUpdateMap resource_updates_valid_ ABSL_GUARDED_BY(mu_);
+    ResourceUpdateMap resource_updates_invalid_ ABSL_GUARDED_BY(mu_);
+    ServerFailureMap server_failures_ ABSL_GUARDED_BY(mu_);
   };
 
   using ResourceCounts =

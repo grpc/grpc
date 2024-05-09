@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/oob_backend_metric.h"
 
 #include <string.h>
@@ -25,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
@@ -36,12 +35,12 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/client_channel/client_channel_channelz.h"
+#include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
-#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -226,7 +225,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  GPR_ASSERT(subchannel_ != nullptr);  // Should not be called before Start().
+  CHECK(subchannel_ != nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }

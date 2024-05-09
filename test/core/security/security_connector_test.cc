@@ -23,6 +23,7 @@
 
 #include <gtest/gtest.h>
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -38,7 +39,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1

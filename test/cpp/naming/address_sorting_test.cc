@@ -24,6 +24,8 @@
 #include <address_sorting/address_sorting.h>
 #include <gmock/gmock.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -46,8 +48,8 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
@@ -74,16 +76,16 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
     memset(&in_dest, 0, sizeof(sockaddr_in));
     in_dest.sin_port = htons(atoi(port.c_str()));
     in_dest.sin_family = AF_INET;
-    GPR_ASSERT(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr) == 1);
+    CHECK_EQ(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr), 1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
-    GPR_ASSERT(test_addr.family == AF_INET6);
+    CHECK(test_addr.family == AF_INET6);
     sockaddr_in6 in6_dest;
     memset(&in6_dest, 0, sizeof(sockaddr_in6));
     in6_dest.sin6_port = htons(atoi(port.c_str()));
     in6_dest.sin6_family = AF_INET6;
-    GPR_ASSERT(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr) == 1);
+    CHECK_EQ(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr), 1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }

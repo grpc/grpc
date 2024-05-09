@@ -30,6 +30,7 @@
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -57,8 +58,8 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace test {

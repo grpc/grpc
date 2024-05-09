@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
 #include <inttypes.h>
@@ -29,11 +27,13 @@
 #include <tuple>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -337,7 +337,7 @@ void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  GPR_ASSERT(DesiredAnnounceSize() == 0);
+  CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 
@@ -387,7 +387,7 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
-  GPR_ASSERT(pending_size >= 0);
+  CHECK_GE(pending_size, 0);
   sfc_->pending_size_ = pending_size;
 }
 

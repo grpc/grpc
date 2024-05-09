@@ -41,7 +41,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/timeout_encoding.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
@@ -365,7 +365,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       auto error =
           p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
                   /*call_tracer=*/nullptr);
-      CHECK(error.ok());
+      CHECK_OK(error);
     }
   };
   parse_vec(init_slices);
@@ -445,7 +445,7 @@ class FromEncoderFixture {
     }
     // Remove the HTTP header.
     CHECK(!out.empty());
-    CHECK(GRPC_SLICE_LENGTH(out[0]) > 9);
+    CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
   }

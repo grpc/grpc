@@ -20,6 +20,9 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
@@ -28,7 +31,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/bad_ssl/server_common.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -53,7 +56,7 @@ size_t grpc_chttp2_num_alpn_versions(void) {
 }
 
 const char* grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(fake_versions));
+  CHECK(i < GPR_ARRAY_SIZE(fake_versions));
   return fake_versions[i];
 }
 
@@ -71,7 +74,7 @@ int main(int argc, char** argv) {
   ssl_creds = grpc_ssl_server_credentials_create(nullptr, &pem_key_cert_pair, 1,
                                                  0, nullptr);
   server = grpc_server_create(nullptr, nullptr);
-  GPR_ASSERT(grpc_server_add_http2_port(server, addr, ssl_creds));
+  CHECK(grpc_server_add_http2_port(server, addr, ssl_creds));
   grpc_server_credentials_release(ssl_creds);
 
   bad_ssl_run(server);

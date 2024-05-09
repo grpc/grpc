@@ -25,6 +25,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_dns": "event_engine_dns",
     "event_engine_listener": "event_engine_listener",
     "free_large_allocator": "free_large_allocator",
+    "http2_stats_fix": "http2_stats_fix",
     "keepalive_fix": "keepalive_fix",
     "keepalive_server_fix": "keepalive_server_fix",
     "monitoring_experiment": "monitoring_experiment",
@@ -59,14 +60,15 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "promise_based_server_call",
-            ],
-            "cpp_end2end_test": [
+                "event_engine_client",
                 "promise_based_server_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -81,9 +83,6 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
-            ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
             ],
         },
         "on": {
@@ -111,9 +110,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "promise_based_server_call",
             ],
-            "cpp_end2end_test": [
-                "promise_based_server_call",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -131,9 +127,6 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
-            ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
             ],
         },
         "on": {
@@ -156,9 +149,6 @@ EXPERIMENTS = {
                 "chaotic_good",
                 "event_engine_client",
                 "promise_based_client_call",
-                "promise_based_server_call",
-            ],
-            "cpp_end2end_test": [
                 "promise_based_server_call",
             ],
             "endpoint_test": [
@@ -184,9 +174,6 @@ EXPERIMENTS = {
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
-            ],
-            "xds_end2end_test": [
-                "promise_based_server_call",
             ],
         },
         "on": {
