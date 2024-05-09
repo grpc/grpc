@@ -85,12 +85,16 @@ constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
-const auto kMetricRrFallback = GlobalInstrumentsRegistry::RegisterUInt64Counter(
-    "grpc.lb.wrr.rr_fallback",
-    "EXPERIMENTAL.  Number of scheduler updates in which there were not "
-    "enough endpoints with valid weight, which caused the WRR policy to "
-    "fall back to RR behavior.",
-    "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+const auto kMetricRrFallback =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.wrr.rr_fallback",
+        "EXPERIMENTAL.  Number of scheduler updates in which there were not "
+        "enough endpoints with valid weight, which caused the WRR policy to "
+        "fall back to RR behavior.",
+        "{update}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -99,14 +103,20 @@ const auto kMetricEndpointWeightNotYetUsable =
         "don't yet have usable weight information (i.e., either the load "
         "report has not yet been received, or it is within the blackout "
         "period).",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 const auto kMetricEndpointWeightStale =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.endpoint_weight_stale",
         "EXPERIMENTAL.  Number of endpoints from each scheduler update whose "
         "latest weight is older than the expiration period.",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 const auto kMetricEndpointWeights =
     GlobalInstrumentsRegistry::RegisterDoubleHistogram(
@@ -115,7 +125,10 @@ const auto kMetricEndpointWeights =
         "Each bucket will be a counter that is incremented once for every "
         "endpoint whose weight is within that range. Note that endpoints "
         "without usable weights will have weight 0.",
-        "{weight}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{weight}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {
