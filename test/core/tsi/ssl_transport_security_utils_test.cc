@@ -737,6 +737,18 @@ TEST(IsPemCertificateChainNonEmptyAndValidTest, MultipleCertSuccess) {
       absl::StrCat(kLeafCertPem, "\n", kLeafCertPem)));
 }
 
+TEST(IsPemCertificateChainNonEmptyAndValidTest,
+     MultipleCertWithExtraMiddleLinesSuccess) {
+  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
+      absl::StrCat(kLeafCertPem, "\nGarbage\n", kLeafCertPem)));
+}
+
+TEST(IsPemCertificateChainNonEmptyAndValidTest,
+     MultipleCertWitManyMiddleLinesSuccess) {
+  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
+      absl::StrCat(kLeafCertPem, "\n\n\n\n\n\n\n", kLeafCertPem)));
+}
+
 TEST(IsPemCertificateChainNonEmptyAndValidTest, ValidCertWithInvalidSuffix) {
   EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid(
       absl::StrCat(kLeafCertPem, "invalid-pem")));
@@ -745,6 +757,12 @@ TEST(IsPemCertificateChainNonEmptyAndValidTest, ValidCertWithInvalidSuffix) {
 TEST(IsPemCertificateChainNonEmptyAndValidTest, ValidCertWithInvalidPrefix) {
   EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid(
       absl::StrCat("invalid-pem", kLeafCertPem)));
+}
+
+TEST(IsPemCertificateChainNonEmptyAndValidTest,
+     ValidCertWithInvalidLeadingLine) {
+  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
+      absl::StrCat("invalid-pem\n", kLeafCertPem)));
 }
 
 TEST(IsPemPrivateKeyNonEmptyAndValidTest, EmptyPem) {
