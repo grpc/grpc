@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
