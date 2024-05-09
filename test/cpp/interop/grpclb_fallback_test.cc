@@ -16,23 +16,23 @@
 //
 //
 
-#include "test/cpp/interop/http2_client.h"
-
-#include <grpc/support/alloc.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-
 #include <thread>
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/alloc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
+#include "test/cpp/interop/http2_client.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
 
