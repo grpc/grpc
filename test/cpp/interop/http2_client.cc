@@ -31,7 +31,7 @@
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
-    <<<<<<< Updated upstream
+        < < < < < < < Updated upstream
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
