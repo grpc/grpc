@@ -133,6 +133,12 @@ extern ${type} ${flag_variable};
 #define GRPC_${flag.upper()}_TRACE_LOG(level) LOG_IF(level, grpc_core::${flag_variable}.enabled()) << "(${flag}) "
 % endfor
 
+constexpr const char* g_all_trace_var_names[] = {
+% for flag in trace_flags:
+"${flag}"${"" if loop.last else ","}
+% endfor
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_DEBUG_TRACE_H\
