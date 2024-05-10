@@ -1667,6 +1667,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -2817,6 +2818,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -4780,6 +4782,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -5241,6 +5244,7 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/activity_test.cc
@@ -5382,6 +5386,7 @@ targets:
   - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/all_ok_test.cc
   deps:
@@ -6456,6 +6461,7 @@ targets:
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -7718,6 +7724,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -9201,6 +9208,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -9832,6 +9840,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -9968,6 +9977,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -10037,6 +10047,7 @@ targets:
   - src/core/lib/event_engine/forkable.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/forkable.cc
   - test/core/event_engine/forkable_test.cc
   deps:
@@ -10105,6 +10116,7 @@ targets:
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
@@ -11520,6 +11532,7 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/inter_activity_pipe_test.cc
@@ -11892,6 +11905,7 @@ targets:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -12205,6 +12219,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -12410,6 +12425,7 @@ targets:
   - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/join_test.cc
   deps:
@@ -12668,6 +12684,7 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/latch_test.cc
@@ -12789,6 +12806,7 @@ targets:
   - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/loop_test.cc
   deps:
@@ -12886,6 +12904,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -14091,6 +14110,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/status_helper.cc
@@ -14652,6 +14672,7 @@ targets:
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/promise_mutex_test.cc
@@ -17749,6 +17770,7 @@ targets:
   - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/seq_test.cc
   deps:
@@ -18577,6 +18599,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -19305,6 +19328,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
@@ -20152,6 +20176,7 @@ targets:
   - src/core/lib/promise/try_join.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/try_join_test.cc
   deps:
@@ -20189,6 +20214,7 @@ targets:
   - src/core/lib/promise/try_seq.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/try_seq_test.cc
   deps:

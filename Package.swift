@@ -1139,6 +1139,7 @@ let package = Package(
         "src/core/lib/debug/stats_data.h",
         "src/core/lib/debug/trace.cc",
         "src/core/lib/debug/trace.h",
+        "src/core/lib/debug/trace_flags.cc",
         "src/core/lib/event_engine/ares_resolver.cc",
         "src/core/lib/event_engine/ares_resolver.h",
         "src/core/lib/event_engine/cf_engine/cf_engine.cc",

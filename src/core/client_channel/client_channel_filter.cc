@@ -2384,7 +2384,7 @@ void ClientChannelFilter::FilterBasedCallData::ResumePendingBatchInCallCombiner(
 // This is called via the call combiner, so access to calld is synchronized.
 void ClientChannelFilter::FilterBasedCallData::PendingBatchesResume() {
   // Retries not enabled; send down batches as-is.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_core::client_channel_call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(client_channel_call_trace)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;

@@ -19,6 +19,7 @@ CC_FILES=[
     'grpc_root/src/core/lib/config/config_vars_non_generated.cc',
     'grpc_root/src/core/lib/config/load_config.cc',
     'grpc_root/src/core/lib/debug/trace.cc',
+    'grpc_root/src/core/lib/debug/trace_flags.cc',
     'grpc_root/src/core/lib/event_engine/thread_local.cc',
     'grpc_root/src/core/lib/gpr/alloc.cc',
     'grpc_root/src/core/lib/gpr/android/log.cc',

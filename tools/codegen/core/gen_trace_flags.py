@@ -14,14 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import yaml
-
-from mako.runtime import Context
-from mako.template import Template
-from mako.lookup import TemplateLookup
-
 from io import StringIO
 
+from mako.lookup import TemplateLookup
+from mako.runtime import Context
+from mako.template import Template
+import yaml
 
 tmpl_dir_ = TemplateLookup(directories=["tools/codegen/core/templates/"])
 
