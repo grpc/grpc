@@ -476,6 +476,7 @@ class SslTransportSecurityTest
       }
     }
 
+    // This is tied specifically to server0.pem loaded by the fixture.
     static void CheckServer0Peer(tsi_peer* peer) {
       const tsi_peer_property* property =
           CheckBasicAuthenticatedPeerAndGetCommonName(peer);
@@ -498,6 +499,7 @@ class SslTransportSecurityTest
       tsi_peer_destruct(peer);
     }
 
+    // This is tied specifically to server1.pem loaded by the fixture.
     static void CheckServer1Peer(tsi_peer* peer) {
       const tsi_peer_property* property =
           CheckBasicAuthenticatedPeerAndGetCommonName(peer);
