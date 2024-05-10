@@ -19,10 +19,6 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-
 #include <regex>
 #include <tuple>
 
@@ -30,6 +26,9 @@
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"

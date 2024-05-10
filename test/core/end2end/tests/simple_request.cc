@@ -91,7 +91,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
     expected_calls *= 2;
   }
   auto after = global_stats().Collect();
-  gpr_log(GPR_DEBUG, "%s", StatsAsJson(after.get()).c_str());
+  VLOG(2) << StatsAsJson(after.get());
   EXPECT_EQ(after->client_calls_created - before->client_calls_created,
             expected_calls);
   EXPECT_EQ(after->server_calls_created - before->server_calls_created,
