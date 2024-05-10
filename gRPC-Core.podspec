@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.64.0-dev'
+  version = '1.65.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -168,6 +168,7 @@ Pod::Spec.new do |s|
                       'include/grpc/impl/propagation_bits.h',
                       'include/grpc/impl/slice_type.h',
                       'include/grpc/load_reporting.h',
+                      'include/grpc/passive_listener.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',

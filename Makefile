@@ -368,7 +368,7 @@ Q = @
 endif
 
 CORE_VERSION = 41.0.0
-CPP_VERSION = 1.64.0-dev
+CPP_VERSION = 1.65.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1775,6 +1775,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/propagation_bits.h \
     include/grpc/impl/slice_type.h \
     include/grpc/load_reporting.h \
+    include/grpc/passive_listener.h \
     include/grpc/slice.h \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \

@@ -242,11 +242,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "grateful"  # @unused
+g_stands_for = "gnarly"  # @unused
 
 core_version = "41.0.0"  # @unused
 
-version = "1.64.0-dev"  # @unused
+version = "1.65.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -296,6 +296,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security.h",
     "include/grpc/grpc_security_constants.h",
+    "include/grpc/passive_listener.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
@@ -457,6 +458,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/impl/service_type.h",
     "include/grpcpp/impl/status.h",
     "include/grpcpp/impl/sync.h",
+    "include/grpcpp/passive_listener.h",
     "include/grpcpp/resource_quota.h",
     "include/grpcpp/security/audit_logging.h",
     "include/grpcpp/security/tls_crl_provider.h",
@@ -883,7 +885,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_public_hdrs",
-    hdrs = GRPC_PUBLIC_HDRS,
+    hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
@@ -1134,6 +1136,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/hash",
         "absl/log:check",
+        "absl/log:log",
         "absl/memory",
         "absl/meta:type_traits",
         "absl/status",
@@ -1643,6 +1646,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2013,6 +2017,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
         "absl/log:check",
+        "absl/log:log",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -2508,6 +2513,7 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
+        "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:json",
         "//src/core:json_reader",
@@ -2566,6 +2572,7 @@ grpc_cc_library(
         "grpc_security_base",
         "grpc_service_config_impl",
         "grpc_trace",
+        "grpc_transport_chttp2",
         "grpc_unsecure",
         "grpcpp_backend_metric_recorder",
         "grpcpp_call_metric_recorder",
@@ -2587,6 +2594,7 @@ grpc_cc_library(
         "//src/core:grpc_backend_metric_provider",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
+        "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
@@ -2689,6 +2697,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:log",
         "absl/strings",
     ],
     language = "c++",
@@ -3667,6 +3676,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3990,6 +4000,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4082,6 +4093,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "@com_google_protobuf//upb:base",
         "@com_google_protobuf//upb:mem",
@@ -4204,6 +4216,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4337,6 +4350,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/log:check",
+        "absl/log:log",
         "absl/memory",
         "absl/status",
         "absl/status:statusor",
@@ -4714,6 +4728,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/hash",
         "absl/log:check",
+        "absl/log:log",
         "absl/meta:type_traits",
         "absl/random",
         "absl/random:bit_gen_ref",

@@ -32,11 +32,11 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -87,8 +87,8 @@ enum RpcMode {
 
 GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
                                 RpcMode rpc_mode) {
-  gpr_log(GPR_INFO, "DoRPCAndGetPath deadline_seconds:%d rpc_mode:%d",
-          deadline_seconds, rpc_mode);
+  LOG(INFO) << "DoRPCAndGetPath deadline_seconds:" << deadline_seconds
+            << " rpc_mode:" << rpc_mode;
   SimpleRequest request;
   SimpleResponse response;
   grpc::ClientContext context;
@@ -101,16 +101,16 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
   context.set_deadline(deadline);
   grpc::Status s = stub->UnaryCall(&context, request, &response);
   if (!s.ok()) {
-    gpr_log(GPR_INFO, "DoRPCAndGetPath failed. status-message: %s",
-            s.error_message().c_str());
+    LOG(INFO) << "DoRPCAndGetPath failed. status-message: "
+              << s.error_message();
     return GrpclbRouteType::GRPCLB_ROUTE_TYPE_UNKNOWN;
   }
   CHECK(response.grpclb_route_type() ==
             GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
         response.grpclb_route_type() ==
             GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
-  gpr_log(GPR_INFO, "DoRPCAndGetPath done. grpclb_route_type:%d",
-          response.grpclb_route_type());
+  LOG(INFO) << "DoRPCAndGetPath done. grpclb_route_type:"
+            << response.grpclb_route_type();
   return response.grpclb_route_type();
 }
 
@@ -120,7 +120,7 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds) {
 
 bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
   int timeout = 20000;  // 20 seconds
-  gpr_log(GPR_INFO, "Setting socket option TCP_USER_TIMEOUT on fd: %d", fd);
+  LOG(INFO) << "Setting socket option TCP_USER_TIMEOUT on fd: " << fd;
   if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                       sizeof(timeout))) {
     grpc_core::Crash("Failed to set socket option TCP_USER_TIMEOUT");
@@ -161,7 +161,7 @@ std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
 }
 
 void RunCommand(const std::string& command) {
-  gpr_log(GPR_INFO, "RunCommand: |%s|", command.c_str());
+  LOG(INFO) << "RunCommand: |" << command << "|";
   int out = std::system(command.c_str());
   if (WIFEXITED(out)) {
     int code = WEXITSTATUS(out);
@@ -185,25 +185,23 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
   while (absl::Now() < fallback_deadline) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 1);
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
-      gpr_log(GPR_ERROR,
-              "Got grpclb route type backend. Backends are "
-              "supposed to be unreachable, so this test is broken");
+      LOG(ERROR) << "Got grpclb route type backend. Backends are "
+                    "supposed to be unreachable, so this test is broken";
       CHECK(0);
     }
     if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_INFO,
-              "Made one successful RPC to a fallback. Now expect the same for "
-              "the rest.");
+      LOG(INFO) << "Made one successful RPC to a fallback. Now expect the same "
+                   "for the rest.";
       fallback = true;
       break;
     } else {
-      gpr_log(GPR_ERROR, "Retryable RPC failure on iteration: %d",
-              fallback_retry_count);
+      LOG(ERROR) << "Retryable RPC failure on iteration: "
+                 << fallback_retry_count;
     }
     fallback_retry_count++;
   }
   if (!fallback) {
-    gpr_log(GPR_ERROR, "Didn't fall back within deadline");
+    LOG(ERROR) << "Didn't fall back within deadline";
     CHECK(0);
   }
   for (int i = 0; i < 30; i++) {
@@ -231,13 +229,13 @@ void DoFallbackAfterStartupTest() {
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing: %s", absl::GetFlag(FLAGS_test_case).c_str());
+  LOG(INFO) << "Testing: " << absl::GetFlag(FLAGS_test_case);
   if (absl::GetFlag(FLAGS_test_case) == "fallback_before_startup") {
     DoFallbackBeforeStartupTest();
-    gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
+    LOG(INFO) << "DoFallbackBeforeStartup done!";
   } else if (absl::GetFlag(FLAGS_test_case) == "fallback_after_startup") {
     DoFallbackAfterStartupTest();
-    gpr_log(GPR_INFO, "DoFallbackBeforeStartup done!");
+    LOG(INFO) << "DoFallbackBeforeStartup done!";
   } else {
     grpc_core::Crash(absl::StrFormat("Invalid test case: %s",
                                      absl::GetFlag(FLAGS_test_case).c_str()));

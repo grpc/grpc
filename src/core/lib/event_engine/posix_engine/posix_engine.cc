@@ -677,6 +677,22 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
+std::unique_ptr<EventEngine::Endpoint> PosixEventEngine::CreateEndpointFromFd(
+    int fd, const EndpointConfig& config) {
+  auto options = TcpOptionsFromEndpointConfig(config);
+  MemoryAllocator allocator;
+  if (options.memory_allocator_factory != nullptr) {
+    return CreatePosixEndpointFromFd(
+        fd, config,
+        options.memory_allocator_factory->CreateMemoryAllocator(
+            absl::StrCat("allocator:", fd)));
+  }
+  return CreatePosixEndpointFromFd(
+      fd, config,
+      options.resource_quota->memory_quota()->CreateMemoryAllocator(
+          absl::StrCat("allocator:", fd)));
+}
+
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 PosixEventEngine::CreateListener(
     Listener::AcceptCallback on_accept,

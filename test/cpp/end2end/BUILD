@@ -529,6 +529,7 @@ grpc_cc_test(
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,  # TODO(b/151315347)
@@ -584,6 +585,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:test_lb_policies",
@@ -619,6 +621,7 @@ grpc_cc_test(
     srcs = ["grpclb_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
