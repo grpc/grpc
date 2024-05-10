@@ -26,16 +26,8 @@ from io import StringIO
 tmpl_dir_ = TemplateLookup(directories=["tools/codegen/core/templates/"])
 
 
-def make_header_content(trace_flags):
-    header_template = tmpl_dir_.get_template("trace_flags.h.mako")
-    buf = StringIO()
-    ctx = Context(buf, trace_flags=trace_flags)
-    header_template.render_context(ctx)
-    return buf.getvalue()
-
-
-def make_cc_content(trace_flags):
-    header_template = tmpl_dir_.get_template("trace_flags.cc.mako")
+def render_source_file(tmpl_name, trace_flags):
+    header_template = tmpl_dir_.get_template(tmpl_name)
     buf = StringIO()
     ctx = Context(buf, trace_flags=trace_flags)
     header_template.render_context(ctx)
@@ -46,9 +38,9 @@ def main():
     with open("src/core/lib/debug/trace_flags.yaml") as f:
         trace_flags = yaml.safe_load(f.read())
     with open("src/core/lib/debug/trace.h", "w") as f:
-        f.write(make_header_content(trace_flags))
+        f.write(render_source_file("trace_flags.h.mako", trace_flags))
     with open("src/core/lib/debug/trace_flags.cc", "w") as f:
-        f.write(make_cc_content(trace_flags))
+        f.write(render_source_file("trace_flags.cc.mako", trace_flags))
 
 
 if __name__ == "__main__":
