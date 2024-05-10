@@ -770,6 +770,7 @@ grpc_cc_library(
     name = "join_state",
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
     ],
     language = "c++",
     public_hdrs = [
@@ -859,6 +860,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
     ],
     language = "c++",
@@ -4841,6 +4843,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4958,6 +4961,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/hash",
         "absl/log:check",
+        "absl/log:log",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5660,6 +5664,7 @@ grpc_cc_library(
     external_deps = [
         "absl/algorithm:container",
         "absl/log:check",
+        "absl/log:log",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -5884,6 +5889,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
+        "absl/log:log",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -5954,6 +5960,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
+        "absl/log:log",
         "absl/meta:type_traits",
         "absl/random",
         "absl/status",
@@ -6100,6 +6107,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:function_ref",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -6908,6 +6916,8 @@ grpc_cc_library(
         "connection_quota",
         "error",
         "error_utils",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "grpc_insecure_credentials",
         "handshaker_registry",
         "iomgr_fwd",
