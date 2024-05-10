@@ -53,13 +53,10 @@ def main(args):
         env = {
             "CHANGED_FILES": "src/core/lib/debug/trace.h src/core/lib/debug/trace_flags.cc"
         }
-        subprocess.run(["tools/distrib/clang_format_code.sh"], check=True)
+        subprocess.run(["tools/distrib/clang_format_code.sh"], check=True, env=env)
     if _CHECK.value:
         diff_result = subprocess.run(
-            ["git", "diff", "src/core/lib/debug/"],
-            check=True,
-            capture_output=True,
-            env=env,
+            ["git", "diff", "src/core/lib/debug/"], check=True, capture_output=True
         )
         if len(diff_result.stdout) > 0 or len(diff_result.stderr) > 0:
             print(
