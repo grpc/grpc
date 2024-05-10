@@ -156,8 +156,9 @@ struct SeqState<Traits, P, F0> {
               << (p != nullptr
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits0::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits0::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -297,8 +298,9 @@ struct SeqState<Traits, P, F0, F1> {
               << (p != nullptr
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits0::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:" +
+                                   PromiseResultTraits0::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -327,8 +329,9 @@ struct SeqState<Traits, P, F0, F1> {
               << (p != nullptr
                       ? (PromiseResultTraits1::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits1::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits1::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -495,8 +498,9 @@ struct SeqState<Traits, P, F0, F1, F2> {
               << (p != nullptr
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits0::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits0::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -525,8 +529,9 @@ struct SeqState<Traits, P, F0, F1, F2> {
               << (p != nullptr
                       ? (PromiseResultTraits1::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits1::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits1::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -555,8 +560,9 @@ struct SeqState<Traits, P, F0, F1, F2> {
               << (p != nullptr
                       ? (PromiseResultTraits2::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits2::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits2::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -751,8 +757,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
               << (p != nullptr
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits0::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits0::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -781,8 +788,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
               << (p != nullptr
                       ? (PromiseResultTraits1::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits1::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits1::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -811,8 +819,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
               << (p != nullptr
                       ? (PromiseResultTraits2::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits2::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits2::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -841,8 +850,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
               << (p != nullptr
                       ? (PromiseResultTraits3::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits3::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits3::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1074,8 +1084,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
               << (p != nullptr
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits0::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits0::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1105,8 +1116,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
               << (p != nullptr
                       ? (PromiseResultTraits1::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits1::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits1::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1135,8 +1147,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
               << (p != nullptr
                       ? (PromiseResultTraits2::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits2::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits2::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1165,7 +1178,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
               << (p != nullptr
                       ? (PromiseResultTraits3::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits3::ErrorString(*p))
                       : "pending");
         }
@@ -1195,7 +1208,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
               << (p != nullptr
                       ? (PromiseResultTraits4::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits4::ErrorString(*p))
                       : "pending");
         }
@@ -1215,7 +1228,8 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
       default:
       case State::kState5: {
         if (grpc_trace_promise_primitives.enabled()) {
-          LOG(INFO).At
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
+                  "seq[%p]: begin poll step 6/6", this);
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
@@ -1459,7 +1473,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
               << (p != nullptr
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits0::ErrorString(*p))
                       : "pending");
         }
@@ -1490,7 +1504,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
               << (p != nullptr
                       ? (PromiseResultTraits1::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits1::ErrorString(*p))
                       : "pending");
         }
@@ -1521,8 +1535,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
               << (p != nullptr
                       ? (PromiseResultTraits2::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits2::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits2::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -1551,7 +1566,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
               << (p != nullptr
                       ? (PromiseResultTraits3::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits3::ErrorString(*p))
                       : "pending");
         }
@@ -1581,7 +1596,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
               << (p != nullptr
                       ? (PromiseResultTraits4::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits4::ErrorString(*p))
                       : "pending");
         }
@@ -1611,7 +1626,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
               << (p != nullptr
                       ? (PromiseResultTraits5::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits5::ErrorString(*p))
                       : "pending");
         }
@@ -1910,7 +1925,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
               << (p != nullptr
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits0::ErrorString(*p))
                       : "pending");
         }
@@ -1942,7 +1957,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
               << (p != nullptr
                       ? (PromiseResultTraits1::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits1::ErrorString(*p))
                       : "pending");
         }
@@ -1973,8 +1988,9 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
               << (p != nullptr
                       ? (PromiseResultTraits2::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
-                                   PromiseResultTraits2::ErrorString(*p))
+                             : absl::StrCat(
+                                   "early-error:",
+                                   PromiseResultTraits2::ErrorString(*p)))
                       : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -2004,7 +2020,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
               << (p != nullptr
                       ? (PromiseResultTraits3::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits3::ErrorString(*p))
                       : "pending");
         }
@@ -2034,7 +2050,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
               << (p != nullptr
                       ? (PromiseResultTraits4::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits4::ErrorString(*p))
                       : "pending");
         }
@@ -2064,7 +2080,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
               << (p != nullptr
                       ? (PromiseResultTraits5::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits5::ErrorString(*p))
                       : "pending");
         }
@@ -2094,7 +2110,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
               << (p != nullptr
                       ? (PromiseResultTraits6::IsOk(*p)
                              ? "ready"
-                             : "early-error:" +
+                             : absl::StrCat("early-error:",
                                    PromiseResultTraits6::ErrorString(*p))
                       : "pending");
         }
