@@ -1,0 +1,28 @@
+[1mdiff --git a/src/core/lib/promise/detail/seq_state.h b/src/core/lib/promise/detail/seq_state.h[m
+[1mindex 650275c7e4..81ddf71409 100644[m
+[1m--- a/src/core/lib/promise/detail/seq_state.h[m
+[1m+++ b/src/core/lib/promise/detail/seq_state.h[m
+[36m@@ -1234,7 +1234,7 @@[m [mstruct SeqState<Traits, P, F0, F1, F2, F3, F4> {[m
+         auto result = current_promise();[m
+         if (grpc_trace_promise_primitives.enabled()) {[m
+           LOG(INFO).AtLocation(whence.file(), whence.line())[m
+[31m-              << "seq[" << this << "]: poll step 5/6 gets "[m
+[32m+[m[32m              << "seq[" << this << "]: poll step 6/6 gets "[m
+               << (result.ready() ? "ready" : "pending");[m
+         }[m
+         auto* p = result.value_if_ready();[m
+[36m@@ -1647,12 +1647,12 @@[m [mstruct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {[m
+       case State::kState6: {[m
+         if (grpc_trace_promise_primitives.enabled()) {[m
+           LOG(INFO).AtLocation(whence.file(), whence.line())[m
+[31m-              << "seq[" << this << "]: begin poll step 6/7";[m
+[32m+[m[32m              << "seq[" << this << "]: begin poll step 7/7";[m
+         }[m
+         auto result = current_promise();[m
+         if (grpc_trace_promise_primitives.enabled()) {[m
+           LOG(INFO).AtLocation(whence.file(), whence.line())[m
+[31m-              << "seq[" << this << "]: poll step 6/7 gets "[m
+[32m+[m[32m              << "seq[" << this << "]: poll step 7/7 gets "[m
+               << (result.ready() ? "ready" : "pending");[m
+         }[m
+         auto* p = result.value_if_ready();[m

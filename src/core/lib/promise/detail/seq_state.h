@@ -1234,7 +1234,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
           LOG(INFO).AtLocation(whence.file(), whence.line())
-              << "seq[" << this << "]: poll step 5/6 gets "
+              << "seq[" << this << "]: poll step 6/6 gets "
               << (result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
@@ -1647,12 +1647,12 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
       case State::kState6: {
         if (grpc_trace_promise_primitives.enabled()) {
           LOG(INFO).AtLocation(whence.file(), whence.line())
-              << "seq[" << this << "]: begin poll step 6/7";
+              << "seq[" << this << "]: begin poll step 7/7";
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
           LOG(INFO).AtLocation(whence.file(), whence.line())
-              << "seq[" << this << "]: poll step 6/7 gets "
+              << "seq[" << this << "]: poll step 7/7 gets "
               << (result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
