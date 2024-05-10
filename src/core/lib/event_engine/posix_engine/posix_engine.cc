@@ -558,8 +558,8 @@ PosixEventEngine::GetDNSResolver(
   // configuration.
   if (ShouldUseAresDnsResolver()) {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-    GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating AresResolver",
-                                this);
+    GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
+        << "PosixEventEngine::" << this << " creating AresResolver";
     auto ares_resolver = AresResolver::CreateAresResolver(
         options.dns_server,
         std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_->Poller()),
@@ -571,8 +571,8 @@ PosixEventEngine::GetDNSResolver(
         std::move(*ares_resolver));
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   }
-  GRPC_EVENT_ENGINE_DNS_TRACE(
-      "PosixEventEngine:%p creating NativePosixDNSResolver", this);
+  GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
+      << "PosixEventEngine::" << this << " creating NativePosixDNSResolver";
   return std::make_unique<NativePosixDNSResolver>(shared_from_this());
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 }

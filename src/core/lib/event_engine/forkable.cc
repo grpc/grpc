@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/debug/trace.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -58,7 +59,7 @@ void ObjectGroupForkHandler::RegisterForkable(
 void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
     CHECK(!std::exchange(is_forking_, true));
-    GRPC_FORK_TRACE_LOG_STRING("PrepareFork");
+    GRPC_FORK_TRACE_LOG(INFO) << "PrepareFork";
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {
@@ -74,7 +75,7 @@ void ObjectGroupForkHandler::Prefork() {
 void ObjectGroupForkHandler::PostforkParent() {
   if (IsForkEnabled()) {
     CHECK(is_forking_);
-    GRPC_FORK_TRACE_LOG_STRING("PostforkParent");
+    GRPC_FORK_TRACE_LOG(INFO) << "PostforkParent";
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {
@@ -91,7 +92,7 @@ void ObjectGroupForkHandler::PostforkParent() {
 void ObjectGroupForkHandler::PostforkChild() {
   if (IsForkEnabled()) {
     CHECK(is_forking_);
-    GRPC_FORK_TRACE_LOG_STRING("PostforkChild");
+    GRPC_FORK_TRACE_LOG(INFO) << "PostforkChild";
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {

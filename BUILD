@@ -2993,7 +2993,10 @@ grpc_cc_library(
         "//src/core:lib/debug/trace_flags.cc",
     ],
     hdrs = ["//src/core:lib/debug/trace.h"],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/strings",
+        "absl/log",
+    ],
     language = "c++",
     visibility = ["@grpc:trace"],
     deps = [

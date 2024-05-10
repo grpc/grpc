@@ -23,6 +23,7 @@
 #include <map>
 #include <string>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/port_platform.h>
@@ -122,15 +123,14 @@ class LogSink : public std::streambuf {
 
 % for flag, settings in trace_flags.items():
 <%
-  flag_name = flag + "_trace"
+  flag_variable = flag + "_trace"
   if "debug_only" in settings and settings["debug_only"]:
     type = "DebugOnlyTraceFlag"
   else:
     type = "TraceFlag"
 %>\
-extern ${type} ${flag_name};
-#define GRPC_${flag.upper()}_LOG(level) ${"\\"}
-  (${flag_name}.enabled() ? LOG(level) : NoDestructSingleton<LogSink>::Get())
+extern ${type} ${flag_variable};
+#define GRPC_${flag.upper()}_TRACE_LOG(level) LOG_IF(level, grpc_core::${flag_variable}.enabled()) << "(${flag}) "
 % endfor
 
 }  // namespace grpc_core
