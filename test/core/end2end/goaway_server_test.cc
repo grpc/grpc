@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -211,8 +212,8 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 int main(int argc, char** argv) {
   // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
   if (grpc_core::IsEventEngineDnsEnabled()) {
-    LOG(ERROR,
-        "Skipping iomgr-specific DNS test because EventEngine DNS is enabled");
+    LOG(ERROR) << "Skipping iomgr-specific DNS test because EventEngine DNS is "
+                  "enabled";
     return 0;
   }
   grpc_completion_queue* cq;
