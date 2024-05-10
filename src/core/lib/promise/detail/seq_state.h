@@ -299,7 +299,7 @@ struct SeqState<Traits, P, F0, F1> {
                       ? (PromiseResultTraits0::IsOk(*p)
                              ? "ready"
                              : absl::StrCat(
-                                   "early-error:" +
+                                   "early-error:",
                                    PromiseResultTraits0::ErrorString(*p)))
                       : "pending");
         }
