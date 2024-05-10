@@ -2988,7 +2988,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_trace",
-    srcs = ["//src/core:lib/debug/trace.cc"],
+    srcs = [
+        "//src/core:lib/debug/trace.cc",
+        "//src/core:lib/debug/trace_flags.cc",
+    ],
     hdrs = ["//src/core:lib/debug/trace.h"],
     external_deps = ["absl/strings"],
     language = "c++",
@@ -2997,6 +3000,7 @@ grpc_cc_library(
         "config_vars",
         "gpr",
         "grpc_public_hdrs",
+        "//src/core:no_destruct",
     ],
 )
 
