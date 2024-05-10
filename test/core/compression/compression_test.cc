@@ -21,11 +21,11 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/test_util/test_config.h"
@@ -40,7 +40,7 @@ TEST(CompressionTest, CompressionAlgorithmParse) {
   };
   const char* invalid_names[] = {"gzip2", "foo", "", "2gzip"};
 
-  gpr_log(GPR_DEBUG, "test_compression_algorithm_parse");
+  VLOG(2) << "test_compression_algorithm_parse";
 
   for (i = 0; i < GPR_ARRAY_SIZE(valid_names); i++) {
     const char* valid_name = valid_names[i];
@@ -73,7 +73,7 @@ TEST(CompressionTest, CompressionAlgorithmName) {
       GRPC_COMPRESS_DEFLATE,
   };
 
-  gpr_log(GPR_DEBUG, "test_compression_algorithm_name");
+  VLOG(2) << "test_compression_algorithm_name";
 
   for (i = 0; i < GPR_ARRAY_SIZE(valid_algorithms); i++) {
     success = grpc_compression_algorithm_name(valid_algorithms[i], &name);
@@ -88,7 +88,7 @@ TEST(CompressionTest, CompressionAlgorithmName) {
 }
 
 TEST(CompressionTest, CompressionAlgorithmForLevel) {
-  gpr_log(GPR_DEBUG, "test_compression_algorithm_for_level");
+  VLOG(2) << "test_compression_algorithm_for_level";
 
   {
     // accept only identity (aka none)
@@ -211,7 +211,7 @@ TEST(CompressionTest, CompressionEnableDisableAlgorithm) {
   grpc_compression_options options;
   grpc_compression_algorithm algorithm;
 
-  gpr_log(GPR_DEBUG, "test_compression_enable_disable_algorithm");
+  VLOG(2) << "test_compression_enable_disable_algorithm";
 
   grpc_compression_options_init(&options);
   for (algorithm = GRPC_COMPRESS_NONE;

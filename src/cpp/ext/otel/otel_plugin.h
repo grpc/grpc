@@ -343,22 +343,20 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
                            grpc_core::RegisteredMetricCallback* key)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(ot_plugin->mu_);
 
-    void Report(
-        grpc_core::GlobalInstrumentsRegistry::GlobalCallbackInt64GaugeHandle
-            handle,
+   private:
+    void ReportInt64(
+        grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
         int64_t value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(
             CallbackGaugeState<int64_t>::ot_plugin->mu_) override;
-    void Report(
-        grpc_core::GlobalInstrumentsRegistry::GlobalCallbackDoubleGaugeHandle
-            handle,
+    void ReportDouble(
+        grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
         double value, absl::Span<const absl::string_view> label_values,
         absl::Span<const absl::string_view> optional_values)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(
             CallbackGaugeState<double>::ot_plugin->mu_) override;
 
-   private:
     OpenTelemetryPlugin* ot_plugin_;
     grpc_core::RegisteredMetricCallback* key_;
   };
@@ -380,19 +378,19 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>
   IsEnabledForServer(const grpc_core::ChannelArgs& args) const override;
   void AddCounter(
-      grpc_core::GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
+      grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
   void AddCounter(
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleCounterHandle handle,
+      grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
   void RecordHistogram(
-      grpc_core::GlobalInstrumentsRegistry::GlobalUInt64HistogramHandle handle,
+      grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       uint64_t value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
   void RecordHistogram(
-      grpc_core::GlobalInstrumentsRegistry::GlobalDoubleHistogramHandle handle,
+      grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
       double value, absl::Span<const absl::string_view> label_values,
       absl::Span<const absl::string_view> optional_values) override;
   void AddCallback(grpc_core::RegisteredMetricCallback* callback)
