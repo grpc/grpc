@@ -112,13 +112,6 @@ class SavedTraceFlags {
   std::map<std::string, bool> values_;
 };
 
-namespace internal {
-class LogSink : public std::streambuf {
- public:
-  int overflow(int c) override { return c; }
-};
-}  // namespace internal
-
 extern TraceFlag api_trace;
 #define GRPC_API_TRACE_LOG(level) \
   LOG_IF(level, grpc_core::api_trace.enabled()) << "(api) "

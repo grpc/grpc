@@ -112,13 +112,6 @@ class SavedTraceFlags {
   std::map<std::string, bool> values_;
 };
 
-namespace internal {
-class LogSink : public std::streambuf {
- public:
-  int overflow(int c) override { return c; }
-};
-}  // namespace internal
-
 % for flag, settings in trace_flags.items():
 <%
   flag_variable = flag + "_trace"
