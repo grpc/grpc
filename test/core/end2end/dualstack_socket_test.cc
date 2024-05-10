@@ -20,8 +20,9 @@
 #include <memory>
 #include <string>
 
-#include "third_party/absl/log/check.h"
-#include "third_party/absl/status/statusor.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
 
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
@@ -38,10 +39,10 @@
 
 #include <vector>
 
-#include "third_party/absl/strings/str_format.h"
-#include "third_party/absl/strings/str_join.h"
-#include "third_party/absl/strings/str_split.h"
-#include "third_party/absl/strings/string_view.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
