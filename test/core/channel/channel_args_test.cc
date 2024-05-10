@@ -272,7 +272,7 @@ struct fake_class {
 };
 
 static void* fake_pointer_arg_copy(void* arg) {
-  gpr_log(GPR_DEBUG, "fake_pointer_arg_copy");
+  VLOG(2) << "fake_pointer_arg_copy";
   fake_class* fc = static_cast<fake_class*>(arg);
   fake_class* new_fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
   new_fc->foo = fc->foo;
@@ -280,7 +280,7 @@ static void* fake_pointer_arg_copy(void* arg) {
 }
 
 static void fake_pointer_arg_destroy(void* arg) {
-  gpr_log(GPR_DEBUG, "fake_pointer_arg_destroy");
+  VLOG(2) << "fake_pointer_arg_destroy";
   fake_class* fc = static_cast<fake_class*>(arg);
   gpr_free(fc);
 }

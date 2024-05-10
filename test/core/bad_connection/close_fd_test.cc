@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
@@ -225,8 +226,8 @@ static void _test_close_before_server_recv(fd_type fdtype) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_log(GPR_INFO, "Running test: test_close_%s_before_server_recv",
-          fd_type_str(fdtype));
+  LOG(INFO) << "Running test: test_close_" << fd_type_str(fdtype)
+            << "_before_server_recv";
   test_init();
 
   grpc_op ops[6];
@@ -399,8 +400,8 @@ static void _test_close_before_server_send(fd_type fdtype) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_log(GPR_INFO, "Running test: test_close_%s_before_server_send",
-          fd_type_str(fdtype));
+  LOG(INFO) << "Running test: test_close_" << fd_type_str(fdtype)
+            << "_before_server_send";
   test_init();
 
   grpc_op ops[6];
@@ -596,8 +597,8 @@ static void _test_close_before_client_send(fd_type fdtype) {
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_byte_buffer* response_payload =
       grpc_raw_byte_buffer_create(&response_payload_slice, 1);
-  gpr_log(GPR_INFO, "Running test: test_close_%s_before_client_send",
-          fd_type_str(fdtype));
+  LOG(INFO) << "Running test: test_close_" << fd_type_str(fdtype)
+            << "_before_client_send";
   test_init();
 
   grpc_op ops[6];
