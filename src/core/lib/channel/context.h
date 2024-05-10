@@ -76,6 +76,8 @@ struct grpc_call_context_element {
 namespace grpc_core {
 class Call;
 class CallTracerAnnotationInterface;
+class CallTracerInterface;
+class ServiceConfigCallData;
 
 // Bind the legacy context array into the new style structure
 // TODO(ctiller): remove as we migrate these contexts to the new system.
@@ -97,6 +99,17 @@ template <>
 struct OldStyleContext<CallTracerAnnotationInterface> {
   static constexpr grpc_context_index kIndex =
       GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE;
+};
+
+template <>
+struct OldStyleContext<CallTracerInterface> {
+  static constexpr grpc_context_index kIndex = GRPC_CONTEXT_CALL_TRACER;
+};
+
+template <>
+struct OldStyleContext<ServiceConfigCallData> {
+  static constexpr grpc_context_index kIndex =
+      GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA;
 };
 
 template <typename T>

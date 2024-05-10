@@ -22,6 +22,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "subchannel.h"
 
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
@@ -29,18 +30,101 @@
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
+#include "src/core/lib/promise/observable.h"
 
 namespace grpc_core {
 
 class ClientChannel : public Channel {
  public:
+  // This class is a wrapper for Subchannel that hides details of the
+  // channel's implementation (such as the connected subchannel) from the
+  // LB policy API.
+  //
+  // Note that no synchronization is needed here, because even if the
+  // underlying subchannel is shared between channels, this wrapper will only
+  // be used within one channel, so it will always be synchronized by the
+  // control plane work_serializer.
+  class SubchannelWrapper : public SubchannelInterface {
+   public:
+    SubchannelWrapper(RefCountedPtr<ClientChannel> client_channel,
+                      RefCountedPtr<Subchannel> subchannel);
+    ~SubchannelWrapper() override;
+
+    void Orphaned() override;
+    void WatchConnectivityState(
+        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+    void CancelConnectivityStateWatch(
+        ConnectivityStateWatcherInterface* watcher) override
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel() const {
+      return subchannel_->connected_subchannel();
+    }
+
+    void RequestConnection() override { subchannel_->RequestConnection(); }
+
+    void ResetBackoff() override { subchannel_->ResetBackoff(); }
+
+    void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+    void CancelDataWatcher(DataWatcherInterface* watcher) override
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+    void ThrottleKeepaliveTime(int new_keepalive_time);
+
+   private:
+    class WatcherWrapper;
+
+    // A heterogenous lookup comparator for data watchers that allows
+    // unique_ptr keys to be looked up as raw pointers.
+    struct DataWatcherLessThan {
+      using is_transparent = void;
+      bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                      const std::unique_ptr<DataWatcherInterface>& p2) const {
+        return p1 < p2;
+      }
+      bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                      const DataWatcherInterface* p2) const {
+        return p1.get() < p2;
+      }
+      bool operator()(const DataWatcherInterface* p1,
+                      const std::unique_ptr<DataWatcherInterface>& p2) const {
+        return p1 < p2.get();
+      }
+    };
+
+    RefCountedPtr<ClientChannel> client_channel_;
+    RefCountedPtr<Subchannel> subchannel_;
+    // Maps from the address of the watcher passed to us by the LB policy
+    // to the address of the WrapperWatcher that we passed to the underlying
+    // subchannel.  This is needed so that when the LB policy calls
+    // CancelConnectivityStateWatch() with its watcher, we know the
+    // corresponding WrapperWatcher to cancel on the underlying subchannel.
+    std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
+        ABSL_GUARDED_BY(*client_channel_->work_serializer_);
+    std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
+        data_watchers_ ABSL_GUARDED_BY(*client_channel_->work_serializer_);
+  };
+
+  using PickerObservable =
+      Observable<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>;
+
+  class CallDestinationFactory {
+   public:
+    struct RawPointerChannelArgTag {};
+
+    static absl::string_view ChannelArgName() { return "grpc.internal.client_channel_call_destination"; }
+
+    virtual RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
+        PickerObservable) = 0;
+  };
+
   static absl::StatusOr<OrphanablePtr<Channel>> Create(
       std::string target, ChannelArgs channel_args,
       grpc_channel_stack_type channel_stack_type);
@@ -49,7 +133,8 @@ class ClientChannel : public Channel {
   ClientChannel(std::string target_uri, ChannelArgs args,
                 std::string uri_to_resolve,
                 RefCountedPtr<ServiceConfig> default_service_config,
-                ClientChannelFactory* client_channel_factory);
+                ClientChannelFactory* client_channel_factory,
+                CallDestinationFactory* call_destination_factory);
 
   ~ClientChannel() override;
 
@@ -106,8 +191,6 @@ class ClientChannel : public Channel {
  private:
   class ResolverResultHandler;
   class ClientChannelControlHelper;
-  class SubchannelWrapper;
-  class LoadBalancedCallDestination;
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
@@ -156,17 +239,6 @@ class ClientChannel : public Channel {
       ConfigSelector& config_selector,
       ClientMetadata& client_initial_metadata) const;
 
-  // Does an LB pick for a call.  Returns one of the following things:
-  // - Continue{}, meaning to queue the pick
-  // - a non-OK status, meaning to fail the call
-  // - a connected subchannel, meaning that the pick is complete
-  // When the pick is complete, pushes client_initial_metadata onto
-  // call_initiator.  Also adds the subchannel call tracker (if any) to
-  // context.
-  LoopCtl<absl::StatusOr<RefCountedPtr<ConnectedSubchannel>>> PickSubchannel(
-      LoadBalancingPolicy::SubchannelPicker& picker,
-      UnstartedCallHandler& unstarted_handler);
-
   const ChannelArgs channel_args_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
@@ -197,7 +269,8 @@ class ClientChannel : public Channel {
   //
   // Fields related to LB picks.
   //
-  Observable<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> picker_;
+  PickerObservable picker_;
+  const RefCountedPtr<UnstartedCallDestination> call_destination_;
 
   //
   // Fields used in the control plane.  Guarded by work_serializer.

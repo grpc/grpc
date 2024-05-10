@@ -119,6 +119,13 @@ T* GetContext() {
   return p;
 }
 
+// Retrieve the current value of a context, or return nullptr if the value is
+// unset.
+template <typename T>
+T* MaybeGetContext() {
+  return promise_detail::Context<T>::get();
+}
+
 template <typename T>
 void SetContext(T* p) {
   promise_detail::Context<T>::set(p);

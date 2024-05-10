@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
@@ -220,6 +221,21 @@ void AddClientCallTracerToContext(grpc_call_context_element* call_context,
 // ServerCallTracerFactory, which has yet to be made into a list.
 void AddServerCallTracerToContext(grpc_call_context_element* call_context,
                                   ServerCallTracer* tracer);
+
+template <>
+struct ContextSubclass<ClientCallTracer::CallAttemptTracer> {
+  using Base = CallTracerInterface;
+};
+
+template <>
+struct ContextSubclass<ServerCallTracer> {
+  using Base = CallTracerInterface;
+};
+
+template <>
+struct ContextSubclass<ClientCallTracer> {
+  using Base = CallTracerAnnotationInterface;
+};
 
 }  // namespace grpc_core
 
