@@ -176,6 +176,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/service_type.h',
                       'include/grpcpp/impl/status.h',
                       'include/grpcpp/impl/sync.h',
+                      'include/grpcpp/passive_listener.h',
                       'include/grpcpp/resource_quota.h',
                       'include/grpcpp/security/audit_logging.h',
                       'include/grpcpp/security/auth_context.h',
