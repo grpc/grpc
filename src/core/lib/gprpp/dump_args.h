@@ -26,13 +26,8 @@ namespace dump_args_detail {
 // Helper function... just ignore the initializer list passed into it.
 // Allows doing 'statements' via parameter pack expansion in C++11 - given
 // template <typename... Ts>:
-//  do_these_things({(foo<Ts>(), 1)});
+//  do_these_things({foo<Ts>()...});
 // will execute foo<T>() for each T in Ts.
-// In this example we also leverage the comma operator to make the resultant
-// type of each statement be a consistant int so that C++ type deduction works
-// as we'd like (note that in the expression (a, 1) in C++, the 'result' of the
-// expression is the value after the right-most ',' -- in this case 1, with a
-// executed as a side effect.
 template <typename T>
 void do_these_things(std::initializer_list<T>) {}
 
@@ -45,7 +40,7 @@ class DumpArgs {
         {AddDumper([a = &args](std::ostream& os) { os << *a; })...});
   }
 
-  friend std::ostream& operator<<(std::ostream& os, const DumpArgs& args);
+  friend std::ostream& operator<<(std::ostream& out, const DumpArgs& args);
 
  private:
   int AddDumper(absl::AnyInvocable<void(std::ostream&) const> dumper) {
@@ -61,6 +56,7 @@ class DumpArgs {
 }  // namespace grpc_core
 
 // Helper to print a list of variables and their values.
+// Each type must be streamable to std::ostream.
 // Usage:
 //   int a = 1;
 //   int b = 2;
