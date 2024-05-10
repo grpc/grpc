@@ -212,7 +212,8 @@ static void my_cancel_ares_request(grpc_ares_request* request) {
 int main(int argc, char** argv) {
   // TODO(yijiem): rewrite this test with a custom EventEngine DNS Resolver
   if (grpc_core::IsEventEngineDnsEnabled()) {
-    LOG(ERROR,
+    ABSL_LOG(
+        ERROR,
         "Skipping iomgr-specific DNS test because EventEngine DNS is enabled");
     return 0;
   }
