@@ -1113,8 +1113,8 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Check endpoint weights.
-  EXPECT_THAT(stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
-                                              kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetDoubleHistogramValue(
+                  kEndpointWeights, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::ElementsAre(
                   // Picker created for first endpoint becoming READY.
                   0,
@@ -1135,17 +1135,18 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                   ::testing::DoubleNear(333.333344, 0.000001))));
   // RR fallback should trigger for the first 5 updates above, because
   // there are less than two endpoints with valid weights.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kRrFallback, kLabelValues,
-                                            kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kRrFallback, kLabelValues,
+                                                  kOptionalLabelValues),
               ::testing::Optional(5));
   // Endpoint-not-yet-usable will be incremented once for every endpoint
   // with weight 0 above.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kEndpointWeightNotYetUsable,
-                                            kLabelValues, kOptionalLabelValues),
-              ::testing::Optional(10));
+  EXPECT_THAT(
+      stats_plugin->GetUInt64CounterValue(kEndpointWeightNotYetUsable,
+                                          kLabelValues, kOptionalLabelValues),
+      ::testing::Optional(10));
   // There are no stale endpoint weights so far.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kEndpointWeightStale, kLabelValues,
-                                            kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
+                  kEndpointWeightStale, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(0));
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
@@ -1156,8 +1157,8 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
       picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // All three endpoints should now have stale weights.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kEndpointWeightStale, kLabelValues,
-                                            kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
+                  kEndpointWeightStale, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
 }
 
