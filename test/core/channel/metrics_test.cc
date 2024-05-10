@@ -16,6 +16,8 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 

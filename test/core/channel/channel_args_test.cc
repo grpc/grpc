@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/credentials.h>
