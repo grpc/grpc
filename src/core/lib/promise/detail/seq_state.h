@@ -739,22 +739,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 1/5", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 1/5";
         }
         auto result = prior.prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 1/5 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits0::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 1/5 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits0::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits0::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits0::IsOk(*p)) {
@@ -771,22 +769,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 2/5", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 2/5";
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 2/5 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits1::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 2/5 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits1::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits1::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits1::IsOk(*p)) {
@@ -803,22 +799,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 3/5", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 3/5";
         }
         auto result = prior.prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 3/5 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits2::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 3/5 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits2::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits2::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits2::IsOk(*p)) {
@@ -835,22 +829,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 4/5", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 4/5";
         }
         auto result = prior.current_promise();
         PromiseResult3* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 4/5 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits3::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits3::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 4/5 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits3::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits3::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits3::IsOk(*p)) {
@@ -868,14 +860,14 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
       default:
       case State::kState4: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 5/5", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 5/5";
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: poll step 5/5 gets %s", this,
-                  result.ready() ? "ready" : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 5/5 gets "
+              << (result.ready() ? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
         if (p == nullptr) return Pending{};
@@ -1070,22 +1062,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
     switch (state) {
       case State::kState0: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 1/6", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 1/6";
         }
         auto result = prior.prior.prior.prior.prior.current_promise();
         PromiseResult0* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 1/6 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits0::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits0::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 1/6 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits0::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits0::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits0::IsOk(*p)) {
@@ -1103,22 +1093,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState1: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 2/6", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 2/6";
         }
         auto result = prior.prior.prior.prior.current_promise();
         PromiseResult1* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 2/6 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits1::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits1::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 2/6 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits1::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits1::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits1::IsOk(*p)) {
@@ -1135,22 +1123,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState2: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 3/6", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 3/6";
         }
         auto result = prior.prior.prior.current_promise();
         PromiseResult2* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 3/6 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits2::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits2::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 3/6 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits2::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits2::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits2::IsOk(*p)) {
@@ -1167,22 +1153,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState3: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 4/6", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 4/6";
         }
         auto result = prior.prior.current_promise();
         PromiseResult3* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 4/6 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits3::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits3::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 4/6 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits3::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits3::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits3::IsOk(*p)) {
@@ -1199,22 +1183,20 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
         ABSL_FALLTHROUGH_INTENDED;
       case State::kState4: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 5/6", this);
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: begin poll step 5/6";
         }
         auto result = prior.current_promise();
         PromiseResult4* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(
-              whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-              "seq[%p]: poll step 5/6 gets %s", this,
-              p != nullptr
-                  ? (PromiseResultTraits4::IsOk(*p)
-                         ? "ready"
-                         : absl::StrCat("early-error:",
-                                        PromiseResultTraits4::ErrorString(*p))
-                               .c_str())
-                  : "pending");
+          LOG(INFO).AtLocation(whence.file(), whence.line())
+              << "seq[" << this << "]: poll step 5/6 gets "
+              << (p != nullptr
+                      ? (PromiseResultTraits4::IsOk(*p)
+                             ? "ready"
+                             : "early-error:" +
+                                   PromiseResultTraits4::ErrorString(*p))
+                      : "pending");
         }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits4::IsOk(*p)) {
@@ -1232,8 +1214,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
       default:
       case State::kState5: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_INFO,
-                  "seq[%p]: begin poll step 6/6", this);
+          LOG(INFO).At
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
