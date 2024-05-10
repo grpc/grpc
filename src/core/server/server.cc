@@ -755,6 +755,8 @@ class Server::TransportConnectivityWatcher
     // Shut down channel.
     MutexLock lock(&server_->mu_global_);
     server_->connections_.erase(transport_.get());
+    --server_->connections_open_;
+    server_->MaybeFinishShutdown();
   }
 
   RefCountedPtr<ServerTransport> transport_;
@@ -972,9 +974,13 @@ grpc_error_handle Server::SetupTransport(
     }
     // TODO(ctiller): add channelz node
     t->SetCallDestination(std::move(*destination));
+    MutexLock lock(&mu_global_);
+    if (ShutdownCalled()) {
+      t->DisconnectWithError(GRPC_ERROR_CREATE("Server shutdown"));
+    }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
-    MutexLock lock(&mu_global_);
+    gpr_log(GPR_INFO, "Adding connection");
     connections_.emplace(std::move(t));
     ++connections_open_;
   } else {
@@ -1090,7 +1096,7 @@ void Server::MaybeFinishShutdown() {
     MutexLock lock(&mu_call_);
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
-  if (!channels_.empty() || !connections_.empty() ||
+  if (!channels_.empty() || connections_open_ > 0 ||
       listeners_destroyed_ < listeners_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
@@ -1100,7 +1106,7 @@ void Server::MaybeFinishShutdown() {
               "Waiting for %" PRIuPTR " channels %" PRIuPTR
               " connections and %" PRIuPTR "/%" PRIuPTR
               " listeners to be destroyed before shutting down server",
-              channels_.size(), connections_.size(),
+              channels_.size(), connections_open_,
               listeners_.size() - listeners_destroyed_, listeners_.size());
     }
     return;
