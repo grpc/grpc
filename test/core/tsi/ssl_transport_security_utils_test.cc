@@ -732,6 +732,11 @@ TEST(IsPemCertificateChainNonEmptyAndValidTest, SingleCertSuccess) {
   EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(kLeafCertPem));
 }
 
+TEST(IsPemCertificateChainNonEmptyAndValidTest, MultipleCertFailure) {
+  EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid(
+      absl::StrCat(kLeafCertPem, kLeafCertPem)));
+}
+
 TEST(IsPemCertificateChainNonEmptyAndValidTest, MultipleCertSuccess) {
   EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
       absl::StrCat(kLeafCertPem, "\n", kLeafCertPem)));
