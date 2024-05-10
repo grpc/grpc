@@ -51,7 +51,8 @@ TraceFlag dns_resolver_trace(false, "dns_resolver");
 TraceFlag environment_autodetect_trace(false, "environment_autodetect");
 DebugOnlyTraceFlag error_refcount_trace(false, "error_refcount");
 TraceFlag event_engine_trace(false, "event_engine");
-TraceFlag event_engine_client_channel_resolver_trace(false, "event_engine_client_channel_resolver");
+TraceFlag event_engine_client_channel_resolver_trace(
+    false, "event_engine_client_channel_resolver");
 TraceFlag event_engine_dns_trace(false, "event_engine_dns");
 TraceFlag event_engine_endpoint_trace(false, "event_engine_endpoint");
 TraceFlag event_engine_endpoint_data_trace(false, "event_engine_endpoint_data");
@@ -93,7 +94,8 @@ TraceFlag ring_hash_lb_trace(false, "ring_hash_lb");
 TraceFlag rls_lb_trace(false, "rls_lb");
 TraceFlag round_robin_trace(false, "round_robin");
 TraceFlag secure_endpoint_trace(false, "secure_endpoint");
-DebugOnlyTraceFlag security_connector_refcount_trace(false, "security_connector_refcount");
+DebugOnlyTraceFlag security_connector_refcount_trace(
+    false, "security_connector_refcount");
 TraceFlag server_channel_trace(false, "server_channel");
 DebugOnlyTraceFlag slice_refcount_trace(false, "slice_refcount");
 TraceFlag stateful_session_filter_trace(false, "stateful_session_filter");
@@ -112,13 +114,17 @@ TraceFlag xds_client_trace(false, "xds_client");
 TraceFlag xds_client_refcount_trace(false, "xds_client_refcount");
 TraceFlag xds_cluster_impl_lb_trace(false, "xds_cluster_impl_lb");
 TraceFlag xds_cluster_manager_lb_trace(false, "xds_cluster_manager_lb");
-TraceFlag xds_cluster_resource_type_test_trace(true, "xds_cluster_resource_type_test");
+TraceFlag xds_cluster_resource_type_test_trace(
+    true, "xds_cluster_resource_type_test");
 TraceFlag xds_common_types_test_trace(true, "xds_common_types_test");
-TraceFlag xds_endpoint_resource_type_test_trace(true, "xds_endpoint_resource_type_test");
-TraceFlag xds_listener_resource_type_test_trace(true, "xds_listener_resource_type_test");
+TraceFlag xds_endpoint_resource_type_test_trace(
+    true, "xds_endpoint_resource_type_test");
+TraceFlag xds_listener_resource_type_test_trace(
+    true, "xds_listener_resource_type_test");
 TraceFlag xds_override_host_lb_trace(false, "xds_override_host_lb");
 TraceFlag xds_resolver_trace(false, "xds_resolver");
-TraceFlag xds_route_config_resource_type_test_trace(true, "xds_route_config_resource_type_test");
+TraceFlag xds_route_config_resource_type_test_trace(
+    true, "xds_route_config_resource_type_test");
 TraceFlag xds_server_config_fetcher_trace(false, "xds_server_config_fetcher");
 TraceFlag xds_wrr_locality_lb_trace(false, "xds_wrr_locality_lb");
 
