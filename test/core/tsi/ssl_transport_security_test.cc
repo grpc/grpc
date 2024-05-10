@@ -662,7 +662,7 @@ class SslTransportSecurityTest
 
   SslTransportSecurityTest() { grpc_init(); }
 
-  ~SslTransportSecurityTest() {
+  ~SslTransportSecurityTest() override {
     DestroyFixture();
     grpc_shutdown();
   }
