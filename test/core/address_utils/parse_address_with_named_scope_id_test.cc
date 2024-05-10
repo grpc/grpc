@@ -28,13 +28,13 @@
 
 #include <string>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -114,10 +114,8 @@ TEST(ParseAddressWithNamedScopeIdTest, MainTest) {
   // system recognizes, and then use that for the test.
   for (size_t i = 1; i < 65536; i++) {
     if (if_indextoname(i, arbitrary_interface_name) != nullptr) {
-      gpr_log(GPR_DEBUG,
-              "Found interface at index %" PRIuPTR
-              " named %s. Will use this for the test",
-              i, arbitrary_interface_name);
+      VLOG(2) << "Found interface at index " << i << " named "
+              << arbitrary_interface_name << ". Will use this for the test";
       break;
     }
   }
@@ -127,9 +125,8 @@ TEST(ParseAddressWithNamedScopeIdTest, MainTest) {
   struct sockaddr_in6 result_from_getaddrinfo =
       resolve_with_gettaddrinfo(target.c_str());
   // Run the test
-  gpr_log(GPR_DEBUG,
-          "Run test_grpc_parse_ipv6_parity_with_getaddrinfo with target: %s",
-          target.c_str());
+  VLOG(2) << "Run test_grpc_parse_ipv6_parity_with_getaddrinfo with target: "
+          << target;
   test_grpc_parse_ipv6_parity_with_getaddrinfo(target.c_str(),
                                                result_from_getaddrinfo);
   // Cleanup
