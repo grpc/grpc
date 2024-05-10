@@ -397,6 +397,9 @@ TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.remote_workload_type")),
             "unknown");
+  EXPECT_EQ(absl::get<std::string>(
+                attributes.at("csm.remote_workload_canonical_service")),
+            "unknown");
 }
 
 TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
@@ -424,6 +427,8 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
             "mynamespace");
 }
 
+// Test that metadata exchange works and corresponding service mesh labels are
+// received and recorded even if the server sends a trailers-only response.
 TEST_P(MetadataExchangeTest, Retries) {
   Init(std::move(
       Options()

@@ -132,12 +132,12 @@ TEST_P(WrrTest, MetricsHaveLocalityLabel) {
   WaitForAllBackends(DEBUG_LOCATION);
   // Make sure we have a metric value for each of the two localities.
   EXPECT_THAT(
-      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
-                                      {LocalityNameString("locality0")}),
+      stats_plugin->GetDoubleHistogramValue(kEndpointWeights, kLabelValues,
+                                            {LocalityNameString("locality0")}),
       ::testing::Optional(::testing::Not(::testing::IsEmpty())));
   EXPECT_THAT(
-      stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
-                                      {LocalityNameString("locality1")}),
+      stats_plugin->GetDoubleHistogramValue(kEndpointWeights, kLabelValues,
+                                            {LocalityNameString("locality1")}),
       ::testing::Optional(::testing::Not(::testing::IsEmpty())));
 }
 
