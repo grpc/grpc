@@ -188,7 +188,7 @@ class InterceptionChainBuilder final {
   }
 
   void Fail(absl::Status status) {
-    GPR_ASSERT(!status.ok());
+    CHECK(!status.ok()) << status;
     if (status_.ok()) status_ = std::move(status);
   }
 
