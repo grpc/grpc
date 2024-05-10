@@ -978,7 +978,7 @@ grpc_error_handle Server::SetupTransport(
     connections_.emplace(std::move(t));
     ++connections_open_;
   } else {
-    GPR_ASSERT(transport->filter_stack_transport() != nullptr);
+    CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<OrphanablePtr<Channel>> channel = LegacyChannel::Create(
         "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
@@ -1387,7 +1387,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   }
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  GPR_ASSERT(transport->filter_stack_transport() != nullptr);
+  CHECK(transport->filter_stack_transport() != nullptr);
   op->set_accept_stream = true;
   op->set_accept_stream_fn = AcceptStream;
   op->set_registered_method_matcher_fn = [](void* arg,
