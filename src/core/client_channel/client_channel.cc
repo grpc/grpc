@@ -275,7 +275,7 @@ ClientChannel::SubchannelWrapper::SubchannelWrapper(
         "client_channel=%p: creating subchannel wrapper %p for subchannel %p",
         client_channel_.get(), this, subchannel_.get());
   }
-  GPR_DEBUG_ASSERT(
+  DCHECK(
       client_channel_->work_serializer_->RunningInWorkSerializer());
   if (client_channel_->channelz_node_ != nullptr) {
     auto* subchannel_node = subchannel_->channelz_node();
