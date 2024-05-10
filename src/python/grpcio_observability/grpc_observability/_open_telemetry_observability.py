@@ -118,8 +118,9 @@ class _OpenTelemetryPlugin:
             decoded_labels[GRPC_TARGET_LABEL] = GRPC_OTHER_LABEL_VALUE
 
         method = decoded_labels.get(GRPC_METHOD_LABEL, "")
-        if not self._plugin.generic_method_attribute_filter(method):
-            # Filter method name.
+        if not (stats_data.registered_method or self._plugin.generic_method_attribute_filter(method)):
+            # Filter method name if it's not registered method and
+            # generic_method_attribute_filter returns false.
             decoded_labels[GRPC_METHOD_LABEL] = GRPC_OTHER_LABEL_VALUE
 
         value = 0
