@@ -37,6 +37,7 @@ grpc_cc_test(
     srcs = ["channel_args_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -149,6 +150,7 @@ grpc_cc_test(
     name = "metrics_test",
     srcs = ["metrics_test.cc"],
     external_deps = [
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
