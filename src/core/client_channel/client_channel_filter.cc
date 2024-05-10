@@ -1531,9 +1531,10 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
       UpdateServiceConfigInControlPlaneLocked(
           std::move(service_config), std::move(config_selector),
           std::string(lb_policy_config->name()));
-    } else
+    } else {
       GRPC_CLIENT_CHANNEL_TRACE_LOG(INFO)
           << "chand=" << this << ": service config not changed";
+    }
     // Create or update LB policy, as needed.
     resolver_result_status = CreateOrUpdateLbPolicyLocked(
         std::move(lb_policy_config),
