@@ -65,6 +65,8 @@ fi
 
 files=`echo $files | sort -R`
 
+echo "DO NOT SUBMIT: $files"
+
 FILES_PER_PROCESS="$(expr $(echo "$files" | grep -o '\n' | wc -l) / $CPU_COUNT + 1)"
 
 if [ "$TEST" == "" ]

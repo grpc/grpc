@@ -23,8 +23,12 @@ from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
 
-_DO_CHECK = flags.DEFINE_bool(
-    "check", default=False, help="Format and compare output using git diff"
+_CHECK = flags.DEFINE_bool(
+    "check", default=False, help="Format and compare output using git diff."
+)
+
+_FORMAT = flags.DEFINE_bool(
+    "format", default=False, help="Format the trace code after generating it."
 )
 
 tmpl_dir_ = TemplateLookup(directories=["tools/codegen/core/templates/"])
@@ -45,9 +49,18 @@ def main(args):
         f.write(render_source_file("trace.h.mako", trace_flags))
     with open("src/core/lib/debug/trace_flags.cc", "w") as f:
         f.write(render_source_file("trace_flags.cc.mako", trace_flags))
-    if _DO_CHECK.value:
+    if _CHECK.value or _FORMAT.value:
+        env = {
+            "CHANGED_FILES": "src/core/lib/debug/trace.h src/core/lib/debug/trace_flags.cc"
+        }
         subprocess.run(["tools/distrib/clang_format_code.sh"], check=True)
-        diff_result = subprocess.run(["git", "diff"], check=True, capture_output=True)
+    if _CHECK.value:
+        diff_result = subprocess.run(
+            ["git", "diff", "src/core/lib/debug/"],
+            check=True,
+            capture_output=True,
+            env=env,
+        )
         if len(diff_result.stdout) > 0 or len(diff_result.stderr) > 0:
             print(
                 "Trace flags need to be generated. Please run tools/codegen/core/gen_trace_flags.py"
