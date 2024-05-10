@@ -19,17 +19,23 @@
 #ifndef GRPC_TEST_CPP_UTIL_CHANNEL_TRACE_PROTO_HELPER_H
 #define GRPC_TEST_CPP_UTIL_CHANNEL_TRACE_PROTO_HELPER_H
 
+#include <string>
+
 namespace grpc {
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(const char* json_c_str);
-void ValidateChannelProtoJsonTranslation(const char* json_c_str);
-void ValidateGetTopChannelsResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateGetChannelResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateGetServerResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateSubchannelProtoJsonTranslation(const char* json_c_str);
-void ValidateServerProtoJsonTranslation(const char* json_c_str);
-void ValidateGetServersResponseProtoJsonTranslation(const char* json_c_str);
+void ValidateChannelTraceProtoJsonTranslation(const std::string& json_string);
+void ValidateChannelProtoJsonTranslation(const std::string& json_string);
+void ValidateGetTopChannelsResponseProtoJsonTranslation(
+    const std::string& json_string);
+void ValidateGetChannelResponseProtoJsonTranslation(
+    const std::string& json_string);
+void ValidateGetServerResponseProtoJsonTranslation(
+    const std::string& json_string);
+void ValidateSubchannelProtoJsonTranslation(const std::string& json_string);
+void ValidateServerProtoJsonTranslation(const std::string& json_string);
+void ValidateGetServersResponseProtoJsonTranslation(
+    const std::string& json_string);
 
 }  // namespace testing
 }  // namespace grpc

@@ -73,41 +73,44 @@ void VaidateProtoJsonTranslation(const std::string& json_str) {
 
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_c_str);
+void ValidateChannelTraceProtoJsonTranslation(const std::string& json_string) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_string);
 }
 
-void ValidateChannelProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_c_str);
+void ValidateChannelProtoJsonTranslation(const std::string& json_string) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_string);
 }
 
 void ValidateGetTopChannelsResponseProtoJsonTranslation(
-    const char* json_c_str) {
+    const std::string& json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetTopChannelsResponse>(
-      json_c_str);
+      json_string);
 }
 
-void ValidateGetChannelResponseProtoJsonTranslation(const char* json_c_str) {
+void ValidateGetChannelResponseProtoJsonTranslation(
+    const std::string& json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetChannelResponse>(
-      json_c_str);
+      json_string);
 }
 
-void ValidateGetServerResponseProtoJsonTranslation(const char* json_c_str) {
+void ValidateGetServerResponseProtoJsonTranslation(
+    const std::string& json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetServerResponse>(
-      json_c_str);
+      json_string);
 }
 
-void ValidateSubchannelProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::Subchannel>(json_c_str);
+void ValidateSubchannelProtoJsonTranslation(const std::string& json_string) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::Subchannel>(json_string);
 }
 
-void ValidateServerProtoJsonTranslation(const char* json_c_str) {
-  VaidateProtoJsonTranslation<grpc::channelz::v1::Server>(json_c_str);
+void ValidateServerProtoJsonTranslation(const std::string& json_string) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::Server>(json_string);
 }
 
-void ValidateGetServersResponseProtoJsonTranslation(const char* json_c_str) {
+void ValidateGetServersResponseProtoJsonTranslation(
+    const std::string& json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetServersResponse>(
-      json_c_str);
+      json_string);
 }
 
 }  // namespace testing
