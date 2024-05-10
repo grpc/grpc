@@ -559,6 +559,13 @@ class Transport : public InternallyRefCounted<Transport> {
     PerformOp(op);
   }
 
+  void DisconnectWithError(grpc_error_handle error) {
+    CHECK(!error.ok()) << error;
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->disconnect_with_error = error;
+    PerformOp(op);
+  }
+
   // implementation of grpc_transport_get_endpoint
   virtual grpc_endpoint* GetEndpoint() = 0;
 };
