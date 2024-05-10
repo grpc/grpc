@@ -37,7 +37,7 @@ void DNSServiceResolverImpl::LookupHostname(
     absl::string_view name, absl::string_view default_port) {
   GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
       << "DNSServiceResolverImpl::LookupHostname: name: " << name
-      << ", default_port: " << default_port << ", this: " this;
+      << ", default_port: " << default_port << ", this: " << this;
 
   absl::string_view host;
   absl::string_view port_string;
@@ -230,7 +230,6 @@ void DNSServiceResolverImpl::Shutdown() {
       GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
           << "DNSServiceResolverImpl::Shutdown sdRef: " << sdRef
           << ", this: " << thatPtr;
-
       request.on_resolve(
           absl::CancelledError("DNSServiceResolverImpl::Shutdown"));
       DNSServiceRefDeallocate(static_cast<DNSServiceRef>(sdRef));

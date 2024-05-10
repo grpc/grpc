@@ -28,8 +28,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/no_destruct.h"
-
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 

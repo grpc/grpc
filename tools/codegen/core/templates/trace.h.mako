@@ -28,8 +28,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/no_destruct.h"
-
 void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 
@@ -141,4 +139,4 @@ constexpr const char* g_all_trace_var_names[] = {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_DEBUG_TRACE_H\
+#endif  // GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
