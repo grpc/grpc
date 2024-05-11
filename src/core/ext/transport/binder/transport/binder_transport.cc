@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/substitute.h"
@@ -141,7 +142,7 @@ static void AssignMetadata(grpc_metadata_batch* mb,
 static void cancel_stream_locked(grpc_binder_transport* transport,
                                  grpc_binder_stream* stream,
                                  grpc_error_handle error) {
-  gpr_log(GPR_INFO, "cancel_stream_locked");
+  LOG(INFO) << "cancel_stream_locked";
   if (!stream->is_closed) {
     CHECK(stream->cancel_self_error.ok());
     stream->is_closed = true;
@@ -200,7 +201,7 @@ static void recv_initial_metadata_locked(void* arg,
       CHECK(stream->recv_initial_metadata);
       CHECK(stream->recv_initial_metadata_ready);
       if (!args->initial_metadata.ok()) {
-        gpr_log(GPR_ERROR, "Failed to parse initial metadata");
+        LOG(ERROR) << "Failed to parse initial metadata";
         return absl_status_to_grpc_error(args->initial_metadata.status());
       }
       if (!stream->is_client) {
@@ -237,11 +238,11 @@ static void recv_message_locked(void* arg, grpc_error_handle /*error*/) {
       CHECK(stream->recv_message);
       CHECK(stream->recv_message_ready);
       if (!args->message.ok()) {
-        gpr_log(GPR_ERROR, "Failed to receive message");
+        LOG(ERROR) << "Failed to receive message";
         if (args->message.status().message() ==
             grpc_binder::TransportStreamReceiver::
                 kGrpcBinderTransportCancelledGracefully) {
-          gpr_log(GPR_ERROR, "message cancelled gracefully");
+          LOG(ERROR) << "message cancelled gracefully";
           // Cancelled because we've already received trailing metadata.
           // It's not an error in this case.
           return absl::OkStatus();
@@ -281,13 +282,13 @@ static void recv_trailing_metadata_locked(void* arg,
       CHECK(stream->recv_trailing_metadata);
       CHECK(stream->recv_trailing_metadata_finished);
       if (!args->trailing_metadata.ok()) {
-        gpr_log(GPR_ERROR, "Failed to receive trailing metadata");
+        LOG(ERROR) << "Failed to receive trailing metadata";
         return absl_status_to_grpc_error(args->trailing_metadata.status());
       }
       if (!stream->is_client) {
         // Client will not send non-empty trailing metadata.
         if (!args->trailing_metadata.value().empty()) {
-          gpr_log(GPR_ERROR, "Server receives non-empty trailing metadata.");
+          LOG(ERROR) << "Server receives non-empty trailing metadata.";
           return absl::CancelledError();
         }
       } else {
@@ -371,7 +372,7 @@ class MetadataEncoder {
 static void accept_stream_locked(void* gt, grpc_error_handle /*error*/) {
   grpc_binder_transport* transport = static_cast<grpc_binder_transport*>(gt);
   if (transport->accept_stream_fn) {
-    gpr_log(GPR_INFO, "Accepting a stream");
+    LOG(INFO) << "Accepting a stream";
     // must pass in a non-null value.
     (*transport->accept_stream_fn)(transport->accept_stream_user_data,
                                    transport, transport);
@@ -449,7 +450,7 @@ static void perform_stream_op_locked(void* stream_op,
       std::make_unique<grpc_binder::Transaction>(tx_code, transport->is_client);
 
   if (op->send_initial_metadata) {
-    gpr_log(GPR_INFO, "send_initial_metadata");
+    LOG(INFO) << "send_initial_metadata";
     grpc_binder::Metadata init_md;
     auto batch = op->payload->send_initial_metadata.send_initial_metadata;
 
@@ -459,12 +460,12 @@ static void perform_stream_op_locked(void* stream_op,
     tx->SetPrefix(init_md);
   }
   if (op->send_message) {
-    gpr_log(GPR_INFO, "send_message");
+    LOG(INFO) << "send_message";
     tx->SetData(op->payload->send_message.send_message->JoinIntoString());
   }
 
   if (op->send_trailing_metadata) {
-    gpr_log(GPR_INFO, "send_trailing_metadata");
+    LOG(INFO) << "send_trailing_metadata";
     auto batch = op->payload->send_trailing_metadata.send_trailing_metadata;
     grpc_binder::Metadata trailing_metadata;
 
@@ -477,7 +478,7 @@ static void perform_stream_op_locked(void* stream_op,
     tx->SetSuffix(trailing_metadata);
   }
   if (op->recv_initial_metadata) {
-    gpr_log(GPR_INFO, "recv_initial_metadata");
+    LOG(INFO) << "recv_initial_metadata";
     stream->recv_initial_metadata_ready =
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     stream->recv_initial_metadata =
@@ -500,7 +501,7 @@ static void perform_stream_op_locked(void* stream_op,
         });
   }
   if (op->recv_message) {
-    gpr_log(GPR_INFO, "recv_message");
+    LOG(INFO) << "recv_message";
     stream->recv_message_ready = op->payload->recv_message.recv_message_ready;
     stream->recv_message = op->payload->recv_message.recv_message;
     stream->call_failed_before_recv_message =
@@ -523,7 +524,7 @@ static void perform_stream_op_locked(void* stream_op,
         });
   }
   if (op->recv_trailing_metadata) {
-    gpr_log(GPR_INFO, "recv_trailing_metadata");
+    LOG(INFO) << "recv_trailing_metadata";
     stream->recv_trailing_metadata_finished =
         op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     stream->recv_trailing_metadata =
@@ -571,7 +572,7 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->on_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_complete,
                             absl_status_to_grpc_error(status));
-    gpr_log(GPR_INFO, "on_complete closure scheduled");
+    LOG(INFO) << "on_complete closure scheduled";
   }
   GRPC_BINDER_STREAM_UNREF(stream, "perform_stream_op");
 }
