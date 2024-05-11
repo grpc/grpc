@@ -102,7 +102,7 @@ int RunCallBenchmark(int port, char* root,
   int status;
 
   // start the server
-  gpr_log(GPR_INFO, "starting server");
+  LOG(INFO) << "starting server";
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_server",
                    gpr_subprocess_binary_extension()),
@@ -120,7 +120,7 @@ int RunCallBenchmark(int port, char* root,
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // start the client
-  gpr_log(GPR_INFO, "starting client");
+  LOG(INFO) << "starting client";
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_client",
                    gpr_subprocess_binary_extension()),
@@ -169,7 +169,7 @@ int RunChannelBenchmark(const std::vector<int>& server_ports, char* root) {
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // start the client
-  gpr_log(GPR_INFO, "starting client");
+  LOG(INFO) << "starting client";
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
@@ -241,13 +241,13 @@ XdsServer StartXdsServerAndConfigureBootstrap(
           {XdsResourceUtils::EdsResourceArgs::Locality(
               "here", std::move(endpoints))})));
   // Create and start server.
-  gpr_log(GPR_INFO, "starting xDS server...");
+  LOG(INFO) << "starting xDS server...";
   grpc::ServerBuilder builder;
   builder.RegisterService(xds_server.ads_service.get());
   builder.AddListeningPort(absl::StrCat("localhost:", xds_server_port),
                            grpc::InsecureServerCredentials());
   xds_server.server = builder.BuildAndStart();
-  gpr_log(GPR_INFO, "xDS server started");
+  LOG(INFO) << "xDS server started";
   return xds_server;
 }
 
@@ -274,11 +274,11 @@ int RunBenchmark(char* root, absl::string_view benchmark,
   } else if (benchmark == "channel" || benchmark == "channel_multi_address") {
     retval = RunChannelBenchmark(server_ports, root);
   } else {
-    gpr_log(GPR_INFO, "Not a valid benchmark name");
+    LOG(INFO) << "Not a valid benchmark name";
     retval = 4;
   }
   if (xds_server.server != nullptr) xds_server.server->Shutdown();
-  gpr_log(GPR_INFO, "done running benchmark");
+  LOG(INFO) << "done running benchmark";
   return retval;
 }
 

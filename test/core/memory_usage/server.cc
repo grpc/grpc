@@ -93,7 +93,7 @@ static fling_call calls[1000006];
 
 static void request_call_unary(int call_idx) {
   if (call_idx == static_cast<int>(sizeof(calls) / sizeof(fling_call))) {
-    gpr_log(GPR_INFO, "Used all call slots (10000) on server. Server exit.");
+    LOG(INFO) << "Used all call slots (10000) on server. Server exit.";
     _exit(0);
   }
   grpc_metadata_array_init(&calls[call_idx].request_metadata_recv);
@@ -138,7 +138,7 @@ static void send_snapshot(void* tag, MemStats* snapshot) {
   op++;
   op->op = GRPC_OP_SEND_MESSAGE;
   if (payload_buffer == nullptr) {
-    gpr_log(GPR_INFO, "NULL payload buffer !!!");
+    LOG(INFO) << "NULL payload buffer !!!";
   }
   op->data.send_message.send_message = payload_buffer;
   op++;
@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
 
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
-      gpr_log(GPR_INFO, "Shutting down due to SIGINT");
+      LOG(INFO) << "Shutting down due to SIGINT";
 
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, tag(1000));
@@ -301,7 +301,7 @@ int main(int argc, char** argv) {
               current_snapshot = MemStats::Snapshot();
               send_snapshot(s, &current_snapshot);
             } else {
-              gpr_log(GPR_ERROR, "Wrong call method");
+              LOG(ERROR) << "Wrong call method";
             }
             break;
           case FLING_SERVER_SEND_INIT_METADATA:

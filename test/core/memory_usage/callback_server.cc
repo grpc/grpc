@@ -60,7 +60,7 @@ class ServerCallbackImpl final
       grpc::CallbackServerContext* context,
       const grpc::testing::SimpleRequest* /* request */,
       grpc::testing::MemorySize* response) override {
-    gpr_log(GPR_INFO, "BeforeSnapshot RPC CALL RECEIVED");
+    LOG(INFO) << "BeforeSnapshot RPC CALL RECEIVED";
     response->set_rss(before_server_create);
     auto* reactor = context->DefaultReactor();
     reactor->Finish(grpc::Status::OK);
@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
   signal(SIGINT, sigint_handler);
   std::string server_address = absl::GetFlag(FLAGS_bind);
   if (server_address.empty()) {
-    gpr_log(GPR_ERROR, "Server: No port entered");
+    LOG(ERROR) << "Server: No port entered";
     return 1;
   }
   gpr_log(GPR_INFO, "Server port: %s", server_address.c_str());
@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();
   if (absl::GetFlag(FLAGS_secure)) {
-    gpr_log(GPR_INFO, "Supposed to be secure, is not yet");
+    LOG(INFO) << "Supposed to be secure, is not yet";
     // TODO (chennancy) Add in secure credentials
   }
   builder->AddListeningPort(server_address, creds);
