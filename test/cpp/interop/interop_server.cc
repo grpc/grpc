@@ -119,8 +119,8 @@ bool CheckExpectedCompression(const ServerContext& context,
   if (compression_expected) {
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Expected some compression, got NONE. This is an error.
-      gpr_log(GPR_ERROR,
-              "Expected compression but got uncompressed request from client.");
+      LOG(ERROR)
+          << "Expected compression but got uncompressed request from client.";
       return false;
     }
     if (!(inspector.WasCompressed())) {

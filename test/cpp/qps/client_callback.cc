@@ -268,7 +268,7 @@ class CallbackStreamingPingPongReactor final
 
   void OnWriteDone(bool ok) override {
     if (!ok) {
-      gpr_log(GPR_ERROR, "Error writing RPC");
+      LOG(ERROR) << "Error writing RPC";
     }
     if ((!ok || client_->ThreadCompleted()) &&
         !writes_done_started_.test_and_set()) {
@@ -284,7 +284,7 @@ class CallbackStreamingPingPongReactor final
         (client_->messages_per_stream() != 0 &&
          ++messages_issued_ >= client_->messages_per_stream())) {
       if (!ok) {
-        gpr_log(GPR_ERROR, "Error reading RPC");
+        LOG(ERROR) << "Error reading RPC";
       }
       if (!writes_done_started_.test_and_set()) {
         StartWritesDone();

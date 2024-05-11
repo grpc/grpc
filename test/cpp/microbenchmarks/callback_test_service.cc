@@ -93,7 +93,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
     }
     void OnWriteDone(bool ok) override {
       if (!ok) {
-        gpr_log(GPR_ERROR, "Server write failed");
+        LOG(ERROR) << "Server write failed";
         return;
       }
       StartRead(&request_);

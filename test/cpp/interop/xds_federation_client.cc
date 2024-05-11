@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
     CHECK(0);
   }
   if (uris.empty()) {
-    gpr_log(GPR_ERROR, "--server_uris has zero entries");
+    LOG(ERROR) << "--server_uris has zero entries";
     CHECK(0);
   }
   // construct and start clients
@@ -121,8 +121,8 @@ int main(int argc, char** argv) {
             absl::GetFlag(FLAGS_soak_request_size),
             absl::GetFlag(FLAGS_soak_response_size));
       } else {
-        gpr_log(GPR_ERROR,
-                "Invalid test case, must be either rpc_soak or channel_soak");
+        LOG(ERROR)
+            << "Invalid test case, must be either rpc_soak or channel_soak";
         CHECK(0);
       }
     }));
@@ -130,6 +130,6 @@ int main(int argc, char** argv) {
   for (auto& thd : threads) {
     thd.join();
   }
-  gpr_log(GPR_INFO, "All clients done!");
+  LOG(INFO) << "All clients done!";
   return 0;
 }

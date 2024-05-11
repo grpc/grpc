@@ -253,7 +253,7 @@ int main(int argc, char** argv) {
 
   // Parse test cases and weights
   if (absl::GetFlag(FLAGS_test_cases).length() == 0) {
-    gpr_log(GPR_ERROR, "No test cases supplied");
+    LOG(ERROR) << "No test cases supplied";
     return 1;
   }
 
@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
   WeightedRandomTestSelector test_selector(tests);
   MetricsServiceImpl metrics_service;
 
-  gpr_log(GPR_INFO, "Starting test(s)..");
+  LOG(INFO) << "Starting test(s)..";
 
   std::vector<std::thread> test_threads;
   std::vector<std::unique_ptr<StressTestInteropClient>> clients;

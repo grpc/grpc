@@ -429,7 +429,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
 }
 
 grpc::CsmObservability EnableCsmObservability() {
-  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+  VLOG(2) << "Registering Prometheus exporter";
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE
   // pods

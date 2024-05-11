@@ -487,11 +487,11 @@ TEST_F(LoadReportTest, BasicReport) {
   // First fetch.
   load_reporter_->FetchAndSample();
   load_reporter_->GenerateLoads(kHostname1, kLbId1);
-  gpr_log(GPR_INFO, "First load generated.");
+  LOG(INFO) << "First load generated.";
   // Second fetch.
   load_reporter_->FetchAndSample();
   load_reporter_->GenerateLoads(kHostname2, kLbId2);
-  gpr_log(GPR_INFO, "Second load generated.");
+  LOG(INFO) << "Second load generated.";
   // TODO(juanlishen): Verify the data.
 }
 

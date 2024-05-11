@@ -77,7 +77,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
                                       grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
-    gpr_log(GPR_DEBUG, "no-op");
+    VLOG(2) << "no-op";
     return absl::OkStatus();
   }
 

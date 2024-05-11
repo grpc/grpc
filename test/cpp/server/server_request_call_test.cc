@@ -99,8 +99,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       {
         std::lock_guard<std::mutex> lock(mu);
         if (shutting_down) {
-          gpr_log(GPR_INFO,
-                  "shut down while processing call, not calling Finish()");
+          LOG(INFO) << "shut down while processing call, not calling Finish()";
           // Continue flushing the CQ.
           continue;
         }
@@ -138,12 +137,12 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
                      std::chrono::milliseconds(1));
     grpc::Status status = stub->Echo(&ctx, request, &response);
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
-    gpr_log(GPR_INFO, "Success.");
+    LOG(INFO) << "Success.";
   }
-  gpr_log(GPR_INFO, "Done sending RPCs.");
+  LOG(INFO) << "Done sending RPCs.";
 
   // Shut down everything properly.
-  gpr_log(GPR_INFO, "Shutting down.");
+  LOG(INFO) << "Shutting down.";
   {
     std::lock_guard<std::mutex> lock(mu);
     shutting_down = true;
@@ -226,7 +225,7 @@ TEST(ServerRequestCallTest, MultithreadedUnimplementedService) {
   }
 
   // Shut down everything properly.
-  gpr_log(GPR_INFO, "Shutting down.");
+  LOG(INFO) << "Shutting down.";
   shutdown.store(true);
   server->Shutdown();
   cq->Shutdown();

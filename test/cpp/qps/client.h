@@ -557,7 +557,7 @@ class ClientImpl : public Client {
         } else if (channel_arg.value_case() == ChannelArg::kIntValue) {
           args->SetInt(channel_arg.name(), channel_arg.int_value());
         } else {
-          gpr_log(GPR_ERROR, "Empty channel arg value.");
+          LOG(ERROR) << "Empty channel arg value.";
         }
       }
     }

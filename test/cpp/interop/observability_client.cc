@@ -160,8 +160,8 @@ bool ParseAdditionalMetadataFlag(
   while (start_pos < flag.length()) {
     size_t colon_pos = flag.find(':', start_pos);
     if (colon_pos == std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Couldn't parse metadata flag: extra characters at end of flag");
+      LOG(ERROR)
+          << "Couldn't parse metadata flag: extra characters at end of flag";
       return false;
     }
     size_t semicolon_pos = flag.find(';', colon_pos);
@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
   // TODO(stanleycheung): switch to CsmObservabilityBuilder once xds setup is
   // ready
   if (absl::GetFlag(FLAGS_enable_otel_plugin)) {
-    gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+    VLOG(2) << "Registering Prometheus exporter";
     opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
     // default was "localhost:9464" which causes connection issue across GKE
     // pods

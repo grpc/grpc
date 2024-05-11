@@ -74,7 +74,7 @@ static void get_cpu_usage(unsigned long long* total_cpu_time,
   // Use the parameters to avoid unused-parameter warning
   (void)total_cpu_time;
   (void)idle_cpu_time;
-  gpr_log(GPR_INFO, "get_cpu_usage(): Non-linux platform is not supported.");
+  LOG(INFO) << "get_cpu_usage(): Non-linux platform is not supported.";
 #endif
 }
 

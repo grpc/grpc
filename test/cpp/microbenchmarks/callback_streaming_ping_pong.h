@@ -54,7 +54,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnReadDone(bool ok) override {
     if (!ok) {
-      gpr_log(GPR_ERROR, "Client read failed");
+      LOG(ERROR) << "Client read failed";
       return;
     }
     MaybeWrite();
@@ -62,7 +62,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
 
   void OnWriteDone(bool ok) override {
     if (!ok) {
-      gpr_log(GPR_ERROR, "Client write failed");
+      LOG(ERROR) << "Client write failed";
       return;
     }
     writes_complete_++;

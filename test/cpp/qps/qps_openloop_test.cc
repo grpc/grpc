@@ -36,7 +36,7 @@ static const int WARMUP = 1;
 static const int BENCHMARK = 3;
 
 static void RunQPS() {
-  gpr_log(GPR_INFO, "Running QPS test, open-loop");
+  LOG(INFO) << "Running QPS test, open-loop";
 
   ClientConfig client_config;
   client_config.set_client_type(ASYNC_CLIENT);

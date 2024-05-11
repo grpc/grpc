@@ -44,7 +44,7 @@ ABSL_FLAG(bool, enable_csm_observability, false,
           "Whether to enable CSM Observability");
 
 grpc::CsmObservability EnableCsmObservability() {
-  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+  VLOG(2) << "Registering Prometheus exporter";
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE
   // pods

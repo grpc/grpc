@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   // concurrently running test binary
   srand(getpid());
   if (!grpc_ipv6_loopback_available()) {
-    gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
+    LOG(INFO) << "Can't bind to ::1.  Skipping IPv6 tests.";
     do_ipv6 = 0;
   }
   // figure out where we are
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
     if (ret != 0) return ret;
   }
   // wait for server
-  gpr_log(GPR_INFO, "Waiting for server");
+  LOG(INFO) << "Waiting for server";
   kill(svr, SIGINT);
   if (waitpid(svr, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;

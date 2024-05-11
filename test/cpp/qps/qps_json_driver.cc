@@ -187,7 +187,7 @@ static double BinarySearch(
         GetCpuLoad(scenario, mid, per_worker_credential_types, success);
     gpr_log(GPR_DEBUG, "Binary Search: current_offered_load %.0f", mid);
     if (!*success) {
-      gpr_log(GPR_ERROR, "Client/Server Failure");
+      LOG(ERROR) << "Client/Server Failure";
       break;
     }
     if (targeted_cpu_load <= current_cpu_load) {
@@ -209,7 +209,7 @@ static double SearchOfferedLoad(
   double current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                        per_worker_credential_types, success);
   if (current_cpu_load > targeted_cpu_load) {
-    gpr_log(GPR_ERROR, "Initial offered load too high");
+    LOG(ERROR) << "Initial offered load too high";
     return -1;
   }
 
@@ -284,7 +284,7 @@ static bool QpsDriver() {
         GetCpuLoad(scenario, targeted_offered_load, per_worker_credential_types,
                    &success);
       } else {
-        gpr_log(GPR_ERROR, "Unimplemented search param");
+        LOG(ERROR) << "Unimplemented search param";
       }
     }
   }
