@@ -273,8 +273,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const std::string& json_key, long token_lifetime_seconds) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
-    gpr_log(GPR_ERROR,
-            "Trying to create JWTCredentials with non-positive lifetime");
+    LOG(ERROR) << "Trying to create JWTCredentials with non-positive lifetime";
     return WrapCallCredentials(nullptr);
   }
   gpr_timespec lifetime =

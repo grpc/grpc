@@ -415,7 +415,7 @@ void ObservabilityLoggingSink::MaybeTriggerFlushLocked() {
   if (entries_.size() > kMaxEntriesBeforeDump ||
       entries_memory_footprint_ > kMaxMemoryFootprintBeforeDump) {
     // Buffer limits have been reached. Dump entries with gpr_log
-    gpr_log(GPR_INFO, "Buffer limit reached. Dumping log entries.");
+    LOG(INFO) << "Buffer limit reached. Dumping log entries.";
     for (auto& entry : entries_) {
       google::protobuf::Struct proto;
       std::string timestamp = entry.timestamp.ToString();

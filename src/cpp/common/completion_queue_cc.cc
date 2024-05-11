@@ -134,8 +134,7 @@ CompletionQueue::CompletionQueue(grpc_completion_queue* take)
 void CompletionQueue::Shutdown() {
 #ifndef NDEBUG
   if (!ServerListEmpty()) {
-    gpr_log(GPR_ERROR,
-            "CompletionQueue shutdown being shutdown before its server.");
+    LOG(ERROR) << "CompletionQueue shutdown being shutdown before its server.";
   }
 #endif
   CompleteAvalanching();

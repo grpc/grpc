@@ -446,7 +446,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
       deserialized_request_ = handler->Deserialize(call_, request_payload_,
                                                    &request_status_, nullptr);
       if (!request_status_.ok()) {
-        gpr_log(GPR_DEBUG, "Failed to deserialize message.");
+        VLOG(2) << "Failed to deserialize message.";
       }
       request_payload_ = nullptr;
       interceptor_methods_.AddInterceptionHookPoint(
@@ -689,7 +689,7 @@ class Server::CallbackRequest final
             req_->call_, req_->request_payload_, &req_->request_status_,
             &req_->handler_data_);
         if (!(req_->request_status_.ok())) {
-          gpr_log(GPR_DEBUG, "Failed to deserialize message.");
+          VLOG(2) << "Failed to deserialize message.";
         }
         req_->request_payload_ = nullptr;
         req_->interceptor_methods_.AddInterceptionHookPoint(

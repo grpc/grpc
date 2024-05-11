@@ -400,7 +400,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   if (has_callback_methods) {
-    gpr_log(GPR_INFO, "Callback server.");
+    LOG(INFO) << "Callback server.";
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(
@@ -445,7 +445,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     if (passive_listener != nullptr) {
       auto* creds = unstarted_listener.credentials->c_creds();
       if (creds == nullptr) {
-        gpr_log(GPR_ERROR, "Credentials missing for PassiveListener");
+        LOG(ERROR) << "Credentials missing for PassiveListener";
         return nullptr;
       }
       auto success = grpc_server_add_passive_listener(
@@ -459,8 +459,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   if (!has_frequently_polled_cqs) {
-    gpr_log(GPR_ERROR,
-            "At least one of the completion queues must be frequently polled");
+    LOG(ERROR) << "At least one of the completion queues must be frequently polled";
     return nullptr;
   }
 

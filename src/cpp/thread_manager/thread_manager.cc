@@ -41,7 +41,7 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
       [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
       this, &created_);
   if (!created_) {
-    gpr_log(GPR_ERROR, "Could not create grpc_sync_server worker-thread");
+    LOG(ERROR) << "Could not create grpc_sync_server worker-thread";
   }
 }
 
