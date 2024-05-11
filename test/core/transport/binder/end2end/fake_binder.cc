@@ -173,10 +173,10 @@ void TransactionProcessor::SetDelay(absl::Duration delay) {
 
 void TransactionProcessor::Terminate() {
   if (!terminated_.load(std::memory_order_seq_cst)) {
-    gpr_log(GPR_INFO, "Terminating the processor");
+    LOG(INFO) << "Terminating the processor";
     terminated_.store(true, std::memory_order_seq_cst);
     tx_thread_.Join();
-    gpr_log(GPR_INFO, "Processor terminated");
+    LOG(INFO) << "Processor terminated";
   }
 }
 

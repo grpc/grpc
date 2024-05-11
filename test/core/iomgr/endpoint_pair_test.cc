@@ -146,7 +146,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 TEST(EndpointPairTest, MainTest) {
 #ifdef GPR_WINDOWS
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    gpr_log(GPR_INFO, "Skipping pathological EventEngine test on Windows");
+    LOG(INFO) << "Skipping pathological EventEngine test on Windows";
     return;
   }
 #endif

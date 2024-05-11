@@ -288,7 +288,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
     close(clifd);
     return GRPC_OS_ERROR(errno, "connect");
   }
-  gpr_log(GPR_DEBUG, "wait");
+  VLOG(2) << "wait";
   while (g_nconnects == nconnects_before &&
          deadline > grpc_core::Timestamp::Now()) {
     grpc_pollset_worker* worker = nullptr;
@@ -303,7 +303,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
 
     gpr_mu_lock(g_mu);
   }
-  gpr_log(GPR_DEBUG, "wait done");
+  VLOG(2) << "wait done";
   if (g_nconnects != nconnects_before + 1) {
     gpr_mu_unlock(g_mu);
     close(clifd);
@@ -482,7 +482,7 @@ static int pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
 
   int pre_fd = socket(address.sin6_family, SOCK_STREAM, 0);
   if (pre_fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create inet socket: %m");
+    LOG(ERROR) << "Unable to create inet socket: %m";
     return -1;
   }
 
@@ -492,13 +492,13 @@ static int pre_allocate_inet_sock(grpc_tcp_server* s, int family, int port,
   int b = bind(pre_fd, reinterpret_cast<struct sockaddr*>(&address),
                sizeof(address));
   if (b < 0) {
-    gpr_log(GPR_ERROR, "Unable to bind inet socket: %m");
+    LOG(ERROR) << "Unable to bind inet socket: %m";
     return -1;
   }
 
   int l = listen(pre_fd, SOMAXCONN);
   if (l < 0) {
-    gpr_log(GPR_ERROR, "Unable to listen on inet socket: %m");
+    LOG(ERROR) << "Unable to listen on inet socket: %m";
     return -1;
   }
 
@@ -587,20 +587,20 @@ static int pre_allocate_unix_sock(grpc_tcp_server* s, const char* path,
 
   int pre_fd = socket(address.sun_family, SOCK_STREAM, 0);
   if (pre_fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create unix socket: %m");
+    LOG(ERROR) << "Unable to create unix socket: %m";
     return -1;
   }
 
   int b = bind(pre_fd, reinterpret_cast<struct sockaddr*>(&address),
                sizeof(address));
   if (b < 0) {
-    gpr_log(GPR_ERROR, "Unable to bind unix socket: %m");
+    LOG(ERROR) << "Unable to bind unix socket: %m";
     return -1;
   }
 
   int l = listen(pre_fd, SOMAXCONN);
   if (l < 0) {
-    gpr_log(GPR_ERROR, "Unable to listen on unix socket: %m");
+    LOG(ERROR) << "Unable to listen on unix socket: %m";
     return -1;
   }
 
@@ -679,8 +679,8 @@ static void test_pre_allocated_unix_fd() {
   // If the path no longer exists, errno is 2. This can happen when
   // runninig the test multiple times in parallel. Do not fail the test
   if (absl::IsUnknown(res_conn) && res_conn.raw_code() == 2) {
-    gpr_log(GPR_ERROR,
-            "Unable to test pre_allocated unix socket: path does not exist");
+    LOG(ERROR)
+        << "Unable to test pre_allocated unix socket: path does not exist";
     grpc_tcp_server_unref(s);
     close(pre_fd);
     return;

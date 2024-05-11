@@ -112,7 +112,7 @@ int main(int argc, char** argv) {
     }
     creds = grpc_google_compute_engine_credentials_create(nullptr);
     if (creds == nullptr) {
-      gpr_log(GPR_ERROR, "Could not create gce credentials.");
+      LOG(ERROR) << "Could not create gce credentials.";
       exit(1);
     }
   } else if (json_refresh_token_file_path != nullptr) {

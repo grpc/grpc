@@ -418,7 +418,7 @@ TEST_F(KeepaliveThrottlingTest, KeepaliveThrottlingMultipleChannels) {
             GRPC_STATUS_DEADLINE_EXCEEDED);
   // Since the subchannel is shared, the second channel should also have
   // keepalive settings in sync with the server.
-  gpr_log(GPR_INFO, "Now testing second channel sharing the same subchannel");
+  LOG(INFO) << "Now testing second channel sharing the same subchannel";
   EXPECT_EQ(PerformWaitingCall(channel_dup, server, cq),
             GRPC_STATUS_DEADLINE_EXCEEDED);
   // shutdown and destroy the client and server

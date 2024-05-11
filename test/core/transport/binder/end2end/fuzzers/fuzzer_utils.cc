@@ -139,7 +139,7 @@ TransactionReceiverForFuzzing::TransactionReceiverForFuzzing(
     binder_transport_fuzzer::IncomingParcels incoming_parcels,
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) {
-  gpr_log(GPR_INFO, "Construct TransactionReceiverForFuzzing");
+  LOG(INFO) << "Construct TransactionReceiverForFuzzing";
   CreateFuzzingThread(FuzzingLoop, std::move(incoming_parcels),
                       std::move(wire_reader_ref), std::move(cb));
 }

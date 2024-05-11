@@ -230,7 +230,7 @@ class InterceptionChainTest : public ::testing::Test {
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(
         "run_call", [destination, &call, &trailing_md]() mutable {
-          gpr_log(GPR_INFO, "👊 start call");
+          LOG(INFO) << "👊 start call";
           destination->StartCall(std::move(call.handler));
           return Map(call.initiator.PullServerTrailingMetadata(),
                      [&trailing_md](ServerMetadataHandle md) {

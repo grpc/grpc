@@ -228,11 +228,11 @@ class TestServer {
         grpc_completion_queue_destroy(call_cq);
       }
     }
-    gpr_log(GPR_INFO, "test server shutdown, joining RPC threads...");
+    LOG(INFO) << "test server shutdown, joining RPC threads...";
     for (auto& t : rpc_threads) {
       t.join();
     }
-    gpr_log(GPR_INFO, "test server threads all finished!");
+    LOG(INFO) << "test server threads all finished!";
   }
 
   static void HandleOneRpc(grpc_call* call, grpc_completion_queue* call_cq) {
@@ -337,7 +337,7 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   for (auto& thread : threads) {
     thread.join();
   }
-  gpr_log(GPR_DEBUG, "All RPCs completed!");
+  VLOG(2) << "All RPCs completed!";
   int num_calls_seen_at_server = test_server->ShutdownAndGetNumCallsHandled();
   if (num_calls_seen_at_server != kNumCalls) {
     gpr_log(GPR_ERROR,

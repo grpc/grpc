@@ -93,19 +93,19 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
 
     // Verifications
     if (first_frame && type != GRPC_CHTTP2_FRAME_HEADER) {
-      gpr_log(GPR_ERROR, "expected first frame to be of type header");
+      LOG(ERROR) << "expected first frame to be of type header";
       gpr_log(GPR_ERROR, "EXPECT: 0x%x", GRPC_CHTTP2_FRAME_HEADER);
       gpr_log(GPR_ERROR, "GOT:    0x%x", type);
       EXPECT_TRUE(false);
     } else if (first_frame && header_is_eof &&
                !(flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM)) {
-      gpr_log(GPR_ERROR, "missing END_STREAM flag in HEADER frame");
+      LOG(ERROR) << "missing END_STREAM flag in HEADER frame";
       EXPECT_TRUE(false);
     }
     if (is_closed &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
-      gpr_log(GPR_ERROR,
-              "stream is closed; new frame headers and data are not allowed");
+      LOG(ERROR)
+          << "stream is closed; new frame headers and data are not allowed";
       EXPECT_TRUE(false);
     }
     if (end_header && (type == GRPC_CHTTP2_FRAME_HEADER ||
@@ -117,8 +117,8 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     }
     if (in_header &&
         (type == GRPC_CHTTP2_FRAME_DATA || type == GRPC_CHTTP2_FRAME_HEADER)) {
-      gpr_log(GPR_ERROR,
-              "parsing frame header; new headers and data are not allowed");
+      LOG(ERROR)
+          << "parsing frame header; new headers and data are not allowed";
       EXPECT_TRUE(false);
     }
     if (flags & ~(GRPC_CHTTP2_DATA_FLAG_END_STREAM |
@@ -137,7 +137,7 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     if (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
       is_closed = true;
       if (type == GRPC_CHTTP2_FRAME_CONTINUATION) {
-        gpr_log(GPR_ERROR, "unexpected END_STREAM flag in CONTINUATION frame");
+        LOG(ERROR) << "unexpected END_STREAM flag in CONTINUATION frame";
         EXPECT_TRUE(false);
       }
     }

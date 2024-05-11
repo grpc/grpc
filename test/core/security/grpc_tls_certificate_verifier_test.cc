@@ -107,7 +107,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
   EXPECT_FALSE(core_external_verifier.Verify(
       &request_,
       [&callback_completed_event](absl::Status async_status) {
-        gpr_log(GPR_INFO, "Callback is invoked.");
+        LOG(INFO) << "Callback is invoked.";
         EXPECT_EQ(async_status.code(), absl::StatusCode::kUnauthenticated);
         EXPECT_EQ(async_status.ToString(),
                   "UNAUTHENTICATED: AsyncExternalVerifier failed");

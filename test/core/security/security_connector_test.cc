@@ -144,7 +144,7 @@ static int check_spiffe_id(const grpc_auth_context* ctx,
     return 0;
   }
   if (prop == nullptr && expect_spiffe_id) {
-    gpr_log(GPR_ERROR, "SPIFFE ID expected, but got nullptr.");
+    LOG(ERROR) << "SPIFFE ID expected, but got nullptr.";
     return 0;
   }
   if (strncmp(prop->value, expected_spiffe_id, prop->value_length) != 0) {
@@ -153,7 +153,7 @@ static int check_spiffe_id(const grpc_auth_context* ctx,
     return 0;
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    gpr_log(GPR_ERROR, "Expected only one property for SPIFFE ID.");
+    LOG(ERROR) << "Expected only one property for SPIFFE ID.";
     return 0;
   }
   return 1;

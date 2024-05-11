@@ -259,17 +259,17 @@ TEST(SettingsTimeout, Basic) {
   ServerThread server_thread(server_address_string.c_str());
   server_thread.Start();
   // Create client and connect to server.
-  gpr_log(GPR_INFO, "starting client connect");
+  LOG(INFO) << "starting client connect";
   Client client(server_address_string.c_str());
   client.Connect();
   // Client read.  Should fail due to server dropping connection.
-  gpr_log(GPR_INFO, "starting client read");
+  LOG(INFO) << "starting client read";
   EXPECT_TRUE(client.ReadUntilError());
   // Shut down client.
-  gpr_log(GPR_INFO, "shutting down client");
+  LOG(INFO) << "shutting down client";
   client.Shutdown();
   // Shut down server.
-  gpr_log(GPR_INFO, "shutting down server");
+  LOG(INFO) << "shutting down server";
   server_thread.Shutdown();
   // Clean up.
 }

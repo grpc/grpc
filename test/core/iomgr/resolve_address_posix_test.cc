@@ -168,13 +168,13 @@ static void test_named_and_numeric_scope_ids(void) {
   }
   ASSERT_GT(strlen(arbitrary_interface_name), 0);
   // Test resolution of an ipv6 address with a named scope ID
-  gpr_log(GPR_DEBUG, "test resolution with a named scope ID");
+  VLOG(2) << "test resolution with a named scope ID";
   std::string target_with_named_scope_id =
       absl::StrFormat("fe80::1234%%%s", arbitrary_interface_name);
   resolve_address_must_succeed(target_with_named_scope_id.c_str());
   gpr_free(arbitrary_interface_name);
   // Test resolution of an ipv6 address with a numeric scope ID
-  gpr_log(GPR_DEBUG, "test resolution with a numeric scope ID");
+  VLOG(2) << "test resolution with a numeric scope ID";
   std::string target_with_numeric_scope_id =
       absl::StrFormat("fe80::1234%%%d", interface_index);
   resolve_address_must_succeed(target_with_numeric_scope_id.c_str());
@@ -194,7 +194,7 @@ TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
   } else if (resolver_type == "ares") {
     overrides.dns_resolver = "ares";
   } else {
-    gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
+    LOG(ERROR) << "--resolver was not set to ares or native";
     ASSERT_TRUE(false);
   }
   grpc_core::ConfigVars::SetOverrides(overrides);
