@@ -50,7 +50,7 @@ grpc_gcp_HandshakerReq* grpc_gcp_handshaker_req_decode(grpc_slice slice,
   grpc_gcp_HandshakerReq* resp = grpc_gcp_HandshakerReq_parse(
       reinterpret_cast<char*>(buf), buf_size, arena);
   if (!resp) {
-    gpr_log(GPR_ERROR, "grpc_gcp_HandshakerReq decode error");
+    LOG(ERROR) << "grpc_gcp_HandshakerReq decode error";
     return nullptr;
   }
   return resp;

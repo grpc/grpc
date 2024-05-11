@@ -65,7 +65,7 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
       break;
     }
     default: {
-      gpr_log(GPR_ERROR, "Unknown completion type");
+      LOG(ERROR) << "Unknown completion type";
       break;
     }
   }

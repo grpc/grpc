@@ -297,7 +297,7 @@ class Fuzzer {
     gpr_log(GPR_INFO, "    stream=%p", stream.get());
     auto message = stream->WaitForMessageFromClient(absl::ZeroDuration());
     if (message.has_value()) {
-      gpr_log(GPR_INFO, "    completing send_message");
+      LOG(INFO) << "    completing send_message";
       stream->CompleteSendMessageFromClient(ok);
     }
   }

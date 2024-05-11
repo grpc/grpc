@@ -77,7 +77,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
     DWORD bytes_rcvd;
     on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
                                        &read_called, &read_wsabuf]() {
-      gpr_log(GPR_DEBUG, "Notified on read");
+      VLOG(2) << "Notified on read";
       EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
       read_called.Notify();
@@ -96,7 +96,7 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   }
   {
     on_write = new AnyInvocableClosure([&write_called] {
-      gpr_log(GPR_DEBUG, "Notified on write");
+      VLOG(2) << "Notified on write";
       write_called.Notify();
     });
     wrapped_server_socket->NotifyOnWrite(on_write);
@@ -153,7 +153,7 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
     wrapped_client_socket->NotifyOnRead(
         SelfDeletingClosure::Create([win_socket = wrapped_client_socket.get(),
                                      &read_called, &read_wsabuf]() {
-          gpr_log(GPR_DEBUG, "Notified on read");
+          VLOG(2) << "Notified on read";
           EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
           EXPECT_STREQ(read_wsabuf.buf, "hello!");
           read_called.Notify();

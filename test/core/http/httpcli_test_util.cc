@@ -86,7 +86,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
         absl::StrCat(root, "/src/core/tsi/test_creds/ca.pem");
     ConfigVars::SetOverrides(overrides);
   }
-  gpr_log(GPR_INFO, "starting HttpRequest test server subprocess:");
+  LOG(INFO) << "starting HttpRequest test server subprocess:";
   for (size_t i = 0; i < args.size(); i++) {
     gpr_log(GPR_INFO, "  HttpRequest test server subprocess argv[%ld]: %s", i,
             args[i]);

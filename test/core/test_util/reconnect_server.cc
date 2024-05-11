@@ -37,7 +37,7 @@ static void pretty_print_backoffs(reconnect_server* server) {
   int i = 1;
   double expected_backoff = 1000.0, backoff;
   timestamp_list* head = server->head;
-  gpr_log(GPR_INFO, "reconnect server: new connection");
+  LOG(INFO) << "reconnect server: new connection";
   for (head = server->head; head && head->next; head = head->next, i++) {
     diff = gpr_time_sub(head->next->timestamp, head->timestamp);
     backoff = gpr_time_to_millis(diff);
@@ -73,7 +73,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     server->peer = new std::string(peer);
   } else {
     if (last_colon == std::string::npos) {
-      gpr_log(GPR_ERROR, "peer does not contain a ':'");
+      LOG(ERROR) << "peer does not contain a ':'";
     } else if (peer.compare(0, static_cast<size_t>(last_colon),
                             *server->peer) != 0) {
       gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer->c_str(),

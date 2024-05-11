@@ -43,7 +43,7 @@
 ///  gpr_cmdline_destroy(cl);
 
 ///  if (verbose) {
-///    gpr_log(GPR_INFO, "Goodbye cruel world!");
+///    LOG(INFO) << "Goodbye cruel world!";
 ///  }
 
 ///  return 0;

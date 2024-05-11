@@ -192,7 +192,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
 
   // First round, no server
   {
-    gpr_log(GPR_DEBUG, "Wave 1");
+    VLOG(2) << "Wave 1";
     grpc_core::Thread threads[NUM_THREADS];
     args.addr = "localhost:54321";
     for (auto& th : threads) {
@@ -207,7 +207,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
 
   // Second round, actual grpc server
   {
-    gpr_log(GPR_DEBUG, "Wave 2");
+    VLOG(2) << "Wave 2";
     int port = grpc_pick_unused_port_or_die();
     args.addr = absl::StrCat("localhost:", port);
     args.server = grpc_server_create(nullptr, nullptr);
@@ -239,7 +239,7 @@ TEST(ConcurrentConnectivityTest, RunConcurrentConnectivityTest) {
 
   // Third round, bogus tcp server
   {
-    gpr_log(GPR_DEBUG, "Wave 3");
+    VLOG(2) << "Wave 3";
     auto* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &args.mu);
     args.pollset.push_back(pollset);

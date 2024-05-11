@@ -255,7 +255,7 @@ bool PosixOracleEndpoint::Write(
 }
 
 void PosixOracleEndpoint::ProcessReadOperations() {
-  gpr_log(GPR_INFO, "Starting thread to process read ops ...");
+  LOG(INFO) << "Starting thread to process read ops ...";
   while (true) {
     read_op_signal_->WaitForNotification();
     read_op_signal_ = std::make_unique<grpc_core::Notification>();
@@ -273,11 +273,11 @@ void PosixOracleEndpoint::ProcessReadOperations() {
                                               grpc_core::StrError(saved_errno)))
                            : absl::OkStatus());
   }
-  gpr_log(GPR_INFO, "Shutting down read ops thread ...");
+  LOG(INFO) << "Shutting down read ops thread ...";
 }
 
 void PosixOracleEndpoint::ProcessWriteOperations() {
-  gpr_log(GPR_INFO, "Starting thread to process write ops ...");
+  LOG(INFO) << "Starting thread to process write ops ...";
   while (true) {
     write_op_signal_->WaitForNotification();
     write_op_signal_ = std::make_unique<grpc_core::Notification>();
@@ -293,7 +293,7 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
                                         grpc_core::StrError(saved_errno)))
                      : absl::OkStatus());
   }
-  gpr_log(GPR_INFO, "Shutting down write ops thread ...");
+  LOG(INFO) << "Shutting down write ops thread ...";
 }
 
 PosixOracleListener::PosixOracleListener(
@@ -341,7 +341,7 @@ PosixOracleListener::~PosixOracleListener() {
 }
 
 void PosixOracleListener::HandleIncomingConnections() {
-  gpr_log(GPR_INFO, "Starting accept thread ...");
+  LOG(INFO) << "Starting accept thread ...";
   CHECK(!listener_fds_.empty());
   int nfds = listener_fds_.size();
   // Add one extra file descriptor to poll the pipe fd.
@@ -381,7 +381,7 @@ void PosixOracleListener::HandleIncomingConnections() {
                  memory_allocator_factory_->CreateMemoryAllocator("test"));
     }
   }
-  gpr_log(GPR_INFO, "Shutting down accept thread ...");
+  LOG(INFO) << "Shutting down accept thread ...";
   gpr_free(pfds);
 }
 

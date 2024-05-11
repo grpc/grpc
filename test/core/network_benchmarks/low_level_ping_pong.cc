@@ -263,16 +263,16 @@ static int epoll_setup(thread_args* args) {
 static void server_thread(thread_args* args) {
   char* buf = static_cast<char*>(gpr_malloc(args->msg_size));
   if (args->setup(args) < 0) {
-    gpr_log(GPR_ERROR, "Setup failed");
+    LOG(ERROR) << "Setup failed";
   }
   for (;;) {
     if (args->read_bytes(args, buf) < 0) {
-      gpr_log(GPR_ERROR, "Server read failed");
+      LOG(ERROR) << "Server read failed";
       gpr_free(buf);
       return;
     }
     if (args->write_bytes(args, buf) < 0) {
-      gpr_log(GPR_ERROR, "Server write failed");
+      LOG(ERROR) << "Server write failed";
       gpr_free(buf);
       return;
     }
@@ -310,16 +310,16 @@ static void client_thread(thread_args* args) {
   int i;
 
   if (args->setup(args) < 0) {
-    gpr_log(GPR_ERROR, "Setup failed");
+    LOG(ERROR) << "Setup failed";
   }
   for (i = 0; i < kNumIters; ++i) {
     start_time = now();
     if (args->write_bytes(args, buf) < 0) {
-      gpr_log(GPR_ERROR, "Client write failed");
+      LOG(ERROR) << "Client write failed";
       goto error;
     }
     if (args->read_bytes(args, buf) < 0) {
-      gpr_log(GPR_ERROR, "Client read failed");
+      LOG(ERROR) << "Client read failed";
       goto error;
     }
     end_time = now();
@@ -438,19 +438,19 @@ static int create_sockets_tcp(fd_pair* client_fds, fd_pair* server_fds) {
 
   listen_fd = create_listening_socket(sa_port, sizeof(port));
   if (listen_fd == -1) {
-    gpr_log(GPR_ERROR, "Listen failed");
+    LOG(ERROR) << "Listen failed";
     goto error;
   }
 
   client_fd = connect_client(sa_port, sizeof(port));
   if (client_fd == -1) {
-    gpr_log(GPR_ERROR, "Connect failed");
+    LOG(ERROR) << "Connect failed";
     goto error;
   }
 
   server_fd = accept_server(listen_fd);
   if (server_fd == -1) {
-    gpr_log(GPR_ERROR, "Accept failed");
+    LOG(ERROR) << "Accept failed";
     goto error;
   }
 
@@ -663,7 +663,7 @@ int main(int argc, char** argv) {
   }
 
   if (read_strategy == nullptr) {
-    gpr_log(GPR_INFO, "No strategy specified, running all benchmarks");
+    LOG(INFO) << "No strategy specified, running all benchmarks";
     return run_all_benchmarks(static_cast<size_t>(msg_size));
   }
 

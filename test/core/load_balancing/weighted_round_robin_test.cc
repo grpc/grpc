@@ -270,7 +270,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     size_t num_picks = NumPicksNeeded(expected);
     absl::Time deadline = absl::Now() + timeout;
     while (true) {
-      gpr_log(GPR_INFO, "TOP OF LOOP");
+      LOG(INFO) << "TOP OF LOOP";
       // We need to see the expected weights for 3 consecutive passes, just
       // to make sure we're consistently returning the right weights.
       size_t num_passes = 0;
@@ -321,7 +321,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
             << location.file() << ":" << location.line();
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
-        gpr_log(GPR_INFO, "running timer callback...");
+        LOG(INFO) << "running timer callback...";
         // Increment time and run any timer callbacks.
         IncrementTimeBy(Duration::Seconds(1));
       }
@@ -1150,7 +1150,7 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
               ::testing::Optional(0));
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  gpr_log(GPR_INFO, "advancing time to trigger staleness...");
+  LOG(INFO) << "advancing time to trigger staleness...";
   IncrementTimeBy(Duration::Seconds(2));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(

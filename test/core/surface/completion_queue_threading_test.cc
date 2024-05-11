@@ -61,7 +61,7 @@ static void shutdown_and_destroy(grpc_completion_queue* cc) {
       break;
     }
     default: {
-      gpr_log(GPR_ERROR, "Unknown completion type");
+      LOG(ERROR) << "Unknown completion type";
       break;
     }
   }
@@ -252,17 +252,17 @@ static void test_threading(size_t producers, size_t consumers) {
 
   // start phase1: producers will pre-declare all operations they will
   // complete
-  gpr_log(GPR_INFO, "start phase 1");
+  LOG(INFO) << "start phase 1";
   gpr_event_set(&phase1, reinterpret_cast<void*>(1));
 
-  gpr_log(GPR_INFO, "wait phase 1");
+  LOG(INFO) << "wait phase 1";
   for (i = 0; i < producers + consumers; i++) {
     ASSERT_TRUE(gpr_event_wait(&options[i].on_phase1_done, ten_seconds_time()));
   }
-  gpr_log(GPR_INFO, "done phase 1");
+  LOG(INFO) << "done phase 1";
 
   // start phase2: operations will complete, and consumers will consume them
-  gpr_log(GPR_INFO, "start phase 2");
+  LOG(INFO) << "start phase 2";
   gpr_event_set(&phase2, reinterpret_cast<void*>(1));
 
   // in parallel, we shutdown the completion channel - all events should still
@@ -270,11 +270,11 @@ static void test_threading(size_t producers, size_t consumers) {
   grpc_completion_queue_shutdown(cc);
 
   // join all threads
-  gpr_log(GPR_INFO, "wait phase 2");
+  LOG(INFO) << "wait phase 2";
   for (i = 0; i < producers + consumers; i++) {
     ASSERT_TRUE(gpr_event_wait(&options[i].on_finished, ten_seconds_time()));
   }
-  gpr_log(GPR_INFO, "done phase 2");
+  LOG(INFO) << "done phase 2";
 
   // destroy the completion channel
   grpc_completion_queue_destroy(cc);

@@ -114,8 +114,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
                 participants[slot].exchange(nullptr, std::memory_order_acquire);
             if (participant == done.get()) run_me = true;
             if (participant == nullptr) {
-              gpr_log(GPR_ERROR,
-                      "Participant was null (spurious wakeup observed)");
+              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
               return false;
             }
             participant->store(true, std::memory_order_release);
@@ -165,8 +164,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveTwoParticipants) {
                 participants[slot].exchange(nullptr, std::memory_order_acquire);
             if (participant == done.get()) run_me++;
             if (participant == nullptr) {
-              gpr_log(GPR_ERROR,
-                      "Participant was null (spurious wakeup observed)");
+              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
               return false;
             }
             participant->fetch_sub(1, std::memory_order_release);

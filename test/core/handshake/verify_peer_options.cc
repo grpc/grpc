@@ -89,7 +89,7 @@ static void server_thread(void* arg) {
     CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
   }
 
-  gpr_log(GPR_INFO, "Shutting down server");
+  LOG(INFO) << "Shutting down server";
   grpc_server_shutdown_and_notify(server, cq, nullptr);
   grpc_server_cancel_all_calls(server);
   grpc_completion_queue_shutdown(cq);

@@ -119,7 +119,7 @@ static int create_socket(int* out_port) {
 
   if (bind(s, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
     perror("Unable to bind");
-    gpr_log(GPR_ERROR, "%s", "Unable to bind to any port");
+    LOG(ERROR) << "%s", "Unable to bind to any port";
     close(s);
     return -1;
   }
@@ -135,7 +135,7 @@ static int create_socket(int* out_port) {
           0 ||
       addr_len > sizeof(addr)) {
     perror("getsockname");
-    gpr_log(GPR_ERROR, "%s", "Unable to get socket local address");
+    LOG(ERROR) << "%s", "Unable to get socket local address";
     close(s);
     return -1;
   }
@@ -183,7 +183,7 @@ static void ssl_log_where_info(const SSL* ssl, int where, int flag,
 
 static void ssl_server_info_callback(const SSL* ssl, int where, int ret) {
   if (ret == 0) {
-    gpr_log(GPR_ERROR, "ssl_server_info_callback: error occurred.\n");
+    LOG(ERROR) << "ssl_server_info_callback: error occurred.\n";
     return;
   }
 
@@ -251,7 +251,7 @@ static void server_thread(void* arg) {
 
   // bind/listen/accept at TCP layer.
   const int sock = args->socket;
-  gpr_log(GPR_INFO, "Server listening");
+  LOG(INFO) << "Server listening";
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
   const int client =
@@ -268,9 +268,9 @@ static void server_thread(void* arg) {
   SSL_set_fd(ssl, client);
   if (SSL_accept(ssl) <= 0) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Handshake failed.");
+    LOG(ERROR) << "Handshake failed.";
   } else {
-    gpr_log(GPR_INFO, "Handshake successful.");
+    LOG(INFO) << "Handshake successful.";
   }
 
   // Send out the settings frame.

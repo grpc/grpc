@@ -49,7 +49,7 @@ static test_node* new_node(size_t i, size_t* ctr) {
 }
 
 TEST(MpscqTest, Serial) {
-  gpr_log(GPR_DEBUG, "test_serial");
+  VLOG(2) << "test_serial";
   MultiProducerSingleConsumerQueue q;
   for (size_t i = 0; i < 10000000; i++) {
     q.Push(&new_node(i, nullptr)->node);
@@ -79,7 +79,7 @@ static void test_thread(void* args) {
 }
 
 TEST(MpscqTest, Mt) {
-  gpr_log(GPR_DEBUG, "test_mt");
+  VLOG(2) << "test_mt";
   gpr_event start;
   gpr_event_init(&start);
   grpc_core::Thread thds[100];
@@ -146,7 +146,7 @@ static void pull_thread(void* arg) {
 }
 
 TEST(MpscqTest, MtMultipop) {
-  gpr_log(GPR_DEBUG, "test_mt_multipop");
+  VLOG(2) << "test_mt_multipop";
   gpr_event start;
   gpr_event_init(&start);
   grpc_core::Thread thds[50];

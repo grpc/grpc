@@ -160,7 +160,7 @@ TestEnvironment::~TestEnvironment() {
   // This will wait until gRPC shutdown has actually happened to make sure
   // no gRPC resources (such as thread) are active. (timeout = 10s)
   if (!grpc_wait_until_shutdown(10)) {
-    gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+    LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
   }
   if (BuiltUnderMsan()) {
     // This is a workaround for MSAN. MSAN doesn't like having shutdown thread
@@ -171,7 +171,7 @@ TestEnvironment::~TestEnvironment() {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                  gpr_time_from_millis(500, GPR_TIMESPAN)));
   }
-  gpr_log(GPR_INFO, "TestEnvironment ends");
+  LOG(INFO) << "TestEnvironment ends";
 }
 
 TestGrpcScope::TestGrpcScope() { grpc_init(); }
@@ -179,7 +179,7 @@ TestGrpcScope::TestGrpcScope() { grpc_init(); }
 TestGrpcScope::~TestGrpcScope() {
   grpc_shutdown();
   if (!grpc_wait_until_shutdown(10)) {
-    gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+    LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
   }
 }
 

@@ -710,7 +710,7 @@ INSTANTIATE_TEST_SUITE_P(
     });
 
 TEST_P(SslTransportSecurityTest, DoHandshakeTinyHandshakeBuffer) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_tiny_handshake_buffer");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_tiny_handshake_buffer";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_tsi_test_fixture_->handshake_buffer_size =
@@ -722,7 +722,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeTinyHandshakeBuffer) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeSmallHandshakeBuffer) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_small_handshake_buffer");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_small_handshake_buffer";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_tsi_test_fixture_->handshake_buffer_size =
@@ -731,14 +731,14 @@ TEST_P(SslTransportSecurityTest, DoHandshakeSmallHandshakeBuffer) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshake) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake");
+  LOG(INFO) << "ssl_tsi_test_do_handshake";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   DoHandshake();
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithRootStore) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_root_store");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_root_store";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->MutableKeyCertLib()->use_root_store = true;
@@ -749,8 +749,8 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithRootStore) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
 TEST_P(SslTransportSecurityTest,
        DoHandshakeSkippingServerCertificateVerification) {
-  gpr_log(GPR_INFO,
-          "ssl_tsi_test_do_handshake_skipping_server_certificate_verification");
+  LOG(INFO)
+      << "ssl_tsi_test_do_handshake_skipping_server_certificate_verification";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetVerifyRootCertSubject(false);
@@ -763,8 +763,7 @@ TEST_P(SslTransportSecurityTest,
 #endif
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithLargeServerHandshakeMessages) {
-  gpr_log(GPR_INFO,
-          "ssl_tsi_test_do_handshake_with_large_server_handshake_messages");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_large_server_handshake_messages";
   std::string trust_bundle = GenerateTrustBundle();
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
@@ -792,7 +791,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithLargeServerHandshakeMessages) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithClientAuthentication) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_client_authentication");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_client_authentication";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetForceClientAuth(true);
@@ -813,8 +812,8 @@ TEST_P(SslTransportSecurityTest,
 
 TEST_P(SslTransportSecurityTest,
        DoHandshakeWithServerNameIndicationExactDomain) {
-  gpr_log(GPR_INFO,
-          "ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain");
+  LOG(INFO)
+      << "ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   // server1 cert contains "waterzooi.test.google.be" in SAN.
@@ -837,8 +836,7 @@ TEST_P(SslTransportSecurityTest,
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithWrongServerNameIndication) {
-  gpr_log(GPR_INFO,
-          "ssl_tsi_test_do_handshake_with_wrong_server_name_indication");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_wrong_server_name_indication";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   // server certs do not contain "test.google.cn".
@@ -861,7 +859,7 @@ TEST_P(SslTransportSecurityTest,
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithBadServerCert) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_bad_server_cert");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_bad_server_cert";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->MutableKeyCertLib()->use_bad_server_cert = true;
@@ -869,7 +867,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithBadServerCert) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithBadClientCert) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_bad_client_cert");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_bad_client_cert";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->MutableKeyCertLib()->use_bad_client_cert = true;
@@ -880,7 +878,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithBadClientCert) {
 #ifdef OPENSSL_IS_BORINGSSL
 // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
 TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientNoServer) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_alpn_client_no_server");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_alpn_client_no_server";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_NO_SERVER);
@@ -888,7 +886,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientNoServer) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerMismatch) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_alpn_client_server_mismatch");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_alpn_client_server_mismatch";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_MISMATCH);
@@ -896,7 +894,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerMismatch) {
 }
 
 TEST_P(SslTransportSecurityTest, DoRoundTripForAllConfigs) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_for_all_configs");
+  LOG(INFO) << "ssl_tsi_test_do_round_trip_for_all_configs";
   unsigned int* bit_array = static_cast<unsigned int*>(
       gpr_zalloc(sizeof(unsigned int) * TSI_TEST_NUM_OF_ARGUMENTS));
   const unsigned int mask = 1U << (TSI_TEST_NUM_OF_ARGUMENTS - 1);
@@ -919,7 +917,7 @@ TEST_P(SslTransportSecurityTest, DoRoundTripForAllConfigs) {
 }
 
 TEST_P(SslTransportSecurityTest, DoRoundTripWithErrorOnStack) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_with_error_on_stack");
+  LOG(INFO) << "ssl_tsi_test_do_round_trip_with_error_on_stack";
   // Invoke an SSL function that causes an error, and ensure the error
   // makes it to the stack.
   ASSERT_FALSE(EC_KEY_new_by_curve_name(NID_rsa));
@@ -930,7 +928,7 @@ TEST_P(SslTransportSecurityTest, DoRoundTripWithErrorOnStack) {
 }
 
 TEST_P(SslTransportSecurityTest, DoRoundTripOddBufferSize) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
+  LOG(INFO) << "ssl_tsi_test_do_round_trip_odd_buffer_size";
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
   size_t size = sizeof(odd_sizes) / sizeof(size_t);
   // 1. This test is extremely slow under MSAN and TSAN.
@@ -962,7 +960,7 @@ TEST_P(SslTransportSecurityTest, DoRoundTripOddBufferSize) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeSessionCache) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_session_cache");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_session_cache";
   tsi_ssl_session_cache* session_cache = tsi_ssl_session_cache_create_lru(16);
   char session_ticket_key[kSessionTicketEncryptionKeySize];
   auto do_handshake = [this, &session_ticket_key,
@@ -995,7 +993,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeSessionCache) {
 #endif  // OPENSSL_IS_BORINGSSL
 
 TEST_P(SslTransportSecurityTest, DoHandshakeAlpnServerNoClient) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_alpn_server_no_client");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_alpn_server_no_client";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetAlpnMode(ALPN_SERVER_NO_CLIENT);
@@ -1003,7 +1001,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeAlpnServerNoClient) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerOk) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_alpn_client_server_ok");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_alpn_client_server_ok";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
@@ -1011,7 +1009,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeAlpnClientServerOk) {
 }
 
 TEST_P(SslTransportSecurityTest, DoHandshakeWithCustomBioPair) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_do_handshake_with_custom_bio_pair");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_custom_bio_pair";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -1143,7 +1141,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
 }
 
 TEST(SslTransportSecurityTest, DuplicateRootCertificates) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_duplicate_root_certificates");
+  LOG(INFO) << "ssl_tsi_test_duplicate_root_certificates";
   char* root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "ca.pem");
   char* dup_root_cert = static_cast<char*>(
       gpr_zalloc(sizeof(char) * (strlen(root_cert) * 2 + 1)));
@@ -1159,7 +1157,7 @@ TEST(SslTransportSecurityTest, DuplicateRootCertificates) {
 }
 
 TEST(SslTransportSecurityTest, ExtractX509SubjectNames) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_extract_x509_subject_names");
+  LOG(INFO) << "ssl_tsi_test_extract_x509_subject_names";
   char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "multi-domain.pem");
   tsi_peer peer;
   ASSERT_EQ(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer),
@@ -1263,7 +1261,7 @@ TEST(SslTransportSecurityTest, ExtractX509SubjectNames) {
 }
 
 TEST(SslTransportSecurityTest, ExtractCertChain) {
-  gpr_log(GPR_INFO, "ssl_tsi_test_extract_cert_chain");
+  LOG(INFO) << "ssl_tsi_test_extract_cert_chain";
   char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "server1.pem");
   char* ca = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "ca.pem");
   char* chain = static_cast<char*>(

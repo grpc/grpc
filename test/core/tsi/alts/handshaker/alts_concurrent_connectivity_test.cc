@@ -296,8 +296,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
     TestServer test_server;
     size_t num_concurrent_connects = 50;
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
-    gpr_log(GPR_DEBUG,
-            "start performing concurrent expected-to-succeed connects");
+    VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
@@ -306,8 +305,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG,
-            "done performing concurrent expected-to-succeed connects");
+    VLOG(2) << "done performing concurrent expected-to-succeed connects";
   }
 }
 
@@ -336,7 +334,7 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
+    VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
@@ -345,7 +343,7 @@ TEST(AltsConcurrentConnectivityTest,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
+    VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 
@@ -368,7 +366,7 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
+    VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
@@ -377,7 +375,7 @@ TEST(AltsConcurrentConnectivityTest,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
+    VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 
@@ -400,7 +398,7 @@ TEST(AltsConcurrentConnectivityTest,
   {
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     size_t num_concurrent_connects = 100;
-    gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
+    VLOG(2) << "start performing concurrent expected-to-fail connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
@@ -409,7 +407,7 @@ TEST(AltsConcurrentConnectivityTest,
           100 /* reconnect_backoff_ms */));
     }
     connect_loop_runners.clear();
-    gpr_log(GPR_DEBUG, "done performing concurrent expected-to-fail connects");
+    VLOG(2) << "done performing concurrent expected-to-fail connects";
   }
 }
 
