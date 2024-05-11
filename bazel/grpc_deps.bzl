@@ -287,7 +287,7 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            sha256 = "",
+            sha256 = "de24a314844cb157909730828560628704f4f896d167dd7da0fa2fb93ea18b10",
             strip_prefix = "c-ares-e8fe27eaa841ed32a4f82bef7a72c4e04e7f86a7",
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/e8fe27eaa841ed32a4f82bef7a72c4e04e7f86a7.tar.gz",
