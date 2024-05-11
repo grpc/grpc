@@ -138,7 +138,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
       ->mutable_load_report_interval()
       ->set_seconds(5);
   stream->Write(request);
-  gpr_log(GPR_INFO, "Initial request sent.");
+  LOG(INFO) << "Initial request sent.";
   grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
   const std::string& lb_id = response.initial_response().load_balancer_id();

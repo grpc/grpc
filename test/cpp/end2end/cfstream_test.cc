@@ -102,13 +102,13 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
   }
 
   void NetworkUp() {
-    gpr_log(GPR_DEBUG, "Bringing network up");
+    VLOG(2) << "Bringing network up";
     InterfaceUp();
     DNSUp();
   }
 
   void NetworkDown() {
-    gpr_log(GPR_DEBUG, "Bringing network down");
+    VLOG(2) << "Bringing network down";
     InterfaceDown();
     DNSDown();
   }
@@ -156,7 +156,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     ClientContext context;
     Status status = stub->Echo(&context, request, response.get());
     if (status.ok()) {
-      gpr_log(GPR_DEBUG, "RPC with succeeded");
+      VLOG(2) << "RPC with succeeded";
       EXPECT_EQ(msg, response->message());
     } else {
       gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
@@ -249,7 +249,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond)));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
-      gpr_log(GPR_INFO, "server startup complete");
+      LOG(INFO) << "server startup complete";
     }
 
     void Serve(const std::string& server_host, std::mutex* mu,
@@ -388,7 +388,7 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
           network_down = false;
         }
       } else {
-        gpr_log(GPR_DEBUG, "RPC succeeded");
+        VLOG(2) << "RPC succeeded";
       }
       delete call;
     }
@@ -431,7 +431,7 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
                 call->status.error_message().c_str());
         // Bring network up when RPCs start failing
       } else {
-        gpr_log(GPR_DEBUG, "RPC succeeded");
+        VLOG(2) << "RPC succeeded";
       }
       delete call;
     }

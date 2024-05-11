@@ -126,7 +126,7 @@ void ConnectionAttemptInjector::HandleConnection(
     for (auto it = holds_.begin(); it != holds_.end(); ++it) {
       Hold* hold = *it;
       if (port == hold->port_) {
-        gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
+        LOG(INFO) << "*** INTERCEPTING CONNECTION ATTEMPT";
         if (hold->intercept_completion_) {
           hold->original_on_complete_ = closure;
           closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,

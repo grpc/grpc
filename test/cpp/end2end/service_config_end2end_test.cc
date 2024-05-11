@@ -320,7 +320,7 @@ class ServiceConfigEnd2endTest : public ::testing::Test {
         cond_.Wait(&mu_);
       }
       server_ready_ = false;
-      gpr_log(GPR_INFO, "server startup complete");
+      LOG(INFO) << "server startup complete";
     }
 
     void Serve(const std::string& server_host) {

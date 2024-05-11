@@ -245,7 +245,7 @@ std::vector<LrsServiceImpl::ClientStats> LrsServiceImpl::WaitForLoadReport(
     load_report_cond_ = &cv;
     while (result_queue_.empty()) {
       if (cv.WaitWithTimeout(&load_report_mu_, timeout)) {
-        gpr_log(GPR_ERROR, "timed out waiting for load report");
+        LOG(ERROR) << "timed out waiting for load report";
         return {};
       }
     }

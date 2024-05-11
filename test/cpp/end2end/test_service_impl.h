@@ -98,7 +98,7 @@ class TestServiceSignaller {
   // is whatever the number of RPCs waiting for server notification is
   // at that time.
   int ClientWaitUntilNRpcsStarted(int desired_rpcs, absl::Duration timeout) {
-    gpr_log(GPR_DEBUG, "*** enter ClientWaitUntilNRpcsStarted ***");
+    VLOG(2) << "*** enter ClientWaitUntilNRpcsStarted ***";
     absl::Time deadline = absl::Now() + timeout;
     std::chrono::system_clock::time_point chrono_deadline =
         absl::ToChronoTime(deadline);
@@ -110,23 +110,23 @@ class TestServiceSignaller {
           desired_rpcs, rpcs_waiting_for_server_to_continue_);
       return rpcs_waiting_for_server_to_continue_ >= desired_rpcs;
     });
-    gpr_log(GPR_DEBUG, "*** leave ClientWaitUntilNRpcsStarted ***");
+    VLOG(2) << "*** leave ClientWaitUntilNRpcsStarted ***";
     return rpcs_waiting_for_server_to_continue_;
   }
   void ServerWaitToContinue() {
-    gpr_log(GPR_DEBUG, "*** enter ServerWaitToContinue ***");
+    VLOG(2) << "*** enter ServerWaitToContinue ***";
     std::unique_lock<std::mutex> lock(mu_);
     cv_server_continue_.wait(lock, [this] { return server_should_continue_; });
-    gpr_log(GPR_DEBUG, "*** leave ServerWaitToContinue ***");
+    VLOG(2) << "*** leave ServerWaitToContinue ***";
   }
   void SignalClientThatRpcStarted() {
-    gpr_log(GPR_DEBUG, "*** SignalClientThatRpcStarted ***");
+    VLOG(2) << "*** SignalClientThatRpcStarted ***";
     std::unique_lock<std::mutex> lock(mu_);
     ++rpcs_waiting_for_server_to_continue_;
     cv_rpc_started_.notify_all();
   }
   void SignalServerToContinue() {
-    gpr_log(GPR_DEBUG, "*** SignalServerToContinue ***");
+    VLOG(2) << "*** SignalServerToContinue ***";
     std::unique_lock<std::mutex> lock(mu_);
     server_should_continue_ = true;
     cv_server_continue_.notify_all();
@@ -170,7 +170,7 @@ class TestMultipleServiceImpl : public RpcService {
     }
 
     if (request->has_param() && request->param().server_die()) {
-      gpr_log(GPR_ERROR, "The request should not reach application handler.");
+      LOG(ERROR) << "The request should not reach application handler.";
       CHECK(0);
     }
     if (request->has_param() && request->param().has_expected_error()) {

@@ -129,13 +129,13 @@ TEST_F(OrcaServiceEnd2endTest, Basic) {
   Stream stream1(stub_.get(), grpc_core::Duration::Milliseconds(5000));
   Stream stream2(stub_.get(), grpc_core::Duration::Milliseconds(2500));
   auto ReadResponses = [&](std::function<void(const OrcaLoadReport&)> checker) {
-    gpr_log(GPR_INFO, "reading response from stream1");
+    LOG(INFO) << "reading response from stream1";
     OrcaLoadReport response = stream1.ReadResponse();
     checker(response);
-    gpr_log(GPR_INFO, "reading response from stream2");
+    LOG(INFO) << "reading response from stream2";
     response = stream2.ReadResponse();
     checker(response);
-    gpr_log(GPR_INFO, "reading response from stream2");
+    LOG(INFO) << "reading response from stream2";
     response = stream2.ReadResponse();
     checker(response);
   };

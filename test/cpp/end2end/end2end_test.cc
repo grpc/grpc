@@ -1353,7 +1353,7 @@ void ReaderThreadFunc(ClientReaderWriter<EchoRequest, EchoResponse>* stream,
   EchoResponse resp;
   gpr_event_set(ev, reinterpret_cast<void*>(1));
   while (stream->Read(&resp)) {
-    gpr_log(GPR_INFO, "Read message");
+    LOG(INFO) << "Read message";
   }
 }
 

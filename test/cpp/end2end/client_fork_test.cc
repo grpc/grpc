@@ -114,7 +114,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
       GTEST_FAIL() << "fork failed";
     case 0:  // post-fork child
     {
-      gpr_log(GPR_DEBUG, "In post-fork child");
+      VLOG(2) << "In post-fork child";
       EchoRequest request;
       EchoResponse response;
       ClientContext context;
@@ -131,7 +131,7 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
     }
     default:  // post-fork parent
     {
-      gpr_log(GPR_DEBUG, "In post-fork parent");
+      VLOG(2) << "In post-fork parent";
       EchoRequest request;
       EchoResponse response;
       ClientContext context;

@@ -44,7 +44,7 @@ namespace testing {
     grpc::internal::MutexLock lock(&mu_);
     auto it = responses_.find(*request);
     if (it == responses_.end()) {
-      gpr_log(GPR_INFO, "RLS: no matching request, returning INTERNAL");
+      LOG(INFO) << "RLS: no matching request, returning INTERNAL";
       unmatched_requests_.push_back(*request);
       return Status(StatusCode::INTERNAL, "no response entry");
     }
