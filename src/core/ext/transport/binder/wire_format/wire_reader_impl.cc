@@ -154,7 +154,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
                     BinderTransportTxCode::SETUP_TRANSPORT) &&
         code <= static_cast<transaction_code_t>(
                     BinderTransportTxCode::PING_RESPONSE))) {
-    LOG(INFO) << "Received unknown control message. Shutdown transport gracefully.";
+    LOG(INFO)
+        << "Received unknown control message. Shutdown transport gracefully.";
     // TODO(waynetu): Shutdown transport gracefully.
     return absl::OkStatus();
   }
@@ -210,7 +211,8 @@ absl::Status WireReaderImpl::ProcessTransaction(transaction_code_t code,
       break;
     }
     case BinderTransportTxCode::SHUTDOWN_TRANSPORT: {
-      LOG(ERROR) << "Received SHUTDOWN_TRANSPORT request but not implemented yet.";
+      LOG(ERROR)
+          << "Received SHUTDOWN_TRANSPORT request but not implemented yet.";
       return absl::UnimplementedError("SHUTDOWN_TRANSPORT");
     }
     case BinderTransportTxCode::ACKNOWLEDGE_BYTES: {

@@ -207,7 +207,8 @@ static tsi_result handshaker_result_create_frame_protector(
     const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
   if (self == nullptr || protector == nullptr) {
-    LOG(ERROR) << "Invalid arguments to handshaker_result_create_frame_protector()";
+    LOG(ERROR)
+        << "Invalid arguments to handshaker_result_create_frame_protector()";
     return TSI_INVALID_ARGUMENT;
   }
   alts_tsi_handshaker_result* result =
