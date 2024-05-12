@@ -906,6 +906,7 @@ grpc_cc_library(
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings:cord",
         "absl/synchronization",
         "protobuf_headers",
@@ -936,6 +937,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings:cord",
     ],
     language = "c++",
@@ -1250,6 +1252,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "absl/synchronization",
     ],
@@ -2457,6 +2460,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2541,6 +2545,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
