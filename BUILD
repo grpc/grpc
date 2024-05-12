@@ -1300,6 +1300,7 @@ grpc_cc_library(
         "include/grpcpp/security/alts_util.h",
     ],
     external_deps = [
+        "absl/log:log",
         "@com_google_protobuf//upb:base",
         "@com_google_protobuf//upb:mem",
         "@com_google_protobuf//upb:message",
@@ -2145,6 +2146,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
     ],
     language = "c++",
     deps = [
@@ -2177,6 +2179,9 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
         "src/cpp/server/load_reporter/util.cc",
     ],
+    external_deps = [
+        "absl/log:log",
+    ],
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
@@ -2205,6 +2210,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/memory",
         "protobuf_headers",
     ],
@@ -2229,6 +2235,9 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/server/load_reporter/get_cpu_stats.h",
     ],
+    external_deps = [
+        "absl/log:log",
+    ],
     language = "c++",
     deps = [
         "gpr",
@@ -2247,6 +2256,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "opencensus-stats",
         "opencensus-tags",
         "protobuf_headers",
@@ -2457,6 +2467,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2541,6 +2552,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
