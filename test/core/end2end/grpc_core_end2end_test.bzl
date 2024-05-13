@@ -43,6 +43,9 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
         srcs = [
             "tests/%s.cc" % name,
         ],
+        external_deps = [
+            "absl/log:log",
+        ],
         deps = [
             "cq_verifier",
             "end2end_test_lib",

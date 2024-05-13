@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -37,7 +38,6 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -510,8 +510,8 @@ static bool proxy_auth_header_matches(absl::string_view proxy_auth_header_val,
 // which will cause the client connection to be dropped.
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
-  gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn,
-          grpc_core::StatusToString(error).c_str());
+  VLOG(2) << "on_read_request_done: " << conn << " "
+          << grpc_core::StatusToString(error);
   if (!error.ok()) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             error);
@@ -670,7 +670,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
   proxy->proxy_name = grpc_core::JoinHostPort("localhost", proxy_port);
-  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.c_str());
+  LOG(INFO) << "Proxy address: " << proxy->proxy_name;
   // Create TCP server.
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()

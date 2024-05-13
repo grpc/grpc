@@ -32,6 +32,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -530,7 +531,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // a connection attempt and queue the pick until that attempt completes.
   if (idle_subchannel != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(GPR_INFO, "Picker override found IDLE subchannel");
+      LOG(INFO) << "Picker override found IDLE subchannel";
     }
     // Deletes itself after the connection is requested.
     new SubchannelConnectionRequester(std::move(idle_subchannel));
@@ -540,7 +541,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // queue the pick and wait for the connection attempt to complete.
   if (found_connecting) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(GPR_INFO, "Picker override found CONNECTING subchannel");
+      LOG(INFO) << "Picker override found CONNECTING subchannel";
     }
     return PickResult::Queue();
   }
@@ -549,7 +550,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // creation of a subchannel for that entry.
   if (!address_with_no_subchannel.empty()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(GPR_INFO, "Picker override found entry with no subchannel");
+      LOG(INFO) << "Picker override found entry with no subchannel";
     }
     if (!IsWorkSerializerDispatchEnabled()) {
       new SubchannelCreationRequester(policy_, address_with_no_subchannel);
