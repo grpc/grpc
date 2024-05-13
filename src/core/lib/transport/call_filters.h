@@ -1245,6 +1245,42 @@ const NoInterceptor
 template <typename Fn>
 const NoInterceptor ServerTrailingMetadataInterceptor<Fn>::Call::OnFinalize;
 
+template <typename Fn>
+class ClientInitialMetadataInterceptor {
+ public:
+  class Call {
+   public:
+    auto OnClientInitialMetadata(ClientMetadata& md,
+                                 ClientInitialMetadataInterceptor* filter) {
+      return filter->fn_(md);
+    }
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+  };
+
+  explicit ClientInitialMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Fn fn_;
+};
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnServerTrailingMetadata;
+template <typename Fn>
+const NoInterceptor ClientInitialMetadataInterceptor<Fn>::Call::OnFinalize;
+
 }  // namespace filters_detail
 
 // Execution environment for a stack of filters.
@@ -1300,6 +1336,14 @@ class CallFilters {
     template <typename T>
     void AddOwnedObject(std::unique_ptr<T> p) {
       AddOwnedObject([](void* p) { delete static_cast<T*>(p); }, p.release());
+    }
+
+    template <typename Fn>
+    void AddOnClientInitialMetadata(Fn fn) {
+      auto filter = std::make_unique<
+          filters_detail::ClientInitialMetadataInterceptor<Fn>>(std::move(fn));
+      Add(filter.get());
+      AddOwnedObject(std::move(filter));
     }
 
     template <typename Fn>

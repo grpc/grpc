@@ -35,6 +35,7 @@ def grpc_bad_ssl_tests():
         hdrs = ["server_common.h"],
         external_deps = [
             "absl/log:check",
+            "absl/log:log",
         ],
         deps = [
             "//test/core/test_util:grpc_test_util",
