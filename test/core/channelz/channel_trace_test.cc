@@ -163,7 +163,7 @@ MATCHER_P(IsEmptyChannelTrace, num_events_logged_expected,
 
 void ValidateJsonProtoTranslation(const Json& json) {
   std::string json_str = JsonDump(json);
-  grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str.c_str());
+  grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str);
 }
 
 }  // anonymous namespace

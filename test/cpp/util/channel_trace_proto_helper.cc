@@ -41,7 +41,7 @@ namespace {
 // then back to json. This ensures that the json string was correctly formatted
 // according to https://developers.google.com/protocol-buffers/docs/proto3#json
 template <typename Message>
-void VaidateProtoJsonTranslation(const std::string& json_str) {
+void VaidateProtoJsonTranslation(absl::string_view json_str) {
   Message msg;
   grpc::protobuf::json::JsonParseOptions parse_options;
   // If the following line is failing, then uncomment the last line of the
@@ -73,42 +73,42 @@ void VaidateProtoJsonTranslation(const std::string& json_str) {
 
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(const std::string& json_string) {
+void ValidateChannelTraceProtoJsonTranslation(absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_string);
 }
 
-void ValidateChannelProtoJsonTranslation(const std::string& json_string) {
+void ValidateChannelProtoJsonTranslation(absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_string);
 }
 
 void ValidateGetTopChannelsResponseProtoJsonTranslation(
-    const std::string& json_string) {
+    absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetTopChannelsResponse>(
       json_string);
 }
 
 void ValidateGetChannelResponseProtoJsonTranslation(
-    const std::string& json_string) {
+    absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetChannelResponse>(
       json_string);
 }
 
 void ValidateGetServerResponseProtoJsonTranslation(
-    const std::string& json_string) {
+    absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetServerResponse>(
       json_string);
 }
 
-void ValidateSubchannelProtoJsonTranslation(const std::string& json_string) {
+void ValidateSubchannelProtoJsonTranslation(absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::Subchannel>(json_string);
 }
 
-void ValidateServerProtoJsonTranslation(const std::string& json_string) {
+void ValidateServerProtoJsonTranslation(absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::Server>(json_string);
 }
 
 void ValidateGetServersResponseProtoJsonTranslation(
-    const std::string& json_string) {
+    absl::string_view json_string) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetServersResponse>(
       json_string);
 }
