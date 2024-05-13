@@ -3347,10 +3347,7 @@ class MaybeOpImpl {
         return r;
       }
     }
-<<<<<<< HEAD
-=======
     GPR_UNREACHABLE_CODE(return Pending{});
->>>>>>> transport-refs-2
   }
 
  private:
