@@ -369,6 +369,7 @@ grpc_cc_test(
     args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
     ],
     tags = [
         "no_mac",

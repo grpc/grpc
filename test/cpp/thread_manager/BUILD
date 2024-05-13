@@ -26,6 +26,7 @@ grpc_cc_test(
     srcs = ["thread_manager_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     deps = [
