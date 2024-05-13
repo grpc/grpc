@@ -1058,8 +1058,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
         server_, method->name(), addr ? addr->c_str() : nullptr,
         PayloadHandlingForMethod(method.get()), 0);
     if (method_registration_tag == nullptr) {
-      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
-              method->name());
+      VLOG(2) << "Attempt to register " << method->name() << " multiple times";
       return false;
     }
 
