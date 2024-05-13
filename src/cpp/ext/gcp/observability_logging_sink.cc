@@ -22,6 +22,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/numeric/int128.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -34,7 +35,6 @@
 #include "google/protobuf/text_format.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>

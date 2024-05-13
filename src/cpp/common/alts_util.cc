@@ -21,10 +21,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "upb/mem/arena.hpp"
 
 #include <grpc/grpc_security_constants.h>
-#include <grpc/support/log.h>
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 #include <grpcpp/security/auth_context.h>

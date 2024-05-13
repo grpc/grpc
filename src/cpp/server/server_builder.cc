@@ -26,11 +26,11 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/workaround_list.h>
@@ -459,7 +459,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   if (!has_frequently_polled_cqs) {
-    LOG(ERROR) << "At least one of the completion queues must be frequently polled";
+    LOG(ERROR)
+        << "At least one of the completion queues must be frequently polled";
     return nullptr;
   }
 
