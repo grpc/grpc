@@ -600,7 +600,7 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   if (result.empty() && !ConfigVars::Get().NotUseSystemSslRoots()) {
     absl::StatusOr<Slice> system_root_certs = LoadSystemRootCerts();
     if (system_root_certs.ok()) {
-      result = *system_root_certs;
+      result = *std::move(system_root_certs);
     } else {
       gpr_log(GPR_ERROR, "error loading system root certs: %s",
               system_root_certs.status().ToString().c_str());
