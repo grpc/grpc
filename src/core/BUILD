@@ -49,6 +49,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "dump_args",
+    srcs = [
+        "lib/gprpp/dump_args.cc",
+    ],
+    hdrs = [
+        "lib/gprpp/dump_args.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log:check",
+        "absl/strings",
+    ],
+    language = "c++",
+    deps = [
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
     name = "slice_cast",
     hdrs = [
         "//:include/grpc/event_engine/internal/slice_cast.h",
