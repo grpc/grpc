@@ -148,16 +148,15 @@ some configuration as environment variables that can be set.
   - subchannel_refcount
   - work_serializer
 
-  'all' can additionally be used to turn all traces on.
-  Individual traces can be disabled by prefixing them with '-'.
-
-  'refcount' will turn on all of the tracers for refcount debugging.
-
-  if 'list_tracers' is present, then all of the available tracers will be
-  printed when the program starts up.
+  Glob patterns and special cases:
+   - `*` can be used to turn all traces on.
+   - Individual traces can be disabled by prefixing them with `-`.
+   - `*refcount*` will turn on all of the tracers for refcount debugging.
+   - if `list_tracers` is present, then all of the available tracers will be
+     printed when the program starts up.
 
   Example:
-  export GRPC_TRACE=all,-pending_tags
+  export GRPC_TRACE=*,-pending_tags
 
 * GRPC_VERBOSITY
   Default gRPC logging verbosity - one of:
