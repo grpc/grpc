@@ -35,7 +35,7 @@ namespace experimental {
 void DNSServiceResolverImpl::LookupHostname(
     EventEngine::DNSResolver::LookupHostnameCallback on_resolve,
     absl::string_view name, absl::string_view default_port) {
-  GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
+  GRPC_TRACE_LOG(grpc_core::event_engine_dns_trace, INFO)
       << "DNSServiceResolverImpl::LookupHostname: name: " << name
       << ", default_port: " << default_port << ", this: " << this;
 
@@ -137,7 +137,7 @@ void DNSServiceResolverImpl::ResolveCallback(
     DNSServiceRef sdRef, DNSServiceFlags flags, uint32_t interfaceIndex,
     DNSServiceErrorType errorCode, const char* hostname,
     const struct sockaddr* address, uint32_t ttl, void* context) {
-  GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
+  GRPC_TRACE_LOG(grpc_core::event_engine_dns_trace, INFO)
       << "DNSServiceResolverImpl::ResolveCallback: sdRef: " << sdRef
       << ", flags: " << flags << ", interface: " << interfaceIndex
       << ", errorCode: " << errorCode << ", hostname: " << hostname
@@ -192,7 +192,7 @@ void DNSServiceResolverImpl::ResolveCallback(
           ->sin6_port = htons(request.port);
     }
 
-    GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
+    GRPC_TRACE_LOG(grpc_core::event_engine_dns_trace, INFO)
         << "DNSServiceResolverImpl::ResolveCallback: sdRef: " << sdRef
         << ", hostname: " << hostname << ", addressPort: "
         << ResolvedAddressToString(resolved_address).value_or("ERROR")
@@ -227,7 +227,7 @@ void DNSServiceResolverImpl::Shutdown() {
     for (auto& kv : that->requests_) {
       auto& sdRef = kv.first;
       auto& request = kv.second;
-      GRPC_EVENT_ENGINE_DNS_TRACE_LOG(INFO)
+      GRPC_TRACE_LOG(grpc_core::event_engine_dns_trace, INFO)
           << "DNSServiceResolverImpl::Shutdown sdRef: " << sdRef
           << ", this: " << thatPtr;
       request.on_resolve(

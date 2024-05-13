@@ -1,4 +1,4 @@
-// Copyright 2024 gRPC authors.
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -87,6 +87,8 @@ class TraceFlag {
 };
 
 #define GRPC_TRACE_FLAG_ENABLED(f) GPR_UNLIKELY((f).enabled())
+#define GRPC_TRACE_LOG(tracer, level) \
+  LOG_IF(level, GRPC_TRACE_FLAG_ENABLED(tracer))
 
 #ifndef NDEBUG
 typedef TraceFlag DebugOnlyTraceFlag;
@@ -113,367 +115,106 @@ class SavedTraceFlags {
 };
 
 extern TraceFlag api_trace;
-#define GRPC_API_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::api_trace.enabled()) << "(api) "
 extern DebugOnlyTraceFlag auth_context_refcount_trace;
-#define GRPC_AUTH_CONTEXT_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::auth_context_refcount_trace.enabled()) \
-      << "(auth_context_refcount) "
 extern TraceFlag backend_metric_trace;
-#define GRPC_BACKEND_METRIC_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::backend_metric_trace.enabled()) \
-      << "(backend_metric) "
 extern TraceFlag backend_metric_filter_trace;
-#define GRPC_BACKEND_METRIC_FILTER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::backend_metric_filter_trace.enabled()) \
-      << "(backend_metric_filter) "
 extern TraceFlag bdp_estimator_trace;
-#define GRPC_BDP_ESTIMATOR_TRACE_LOG(level)                                    \
-  LOG_IF(level, grpc_core::bdp_estimator_trace.enabled()) << "(bdp_estimator)" \
-                                                             " "
 extern TraceFlag call_trace;
-#define GRPC_CALL_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::call_trace.enabled()) << "(call) "
 extern DebugOnlyTraceFlag call_combiner_trace;
-#define GRPC_CALL_COMBINER_TRACE_LOG(level)                                    \
-  LOG_IF(level, grpc_core::call_combiner_trace.enabled()) << "(call_combiner)" \
-                                                             " "
 extern TraceFlag call_error_trace;
-#define GRPC_CALL_ERROR_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::call_error_trace.enabled()) << "(call_error) "
 extern DebugOnlyTraceFlag call_refcount_trace;
-#define GRPC_CALL_REFCOUNT_TRACE_LOG(level)                                    \
-  LOG_IF(level, grpc_core::call_refcount_trace.enabled()) << "(call_refcount)" \
-                                                             " "
 extern TraceFlag cares_address_sorting_trace;
-#define GRPC_CARES_ADDRESS_SORTING_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::cares_address_sorting_trace.enabled()) \
-      << "(cares_address_sorting) "
 extern TraceFlag cares_resolver_trace;
-#define GRPC_CARES_RESOLVER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::cares_resolver_trace.enabled()) \
-      << "(cares_resolver) "
 extern TraceFlag cds_lb_trace;
-#define GRPC_CDS_LB_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::cds_lb_trace.enabled()) << "(cds_lb) "
 extern TraceFlag channel_trace;
-#define GRPC_CHANNEL_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::channel_trace.enabled()) << "(channel) "
 extern TraceFlag channel_stack_trace;
-#define GRPC_CHANNEL_STACK_TRACE_LOG(level)                                    \
-  LOG_IF(level, grpc_core::channel_stack_trace.enabled()) << "(channel_stack)" \
-                                                             " "
 extern TraceFlag chaotic_good_trace;
-#define GRPC_CHAOTIC_GOOD_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::chaotic_good_trace.enabled()) << "(chaotic_good) "
 extern TraceFlag chttp2_hpack_parser_trace;
-#define GRPC_CHTTP2_HPACK_PARSER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::chttp2_hpack_parser_trace.enabled()) \
-      << "(chttp2_hpack_parser) "
 extern TraceFlag chttp2_new_stream_trace;
-#define GRPC_CHTTP2_NEW_STREAM_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::chttp2_new_stream_trace.enabled()) \
-      << "(chttp2_new_stream) "
 extern TraceFlag client_channel_trace;
-#define GRPC_CLIENT_CHANNEL_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::client_channel_trace.enabled()) \
-      << "(client_channel) "
 extern TraceFlag client_channel_call_trace;
-#define GRPC_CLIENT_CHANNEL_CALL_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::client_channel_call_trace.enabled()) \
-      << "(client_channel_call) "
 extern TraceFlag client_channel_lb_call_trace;
-#define GRPC_CLIENT_CHANNEL_LB_CALL_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::client_channel_lb_call_trace.enabled()) \
-      << "(client_channel_lb_call) "
 extern TraceFlag client_idle_filter_trace;
-#define GRPC_CLIENT_IDLE_FILTER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::client_idle_filter_trace.enabled()) \
-      << "(client_idle_filter) "
 extern DebugOnlyTraceFlag closure_trace;
-#define GRPC_CLOSURE_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::closure_trace.enabled()) << "(closure) "
 extern DebugOnlyTraceFlag combiner_trace;
-#define GRPC_COMBINER_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::combiner_trace.enabled()) << "(combiner) "
 extern TraceFlag compression_trace;
-#define GRPC_COMPRESSION_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::compression_trace.enabled()) << "(compression) "
 extern TraceFlag connectivity_state_trace;
-#define GRPC_CONNECTIVITY_STATE_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::connectivity_state_trace.enabled()) \
-      << "(connectivity_state) "
 extern DebugOnlyTraceFlag cq_refcount_trace;
-#define GRPC_CQ_REFCOUNT_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::cq_refcount_trace.enabled()) << "(cq_refcount) "
 extern TraceFlag cronet_trace;
-#define GRPC_CRONET_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::cronet_trace.enabled()) << "(cronet) "
 extern TraceFlag dns_resolver_trace;
-#define GRPC_DNS_RESOLVER_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::dns_resolver_trace.enabled()) << "(dns_resolver) "
 extern TraceFlag environment_autodetect_trace;
-#define GRPC_ENVIRONMENT_AUTODETECT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::environment_autodetect_trace.enabled()) \
-      << "(environment_autodetect) "
 extern DebugOnlyTraceFlag error_refcount_trace;
-#define GRPC_ERROR_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::error_refcount_trace.enabled()) \
-      << "(error_refcount) "
 extern TraceFlag event_engine_trace;
-#define GRPC_EVENT_ENGINE_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::event_engine_trace.enabled()) << "(event_engine) "
 extern TraceFlag event_engine_client_channel_resolver_trace;
-#define GRPC_EVENT_ENGINE_CLIENT_CHANNEL_RESOLVER_TRACE_LOG(level)        \
-  LOG_IF(level,                                                           \
-         grpc_core::event_engine_client_channel_resolver_trace.enabled()) \
-      << "(event_engine_client_channel_resolver) "
 extern TraceFlag event_engine_dns_trace;
-#define GRPC_EVENT_ENGINE_DNS_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::event_engine_dns_trace.enabled()) \
-      << "(event_engine_dns) "
 extern TraceFlag event_engine_endpoint_trace;
-#define GRPC_EVENT_ENGINE_ENDPOINT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::event_engine_endpoint_trace.enabled()) \
-      << "(event_engine_endpoint) "
 extern TraceFlag event_engine_endpoint_data_trace;
-#define GRPC_EVENT_ENGINE_ENDPOINT_DATA_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::event_engine_endpoint_data_trace.enabled()) \
-      << "(event_engine_endpoint_data) "
 extern TraceFlag event_engine_poller_trace;
-#define GRPC_EVENT_ENGINE_POLLER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::event_engine_poller_trace.enabled()) \
-      << "(event_engine_poller) "
 extern TraceFlag executor_trace;
-#define GRPC_EXECUTOR_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::executor_trace.enabled()) << "(executor) "
 extern TraceFlag fault_injection_filter_trace;
-#define GRPC_FAULT_INJECTION_FILTER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::fault_injection_filter_trace.enabled()) \
-      << "(fault_injection_filter) "
 extern DebugOnlyTraceFlag fd_refcount_trace;
-#define GRPC_FD_REFCOUNT_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::fd_refcount_trace.enabled()) << "(fd_refcount) "
 extern DebugOnlyTraceFlag fd_trace_trace;
-#define GRPC_FD_TRACE_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::fd_trace_trace.enabled()) << "(fd_trace) "
 extern TraceFlag flowctl_trace;
-#define GRPC_FLOWCTL_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::flowctl_trace.enabled()) << "(flowctl) "
 extern TraceFlag fork_trace;
-#define GRPC_FORK_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::fork_trace.enabled()) << "(fork) "
 extern TraceFlag glb_trace;
-#define GRPC_GLB_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::glb_trace.enabled()) << "(glb) "
 extern TraceFlag grpc_authz_api_trace;
-#define GRPC_GRPC_AUTHZ_API_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::grpc_authz_api_trace.enabled()) \
-      << "(grpc_authz_api) "
 extern TraceFlag handshaker_trace;
-#define GRPC_HANDSHAKER_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::handshaker_trace.enabled()) << "(handshaker) "
 extern TraceFlag health_check_client_trace;
-#define GRPC_HEALTH_CHECK_CLIENT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::health_check_client_trace.enabled()) \
-      << "(health_check_client) "
 extern TraceFlag http_trace;
-#define GRPC_HTTP_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::http_trace.enabled()) << "(http) "
 extern TraceFlag http1_trace;
-#define GRPC_HTTP1_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::http1_trace.enabled()) << "(http1) "
 extern TraceFlag http2_ping_trace;
-#define GRPC_HTTP2_PING_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::http2_ping_trace.enabled()) << "(http2_ping) "
 extern TraceFlag http2_stream_state_trace;
-#define GRPC_HTTP2_STREAM_STATE_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::http2_stream_state_trace.enabled()) \
-      << "(http2_stream_state) "
 extern TraceFlag http_keepalive_trace;
-#define GRPC_HTTP_KEEPALIVE_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::http_keepalive_trace.enabled()) \
-      << "(http_keepalive) "
 extern TraceFlag inproc_trace;
-#define GRPC_INPROC_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::inproc_trace.enabled()) << "(inproc) "
 extern DebugOnlyTraceFlag lb_policy_refcount_trace;
-#define GRPC_LB_POLICY_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::lb_policy_refcount_trace.enabled()) \
-      << "(lb_policy_refcount) "
 extern TraceFlag metadata_query_trace;
-#define GRPC_METADATA_QUERY_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::metadata_query_trace.enabled()) \
-      << "(metadata_query) "
 extern TraceFlag op_failure_trace;
-#define GRPC_OP_FAILURE_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::op_failure_trace.enabled()) << "(op_failure) "
 extern TraceFlag orca_client_trace;
-#define GRPC_ORCA_CLIENT_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::orca_client_trace.enabled()) << "(orca_client) "
 extern TraceFlag outlier_detection_lb_trace;
-#define GRPC_OUTLIER_DETECTION_LB_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::outlier_detection_lb_trace.enabled()) \
-      << "(outlier_detection_lb) "
 extern DebugOnlyTraceFlag party_state_trace;
-#define GRPC_PARTY_STATE_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::party_state_trace.enabled()) << "(party_state) "
 extern DebugOnlyTraceFlag pending_tags_trace;
-#define GRPC_PENDING_TAGS_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::pending_tags_trace.enabled()) << "(pending_tags) "
 extern TraceFlag pick_first_trace;
-#define GRPC_PICK_FIRST_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::pick_first_trace.enabled()) << "(pick_first) "
 extern TraceFlag plugin_credentials_trace;
-#define GRPC_PLUGIN_CREDENTIALS_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::plugin_credentials_trace.enabled()) \
-      << "(plugin_credentials) "
 extern DebugOnlyTraceFlag polling_trace;
-#define GRPC_POLLING_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::polling_trace.enabled()) << "(polling) "
 extern DebugOnlyTraceFlag polling_api_trace;
-#define GRPC_POLLING_API_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::polling_api_trace.enabled()) << "(polling_api) "
 extern TraceFlag priority_lb_trace;
-#define GRPC_PRIORITY_LB_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::priority_lb_trace.enabled()) << "(priority_lb) "
 extern DebugOnlyTraceFlag promise_primitives_trace;
-#define GRPC_PROMISE_PRIMITIVES_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::promise_primitives_trace.enabled()) \
-      << "(promise_primitives) "
 extern TraceFlag queue_pluck_trace;
-#define GRPC_QUEUE_PLUCK_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::queue_pluck_trace.enabled()) << "(queue_pluck) "
 extern DebugOnlyTraceFlag resolver_refcount_trace;
-#define GRPC_RESOLVER_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::resolver_refcount_trace.enabled()) \
-      << "(resolver_refcount) "
 extern TraceFlag resource_quota_trace;
-#define GRPC_RESOURCE_QUOTA_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::resource_quota_trace.enabled()) \
-      << "(resource_quota) "
 extern TraceFlag retry_trace;
-#define GRPC_RETRY_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::retry_trace.enabled()) << "(retry) "
 extern TraceFlag ring_hash_lb_trace;
-#define GRPC_RING_HASH_LB_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::ring_hash_lb_trace.enabled()) << "(ring_hash_lb) "
 extern TraceFlag rls_lb_trace;
-#define GRPC_RLS_LB_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::rls_lb_trace.enabled()) << "(rls_lb) "
 extern TraceFlag round_robin_trace;
-#define GRPC_ROUND_ROBIN_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::round_robin_trace.enabled()) << "(round_robin) "
 extern TraceFlag secure_endpoint_trace;
-#define GRPC_SECURE_ENDPOINT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::secure_endpoint_trace.enabled()) \
-      << "(secure_endpoint) "
 extern DebugOnlyTraceFlag security_connector_refcount_trace;
-#define GRPC_SECURITY_CONNECTOR_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::security_connector_refcount_trace.enabled()) \
-      << "(security_connector_refcount) "
 extern TraceFlag server_channel_trace;
-#define GRPC_SERVER_CHANNEL_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::server_channel_trace.enabled()) \
-      << "(server_channel) "
 extern DebugOnlyTraceFlag slice_refcount_trace;
-#define GRPC_SLICE_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::slice_refcount_trace.enabled()) \
-      << "(slice_refcount) "
 extern TraceFlag stateful_session_filter_trace;
-#define GRPC_STATEFUL_SESSION_FILTER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::stateful_session_filter_trace.enabled()) \
-      << "(stateful_session_filter) "
 extern DebugOnlyTraceFlag stream_refcount_trace;
-#define GRPC_STREAM_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::stream_refcount_trace.enabled()) \
-      << "(stream_refcount) "
 extern TraceFlag subchannel_trace;
-#define GRPC_SUBCHANNEL_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::subchannel_trace.enabled()) << "(subchannel) "
 extern TraceFlag subchannel_pool_trace;
-#define GRPC_SUBCHANNEL_POOL_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::subchannel_pool_trace.enabled()) \
-      << "(subchannel_pool) "
 extern DebugOnlyTraceFlag subchannel_refcount_trace;
-#define GRPC_SUBCHANNEL_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::subchannel_refcount_trace.enabled()) \
-      << "(subchannel_refcount) "
 extern TraceFlag tcp_trace;
-#define GRPC_TCP_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::tcp_trace.enabled()) << "(tcp) "
 extern TraceFlag timer_trace;
-#define GRPC_TIMER_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::timer_trace.enabled()) << "(timer) "
 extern TraceFlag timer_check_trace;
-#define GRPC_TIMER_CHECK_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::timer_check_trace.enabled()) << "(timer_check) "
 extern TraceFlag tsi_trace;
-#define GRPC_TSI_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::tsi_trace.enabled()) << "(tsi) "
 extern TraceFlag weighted_round_robin_lb_trace;
-#define GRPC_WEIGHTED_ROUND_ROBIN_LB_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::weighted_round_robin_lb_trace.enabled()) \
-      << "(weighted_round_robin_lb) "
 extern TraceFlag weighted_target_lb_trace;
-#define GRPC_WEIGHTED_TARGET_LB_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::weighted_target_lb_trace.enabled()) \
-      << "(weighted_target_lb) "
 extern DebugOnlyTraceFlag work_serializer_trace;
-#define GRPC_WORK_SERIALIZER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::work_serializer_trace.enabled()) \
-      << "(work_serializer) "
 extern TraceFlag xds_client_trace;
-#define GRPC_XDS_CLIENT_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::xds_client_trace.enabled()) << "(xds_client) "
 extern TraceFlag xds_client_refcount_trace;
-#define GRPC_XDS_CLIENT_REFCOUNT_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_client_refcount_trace.enabled()) \
-      << "(xds_client_refcount) "
 extern TraceFlag xds_cluster_impl_lb_trace;
-#define GRPC_XDS_CLUSTER_IMPL_LB_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_cluster_impl_lb_trace.enabled()) \
-      << "(xds_cluster_impl_lb) "
 extern TraceFlag xds_cluster_manager_lb_trace;
-#define GRPC_XDS_CLUSTER_MANAGER_LB_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_cluster_manager_lb_trace.enabled()) \
-      << "(xds_cluster_manager_lb) "
 extern TraceFlag xds_cluster_resource_type_test_trace;
-#define GRPC_XDS_CLUSTER_RESOURCE_TYPE_TEST_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_cluster_resource_type_test_trace.enabled()) \
-      << "(xds_cluster_resource_type_test) "
 extern TraceFlag xds_common_types_test_trace;
-#define GRPC_XDS_COMMON_TYPES_TEST_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_common_types_test_trace.enabled()) \
-      << "(xds_common_types_test) "
 extern TraceFlag xds_endpoint_resource_type_test_trace;
-#define GRPC_XDS_ENDPOINT_RESOURCE_TYPE_TEST_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_endpoint_resource_type_test_trace.enabled()) \
-      << "(xds_endpoint_resource_type_test) "
 extern TraceFlag xds_listener_resource_type_test_trace;
-#define GRPC_XDS_LISTENER_RESOURCE_TYPE_TEST_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_listener_resource_type_test_trace.enabled()) \
-      << "(xds_listener_resource_type_test) "
 extern TraceFlag xds_override_host_lb_trace;
-#define GRPC_XDS_OVERRIDE_HOST_LB_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_override_host_lb_trace.enabled()) \
-      << "(xds_override_host_lb) "
 extern TraceFlag xds_resolver_trace;
-#define GRPC_XDS_RESOLVER_TRACE_LOG(level) \
-  LOG_IF(level, grpc_core::xds_resolver_trace.enabled()) << "(xds_resolver) "
 extern TraceFlag xds_route_config_resource_type_test_trace;
-#define GRPC_XDS_ROUTE_CONFIG_RESOURCE_TYPE_TEST_TRACE_LOG(level)        \
-  LOG_IF(level,                                                          \
-         grpc_core::xds_route_config_resource_type_test_trace.enabled()) \
-      << "(xds_route_config_resource_type_test) "
 extern TraceFlag xds_server_config_fetcher_trace;
-#define GRPC_XDS_SERVER_CONFIG_FETCHER_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_server_config_fetcher_trace.enabled()) \
-      << "(xds_server_config_fetcher) "
 extern TraceFlag xds_wrr_locality_lb_trace;
-#define GRPC_XDS_WRR_LOCALITY_LB_TRACE_LOG(level)               \
-  LOG_IF(level, grpc_core::xds_wrr_locality_lb_trace.enabled()) \
-      << "(xds_wrr_locality_lb) "
 
 constexpr const char* g_all_trace_var_names[] = {
     "api",
