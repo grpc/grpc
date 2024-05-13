@@ -92,6 +92,7 @@ grpc_cc_library(
     srcs = ["rls_server.cc"],
     hdrs = ["rls_server.h"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     deps = [
@@ -187,6 +188,7 @@ grpc_cc_binary(
     srcs = ["client_crash_test_server.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "gtest",
     ],
     deps = [
@@ -207,6 +209,7 @@ grpc_cc_test(
     name = "client_fork_test",
     srcs = ["client_fork_test.cc"],
     external_deps = [
+        "absl/log:check",
         "absl/strings",
         "gtest",
     ],
@@ -371,6 +374,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "end2end_test",
     size = "large",
+    external_deps = ["absl/log:check"],
     flaky = True,  # TODO(b/151704375)
     shard_count = 10,
     tags = [
@@ -489,6 +493,7 @@ grpc_cc_test(
     name = "mock_test",
     srcs = ["mock_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -764,6 +769,7 @@ grpc_cc_test(
     name = "server_load_reporting_end2end_test",
     srcs = ["server_load_reporting_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -782,6 +788,7 @@ grpc_cc_test(
     name = "flaky_network_test",
     srcs = ["flaky_network_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -828,6 +835,7 @@ grpc_cc_test(
     name = "streaming_throughput_test",
     srcs = ["streaming_throughput_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -851,6 +859,7 @@ grpc_cc_test(
     size = "large",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     shard_count = 5,
@@ -1035,6 +1044,7 @@ grpc_cc_test(
     name = "orca_service_end2end_test",
     srcs = ["orca_service_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["cpp_end2end_test"],
@@ -1080,6 +1090,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["ssl_credentials_test"],
@@ -1106,6 +1117,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["tls_credentials_test"],

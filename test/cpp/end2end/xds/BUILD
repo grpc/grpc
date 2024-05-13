@@ -162,6 +162,7 @@ grpc_cc_test(
     size = "large",
     srcs = ["xds_cluster_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)
@@ -217,6 +218,7 @@ grpc_cc_test(
     size = "large",
     srcs = ["xds_core_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     flaky = True,
@@ -243,6 +245,7 @@ grpc_cc_test(
     size = "large",
     srcs = ["xds_csds_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -324,6 +327,7 @@ grpc_cc_test(
     size = "large",
     srcs = ["xds_wrr_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     linkstatic = True,  # Fixes dyld error on MacOS
@@ -410,6 +414,7 @@ grpc_cc_test(
     size = "large",
     srcs = ["xds_routing_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)
@@ -458,6 +463,7 @@ grpc_cc_test(
     size = "large",
     srcs = ["xds_override_host_end2end_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     linkstatic = True,  # Fixes dyld error on MacOS

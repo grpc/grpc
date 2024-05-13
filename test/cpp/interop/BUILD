@@ -224,6 +224,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     tags = ["no_windows"],
     deps = [
@@ -313,6 +314,7 @@ grpc_cc_library(
         "pre_stop_hook_server.h",
         "xds_interop_server_lib.h",
     ],
+    external_deps = ["absl/log:check"],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
@@ -332,6 +334,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
         "otel/exporters/prometheus:prometheus_exporter",
         "otel/sdk/src/metrics",
     ],
@@ -381,6 +384,7 @@ grpc_cc_library(
         "istio_echo_server_lib.cc",
     ],
     hdrs = ["istio_echo_server_lib.h"],
+    external_deps = ["absl/log:check"],
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:istio_echo_proto",
@@ -394,6 +398,7 @@ grpc_cc_binary(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log:check",
     ],
     deps = [
         ":istio_echo_server_lib",

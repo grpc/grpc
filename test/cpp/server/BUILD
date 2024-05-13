@@ -53,6 +53,7 @@ grpc_cc_test(
     name = "server_request_call_test",
     srcs = ["server_request_call_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     tags = ["no_windows"],
