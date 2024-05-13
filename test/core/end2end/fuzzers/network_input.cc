@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -520,8 +521,7 @@ Duration ScheduleConnection(
                     endpoint) mutable {
               ExecCtx exec_ctx;
               if (!endpoint.ok()) {
-                gpr_log(GPR_ERROR, "Failed to connect: %s",
-                        endpoint.status().ToString().c_str());
+                LOG(ERROR) << "Failed to connect: " << endpoint.status();
                 return;
               }
               std::shared_ptr<EventEngine::Endpoint> ep =

@@ -38,7 +38,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/passive_listener.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -74,6 +76,9 @@
   "grpc.server.max_pending_requests_hard_limit"
 
 namespace grpc_core {
+namespace experimental {
+class PassiveListenerImpl;
+}  // namespace experimental
 
 extern TraceFlag grpc_server_channel_trace;
 
@@ -112,7 +117,7 @@ class Server : public ServerInterface,
   /// Interface for listeners.
   /// Implementations must override the Orphan() method, which should stop
   /// listening and initiate destruction of the listener.
-  class ListenerInterface : public Orphanable {
+  class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
    public:
     ~ListenerInterface() override = default;
 
@@ -211,17 +216,28 @@ class Server : public ServerInterface,
 
   void SendGoaways() ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
+  grpc_compression_options compression_options() const override {
+    return compression_options_;
+  }
+
  private:
+  // note: the grpc_core::Server redundant namespace qualification is
+  // required for older gcc versions.
+  // TODO(yashykt): eliminate this friend statement as part of your upcoming
+  // server listener refactoring.
+  friend absl::Status(::grpc_server_add_passive_listener)(
+      grpc_core::Server* server, grpc_server_credentials* credentials,
+      std::shared_ptr<grpc_core::experimental::PassiveListenerImpl>
+          passive_listener);
   struct RequestedCall;
 
   class RequestMatcherInterface;
-  class RealRequestMatcherFilterStack;
-  class RealRequestMatcherPromises;
+  class RealRequestMatcher;
   class AllocatingRequestMatcherBase;
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
 
-  class ChannelData final : public ServerTransport::Acceptor {
+  class ChannelData final {
    public:
     ChannelData() = default;
     ~ChannelData();
@@ -234,26 +250,17 @@ class Server : public ServerInterface,
     Channel* channel() const { return channel_.get(); }
     size_t cq_idx() const { return cq_idx_; }
 
-    RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
-                                          const absl::string_view& path);
     // Filter vtable functions.
     static grpc_error_handle InitChannelElement(
         grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
-    static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-        grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory);
     void InitCall(RefCountedPtr<CallSpineInterface> call);
-
-    Arena* CreateArena() override;
-    absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
 
    private:
     class ConnectivityWatcher;
 
     static void AcceptStream(void* arg, Transport* /*transport*/,
                              const void* transport_server_data);
-    void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
@@ -384,6 +391,12 @@ class Server : public ServerInterface,
     using is_transparent = void;
   };
 
+  class TransportConnectivityWatcher;
+
+  RegisteredMethod* GetRegisteredMethod(const absl::string_view& host,
+                                        const absl::string_view& path);
+  void SetRegisteredMethodOnMetadata(ClientMetadata& metadata);
+
   static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
@@ -445,6 +458,10 @@ class Server : public ServerInterface,
     return shutdown_refs_.load(std::memory_order_acquire) == 0;
   }
 
+  auto MatchAndPublishCall(CallHandler call_handler);
+  absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
+      const ChannelArgs& args);
+
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
@@ -453,6 +470,7 @@ class Server : public ServerInterface,
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
   bool started_ = false;
+  const grpc_compression_options compression_options_;
 
   // The two following mutexes control access to server-state.
   // mu_global_ controls access to non-call-related state (e.g., channel state).
@@ -500,6 +518,9 @@ class Server : public ServerInterface,
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
+  absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
+      ABSL_GUARDED_BY(mu_global_);
+  size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
 
   std::list<Listener> listeners_;
   size_t listeners_destroyed_ = 0;

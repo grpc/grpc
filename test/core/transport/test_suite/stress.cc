@@ -19,7 +19,7 @@
 namespace grpc_core {
 
 TRANSPORT_TEST(ManyUnaryRequests) {
-  SetServerAcceptor();
+  SetServerCallDestination();
   const int kNumRequests = absl::LogUniform<int>(rng(), 10, 100);
   std::list<std::string> call_names;
   auto make_call_name = [&call_names](int i,

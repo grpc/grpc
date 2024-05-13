@@ -58,9 +58,7 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    # TODO(hork): resolve when the client end2end test flake rate reduces to
-    # a tolerable amount.
-    windows: false
+    windows: true
 - name: event_engine_dns
   default:
     # not tested on iOS at all
@@ -96,8 +94,6 @@
     ios: broken
     windows: broken
     posix: false
-- name: promise_based_server_call
-  default: false
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write

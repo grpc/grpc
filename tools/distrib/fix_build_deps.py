@@ -64,6 +64,7 @@ EXTERNAL_DEPS = {
     "absl/functional/bind_front.h": "absl/functional:bind_front",
     "absl/functional/function_ref.h": "absl/functional:function_ref",
     "absl/hash/hash.h": "absl/hash",
+    "absl/log/check.h": "absl/log:check",
     "absl/memory/memory.h": "absl/memory",
     "absl/meta/type_traits.h": "absl/meta:type_traits",
     "absl/numeric/int128.h": "absl/numeric:int128",
@@ -543,9 +544,11 @@ def make_library(library):
     # once EventEngine lands we can clean this up
     deps = Choices(
         library,
-        {"//:grpc_base": ["//:grpc", "//:grpc_unsecure"]}
-        if library.startswith("//test/")
-        else {},
+        (
+            {"//:grpc_base": ["//:grpc", "//:grpc_unsecure"]}
+            if library.startswith("//test/")
+            else {}
+        ),
     )
     external_deps = Choices(None, {})
     for hdr in hdrs:

@@ -199,6 +199,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
   g_client_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
   g_server_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
+  GlobalStatsPluginRegistryTestPeer::ResetGlobalStatsPluginRegistry();
   GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<NewFakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
@@ -265,8 +266,6 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   EXPECT_GE(server_transport_stats.incoming.framing_bytes, 32);
   EXPECT_LE(server_transport_stats.incoming.framing_bytes, 58);
 
-  delete ServerCallTracerFactory::Get(ChannelArgs());
-  ServerCallTracerFactory::RegisterGlobal(nullptr);
   delete g_client_call_ended_notify;
   g_client_call_ended_notify = nullptr;
   delete g_server_call_ended_notify;

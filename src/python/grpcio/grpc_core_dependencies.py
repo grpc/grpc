@@ -736,6 +736,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/transport/call_spine.cc',
     'src/core/lib/transport/connectivity_state.cc',
     'src/core/lib/transport/error_utils.cc',
+    'src/core/lib/transport/interception_chain.cc',
     'src/core/lib/transport/message.cc',
     'src/core/lib/transport/metadata.cc',
     'src/core/lib/transport/metadata_batch.cc',

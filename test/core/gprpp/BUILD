@@ -60,6 +60,20 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "dump_args_test",
+    srcs = ["dump_args_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:dump_args",
+    ],
+)
+
 # TODO(hork): solidify fork support requirements for EventEngines
 grpc_cc_test(
     name = "fork_test",
