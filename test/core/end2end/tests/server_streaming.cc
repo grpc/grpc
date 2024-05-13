@@ -19,10 +19,10 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -70,7 +70,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   test.Expect(104, true);
   test.Step();
 
-  gpr_log(GPR_DEBUG, "SEEN_STATUS:%d", seen_status);
+  VLOG(2) << "SEEN_STATUS:" << seen_status;
 
   // Client keeps reading messages till it gets the status
   int num_messages_received = 0;

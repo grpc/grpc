@@ -25,6 +25,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
@@ -37,7 +38,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -245,9 +245,7 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
 
 class H2SslCertTest : public ::testing::TestWithParam<CoreTestConfigWrapper> {
  protected:
-  H2SslCertTest() {
-    gpr_log(GPR_INFO, "SSL_CERT_tests/%s", GetParam().config.name);
-  }
+  H2SslCertTest() { LOG(INFO) << "SSL_CERT_tests/" << GetParam().config.name; }
   void SetUp() override {
     fixture_ = GetParam().config.create_fixture(grpc_core::ChannelArgs(),
                                                 grpc_core::ChannelArgs());

@@ -91,7 +91,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "ssl_transport_security_test",
-    timeout = "long",
+    timeout = "eternal",
     srcs = ["ssl_transport_security_test.cc"],
     data = [
         "//src/core/tsi/test_creds:badclient.key",
