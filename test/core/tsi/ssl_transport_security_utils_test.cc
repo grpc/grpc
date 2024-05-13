@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
+#include <openssl/evp.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
 
@@ -714,83 +715,123 @@ TEST_F(CrlUtils, CrlAkidNullptr) {
   EXPECT_EQ(akid.status().code(), absl::StatusCode::kInvalidArgument);
 }
 
-TEST(IsPemCertificateChainiNonEmptyAndValidTest, EmptyPem) {
-  EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid(/*cert_chain_pem=*/""));
+TEST(ParsePemCertificateChainTest, EmptyPem) {
+  EXPECT_EQ(ParsePemCertificateChain(/*cert_chain_pem=*/"").status(),
+            absl::InvalidArgumentError("Cert chain PEM is empty."));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest, InvalidPem) {
-  EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid("invalid-pem"));
+TEST(ParsePemCertificateChainTest, InvalidPem) {
+  EXPECT_EQ(ParsePemCertificateChain("invalid-pem").status(),
+            absl::NotFoundError("No certificates found."));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest, PartialPem) {
+TEST(ParsePemCertificateChainTest, PartialPem) {
   std::string pem(kLeafCertPem);
-  EXPECT_FALSE(
-      IsPemCertificateChainNonEmptyAndValid(pem.substr(0, pem.length() / 2)));
+  EXPECT_EQ(ParsePemCertificateChain(pem.substr(0, pem.length() / 2)).status(),
+            absl::FailedPreconditionError("Invalid PEM."));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest, SingleCertSuccess) {
-  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(kLeafCertPem));
+TEST(ParsePemCertificateChainTest, SingleCertSuccess) {
+  absl::StatusOr<std::vector<X509*>> certs =
+      ParsePemCertificateChain(kLeafCertPem);
+  EXPECT_EQ(certs.status(), absl::OkStatus());
+  EXPECT_EQ(certs->size(), 1);
+  EXPECT_NE(certs->at(0), nullptr);
+  X509_free(certs->at(0));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest, MultipleCertFailure) {
-  EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid(
-      absl::StrCat(kLeafCertPem, kLeafCertPem)));
+TEST(ParsePemCertificateChainTest, MultipleCertFailure) {
+  EXPECT_EQ(ParsePemCertificateChain(absl::StrCat(kLeafCertPem, kLeafCertPem))
+                .status(),
+            absl::FailedPreconditionError("Invalid PEM."));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest, MultipleCertSuccess) {
-  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
-      absl::StrCat(kLeafCertPem, "\n", kLeafCertPem)));
+TEST(ParsePemCertificateChainTest, MultipleCertSuccess) {
+  absl::StatusOr<std::vector<X509*>> certs =
+      ParsePemCertificateChain(absl::StrCat(kLeafCertPem, "\n", kLeafCertPem));
+  EXPECT_EQ(certs.status(), absl::OkStatus());
+  EXPECT_EQ(certs->size(), 2);
+  EXPECT_NE(certs->at(0), nullptr);
+  EXPECT_NE(certs->at(1), nullptr);
+  X509_free(certs->at(0));
+  X509_free(certs->at(1));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest,
-     MultipleCertWithExtraMiddleLinesSuccess) {
-  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
-      absl::StrCat(kLeafCertPem, "\nGarbage\n", kLeafCertPem)));
+TEST(ParsePemCertificateChainTest, MultipleCertWithExtraMiddleLinesSuccess) {
+  absl::StatusOr<std::vector<X509*>> certs = ParsePemCertificateChain(
+      absl::StrCat(kLeafCertPem, "\nGarbage\n", kLeafCertPem));
+  EXPECT_EQ(certs.status(), absl::OkStatus());
+  EXPECT_EQ(certs->size(), 2);
+  EXPECT_NE(certs->at(0), nullptr);
+  EXPECT_NE(certs->at(1), nullptr);
+  X509_free(certs->at(0));
+  X509_free(certs->at(1));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest,
-     MultipleCertWitManyMiddleLinesSuccess) {
-  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
-      absl::StrCat(kLeafCertPem, "\n\n\n\n\n\n\n", kLeafCertPem)));
+TEST(ParsePemCertificateChainTest, MultipleCertWitManyMiddleLinesSuccess) {
+  absl::StatusOr<std::vector<X509*>> certs = ParsePemCertificateChain(
+      absl::StrCat(kLeafCertPem, "\n\n\n\n\n\n\n", kLeafCertPem));
+  EXPECT_EQ(certs.status(), absl::OkStatus());
+  EXPECT_EQ(certs->size(), 2);
+  EXPECT_NE(certs->at(0), nullptr);
+  EXPECT_NE(certs->at(1), nullptr);
+  X509_free(certs->at(0));
+  X509_free(certs->at(1));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest, ValidCertWithInvalidSuffix) {
-  EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid(
-      absl::StrCat(kLeafCertPem, "invalid-pem")));
+TEST(ParsePemCertificateChainTest, ValidCertWithInvalidSuffix) {
+  EXPECT_EQ(ParsePemCertificateChain(absl::StrCat(kLeafCertPem, "invalid-pem"))
+                .status(),
+            absl::FailedPreconditionError("Invalid PEM."));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest, ValidCertWithInvalidPrefix) {
-  EXPECT_FALSE(IsPemCertificateChainNonEmptyAndValid(
-      absl::StrCat("invalid-pem", kLeafCertPem)));
+TEST(ParsePemCertificateChainTest, ValidCertWithInvalidPrefix) {
+  EXPECT_EQ(ParsePemCertificateChain(absl::StrCat("invalid-pem", kLeafCertPem))
+                .status(),
+            absl::NotFoundError("No certificates found."));
 }
 
-TEST(IsPemCertificateChainNonEmptyAndValidTest,
-     ValidCertWithInvalidLeadingLine) {
-  EXPECT_TRUE(IsPemCertificateChainNonEmptyAndValid(
-      absl::StrCat("invalid-pem\n", kLeafCertPem)));
+TEST(ParsePemCertificateChainTest, ValidCertWithInvalidLeadingLine) {
+  absl::StatusOr<std::vector<X509*>> certs =
+      ParsePemCertificateChain(absl::StrCat("invalid-pem\n", kLeafCertPem));
+  EXPECT_EQ(certs.status(), absl::OkStatus());
+  EXPECT_EQ(certs->size(), 1);
+  EXPECT_NE(certs->at(0), nullptr);
+  X509_free(certs->at(0));
 }
 
-TEST(IsPemPrivateKeyNonEmptyAndValidTest, EmptyPem) {
-  EXPECT_FALSE(IsPemPrivateKeyNonEmptyAndValid(/*private_key_pem=*/""));
+TEST(ParsePemPrivateKeyTest, EmptyPem) {
+  EXPECT_EQ(ParsePemPrivateKey(/*private_key_pem=*/"").status(),
+            absl::NotFoundError("No private key found."));
 }
 
-TEST(IsPemPrivateKeyNonEmptyAndValidTest, InvalidPem) {
-  EXPECT_FALSE(IsPemPrivateKeyNonEmptyAndValid("invalid-pem"));
+TEST(ParsePemPrivateKeyTest, InvalidPem) {
+  EXPECT_EQ(ParsePemPrivateKey("invalid-pem").status(),
+            absl::NotFoundError("No private key found."));
 }
 
-TEST(IsPemPrivateKeyNonEmptyAndValidTest, PartialPem) {
+TEST(ParsePemPrivateKeyTest, PartialPem) {
   std::string pem(kPrivateKeyPem);
-  EXPECT_FALSE(
-      IsPemPrivateKeyNonEmptyAndValid(pem.substr(0, pem.length() / 2)));
+  EXPECT_EQ(ParsePemPrivateKey(pem.substr(0, pem.length() / 2)).status(),
+            absl::NotFoundError("No private key found."));
 }
 
-TEST(IsPemPrivateKeyNonEmptyAndValidTest, RsaSuccess) {
-  EXPECT_TRUE(IsPemPrivateKeyNonEmptyAndValid(kPrivateKeyPem));
-  EXPECT_TRUE(IsPemPrivateKeyNonEmptyAndValid(kRsaPrivateKeyPem));
+TEST(ParsePemPrivateKeyTest, RsaSuccess1) {
+  absl::StatusOr<EVP_PKEY*> pkey = ParsePemPrivateKey(kPrivateKeyPem);
+  EXPECT_EQ(pkey.status(), absl::OkStatus());
+  EXPECT_NE(*pkey, nullptr);
 }
 
-TEST(IsPemPrivateKeyNonEmptyAndValidTest, EcSuccess) {
-  EXPECT_TRUE(IsPemPrivateKeyNonEmptyAndValid(kEcPrivateKeyPem));
+TEST(ParsePemPrivateKeyTest, RsaSuccess2) {
+  absl::StatusOr<EVP_PKEY*> pkey = ParsePemPrivateKey(kRsaPrivateKeyPem);
+  EXPECT_EQ(pkey.status(), absl::OkStatus());
+  EXPECT_NE(*pkey, nullptr);
+}
+
+TEST(ParsePemPrivateKeyTest, EcSuccess) {
+  absl::StatusOr<EVP_PKEY*> pkey = ParsePemPrivateKey(kEcPrivateKeyPem);
+  EXPECT_EQ(pkey.status(), absl::OkStatus());
+  EXPECT_NE(*pkey, nullptr);
 }
 }  // namespace testing
 }  // namespace grpc_core
