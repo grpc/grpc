@@ -14,12 +14,15 @@
 #
 # File format:
 # Each config var must have a name, a default, and a description.
-# Optionally, a `debug-only: true` flag can be added to ensure that these flags
-# are only enabled in debug builds.
+# Optionally:
+#  *  a `debug_only: true` flag can be added to ensure that this flag is only
+#     enabled in debug builds.
+#  *  an `internal: true` flag can be added to ensure that this flag does not
+#     show up in the environment_variables.md documentations.
 
 api:
   default: false
-  description: null
+  description: API calls to the C core.
 auth_context_refcount:
   debug_only: true
   default: false
@@ -32,36 +35,36 @@ backend_metric_filter:
   description: null
 bdp_estimator:
   default: false
-  description: null
+  description: Behavior of bdp estimation logic.
 call:
   default: false
   description: null
 call_combiner:
   debug_only: true
   default: false
-  description: null
+  description: Call combiner state.
 call_error:
   default: false
-  description: null
+  description: Possible errors contributing to final call statuses.
 call_refcount:
   debug_only: true
   default: false
   description: null
 cares_address_sorting:
   default: false
-  description: null
+  description: Operations of the c-ares based DNS resolver's address sorter.
 cares_resolver:
   default: false
-  description: null
+  description: Operations of the c-ares based DNS resolver.
 cds_lb:
   default: false
-  description: null
+  description: CDS LB policy.
 channel:
   default: false
-  description: null
+  description: Operations on the C core channel stack.
 channel_stack:
   default: false
-  description: null
+  description: Construction of the set of filters in a channel stack.
 chaotic_good:
   default: false
   description: null
@@ -73,40 +76,40 @@ chttp2_new_stream:
   description: null
 client_channel:
   default: false
-  description: null
+  description: Client channel control plane activity, including resolver and load balancing policy interaction.
 client_channel_call:
   default: false
-  description: null
+  description: Client channel call activity related to name resolution.
 client_channel_lb_call:
   default: false
-  description: null
+  description: Client channel call activity related to load balancing picking.
 client_idle_filter:
   default: false
   description: null
 closure:
   debug_only: true
   default: false
-  description: null
+  description: Legacy closure creation, scheduling, and completion.
 combiner:
   debug_only: true
   default: false
-  description: null
+  description: Combiner lock state.
 compression:
   default: false
-  description: null
+  description: Compression operations.
 connectivity_state:
   default: false
-  description: null
+  description: Connectivity state changes to channels.
 cq_refcount:
   debug_only: true
   default: false
   description: null
 cronet:
   default: false
-  description: null
+  description: Cronet transport engine.
 dns_resolver:
   default: false
-  description: null
+  description: The active DNS resolver.
 environment_autodetect:
   default: false
   description: null
@@ -134,7 +137,7 @@ event_engine_poller:
   description: null
 executor:
   default: false
-  description: null
+  description: gRPC's legacy thread pool ('the executor').
 fault_injection_filter:
   default: false
   description: null
@@ -145,43 +148,43 @@ fd_refcount:
 fd_trace:
   debug_only: true
   default: false
-  description: null
+  description: Legacy file descriptor create(), shutdown() and close() calls for channel fds.
 flowctl:
   default: false
-  description: null
+  description: Http2 flow control.
 fork:
   default: false
   description: null
 glb:
   default: false
-  description: null
+  description: gRPClb load balancer.
 grpc_authz_api:
   default: false
-  description: null
+  description: gRPC authorization.
 handshaker:
   default: false
-  description: null
+  description: Handshaking state.
 health_check_client:
   default: false
-  description: null
+  description: Health checking client code.
 http:
   default: false
-  description: null
+  description: Http2 transport engine.
 http1:
   default: false
-  description: null
+  description: HTTP/1.x operations performed by gRPC.
 http2_ping:
   default: false
-  description: null
+  description: Pings/ping acks/antagonist writes in http2 stack.
 http2_stream_state:
   default: false
-  description: null
+  description: Http2 stream state mutations.
 http_keepalive:
   default: false
-  description: null
+  description: gRPC keepalive pings.
 inproc:
   default: false
-  description: null
+  description: In-process transport.
 lb_policy_refcount:
   debug_only: true
   default: false
@@ -191,7 +194,7 @@ metadata_query:
   description: null
 op_failure:
   default: false
-  description: null
+  description: Error information when failure is pushed onto a completion queue.
 orca_client:
   default: false
   description: null
@@ -205,24 +208,24 @@ party_state:
 pending_tags:
   debug_only: true
   default: false
-  description: null
+  description: Still-in-progress tags on completion queues.
 pick_first:
   default: false
-  description: null
+  description: Pick first load balancing policy.
 plugin_credentials:
   default: false
-  description: null
+  description: Plugin credentials.
 polling:
   debug_only: true
   default: false
-  description: null
+  description: The active polling engine.
 polling_api:
   debug_only: true
   default: false
-  description: null
+  description: API calls to polling engine.
 priority_lb:
   default: false
-  description: null
+  description: Priority LB policy.
 promise_primitives:
   debug_only: true
   default: false
@@ -236,29 +239,29 @@ resolver_refcount:
   description: null
 resource_quota:
   default: false
-  description: null
+  description: Resource quota objects internals.
 retry:
   default: false
   description: null
 ring_hash_lb:
   default: false
-  description: null
+  description: Ring hash load balancing policy.
 rls_lb:
   default: false
-  description: null
+  description: RLS load balancing policy.
 round_robin:
   default: false
-  description: null
+  description: Round robin load balancing policy.
 secure_endpoint:
   default: false
-  description: null
+  description: Bytes flowing through encrypted channels.
 security_connector_refcount:
   debug_only: true
   default: false
   description: null
 server_channel:
   default: false
-  description: null
+  description: Lightweight trace of significant server channel events.
 slice_refcount:
   debug_only: true
   default: false
@@ -269,75 +272,80 @@ stateful_session_filter:
 stream_refcount:
   debug_only: true
   default: false
-  description: null
+  description: null.
 subchannel:
   default: false
-  description: null
+  description: Connectivity state of subchannels.
 subchannel_pool:
   default: false
-  description: null
+  description: Subchannel pool.
 subchannel_refcount:
   debug_only: true
   default: false
   description: null
 tcp:
   default: false
-  description: null
+  description: Bytes in and out of a channel.
 timer:
   default: false
-  description: null
+  description: Timers (alarms) in the grpc internals.
 timer_check:
   default: false
-  description: null
+  description: more detailed trace of timer logic in grpc internals.
 tsi:
   default: false
-  description: null
+  description: TSI transport security.
 weighted_round_robin_lb:
   default: false
-  description: null
+  description: Weighted round robin load balancing policy.
 weighted_target_lb:
   default: false
-  description: null
+  description: Weighted target LB policy.
 work_serializer:
   debug_only: true
   default: false
   description: null
 xds_client:
   default: false
-  description: null
+  description: XDS client.
 xds_client_refcount:
   default: false
-  description: null
+  description: Refcount of XDS client.
 xds_cluster_impl_lb:
   default: false
-  description: null
+  description: XDS Cluster impl LB policy.
 xds_cluster_manager_lb:
   default: false
-  description: null
+  description: XDS Cluster manager LB policy.
 xds_cluster_resource_type_test:
   default: true
-  description: null
+  description: XDS Cluster resource type.
+  internal: true
 xds_common_types_test:
   default: true
-  description: null
+  description: XDS Common types.
+  internal: true
 xds_endpoint_resource_type_test:
   default: true
-  description: null
+  description: XDS Endpoint resource type.
+  internal: true
 xds_listener_resource_type_test:
   default: true
-  description: null
+  description: XDS Listener resource type.
+  internal: true
 xds_override_host_lb:
   default: false
-  description: null
+  description: XDS Override host LB.
 xds_resolver:
   default: false
-  description: null
+  description: XDS Resolver.
 xds_route_config_resource_type_test:
   default: true
-  description: null
+  description: XDS Route config resource type.
+  internal: true
 xds_server_config_fetcher:
   default: false
-  description: null
+  description: XDS Server config fetcher.
 xds_wrr_locality_lb:
   default: false
-  description: null
+  description: XDS WRR locality LB policy.

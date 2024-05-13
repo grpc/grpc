@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Uses trace_flags.yaml to auto-generate code for trace flags in gRPC-core, as
+# well as the trace flag piece of doc/environment_variables.md.
+
 import subprocess
 from io import StringIO
 
@@ -49,6 +52,8 @@ def main(args):
         f.write(render_source_file("trace.h.mako", trace_flags))
     with open("src/core/lib/debug/trace_flags.cc", "w") as f:
         f.write(render_source_file("trace_flags.cc.mako", trace_flags))
+    with open("doc/environment_variables.md", "w") as f:
+        f.write(render_source_file("environment_variables.md.mako", trace_flags))
     if _CHECK.value or _FORMAT.value:
         env = {
             "CHANGED_FILES": "src/core/lib/debug/trace.h src/core/lib/debug/trace_flags.cc"

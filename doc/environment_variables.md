@@ -41,92 +41,108 @@ some configuration as environment variables that can be set.
   - legacy - the (deprecated) original polling engine for gRPC
 
 * GRPC_TRACE
-  A comma separated list of tracers that provide additional insight into how
-  gRPC C core is processing requests via debug logs. Available tracers include:
-  - api - traces api calls to the C core
-  - bdp_estimator - traces behavior of bdp estimation logic
-  - call_error - traces the possible errors contributing to final call status
-  - cares_resolver - traces operations of the c-ares based DNS resolver
-  - cares_address_sorting - traces operations of the c-ares based DNS
-    resolver's resolved address sorter
-  - cds_lb - traces cds LB policy
-  - channel - traces operations on the C core channel stack
-  - channel_stack - traces the set of filters in a channel stack upon
-    construction
-  - client_channel - traces client channel control plane activity, including
-    resolver and load balancing policy interaction
-  - client_channel_call - traces client channel call activity related to name
-    resolution
-  - client_channel_lb_call - traces client channel call activity related
-    to load balancing picking
-  - compression - traces compression operations
-  - connectivity_state - traces connectivity state changes to channels
-  - cronet - traces state in the cronet transport engine
-  - dns_resolver - traces state in the native DNS resolver
-  - executor - traces grpc's internal thread pool ('the executor')
-  - glb - traces the grpclb load balancer
-  - handshaker - traces handshaking state
-  - health_check_client - traces health checking client code
-  - http - traces state in the http2 transport engine
-  - http2_stream_state - traces all http2 stream state mutations.
-  - http2_ping - traces pings/ping acks/antagonist writes in http2 stack.
-  - http1 - traces HTTP/1.x operations performed by gRPC
-  - inproc - traces the in-process transport
-  - http_keepalive - traces gRPC keepalive pings
-  - flowctl - traces http2 flow control
-  - op_failure - traces error information when failure is pushed onto a
-    completion queue
-  - pick_first - traces the pick first load balancing policy
-  - plugin_credentials - traces plugin credentials
-  - pollable_refcount - traces reference counting of 'pollable' objects (only
-    in DEBUG)
-  - priority_lb - traces priority LB policy
-  - resource_quota - trace resource quota objects internals
-  - ring_hash_lb - traces the ring hash load balancing policy
-  - rls_lb - traces the RLS load balancing policy
-  - round_robin - traces the round_robin load balancing policy
-  - weighted_round_robin_lb - traces the weighted_round_robin load balancing
-    policy
+  A comma-separated list of tracer names or glob patterns that provide
+  additional insight into how gRPC C core is processing requests via debug logs.
+  Available tracers include:
+  - api - API calls to the C core.
+  - backend_metric
+  - backend_metric_filter
+  - bdp_estimator - Behavior of bdp estimation logic.
+  - call
+  - call_error - Possible errors contributing to final call statuses.
+  - cares_address_sorting - Operations of the c-ares based DNS resolver's address sorter.
+  - cares_resolver - Operations of the c-ares based DNS resolver.
+  - cds_lb - CDS LB policy.
+  - channel - Operations on the C core channel stack.
+  - channel_stack - Construction of the set of filters in a channel stack.
+  - chaotic_good
+  - chttp2_hpack_parser
+  - chttp2_new_stream
+  - client_channel - Client channel control plane activity, including resolver and load balancing policy interaction.
+  - client_channel_call - Client channel call activity related to name resolution.
+  - client_channel_lb_call - Client channel call activity related to load balancing picking.
+  - client_idle_filter
+  - compression - Compression operations.
+  - connectivity_state - Connectivity state changes to channels.
+  - cronet - Cronet transport engine.
+  - dns_resolver - The active DNS resolver.
+  - environment_autodetect
+  - event_engine
+  - event_engine_client_channel_resolver
+  - event_engine_dns
+  - event_engine_endpoint
+  - event_engine_endpoint_data
+  - event_engine_poller
+  - executor - gRPC's legacy thread pool ('the executor').
+  - fault_injection_filter
+  - flowctl - Http2 flow control.
+  - fork
+  - glb - gRPClb load balancer.
+  - grpc_authz_api - gRPC authorization.
+  - handshaker - Handshaking state.
+  - health_check_client - Health checking client code.
+  - http - Http2 transport engine.
+  - http1 - HTTP/1.x operations performed by gRPC.
+  - http2_ping - Pings/ping acks/antagonist writes in http2 stack.
+  - http2_stream_state - Http2 stream state mutations.
+  - http_keepalive - gRPC keepalive pings.
+  - inproc - In-process transport.
+  - metadata_query
+  - op_failure - Error information when failure is pushed onto a completion queue.
+  - orca_client
+  - outlier_detection_lb
+  - pick_first - Pick first load balancing policy.
+  - plugin_credentials - Plugin credentials.
+  - priority_lb - Priority LB policy.
   - queue_pluck
-  - grpc_authz_api - traces gRPC authorization
-  - server_channel - lightweight trace of significant server channel events
-  - secure_endpoint - traces bytes flowing through encrypted channels
-  - subchannel - traces the connectivity state of subchannel
-  - subchannel_pool - traces subchannel pool
-  - timer - timers (alarms) in the grpc internals
-  - timer_check - more detailed trace of timer logic in grpc internals
-  - transport_security - traces metadata about secure channel establishment
-  - tcp - traces bytes in and out of a channel
-  - tsi - traces tsi transport security
-  - weighted_target_lb - traces weighted_target LB policy
-  - xds_client - traces xds client
-  - xds_cluster_manager_lb - traces cluster manager LB policy
-  - xds_cluster_impl_lb - traces cluster impl LB policy
-  - xds_resolver - traces xds resolver
+  - resource_quota - Resource quota objects internals.
+  - retry
+  - ring_hash_lb - Ring hash load balancing policy.
+  - rls_lb - RLS load balancing policy.
+  - round_robin - Round robin load balancing policy.
+  - secure_endpoint - Bytes flowing through encrypted channels.
+  - server_channel - Lightweight trace of significant server channel events.
+  - stateful_session_filter
+  - subchannel - Connectivity state of subchannels.
+  - subchannel_pool - Subchannel pool.
+  - tcp - Bytes in and out of a channel.
+  - timer - Timers (alarms) in the grpc internals.
+  - timer_check - more detailed trace of timer logic in grpc internals.
+  - tsi - TSI transport security.
+  - weighted_round_robin_lb - Weighted round robin load balancing policy.
+  - weighted_target_lb - Weighted target LB policy.
+  - xds_client - XDS client.
+  - xds_client_refcount - Refcount of XDS client.
+  - xds_cluster_impl_lb - XDS Cluster impl LB policy.
+  - xds_cluster_manager_lb - XDS Cluster manager LB policy.
+  - xds_override_host_lb - XDS Override host LB.
+  - xds_resolver - XDS Resolver.
+  - xds_server_config_fetcher - XDS Server config fetcher.
+  - xds_wrr_locality_lb - XDS WRR locality LB policy.
 
   The following tracers will only run in binaries built in DEBUG mode. This is
-  accomplished by invoking `CONFIG=dbg make <target>`
-  - metadata - tracks creation and mutation of metadata
-  - combiner - traces combiner lock state
-  - call_combiner - traces call combiner state
-  - closure - tracks closure creation, scheduling, and completion
-  - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
-  - pending_tags - traces still-in-progress tags on completion queues
-  - polling - traces the selected polling engine
-  - polling_api - traces the api calls to polling engine
-  - subchannel_refcount
-  - queue_refcount
-  - error_refcount
-  - stream_refcount
-  - slice_refcount
-  - workqueue_refcount
-  - fd_refcount
-  - cq_refcount
+  accomplished by invoking `bazel build --config=dbg <target>`
   - auth_context_refcount
-  - security_connector_refcount
-  - resolver_refcount
+  - call_combiner - Call combiner state.
+  - call_refcount
+  - closure - Legacy closure creation, scheduling, and completion.
+  - combiner - Combiner lock state.
+  - cq_refcount
+  - error_refcount
+  - fd_refcount
+  - fd_trace - Legacy file descriptor create(), shutdown() and close() calls for channel fds.
   - lb_policy_refcount
-  - chttp2_refcount
+  - party_state
+  - pending_tags - Still-in-progress tags on completion queues.
+  - polling - The active polling engine.
+  - polling_api - API calls to polling engine.
+  - promise_primitives
+  - resolver_refcount
+  - security_connector_refcount
+  - slice_refcount
+  - stream_refcount - null.
+  - subchannel_refcount
+  - work_serializer
 
   'all' can additionally be used to turn all traces on.
   Individual traces can be disabled by prefixing them with '-'.
