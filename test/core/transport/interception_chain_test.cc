@@ -19,8 +19,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/promise/poll_matcher.h"
@@ -247,10 +245,9 @@ class InterceptionChainTest : public ::testing::Test {
   class Destination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      gpr_log(GPR_INFO, "👊 started call: metadata=%s",
-              unstarted_call_handler.UnprocessedClientInitialMetadata()
-                  .DebugString()
-                  .c_str());
+      LOG(INFO) << "👊 started call: metadata="
+                << unstarted_call_handler.UnprocessedClientInitialMetadata()
+                       .DebugString();
       EXPECT_EQ(metadata_.get(), nullptr);
       metadata_ = Arena::MakePooled<ClientMetadata>();
       *metadata_ =

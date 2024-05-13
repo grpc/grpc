@@ -30,7 +30,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -105,8 +104,7 @@ static void actually_poll(void* argsp) {
         break;
       }
       grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
-      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
-              time_left.millis());
+      VLOG(2) << "done=" << args->done << ", time_left=" << time_left.millis();
       ASSERT_GE(time_left, grpc_core::Duration::Zero());
       grpc_pollset_worker* worker = nullptr;
       GRPC_LOG_IF_ERROR(
@@ -158,10 +156,8 @@ static void test_named_and_numeric_scope_ids(void) {
   // system recognizes, and then use that for the test.
   for (size_t i = 1; i < 65536; i++) {
     if (if_indextoname(i, arbitrary_interface_name) != nullptr) {
-      gpr_log(GPR_DEBUG,
-              "Found interface at index %" PRIuPTR
-              " named %s. Will use this for the test",
-              i, arbitrary_interface_name);
+      VLOG(2) << "Found interface at index " << i << " named "
+              << arbitrary_interface_name << ". Will use this for the test";
       interface_index = static_cast<int>(i);
       break;
     }

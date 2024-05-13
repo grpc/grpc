@@ -23,10 +23,10 @@
 #include <sys/types.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"
@@ -74,7 +74,7 @@ size_t count_slices(grpc_slice* slices, size_t nslices, int* current_data) {
 static grpc_endpoint_test_fixture begin_test(grpc_endpoint_test_config config,
                                              const char* test_name,
                                              size_t slice_size) {
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  LOG(INFO) << test_name << "/" << config.name;
   return config.create_fixture(slice_size);
 }
 
@@ -218,18 +218,14 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_core::ExecCtx exec_ctx;
   auto deadline = grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(300));
-  gpr_log(GPR_DEBUG,
-          "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR " slice_size=%" PRIuPTR
-          " shutdown=%d",
-          num_bytes, write_size, slice_size, shutdown);
+  VLOG(2) << "num_bytes=" << num_bytes << " write_size=" << write_size
+          << " slice_size=" << slice_size << " shutdown=" << shutdown;
 
   if (shutdown) {
     LOG(INFO) << "Start read and write shutdown test";
   } else {
-    gpr_log(GPR_INFO,
-            "Start read and write test with %" PRIuPTR
-            " bytes, slice size %" PRIuPTR,
-            num_bytes, slice_size);
+    LOG(INFO) << "Start read and write test with " << num_bytes
+              << " bytes, slice size " << slice_size;
   }
 
   state.read_ep = f.client_ep;

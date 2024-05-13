@@ -29,7 +29,6 @@
 
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -94,8 +93,8 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     // Verifications
     if (first_frame && type != GRPC_CHTTP2_FRAME_HEADER) {
       LOG(ERROR) << "expected first frame to be of type header";
-      gpr_log(GPR_ERROR, "EXPECT: 0x%x", GRPC_CHTTP2_FRAME_HEADER);
-      gpr_log(GPR_ERROR, "GOT:    0x%x", type);
+      LOG(ERROR) << "EXPECT: 0x" << GRPC_CHTTP2_FRAME_HEADER;
+      LOG(ERROR) << "GOT:    0x" << type;
       EXPECT_TRUE(false);
     } else if (first_frame && header_is_eof &&
                !(flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM)) {
@@ -110,9 +109,9 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     }
     if (end_header && (type == GRPC_CHTTP2_FRAME_HEADER ||
                        type == GRPC_CHTTP2_FRAME_CONTINUATION)) {
-      gpr_log(GPR_ERROR,
-              "frame header is ended; new headers and continuations are not "
-              "allowed");
+      LOG(ERROR)
+          << "frame header is ended; new headers and continuations are not "
+             "allowed";
       EXPECT_TRUE(false);
     }
     if (in_header &&
@@ -123,7 +122,7 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     }
     if (flags & ~(GRPC_CHTTP2_DATA_FLAG_END_STREAM |
                   GRPC_CHTTP2_DATA_FLAG_END_HEADERS)) {
-      gpr_log(GPR_ERROR, "unexpected frame flags: 0x%x", flags);
+      LOG(ERROR) << "unexpected frame flags: 0x" << flags;
       EXPECT_TRUE(false);
     }
 

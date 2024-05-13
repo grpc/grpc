@@ -38,7 +38,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -242,9 +241,8 @@ void test_connect_cancellation_succeeds(void) {
       if (svr_fd >= 0) {
         close(svr_fd);
       }
-      gpr_log(GPR_ERROR,
-              "Skipping test. Failed to create a phony server bound to ipv6 or "
-              "ipv4 address");
+      LOG(ERROR) << "Skipping test. Failed to create a phony server bound to "
+                    "ipv6 or ipv4 address";
       return;
     }
   }

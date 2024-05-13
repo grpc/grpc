@@ -28,11 +28,11 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -111,8 +111,7 @@ std::shared_ptr<CallParams> GetBeforeSnapshot(
       [params, &before_server_memory](const grpc::Status& status) {
         if (status.ok()) {
           before_server_memory = params->snapshot_response.rss();
-          gpr_log(GPR_INFO, "Server Before RPC: %ld",
-                  params->snapshot_response.rss());
+          LOG(INFO) << "Server Before RPC: " << params->snapshot_response.rss();
           LOG(INFO) << "GetBeforeSnapshot succeeded.";
         } else {
           LOG(ERROR) << "GetBeforeSnapshot failed.";
@@ -132,8 +131,8 @@ int main(int argc, char** argv) {
     LOG(ERROR) << "Client: No target port entered";
     return 1;
   }
-  gpr_log(GPR_INFO, "Client Target: %s", absl::GetFlag(FLAGS_target).c_str());
-  gpr_log(GPR_INFO, "Client Size: %d", absl::GetFlag(FLAGS_size));
+  LOG(INFO) << "Client Target: " << absl::GetFlag(FLAGS_target);
+  LOG(INFO) << "Client Size: " << absl::GetFlag(FLAGS_size);
 
   // Getting initial memory usage
   std::shared_ptr<grpc::Channel> get_memory_channel = CreateChannelForTest(0);

@@ -34,6 +34,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
@@ -44,7 +45,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -164,8 +164,8 @@ static void OnServingStatusUpdate(void* /*user_data*/, const char* uri,
                                   grpc_serving_status_update update) {
   absl::Status status(static_cast<absl::StatusCode>(update.code),
                       update.error_message);
-  gpr_log(GPR_INFO, "xDS serving status notification: uri=\"%s\", status=%s",
-          uri, status.ToString().c_str());
+  LOG(INFO) << "xDS serving status notification: uri=\"" << uri
+            << "\", status=" << status;
 }
 
 int main(int argc, char** argv) {
@@ -189,7 +189,7 @@ int main(int argc, char** argv) {
   if (addr.empty()) {
     addr = grpc_core::JoinHostPort("::", grpc_pick_unused_port_or_die());
   }
-  gpr_log(GPR_INFO, "creating server on: %s", addr.c_str());
+  LOG(INFO) << "creating server on: " << addr;
 
   cq = grpc_completion_queue_create_for_next(nullptr);
 

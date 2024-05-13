@@ -43,7 +43,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -59,7 +58,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "test/core/test_util/port.h"
 
-#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
+#define LOG_TEST(x) LOG(INFO) << #x
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -272,7 +271,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   const struct sockaddr* remote_addr =
       reinterpret_cast<const struct sockaddr*>(remote->addr.addr);
 
-  gpr_log(GPR_INFO, "Connecting to %s", remote->str);
+  LOG(INFO) << "Connecting to " << remote->str;
   gpr_mu_lock(g_mu);
   nconnects_before = g_nconnects;
   on_connect_result_init(&g_result);
@@ -281,7 +280,7 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
     gpr_mu_unlock(g_mu);
     return GRPC_OS_ERROR(errno, "Failed to create socket");
   }
-  gpr_log(GPR_DEBUG, "start connect to %s", remote->str);
+  VLOG(2) << "start connect to " << remote->str;
   if (connect(clifd, remote_addr, static_cast<socklen_t>(remote->addr.len)) !=
       0) {
     gpr_mu_unlock(g_mu);
@@ -313,8 +312,8 @@ static grpc_error_handle tcp_connect(const test_addr* remote,
   *result = g_result;
 
   gpr_mu_unlock(g_mu);
-  gpr_log(GPR_INFO, "Result (%d, %d) fd %d", result->port_index,
-          result->fd_index, result->server_fd);
+  LOG(INFO) << "Result (" << result->port_index << ", " << result->fd_index
+            << ") fd " << result->server_fd;
   grpc_tcp_server_unref(result->server);
   return absl::OkStatus();
 }
@@ -356,12 +355,10 @@ static void test_connect(size_t num_connects,
   server_weak_ref_init(&weak_ref);
   server_weak_ref_set(&weak_ref, s);
   LOG_TEST("test_connect");
-  gpr_log(GPR_INFO,
-          "clients=%lu, num chan args=%lu, remote IP=%s, test_dst_addrs=%d",
-          static_cast<unsigned long>(num_connects),
-          static_cast<unsigned long>(
-              channel_args != nullptr ? channel_args->num_args : 0),
-          dst_addrs != nullptr ? "<specific>" : "::", test_dst_addrs);
+  LOG(INFO) << "clients=" << num_connects << ", num chan args="
+            << (channel_args != nullptr ? channel_args->num_args : 0)
+            << ", remote IP=" << (dst_addrs != nullptr ? "<specific>" : "::")
+            << ", test_dst_addrs=" << test_dst_addrs;
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   memset(&resolved_addr1, 0, sizeof(resolved_addr1));
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
@@ -370,13 +367,13 @@ static void test_connect(size_t num_connects,
   ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "grpc_tcp_server_add_port",
       grpc_tcp_server_add_port(s, &resolved_addr, &svr_port)));
-  gpr_log(GPR_INFO, "Allocated port %d", svr_port);
+  LOG(INFO) << "Allocated port " << svr_port;
   ASSERT_GT(svr_port, 0);
   // Cannot use wildcard (port==0), because add_port() will try to reuse the
   // same port as a previous add_port().
   svr1_port = grpc_pick_unused_port_or_die();
   ASSERT_GT(svr1_port, 0);
-  gpr_log(GPR_INFO, "Picked unused port %d", svr1_port);
+  LOG(INFO) << "Picked unused port " << svr1_port;
   grpc_sockaddr_set_port(&resolved_addr1, svr1_port);
   ASSERT_EQ(grpc_tcp_server_add_port(s, &resolved_addr1, &port),
             absl::OkStatus());
@@ -410,8 +407,7 @@ static void test_connect(size_t num_connects,
         on_connect_result result;
         grpc_error_handle err;
         if (dst.addr.len == 0) {
-          gpr_log(GPR_DEBUG, "Skipping test of non-functional local IP %s",
-                  dst.str);
+          VLOG(2) << "Skipping test of non-functional local IP " << dst.str;
           continue;
         }
         ASSERT_TRUE(grpc_sockaddr_set_port(&dst.addr, ports[port_num]));
@@ -422,8 +418,8 @@ static void test_connect(size_t num_connects,
             result.server_fd >= 0 && result.server == s) {
           continue;
         }
-        gpr_log(GPR_ERROR, "Failed to connect to %s: %s", dst.str,
-                grpc_core::StatusToString(err).c_str());
+        LOG(ERROR) << "Failed to connect to " << dst.str << ": "
+                   << grpc_core::StatusToString(err);
         ASSERT_TRUE(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
       }
@@ -444,8 +440,9 @@ static void test_connect(size_t num_connects,
                   0);
         ASSERT_LE(dst.addr.len, sizeof(dst.addr.addr));
         test_addr_init_str(&dst);
-        gpr_log(GPR_INFO, "(%d, %d) fd %d family %s listening on %s", port_num,
-                fd_num, fd, sock_family_name(addr->ss_family), dst.str);
+        LOG(INFO) << "(" << port_num << ", " << fd_num << ") fd " << fd
+                  << " family " << sock_family_name(addr->ss_family)
+                  << " listening on " << dst.str;
         for (connect_num = 0; connect_num < num_connects; ++connect_num) {
           on_connect_result result;
           on_connect_result_init(&result);
