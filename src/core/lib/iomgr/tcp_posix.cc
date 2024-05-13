@@ -46,6 +46,7 @@
 #include <unordered_map>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
@@ -212,7 +213,7 @@ class TcpZerocopySendCtx {
     if (send_records_ == nullptr || free_send_records_ == nullptr) {
       gpr_free(send_records_);
       gpr_free(free_send_records_);
-      gpr_log(GPR_INFO, "Disabling TCP TX zerocopy due to memory pressure.\n");
+      LOG(INFO) << "Disabling TCP TX zerocopy due to memory pressure.\n";
       memory_limited_ = true;
     } else {
       for (int idx = 0; idx < max_sends_; ++idx) {
@@ -836,7 +837,7 @@ static void tcp_destroy(grpc_endpoint* ep) {
 static void perform_reclamation(grpc_tcp* tcp)
     ABSL_LOCKS_EXCLUDED(tcp->read_mu) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
-    gpr_log(GPR_INFO, "TCP: benign reclamation to free memory");
+    LOG(INFO) << "TCP: benign reclamation to free memory";
   }
   tcp->read_mu.Lock();
   if (tcp->incoming_buffer != nullptr) {
@@ -1294,7 +1295,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-        gpr_log(GPR_ERROR, "Failed to set timestamping options on the socket.");
+        LOG(ERROR) << "Failed to set timestamping options on the socket.";
       }
       return false;
     }
@@ -1380,7 +1381,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_ERROR, "Received timestamp without extended error");
+      LOG(ERROR) << "Received timestamp without extended error";
     }
     return cmsg;
   }
@@ -1392,7 +1393,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     next_cmsg = CMSG_NXTHDR(msg, opt_stats);
     if (next_cmsg == nullptr) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-        gpr_log(GPR_ERROR, "Received timestamp without extended error");
+        LOG(ERROR) << "Received timestamp without extended error";
       }
       return opt_stats;
     }
@@ -1402,7 +1403,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
       !(next_cmsg->cmsg_type == IP_RECVERR ||
         next_cmsg->cmsg_type == IPV6_RECVERR)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_ERROR, "Unexpected control message");
+      LOG(ERROR) << "Unexpected control message";
     }
     return cmsg;
   }
@@ -1412,7 +1413,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(next_cmsg));
   if (serr->ee_errno != ENOMSG ||
       serr->ee_origin != SO_EE_ORIGIN_TIMESTAMPING) {
-    gpr_log(GPR_ERROR, "Unexpected control message");
+    LOG(ERROR) << "Unexpected control message";
     return cmsg;
   }
   tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
@@ -1462,7 +1463,7 @@ static bool process_errors(grpc_tcp* tcp) {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
-      gpr_log(GPR_ERROR, "Error message was truncated.");
+      LOG(ERROR) << "Error message was truncated.";
     }
 
     if (msg.msg_controllen == 0) {
@@ -1539,14 +1540,14 @@ static bool tcp_write_with_timestamps(grpc_tcp* /*tcp*/, struct msghdr* /*msg*/,
                                       ssize_t* /*sent_length*/,
                                       int* /* saved_errno */,
                                       int /*additional_flags*/) {
-  gpr_log(GPR_ERROR, "Write with timestamps not supported for this platform");
+  LOG(ERROR) << "Write with timestamps not supported for this platform";
   CHECK(0);
   return false;
 }
 
 static void tcp_handle_error(void* /*arg*/ /* grpc_tcp */,
                              grpc_error_handle /*error*/) {
-  gpr_log(GPR_ERROR, "Error handling is not supported for this platform");
+  LOG(ERROR) << "Error handling is not supported for this platform";
   CHECK(0);
 }
 #endif  // GRPC_LINUX_ERRQUEUE
@@ -1842,7 +1843,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
           : tcp_flush(tcp, &error);
   if (!flush_result) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: delayed");
+      LOG(INFO) << "write: delayed";
     }
     notify_on_write(tcp);
     // tcp_flush does not populate error if it has returned false.
@@ -1915,7 +1916,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     tcp->write_cb = cb;
     tcp->current_zerocopy_send = zerocopy_send_record;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "write: delayed");
+      LOG(INFO) << "write: delayed";
     }
     notify_on_write(tcp);
   } else {
@@ -2029,7 +2030,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
     if (err == 0) {
       tcp->tcp_zerocopy_send_ctx.set_enabled(true);
     } else {
-      gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
+      LOG(ERROR) << "Failed to set zerocopy options on the socket.";
     }
 #endif
   }
