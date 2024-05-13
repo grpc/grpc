@@ -422,7 +422,6 @@ class ChannelBasedCall : public Call {
 
   Channel* channel() const { return channel_.get(); }
 
- protected:
   // Non-virtual arena accessor -- needed by PipeBasedCall
   Arena* GetArena() { return arena_; }
 
