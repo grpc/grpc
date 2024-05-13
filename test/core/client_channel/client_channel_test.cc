@@ -1,5 +1,4 @@
-//
-// Copyright 2022 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,79 +11,103 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
+
+#include "src/core/client_channel/client_channel.h"
 
 #include <memory>
 
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/client_channel/subchannel.h"
-#include "src/core/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "test/core/test_util/test_config.h"
+#include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {
-namespace testing {
+
 namespace {
-
-TEST(MakeSubchannelArgs, UsesChannelDefaultAuthorityByDefault) {
-  ChannelArgs args = Subchannel::MakeSubchannelArgs(
-      ChannelArgs(), ChannelArgs(), nullptr, "foo.example.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "foo.example.com");
-}
-
-TEST(MakeSubchannelArgs, DefaultAuthorityFromChannelArgs) {
-  ChannelArgs args = Subchannel::MakeSubchannelArgs(
-      ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "bar.example.com"),
-      ChannelArgs(), nullptr, "foo.example.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "bar.example.com");
-}
-
-TEST(MakeSubchannelArgs, DefaultAuthorityFromResolver) {
-  ChannelArgs args = Subchannel::MakeSubchannelArgs(
-      ChannelArgs(),
-      ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "bar.example.com"), nullptr,
-      "foo.example.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "bar.example.com");
-}
-
-TEST(MakeSubchannelArgs,
-     DefaultAuthorityFromChannelArgsOverridesValueFromResolver) {
-  ChannelArgs args = Subchannel::MakeSubchannelArgs(
-      ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "bar.example.com"),
-      ChannelArgs().Set(GRPC_ARG_DEFAULT_AUTHORITY, "baz.example.com"), nullptr,
-      "foo.example.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_DEFAULT_AUTHORITY), "bar.example.com");
-}
-
-TEST(MakeSubchannelArgs, ArgsFromChannelTrumpPerAddressArgs) {
-  ChannelArgs args = Subchannel::MakeSubchannelArgs(ChannelArgs().Set("foo", 1),
-                                                    ChannelArgs().Set("foo", 2),
-                                                    nullptr, "foo.example.com");
-  EXPECT_EQ(args.GetInt("foo"), 1);
-}
-
-TEST(MakeSubchannelArgs, StripsOutNoSubchannelArgs) {
-  ChannelArgs args = Subchannel::MakeSubchannelArgs(
-      ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo", 1),
-      ChannelArgs().Set(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar", 1), nullptr,
-      "foo.example.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "foo"), absl::nullopt);
-  EXPECT_EQ(args.GetString(GRPC_ARG_NO_SUBCHANNEL_PREFIX "bar"), absl::nullopt);
-}
-
+const absl::string_view kTestTarget = "test_target";
+const absl::string_view kTestPath = "/test_method";
 }  // namespace
-}  // namespace testing
-}  // namespace grpc_core
 
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(&argc, argv);
-  auto result = RUN_ALL_TESTS();
-  return result;
+class ClientChannelTest : public YodelTest {
+ public:
+ protected:
+  using YodelTest::YodelTest;
+
+  ClientChannel& InitChannel(const ChannelArgs& args) {
+    auto channel =
+        ClientChannel::Create(std::string(kTestTarget), CompleteArgs(args));
+    CHECK_OK(channel);
+    channel_ = OrphanablePtr<ClientChannel>(
+        DownCast<ClientChannel*>(channel->release()));
+    return *channel_;
+  }
+
+  ClientChannel& channel() { return *channel_; }
+
+  ClientMetadataHandle MakeClientInitialMetadata() {
+    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    client_initial_metadata->Set(HttpPathMetadata(),
+                                 Slice::FromCopiedString(kTestPath));
+    return client_initial_metadata;
+  }
+
+ private:
+  class TestClientChannelFactory final : public ClientChannelFactory {
+   public:
+    RefCountedPtr<Subchannel> CreateSubchannel(
+        const grpc_resolved_address& address, const ChannelArgs& args) {
+      Crash("unimplemented");
+    }
+  };
+
+  class TestCallDestination final : public UnstartedCallDestination {
+   public:
+    void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+      Crash("unimplemented");
+    }
+
+    void Orphaned() override {}
+  };
+
+  class TestCallDestinationFactory final
+      : public ClientChannel::CallDestinationFactory {
+   public:
+    TestCallDestinationFactory(ClientChannelTest* test) : test_(test) {}
+
+    virtual RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
+        ClientChannel::PickerObservable picker) {
+      CHECK(!test_->picker_.has_value());
+      test_->picker_ = std::move(picker);
+      return test_->call_destination_;
+    }
+
+   private:
+    ClientChannelTest* const test_;
+  };
+
+  ChannelArgs CompleteArgs(const ChannelArgs& args) {
+    return args.SetObject(&call_destination_factory_)
+        .SetObject(&client_channel_factory_)
+        .SetObject(ResourceQuota::Default())
+        .SetObject(
+            std::static_pointer_cast<
+                grpc_event_engine::experimental::EventEngine>(event_engine()));
+  }
+
+  OrphanablePtr<ClientChannel> channel_;
+  absl::optional<ClientChannel::PickerObservable> picker_;
+  TestCallDestinationFactory call_destination_factory_{this};
+  TestClientChannelFactory client_channel_factory_;
+  RefCountedPtr<TestCallDestination> call_destination_ =
+      MakeRefCounted<TestCallDestination>();
+};
+
+#define CLIENT_CHANNEL_TEST(name) YODEL_TEST(ClientChannelTest, name)
+
+CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
+
+CLIENT_CHANNEL_TEST(CreateCall) {
+  auto& channel = InitChannel(ChannelArgs());
+  channel.CreateCall(MakeClientInitialMetadata());
 }
+
+}  // namespace grpc_core

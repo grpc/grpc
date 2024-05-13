@@ -12,15 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_test")
 
 grpc_package(name = "test/core/client_channel")
 
 licenses(["notice"])
 
 grpc_cc_test(
-    name = "client_channel_test",
-    srcs = ["client_channel_test.cc"],
+    name = "subchannel_args_test",
+    srcs = ["subchannel_args_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
@@ -29,6 +30,27 @@ grpc_cc_test(
         "//:grpc_client_channel",
         "//src/core:channel_args",
         "//src/core:subchannel_pool_interface",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "client_channel_test_lib",
+    testonly = True,
+    srcs = ["client_channel_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/call/yodel:yodel_test",
+    ],
+    alwayslink = 1,
+)
+
+grpc_yodel_test(
+    name = "client_channel",
+    deps = [
+        ":client_channel_test_lib",
+        "//:grpc",
         "//test/core/test_util:grpc_test_util",
     ],
 )

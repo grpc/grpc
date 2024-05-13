@@ -30,13 +30,13 @@
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
 #include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
-#include "src/core/lib/promise/observable.h"
 
 namespace grpc_core {
 
@@ -119,15 +119,16 @@ class ClientChannel : public Channel {
    public:
     struct RawPointerChannelArgTag {};
 
-    static absl::string_view ChannelArgName() { return "grpc.internal.client_channel_call_destination"; }
+    static absl::string_view ChannelArgName() {
+      return "grpc.internal.client_channel_call_destination";
+    }
 
     virtual RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
         PickerObservable) = 0;
   };
 
   static absl::StatusOr<OrphanablePtr<Channel>> Create(
-      std::string target, ChannelArgs channel_args,
-      grpc_channel_stack_type channel_stack_type);
+      std::string target, ChannelArgs channel_args);
 
   // Do not instantiate directly -- use Create() instead.
   ClientChannel(std::string target_uri, ChannelArgs args,
@@ -145,6 +146,8 @@ class ClientChannel : public Channel {
                         grpc_pollset_set* /*pollset_set_alternative*/,
                         Slice path, absl::optional<Slice> authority,
                         Timestamp deadline, bool registered_method) override;
+
+  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_.get();
@@ -230,9 +233,6 @@ class ClientChannel : public Channel {
 
   void StartIdleTimer();
 
-  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata,
-                           Arena* arena);
-
   // Applies service config settings from config_selector to the call.
   // May modify call context and client_initial_metadata.
   absl::Status ApplyServiceConfigToCall(
@@ -248,6 +248,7 @@ class ClientChannel : public Channel {
   ClientChannelFactory* const client_channel_factory_;
   const std::string default_authority_;
   channelz::ChannelNode* const channelz_node_;
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
 
   //

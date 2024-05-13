@@ -84,6 +84,17 @@ std::vector<TestRegistry::Test> TestRegistry::AllTests() {
   return out;
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// SimpleTestRegistry
+
+void SimpleTestRegistry::RegisterTest(
+    absl::string_view name,
+    absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
+                                  absl::BitGenRef) const>
+        create) {
+  tests_.push_back({std::string(name), std::move(create)});
+}
+
 }  // namespace yodel_detail
 
 ///////////////////////////////////////////////////////////////////////////////

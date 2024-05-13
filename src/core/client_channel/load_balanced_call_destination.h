@@ -17,10 +17,10 @@
 
 #include "absl/functional/any_invocable.h"
 
+#include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/transport/call_destination.h"
 #include "src/core/load_balancing/lb_policy.h"
-#include "src/core/client_channel/client_channel.h"
 
 namespace grpc_core {
 

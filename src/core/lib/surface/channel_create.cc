@@ -84,8 +84,8 @@ absl::StatusOr<OrphanablePtr<Channel>> ChannelCreate(
     return LegacyChannel::Create(std::move(target), std::move(args),
                                  channel_stack_type);
   }
-  return ClientChannel::Create(std::move(target), std::move(args),
-                               channel_stack_type);
+  CHECK_EQ(channel_stack_type, GRPC_CLIENT_CHANNEL);
+  return ClientChannel::Create(std::move(target), std::move(args));
 }
 
 }  // namespace grpc_core
