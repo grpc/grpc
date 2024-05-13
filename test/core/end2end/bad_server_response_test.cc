@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -35,7 +36,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -135,8 +135,7 @@ static void handle_write() {
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "handle_read error: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "handle_read error: " << grpc_core::StatusToString(error);
     return;
   }
   state.incoming_data_length += state.temp_incoming_buffer.length;
@@ -145,15 +144,13 @@ static void handle_read(void* /*arg*/, grpc_error_handle error) {
   for (i = 0; i < state.temp_incoming_buffer.count; i++) {
     char* dump = grpc_dump_slice(state.temp_incoming_buffer.slices[i],
                                  GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_DEBUG, "Server received: %s", dump);
+    VLOG(2) << "Server received: " << dump;
     gpr_free(dump);
   }
 
-  gpr_log(GPR_DEBUG,
-          "got %" PRIuPTR " bytes, expected %" PRIuPTR
-          " bytes or a non-HTTP2 response to be sent",
-          state.incoming_data_length,
-          SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD);
+  VLOG(2) << "got " << state.incoming_data_length << " bytes, expected "
+          << SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD
+          << " bytes or a non-HTTP2 response to be sent";
   if (state.incoming_data_length >=
           SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD ||
       !state.http2_response) {
@@ -299,8 +296,8 @@ static void actually_poll_server(void* arg) {
     bool done = gpr_atm_acq_load(&state.done_atm) != 0;
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
-            time_left.tv_sec, time_left.tv_nsec);
+    VLOG(2) << "done=" << done << ", time_left=" << time_left.tv_sec << "."
+            << time_left.tv_nsec;
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }

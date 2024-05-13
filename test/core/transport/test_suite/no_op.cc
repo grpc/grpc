@@ -20,8 +20,8 @@ TRANSPORT_TEST(NoOp) {}
 
 TRANSPORT_TEST(WaitForAllPendingWork) { WaitForAllPendingWork(); }
 
-TRANSPORT_TEST(SetServerAcceptorAndFinish) {
-  SetServerAcceptor();
+TRANSPORT_TEST(SetServerCallDestinationAndFinish) {
+  SetServerCallDestination();
   WaitForAllPendingWork();
 }
 
