@@ -523,7 +523,7 @@ class Transport : public InternallyRefCounted<Transport> {
   // not.
   // TODO(ctiller): consider moving to a DualRefCounted model (with the
   // disadvantage that we would accidentally have many strong owners which is
-  // unneccessary for this type).
+  // unnecessary for this type).
   RefCountedPtr<Transport> Ref() {
     return InternallyRefCounted<Transport>::Ref();
   }
