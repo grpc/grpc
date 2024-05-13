@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -597,7 +598,13 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   }
   // Try loading roots from OS trust store if flag is enabled.
   if (result.empty() && !ConfigVars::Get().NotUseSystemSslRoots()) {
-    result = Slice(LoadSystemRootCerts());
+    absl::StatusOr<Slice> system_root_certs = LoadSystemRootCerts();
+    if (system_root_certs.ok()) {
+      result = *system_root_certs;
+    } else {
+      gpr_log(GPR_ERROR, "error loading system root certs: %s",
+              system_root_certs.status().ToString().c_str());
+    }
   }
   // Fallback to roots manually shipped with gRPC.
   if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {

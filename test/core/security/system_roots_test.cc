@@ -27,6 +27,7 @@
 #include <sys/param.h>
 #endif  // GPR_LINUX || GPR_FREEBSD || GPR_APPLE
 
+#include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc_security.h>
@@ -89,8 +90,10 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
 
 #if defined(GPR_WINDOWS)
 TEST(LoadSystemRootCertsTest, Success) {
-  grpc_core::Slice roots_slice = grpc_core::LoadSystemRootCerts();
-  EXPECT_FALSE(roots_slice.empty());
+  absl::StatusOr<grpc_core::Slice> roots_slice =
+      grpc_core::LoadSystemRootCerts();
+  EXPECT_OK(roots_slice.status());
+  EXPECT_FALSE(roots_slice->empty());
 }
 #endif  // GPR_WINDOWS
 

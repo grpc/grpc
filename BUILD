@@ -4050,7 +4050,10 @@ grpc_cc_library(
         "//src/core:lib/security/security_connector/load_system_roots_supported.h",
         "//src/core:lib/security/util/json_util.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/status:statusor",
+        "absl/strings",
+    ],
     language = "c++",
     visibility = ["@grpc:public"],
     deps = [

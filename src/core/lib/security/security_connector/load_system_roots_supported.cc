@@ -32,6 +32,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "absl/status/statusor.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -63,8 +65,8 @@ const char* kCertDirectories[] = {""};
 #endif                      // GPR_APPLE
 
 Slice GetSystemRootCerts() {
-  size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
-  for (size_t i = 0; i < num_cert_files_; i++) {
+  size_t num_cert_files = GPR_ARRAY_SIZE(kCertFiles);
+  for (size_t i = 0; i < num_cert_files; i++) {
     auto slice = LoadFile(kCertFiles[i], /*add_null_terminator=*/true);
     if (slice.ok()) return *std::move(slice);
   }
@@ -135,10 +137,10 @@ Slice CreateRootCertsBundle(const char* certs_directory) {
       }
     }
   }
-  return Slice(grpc_slice_new(bundle_string, bytes_read, gpr_free));
+  return Slice::FromCopiedBuffer(bundle_string, bytes_read);
 }
 
-Slice LoadSystemRootCerts() {
+absl::StatusOr<Slice> LoadSystemRootCerts() {
   Slice result;
   // Prioritize user-specified custom directory if flag is set.
   auto custom_dir = ConfigVars::Get().SystemSslRootsDir();

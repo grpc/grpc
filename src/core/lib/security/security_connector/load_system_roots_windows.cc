@@ -27,6 +27,8 @@
 
 #include <vector>
 
+#include "absl/status/statusor.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -52,7 +54,7 @@ std::string Utf8Encode(const std::wstring& wstr) {
 
 }  // namespace
 
-Slice LoadSystemRootCerts() {
+absl::StatusOr<Slice> LoadSystemRootCerts() {
   std::string bundle_string;
 
   // Open root certificate store.
