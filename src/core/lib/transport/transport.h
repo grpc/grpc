@@ -526,9 +526,6 @@ class Transport : public InternallyRefCounted<Transport> {
 
   // implementation of grpc_transport_perform_op
   virtual void PerformOp(grpc_transport_op* op) = 0;
-
-  // implementation of grpc_transport_get_endpoint
-  virtual grpc_endpoint* GetEndpoint() = 0;
 };
 
 class FilterStackTransport : public Transport {

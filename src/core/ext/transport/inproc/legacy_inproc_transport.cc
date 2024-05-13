@@ -134,7 +134,6 @@ struct inproc_transport final : public grpc_core::FilterStackTransport {
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
-  grpc_endpoint* GetEndpoint() override;
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
@@ -1212,8 +1211,6 @@ void inproc_transport::SetPollsetSet(grpc_stream* /*gs*/,
                                      grpc_pollset_set* /*pollset_set*/) {
   // Nothing to do here
 }
-
-grpc_endpoint* inproc_transport::GetEndpoint() { return nullptr; }
 
 //******************************************************************************
 // Main inproc transport functions
