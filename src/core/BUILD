@@ -664,7 +664,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "promise_like",
-    external_deps = ["absl/meta:type_traits"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/meta:type_traits",
+    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/detail/promise_like.h",
@@ -3130,6 +3133,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_trace",
         "channel_stack_type",
+        "interception_chain",
         "//:channel_stack_builder",
         "//:debug_location",
         "//:gpr",
@@ -3147,6 +3151,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "//:channelz",
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
 )
@@ -7087,6 +7092,7 @@ grpc_cc_library(
         "experiments",
         "iomgr_fwd",
         "metadata_batch",
+        "resource_quota",
         "slice",
         "slice_buffer",
         "status_helper",

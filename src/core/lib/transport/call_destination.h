@@ -51,6 +51,24 @@ class CallDestination : public DualRefCounted<CallDestination> {
   virtual void HandleCall(CallHandler unstarted_call_handler) = 0;
 };
 
+template <typename HC>
+auto MakeCallDestinationFromHandlerFunction(HC handle_call) {
+  class Impl : public CallDestination {
+   public:
+    explicit Impl(HC handle_call) : handle_call_(std::move(handle_call)) {}
+
+    void Orphaned() override {}
+
+    void HandleCall(CallHandler call_handler) override {
+      handle_call_(std::move(call_handler));
+    }
+
+   private:
+    HC handle_call_;
+  };
+  return MakeRefCounted<Impl>(std::move(handle_call));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_DESTINATION_H
