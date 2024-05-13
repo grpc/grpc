@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_LIB_GPRPP_GLOB_H
+#define GRPC_CORE_LIB_GPRPP_GLOB_H
+
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -22,3 +25,5 @@ namespace grpc_core {
 bool GlobMatch(absl::string_view name, absl::string_view pattern);
 
 }  // namespace grpc_core
+
+#endif  // GRPC_CORE_LIB_GPRPP_GLOB_H
