@@ -23,6 +23,7 @@
 #include <map>
 #include <string>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
@@ -32,18 +33,10 @@ void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 
 namespace grpc_core {
+bool ParseTracers(absl::string_view tracers);
+class SavedTraceFlags;
 
 class TraceFlag;
-class TraceFlagList {
- public:
-  static bool Set(absl::string_view name, bool enabled);
-  static void Add(TraceFlag* flag);
-  static void SaveTo(std::map<std::string, bool>& values);
-
- private:
-  static void LogAllTracers();
-  static TraceFlag* root_tracer_;
-};
 
 namespace testing {
 void grpc_tracer_enable_flag(TraceFlag* flag);
@@ -75,7 +68,8 @@ class TraceFlag {
 
  private:
   friend void testing::grpc_tracer_enable_flag(TraceFlag* flag);
-  friend class TraceFlagList;
+  friend bool ParseTracers(absl::string_view tracers);
+  friend SavedTraceFlags;
 
   void set_enabled(bool enabled) {
     value_.store(enabled, std::memory_order_relaxed);
@@ -111,18 +105,36 @@ class SavedTraceFlags {
   void Restore();
 
  private:
-  std::map<std::string, bool> values_;
+  std::map<std::string, std::pair<bool, TraceFlag*>> values_;
 };
 
-extern TraceFlag api_trace;
 extern DebugOnlyTraceFlag auth_context_refcount_trace;
+extern DebugOnlyTraceFlag call_combiner_trace;
+extern DebugOnlyTraceFlag call_refcount_trace;
+extern DebugOnlyTraceFlag closure_trace;
+extern DebugOnlyTraceFlag combiner_trace;
+extern DebugOnlyTraceFlag cq_refcount_trace;
+extern DebugOnlyTraceFlag error_refcount_trace;
+extern DebugOnlyTraceFlag fd_refcount_trace;
+extern DebugOnlyTraceFlag fd_trace_trace;
+extern DebugOnlyTraceFlag lb_policy_refcount_trace;
+extern DebugOnlyTraceFlag party_state_trace;
+extern DebugOnlyTraceFlag pending_tags_trace;
+extern DebugOnlyTraceFlag polling_trace;
+extern DebugOnlyTraceFlag polling_api_trace;
+extern DebugOnlyTraceFlag promise_primitives_trace;
+extern DebugOnlyTraceFlag resolver_refcount_trace;
+extern DebugOnlyTraceFlag security_connector_refcount_trace;
+extern DebugOnlyTraceFlag slice_refcount_trace;
+extern DebugOnlyTraceFlag stream_refcount_trace;
+extern DebugOnlyTraceFlag subchannel_refcount_trace;
+extern DebugOnlyTraceFlag work_serializer_trace;
+extern TraceFlag api_trace;
 extern TraceFlag backend_metric_trace;
 extern TraceFlag backend_metric_filter_trace;
 extern TraceFlag bdp_estimator_trace;
 extern TraceFlag call_trace;
-extern DebugOnlyTraceFlag call_combiner_trace;
 extern TraceFlag call_error_trace;
-extern DebugOnlyTraceFlag call_refcount_trace;
 extern TraceFlag cares_address_sorting_trace;
 extern TraceFlag cares_resolver_trace;
 extern TraceFlag cds_lb_trace;
@@ -135,15 +147,11 @@ extern TraceFlag client_channel_trace;
 extern TraceFlag client_channel_call_trace;
 extern TraceFlag client_channel_lb_call_trace;
 extern TraceFlag client_idle_filter_trace;
-extern DebugOnlyTraceFlag closure_trace;
-extern DebugOnlyTraceFlag combiner_trace;
 extern TraceFlag compression_trace;
 extern TraceFlag connectivity_state_trace;
-extern DebugOnlyTraceFlag cq_refcount_trace;
 extern TraceFlag cronet_trace;
 extern TraceFlag dns_resolver_trace;
 extern TraceFlag environment_autodetect_trace;
-extern DebugOnlyTraceFlag error_refcount_trace;
 extern TraceFlag event_engine_trace;
 extern TraceFlag event_engine_client_channel_resolver_trace;
 extern TraceFlag event_engine_dns_trace;
@@ -152,8 +160,6 @@ extern TraceFlag event_engine_endpoint_data_trace;
 extern TraceFlag event_engine_poller_trace;
 extern TraceFlag executor_trace;
 extern TraceFlag fault_injection_filter_trace;
-extern DebugOnlyTraceFlag fd_refcount_trace;
-extern DebugOnlyTraceFlag fd_trace_trace;
 extern TraceFlag flowctl_trace;
 extern TraceFlag fork_trace;
 extern TraceFlag glb_trace;
@@ -166,42 +172,30 @@ extern TraceFlag http2_ping_trace;
 extern TraceFlag http2_stream_state_trace;
 extern TraceFlag http_keepalive_trace;
 extern TraceFlag inproc_trace;
-extern DebugOnlyTraceFlag lb_policy_refcount_trace;
 extern TraceFlag metadata_query_trace;
 extern TraceFlag op_failure_trace;
 extern TraceFlag orca_client_trace;
 extern TraceFlag outlier_detection_lb_trace;
-extern DebugOnlyTraceFlag party_state_trace;
-extern DebugOnlyTraceFlag pending_tags_trace;
 extern TraceFlag pick_first_trace;
 extern TraceFlag plugin_credentials_trace;
-extern DebugOnlyTraceFlag polling_trace;
-extern DebugOnlyTraceFlag polling_api_trace;
 extern TraceFlag priority_lb_trace;
-extern DebugOnlyTraceFlag promise_primitives_trace;
 extern TraceFlag queue_pluck_trace;
-extern DebugOnlyTraceFlag resolver_refcount_trace;
 extern TraceFlag resource_quota_trace;
 extern TraceFlag retry_trace;
 extern TraceFlag ring_hash_lb_trace;
 extern TraceFlag rls_lb_trace;
 extern TraceFlag round_robin_trace;
 extern TraceFlag secure_endpoint_trace;
-extern DebugOnlyTraceFlag security_connector_refcount_trace;
 extern TraceFlag server_channel_trace;
-extern DebugOnlyTraceFlag slice_refcount_trace;
 extern TraceFlag stateful_session_filter_trace;
-extern DebugOnlyTraceFlag stream_refcount_trace;
 extern TraceFlag subchannel_trace;
 extern TraceFlag subchannel_pool_trace;
-extern DebugOnlyTraceFlag subchannel_refcount_trace;
 extern TraceFlag tcp_trace;
 extern TraceFlag timer_trace;
 extern TraceFlag timer_check_trace;
 extern TraceFlag tsi_trace;
 extern TraceFlag weighted_round_robin_lb_trace;
 extern TraceFlag weighted_target_lb_trace;
-extern DebugOnlyTraceFlag work_serializer_trace;
 extern TraceFlag xds_client_trace;
 extern TraceFlag xds_client_refcount_trace;
 extern TraceFlag xds_cluster_impl_lb_trace;
@@ -216,16 +210,15 @@ extern TraceFlag xds_route_config_resource_type_test_trace;
 extern TraceFlag xds_server_config_fetcher_trace;
 extern TraceFlag xds_wrr_locality_lb_trace;
 
+const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags();
+
 constexpr const char* g_all_trace_var_names[] = {
     "api",
-    "auth_context_refcount",
     "backend_metric",
     "backend_metric_filter",
     "bdp_estimator",
     "call",
-    "call_combiner",
     "call_error",
-    "call_refcount",
     "cares_address_sorting",
     "cares_resolver",
     "cds_lb",
@@ -238,15 +231,11 @@ constexpr const char* g_all_trace_var_names[] = {
     "client_channel_call",
     "client_channel_lb_call",
     "client_idle_filter",
-    "closure",
-    "combiner",
     "compression",
     "connectivity_state",
-    "cq_refcount",
     "cronet",
     "dns_resolver",
     "environment_autodetect",
-    "error_refcount",
     "event_engine",
     "event_engine_client_channel_resolver",
     "event_engine_dns",
@@ -255,8 +244,6 @@ constexpr const char* g_all_trace_var_names[] = {
     "event_engine_poller",
     "executor",
     "fault_injection_filter",
-    "fd_refcount",
-    "fd_trace",
     "flowctl",
     "fork",
     "glb",
@@ -269,42 +256,30 @@ constexpr const char* g_all_trace_var_names[] = {
     "http2_stream_state",
     "http_keepalive",
     "inproc",
-    "lb_policy_refcount",
     "metadata_query",
     "op_failure",
     "orca_client",
     "outlier_detection_lb",
-    "party_state",
-    "pending_tags",
     "pick_first",
     "plugin_credentials",
-    "polling",
-    "polling_api",
     "priority_lb",
-    "promise_primitives",
     "queue_pluck",
-    "resolver_refcount",
     "resource_quota",
     "retry",
     "ring_hash_lb",
     "rls_lb",
     "round_robin",
     "secure_endpoint",
-    "security_connector_refcount",
     "server_channel",
-    "slice_refcount",
     "stateful_session_filter",
-    "stream_refcount",
     "subchannel",
     "subchannel_pool",
-    "subchannel_refcount",
     "tcp",
     "timer",
     "timer_check",
     "tsi",
     "weighted_round_robin_lb",
     "weighted_target_lb",
-    "work_serializer",
     "xds_client",
     "xds_client_refcount",
     "xds_cluster_impl_lb",
@@ -317,7 +292,31 @@ constexpr const char* g_all_trace_var_names[] = {
     "xds_resolver",
     "xds_route_config_resource_type_test",
     "xds_server_config_fetcher",
-    "xds_wrr_locality_lb"};
+    "xds_wrr_locality_lb",
+#ifndef NDEBUG
+    "auth_context_refcount",
+    "call_combiner",
+    "call_refcount",
+    "closure",
+    "combiner",
+    "cq_refcount",
+    "error_refcount",
+    "fd_refcount",
+    "fd_trace",
+    "lb_policy_refcount",
+    "party_state",
+    "pending_tags",
+    "polling",
+    "polling_api",
+    "promise_primitives",
+    "resolver_refcount",
+    "security_connector_refcount",
+    "slice_refcount",
+    "stream_refcount",
+    "subchannel_refcount",
+    "work_serializer",
+#endif
+};
 
 }  // namespace grpc_core
 

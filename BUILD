@@ -3019,6 +3019,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/strings",
+        "absl/container:flat_hash_map",
     ],
     language = "c++",
     visibility = ["@grpc:trace"],

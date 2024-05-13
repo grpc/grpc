@@ -518,3 +518,19 @@ grpc_cc_library(
         "//src/core:metrics",
     ],
 )
+
+grpc_cc_test(
+    name = "trace_flag_test",
+    srcs = ["trace_flag_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "grpc_test_util",
+        "grpc_test_util_base",
+        "//:gpr",
+        "//src/core:useful",
+    ],
+)
+

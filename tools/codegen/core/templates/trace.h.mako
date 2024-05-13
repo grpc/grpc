@@ -23,6 +23,7 @@
 #include <map>
 #include <string>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
@@ -32,18 +33,10 @@ void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 
 namespace grpc_core {
+bool ParseTracers(absl::string_view tracers);
+class SavedTraceFlags;
 
 class TraceFlag;
-class TraceFlagList {
- public:
-  static bool Set(absl::string_view name, bool enabled);
-  static void Add(TraceFlag* flag);
-  static void SaveTo(std::map<std::string, bool>& values);
-
- private:
-  static void LogAllTracers();
-  static TraceFlag* root_tracer_;
-};
 
 namespace testing {
 void grpc_tracer_enable_flag(TraceFlag* flag);
@@ -75,7 +68,8 @@ class TraceFlag {
 
  private:
   friend void testing::grpc_tracer_enable_flag(TraceFlag* flag);
-  friend class TraceFlagList;
+  friend bool ParseTracers(absl::string_view tracers);
+  friend SavedTraceFlags;
 
   void set_enabled(bool enabled) {
     value_.store(enabled, std::memory_order_relaxed);
@@ -110,24 +104,35 @@ class SavedTraceFlags {
   void Restore();
 
  private:
-  std::map<std::string, bool> values_;
+  std::map<std::string, std::pair<bool, TraceFlag*>> values_;
 };
 
 % for flag, settings in trace_flags.items():
-<%
-  flag_variable = flag + "_trace"
-  if "debug_only" in settings and settings["debug_only"]:
-    type = "DebugOnlyTraceFlag"
-  else:
-    type = "TraceFlag"
-%>\
-extern ${type} ${flag_variable};
+% if "debug_only" in settings and settings["debug_only"]:
+extern DebugOnlyTraceFlag ${flag}_trace;
+% endif
+% endfor
+% for flag, settings in trace_flags.items():
+% if not "debug_only" in settings or not settings["debug_only"]:
+extern TraceFlag ${flag}_trace;
+% endif
 % endfor
 
+const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags();
+
 constexpr const char* g_all_trace_var_names[] = {
-% for flag in trace_flags:
-"${flag}"${"" if loop.last else ","}
+% for flag, settings in trace_flags.items():
+% if not "debug_only" in settings or not settings["debug_only"]:
+"${flag}",
+% endif
 % endfor
+#ifndef NDEBUG
+% for flag, settings in trace_flags.items():
+% if "debug_only" in settings and settings["debug_only"]:
+"${flag}",
+% endif
+% endfor
+#endif
 };
 
 }  // namespace grpc_core
