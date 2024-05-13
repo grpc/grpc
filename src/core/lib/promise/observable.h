@@ -88,7 +88,9 @@ class Observable {
     GRPC_MUST_USE_RESULT Waker Add(Observer* observer)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       observers_.insert(observer);
-      return GetContext<Activity>()->MakeNonOwningWaker();
+      Waker waker = GetContext<Activity>()->MakeNonOwningWaker();
+      gpr_log(GPR_ERROR, "New waker: %p", waker.DebugString().c_str());
+      return waker;
     }
 
    private:
@@ -110,9 +112,14 @@ class Observable {
   // Subclasses must implement ShouldReturn().
   class Observer {
    public:
-    explicit Observer(RefCountedPtr<State> state) : state_(std::move(state)) {}
+    explicit Observer(RefCountedPtr<State> state) : state_(std::move(state)) {
+      gpr_log(GPR_ERROR, "Observer:%p: waker=%s", this,
+              waker_.DebugString().c_str());
+    }
 
     virtual ~Observer() {
+      gpr_log(GPR_ERROR, "~Observer:%p: waker=%s", this,
+              waker_.DebugString().c_str());
       // If we saw a pending at all then we *may* be in the set of observers.
       // If not we're definitely not and we can avoid taking the lock at all.
       if (!saw_pending_) return;
@@ -125,7 +132,10 @@ class Observable {
     Observer(const Observer&) = delete;
     Observer& operator=(const Observer&) = delete;
     Observer(Observer&& other) noexcept : state_(std::move(other.state_)) {
+      gpr_log(GPR_ERROR, "Observer:%p<-%p: waker=%s", this, &other,
+              waker_.DebugString().c_str());
       CHECK(other.waker_.is_unwakeable());
+      DCHECK(waker_.is_unwakeable());
       CHECK(!other.saw_pending_);
     }
     Observer& operator=(Observer&& other) noexcept = delete;
@@ -135,6 +145,8 @@ class Observable {
     virtual bool ShouldReturn(const T& current) = 0;
 
     Poll<T> operator()() {
+      gpr_log(GPR_ERROR, "Observer():%p: waker=%s", this,
+              waker_.DebugString().c_str());
       MutexLock lock(state_->mu());
       // Check if the value has changed yet.
       if (ShouldReturn(state_->current())) {
@@ -142,8 +154,12 @@ class Observable {
         return state_->current();
       }
       // Record that we saw at least one pending and then register for wakeup.
+      gpr_log(GPR_ERROR, "Observer() sp:%p: waker=%s", this,
+              waker_.DebugString().c_str());
       saw_pending_ = true;
       if (waker_.is_unwakeable()) waker_ = state_->Add(this);
+      gpr_log(GPR_ERROR, "Observer()...:%p: waker=%s", this,
+              waker_.DebugString().c_str());
       return Pending{};
     }
 

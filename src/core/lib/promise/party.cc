@@ -110,7 +110,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -308,8 +308,10 @@ void Party::AddParticipants(Participant** participants, size_t count) {
     for (size_t i = 0; i < count; i++) {
       if (grpc_trace_party_state.enabled()) {
         gpr_log(GPR_INFO,
-                "Party %p                 AddParticipant: %s @ %" PRIdPTR,
-                &sync_, std::string(participants[i]->name()).c_str(), slots[i]);
+                "Party %p                 AddParticipant: %s @ %" PRIdPTR
+                " [participant=%p]",
+                &sync_, std::string(participants[i]->name()).c_str(), slots[i],
+                participants[i]);
       }
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }

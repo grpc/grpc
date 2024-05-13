@@ -474,6 +474,7 @@ class Party : public Activity, private Wakeable {
       Construct(&factory_, std::move(promise_factory));
     }
     ~ParticipantImpl() {
+      gpr_log(GPR_ERROR, "Destroy:%p, started_=%d", this, started_);
       if (!started_) {
         Destruct(&factory_);
       } else {

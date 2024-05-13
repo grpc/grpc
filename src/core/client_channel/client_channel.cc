@@ -754,17 +754,17 @@ CallInitiator ClientChannel::CreateCall(
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuarded(
-      "wait-for-name-resolution", [self = RefAsSubclass<ClientChannel>(),
-                                   unstarted_handler = std::move(call.handler),
-                                   was_queued = false]() mutable {
+      "wait-for-name-resolution",
+      [self = RefAsSubclass<ClientChannel>(),
+       unstarted_handler = std::move(call.handler)]() mutable {
         const bool wait_for_ready =
             unstarted_handler.UnprocessedClientInitialMetadata()
                 .GetOrCreatePointer(WaitForReady())
                 ->value;
         return Map(
             // Wait for the resolver result.
-            self->resolver_data_for_calls_.NextWhen(
-                [wait_for_ready, &was_queued](
+            CheckDelayed(self->resolver_data_for_calls_.NextWhen(
+                [wait_for_ready](
                     const absl::StatusOr<ResolverDataForCalls> result) {
                   bool got_result = false;
                   // If the resolver reports an error but the call is
@@ -776,12 +776,14 @@ CallInitiator ClientChannel::CreateCall(
                     // Not an error.  Make sure we actually have a result.
                     got_result = result->config_selector != nullptr;
                   }
-                  if (!got_result) was_queued = true;
                   return got_result;
-                }),
+                })),
             // Handle resolver result.
-            [self, &was_queued, &unstarted_handler](
-                absl::StatusOr<ResolverDataForCalls> resolver_data) mutable {
+            [self, &unstarted_handler](
+                std::tuple<absl::StatusOr<ResolverDataForCalls>, bool>
+                    result_and_delayed) mutable {
+              auto& resolver_data = std::get<0>(result_and_delayed);
+              const bool was_queued = std::get<1>(result_and_delayed);
               if (!resolver_data.ok()) return resolver_data.status();
               // Apply service config to call.
               absl::Status status = self->ApplyServiceConfigToCall(

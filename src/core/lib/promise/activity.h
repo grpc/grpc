@@ -26,6 +26,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -119,6 +120,11 @@ class Waker {
 
   std::string ActivityDebugTag() {
     return wakeable_and_arg_.ActivityDebugTag();
+  }
+
+  std::string DebugString() {
+    return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
+                           wakeable_and_arg_.wakeup_mask);
   }
 
   // This is for tests to assert that a waker is occupied or not.

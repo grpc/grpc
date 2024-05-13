@@ -93,6 +93,11 @@ class ClientChannelTest : public YodelTest {
                 grpc_event_engine::experimental::EventEngine>(event_engine()));
   }
 
+  void Shutdown() override {
+    channel_.reset();
+    picker_.reset();
+  }
+
   OrphanablePtr<ClientChannel> channel_;
   absl::optional<ClientChannel::PickerObservable> picker_;
   TestCallDestinationFactory call_destination_factory_{this};

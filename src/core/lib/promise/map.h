@@ -72,6 +72,20 @@ promise_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
   return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
 }
 
+// Maps a promise to a new promise that returns a tuple of the original result and a bool indicating whether there was ever a Pending{} value observed from polling.
+template <typename Promise>
+auto CheckDelayed(Promise promise) {
+  using P = promise_detail::PromiseLike<Promise>;
+  return [delayed = false, promise = P(std::move(promise))]() mutable -> Poll<std::tuple<typename P::Result, bool>> {
+    auto r = promise();
+    if (r.pending()) {
+      delayed = true;
+      return Pending{};
+    }
+    return std::make_tuple(r.value(), delayed);
+  };
+}
+
 // Callable that takes a tuple and returns one element
 template <size_t kElem>
 struct JustElem {
