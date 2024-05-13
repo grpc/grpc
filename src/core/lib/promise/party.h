@@ -379,6 +379,11 @@ class Party : public Activity, private Wakeable {
   // The on_complete callback will be called with the result of the promise if
   // it completes.
   // A maximum of sixteen promises can be spawned onto a party.
+  // promise_factory called to create the promise with the party lock taken;
+  // after the promise is created the factory is destroyed.
+  // This means that pointers or references to factory members will be
+  // invalidated after the promise is created - so the promise should not retain
+  // any of these.
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
