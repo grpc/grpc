@@ -17,14 +17,15 @@
 # Uses trace_flags.yaml to auto-generate code for trace flags in gRPC-core, as
 # well as the trace flag piece of doc/environment_variables.md.
 
-import subprocess
 from io import StringIO
+import subprocess
 
-import yaml
-from absl import app, flags
+from absl import app
+from absl import flags
 from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
+import yaml
 
 _CHECK = flags.DEFINE_bool(
     "check", default=False, help="Format and compare output using git diff."
