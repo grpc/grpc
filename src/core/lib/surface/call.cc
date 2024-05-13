@@ -34,6 +34,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -1138,8 +1139,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
     } else if (!is_client()) {
       SetFinalStatus(absl::OkStatus());
     } else {
-      gpr_log(GPR_DEBUG,
-              "Received trailing metadata with no error and no status");
+      VLOG(2) << "Received trailing metadata with no error and no status";
       SetFinalStatus(grpc_error_set_int(GRPC_ERROR_CREATE("No status received"),
                                         StatusIntProperty::kRpcStatus,
                                         GRPC_STATUS_UNKNOWN));
