@@ -137,7 +137,9 @@ Slice CreateRootCertsBundle(const char* certs_directory) {
       }
     }
   }
-  return Slice::FromCopiedBuffer(bundle_string, bytes_read);
+  Slice copied_buffer = Slice::FromCopiedBuffer(bundle_string, bytes_read);
+  gpr_free(bundle_string);
+  return copied_buffer;
 }
 
 absl::StatusOr<Slice> LoadSystemRootCerts() {
