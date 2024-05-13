@@ -170,9 +170,9 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert);
 // return: a std::string of the DER encoding of the AKID or a status on failure.
 absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl);
 
-// Returns a vector of X509 instances representing the parsed X.509
-// certificates from the given PEM-encoded certificate chain. Caller takes
-// ownership of the X509 pointers in the output vector.
+// Returns a vector of X509 instances parsed from the given PEM-encoded
+// certificate chain. Caller takes ownership of the X509 pointers in the output
+// vector.
 absl::StatusOr<std::vector<X509*>> ParsePemCertificateChain(
     absl::string_view cert_chain_pem);
 
