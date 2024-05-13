@@ -241,7 +241,6 @@ struct grpc_channel_stack {
   MakeServerCallPromise(grpc_core::CallArgs call_args);
 
   void InitClientCallSpine(grpc_core::CallSpineInterface* call);
-  void InitServerCallSpine(grpc_core::CallSpineInterface* call);
 };
 
 // A call stack tracks a set of related filters for one call, and guarantees

@@ -539,11 +539,11 @@ void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()
-        ->RegisterFilter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
+        ->RegisterV2Filter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
         // TODO(yashykt) : Figure out a good place to place this channel arg
         .IfChannelArg("grpc.experimental.enable_observability", true);
     builder->channel_init()
-        ->RegisterFilter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
+        ->RegisterV2Filter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
         // TODO(yashykt) : Figure out a good place to place this channel arg
         .IfChannelArg("grpc.experimental.enable_observability", true);
   });
