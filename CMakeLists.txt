@@ -2298,6 +2298,7 @@ add_library(grpc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/posix/directory_reader.cc
@@ -3092,6 +3093,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -5211,6 +5213,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -5999,6 +6002,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(activity_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/trace.cc
   test/core/promise/activity_test.cc
@@ -6273,6 +6277,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(all_ok_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/trace.cc
   test/core/promise/all_ok_test.cc
 )
@@ -8512,6 +8517,7 @@ add_executable(call_filters_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -10185,6 +10191,7 @@ add_executable(chunked_vector_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -13373,6 +13380,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14233,6 +14241,7 @@ add_executable(flow_control_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14320,6 +14329,7 @@ add_executable(for_each_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14446,6 +14456,7 @@ add_executable(forkable_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/forkable.cc
+  src/core/lib/gprpp/glob.cc
   test/core/event_engine/forkable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14589,6 +14600,7 @@ add_executable(frame_test
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
@@ -17721,6 +17733,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/trace.cc
   test/core/promise/inter_activity_pipe_test.cc
@@ -17851,6 +17864,7 @@ add_executable(interception_chain_test
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -18076,6 +18090,7 @@ add_executable(interceptor_list_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -18467,6 +18482,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(join_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/trace.cc
   test/core/promise/join_test.cc
 )
@@ -18868,6 +18884,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(latch_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/trace.cc
   test/core/promise/latch_test.cc
@@ -19223,6 +19240,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(loop_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/trace.cc
   test/core/promise/loop_test.cc
 )
@@ -19273,6 +19291,7 @@ add_executable(map_pipe_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -21546,6 +21565,7 @@ add_executable(periodic_update_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -22633,6 +22653,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_mutex_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/trace.cc
   test/core/promise/promise_mutex_test.cc
@@ -26732,6 +26753,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/trace.cc
   test/core/promise/seq_test.cc
 )
@@ -28306,6 +28328,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(slice_string_helpers_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
@@ -29978,6 +30001,7 @@ add_executable(test_core_event_engine_slice_buffer_test
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
@@ -31838,6 +31862,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(try_join_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/trace.cc
   test/core/promise/try_join_test.cc
 )
@@ -31927,6 +31952,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(try_seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/trace.cc
   test/core/promise/try_seq_test.cc
 )

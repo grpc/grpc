@@ -546,6 +546,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/crash.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
+    src/core/lib/gprpp/glob.cc \
     src/core/lib/gprpp/host_port.cc \
     src/core/lib/gprpp/linux/env.cc \
     src/core/lib/gprpp/load_file.cc \

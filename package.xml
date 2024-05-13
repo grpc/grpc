@@ -1292,6 +1292,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/glob.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/glob.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/if_list.h" role="src" />

@@ -1304,6 +1304,8 @@ let package = Package(
         "src/core/lib/gprpp/examine_stack.h",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/fork.h",
+        "src/core/lib/gprpp/glob.cc",
+        "src/core/lib/gprpp/glob.h",
         "src/core/lib/gprpp/host_port.cc",
         "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/if_list.h",

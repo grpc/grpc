@@ -890,6 +890,7 @@ libs:
   - src/core/lib/gprpp/directory_reader.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -1719,6 +1720,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/posix/directory_reader.cc
@@ -2428,6 +2430,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -2873,6 +2876,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -4519,6 +4523,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -4840,6 +4845,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -5232,6 +5238,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5254,6 +5261,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/activity_test.cc
@@ -5385,6 +5393,7 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
@@ -5396,6 +5405,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/all_ok_test.cc
   deps:
@@ -6383,6 +6393,7 @@ targets:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -6473,6 +6484,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -7672,6 +7684,7 @@ targets:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7736,6 +7749,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -9184,6 +9198,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9234,6 +9249,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -9797,6 +9813,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -9866,6 +9883,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -9929,6 +9947,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -10003,6 +10022,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -10068,10 +10088,12 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/forkable.h
+  - src/core/lib/gprpp/glob.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/forkable.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/event_engine/forkable_test.cc
   deps:
   - gtest
@@ -10130,6 +10152,7 @@ targets:
   headers:
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
@@ -10140,6 +10163,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
@@ -11538,6 +11562,7 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -11556,6 +11581,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/inter_activity_pipe_test.cc
@@ -11688,6 +11714,7 @@ targets:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -11978,6 +12005,7 @@ targets:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -12179,6 +12207,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -12245,6 +12274,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -12440,6 +12470,7 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/join.h
@@ -12449,6 +12480,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/join_test.cc
   deps:
@@ -12687,6 +12719,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -12708,6 +12741,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/latch_test.cc
@@ -12819,6 +12853,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -12830,6 +12865,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/loop_test.cc
   deps:
@@ -12856,6 +12892,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -12930,6 +12967,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -14095,6 +14133,7 @@ targets:
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
@@ -14136,6 +14175,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -14674,6 +14714,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -14696,6 +14737,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/promise_mutex_test.cc
@@ -17784,6 +17826,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -17794,6 +17837,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/seq_test.cc
   deps:
@@ -18616,6 +18660,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
@@ -18623,6 +18668,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
@@ -19342,6 +19388,7 @@ targets:
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/slice/slice.h
@@ -19356,6 +19403,7 @@ targets:
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_refcount.cc
@@ -20189,6 +20237,7 @@ targets:
   headers:
   - src/core/lib/debug/trace.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
@@ -20200,6 +20249,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/try_join_test.cc
   deps:
@@ -20226,6 +20276,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -20238,6 +20289,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/trace.cc
   - test/core/promise/try_seq_test.cc
   deps:

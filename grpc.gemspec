@@ -1310,6 +1310,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/examine_stack.h )
   s.files += %w( src/core/lib/gprpp/fork.cc )
   s.files += %w( src/core/lib/gprpp/fork.h )
+  s.files += %w( src/core/lib/gprpp/glob.cc )
+  s.files += %w( src/core/lib/gprpp/glob.h )
   s.files += %w( src/core/lib/gprpp/host_port.cc )
   s.files += %w( src/core/lib/gprpp/host_port.h )
   s.files += %w( src/core/lib/gprpp/if_list.h )

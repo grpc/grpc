@@ -50,6 +50,7 @@ CC_FILES=[
     'grpc_root/src/core/lib/gprpp/crash.cc',
     'grpc_root/src/core/lib/gprpp/examine_stack.cc',
     'grpc_root/src/core/lib/gprpp/fork.cc',
+    'grpc_root/src/core/lib/gprpp/glob.cc',
     'grpc_root/src/core/lib/gprpp/host_port.cc',
     'grpc_root/src/core/lib/gprpp/linux/env.cc',
     'grpc_root/src/core/lib/gprpp/mpscq.cc',
