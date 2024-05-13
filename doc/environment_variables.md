@@ -67,12 +67,12 @@ some configuration as environment variables that can be set.
   - cronet - Cronet transport engine.
   - dns_resolver - The active DNS resolver.
   - environment_autodetect
-  - event_engine
-  - event_engine_client_channel_resolver
-  - event_engine_dns
-  - event_engine_endpoint
-  - event_engine_endpoint_data
-  - event_engine_poller
+  - event_engine - High-level EventEngine operations.
+  - event_engine_client_channel_resolver - EventEngine-based client channel resolver state and events.
+  - event_engine_dns - EventEngine DNS resolver.
+  - event_engine_endpoint - EventEngine Endpoint operations.
+  - event_engine_endpoint_data - Detailed dump of EventEngine endpoint TCP data.
+  - event_engine_poller - EventEngine Poller events.
   - executor - gRPC's legacy thread pool ('the executor').
   - fault_injection_filter
   - flowctl - Http2 flow control.
