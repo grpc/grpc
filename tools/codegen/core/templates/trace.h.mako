@@ -87,7 +87,7 @@ class TraceFlag {
 };
 
 #define GRPC_TRACE_FLAG_ENABLED(f) GPR_UNLIKELY((f).enabled())
-#define GRPC_TRACE_LOG(tracer, level) LOG_IF(level, GRPC_TRACE_FLAG_ENABLED(tracer))
+#define GRPC_TRACE_LOG(tracer, level) LOG_IF(level, GRPC_TRACE_FLAG_ENABLED(grpc_core::tracer##_trace))
 
 #ifndef NDEBUG
 typedef TraceFlag DebugOnlyTraceFlag;

@@ -359,7 +359,7 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
 // the grpc_init() and grpc_shutdown() code paths which are protected by a
 // global mutex. So it is okay to assume that these functions are thread-safe
 void Executor::InitAll() {
-  GRPC_TRACE_LOG(executor_trace, INFO) << "Executor::InitAll() enter";
+  GRPC_TRACE_LOG(executor, INFO) << "Executor::InitAll() enter";
 
   // Return if Executor::InitAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] != nullptr) {
@@ -375,7 +375,7 @@ void Executor::InitAll() {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->Init();
   executors[static_cast<size_t>(ExecutorType::RESOLVER)]->Init();
 
-  GRPC_TRACE_LOG(executor_trace, INFO) << "Executor::InitAll() done";
+  GRPC_TRACE_LOG(executor, INFO) << "Executor::InitAll() done";
 }
 
 void Executor::Run(grpc_closure* closure, grpc_error_handle error,
@@ -385,7 +385,7 @@ void Executor::Run(grpc_closure* closure, grpc_error_handle error,
 }
 
 void Executor::ShutdownAll() {
-  GRPC_TRACE_LOG(executor_trace, INFO) << "Executor::ShutdownAll() enter";
+  GRPC_TRACE_LOG(executor, INFO) << "Executor::ShutdownAll() enter";
 
   // Return if Executor:SshutdownAll() is already called earlier
   if (executors[static_cast<size_t>(ExecutorType::DEFAULT)] == nullptr) {
@@ -413,7 +413,7 @@ void Executor::ShutdownAll() {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)] = nullptr;
   executors[static_cast<size_t>(ExecutorType::RESOLVER)] = nullptr;
 
-  GRPC_TRACE_LOG(executor_trace, INFO) << "Executor::ShutdownAll() done";
+  GRPC_TRACE_LOG(executor, INFO) << "Executor::ShutdownAll() done";
 }
 
 bool Executor::IsThreaded(ExecutorType executor_type) {

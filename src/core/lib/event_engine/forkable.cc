@@ -57,7 +57,7 @@ void ObjectGroupForkHandler::RegisterForkable(
 void ObjectGroupForkHandler::Prefork() {
   if (IsForkEnabled()) {
     CHECK(!std::exchange(is_forking_, true));
-    GRPC_TRACE_LOG(grpc_core::fork_trace, INFO) << "PrepareFork";
+    GRPC_TRACE_LOG(fork, INFO) << "PrepareFork";
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {
@@ -73,7 +73,7 @@ void ObjectGroupForkHandler::Prefork() {
 void ObjectGroupForkHandler::PostforkParent() {
   if (IsForkEnabled()) {
     CHECK(is_forking_);
-    GRPC_TRACE_LOG(grpc_core::fork_trace, INFO) << "PostforkParent";
+    GRPC_TRACE_LOG(fork, INFO) << "PostforkParent";
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {
@@ -90,7 +90,7 @@ void ObjectGroupForkHandler::PostforkParent() {
 void ObjectGroupForkHandler::PostforkChild() {
   if (IsForkEnabled()) {
     CHECK(is_forking_);
-    GRPC_TRACE_LOG(grpc_core::fork_trace, INFO) << "PostforkChild";
+    GRPC_TRACE_LOG(fork, INFO) << "PostforkChild";
     for (auto it = forkables_.begin(); it != forkables_.end();) {
       auto shared = it->lock();
       if (shared) {

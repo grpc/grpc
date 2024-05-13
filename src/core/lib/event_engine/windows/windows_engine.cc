@@ -242,7 +242,7 @@ WindowsEventEngine::GetDNSResolver(
   return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
       std::move(*ares_resolver));
 #else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-  GRPC_TRACE_LOG(grpc_core::event_engine_dns_trace, INFO)
+  GRPC_TRACE_LOG(event_engine_dns, INFO)
       << "WindowsEventEngine::" << this << " creating NativeWindowsDNSResolver";
   return std::make_unique<NativeWindowsDNSResolver>(shared_from_this());
 #endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
