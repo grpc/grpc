@@ -20,6 +20,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

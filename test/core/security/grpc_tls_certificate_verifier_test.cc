@@ -22,6 +22,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 

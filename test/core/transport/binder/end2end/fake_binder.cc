@@ -17,6 +17,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
+
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_binder {
