@@ -14,8 +14,11 @@
 
 #include "test/core/call/yodel/yodel_test.h"
 
+#include <memory>
+
 #include "absl/random/random.h"
 
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
@@ -103,13 +106,13 @@ void SimpleTestRegistry::RegisterTest(
 class YodelTest::WatchDog {
  public:
   explicit WatchDog(YodelTest* test) : test_(test) {}
-  ~WatchDog() { test_->event_engine_->Cancel(timer_); }
+  ~WatchDog() { test_->state_->event_engine->Cancel(timer_); }
 
  private:
   YodelTest* const test_;
   grpc_event_engine::experimental::EventEngine::TaskHandle const timer_{
-      test_->event_engine_->RunAfter(Duration::Minutes(5),
-                                     [this]() { test_->Timeout(); })};
+      test_->state_->event_engine->RunAfter(Duration::Minutes(5),
+                                            [this]() { test_->Timeout(); })};
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -117,36 +120,38 @@ class YodelTest::WatchDog {
 
 YodelTest::YodelTest(const fuzzing_event_engine::Actions& actions,
                      absl::BitGenRef rng)
-    : rng_(rng),
-      event_engine_{
-          std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
-              []() {
-                grpc_timer_manager_set_threading(false);
-                grpc_event_engine::experimental::FuzzingEventEngine::Options
-                    options;
-                return options;
-              }(),
-              actions)},
-      call_arena_allocator_{MakeRefCounted<CallArenaAllocator>(
-          MakeResourceQuota("test-quota")
-              ->memory_quota()
-              ->CreateMemoryAllocator("test-allocator"),
-          1024)} {}
+    : rng_(rng), actions_(actions) {}
 
 void YodelTest::RunTest() {
+  CoreConfiguration::Reset();
+  InitCoreConfiguration();
+  state_ = std::make_unique<State>();
+  state_->event_engine =
+      std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+          []() {
+            grpc_timer_manager_set_threading(false);
+            grpc_event_engine::experimental::FuzzingEventEngine::Options
+                options;
+            return options;
+          }(),
+          actions_);
+  state_->call_arena_allocator = MakeRefCounted<CallArenaAllocator>(
+      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+          "test-allocator"),
+      1024);
   TestImpl();
   EXPECT_EQ(pending_actions_.size(), 0)
       << "There are still pending actions: did you forget to call "
          "WaitForAllPendingWork()?";
   Shutdown();
-  event_engine_->TickUntilIdle();
-  event_engine_->UnsetGlobalHooks();
+  state_->event_engine->TickUntilIdle();
+  state_->event_engine->UnsetGlobalHooks();
 }
 
 void YodelTest::TickUntilTrue(absl::FunctionRef<bool()> poll) {
   WatchDog watchdog(this);
   while (!poll()) {
-    event_engine_->Tick();
+    state_->event_engine->Tick();
   }
 }
 
@@ -157,7 +162,7 @@ void YodelTest::WaitForAllPendingWork() {
       pending_actions_.pop();
       continue;
     }
-    event_engine_->Tick();
+    state_->event_engine->Tick();
   }
 }
 

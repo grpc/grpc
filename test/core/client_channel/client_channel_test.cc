@@ -18,12 +18,13 @@
 
 #include "gtest/gtest.h"
 
+#include "src/core/lib/config/core_configuration.h"
 #include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {
 
 namespace {
-const absl::string_view kTestTarget = "test_target";
+const absl::string_view kTestTarget = "test:///target";
 const absl::string_view kTestPath = "/test_method";
 }  // namespace
 
@@ -50,6 +51,15 @@ class ClientChannelTest : public YodelTest {
     return client_initial_metadata;
   }
 
+  CallHandler TickUntilCallStarted() {
+    auto poll = [this]() -> Poll<CallHandler> {
+      auto handler = call_destination_->PopHandler();
+      if (handler.has_value()) return std::move(*handler);
+      return Pending();
+    };
+    return TickUntil(absl::FunctionRef<Poll<CallHandler>()>(poll));
+  }
+
  private:
   class TestClientChannelFactory final : public ClientChannelFactory {
    public:
@@ -62,10 +72,21 @@ class ClientChannelTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      Crash("unimplemented");
+      handlers_.push(
+          unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack());
+    }
+
+    absl::optional<CallHandler> PopHandler() {
+      if (handlers_.empty()) return absl::nullopt;
+      auto handler = std::move(handlers_.front());
+      handlers_.pop();
+      return handler;
     }
 
     void Orphaned() override {}
+
+   private:
+    std::queue<CallHandler> handlers_;
   };
 
   class TestCallDestinationFactory final
@@ -93,6 +114,12 @@ class ClientChannelTest : public YodelTest {
                 grpc_event_engine::experimental::EventEngine>(event_engine()));
   }
 
+  void InitCoreConfiguration() override {
+    CoreConfiguration::RegisterBuilder(
+
+    );
+  }
+
   void Shutdown() override {
     channel_.reset();
     picker_.reset();
@@ -113,6 +140,12 @@ CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 CLIENT_CHANNEL_TEST(CreateCall) {
   auto& channel = InitChannel(ChannelArgs());
   channel.CreateCall(MakeClientInitialMetadata());
+}
+
+CLIENT_CHANNEL_TEST(StartCall) {
+  auto& channel = InitChannel(ChannelArgs());
+  auto call_initiator = channel.CreateCall(MakeClientInitialMetadata());
+  auto call_handler = TickUntilCallStarted();
 }
 
 }  // namespace grpc_core

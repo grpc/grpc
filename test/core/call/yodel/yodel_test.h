@@ -340,7 +340,7 @@ class YodelTest : public ::testing::Test {
     yodel_detail::SequenceSpawner(
         name_and_location,
         yodel_detail::SpawnerForContext(std::move(context),
-                                        event_engine_.get()),
+                                        state_->event_engine.get()),
         [this](yodel_detail::NameAndLocation name_and_location, int step) {
           auto action = std::make_shared<yodel_detail::ActionState>(
               name_and_location, step);
@@ -351,9 +351,10 @@ class YodelTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    auto* arena = call_arena_allocator_->MakeArena();
-    return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                        arena, call_arena_allocator_, nullptr);
+    auto* arena = state_->call_arena_allocator->MakeArena();
+    return MakeCallPair(std::move(client_initial_metadata),
+                        state_->event_engine.get(), arena,
+                        state_->call_arena_allocator, nullptr);
   }
 
   void WaitForAllPendingWork();
@@ -374,25 +375,33 @@ class YodelTest : public ::testing::Test {
 
   const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
   event_engine() {
-    return event_engine_;
+    return state_->event_engine;
   }
 
  private:
   class WatchDog;
+  struct State {
+    grpc::testing::TestGrpcScope grpc_scope;
+    std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
+        event_engine;
+    RefCountedPtr<CallArenaAllocator> call_arena_allocator;
+  };
 
   virtual void TestImpl() = 0;
 
   void Timeout();
   void TickUntilTrue(absl::FunctionRef<bool()> poll);
 
+  // Called before the test runs, after core configuration has been reset
+  // and before the event engine is started.
+  // This is a good time to register any custom core configuration builders.
+  virtual void InitCoreConfiguration() {}
   // Called after the test has run, but before the event engine is shut down.
   virtual void Shutdown() {}
 
-  grpc::testing::TestGrpcScope grpc_scope_;
   absl::BitGenRef rng_;
-  const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
-      event_engine_;
-  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  fuzzing_event_engine::Actions actions_;
+  std::unique_ptr<State> state_;
   std::queue<std::shared_ptr<yodel_detail::ActionState>> pending_actions_;
 };
 
