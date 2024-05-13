@@ -110,13 +110,16 @@ namespace {
 void ParseTracers(absl::string_view tracers) {
   std::string enabled_tracers;
   for (auto trace_glob : absl::StrSplit(tracers, ',', absl::SkipWhitespace())) {
+    bool found = false;
     bool enabled = !absl::ConsumePrefix(&trace_glob, "-");
     for (const auto& flag : g_all_trace_var_names) {
       if (GlobMatch(flag, trace_glob)) {
         absl::StrAppend(&enabled_tracers, flag, ", ");
         TraceFlagList::Set(flag, enabled);
+        found = true;
       }
     }
+    if (!found) LOG(ERROR) << "Unknown tracer: " << trace_glob;
   }
   if (!enabled_tracers.empty()) {
     absl::string_view enabled_tracers_view(enabled_tracers);
