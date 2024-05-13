@@ -116,6 +116,7 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],
+    shard_count = 5,
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
