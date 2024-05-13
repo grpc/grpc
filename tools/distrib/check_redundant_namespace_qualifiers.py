@@ -26,6 +26,9 @@ IGNORED_FILES = [
     # for older gcc versions.
     "src/core/ext/transport/chttp2/server/chttp2_server.h",
     "src/core/server/server.h",
+    # generated code adds a necessary grpc_core:: for a logging macro which can
+    # be used anywhere.
+    "src/core/lib/debug/trace.h"
 ]
 
 
