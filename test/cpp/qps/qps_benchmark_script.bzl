@@ -58,6 +58,7 @@ def qps_json_driver_batch():
             ],
             external_deps = [
                 "absl/log:check",
+                "absl/log:log",
             ],
             tags = [
                 "qps_json_driver",
@@ -85,6 +86,7 @@ def json_run_localhost_batch():
             ],
             external_deps = [
                 "absl/log:check",
+                "absl/log:log",
             ],
             deps = [
                 "//:gpr",
