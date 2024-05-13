@@ -34,6 +34,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -420,6 +421,9 @@ class ChannelBasedCall : public Call {
   }
 
   Channel* channel() const { return channel_.get(); }
+
+  // Non-virtual arena accessor -- needed by PipeBasedCall
+  Arena* GetArena() { return arena_; }
 
  private:
   Arena* const arena_;
@@ -1163,8 +1167,7 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
     } else if (!is_client()) {
       SetFinalStatus(absl::OkStatus());
     } else {
-      gpr_log(GPR_DEBUG,
-              "Received trailing metadata with no error and no status");
+      VLOG(2) << "Received trailing metadata with no error and no status";
       SetFinalStatus(grpc_error_set_int(GRPC_ERROR_CREATE("No status received"),
                                         StatusIntProperty::kRpcStatus,
                                         GRPC_STATUS_UNKNOWN));
@@ -2800,12 +2803,12 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
   void PublishInitialMetadata(ServerMetadata* metadata);
 
   ClientMetadataHandle send_initial_metadata_;
-  Pipe<ServerMetadataHandle> server_initial_metadata_{arena()};
+  Pipe<ServerMetadataHandle> server_initial_metadata_{GetArena()};
   Latch<ServerMetadataHandle> server_trailing_metadata_;
   Latch<ServerMetadataHandle> cancel_error_;
   Latch<grpc_polling_entity> polling_entity_;
-  Pipe<MessageHandle> client_to_server_messages_{arena()};
-  Pipe<MessageHandle> server_to_client_messages_{arena()};
+  Pipe<MessageHandle> client_to_server_messages_{GetArena()};
+  Pipe<MessageHandle> server_to_client_messages_{GetArena()};
   bool is_trailers_only_ = false;
   bool scheduled_receive_status_ = false;
   bool scheduled_send_close_ = false;
@@ -3344,6 +3347,10 @@ class MaybeOpImpl {
         return r;
       }
     }
+<<<<<<< HEAD
+=======
+    GPR_UNREACHABLE_CODE(return Pending{});
+>>>>>>> transport-refs-2
   }
 
  private:
