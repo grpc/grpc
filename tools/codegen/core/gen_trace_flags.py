@@ -54,15 +54,21 @@ def main(args):
     with open("src/core/lib/debug/trace_flags.cc", "w") as f:
         f.write(render_source_file("trace_flags.cc.mako", trace_flags))
     with open("doc/environment_variables.md", "w") as f:
-        f.write(render_source_file("environment_variables.md.mako", trace_flags))
+        f.write(
+            render_source_file("environment_variables.md.mako", trace_flags)
+        )
     if _CHECK.value or _FORMAT.value:
         env = {
             "CHANGED_FILES": "src/core/lib/debug/trace.h src/core/lib/debug/trace_flags.cc"
         }
-        subprocess.run(["tools/distrib/clang_format_code.sh"], check=True, env=env)
+        subprocess.run(
+            ["tools/distrib/clang_format_code.sh"], check=True, env=env
+        )
     if _CHECK.value:
         diff_result = subprocess.run(
-            ["git", "diff", "src/core/lib/debug/"], check=True, capture_output=True
+            ["git", "diff", "src/core/lib/debug/"],
+            check=True,
+            capture_output=True,
         )
         if len(diff_result.stdout) > 0 or len(diff_result.stderr) > 0:
             print(
