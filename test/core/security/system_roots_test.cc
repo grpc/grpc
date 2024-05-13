@@ -92,7 +92,7 @@ TEST(CreateRootCertsBundleTest, BundlesCorrectly) {
 TEST(LoadSystemRootCertsTest, Success) {
   absl::StatusOr<grpc_core::Slice> roots_slice =
       grpc_core::LoadSystemRootCerts();
-  EXPECT_OK(roots_slice.status());
+  EXPECT_EQ(roots_slice.status(), absl::OkStatus());
   EXPECT_FALSE(roots_slice->empty());
 }
 #endif  // GPR_WINDOWS
