@@ -119,22 +119,22 @@ error_refcount:
   description: null
 event_engine:
   default: false
-  description: null
+  description: High-level EventEngine operations.
 event_engine_client_channel_resolver:
   default: false
-  description: null
+  description: EventEngine-based client channel resolver state and events.
 event_engine_dns:
   default: false
-  description: null
+  description: EventEngine DNS resolver.
 event_engine_endpoint:
   default: false
-  description: null
+  description: EventEngine Endpoint operations.
 event_engine_endpoint_data:
   default: false
-  description: null
+  description: Detailed dump of EventEngine endpoint TCP data.
 event_engine_poller:
   default: false
-  description: null
+  description: EventEngine Poller events.
 executor:
   default: false
   description: gRPC's legacy thread pool ('the executor').
