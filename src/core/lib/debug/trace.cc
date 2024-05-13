@@ -33,6 +33,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/gprpp/glob.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
@@ -106,64 +107,12 @@ void SavedTraceFlags::Restore() {
 }
 
 namespace {
-// A basic glob matcher based on https://research.swtch.com/glob.
-bool GlobMatch(absl::string_view name, absl::string_view trace_glob) {
-  size_t name_idx = 0;
-  size_t trace_idx = 0;
-  // pointers for iterative wildcard * matching.
-  size_t name_next_idx = name_idx;
-  size_t trace_next_idx = trace_idx;
-
-  while (trace_idx < trace_glob.length() || name_idx < name.length()) {
-    if (trace_idx < trace_glob.length()) {
-      switch (trace_glob.at(trace_idx)) {
-        case '?':
-          if (name_idx < name.length()) {
-            ++trace_idx;
-            ++name_idx;
-            continue;
-          }
-          break;
-        case '*':
-          trace_next_idx = trace_idx;
-          name_next_idx = name_idx + 1;
-          ++trace_idx;
-          continue;
-        default:
-          if (name_idx < name.length() &&
-              name.at(name_idx) == trace_glob.at(trace_idx)) {
-            ++trace_idx;
-            ++name_idx;
-            continue;
-          }
-          break;
-      }
-    }
-    // Failed to match a character. Restart if possible.
-    if (name_next_idx > 0 && name_next_idx <= name.length()) {
-      trace_idx = trace_next_idx;
-      name_idx = name_next_idx;
-      continue;
-    }
-    return false;
-  }
-  return true;
-}
-
-bool IsGlob(absl::string_view trace_glob) {
-  return std::any_of(trace_glob.begin(), trace_glob.end(),
-                     [](const char c) { return c == '?' || c == '*'; });
-}
-
 void ParseTracers(absl::string_view tracers) {
   std::string enabled_tracers;
   for (auto trace_glob : absl::StrSplit(tracers, ',', absl::SkipWhitespace())) {
     bool enabled = !absl::ConsumePrefix(&trace_glob, "-");
     for (const auto& flag : g_all_trace_var_names) {
-      if (trace_glob == flag) {
-        absl::StrAppend(&enabled_tracers, flag, ", ");
-        TraceFlagList::Set(flag, enabled);
-      } else if (IsGlob(trace_glob) && GlobMatch(flag, trace_glob)) {
+      if (GlobMatch(flag, trace_glob)) {
         absl::StrAppend(&enabled_tracers, flag, ", ");
         TraceFlagList::Set(flag, enabled);
       }

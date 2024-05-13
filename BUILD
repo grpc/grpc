@@ -3026,6 +3026,7 @@ grpc_cc_library(
         "config_vars",
         "gpr",
         "grpc_public_hdrs",
+        "//src/core:glob",
         "//src/core:no_destruct",
     ],
 )

@@ -5802,6 +5802,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "glob",
+    srcs = ["lib/gprpp/glob.cc"],
+    hdrs = ["lib/gprpp/glob.h"],
+    external_deps = ["absl/strings"],
+)
+
+grpc_cc_library(
     name = "status_conversion",
     srcs = ["lib/transport/status_conversion.cc"],
     hdrs = ["lib/transport/status_conversion.h"],
