@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -93,8 +94,8 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     // Verifications
     if (first_frame && type != GRPC_CHTTP2_FRAME_HEADER) {
       LOG(ERROR) << "expected first frame to be of type header";
-      LOG(ERROR) << "EXPECT: 0x" << GRPC_CHTTP2_FRAME_HEADER;
-      LOG(ERROR) << "GOT:    0x" << type;
+      LOG(ERROR) << "EXPECT: " << GRPC_CHTTP2_FRAME_HEADER;
+      LOG(ERROR) << "GOT:    " << type;
       EXPECT_TRUE(false);
     } else if (first_frame && header_is_eof &&
                !(flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM)) {
@@ -122,7 +123,7 @@ static void verify_frames(grpc_slice_buffer& output, bool header_is_eof) {
     }
     if (flags & ~(GRPC_CHTTP2_DATA_FLAG_END_STREAM |
                   GRPC_CHTTP2_DATA_FLAG_END_HEADERS)) {
-      LOG(ERROR) << "unexpected frame flags: 0x" << flags;
+      LOG(ERROR) << "unexpected frame flags: " << flags;
       EXPECT_TRUE(false);
     }
 
