@@ -355,7 +355,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
     if (free_bytes_.compare_exchange_weak(free, new_free,
                                           std::memory_order_acq_rel,
                                           std::memory_order_acquire)) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
         gpr_log(GPR_INFO, "[%p] Early return %" PRIdPTR " bytes", this, ret);
       }
       CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
@@ -450,7 +450,7 @@ void BasicMemoryQuota::Start() {
       [self](
           std::tuple<const char*, RefCountedPtr<ReclaimerQueue::Handle>> arg) {
         auto reclaimer = std::move(std::get<1>(arg));
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
           double free = std::max(intptr_t{0}, self->free_bytes_.load());
           size_t quota_size = self->quota_size_.load();
           gpr_log(GPR_INFO,
@@ -533,7 +533,7 @@ void BasicMemoryQuota::FinishReclamation(uint64_t token, Waker waker) {
   if (reclamation_counter_.compare_exchange_strong(current, current + 1,
                                                    std::memory_order_relaxed,
                                                    std::memory_order_relaxed)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
       double free = std::max(intptr_t{0}, free_bytes_.load());
       size_t quota_size = quota_size_.load();
       gpr_log(GPR_INFO,
@@ -550,7 +550,7 @@ void BasicMemoryQuota::Return(size_t amount) {
 }
 
 void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
     gpr_log(GPR_INFO, "Adding allocator %p", allocator);
   }
 
@@ -563,7 +563,7 @@ void BasicMemoryQuota::AddNewAllocator(GrpcMemoryAllocatorImpl* allocator) {
 }
 
 void BasicMemoryQuota::RemoveAllocator(GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
     gpr_log(GPR_INFO, "Removing allocator %p", allocator);
   }
 
@@ -610,7 +610,7 @@ void BasicMemoryQuota::MaybeMoveAllocator(GrpcMemoryAllocatorImpl* allocator,
 
 void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
     GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
     gpr_log(GPR_INFO, "Moving allocator %p to small", allocator);
   }
 
@@ -631,7 +631,7 @@ void BasicMemoryQuota::MaybeMoveAllocatorBigToSmall(
 
 void BasicMemoryQuota::MaybeMoveAllocatorSmallToBig(
     GrpcMemoryAllocatorImpl* allocator) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
     gpr_log(GPR_INFO, "Moving allocator %p to big", allocator);
   }
 
@@ -768,7 +768,7 @@ double PressureTracker::AddSampleAndGetControlValue(double sample) {
     } else {
       report = controller_.Update(current_estimate - kSetPoint);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
       gpr_log(GPR_INFO, "RQ: pressure:%lf report:%lf controller:%s",
               current_estimate, report, controller_.DebugString().c_str());
     }

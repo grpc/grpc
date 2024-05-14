@@ -99,7 +99,7 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
   if (max_bytes_ == max_bytes) {
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser max size to %d", max_bytes);
   }
   while (mem_used_ > max_bytes) {
@@ -111,7 +111,7 @@ void HPackTable::SetMaxBytes(uint32_t max_bytes) {
 bool HPackTable::SetCurrentTableSize(uint32_t bytes) {
   if (current_table_bytes_ == bytes) return true;
   if (bytes > max_bytes_) return false;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
   }
   while (mem_used_ > bytes) {

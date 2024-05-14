@@ -75,11 +75,6 @@
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;
 
-grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
-                                                      "cares_address_sorting");
-
-grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
-
 typedef struct fd_node {
   // default constructor exists only for linked list manipulation
   fd_node() : ev_driver(nullptr) {}
@@ -571,7 +566,7 @@ static void log_address_sorting_list(const grpc_ares_request* r,
 
 void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
                                              EndpointAddressesList* addresses) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
+  if (GRPC_TRACE_FLAG_ENABLED(cares_address_sorting_trace)) {
     log_address_sorting_list(r, *addresses, "input");
   }
   address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
@@ -591,7 +586,7 @@ void grpc_cares_wrapper_address_sorting_sort(const grpc_ares_request* r,
   }
   gpr_free(sortables);
   *addresses = std::move(sorted);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_address_sorting)) {
+  if (GRPC_TRACE_FLAG_ENABLED(cares_address_sorting_trace)) {
     log_address_sorting_list(r, *addresses, "output");
   }
 }

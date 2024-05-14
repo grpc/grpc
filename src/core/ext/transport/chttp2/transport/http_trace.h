@@ -19,6 +19,4 @@
 
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_core::TraceFlag grpc_http_trace;
-
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP_TRACE_H

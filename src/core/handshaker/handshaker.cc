@@ -43,8 +43,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_handshaker_trace(false, "handshaker");
-
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -62,13 +60,12 @@ std::string HandshakerArgsString(HandshakerArgs* args) {
 }  // namespace
 
 HandshakeManager::HandshakeManager()
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)
-                     ? "HandshakeManager"
-                     : nullptr) {}
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(handshaker_trace) ? "HandshakeManager"
+                                                           : nullptr) {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   MutexLock lock(&mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(handshaker_trace)) {
     gpr_log(
         GPR_INFO,
         "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
@@ -94,7 +91,7 @@ void HandshakeManager::Shutdown(grpc_error_handle why) {
 // on_handshake_done callback.
 // Returns true if we've scheduled the on_handshake_done callback.
 bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(handshaker_trace)) {
     gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
             ", args=%s",
@@ -128,7 +125,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
       }
       args_.args = ChannelArgs();
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(handshaker_trace)) {
       gpr_log(GPR_INFO,
               "handshake_manager %p: handshaking complete -- scheduling "
               "on_handshake_done with error=%s",
@@ -141,7 +138,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
     is_shutdown_ = true;
   } else {
     auto handshaker = handshakers_[index_];
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(handshaker_trace)) {
       gpr_log(
           GPR_INFO,
           "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,

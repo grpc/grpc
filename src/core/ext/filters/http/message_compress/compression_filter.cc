@@ -113,7 +113,7 @@ ChannelCompression::ChannelCompression(const ChannelArgs& args)
 
 MessageHandle ChannelCompression::CompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm) const {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(compression_trace)) {
     gpr_log(GPR_INFO, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
             message->payload()->Length(), algorithm, message->flags());
   }
@@ -139,7 +139,7 @@ MessageHandle ChannelCompression::CompressMessage(
   // If we achieved compression send it as compressed, otherwise send it as (to
   // avoid spending cycles on the receiver decompressing).
   if (did_compress) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(compression_trace)) {
       const char* algo_name;
       const size_t before_size = payload->Length();
       const size_t after_size = tmp.Length();
@@ -157,7 +157,7 @@ MessageHandle ChannelCompression::CompressMessage(
       call_tracer->RecordSendCompressedMessage(*message->payload());
     }
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(compression_trace)) {
       const char* algo_name;
       CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       gpr_log(GPR_INFO,
@@ -171,7 +171,7 @@ MessageHandle ChannelCompression::CompressMessage(
 
 absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
     bool is_client, MessageHandle message, DecompressArgs args) const {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(compression_trace)) {
     gpr_log(GPR_INFO, "DecompressMessage: len=%" PRIdPTR " max=%d alg=%d",
             message->payload()->Length(),
             args.max_recv_message_length.value_or(-1), args.algorithm);

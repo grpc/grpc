@@ -44,8 +44,6 @@
 
 namespace grpc_core {
 
-extern DebugOnlyTraceFlag grpc_call_combiner_trace;
-
 class CallCombiner {
  public:
   CallCombiner();
@@ -167,7 +165,7 @@ class CallCombinerClosureList {
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call_combiner_trace)) {
       gpr_log(GPR_INFO,
               "CallCombinerClosureList executing closure while already "
               "holding call_combiner %p: closure=%s error=%s reason=%s",

@@ -20,6 +20,5 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 }  // namespace grpc_core

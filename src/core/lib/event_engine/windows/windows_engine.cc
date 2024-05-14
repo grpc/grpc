@@ -123,7 +123,7 @@ WindowsEventEngine::~WindowsEventEngine() {
   {
     task_mu_.Lock();
     if (!known_handles_.empty()) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(event_engine_trace)) {
         for (auto handle : known_handles_) {
           gpr_log(GPR_ERROR,
                   "WindowsEventEngine:%p uncleared TaskHandle at shutdown:%s",
@@ -135,7 +135,7 @@ WindowsEventEngine::~WindowsEventEngine() {
       auto deadline =
           timer_manager_.Now() + grpc_core::Duration::FromSecondsAsDouble(10);
       while (!known_handles_.empty() && timer_manager_.Now() < deadline) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(event_engine_trace)) {
           GRPC_LOG_EVERY_N_SEC(1, GPR_DEBUG, "Waiting for timers. %d remaining",
                                known_handles_.size());
         }

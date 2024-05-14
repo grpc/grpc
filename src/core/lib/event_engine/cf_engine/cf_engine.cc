@@ -63,7 +63,7 @@ CFEventEngine::CFEventEngine()
 CFEventEngine::~CFEventEngine() {
   {
     grpc_core::MutexLock lock(&task_mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(event_engine_trace)) {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
                 "CFEventEngine:%p uncleared TaskHandle at shutdown:%s", this,

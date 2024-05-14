@@ -2087,7 +2087,6 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
-        "//src/core:channel_stack_trace",
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:compression",

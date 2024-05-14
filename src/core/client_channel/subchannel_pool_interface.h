@@ -36,8 +36,6 @@ namespace grpc_core {
 
 class Subchannel;
 
-extern TraceFlag grpc_subchannel_pool_trace;
-
 // A key that can uniquely identify a subchannel.
 class SubchannelKey final {
  public:
@@ -68,7 +66,7 @@ class SubchannelKey final {
 class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
  public:
   SubchannelPoolInterface()
-      : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_subchannel_pool_trace)
+      : RefCounted(GRPC_TRACE_FLAG_ENABLED(subchannel_pool_trace)
                        ? "SubchannelPoolInterface"
                        : nullptr) {}
   ~SubchannelPoolInterface() override {}

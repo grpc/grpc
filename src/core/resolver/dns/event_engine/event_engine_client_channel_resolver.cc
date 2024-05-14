@@ -184,7 +184,7 @@ EventEngineClientChannelDNSResolver::EventEngineClientChannelDNSResolver(
                           .set_jitter(GRPC_DNS_RECONNECT_JITTER)
                           .set_max_backoff(Duration::Milliseconds(
                               GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
-                      &grpc_event_engine_client_channel_resolver_trace),
+                      &event_engine_client_channel_resolver_trace),
       request_service_config_(
           !channel_args()
                .GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)

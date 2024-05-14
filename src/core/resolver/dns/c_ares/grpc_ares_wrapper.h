@@ -39,13 +39,9 @@
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
-extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
-
-extern grpc_core::TraceFlag grpc_trace_cares_resolver;
-
 #define GRPC_CARES_TRACE_LOG(format, ...)                           \
   do {                                                              \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver)) {       \
+    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver_trace)) {            \
       gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
     }                                                               \
   } while (0)

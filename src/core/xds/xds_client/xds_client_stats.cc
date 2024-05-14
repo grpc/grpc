@@ -43,14 +43,14 @@ XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
                                          absl::string_view lrs_server,
                                          absl::string_view cluster_name,
                                          absl::string_view eds_service_name)
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount_trace)
                      ? "XdsClusterDropStats"
                      : nullptr),
       xds_client_(std::move(xds_client)),
       lrs_server_(lrs_server),
       cluster_name_(cluster_name),
       eds_service_name_(eds_service_name) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] created drop stats %p for {%s, %s, %s}",
             xds_client_.get(), this, std::string(lrs_server_).c_str(),
             std::string(cluster_name_).c_str(),
@@ -59,7 +59,7 @@ XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
 }
 
 XdsClusterDropStats::~XdsClusterDropStats() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] destroying drop stats %p for {%s, %s, %s}",
             xds_client_.get(), this, std::string(lrs_server_).c_str(),
@@ -96,7 +96,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
     RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> name)
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount_trace)
                      ? "XdsClusterLocalityStats"
                      : nullptr),
       xds_client_(std::move(xds_client)),
@@ -104,7 +104,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
       cluster_name_(cluster_name),
       eds_service_name_(eds_service_name),
       name_(std::move(name)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] created locality stats %p for {%s, %s, %s, %s}",
             xds_client_.get(), this, std::string(lrs_server_).c_str(),
@@ -115,7 +115,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
 }
 
 XdsClusterLocalityStats::~XdsClusterLocalityStats() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] destroying locality stats %p for {%s, %s, %s, %s}",
             xds_client_.get(), this, std::string(lrs_server_).c_str(),

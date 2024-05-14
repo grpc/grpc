@@ -40,7 +40,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
+grpc_core::DebugOnlyTraceFlag auth_context_refcount_trace(
     false, "auth_context_refcount");
 
 // --- grpc_call ---

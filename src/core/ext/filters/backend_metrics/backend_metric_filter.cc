@@ -47,8 +47,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
-
 const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
@@ -131,7 +129,7 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   auto* ctx = &GetContext<
       grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
   if (ctx == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter_trace)) {
       gpr_log(GPR_INFO, "[%p] No BackendMetricProvider.", this);
     }
     return;
@@ -139,13 +137,13 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(
       reinterpret_cast<BackendMetricProvider*>(ctx->value));
   if (serialized.has_value() && !serialized->empty()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter_trace)) {
       gpr_log(GPR_INFO, "[%p] Backend metrics serialized. size: %" PRIuPTR,
               this, serialized->size());
     }
     md.Set(EndpointLoadMetricsBinMetadata(),
            Slice::FromCopiedString(std::move(*serialized)));
-  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+  } else if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter_trace)) {
     gpr_log(GPR_INFO, "[%p] No backend metrics.", this);
   }
 }

@@ -46,11 +46,9 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-extern grpc_core::TraceFlag grpc_trace_ares_resolver;
-
 #define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)                              \
   do {                                                                         \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {                   \
+    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver_trace)) {                       \
       gpr_log(GPR_INFO, "(EventEngine c-ares resolver) " format, __VA_ARGS__); \
     }                                                                          \
   } while (0)

@@ -35,7 +35,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -240,7 +239,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     post_processor_functions.emplace_back(std::move(post_processors[i]));
   }
   // Log out the graph we built if that's been requested.
-  if (grpc_trace_channel_stack.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel_stack_trace)) {
     // It can happen that multiple threads attempt to construct a core config at
     // once.
     // This is benign - the first one wins and others are discarded.

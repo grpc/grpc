@@ -385,13 +385,11 @@ void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
 void grpc_channel_stack_no_post_init(grpc_channel_stack* stk,
                                      grpc_channel_element* elem);
 
-extern grpc_core::TraceFlag grpc_trace_channel;
-
-#define GRPC_CALL_LOG_OP(sev, elem, op)                \
-  do {                                                 \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) { \
-      grpc_call_log_op(sev, elem, op);                 \
-    }                                                  \
+#define GRPC_CALL_LOG_OP(sev, elem, op)           \
+  do {                                            \
+    if (GRPC_TRACE_FLAG_ENABLED(channel_trace)) { \
+      grpc_call_log_op(sev, elem, op);            \
+    }                                             \
   } while (0)
 
 #endif  // GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_H

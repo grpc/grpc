@@ -19,5 +19,3 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-
-grpc_core::TraceFlag grpc_inproc_trace(false, "inproc");

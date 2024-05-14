@@ -41,8 +41,6 @@
 
 namespace grpc_core {
 
-extern TraceFlag grpc_authz_trace;
-
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
   auto policies_or = GenerateRbacPolicies(authz_policy);
@@ -115,7 +113,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
         return;
       }
       absl::Status status = provider->ForceUpdate();
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api_trace) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
                 static_cast<int>(status.code()),
@@ -170,7 +168,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (cb_ != nullptr) {
     cb_(contents_changed, absl::OkStatus());
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api_trace)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
             "policy\n%s",

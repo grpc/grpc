@@ -66,8 +66,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-TraceFlag xds_common_types_test_trace(true, "xds_common_types_test");
-
 class XdsCommonTypesTest : public ::testing::Test {
  protected:
   XdsCommonTypesTest()

@@ -130,7 +130,7 @@ void PopulateMetadataValue(google_protobuf_Value* value_pb, const Json& value,
 void MaybeLogDiscoveryRequest(
     const XdsApiContext& context,
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.def_pool);
@@ -262,7 +262,7 @@ namespace {
 void MaybeLogDiscoveryResponse(
     const XdsApiContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(
@@ -351,7 +351,7 @@ namespace {
 void MaybeLogLrsRequest(
     const XdsApiContext& context,
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(
@@ -513,7 +513,7 @@ namespace {
 void MaybeLogLrsResponse(
     const XdsApiContext& context,
     const envoy_service_load_stats_v3_LoadStatsResponse* response) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_service_load_stats_v3_LoadStatsResponse_getmsgdef(

@@ -40,8 +40,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
-
 // --- grpc_auth_context ---
 
 // High level authentication context object. Can optionally be chained.
@@ -74,7 +72,7 @@ struct grpc_auth_context
       grpc_core::RefCountedPtr<grpc_auth_context> chained)
       : grpc_core::RefCounted<grpc_auth_context,
                               grpc_core::NonPolymorphicRefCount>(
-            GRPC_TRACE_FLAG_ENABLED(grpc_trace_auth_context_refcount)
+            GRPC_TRACE_FLAG_ENABLED(auth_context_refcount_trace)
                 ? "auth_context_refcount"
                 : nullptr),
         chained_(std::move(chained)) {

@@ -164,14 +164,14 @@ class ForEach {
   }
 
   Poll<Result> PollReaderNext() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s PollReaderNext", DebugTag().c_str());
     }
     auto r = reader_next_();
     if (auto* p = r.value_if_ready()) {
       switch (NextValueTraits<ReaderResult>::Type(*p)) {
         case NextValueType::kValue: {
-          if (grpc_trace_promise_primitives.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
             gpr_log(GPR_INFO, "%s PollReaderNext: got value",
                     DebugTag().c_str());
           }
@@ -183,14 +183,14 @@ class ForEach {
           return PollAction();
         }
         case NextValueType::kEndOfStream: {
-          if (grpc_trace_promise_primitives.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
             gpr_log(GPR_INFO, "%s PollReaderNext: got end of stream",
                     DebugTag().c_str());
           }
           return Done<Result>::Make(false);
         }
         case NextValueType::kError: {
-          if (grpc_trace_promise_primitives.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
             gpr_log(GPR_INFO, "%s PollReaderNext: got error",
                     DebugTag().c_str());
           }
@@ -202,7 +202,7 @@ class ForEach {
   }
 
   Poll<Result> PollAction() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s PollAction", DebugTag().c_str());
     }
     auto r = in_action_.promise();

@@ -56,8 +56,6 @@ namespace grpc_core {
 
 namespace {
 
-TraceFlag grpc_trace_dns_resolver(false, "dns_resolver");
-
 class NativeClientChannelDNSResolver final : public PollingResolver {
  public:
   NativeClientChannelDNSResolver(ResolverArgs args,
@@ -91,14 +89,14 @@ NativeClientChannelDNSResolver::NativeClientChannelDNSResolver(
                           .set_jitter(GRPC_DNS_RECONNECT_JITTER)
                           .set_max_backoff(Duration::Milliseconds(
                               GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
-                      &grpc_trace_dns_resolver) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+                      &dns_resolver_trace) {
+  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver_trace)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] created", this);
   }
 }
 
 NativeClientChannelDNSResolver::~NativeClientChannelDNSResolver() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver_trace)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] destroyed", this);
   }
 }
@@ -109,7 +107,7 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
       absl::bind_front(&NativeClientChannelDNSResolver::OnResolved, this),
       name_to_resolve(), kDefaultSecurePort, kDefaultDNSRequestTimeout,
       interested_parties(), /*name_server=*/"");
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver_trace)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] starting request=%p", this,
             DNSResolver::HandleToString(dns_request_handle).c_str());
   }
@@ -118,7 +116,7 @@ OrphanablePtr<Orphanable> NativeClientChannelDNSResolver::StartRequest() {
 
 void NativeClientChannelDNSResolver::OnResolved(
     absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_dns_resolver)) {
+  if (GRPC_TRACE_FLAG_ENABLED(dns_resolver_trace)) {
     gpr_log(GPR_DEBUG, "[dns_resolver=%p] request complete, status=\"%s\"",
             this, addresses_or.status().ToString().c_str());
   }

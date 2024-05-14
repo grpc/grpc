@@ -2201,7 +2201,7 @@ void ClientChannelFilter::FilterBasedCallData::StartTransportStreamOpBatch(
   auto* calld = static_cast<FilterBasedCallData*>(elem->call_data);
   auto* chand = static_cast<ClientChannelFilter*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(client_channel_call_trace) &&
-      !GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
+      !GRPC_TRACE_FLAG_ENABLED(channel_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from above: %s", chand,
             calld, grpc_transport_stream_op_batch_string(batch, false).c_str());
   }
@@ -3104,7 +3104,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesResume() {
 void ClientChannelFilter::FilterBasedLoadBalancedCall::
     StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
   if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call_trace) ||
-      GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) {
+      GRPC_TRACE_FLAG_ENABLED(channel_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: batch started from above: %s, "
             "call_attempt_tracer()=%p",

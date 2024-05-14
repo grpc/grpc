@@ -3097,21 +3097,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "channel_stack_trace",
-    srcs = [
-        "lib/channel/channel_stack_trace.cc",
-    ],
-    hdrs = [
-        "lib/channel/channel_stack_trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "channel_init",
     srcs = [
         "lib/surface/channel_init.cc",
@@ -3131,7 +3116,6 @@ grpc_cc_library(
         "call_filters",
         "channel_args",
         "channel_fwd",
-        "channel_stack_trace",
         "channel_stack_type",
         "interception_chain",
         "//:channel_stack_builder",
@@ -7335,9 +7319,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chaotic_good_transport",
-    srcs = [
-        "ext/transport/chaotic_good/chaotic_good_transport.cc",
-    ],
     hdrs = [
         "ext/transport/chaotic_good/chaotic_good_transport.h",
     ],

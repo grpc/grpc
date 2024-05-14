@@ -68,12 +68,11 @@ const auto kDefaultMaxConnectionAgeGrace = Duration::Infinity();
 const auto kDefaultMaxConnectionIdle = Duration::Infinity();
 const auto kMaxConnectionAgeJitter = 0.1;
 
-TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 }  // namespace
 
 #define GRPC_IDLE_FILTER_LOG(format, ...)                               \
   do {                                                                  \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_client_idle_filter)) {       \
+    if (GRPC_TRACE_FLAG_ENABLED(client_idle_filter_trace)) {            \
       gpr_log(GPR_INFO, "(client idle filter) " format, ##__VA_ARGS__); \
     }                                                                   \
   } while (0)

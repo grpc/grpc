@@ -80,8 +80,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-grpc_core::TraceFlag grpc_trace_ares_resolver(false, "cares_resolver");
-
 namespace {
 
 absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
@@ -221,8 +219,8 @@ AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine, ares_channel channel)
     : RefCountedDNSResolverInterface(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver) ? "AresResolver"
-                                                            : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(cares_resolver_trace) ? "AresResolver"
+                                                        : nullptr),
       channel_(channel),
       polled_fd_factory_(std::move(polled_fd_factory)),
       event_engine_(std::move(event_engine)) {
@@ -767,7 +765,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   }
   GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p Got %zu TXT records", ares_resolver,
                                result.size());
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {
+  if (GRPC_TRACE_FLAG_ENABLED(cares_resolver_trace)) {
     for (const auto& record : result) {
       gpr_log(GPR_INFO, "%s", record.c_str());
     }

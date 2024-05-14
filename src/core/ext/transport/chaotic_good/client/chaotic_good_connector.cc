@@ -314,7 +314,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         },
         EventEngineWakeupScheduler(self->event_engine_),
         [self](absl::Status status) {
-          if (grpc_chaotic_good_trace.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
             gpr_log(GPR_INFO, "ChaoticGoodConnector::OnHandshakeDone: %s",
                     status.ToString().c_str());
           }

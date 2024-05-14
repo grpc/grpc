@@ -158,7 +158,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
         });
     return false;
   }
-  if (grpc_event_engine_endpoint_data_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data_trace)) {
     for (size_t i = 0; i < data->Count(); i++) {
       auto str = data->RefSlice(i).as_string_view();
       gpr_log(GPR_INFO, "WindowsEndpoint::%p WRITE (peer=%s): %.*s", this,
@@ -296,7 +296,7 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   }
   if (result.bytes_transferred == 0) {
     // Either the endpoint is shut down or we've seen the end of the stream
-    if (grpc_event_engine_endpoint_data_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_data_trace)) {
       DumpSliceBuffer(buffer_, absl::StrFormat("WindowsEndpoint::%p READ",
                                                io_state->endpoint));
     }

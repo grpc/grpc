@@ -45,14 +45,14 @@ auto MapPipe(PipeReceiver<T> src, PipeSender<T> dst, Filter filter_factory) {
        dst = std::move(dst)](T t) mutable {
         return TrySeq(
             [] {
-              if (grpc_trace_promise_primitives.enabled()) {
+              if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
                 gpr_log(GPR_DEBUG, "MapPipe: start map");
               }
               return Empty{};
             },
             filter_factory.Make(std::move(t)),
             [&dst](T t) {
-              if (grpc_trace_promise_primitives.enabled()) {
+              if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
                 gpr_log(GPR_DEBUG, "MapPipe: start push");
               }
               return Map(dst.Push(std::move(t)), [](bool successful_push) {

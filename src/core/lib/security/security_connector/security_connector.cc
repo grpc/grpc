@@ -32,7 +32,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
+grpc_core::DebugOnlyTraceFlag security_connector_refcount_trace(
     false, "security_connector_refcount");
 
 grpc_channel_security_connector::grpc_channel_security_connector(

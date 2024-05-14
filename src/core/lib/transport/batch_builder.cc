@@ -35,7 +35,7 @@ void BatchBuilder::PendingCompletion::CompletionCallback(
     void* self, grpc_error_handle error) {
   auto* pc = static_cast<PendingCompletion*>(self);
   auto* party = pc->batch->party.get();
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
     gpr_log(GPR_DEBUG, "%sFinish batch-component %s: status=%s",
             pc->batch->DebugPrefix(party).c_str(),
             std::string(pc->name()).c_str(), error.ToString().c_str());
@@ -68,7 +68,7 @@ BatchBuilder::Batch::Batch(grpc_transport_stream_op_batch_payload* payload,
 }
 
 BatchBuilder::Batch::~Batch() {
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
     gpr_log(GPR_DEBUG, "%s[connected] [batch %p] Destroy",
             GetContext<Activity>()->DebugTag().c_str(), this);
   }
@@ -105,7 +105,7 @@ BatchBuilder::Batch* BatchBuilder::GetBatch(Target target) {
 void BatchBuilder::FlushBatch() {
   CHECK_NE(batch_, nullptr);
   CHECK(target_.has_value());
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
     gpr_log(
         GPR_DEBUG, "%sPerform transport stream op batch: %p %s",
         batch_->DebugPrefix().c_str(), &batch_->batch,
@@ -124,7 +124,7 @@ ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(
     Batch* batch, ServerMetadataHandle sent_metadata, absl::Status send_result,
     bool actually_sent) {
   if (!send_result.ok()) {
-    if (grpc_call_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
       gpr_log(GPR_DEBUG,
               "%sSend metadata failed with error: %s, fabricating trailing "
               "metadata",
@@ -138,7 +138,7 @@ ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(
     sent_metadata->Set(GrpcCallWasCancelled(), true);
   }
   if (!sent_metadata->get(GrpcCallWasCancelled()).has_value()) {
-    if (grpc_call_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
       gpr_log(
           GPR_DEBUG,
           "%sTagging trailing metadata with cancellation status from "

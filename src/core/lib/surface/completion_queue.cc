@@ -60,10 +60,6 @@
 #include "src/core/lib/experiments/experiments.h"
 #endif
 
-grpc_core::TraceFlag grpc_trace_operation_failures(false, "op_failure");
-grpc_core::DebugOnlyTraceFlag grpc_trace_pending_tags(false, "pending_tags");
-grpc_core::DebugOnlyTraceFlag grpc_trace_cq_refcount(false, "cq_refcount");
-
 namespace {
 
 // Specifies a cq thread local cache.
@@ -441,16 +437,14 @@ static const cq_vtable g_cq_vtable[] = {
 #define POLLSET_FROM_CQ(cq) \
   ((grpc_pollset*)((cq)->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
 
-grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
-
-#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)     \
-  do {                                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) &&       \
-        (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace) || \
-         (event)->type != GRPC_QUEUE_TIMEOUT)) {         \
-      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq,      \
-              grpc_event_string(event).c_str());         \
-    }                                                    \
+#define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)   \
+  do {                                                 \
+    if (GRPC_TRACE_FLAG_ENABLED(api_trace) &&          \
+        (GRPC_TRACE_FLAG_ENABLED(queue_pluck_trace) || \
+         (event)->type != GRPC_QUEUE_TIMEOUT)) {       \
+      gpr_log(GPR_INFO, "RETURN_EVENT[%p]: %s", cq,    \
+              grpc_event_string(event).c_str());       \
+    }                                                  \
   } while (0)
 
 static void on_pollset_shutdown_done(void* arg, grpc_error_handle error);
@@ -546,7 +540,8 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 
   // One for destroy(), one for pollset_shutdown
   new (&cq->owning_refs) grpc_core::RefCount(
-      2, grpc_trace_cq_refcount.enabled() ? "completion_queue" : nullptr);
+      2, GRPC_TRACE_FLAG_ENABLED(cq_refcount_trace) ? "completion_queue"
+                                                    : nullptr);
 
   poller_vtable->init(POLLSET_FROM_CQ(cq), &cq->mu);
   vtable->init(DATA_FROM_CQ(cq), shutdown_callback);
@@ -700,14 +695,14 @@ static void cq_end_op_for_next(
     grpc_completion_queue* cq, void* tag, grpc_error_handle error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
     grpc_cq_completion* storage, bool /*internal*/) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
-      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
+  if (GRPC_TRACE_FLAG_ENABLED(api_trace) ||
+      (GRPC_TRACE_FLAG_ENABLED(op_failure_trace) && !error.ok())) {
     std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_next(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(op_failure_trace) && !error.ok()) {
       gpr_log(GPR_INFO, "Operation failed: tag=%p, error=%s", tag,
               errmsg.c_str());
     }
@@ -774,14 +769,14 @@ static void cq_end_op_for_pluck(
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
   int is_success = (error.ok());
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
-      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
+  if (GRPC_TRACE_FLAG_ENABLED(api_trace) ||
+      (GRPC_TRACE_FLAG_ENABLED(op_failure_trace) && !error.ok())) {
     std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_pluck(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(op_failure_trace) && !error.ok()) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag,
               errmsg.c_str());
     }
@@ -836,14 +831,14 @@ static void cq_end_op_for_callback(
     grpc_cq_completion* storage, bool internal) {
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
-      (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok())) {
+  if (GRPC_TRACE_FLAG_ENABLED(api_trace) ||
+      (GRPC_TRACE_FLAG_ENABLED(op_failure_trace) && !error.ok())) {
     std::string errmsg = grpc_core::StatusToString(error);
     GRPC_API_TRACE(
         "cq_end_op_for_callback(cq=%p, tag=%p, error=%s, "
         "done=%p, done_arg=%p, storage=%p)",
         6, (cq, tag, errmsg.c_str(), done, done_arg, storage));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) && !error.ok()) {
+    if (GRPC_TRACE_FLAG_ENABLED(op_failure_trace) && !error.ok()) {
       gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag,
               errmsg.c_str());
     }
@@ -934,7 +929,7 @@ class ExecCtxNext : public grpc_core::ExecCtx {
 
 #ifndef NDEBUG
 static void dump_pending_tags(grpc_completion_queue* cq) {
-  if (!GRPC_TRACE_FLAG_ENABLED(grpc_trace_pending_tags)) return;
+  if (!GRPC_TRACE_FLAG_ENABLED(pending_tags_trace)) return;
   std::vector<std::string> parts;
   parts.push_back("PENDING TAGS:");
   gpr_mu_lock(cq->mu);
@@ -1196,7 +1191,7 @@ static grpc_event cq_pluck(grpc_completion_queue* cq, void* tag,
   grpc_pollset_worker* worker = nullptr;
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_cq_pluck_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(queue_pluck_trace)) {
     GRPC_API_TRACE(
         "grpc_completion_queue_pluck("
         "cq=%p, tag=%p, "

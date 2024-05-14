@@ -798,13 +798,12 @@ void grpc_chttp2_settings_timeout(
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-// extern grpc_core::TraceFlag grpc_flowctl_trace;
-
-#define GRPC_CHTTP2_IF_TRACING(stmt)                \
-  do {                                              \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) { \
-      (stmt);                                       \
-    }                                               \
+//
+#define GRPC_CHTTP2_IF_TRACING(stmt)           \
+  do {                                         \
+    if (GRPC_TRACE_FLAG_ENABLED(http_trace)) { \
+      (stmt);                                  \
+    }                                          \
   } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,

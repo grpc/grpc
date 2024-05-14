@@ -41,18 +41,15 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling");  // Disabled by default
+grpc_core::DebugOnlyTraceFlag polling_trace(false,
+                                            "polling");  // Disabled by default
 
 // Traces fd create/close operations
-grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
-grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
-grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
 // Polling API trace only enabled in debug builds
 #ifndef NDEBUG
 #define GRPC_POLLING_API_TRACE(format, ...)                  \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_api_trace)) {     \
+  if (GRPC_TRACE_FLAG_ENABLED(polling_api_trace)) {          \
     gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
   }
 #else

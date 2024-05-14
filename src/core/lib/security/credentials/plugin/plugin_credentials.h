@@ -48,8 +48,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 
-extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
-
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.

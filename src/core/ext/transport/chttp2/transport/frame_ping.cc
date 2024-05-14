@@ -37,9 +37,6 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_core::TraceFlag grpc_keepalive_trace;
-extern grpc_core::TraceFlag grpc_http_trace;
-
 grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   grpc_slice slice = GRPC_SLICE_MALLOC(9 + 8);
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
@@ -96,7 +93,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
   if (p->byte == 8) {
     CHECK(is_last);
     if (p->is_ack) {
-      if (grpc_ping_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(http2_ping_trace)) {
         gpr_log(GPR_INFO, "%s[%p]: received ping ack %" PRIx64,
                 t->is_client ? "CLIENT" : "SERVER", t, p->opaque_8bytes);
       }
@@ -105,7 +102,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
       if (!t->is_client) {
         const bool transport_idle =
             t->keepalive_permit_without_calls == 0 && t->stream_map.empty();
-        if (grpc_keepalive_trace.enabled() || grpc_http_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(http_keepalive_trace) ||
+            GRPC_TRACE_FLAG_ENABLED(http_trace)) {
           gpr_log(GPR_INFO, "SERVER[%p]: received ping %" PRIx64 ": %s", t,
                   p->opaque_8bytes,
                   t->ping_abuse_policy.GetDebugString(transport_idle).c_str());
@@ -113,7 +111,7 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
         if (t->ping_abuse_policy.ReceivedOnePing(transport_idle)) {
           grpc_chttp2_exceeded_ping_strikes(t);
         }
-      } else if (grpc_ping_trace.enabled()) {
+      } else if (GRPC_TRACE_FLAG_ENABLED(http2_ping_trace)) {
         gpr_log(GPR_INFO, "CLIENT[%p]: received ping %" PRIx64, t,
                 p->opaque_8bytes);
       }

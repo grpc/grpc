@@ -21,5 +21,3 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-
-grpc_core::TraceFlag grpc_api_trace(false, "api");

@@ -39,8 +39,6 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
-grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
-
 grpc_plugin_credentials::~grpc_plugin_credentials() {
   if (plugin_.state != nullptr && plugin_.destroy != nullptr) {
     plugin_.destroy(plugin_.state);
@@ -124,7 +122,7 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(
       static_cast<grpc_plugin_credentials::PendingRequest*>(request));
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "asynchronously",
@@ -155,7 +153,7 @@ grpc_plugin_credentials::GetRequestMetadata(
       RefAsSubclass<grpc_plugin_credentials>(), std::move(initial_metadata),
       args);
   // Invoke the plugin.  The callback holds a ref to us.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",
             this, request.get());
   }
@@ -173,7 +171,7 @@ grpc_plugin_credentials::GetRequestMetadata(
                             child_request.get(), creds_md, &num_creds_md,
                             &status, &error_details)) {
     child_request.release();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
       gpr_log(GPR_INFO,
               "plugin_credentials[%p]: request %p: plugin will return "
               "asynchronously",
@@ -182,7 +180,7 @@ grpc_plugin_credentials::GetRequestMetadata(
     return [request] { return request->PollAsyncResult(); };
   }
   // Synchronous return.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "synchronously",

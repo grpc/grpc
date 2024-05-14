@@ -290,7 +290,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
 
   static void WatchComplete(void* arg, grpc_error_handle error) {
     RefCountedPtr<StateWatcher> self(static_cast<StateWatcher*>(arg));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
+    if (GRPC_TRACE_FLAG_ENABLED(op_failure_trace)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
     MutexLock lock(&self->mu_);

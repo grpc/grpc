@@ -59,8 +59,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_trace_chttp2_hpack_parser(false, "chttp2_hpack_parser");
-
 namespace {
 // The alphabet used for base64 encoding binary metadata.
 constexpr char kBase64Alphabet[] =
@@ -733,7 +731,7 @@ class HPackParser::Parser {
 
   bool FinishHeaderAndAddToTable(HPackTable::Memento md) {
     // Log if desired
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
+    if (GRPC_TRACE_FLAG_ENABLED(chttp2_hpack_parser_trace)) {
       LogHeader(md);
     }
     // Emit whilst we own the metadata.
@@ -758,7 +756,7 @@ class HPackParser::Parser {
 
   void FinishHeaderOmitFromTable(const HPackTable::Memento& md) {
     // Log if desired
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
+    if (GRPC_TRACE_FLAG_ENABLED(chttp2_hpack_parser_trace)) {
       LogHeader(md);
     }
     EmitHeader(md);

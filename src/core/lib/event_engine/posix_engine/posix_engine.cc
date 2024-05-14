@@ -459,7 +459,7 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(event_engine_trace)) {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
                 "(event_engine) PosixEventEngine:%p uncleared "

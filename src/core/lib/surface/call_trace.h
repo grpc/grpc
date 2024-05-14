@@ -19,6 +19,4 @@
 
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_core::TraceFlag grpc_call_trace;
-
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_CALL_TRACE_H

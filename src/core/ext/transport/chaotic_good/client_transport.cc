@@ -260,7 +260,7 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
       // Wait for initial metadata then send it out.
       call_handler.PullClientInitialMetadata(),
       [send_fragment](ClientMetadataHandle md) mutable {
-        if (grpc_chaotic_good_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
           gpr_log(GPR_INFO, "CHAOTIC_GOOD: Sending initial metadata: %s",
                   md->DebugString().c_str());
         }
@@ -299,7 +299,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
     const uint32_t stream_id = MakeStream(call_handler);
     return Map(CallOutboundLoop(stream_id, call_handler),
                [stream_id, this](absl::Status result) {
-                 if (grpc_chaotic_good_trace.enabled()) {
+                 if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
                    gpr_log(GPR_INFO, "CHAOTIC_GOOD: Call %d finished with %s",
                            stream_id, result.ToString().c_str());
                  }

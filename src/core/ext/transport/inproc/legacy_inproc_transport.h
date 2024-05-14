@@ -24,6 +24,4 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
                                                 const grpc_channel_args* args,
                                                 void* reserved);
 
-extern grpc_core::TraceFlag grpc_inproc_trace;
-
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_INPROC_LEGACY_INPROC_TRANSPORT_H

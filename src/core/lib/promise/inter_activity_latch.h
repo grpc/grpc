@@ -45,7 +45,7 @@ class InterActivityLatch {
   auto Wait() {
     return [this]() -> Poll<T> {
       MutexLock lock(&mu_);
-      if (grpc_trace_promise_primitives.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
         gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -61,7 +61,7 @@ class InterActivityLatch {
   // Set the latch.
   void Set(T value) {
     MutexLock lock(&mu_);
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
     is_set_ = true;
@@ -103,7 +103,7 @@ class InterActivityLatch<void> {
   auto Wait() {
     return [this]() -> Poll<Empty> {
       MutexLock lock(&mu_);
-      if (grpc_trace_promise_primitives.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
         gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -119,7 +119,7 @@ class InterActivityLatch<void> {
   // Set the latch.
   void Set() {
     MutexLock lock(&mu_);
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
     is_set_ = true;

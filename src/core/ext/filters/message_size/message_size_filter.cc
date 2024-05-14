@@ -161,7 +161,7 @@ ServerMetadataHandle CheckPayload(const Message& msg,
                                   absl::optional<uint32_t> max_length,
                                   bool is_client, bool is_send) {
   if (!max_length.has_value()) return nullptr;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
     gpr_log(GPR_INFO, "%s[message_size] %s len:%" PRIdPTR " max:%d",
             GetContext<Activity>()->DebugTag().c_str(),
             is_send ? "send" : "recv", msg.payload()->Length(), *max_length);

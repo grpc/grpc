@@ -24,8 +24,6 @@
 
 #include "src/core/lib/debug/trace.h"
 
-extern grpc_core::TraceFlag grpc_api_trace;
-
 // Provide unwrapping macros because we're in C89 and variadic macros weren't
 // introduced until C99...
 #define GRPC_API_TRACE_UNWRAP0()
@@ -45,7 +43,7 @@ extern grpc_core::TraceFlag grpc_api_trace;
 // Due to the limitations of C89's preprocessor, the arity of the var-arg list
 // 'nargs' must be specified.
 #define GRPC_API_TRACE(fmt, nargs, args)                      \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) {              \
+  if (GRPC_TRACE_FLAG_ENABLED(api_trace)) {                   \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
 

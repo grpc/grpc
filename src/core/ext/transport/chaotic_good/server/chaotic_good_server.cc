@@ -97,7 +97,7 @@ ChaoticGoodServerListener::~ChaoticGoodServerListener() {
 
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr) {
-  if (grpc_chaotic_good_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
     auto str = grpc_event_engine::experimental::ResolvedAddressToString(addr);
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: Listen on %s",
             str.ok() ? str->c_str() : str.status().ToString().c_str());
@@ -140,7 +140,7 @@ absl::Status ChaoticGoodServerListener::StartListening() {
   auto status = ee_listener_->Start();
   if (!status.ok()) {
     gpr_log(GPR_ERROR, "Start listening failed: %s", status.ToString().c_str());
-  } else if (grpc_chaotic_good_trace.enabled()) {
+  } else if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: Started listening");
   }
   return status;
@@ -160,7 +160,7 @@ ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
 }
 
 void ChaoticGoodServerListener::ActiveConnection::Orphan() {
-  if (grpc_chaotic_good_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
     gpr_log(GPR_INFO, "ActiveConnection::Orphan() %p", this);
   }
   if (handshaking_state_ != nullptr) {
@@ -302,7 +302,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           },
           [self](PromiseEndpoint ret) -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
-            if (grpc_chaotic_good_trace.enabled()) {
+            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
               gpr_log(
                   GPR_INFO, "%p Data endpoint setup done: shutdown=%s",
                   self->connection_.get(),
@@ -458,7 +458,7 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 }
 
 void ChaoticGoodServerListener::Orphan() {
-  if (grpc_chaotic_good_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
     gpr_log(GPR_INFO, "ChaoticGoodServerListener::Orphan()");
   }
   {

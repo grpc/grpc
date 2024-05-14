@@ -118,7 +118,7 @@ class Center : public InterceptorList<T> {
 
   // Add one ref to this object, and return this.
   void IncrementRefCount() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_DEBUG, "%s", DebugOpString("IncrementRefCount").c_str());
     }
     refs_++;
@@ -133,7 +133,7 @@ class Center : public InterceptorList<T> {
   // Drop a ref
   // If no refs remain, destroy this object
   void Unref() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_DEBUG, "%s", DebugOpString("Unref").c_str());
     }
     DCHECK_GT(refs_, 0);
@@ -148,7 +148,7 @@ class Center : public InterceptorList<T> {
   // Return true if the value was pushed.
   // Return false if the recv end is closed.
   Poll<bool> Push(T* value) {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Push").c_str());
     }
     DCHECK_NE(refs_, 0);
@@ -172,7 +172,7 @@ class Center : public InterceptorList<T> {
   }
 
   Poll<bool> PollAck() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollAck").c_str());
     }
     DCHECK_NE(refs_, 0);
@@ -200,7 +200,7 @@ class Center : public InterceptorList<T> {
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
   Poll<absl::optional<T>> Next() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
     }
     DCHECK_NE(refs_, 0);
@@ -226,7 +226,7 @@ class Center : public InterceptorList<T> {
   // Check if the pipe is closed for sending (if there is a value still queued
   // but the pipe is closed, reports closed).
   Poll<bool> PollClosedForSender() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForSender").c_str());
     }
     DCHECK_NE(refs_, 0);
@@ -249,7 +249,7 @@ class Center : public InterceptorList<T> {
   // Check if the pipe is closed for receiving (if there is a value still queued
   // but the pipe is closed, reports open).
   Poll<bool> PollClosedForReceiver() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForReceiver").c_str());
     }
     DCHECK_NE(refs_, 0);
@@ -270,7 +270,7 @@ class Center : public InterceptorList<T> {
   }
 
   Poll<Empty> PollEmpty() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("PollEmpty").c_str());
     }
     DCHECK_NE(refs_, 0);
@@ -290,7 +290,7 @@ class Center : public InterceptorList<T> {
   }
 
   void AckNext() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
     }
     switch (value_state_) {
@@ -317,7 +317,7 @@ class Center : public InterceptorList<T> {
   }
 
   void MarkClosed() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("MarkClosed").c_str());
     }
     switch (value_state_) {
@@ -346,7 +346,7 @@ class Center : public InterceptorList<T> {
   }
 
   void MarkCancelled() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s", DebugOpString("MarkCancelled").c_str());
     }
     switch (value_state_) {
@@ -654,7 +654,7 @@ class Push {
 
   Poll<bool> operator()() {
     if (center_ == nullptr) {
-      if (grpc_trace_promise_primitives.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
         gpr_log(GPR_DEBUG, "%s Pipe push has a null center",
                 GetContext<Activity>()->DebugTag().c_str());
       }

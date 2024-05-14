@@ -40,11 +40,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
 
-extern grpc_core::TraceFlag grpc_keepalive_trace;
-extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
-
 /// Creates a CHTTP2 Transport. This takes ownership of a \a resource_user ref
 /// from the caller; if the caller still needs the resource_user after creating
 /// a transport, the caller must take another ref.

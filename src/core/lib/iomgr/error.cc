@@ -40,10 +40,6 @@
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
-                                                        "error_refcount");
-grpc_core::DebugOnlyTraceFlag grpc_trace_closure(false, "closure");
-
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,
                                 size_t children_count, absl::Status* children) {

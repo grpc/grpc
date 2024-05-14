@@ -23,7 +23,6 @@
 
 namespace grpc_core {
 
-extern TraceFlag grpc_xds_resolver_trace;
 
 }  // namespace grpc_core
 

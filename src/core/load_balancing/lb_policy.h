@@ -55,8 +55,6 @@
 
 namespace grpc_core {
 
-extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
-
 /// Interface for load balancing policies.
 ///
 /// The following concepts are used here:

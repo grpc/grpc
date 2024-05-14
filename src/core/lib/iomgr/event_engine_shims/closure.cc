@@ -34,7 +34,7 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
   grpc_core::ExecCtx exec_ctx;
 #ifndef NDEBUG
   closure->scheduled = false;
-  if (grpc_trace_closure.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(closure_trace)) {
     gpr_log(GPR_DEBUG,
             "EventEngine: running closure %p: created [%s:%d]: %s [%s:%d]",
             closure, closure->file_created, closure->line_created,
@@ -44,7 +44,7 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
 #endif
   closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-  if (grpc_trace_closure.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(closure_trace)) {
     gpr_log(GPR_DEBUG, "EventEngine: closure %p finished", closure);
   }
 #endif

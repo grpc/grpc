@@ -124,6 +124,4 @@ grpc_error_handle grpc_http_parser_eof(grpc_http_parser* parser);
 void grpc_http_request_destroy(grpc_http_request* request);
 void grpc_http_response_destroy(grpc_http_response* response);
 
-extern grpc_core::TraceFlag grpc_http1_trace;
-
 #endif  // GRPC_SRC_CORE_LIB_HTTP_PARSER_H

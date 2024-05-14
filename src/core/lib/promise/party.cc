@@ -33,8 +33,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
 #endif
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_party_state(false, "party_state");
-
 namespace grpc_core {
 
 namespace {
@@ -273,14 +271,14 @@ bool Party::RunOneParticipant(int i) {
   // somewhere.
   auto* participant = participants_[i].load(std::memory_order_acquire);
   if (participant == nullptr) {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
       gpr_log(GPR_INFO, "%s[party] wakeup %d already complete",
               DebugTag().c_str(), i);
     }
     return false;
   }
   absl::string_view name;
-  if (grpc_trace_promise_primitives.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
     name = participant->name();
     gpr_log(GPR_INFO, "%s[%s] begin job %d", DebugTag().c_str(),
             std::string(name).c_str(), i);
@@ -306,7 +304,7 @@ void Party::AddParticipants(Participant** participants, size_t count) {
   bool run_party = sync_.AddParticipantsAndRef(count, [this, participants,
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
-      if (grpc_trace_party_state.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(party_state_trace)) {
         gpr_log(GPR_INFO,
                 "Party %p                 AddParticipant: %s @ %" PRIdPTR,
                 &sync_, std::string(participants[i]->name()).c_str(), slots[i]);

@@ -40,8 +40,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
-
 namespace grpc_core {
 namespace chttp2 {
 
@@ -235,7 +233,7 @@ void TransportFlowControl::UpdateSetting(
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
   if (new_desired_value != *desired_value) {
-    if (grpc_flowctl_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(flowctl_trace)) {
       gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
               std::string(name).c_str(), *desired_value, new_desired_value);
     }
