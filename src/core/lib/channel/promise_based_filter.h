@@ -59,6 +59,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
@@ -354,31 +355,72 @@ template <typename Promise, typename Derived>
 auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
-    auto status = call_data->call.OnServerTrailingMetadata(*md);
-    if (!status.ok()) return ServerMetadataFromStatus(status);
-    return md;
-  });
+  return OnCancel(
+      Map(std::move(x),
+          [call_data](ServerMetadataHandle md) {
+            auto status = call_data->call.OnServerTrailingMetadata(*md);
+            if (!status.ok()) {
+              return ServerMetadataFromStatus(status);
+            }
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture it here.
+      // This ought to be easy to fix once client side promises are completely
+      // rolled out.
+      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+        grpc_metadata_batch b;
+        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+        b.Set(GrpcCallWasCancelled(), true);
+        promise_detail::Context<grpc_call_context_element> context(ctx);
+        call_data->call.OnServerTrailingMetadata(b).IgnoreError();
+      });
 }
 
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
-    call_data->call.OnServerTrailingMetadata(*md);
-    return md;
-  });
+  return OnCancel(
+      Map(std::move(x),
+          [call_data](ServerMetadataHandle md) {
+            call_data->call.OnServerTrailingMetadata(*md);
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture it here.
+      // This ought to be easy to fix once client side promises are completely
+      // rolled out.
+      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+        grpc_metadata_batch b;
+        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+        b.Set(GrpcCallWasCancelled(), true);
+        promise_detail::Context<grpc_call_context_element> context(ctx);
+        call_data->call.OnServerTrailingMetadata(b);
+      });
 }
 
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
-    call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
-    return md;
-  });
+  return OnCancel(
+      Map(std::move(x),
+          [call_data](ServerMetadataHandle md) {
+            call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture it here.
+      // This ought to be easy to fix once client side promises are completely
+      // rolled out.
+      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+        grpc_metadata_batch b;
+        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+        b.Set(GrpcCallWasCancelled(), true);
+        promise_detail::Context<grpc_call_context_element> context(ctx);
+        call_data->call.OnServerTrailingMetadata(b, call_data->channel);
+      });
 }
 
 template <typename Interceptor, typename Derived, typename SfinaeVoid = void>

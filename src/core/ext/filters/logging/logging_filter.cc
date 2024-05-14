@@ -290,6 +290,7 @@ void CallData::LogServerTrailer(bool is_client,
   }
   g_logging_sink->LogEntry(std::move(entry));
 }
+
 void CallData::LogClientMessage(bool is_client,
                                 CallTracerAnnotationInterface* tracer,
                                 const SliceBuffer* message) {
@@ -378,6 +379,12 @@ void ClientLoggingFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
 
 void ClientLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   if (!call_data_.has_value()) return;
+  if (md.get(GrpcCallWasCancelled()).value_or(false) &&
+      md.get(GrpcStatusMetadata()) == GRPC_STATUS_CANCELLED) {
+    call_data_->LogCancel(
+        /*is_client=*/true, GetContext<CallTracerAnnotationInterface>());
+    return;
+  }
   call_data_->LogServerTrailer(
       /*is_client=*/true, GetContext<CallTracerAnnotationInterface>(), &md);
 }
@@ -436,6 +443,12 @@ void ServerLoggingFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
 
 void ServerLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   if (!call_data_.has_value()) return;
+  if (md.get(GrpcCallWasCancelled()).value_or(false) &&
+      md.get(GrpcStatusMetadata()) == GRPC_STATUS_CANCELLED) {
+    call_data_->LogCancel(
+        /*is_client=*/false, GetContext<CallTracerAnnotationInterface>());
+    return;
+  }
   call_data_->LogServerTrailer(
       /*is_client=*/false, GetContext<CallTracerAnnotationInterface>(), &md);
 }
