@@ -183,7 +183,7 @@
       elif d == 'libssl':
         deps.append("${_gRPC_SSL_LIBRARIES}")
       elif d == 're2':
-        deps.append("${_gRPC_RE2_LIBRARIES}")
+        deps.append("re2::re2")
       elif d == 'cares':
         deps.append("${_gRPC_CARES_LIBRARIES}")
       elif d == 'protobuf':
@@ -888,7 +888,6 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -985,7 +984,6 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_RE2_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
