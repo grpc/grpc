@@ -23,11 +23,11 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -146,7 +146,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 TEST(EndpointPairTest, MainTest) {
 #ifdef GPR_WINDOWS
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    gpr_log(GPR_INFO, "Skipping pathological EventEngine test on Windows");
+    LOG(INFO) << "Skipping pathological EventEngine test on Windows";
     return;
   }
 #endif
