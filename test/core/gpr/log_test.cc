@@ -16,8 +16,6 @@
 //
 //
 
-#include "absl/log/log.h"
-
 #include <string.h>
 
 #include <memory>
@@ -25,6 +23,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+
+#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/test_util/test_config.h"
@@ -63,9 +63,9 @@ static void test_should_not_log(gpr_log_func_args* /*args*/) {
 
 TEST(LogTest, Basic) {
   // test logging at various verbosity levels
-  VLOG(2) << "%s", "hello world";
-  LOG(INFO) << "%s", "hello world";
-  LOG(ERROR) << "%s", "hello world";
+  gpr_log(GPR_DEBUG, "%s", "hello world");
+  gpr_log(GPR_INFO, "%s", "hello world");
+  gpr_log(GPR_ERROR, "%s", "hello world");
   // should succeed
   CHECK(1);
   gpr_set_log_function(test_callback);
