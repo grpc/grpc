@@ -24,9 +24,8 @@ bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
     grpc_gcp_HandshakerResp* resp, upb_Arena* arena, uint32_t max_major,
     uint32_t max_minor, uint32_t min_major, uint32_t min_minor) {
   if (resp == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr argument to "
-            "grpc_gcp_handshaker_resp_set_peer_rpc_versions().");
+    LOG(ERROR) << "Invalid nullptr argument to "
+                  "grpc_gcp_handshaker_resp_set_peer_rpc_versions().";
     return false;
   }
   grpc_gcp_rpc_protocol_versions versions;
