@@ -401,7 +401,8 @@ TEST(SliceTest, ExternalAsOwned) {
   // In ASAN (where we can be sure that it'll crash), go ahead and read the
   // bytes we just deleted.
   if (BuiltUnderAsan()) {
-    ASSERT_DEATH({ VLOG(2) << SumSlice(slice); }, "");
+    ASSERT_DEATH({ VLOG(2) << absl::StrFormat("%" PRIdPTR, SumSlice(slice)); },
+                 "");
   }
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }
