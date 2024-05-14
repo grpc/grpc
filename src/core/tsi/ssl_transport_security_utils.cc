@@ -425,8 +425,8 @@ absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(
   }
   EVP_PKEY* pkey =
       PEM_read_bio_PrivateKey(in, /*x=*/nullptr, /*cb=*/nullptr, /*u=*/nullptr);
+  BIO_free(in);
   if (pkey == nullptr) {
-    BIO_free(in);
     return absl::NotFoundError("No private key found.");
   }
   return pkey;

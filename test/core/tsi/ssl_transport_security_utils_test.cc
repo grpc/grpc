@@ -820,18 +820,21 @@ TEST(ParsePemPrivateKeyTest, RsaSuccess1) {
   absl::StatusOr<EVP_PKEY*> pkey = ParsePemPrivateKey(kPrivateKeyPem);
   EXPECT_EQ(pkey.status(), absl::OkStatus());
   EXPECT_NE(*pkey, nullptr);
+  EVP_PKEY_free(*pkey);
 }
 
 TEST(ParsePemPrivateKeyTest, RsaSuccess2) {
   absl::StatusOr<EVP_PKEY*> pkey = ParsePemPrivateKey(kRsaPrivateKeyPem);
   EXPECT_EQ(pkey.status(), absl::OkStatus());
   EXPECT_NE(*pkey, nullptr);
+  EVP_PKEY_free(*pkey);
 }
 
 TEST(ParsePemPrivateKeyTest, EcSuccess) {
   absl::StatusOr<EVP_PKEY*> pkey = ParsePemPrivateKey(kEcPrivateKeyPem);
   EXPECT_EQ(pkey.status(), absl::OkStatus());
   EXPECT_NE(*pkey, nullptr);
+  EVP_PKEY_free(*pkey);
 }
 }  // namespace testing
 }  // namespace grpc_core
