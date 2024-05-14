@@ -54,9 +54,9 @@ def main(args):
         f.write(render_source_file("trace.h.mako", trace_flags))
     with open("src/core/lib/debug/trace_flags.cc", "w") as f:
         f.write(render_source_file("trace_flags.cc.mako", trace_flags))
-    with open("doc/environment_variables.md", "w") as f:
+    with open("doc/trace_flags.md", "w") as f:
         f.write(
-            render_source_file("environment_variables.md.mako", trace_flags)
+            render_source_file("trace_flags.md.mako", trace_flags)
         )
     if _CHECK.value or _FORMAT.value:
         env = os.environ.copy()
