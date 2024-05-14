@@ -5268,6 +5268,7 @@ targets:
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5410,6 +5411,7 @@ targets:
   - test/core/promise/all_ok_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -6533,6 +6535,7 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -7787,6 +7790,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -9279,6 +9283,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -9922,6 +9927,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10060,6 +10066,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10097,6 +10104,7 @@ targets:
   - test/core/event_engine/forkable_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -10171,6 +10179,7 @@ targets:
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
   - absl/types:span
@@ -11588,6 +11597,7 @@ targets:
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12312,6 +12322,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12485,6 +12496,7 @@ targets:
   - test/core/promise/join_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -12748,6 +12760,7 @@ targets:
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12870,6 +12883,7 @@ targets:
   - test/core/promise/loop_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13005,6 +13019,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -14204,6 +14219,7 @@ targets:
   - gtest
   - utf8_range_lib
   - upb_message_lib
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -14744,6 +14760,7 @@ targets:
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -17842,6 +17859,7 @@ targets:
   - test/core/promise/seq_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -18675,6 +18693,7 @@ targets:
   - test/core/slice/slice_string_helpers_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
   - gpr
@@ -19411,6 +19430,7 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -20025,6 +20045,36 @@ targets:
   - gtest
   - grpc++_test_config
   - grpc++_test_util
+- name: trace_flag_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  src:
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/trace_flag_test.cc
+  - test/core/test_util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: traced_buffer_list_test
   gtest: true
   build: test
@@ -20254,6 +20304,7 @@ targets:
   - test/core/promise/try_join_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -20294,6 +20345,7 @@ targets:
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr

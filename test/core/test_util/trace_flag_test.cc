@@ -23,7 +23,7 @@
 class TraceFlagTest : public ::testing::Test {
  public:
   TraceFlagTest() {}
-  ~TraceFlagTest() { saved_flags_.Restore(); }
+  ~TraceFlagTest() override { saved_flags_.Restore(); }
 
  private:
   grpc_core::SavedTraceFlags saved_flags_;

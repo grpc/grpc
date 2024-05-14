@@ -1497,6 +1497,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx tls_key_export_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
+  add_dependencies(buildtests_cxx trace_flag_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx traced_buffer_list_test)
   endif()
@@ -6039,6 +6040,7 @@ target_link_libraries(activity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -6312,6 +6314,7 @@ target_include_directories(all_ok_test
 target_link_libraries(all_ok_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   absl::utility
@@ -8596,6 +8599,7 @@ target_link_libraries(call_filters_test
   upb_message_lib
   absl::config
   absl::no_destructor
+  absl::flat_hash_map
   absl::inlined_vector
   absl::function_ref
   absl::hash
@@ -10259,6 +10263,7 @@ target_link_libraries(chunked_vector_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -13440,6 +13445,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -14310,6 +14316,7 @@ target_link_libraries(flow_control_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14397,6 +14404,7 @@ target_link_libraries(for_each_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14490,6 +14498,7 @@ target_include_directories(forkable_test
 target_link_libraries(forkable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::statusor
   gpr
 )
@@ -14638,6 +14647,7 @@ target_include_directories(frame_test
 target_link_libraries(frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::hash
   absl::statusor
   absl::span
@@ -17770,6 +17780,7 @@ target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -18158,6 +18169,7 @@ target_link_libraries(interceptor_list_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -18517,6 +18529,7 @@ target_include_directories(join_test
 target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
@@ -18921,6 +18934,7 @@ target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -19275,6 +19289,7 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
@@ -19359,6 +19374,7 @@ target_link_libraries(map_pipe_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -21624,6 +21640,7 @@ target_link_libraries(periodic_update_test
   gtest
   utf8_range_lib
   upb_message_lib
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::statusor
@@ -22690,6 +22707,7 @@ target_link_libraries(promise_mutex_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -26788,6 +26806,7 @@ target_include_directories(seq_test
 target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
@@ -28365,6 +28384,7 @@ target_include_directories(slice_string_helpers_test
 target_link_libraries(slice_string_helpers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::hash
   absl::statusor
   gpr
@@ -30039,6 +30059,7 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::hash
   absl::statusor
   absl::utility
@@ -31560,6 +31581,57 @@ target_link_libraries(too_many_pings_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(trace_flag_test
+  test/core/test_util/cmdline.cc
+  test/core/test_util/fuzzer_util.cc
+  test/core/test_util/grpc_profiler.cc
+  test/core/test_util/histogram.cc
+  test/core/test_util/mock_endpoint.cc
+  test/core/test_util/parse_hexstring.cc
+  test/core/test_util/resolve_localhost_ip46.cc
+  test/core/test_util/slice_splitter.cc
+  test/core/test_util/trace_flag_test.cc
+  test/core/test_util/tracer_util.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(trace_flag_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(trace_flag_test PUBLIC cxx_std_14)
+target_include_directories(trace_flag_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(trace_flag_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(traced_buffer_list_test
@@ -31897,6 +31969,7 @@ target_include_directories(try_join_test
 target_link_libraries(try_join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   absl::utility
@@ -31987,6 +32060,7 @@ target_include_directories(try_seq_test
 target_link_libraries(try_seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
