@@ -26,6 +26,7 @@ grpc_cc_library(
     srcs = ["library.cc"],
     hdrs = ["library.h"],
     external_deps = [
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
