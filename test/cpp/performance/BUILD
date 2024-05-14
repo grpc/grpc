@@ -23,6 +23,7 @@ grpc_cc_test(
     srcs = ["writes_per_rpc_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     tags = ["no_windows"],
