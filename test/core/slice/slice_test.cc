@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-#include "gtest/gtest.h"
-#include "absl/strings/string_view.h"
 #include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
