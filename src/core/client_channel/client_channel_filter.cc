@@ -593,7 +593,7 @@ class ClientChannelFilter::ResolverResultHandler final
 
   ~ResolverResultHandler() override {
     GRPC_TRACE_LOG(client_channel, INFO)
-        << "chand=" << chand_ << " resolver shutdown complete";
+        << "chand=" << chand_ << ": resolver shutdown complete";
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "ResolverResultHandler");
   }
 
@@ -629,7 +629,7 @@ class ClientChannelFilter::SubchannelWrapper final
         chand_(chand),
         subchannel_(std::move(subchannel)) {
     GRPC_TRACE_LOG(client_channel, INFO)
-        << "chand=" << chand << " creating subchannel wrapper " << this
+        << "chand=" << chand << ": creating subchannel wrapper " << this
         << " for subchannel " << subchannel_.get();
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
 #ifndef NDEBUG
@@ -652,7 +652,7 @@ class ClientChannelFilter::SubchannelWrapper final
 
   ~SubchannelWrapper() override {
     GRPC_TRACE_LOG(client_channel, INFO)
-        << "chand=" << chand_ << " destroying subchannel wrapper " << this
+        << "chand=" << chand_ << ": destroying subchannel wrapper " << this
         << "for subchannel " << subchannel_.get();
     if (!IsWorkSerializerDispatchEnabled()) {
       chand_->subchannel_wrappers_.erase(this);
@@ -788,7 +788,7 @@ class ClientChannelFilter::SubchannelWrapper final
         grpc_connectivity_state state, const absl::Status& status) override {
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
-          << " connectivity change for subchannel wrapper " << parent_.get()
+          << ": connectivity change for subchannel wrapper " << parent_.get()
           << " subchannel " << parent_->subchannel_.get()
           << "hopping into work_serializer";
       self.release();  // Held by callback.
@@ -811,13 +811,11 @@ class ClientChannelFilter::SubchannelWrapper final
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(*parent_->chand_->work_serializer_) {
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
-          << " processing connectivity change in work serializer "
-             "for subchannel wrapper "
+          << ": processing connectivity change in work serializer for "
+             "subchannel wrapper "
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
-          << " state=" << ConnectivityStateName(state)
-          << " status=" << status.ToString();
-
+          << " state=" << ConnectivityStateName(state) << " status=" << status;
       absl::optional<absl::Cord> keepalive_throttling =
           status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
@@ -1115,7 +1113,7 @@ class ClientChannelFilter::ClientChannelControlHelper final
     GRPC_TRACE_LOG(client_channel, INFO)
         << "chand=" << chand_
         << ": update: state=" << ConnectivityStateName(state) << " status=("
-        << status << ") picker=" << picker.get() << " "
+        << status << ") picker=" << picker.get()
         << (chand_->disconnect_error_.ok()
                 ? ""
                 : " (ignoring -- channel shutting down)");
@@ -3310,9 +3308,8 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall::LbQueuedCallCanceller
       MutexLock lock(&chand->lb_mu_);
       GRPC_TRACE_LOG(client_channel_lb_call, INFO)
           << "chand=" << chand << " lb_call=" << lb_call
-          << ": cancelling queued pick: "
-             "error="
-          << StatusToString(error) << " self=" << self
+          << ": cancelling queued pick: error=" << StatusToString(error)
+          << " self=" << self
           << " calld->pick_canceller=" << lb_call->lb_call_canceller_;
       if (lb_call->lb_call_canceller_ == self && !error.ok()) {
         lb_call->Commit();
