@@ -88,8 +88,8 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   }
   LOG(INFO) << "starting HttpRequest test server subprocess:";
   for (size_t i = 0; i < args.size(); i++) {
-    gpr_log(GPR_INFO, "  HttpRequest test server subprocess argv[%ld]: %s", i,
-            args[i]);
+    LOG(INFO) << "  HttpRequest test server subprocess argv[" << i
+              << "]: " << args[i];
   }
   gpr_subprocess* server =
       gpr_subprocess_create(args.size(), const_cast<const char**>(args.data()));

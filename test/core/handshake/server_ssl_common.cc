@@ -246,7 +246,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     }
   }
   CHECK_GT(sock, 0);
-  gpr_log(GPR_INFO, "Connected to server on port %d", s.port());
+  LOG(INFO) << "Connected to server on port " << s.port();
 
   // Establish a SSL* and connect at SSL layer.
   SSL* ssl = SSL_new(ctx);

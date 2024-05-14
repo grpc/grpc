@@ -28,11 +28,11 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
+#include "third_party/absl/strings/string_view.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -182,7 +182,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -211,7 +211,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -401,7 +401,7 @@ TEST(SliceTest, ExternalAsOwned) {
   // In ASAN (where we can be sure that it'll crash), go ahead and read the
   // bytes we just deleted.
   if (BuiltUnderAsan()) {
-    ASSERT_DEATH({ VLOG(2) << "%" PRIdPTR, SumSlice(slice)); }, "";
+    ASSERT_DEATH({ VLOG(2) << SumSlice(slice); }, "");
   }
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }

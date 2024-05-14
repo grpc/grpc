@@ -41,10 +41,10 @@ static void pretty_print_backoffs(reconnect_server* server) {
   for (head = server->head; head && head->next; head = head->next, i++) {
     diff = gpr_time_sub(head->next->timestamp, head->timestamp);
     backoff = gpr_time_to_millis(diff);
-    gpr_log(GPR_INFO,
-            "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%",
-            i, backoff / 1000.0, expected_backoff / 1000.0,
-            (backoff - expected_backoff) * 100.0 / expected_backoff);
+    LOG(INFO) << "retry " << i << ":backoff " << backoff / 1000.0 << "s,"
+              << "expected backoff " << expected_backoff / 1000.0 << "s,"
+              << "jitter "
+              << (backoff - expected_backoff) * 100.0 / expected_backoff << "%";
     expected_backoff *= 1.6;
     int max_reconnect_backoff_ms = 120 * 1000;
     if (server->max_reconnect_backoff_ms > 0) {
@@ -76,8 +76,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
       LOG(ERROR) << "peer does not contain a ':'";
     } else if (peer.compare(0, static_cast<size_t>(last_colon),
                             *server->peer) != 0) {
-      gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer->c_str(),
-              std::string(peer).c_str());
+      LOG(ERROR) << "mismatched peer! " << *server->peer << " vs " << peer;
     }
   }
   new_tail = static_cast<timestamp_list*>(gpr_malloc(sizeof(timestamp_list)));
