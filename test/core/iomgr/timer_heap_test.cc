@@ -23,8 +23,9 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -77,7 +78,7 @@ static void test1(void) {
   grpc_timer* test_elements = create_test_elements(num_test_elements);
   uint8_t* inpq = static_cast<uint8_t*>(gpr_malloc(num_test_elements));
 
-  gpr_log(GPR_INFO, "test1");
+  LOG(INFO) << "test1";
 
   grpc_timer_heap_init(&pq);
   memset(inpq, 0, num_test_elements);
@@ -156,7 +157,7 @@ static elem_struct* search_elems(elem_struct* elems, size_t count,
 }
 
 static void test2(void) {
-  gpr_log(GPR_INFO, "test2");
+  LOG(INFO) << "test2";
 
   grpc_timer_heap pq;
 
@@ -227,7 +228,7 @@ static void test2(void) {
 }
 
 static void shrink_test(void) {
-  gpr_log(GPR_INFO, "shrink_test");
+  LOG(INFO) << "shrink_test";
 
   grpc_timer_heap pq;
   size_t i;
