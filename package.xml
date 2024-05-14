@@ -1733,6 +1733,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/call_destination.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_final_info.cc" role="src" />
@@ -1745,6 +1746,8 @@
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/http2_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/interception_chain.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/message.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/message.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/metadata.cc" role="src" />

@@ -235,37 +235,27 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     FrameHeader frame_header, BufferPair buffers,
     ChaoticGoodTransport& transport) {
   ClientFragmentFrame fragment_frame;
-  ScopedArenaPtr arena(acceptor_->CreateArena());
+  ScopedArenaPtr arena(call_arena_allocator_->MakeArena());
   absl::Status status = transport.DeserializeFrame(
       frame_header, std::move(buffers), arena.get(), fragment_frame,
       FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
-    auto create_call_result = acceptor_->CreateCall(
-        std::move(fragment_frame.headers), arena.release());
-    if (grpc_chaotic_good_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "CHAOTIC_GOOD: DeserializeAndPushFragmentToNewCall: "
-              "create_call_result=%s",
-              create_call_result.ok()
-                  ? "ok"
-                  : create_call_result.status().ToString().c_str());
-    }
-    if (create_call_result.ok()) {
-      call_initiator.emplace(std::move(*create_call_result));
-      auto add_result = NewStream(frame_header.stream_id, *call_initiator);
-      if (add_result.ok()) {
-        call_initiator->SpawnGuarded(
-            "server-write", [this, stream_id = frame_header.stream_id,
-                             call_initiator = *call_initiator]() {
-              return CallOutboundLoop(stream_id, call_initiator);
-            });
-      } else {
-        call_initiator.reset();
-        status = add_result;
-      }
+    auto call =
+        MakeCallPair(std::move(fragment_frame.headers), event_engine_.get(),
+                     arena.release(), call_arena_allocator_, nullptr);
+    call_initiator.emplace(std::move(call.initiator));
+    auto add_result = NewStream(frame_header.stream_id, *call_initiator);
+    if (add_result.ok()) {
+      call_destination_->StartCall(std::move(call.handler));
+      call_initiator->SpawnGuarded(
+          "server-write", [this, stream_id = frame_header.stream_id,
+                           call_initiator = *call_initiator]() {
+            return CallOutboundLoop(stream_id, call_initiator);
+          });
     } else {
-      status = create_call_result.status();
+      call_initiator.reset();
+      status = add_result;
     }
   }
   return MaybePushFragmentIntoCall(std::move(call_initiator), std::move(status),
@@ -366,10 +356,13 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
     PromiseEndpoint data_endpoint,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     HPackParser hpack_parser, HPackCompressor hpack_encoder)
-    : outgoing_frames_(4),
-      allocator_(args.GetObject<ResourceQuota>()
-                     ->memory_quota()
-                     ->CreateMemoryAllocator("chaotic-good")) {
+    : call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
+          args.GetObject<ResourceQuota>()
+              ->memory_quota()
+              ->CreateMemoryAllocator("chaotic-good"),
+          1024)),
+      event_engine_(event_engine),
+      outgoing_frames_(4) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), std::move(data_endpoint),
       std::move(hpack_parser), std::move(hpack_encoder));
@@ -381,20 +374,25 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
                          OnTransportActivityDone("reader"));
 }
 
-void ChaoticGoodServerTransport::SetAcceptor(Acceptor* acceptor) {
-  CHECK_EQ(acceptor_, nullptr);
-  CHECK_NE(acceptor, nullptr);
-  acceptor_ = acceptor;
+void ChaoticGoodServerTransport::SetCallDestination(
+    RefCountedPtr<UnstartedCallDestination> call_destination) {
+  CHECK(call_destination_ == nullptr);
+  CHECK(call_destination != nullptr);
+  call_destination_ = call_destination;
   got_acceptor_.Set();
 }
 
-ChaoticGoodServerTransport::~ChaoticGoodServerTransport() {
-  if (writer_ != nullptr) {
-    writer_.reset();
+void ChaoticGoodServerTransport::Orphan() {
+  ActivityPtr writer;
+  ActivityPtr reader;
+  {
+    MutexLock lock(&mu_);
+    writer = std::move(writer_);
+    reader = std::move(reader_);
   }
-  if (reader_ != nullptr) {
-    reader_.reset();
-  }
+  writer.reset();
+  reader.reset();
+  Unref();
 }
 
 void ChaoticGoodServerTransport::AbortWithError() {

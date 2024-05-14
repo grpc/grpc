@@ -64,7 +64,7 @@
     If set, enable the chaotic good load transport (this is mostly here for testing)
   expiry: 2024/09/09
   owner: ctiller@google.com
-  requires: [promise_based_client_call, promise_based_server_call]
+  requires: [promise_based_client_call]
   test_tags: [core_end2end_test]
 - name: client_privacy
   description:
@@ -170,14 +170,7 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
-  requires: [promise_based_client_call, promise_based_server_call]
-- name: promise_based_server_call
-  description:
-    If set, use the new gRPC promise based call code when it's appropriate
-    (ie when all filters in a stack are promise based)
-  expiry: 2024/06/14
-  owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "logging_test"]
+  requires: [promise_based_client_call]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
