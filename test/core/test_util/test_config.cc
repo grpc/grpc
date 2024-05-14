@@ -18,8 +18,6 @@
 
 #include "test/core/test_util/test_config.h"
 
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -29,6 +27,10 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/init.h"
 #include "test/core/event_engine/test_init.h"

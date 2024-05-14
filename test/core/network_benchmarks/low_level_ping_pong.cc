@@ -33,10 +33,13 @@
 #ifdef __linux__
 #include <sys/epoll.h>
 #endif
+#include <sys/socket.h>
+
+#include "third_party/absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <sys/socket.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/strerror.h"
@@ -45,7 +48,6 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/histogram.h"
-#include "third_party/absl/log/check.h"
 
 typedef struct fd_pair {
   int read_fd;

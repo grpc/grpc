@@ -17,10 +17,6 @@
 #ifndef GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 #define GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -52,6 +48,12 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -150,7 +152,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
-          LOG(INFO) << "notifying watcher: state=" << ConnectivityStateName(new_state) << " status=" << status;
+          LOG(INFO) << "notifying watcher: state="
+                    << ConnectivityStateName(new_state) << " status=" << status;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
 
@@ -209,7 +212,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
-          LOG(INFO) << "AddDataWatcher(): added HealthWatch=" << health_watcher_.get() << " connectivity_watcher=" << connectivity_watcher_ptr << " watcher_wrapper=" << health_watcher_wrapper_;
+          LOG(INFO) << "AddDataWatcher(): added HealthWatch="
+                    << health_watcher_.get()
+                    << " connectivity_watcher=" << connectivity_watcher_ptr
+                    << " watcher_wrapper=" << health_watcher_wrapper_;
         }
       }
 
@@ -225,7 +231,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           if (health_watcher_.get() != static_cast<HealthWatcher*>(watcher)) {
             return;
           }
-          LOG(INFO) << "CancelDataWatcher(): cancelling HealthWatch=" << health_watcher_.get() << " watcher_wrapper=" << health_watcher_wrapper_;
+          LOG(INFO) << "CancelDataWatcher(): cancelling HealthWatch="
+                    << health_watcher_.get()
+                    << " watcher_wrapper=" << health_watcher_wrapper_;
           state_->state_tracker_.RemoveWatcher(health_watcher_wrapper_);
           health_watcher_wrapper_ = nullptr;
           health_watcher_.reset();
@@ -325,7 +333,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
             VLOG(2) << "Waiting for state notifications to be delivered";
             test_->work_serializer_->Run(
                 [&]() {
-                  LOG(INFO) << "State notifications delivered, waiting for health notifications";
+                  LOG(INFO) << "State notifications delivered, waiting for "
+                               "health notifications";
                   // Now the connectivity state notifications has been
                   // delivered. If the state reported was READY, then the
                   // pick_first leaf policy will have started a health watch, so
@@ -492,7 +501,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       PickerWrapper(LoadBalancingPolicyTest* test,
                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
           : test_(test), picker_(std::move(picker)) {
-        LOG(INFO) << "creating wrapper " << this << " for picker " << picker_.get();
+        LOG(INFO) << "creating wrapper " << this << " for picker "
+                  << picker_.get();
       }
 
       void Orphaned() override {
@@ -564,7 +574,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       StateUpdate update{
           state, status,
           MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
-      LOG(INFO) << "enqueuing state update from LB policy: " << update.ToString();
+      LOG(INFO) << "enqueuing state update from LB policy: "
+                << update.ToString();
       queue_.push_back(std::move(update));
     }
 
@@ -831,10 +842,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           // notifications for the subchannels, so we add another
           // callback to the queue to be executed after those initial
           // state notifications have been delivered.
-          LOG(INFO) << "Applied update, waiting for initial connectivity state notifications";
+          LOG(INFO) << "Applied update, waiting for initial connectivity state "
+                       "notifications";
           work_serializer_->Run(
               [&]() {
-                LOG(INFO) << "Initial connectivity state notifications delivered; waiting for health notifications";
+                LOG(INFO) << "Initial connectivity state notifications "
+                             "delivered; waiting for health notifications";
                 // Now that the initial state notifications have been
                 // delivered, the queue will contain the health watch
                 // notifications for any subchannels in state READY,
@@ -1321,7 +1334,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> addresses, size_t current_index,
       size_t new_index, absl::AnyInvocable<void()> expect_after_disconnect,
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Expecting endpoint address change: addresses={" << absl::StrJoin(addresses, ", ") << "}, current_index=" << current_index << ", new_index=" << new_index;
+    LOG(INFO) << "Expecting endpoint address change: addresses={"
+              << absl::StrJoin(addresses, ", ")
+              << "}, current_index=" << current_index
+              << ", new_index=" << new_index;
     ASSERT_LT(current_index, addresses.size());
     ASSERT_LT(new_index, addresses.size());
     // Find all subchannels.

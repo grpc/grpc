@@ -34,7 +34,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/test_config.h"
 
-#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
+#define LOG_TEST(x) LOG(INFO) << x
 
 static void* create_test_tag(void) {
   static intptr_t i = 0;

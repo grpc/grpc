@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/grpc.h>
-
 #include <map>
 #include <memory>
 #include <set>
@@ -28,6 +26,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -169,9 +170,8 @@ class Fuzzer {
         std::shared_ptr<const typename ResourceType::ResourceType> resource,
         RefCountedPtr<XdsClient::ReadDelayHandle> /* read_delay_handle */)
         override {
-      LOG(INFO) << "==> OnResourceChanged("
-                << ResourceType::Get()->type_url() << " " << resource_name_
-                << "): " << resource->ToString();
+      LOG(INFO) << "==> OnResourceChanged(" << ResourceType::Get()->type_url()
+                << " " << resource_name_ << "): " << resource->ToString();
     }
 
     void OnError(
@@ -202,8 +202,9 @@ class Fuzzer {
   template <typename WatcherType>
   void StartWatch(std::map<std::string, std::set<WatcherType*>>* watchers,
                   std::string resource_name) {
-    LOG(INFO) << "### StartWatch(" << WatcherType::ResourceType::Get()->type_url()
-              << " " << resource_name << ")";
+    LOG(INFO) << "### StartWatch("
+              << WatcherType::ResourceType::Get()->type_url() << " "
+              << resource_name << ")";
     auto watcher = MakeRefCounted<WatcherType>(resource_name);
     (*watchers)[resource_name].insert(watcher.get());
     WatcherType::ResourceType::Get()->StartWatch(
@@ -213,8 +214,9 @@ class Fuzzer {
   template <typename WatcherType>
   void StopWatch(std::map<std::string, std::set<WatcherType*>>* watchers,
                  std::string resource_name) {
-    LOG(INFO) << "### StopWatch(" << WatcherType::ResourceType::Get()->type_url()
-              << " " << resource_name << ")";
+    LOG(INFO) << "### StopWatch("
+              << WatcherType::ResourceType::Get()->type_url() << " "
+              << resource_name << ")";
     auto& watchers_set = (*watchers)[resource_name];
     auto it = watchers_set.begin();
     if (it == watchers_set.end()) return;
@@ -244,8 +246,8 @@ class Fuzzer {
 
   void TriggerConnectionFailure(const std::string& authority,
                                 absl::Status status) {
-    LOG(INFO) << "### TriggerConnectionFailure(" << authority << "): "
-              << status;
+    LOG(INFO) << "### TriggerConnectionFailure(" << authority
+              << "): " << status;
     const auto* xds_server = GetServer(authority);
     if (xds_server == nullptr) return;
     transport_factory_->TriggerConnectionFailure(*xds_server,

@@ -14,8 +14,6 @@
 
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -32,6 +30,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
+
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"

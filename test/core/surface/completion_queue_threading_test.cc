@@ -16,10 +16,6 @@
 //
 //
 
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -28,6 +24,12 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
