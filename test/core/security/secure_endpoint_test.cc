@@ -23,9 +23,10 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -281,7 +282,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_core::ExecCtx exec_ctx;
   int n = 0;
   grpc_closure done_closure;
-  gpr_log(GPR_INFO, "Start test left over");
+  LOG(INFO) << "Start test left over";
 
   grpc_slice_buffer_init(&incoming);
   GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);

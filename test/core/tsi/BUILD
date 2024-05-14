@@ -111,6 +111,7 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
@@ -167,7 +168,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

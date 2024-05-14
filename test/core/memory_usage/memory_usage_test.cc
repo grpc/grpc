@@ -32,6 +32,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
@@ -39,7 +40,6 @@
 #include "google/protobuf/wrappers.pb.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
@@ -102,7 +102,7 @@ int RunCallBenchmark(int port, char* root,
   int status;
 
   // start the server
-  gpr_log(GPR_INFO, "starting server");
+  LOG(INFO) << "starting server";
   std::vector<std::string> server_flags = {
       absl::StrCat(root, "/memory_usage_server",
                    gpr_subprocess_binary_extension()),
@@ -113,14 +113,14 @@ int RunCallBenchmark(int port, char* root,
   // Add scenario-specific server flags to the end of the server_flags
   absl::c_move(server_scenario_flags, std::back_inserter(server_flags));
   Subprocess svr(server_flags);
-  gpr_log(GPR_INFO, "server started, pid %d", svr.GetPID());
+  LOG(INFO) << "server started, pid " << svr.GetPID();
 
   // Wait one second before starting client to give the server a chance
   // to start up.
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // start the client
-  gpr_log(GPR_INFO, "starting client");
+  LOG(INFO) << "starting client";
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_client",
                    gpr_subprocess_binary_extension()),
@@ -135,7 +135,7 @@ int RunCallBenchmark(int port, char* root,
   // Add scenario-specific client flags to the end of the client_flags
   absl::c_move(client_scenario_flags, std::back_inserter(client_flags));
   Subprocess cli(client_flags);
-  gpr_log(GPR_INFO, "client started, pid %d", cli.GetPID());
+  LOG(INFO) << "client started, pid " << cli.GetPID();
   // wait for completion
   if ((status = cli.Join()) != 0) {
     printf("client failed with: %d", status);
@@ -154,14 +154,14 @@ int RunChannelBenchmark(const std::vector<int>& server_ports, char* root) {
   std::vector<Subprocess> servers;
   servers.reserve(server_ports.size());
   for (int port : server_ports) {
-    gpr_log(GPR_INFO, "starting server on port %d", port);
+    LOG(INFO) << "starting server on port " << port;
     std::vector<std::string> server_flags = {
         absl::StrCat(root, "/memory_usage_callback_server",
                      gpr_subprocess_binary_extension()),
         "--bind", grpc_core::LocalIpAndPort(port)};
     if (absl::GetFlag(FLAGS_use_xds)) server_flags.emplace_back("--use_xds");
     servers.emplace_back(server_flags);
-    gpr_log(GPR_INFO, "server started, pid %d", servers.back().GetPID());
+    LOG(INFO) << "server started, pid " << servers.back().GetPID();
   }
 
   // Wait one second before starting client to avoid possible race condition
@@ -169,7 +169,7 @@ int RunChannelBenchmark(const std::vector<int>& server_ports, char* root) {
   gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
 
   // start the client
-  gpr_log(GPR_INFO, "starting client");
+  LOG(INFO) << "starting client";
   std::vector<std::string> client_flags = {
       absl::StrCat(root, "/memory_usage_callback_client",
                    gpr_subprocess_binary_extension()),
@@ -183,7 +183,7 @@ int RunChannelBenchmark(const std::vector<int>& server_ports, char* root) {
         absl::StrCat("--server_pid=", servers[0].GetPID()));
   }
   Subprocess cli(client_flags);
-  gpr_log(GPR_INFO, "client started, pid %d", cli.GetPID());
+  LOG(INFO) << "client started, pid " << cli.GetPID();
   // wait for completion
   int retval = cli.Join();
   if (retval != 0) {
@@ -206,7 +206,7 @@ XdsServer StartXdsServerAndConfigureBootstrap(
     const std::vector<int>& server_ports) {
   XdsServer xds_server;
   int xds_server_port = grpc_pick_unused_port_or_die();
-  gpr_log(GPR_INFO, "xDS server port: %d", xds_server_port);
+  LOG(INFO) << "xDS server port: " << xds_server_port;
   // Generate xDS bootstrap and set the env var.
   std::string bootstrap =
       grpc::testing::XdsBootstrapBuilder()
@@ -214,7 +214,7 @@ XdsServer StartXdsServerAndConfigureBootstrap(
           .SetXdsChannelCredentials("insecure")
           .Build();
   grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", bootstrap);
-  gpr_log(GPR_INFO, "xDS bootstrap: %s", bootstrap.c_str());
+  LOG(INFO) << "xDS bootstrap: " << bootstrap;
   // Create ADS service.
   xds_server.ads_service = std::make_shared<grpc::testing::AdsServiceImpl>();
   xds_server.ads_service->Start();
@@ -241,28 +241,27 @@ XdsServer StartXdsServerAndConfigureBootstrap(
           {XdsResourceUtils::EdsResourceArgs::Locality(
               "here", std::move(endpoints))})));
   // Create and start server.
-  gpr_log(GPR_INFO, "starting xDS server...");
+  LOG(INFO) << "starting xDS server...";
   grpc::ServerBuilder builder;
   builder.RegisterService(xds_server.ads_service.get());
   builder.AddListeningPort(absl::StrCat("localhost:", xds_server_port),
                            grpc::InsecureServerCredentials());
   xds_server.server = builder.BuildAndStart();
-  gpr_log(GPR_INFO, "xDS server started");
+  LOG(INFO) << "xDS server started";
   return xds_server;
 }
 
 int RunBenchmark(char* root, absl::string_view benchmark,
                  std::vector<std::string> server_scenario_flags,
                  std::vector<std::string> client_scenario_flags) {
-  gpr_log(GPR_INFO, "running benchmark: %s", std::string(benchmark).c_str());
+  LOG(INFO) << "running benchmark: " << benchmark;
   const size_t num_ports = benchmark == "channel_multi_address" ? 10 : 1;
   std::vector<int> server_ports;
   server_ports.reserve(num_ports);
   for (size_t i = 0; i < num_ports; ++i) {
     server_ports.push_back(grpc_pick_unused_port_or_die());
   }
-  gpr_log(GPR_INFO, "server ports: %s",
-          absl::StrJoin(server_ports, ",").c_str());
+  LOG(INFO) << "server ports: " << absl::StrJoin(server_ports, ",");
   XdsServer xds_server;
   if (absl::GetFlag(FLAGS_use_xds)) {
     xds_server = StartXdsServerAndConfigureBootstrap(server_ports);
@@ -274,11 +273,11 @@ int RunBenchmark(char* root, absl::string_view benchmark,
   } else if (benchmark == "channel" || benchmark == "channel_multi_address") {
     retval = RunChannelBenchmark(server_ports, root);
   } else {
-    gpr_log(GPR_INFO, "Not a valid benchmark name");
+    LOG(INFO) << "Not a valid benchmark name";
     retval = 4;
   }
   if (xds_server.server != nullptr) xds_server.server->Shutdown();
-  gpr_log(GPR_INFO, "done running benchmark");
+  LOG(INFO) << "done running benchmark";
   return retval;
 }
 

@@ -27,6 +27,7 @@
 #include <openssl/rsa.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -2011,7 +2012,7 @@ void auth_metadata_context_build(const char* url_scheme,
   char* service_url = nullptr;
   grpc_auth_metadata_context_reset(auth_md_context);
   if (last_slash == nullptr) {
-    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
+    LOG(ERROR) << "No '/' found in fully qualified method name";
     service[0] = '\0';
     method_name = gpr_strdup("");
   } else if (last_slash == service) {

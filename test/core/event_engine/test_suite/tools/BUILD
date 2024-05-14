@@ -62,6 +62,7 @@ grpc_cc_library(
         "absl/flags:flag",
         "absl/flags:parse",
         "absl/log:check",
+        "absl/log:log",
     ],
     language = "C++",
     deps = [

@@ -253,6 +253,7 @@ grpc_cc_test(
     args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
     ],
     tags = [
         "no_mac",
@@ -368,6 +369,7 @@ grpc_cc_test(
     args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
     ],
     tags = [
         "no_mac",
@@ -400,6 +402,7 @@ grpc_cc_library(
     hdrs = ["callback_test_service.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "benchmark",
     ],
     deps = [
@@ -448,6 +451,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
     ],
     deps = [
         ":bm_callback_test_service_impl",
