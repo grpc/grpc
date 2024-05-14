@@ -804,6 +804,7 @@ doc/service_config.md \
 doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
+doc/trace_flags.md \
 doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \

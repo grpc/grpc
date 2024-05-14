@@ -1074,7 +1074,6 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
-    src/core/lib/channel/channel_stack_trace.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/metrics.cc \
     src/core/lib/channel/promise_based_filter.cc \

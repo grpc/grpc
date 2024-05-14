@@ -55,9 +55,7 @@ def main(args):
     with open("src/core/lib/debug/trace_flags.cc", "w") as f:
         f.write(render_source_file("trace_flags.cc.mako", trace_flags))
     with open("doc/trace_flags.md", "w") as f:
-        f.write(
-            render_source_file("trace_flags.md.mako", trace_flags)
-        )
+        f.write(render_source_file("trace_flags.md.mako", trace_flags))
     if _CHECK.value or _FORMAT.value:
         env = os.environ.copy()
         env["CHANGED_FILES"] = "src/core/lib/debug/*"

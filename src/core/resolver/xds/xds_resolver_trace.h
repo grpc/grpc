@@ -21,9 +21,6 @@
 
 #include "src/core/lib/debug/trace.h"
 
-namespace grpc_core {
-
-
-}  // namespace grpc_core
+namespace grpc_core {}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_RESOLVER_XDS_XDS_RESOLVER_TRACE_H

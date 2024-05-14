@@ -802,7 +802,6 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
@@ -1656,7 +1655,6 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
@@ -2343,7 +2341,6 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
@@ -2812,7 +2809,6 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
@@ -4436,7 +4432,6 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
@@ -4781,7 +4776,6 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
@@ -5859,7 +5853,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6085,7 +6078,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6348,7 +6340,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6593,7 +6584,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6669,7 +6659,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6732,7 +6721,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6795,7 +6783,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6858,7 +6845,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6938,7 +6924,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7016,7 +7001,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7079,7 +7063,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8029,7 +8012,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8203,7 +8185,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8342,7 +8323,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8511,7 +8491,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8611,7 +8590,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8761,7 +8739,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9548,7 +9525,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9611,7 +9587,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9674,7 +9649,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9755,7 +9729,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -10242,6 +10215,36 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: glob_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/cmdline.h
+  - test/core/test_util/evaluate_args_test_util.h
+  - test/core/test_util/fuzzer_util.h
+  - test/core/test_util/grpc_profiler.h
+  - test/core/test_util/histogram.h
+  - test/core/test_util/mock_endpoint.h
+  - test/core/test_util/parse_hexstring.h
+  - test/core/test_util/resolve_localhost_ip46.h
+  - test/core/test_util/slice_splitter.h
+  - test/core/test_util/tracer_util.h
+  src:
+  - test/core/test_util/cmdline.cc
+  - test/core/test_util/fuzzer_util.cc
+  - test/core/test_util/glob_test.cc
+  - test/core/test_util/grpc_profiler.cc
+  - test/core/test_util/histogram.cc
+  - test/core/test_util/mock_endpoint.cc
+  - test/core/test_util/parse_hexstring.cc
+  - test/core/test_util/resolve_localhost_ip46.cc
+  - test/core/test_util/slice_splitter.cc
+  - test/core/test_util/tracer_util.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: goaway_server_test
   gtest: true
   build: test
@@ -10304,7 +10307,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -10499,7 +10501,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -11056,7 +11057,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -11250,7 +11250,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -11337,7 +11336,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -11637,7 +11635,6 @@ targets:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/metrics.h
@@ -11951,7 +11948,6 @@ targets:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/metrics.cc
   - src/core/lib/channel/promise_based_filter.cc
@@ -12417,7 +12413,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -12621,7 +12616,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -12696,7 +12690,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13117,7 +13110,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13180,7 +13172,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13243,7 +13234,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13306,7 +13296,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13589,7 +13578,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13664,7 +13652,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13727,7 +13714,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14097,7 +14083,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14356,7 +14341,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14449,7 +14433,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14872,7 +14855,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15129,7 +15111,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15206,7 +15187,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15269,7 +15249,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15480,7 +15459,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15554,7 +15532,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15617,7 +15594,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15680,7 +15656,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15743,7 +15718,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15806,7 +15780,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15869,7 +15842,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15932,7 +15904,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15995,7 +15966,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16058,7 +16028,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16121,7 +16090,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16184,7 +16152,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16247,7 +16214,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16310,7 +16276,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16373,7 +16338,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16436,7 +16400,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16499,7 +16462,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16562,7 +16524,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16625,7 +16586,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16688,7 +16648,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16751,7 +16710,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16814,7 +16772,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16877,7 +16834,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16940,7 +16896,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17014,7 +16969,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17077,7 +17031,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17140,7 +17093,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17203,7 +17155,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17277,7 +17228,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17340,7 +17290,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17403,7 +17352,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17466,7 +17414,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17529,7 +17476,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17592,7 +17538,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17655,7 +17600,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18063,7 +18007,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18212,7 +18155,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18341,7 +18283,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18404,7 +18345,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18482,7 +18422,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18545,7 +18484,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18622,7 +18560,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18981,7 +18918,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19332,7 +19268,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19594,7 +19529,6 @@ targets:
   - test/core/transport/test_suite/test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
@@ -19669,7 +19603,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.h
   - src/cpp/ext/chaotic_good.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19881,7 +19814,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -20045,7 +19977,7 @@ targets:
   - gtest
   - grpc++_test_config
   - grpc++_test_util
-- name: trace_flag_test
+- name: trace_flags_test
   gtest: true
   build: test
   language: c++
@@ -20069,7 +20001,7 @@ targets:
   - test/core/test_util/parse_hexstring.cc
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
-  - test/core/test_util/trace_flag_test.cc
+  - test/core/test_util/trace_flags_test.cc
   - test/core/test_util/tracer_util.cc
   deps:
   - gtest
@@ -20128,7 +20060,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -20830,7 +20761,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -20893,7 +20823,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
