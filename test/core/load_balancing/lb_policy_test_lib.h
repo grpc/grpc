@@ -325,12 +325,12 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               AssertValidConnectivityStateTransition(state_tracker_.state(),
                                                      state, location);
             }
-            VLOG(2) << "Setting state on tracker";
+            LOG(INFO) << "Setting state on tracker";
             state_tracker_.SetState(state, status, "set from test");
             // SetState() enqueued the connectivity state notifications for
             // the subchannel, so we add another callback to the queue to be
             // executed after that state notifications has been delivered.
-            VLOG(2) << "Waiting for state notifications to be delivered";
+            LOG(INFO) << "Waiting for state notifications to be delivered";
             test_->work_serializer_->Run(
                 [&]() {
                   LOG(INFO) << "State notifications delivered, waiting for "
@@ -347,7 +347,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           },
           DEBUG_LOCATION);
       notification.WaitForNotification();
-      VLOG(2) << "Health notifications delivered";
+      LOG(INFO) << "Health notifications delivered";
     }
 
     // Indicates if any of the associated SubchannelInterface objects
@@ -861,7 +861,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         },
         DEBUG_LOCATION);
     notification.WaitForNotification();
-    VLOG(2) << "health notifications delivered";
+    LOG(INFO) << "health notifications delivered";
     return status;
   }
 
@@ -893,15 +893,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool WaitForStateUpdate(
       std::function<bool(FakeHelper::StateUpdate update)> continue_predicate,
       SourceLocation location = SourceLocation()) {
-    VLOG(2) << "==> WaitForStateUpdate()";
+    LOG(INFO) << "==> WaitForStateUpdate()";
     while (true) {
       auto update = helper_->GetNextStateUpdate(location);
       if (!update.has_value()) {
-        VLOG(2) << "WaitForStateUpdate() returning false";
+        LOG(INFO) << "WaitForStateUpdate() returning false";
         return false;
       }
       if (!continue_predicate(std::move(*update))) {
-        VLOG(2) << "WaitForStateUpdate() returning true";
+        LOG(INFO) << "WaitForStateUpdate() returning true";
         return true;
       }
     }
@@ -938,7 +938,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // update for state READY, whose picker is returned.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
-    VLOG(2) << "==> WaitForConnected()";
+    LOG(INFO) << "==> WaitForConnected()";
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
@@ -1031,7 +1031,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
-          VLOG(2) << "PICKS: " << absl::StrJoin(*picks, " ");
+          LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
           // If the picks still match the old list, then keep going.
           if (PicksAreRoundRobin(old_addresses, *picks)) return true;
           // Otherwise, the picks should match the new list.
@@ -1046,7 +1046,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           return false;  // Stop.
         },
         location);
-    VLOG(2) << "done waiting for expected RR addresses";
+    LOG(INFO) << "done waiting for expected RR addresses";
     return retval;
   }
 
@@ -1300,7 +1300,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   DrainRoundRobinPickerUpdates(absl::Span<const absl::string_view> addresses,
                                SourceLocation location = SourceLocation()) {
-    VLOG(2) << "Draining RR picker updates...";
+    LOG(INFO) << "Draining RR picker updates...";
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     while (!helper_->QueueEmpty()) {
       auto update = helper_->GetNextStateUpdate(location);
@@ -1315,17 +1315,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                             location);
       picker = std::move(update->picker);
     }
-    VLOG(2) << "Done draining RR picker updates";
+    LOG(INFO) << "Done draining RR picker updates";
     return picker;
   }
 
   // Expects zero or more CONNECTING updates.
   void DrainConnectingUpdates(SourceLocation location = SourceLocation()) {
-    VLOG(2) << "Draining CONNECTING updates...";
+    LOG(INFO) << "Draining CONNECTING updates...";
     while (!helper_->QueueEmpty()) {
       ASSERT_TRUE(ExpectConnectingUpdate(location));
     }
-    VLOG(2) << "Done draining CONNECTING updates";
+    LOG(INFO) << "Done draining CONNECTING updates";
   }
 
   // Triggers a connection failure for the current address for an
@@ -1378,7 +1378,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       // interacts with it again.
       subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
     }
-    VLOG(2) << "Done with endpoint address change";
+    LOG(INFO) << "Done with endpoint address change";
   }
 
   // Requests a picker on picker and expects a Fail result.
@@ -1444,18 +1444,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void WaitForWorkSerializerToFlush() {
     ExecCtx exec_ctx;
-    VLOG(2) << "waiting for WorkSerializer to flush...";
+    LOG(INFO) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
     notification.WaitForNotification();
-    VLOG(2) << "WorkSerializer flush complete";
+    LOG(INFO) << "WorkSerializer flush complete";
   }
 
   void IncrementTimeBy(Duration duration) {
     ExecCtx exec_ctx;
     LOG(INFO) << "Incrementing time by " << duration;
     fuzzing_ee_->TickForDuration(duration);
-    VLOG(2) << "Done incrementing time";
+    LOG(INFO) << "Done incrementing time";
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }

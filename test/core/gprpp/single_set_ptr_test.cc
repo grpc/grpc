@@ -29,7 +29,7 @@ TEST(SingleSetPtrTest, NoOp) { SingleSetPtr<int>(); }
 TEST(SingleSetPtrTest, CanSet) {
   SingleSetPtr<int> p;
   EXPECT_FALSE(p.is_set());
-  EXPECT_DEATH_IF_SUPPORTED(absl::StrFormat("%d", *p), "");
+  EXPECT_DEATH_IF_SUPPORTED( { LOG(ERROR) << absl::StrFormat("%d", *p); }, "");
   p.Set(new int(42));
   EXPECT_EQ(*p, 42);
 }

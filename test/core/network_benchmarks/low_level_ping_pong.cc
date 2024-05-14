@@ -36,6 +36,7 @@
 #include <sys/socket.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
