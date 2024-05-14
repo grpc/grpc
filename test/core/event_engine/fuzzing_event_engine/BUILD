@@ -25,7 +25,10 @@ grpc_cc_library(
     name = "fuzzing_event_engine",
     srcs = ["fuzzing_event_engine.cc"],
     hdrs = ["fuzzing_event_engine.h"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     deps = [
         ":fuzzing_event_engine_proto",
         "//:event_engine_base_hdrs",
