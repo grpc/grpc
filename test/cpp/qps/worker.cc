@@ -38,6 +38,9 @@ ABSL_FLAG(int32_t, server_port, 0,
           "config message");
 ABSL_FLAG(std::string, credential_type, grpc::testing::kInsecureCredentialsType,
           "Credential type for communication with driver");
+ABSL_FLAG(bool, die_on_connection_failure, true,
+          "Whether the worker should crash if it cannot connect to the server "
+          "while operating as a client.");
 
 static bool got_sigint = false;
 
@@ -51,7 +54,8 @@ std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
 static void RunServer() {
   QpsWorker worker(absl::GetFlag(FLAGS_driver_port),
                    absl::GetFlag(FLAGS_server_port),
-                   absl::GetFlag(FLAGS_credential_type));
+                   absl::GetFlag(FLAGS_credential_type),
+                   absl::GetFlag(FLAGS_die_on_connection_failure));
 
   while (!got_sigint && !worker.Done()) {
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
