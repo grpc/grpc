@@ -60,23 +60,21 @@ def main(args):
         )
     if _CHECK.value or _FORMAT.value:
         env = os.environ.copy()
-        env[
-            "CHANGED_FILES"
-        ] = "src/core/lib/debug/trace.h src/core/lib/debug/trace_flags.cc"
-        subprocess.run(
-            ["tools/distrib/clang_format_code.sh"], check=True, env=env
+        env["CHANGED_FILES"] = "src/core/lib/debug/*"
+        env["TEST"] = ""
+        format_result = subprocess.run(
+            ["tools/distrib/clang_format_code.sh"], env=env, capture_output=True
         )
+        if format_result.returncode != 0:
+            raise app.Error("Format failed")
     if _CHECK.value:
-        diff_result = subprocess.run(
-            ["git", "diff", "src/core/lib/debug/"],
-            check=True,
-            capture_output=True,
-        )
+        diff_result = subprocess.run(["git", "diff"], capture_output=True)
         if len(diff_result.stdout) > 0 or len(diff_result.stderr) > 0:
             print(
                 "Trace flags need to be generated. Please run tools/codegen/core/gen_trace_flags.py"
             )
-            return 11
+            print(diff_result.stdout.decode("utf-8"))
+            raise app.Error("diff found")
 
 
 if __name__ == "__main__":
