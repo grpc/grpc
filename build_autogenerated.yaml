@@ -4611,6 +4611,7 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/join_state.h
@@ -11767,6 +11768,7 @@ targets:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/join_state.h
