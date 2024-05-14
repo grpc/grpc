@@ -41,10 +41,10 @@ static void pretty_print_backoffs(reconnect_server* server) {
   for (head = server->head; head && head->next; head = head->next, i++) {
     diff = gpr_time_sub(head->next->timestamp, head->timestamp);
     backoff = gpr_time_to_millis(diff);
-    LOG(INFO) << "retry " << i << ":backoff " << backoff / 1000.0 << "s,"
-              << "expected backoff " << expected_backoff / 1000.0 << "s,"
-              << "jitter "
-              << (backoff - expected_backoff) * 100.0 / expected_backoff << "%";
+    LOG(INFO) << absl::StrFormat(
+        "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%", i,
+        backoff / 1000.0, expected_backoff / 1000.0,
+        (backoff - expected_backoff) * 100.0 / expected_backoff);
     expected_backoff *= 1.6;
     int max_reconnect_backoff_ms = 120 * 1000;
     if (server->max_reconnect_backoff_ms > 0) {
