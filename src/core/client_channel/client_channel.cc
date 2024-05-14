@@ -539,6 +539,10 @@ absl::StatusOr<OrphanablePtr<Channel>> ClientChannel::Create(
     return absl::InternalError(
         "Missing call destination factory in args for client channel");
   }
+  if (channel_args.GetObject<EventEngine>() == nullptr) {
+    return absl::InternalError(
+        "Missing event engine in args for client channel");
+  }
   // Success.  Construct channel.
   return MakeOrphanable<ClientChannel>(
       std::move(target), std::move(channel_args), std::move(uri_to_resolve),
@@ -567,7 +571,7 @@ ClientChannel::ClientChannel(
     CallDestinationFactory* call_destination_factory)
     : Channel(std::move(target), channel_args),
       channel_args_(std::move(channel_args)),
-      event_engine_(channel_args.GetObjectRef<EventEngine>()),
+      event_engine_(channel_args_.GetObjectRef<EventEngine>()),
       uri_to_resolve_(std::move(uri_to_resolve)),
       service_config_parser_index_(
           internal::ClientChannelServiceConfigParser::ParserIndex()),
@@ -779,7 +783,7 @@ CallInitiator ClientChannel::CreateCall(
                   return got_result;
                 })),
             // Handle resolver result.
-            [self, &unstarted_handler](
+            [self, unstarted_handler](
                 std::tuple<absl::StatusOr<ResolverDataForCalls>, bool>
                     result_and_delayed) mutable {
               auto& resolver_data = std::get<0>(result_and_delayed);
