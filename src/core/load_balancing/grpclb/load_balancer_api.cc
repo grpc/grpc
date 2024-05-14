@@ -104,7 +104,7 @@ grpc_slice GrpcLbLoadReportRequestCreate(
       const GrpcLbClientStats::DropTokenCount& cur = (*drop_token_counts)[i];
       grpc_lb_v1_ClientStatsPerToken* cur_msg =
           grpc_lb_v1_ClientStats_add_calls_finished_with_drop(req_stats, arena);
-      const size_t token_len = strlen(cur.token.get());
+      const size_t token_len = strlen(cur.token.get()) + 1;
       char* token = reinterpret_cast<char*>(upb_Arena_Malloc(arena, token_len));
       memcpy(token, cur.token.get(), token_len);
       grpc_lb_v1_ClientStatsPerToken_set_load_balance_token(
