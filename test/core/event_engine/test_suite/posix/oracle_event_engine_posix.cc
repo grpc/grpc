@@ -32,7 +32,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"

@@ -24,7 +24,7 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/test_util/test_config.h"

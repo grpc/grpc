@@ -33,7 +33,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

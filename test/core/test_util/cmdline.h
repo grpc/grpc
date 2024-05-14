@@ -23,6 +23,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/log.h"
+
 /// Simple command line parser.
 
 /// Supports flags that can be specified as -foo, --foo, --no-foo, -no-foo, etc

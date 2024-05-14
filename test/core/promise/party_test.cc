@@ -22,6 +22,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/base/thread_annotations.h"
 #include "gtest/gtest.h"
 

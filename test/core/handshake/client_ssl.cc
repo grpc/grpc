@@ -54,7 +54,7 @@
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
