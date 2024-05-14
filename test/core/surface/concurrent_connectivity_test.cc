@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
@@ -30,7 +31,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/log.h"
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 

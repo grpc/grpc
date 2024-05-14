@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
@@ -35,7 +36,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include "absl/log/log.h"
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/channel/channel_args.h"

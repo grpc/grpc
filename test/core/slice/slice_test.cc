@@ -28,11 +28,11 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>
-#include "absl/log/log.h"
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/memory.h"

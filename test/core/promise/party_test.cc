@@ -22,8 +22,8 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>

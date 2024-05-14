@@ -16,6 +16,8 @@
 //
 //
 
+#include "absl/log/log.h"
+
 #include <string.h>
 
 #include <memory>
@@ -23,8 +25,6 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
-
-#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/test_util/test_config.h"

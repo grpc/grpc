@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -33,7 +34,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

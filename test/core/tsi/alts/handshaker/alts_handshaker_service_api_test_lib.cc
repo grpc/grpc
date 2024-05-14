@@ -16,8 +16,9 @@
 //
 //
 
-#include "absl/log/log.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+
+#include "absl/log/log.h"
 
 bool grpc_gcp_handshaker_resp_set_peer_rpc_versions(
     grpc_gcp_HandshakerResp* resp, upb_Arena* arena, uint32_t max_major,

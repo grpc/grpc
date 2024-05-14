@@ -21,9 +21,9 @@
 
 #include <string>
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/log/log.h"
+
+#include <grpc/support/port_platform.h>
 
 /// Simple command line parser.
 

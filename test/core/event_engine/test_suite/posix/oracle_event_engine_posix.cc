@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -32,7 +33,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
-#include "absl/log/log.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"

@@ -49,12 +49,12 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#include "absl/log/log.h"
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"

@@ -20,10 +20,10 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
-#include "absl/log/log.h"
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/endpoint.h"

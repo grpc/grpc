@@ -29,7 +29,6 @@
 
 #include <grpc/grpc.h>
 
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

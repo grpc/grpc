@@ -22,13 +22,13 @@
 #include <stdlib.h>
 
 #include "absl/debugging/failure_signal_handler.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
-#include "absl/log/log.h"
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/crash.h"

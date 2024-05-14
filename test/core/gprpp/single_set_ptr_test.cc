@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "absl/log/log.h"
-
 #include "gtest/gtest.h"
 
 namespace grpc_core {
