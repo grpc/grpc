@@ -81,6 +81,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
@@ -119,6 +120,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -165,6 +167,7 @@ grpc_cc_library(
     external_deps = [
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -202,7 +205,10 @@ grpc_cc_library(
 grpc_cc_test(
     name = "cmdline_test",
     srcs = ["cmdline_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -221,6 +227,7 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     linkstatic = True,
@@ -238,7 +245,10 @@ grpc_cc_library(
 grpc_cc_test(
     name = "histogram_test",
     srcs = ["histogram_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     tags = ["nofixdeps"],
     uses_event_engine = False,
@@ -280,6 +290,7 @@ grpc_cc_test(
         "stack_tracer_test.cc",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
@@ -302,6 +313,7 @@ grpc_cc_library(
     hdrs = ["test_lb_policies.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -341,6 +353,7 @@ grpc_cc_library(
     hdrs = ["fake_udp_and_tcp_server.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -506,6 +519,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
         "absl/strings",
         "absl/types:optional",
