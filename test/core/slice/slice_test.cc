@@ -29,10 +29,10 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-#include "third_party/absl/strings/string_view.h"
+#include "absl/strings/string_view.h"
+#include "absl/log/log.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/memory.h"
