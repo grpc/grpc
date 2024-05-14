@@ -64,6 +64,7 @@ grpc_cc_test(
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "//src/core:dump_args",
     ],
 )
 

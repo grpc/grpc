@@ -27,6 +27,7 @@
 #include <string>
 
 #include "absl/numeric/int128.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/gprpp/time.h"
@@ -73,7 +74,41 @@ class LoggingSink {
       kCancel
     };
 
+    static std::string EventTypeString(EventType type) {
+      switch (type) {
+        case EventType::kUnknown:
+          return "UNKNOWN";
+        case EventType::kClientHeader:
+          return "CLIENT_HEADER";
+        case EventType::kServerHeader:
+          return "SERVER_HEADER";
+        case EventType::kClientMessage:
+          return "CLIENT_MESSAGE";
+        case EventType::kServerMessage:
+          return "SERVER_MESSAGE";
+        case EventType::kClientHalfClose:
+          return "CLIENT_HALF_CLOSE";
+        case EventType::kServerTrailer:
+          return "SERVER_TRAILER";
+        case EventType::kCancel:
+          return "CANCEL";
+      }
+      return absl::StrCat("INVALID(", static_cast<int>(type), ")");
+    }
+
     enum class Logger { kUnknown = 0, kClient, kServer };
+
+    static std::string LoggerString(Logger logger) {
+      switch (logger) {
+        case Logger::kUnknown:
+          return "UNKNOWN";
+        case Logger::kClient:
+          return "CLIENT";
+        case Logger::kServer:
+          return "SERVER";
+      }
+      return absl::StrCat("INVALID(", static_cast<int>(logger), ")");
+    }
 
     struct Payload {
       std::map<std::string, std::string> metadata;
@@ -117,6 +152,16 @@ class LoggingSink {
 
   virtual void LogEntry(Entry entry) = 0;
 };
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const LoggingSink::Entry::EventType& type) {
+  return out << LoggingSink::Entry::EventTypeString(type);
+}
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const LoggingSink::Entry::Logger& logger) {
+  return out << LoggingSink::Entry::LoggerString(logger);
+}
 
 }  // namespace grpc_core
 
