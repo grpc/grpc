@@ -33,6 +33,7 @@ def generate_resolver_component_tests():
             ],
             external_deps = [
                 "absl/log:check",
+                "absl/log:log",
                 "gtest",
             ],
             deps = [
@@ -55,6 +56,7 @@ def generate_resolver_component_tests():
             ],
             external_deps = [
                 "absl/log:check",
+                "absl/log:log",
                 "gtest",
             ],
             deps = [
@@ -78,6 +80,7 @@ def generate_resolver_component_tests():
             external_deps = [
                 "absl/flags:flag",
                 "absl/log:check",
+                "absl/log:log",
                 "absl/strings",
             ],
             deps = [

@@ -59,6 +59,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:log",
     ],
     language = "C++",
     deps = [

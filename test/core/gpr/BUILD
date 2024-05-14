@@ -47,7 +47,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "env_test",
     srcs = ["env_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -62,6 +65,7 @@ grpc_cc_test(
     srcs = ["log_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
