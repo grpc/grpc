@@ -26,11 +26,11 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -105,8 +105,7 @@ static void actually_poll(void* argsp) {
         break;
       }
       grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
-      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done,
-              time_left.millis());
+      VLOG(2) << "done=" << args->done << ", time_left=" << time_left.millis();
       ASSERT_GE(time_left, grpc_core::Duration::Zero());
       grpc_pollset_worker* worker = nullptr;
       GRPC_LOG_IF_ERROR(
@@ -158,23 +157,21 @@ static void test_named_and_numeric_scope_ids(void) {
   // system recognizes, and then use that for the test.
   for (size_t i = 1; i < 65536; i++) {
     if (if_indextoname(i, arbitrary_interface_name) != nullptr) {
-      gpr_log(GPR_DEBUG,
-              "Found interface at index %" PRIuPTR
-              " named %s. Will use this for the test",
-              i, arbitrary_interface_name);
+      VLOG(2) << "Found interface at index " << i << " named "
+              << arbitrary_interface_name << ". Will use this for the test";
       interface_index = static_cast<int>(i);
       break;
     }
   }
   ASSERT_GT(strlen(arbitrary_interface_name), 0);
   // Test resolution of an ipv6 address with a named scope ID
-  gpr_log(GPR_DEBUG, "test resolution with a named scope ID");
+  VLOG(2) << "test resolution with a named scope ID";
   std::string target_with_named_scope_id =
       absl::StrFormat("fe80::1234%%%s", arbitrary_interface_name);
   resolve_address_must_succeed(target_with_named_scope_id.c_str());
   gpr_free(arbitrary_interface_name);
   // Test resolution of an ipv6 address with a numeric scope ID
-  gpr_log(GPR_DEBUG, "test resolution with a numeric scope ID");
+  VLOG(2) << "test resolution with a numeric scope ID";
   std::string target_with_numeric_scope_id =
       absl::StrFormat("fe80::1234%%%d", interface_index);
   resolve_address_must_succeed(target_with_numeric_scope_id.c_str());
@@ -194,7 +191,7 @@ TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
   } else if (resolver_type == "ares") {
     overrides.dns_resolver = "ares";
   } else {
-    gpr_log(GPR_ERROR, "--resolver was not set to ares or native");
+    LOG(ERROR) << "--resolver was not set to ares or native";
     ASSERT_TRUE(false);
   }
   grpc_core::ConfigVars::SetOverrides(overrides);
