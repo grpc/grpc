@@ -66,10 +66,10 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
-      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)

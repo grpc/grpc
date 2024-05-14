@@ -46,6 +46,7 @@
 #include <openssl/x509v3.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -53,7 +54,6 @@
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
@@ -204,7 +204,7 @@ static void init_openssl(void) {
     CRYPTO_set_locking_callback(openssl_locking_cb);
     CRYPTO_set_id_callback(openssl_thread_id_cb);
   } else {
-    gpr_log(GPR_INFO, "OpenSSL callback has already been set.");
+    LOG(INFO) << "OpenSSL callback has already been set.";
   }
 #endif
   g_ssl_ctx_ex_factory_index =
@@ -234,7 +234,7 @@ static void ssl_log_where_info(const SSL* ssl, int where, int flag,
 // Used for debugging. TODO(jboeuf): Remove when code is mature enough.
 static void ssl_info_callback(const SSL* ssl, int where, int ret) {
   if (ret == 0) {
-    gpr_log(GPR_ERROR, "ssl_info_callback: error occurred.\n");
+    LOG(ERROR) << "ssl_info_callback: error occurred.\n";
     return;
   }
 
@@ -277,19 +277,18 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
-    gpr_log(GPR_DEBUG, "Could not get subject name from certificate.");
+    VLOG(2) << "Could not get subject name from certificate.";
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    gpr_log(GPR_DEBUG,
-            "Could not get common name of subject from certificate.");
+    VLOG(2) << "Could not get common name of subject from certificate.";
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);
   if (common_name_entry == nullptr) {
-    gpr_log(GPR_ERROR, "Could not get common name entry from certificate.");
+    LOG(ERROR) << "Could not get common name entry from certificate.";
     return TSI_INTERNAL_ERROR;
   }
   common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
@@ -300,7 +299,7 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   }
   utf8_returned_size = ASN1_STRING_to_UTF8(utf8, common_name_asn1);
   if (utf8_returned_size < 0) {
-    gpr_log(GPR_ERROR, "Could not extract utf8 from asn1 string.");
+    LOG(ERROR) << "Could not extract utf8 from asn1 string.";
     return TSI_OUT_OF_RESOURCES;
   }
   *utf8_size = static_cast<size_t>(utf8_returned_size);
@@ -336,7 +335,7 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
                                                   bool is_verified_root_cert) {
   X509_NAME* subject_name = X509_get_subject_name(cert);
   if (subject_name == nullptr) {
-    gpr_log(GPR_INFO, "Could not get subject name from certificate.");
+    LOG(INFO) << "Could not get subject name from certificate.";
     return TSI_NOT_FOUND;
   }
   BIO* bio = BIO_new(BIO_s_mem());
@@ -344,7 +343,7 @@ static tsi_result peer_property_from_x509_subject(X509* cert,
   char* contents;
   long len = BIO_get_mem_data(bio, &contents);
   if (len < 0) {
-    gpr_log(GPR_ERROR, "Could not get subject entry from certificate.");
+    LOG(ERROR) << "Could not get subject entry from certificate.";
     BIO_free(bio);
     return TSI_INTERNAL_ERROR;
   }
@@ -409,7 +408,7 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         property_name = TSI_X509_URI_PEER_PROPERTY;
       }
       if (name_size < 0) {
-        gpr_log(GPR_ERROR, "Could not get utf8 from asn1 string.");
+        LOG(ERROR) << "Could not get utf8 from asn1 string.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -435,14 +434,14 @@ static tsi_result add_subject_alt_names_properties_to_peer(
       } else if (subject_alt_name->d.iPAddress->length == 16) {
         af = AF_INET6;
       } else {
-        gpr_log(GPR_ERROR, "SAN IP Address contained invalid IP");
+        LOG(ERROR) << "SAN IP Address contained invalid IP";
         result = TSI_INTERNAL_ERROR;
         break;
       }
       const char* name = inet_ntop(af, subject_alt_name->d.iPAddress->data,
                                    ntop_buf, INET6_ADDRSTRLEN);
       if (name == nullptr) {
-        gpr_log(GPR_ERROR, "Could not get IP string from asn1 octet.");
+        LOG(ERROR) << "Could not get IP string from asn1 octet.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -605,7 +604,7 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
     }
     engine_name = static_cast<char*>(gpr_zalloc(engine_name_length + 1));
     memcpy(engine_name, engine_start, engine_name_length);
-    gpr_log(GPR_DEBUG, "ENGINE key: %s", engine_name);
+    VLOG(2) << "ENGINE key: " << engine_name;
     ENGINE_load_dynamic();
     engine = ENGINE_by_id(engine_name);
     if (engine == nullptr) {
@@ -613,7 +612,7 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
       // current working directory.
       engine = ENGINE_by_id("dynamic");
       if (engine == nullptr) {
-        gpr_log(GPR_ERROR, "Cannot load dynamic engine");
+        LOG(ERROR) << "Cannot load dynamic engine";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
@@ -622,29 +621,29 @@ static tsi_result ssl_ctx_use_engine_private_key(SSL_CTX* context,
           !ENGINE_ctrl_cmd_string(engine, "DIR_ADD", ".", 0) ||
           !ENGINE_ctrl_cmd_string(engine, "LIST_ADD", "1", 0) ||
           !ENGINE_ctrl_cmd_string(engine, "LOAD", NULL, 0)) {
-        gpr_log(GPR_ERROR, "Cannot find engine");
+        LOG(ERROR) << "Cannot find engine";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
     }
     if (!ENGINE_set_default(engine, ENGINE_METHOD_ALL)) {
-      gpr_log(GPR_ERROR, "ENGINE_set_default with ENGINE_METHOD_ALL failed");
+      LOG(ERROR) << "ENGINE_set_default with ENGINE_METHOD_ALL failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
     if (!ENGINE_init(engine)) {
-      gpr_log(GPR_ERROR, "ENGINE_init failed");
+      LOG(ERROR) << "ENGINE_init failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
     private_key = ENGINE_load_private_key(engine, key_id, 0, 0);
     if (private_key == nullptr) {
-      gpr_log(GPR_ERROR, "ENGINE_load_private_key failed");
+      LOG(ERROR) << "ENGINE_load_private_key failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
     if (!SSL_CTX_use_PrivateKey(context, private_key)) {
-      gpr_log(GPR_ERROR, "SSL_CTX_use_PrivateKey failed");
+      LOG(ERROR) << "SSL_CTX_use_PrivateKey failed";
       result = TSI_INVALID_ARGUMENT;
       break;
     }
@@ -725,7 +724,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     if (root_names != nullptr) {
       root_name = X509_get_subject_name(root);
       if (root_name == nullptr) {
-        gpr_log(GPR_ERROR, "Could not get name from root certificate.");
+        LOG(ERROR) << "Could not get name from root certificate.";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
@@ -742,7 +741,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
       unsigned long error = ERR_get_error();
       if (ERR_GET_LIB(error) != ERR_LIB_X509 ||
           ERR_GET_REASON(error) != X509_R_CERT_ALREADY_IN_HASH_TABLE) {
-        gpr_log(GPR_ERROR, "Could not add root certificate to ssl context.");
+        LOG(ERROR) << "Could not add root certificate to ssl context.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -751,7 +750,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
     num_roots++;
   }
   if (num_roots == 0) {
-    gpr_log(GPR_ERROR, "Could not load any root certificate.");
+    LOG(ERROR) << "Could not load any root certificate.";
     result = TSI_INVALID_ARGUMENT;
   }
 
@@ -790,7 +789,7 @@ static tsi_result populate_ssl_context(
       result = ssl_ctx_use_certificate_chain(context, key_cert_pair->cert_chain,
                                              strlen(key_cert_pair->cert_chain));
       if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Invalid cert chain file.");
+        LOG(ERROR) << "Invalid cert chain file.";
         return result;
       }
     }
@@ -798,7 +797,7 @@ static tsi_result populate_ssl_context(
       result = ssl_ctx_use_private_key(context, key_cert_pair->private_key,
                                        strlen(key_cert_pair->private_key));
       if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-        gpr_log(GPR_ERROR, "Invalid private key.");
+        LOG(ERROR) << "Invalid private key.";
         return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
       }
     }
@@ -812,7 +811,7 @@ static tsi_result populate_ssl_context(
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
     EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
     if (!SSL_CTX_set_tmp_ecdh(context, ecdh)) {
-      gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
+      LOG(ERROR) << "Could not set ephemeral ECDH key.";
       EC_KEY_free(ecdh);
       return TSI_INTERNAL_ERROR;
     }
@@ -820,7 +819,7 @@ static tsi_result populate_ssl_context(
     EC_KEY_free(ecdh);
 #else
     if (!SSL_CTX_set1_groups(context, kSslEcCurveNames, 1)) {
-      gpr_log(GPR_ERROR, "Could not set ephemeral ECDH key.");
+      LOG(ERROR) << "Could not set ephemeral ECDH key.";
       return TSI_INTERNAL_ERROR;
     }
     SSL_CTX_set_options(context, SSL_OP_SINGLE_ECDH_USE);
@@ -840,7 +839,7 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 
   cert = PEM_read_bio_X509(pem, nullptr, nullptr, const_cast<char*>(""));
   if (cert == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid certificate");
+    LOG(ERROR) << "Invalid certificate";
     result = TSI_INVALID_ARGUMENT;
   } else {
     result = peer_from_x509(cert, 0, peer);
@@ -962,7 +961,7 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   int success =
       SSL_set_ex_data(ssl, g_ssl_ex_verified_root_cert_index, root_cert);
   if (success == 0) {
-    gpr_log(GPR_INFO, "Could not set verified root cert in SSL's ex_data");
+    LOG(INFO) << "Could not set verified root cert in SSL's ex_data";
   } else {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
     X509_up_ref(root_cert);
@@ -1007,13 +1006,13 @@ static absl::StatusOr<X509_CRL*> GetCrlFromProvider(
   }
   absl::StatusOr<std::string> issuer_name = grpc_core::IssuerFromCert(cert);
   if (!issuer_name.ok()) {
-    gpr_log(GPR_INFO, "Could not get certificate issuer name");
+    LOG(INFO) << "Could not get certificate issuer name";
     return absl::InvalidArgumentError(issuer_name.status().message());
   }
   absl::StatusOr<std::string> akid = grpc_core::AkidFromCertificate(cert);
   std::string akid_to_use;
   if (!akid.ok()) {
-    gpr_log(GPR_INFO, "Could not get certificate authority key identifier.");
+    LOG(INFO) << "Could not get certificate authority key identifier.";
   } else {
     akid_to_use = *akid;
   }
@@ -1046,12 +1045,12 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3b verify issuer and scope
   valid = grpc_core::VerifyCrlCertIssuerNamesMatch(crl, cert);
   if (!valid) {
-    gpr_log(GPR_DEBUG, "CRL and cert issuer names mismatched.");
+    VLOG(2) << "CRL and cert issuer names mismatched.";
     return valid;
   }
   valid = grpc_core::HasCrlSignBit(issuer);
   if (!valid) {
-    gpr_log(GPR_DEBUG, "CRL issuer not allowed to sign CRLs.");
+    VLOG(2) << "CRL issuer not allowed to sign CRLs.";
     return valid;
   }
   // 6.3.3c Not supporting deltas
@@ -1062,7 +1061,7 @@ static bool ValidateCrl(X509* cert, X509* issuer, X509_CRL* crl) {
   // 6.3.3g Verify CRL Signature
   valid = grpc_core::VerifyCrlSignature(crl, issuer);
   if (!valid) {
-    gpr_log(GPR_DEBUG, "Crl signature check failed.");
+    VLOG(2) << "Crl signature check failed.";
   }
   return valid;
 }
@@ -1152,7 +1151,7 @@ static int CheckChainRevocation(
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   int ret = X509_verify_cert(ctx);
   if (ret <= 0) {
-    gpr_log(GPR_DEBUG, "Failed to verify cert chain.");
+    VLOG(2) << "Failed to verify cert chain.";
     // Verification failed. We shouldn't expect to have a verified chain, so
     // there is no need to attempt to extract the root cert from it, check for
     // revocation, or check anything else.
@@ -1162,7 +1161,7 @@ static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   if (provider != nullptr) {
     ret = CheckChainRevocation(ctx, provider);
     if (ret <= 0) {
-      gpr_log(GPR_DEBUG, "The chain failed revocation checks.");
+      VLOG(2) << "The chain failed revocation checks.";
       return ret;
     }
   }
@@ -1198,7 +1197,7 @@ static tsi_result tsi_set_min_and_max_tls_versions(
       break;
 #endif
     default:
-      gpr_log(GPR_INFO, "TLS version is not supported.");
+      LOG(INFO) << "TLS version is not supported.";
       return TSI_FAILED_PRECONDITION;
   }
 
@@ -1217,7 +1216,7 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 #endif
       break;
     default:
-      gpr_log(GPR_INFO, "TLS version is not supported.");
+      LOG(INFO) << "TLS version is not supported.";
       return TSI_FAILED_PRECONDITION;
   }
 #endif
@@ -1229,25 +1228,25 @@ static tsi_result tsi_set_min_and_max_tls_versions(
 tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
     const char* pem_roots) {
   if (pem_roots == nullptr) {
-    gpr_log(GPR_ERROR, "The root certificates are empty.");
+    LOG(ERROR) << "The root certificates are empty.";
     return nullptr;
   }
   tsi_ssl_root_certs_store* root_store = static_cast<tsi_ssl_root_certs_store*>(
       gpr_zalloc(sizeof(tsi_ssl_root_certs_store)));
   if (root_store == nullptr) {
-    gpr_log(GPR_ERROR, "Could not allocate buffer for ssl_root_certs_store.");
+    LOG(ERROR) << "Could not allocate buffer for ssl_root_certs_store.";
     return nullptr;
   }
   root_store->store = X509_STORE_new();
   if (root_store->store == nullptr) {
-    gpr_log(GPR_ERROR, "Could not allocate buffer for X509_STORE.");
+    LOG(ERROR) << "Could not allocate buffer for X509_STORE.";
     gpr_free(root_store);
     return nullptr;
   }
   tsi_result result = x509_store_load_certs(root_store->store, pem_roots,
                                             strlen(pem_roots), nullptr);
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Could not load root certificates.");
+    LOG(ERROR) << "Could not load root certificates.";
     X509_STORE_free(root_store->store);
     gpr_free(root_store);
     return nullptr;
@@ -1477,9 +1476,8 @@ static tsi_result ssl_handshaker_result_extract_peer(
     result = peer_property_from_x509_subject(
         verified_root_cert, &peer->properties[peer->property_count], true);
     if (result != TSI_OK) {
-      gpr_log(GPR_DEBUG,
-              "Problem extracting subject from verified_root_cert. result: %d",
-              static_cast<int>(result));
+      VLOG(2) << "Problem extracting subject from verified_root_cert. result: "
+              << result;
     }
     peer->property_count++;
   }
@@ -1676,7 +1674,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
   bytes_written_into_ssl_size =
       BIO_write(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_written_into_ssl_size < 0) {
-    gpr_log(GPR_ERROR, "Could not write to memory BIO.");
+    LOG(ERROR) << "Could not write to memory BIO.";
     if (error != nullptr) *error = "could not write to memory BIO";
     impl->result = TSI_INTERNAL_ERROR;
     return impl->result;
@@ -1823,7 +1821,7 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
         ssl_bytes_remaining(impl, &unused_bytes, &unused_bytes_size, error);
     if (status != TSI_OK) return status;
     if (unused_bytes_size > received_bytes_size) {
-      gpr_log(GPR_ERROR, "More unused bytes than received bytes.");
+      LOG(ERROR) << "More unused bytes than received bytes.";
       gpr_free(unused_bytes);
       if (error != nullptr) *error = "More unused bytes than received bytes.";
       return TSI_INTERNAL_ERROR;
@@ -1877,7 +1875,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
   tsi_ssl_handshaker* impl = nullptr;
   *handshaker = nullptr;
   if (ctx == nullptr) {
-    gpr_log(GPR_ERROR, "SSL Context is null. Should never happen.");
+    LOG(ERROR) << "SSL Context is null. Should never happen.";
     return TSI_INTERNAL_ERROR;
   }
   if (ssl == nullptr) {
@@ -1887,7 +1885,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
 
   if (!BIO_new_bio_pair(&network_io, network_bio_buf_size, &ssl_io,
                         ssl_bio_buf_size)) {
-    gpr_log(GPR_ERROR, "BIO_new_bio_pair failed.");
+    LOG(ERROR) << "BIO_new_bio_pair failed.";
     SSL_free(ssl);
     return TSI_OUT_OF_RESOURCES;
   }
@@ -2076,7 +2074,7 @@ static int does_entry_match_name(absl::string_view entry,
 
   // Wildchar subdomain matching.
   if (entry.size() < 3 || entry[1] != '.') {  // At least *.x
-    gpr_log(GPR_ERROR, "Invalid wildchar entry.");
+    LOG(ERROR) << "Invalid wildchar entry.";
     return 0;
   }
   size_t name_subdomain_pos = name.find('.');
@@ -2222,7 +2220,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #endif
   if (ssl_context == nullptr) {
     grpc_core::LogSslErrorStack();
-    gpr_log(GPR_ERROR, "Could not create ssl context.");
+    LOG(ERROR) << "Could not create ssl context.";
     return TSI_INVALID_ARGUMENT;
   }
 
@@ -2289,7 +2287,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
       X509_VERIFY_PARAM_set_depth(param, kMaxChainLength);
       if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Cannot load server root certificates.");
+        LOG(ERROR) << "Cannot load server root certificates.";
         break;
       }
     }
@@ -2308,7 +2306,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       if (SSL_CTX_set_alpn_protos(
               ssl_context, impl->alpn_protocol_list,
               static_cast<unsigned int>(impl->alpn_protocol_list_length))) {
-        gpr_log(GPR_ERROR, "Could not set alpn protocol list to context.");
+        LOG(ERROR) << "Could not set alpn protocol list to context.";
         result = TSI_INVALID_ARGUMENT;
         break;
       }
@@ -2338,7 +2336,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     X509_STORE_set_verify_cb(cert_store, verify_cb);
     if (!X509_STORE_load_locations(cert_store, nullptr,
                                    options->crl_directory)) {
-      gpr_log(GPR_ERROR, "Failed to load CRL File from directory.");
+      LOG(ERROR) << "Failed to load CRL File from directory.";
     } else {
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
       X509_VERIFY_PARAM_set_flags(
@@ -2443,7 +2441,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
         grpc_core::LogSslErrorStack();
-        gpr_log(GPR_ERROR, "Could not create ssl context.");
+        LOG(ERROR) << "Could not create ssl context.";
         result = TSI_OUT_OF_RESOURCES;
         break;
       }
@@ -2465,7 +2463,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
           impl->ssl_contexts[i], kSslSessionIdContext,
           GPR_ARRAY_SIZE(kSslSessionIdContext));
       if (set_sid_ctx_result == 0) {
-        gpr_log(GPR_ERROR, "Failed to set session id context.");
+        LOG(ERROR) << "Failed to set session id context.";
         result = TSI_INTERNAL_ERROR;
         break;
       }
@@ -2475,7 +2473,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                 impl->ssl_contexts[i],
                 const_cast<char*>(options->session_ticket_key),
                 options->session_ticket_key_size) == 0) {
-          gpr_log(GPR_ERROR, "Invalid STEK size.");
+          LOG(ERROR) << "Invalid STEK size.";
           result = TSI_INVALID_ARGUMENT;
           break;
         }
@@ -2488,7 +2486,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
             strlen(options->pem_client_root_certs),
             options->send_client_ca_list ? &root_names : nullptr);
         if (result != TSI_OK) {
-          gpr_log(GPR_ERROR, "Invalid verification certs.");
+          LOG(ERROR) << "Invalid verification certs.";
           break;
         }
         if (options->send_client_ca_list) {
@@ -2536,7 +2534,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         X509_STORE_set_verify_cb(cert_store, verify_cb);
         if (!X509_STORE_load_locations(cert_store, nullptr,
                                        options->crl_directory)) {
-          gpr_log(GPR_ERROR, "Failed to load CRL File from directory.");
+          LOG(ERROR) << "Failed to load CRL File from directory.";
         } else {
           X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
           X509_VERIFY_PARAM_set_flags(

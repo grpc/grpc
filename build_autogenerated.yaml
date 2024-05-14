@@ -1110,6 +1110,7 @@ libs:
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_arena_allocator.h
+  - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_spine.h
@@ -1117,6 +1118,7 @@ libs:
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/interception_chain.h
   - src/core/lib/transport/message.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
@@ -1921,6 +1923,7 @@ libs:
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/interception_chain.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
@@ -2609,6 +2612,7 @@ libs:
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_arena_allocator.h
+  - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_spine.h
@@ -2616,6 +2620,7 @@ libs:
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/interception_chain.h
   - src/core/lib/transport/message.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
@@ -3032,6 +3037,7 @@ libs:
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/interception_chain.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
@@ -4686,6 +4692,7 @@ libs:
   - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/batch_builder.h
   - src/core/lib/transport/call_arena_allocator.h
+  - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/call_spine.h
@@ -4693,6 +4700,7 @@ libs:
   - src/core/lib/transport/custom_metadata.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/interception_chain.h
   - src/core/lib/transport/message.h
   - src/core/lib/transport/metadata.h
   - src/core/lib/transport/metadata_batch.h
@@ -4989,6 +4997,7 @@ libs:
   - src/core/lib/transport/call_spine.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/interception_chain.cc
   - src/core/lib/transport/message.cc
   - src/core/lib/transport/metadata.cc
   - src/core/lib/transport/metadata_batch.cc
@@ -8661,6 +8670,20 @@ targets:
   - linux
   - posix
   - mac
+- name: dump_args_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/gprpp/dump_args.h
+  src:
+  - src/core/lib/gprpp/dump_args.cc
+  - test/core/gprpp/dump_args_test.cc
+  deps:
+  - gtest
+  - absl/functional:any_invocable
+  - absl/log:check
+  uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test

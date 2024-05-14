@@ -1,4 +1,6 @@
-// Copyright 2023 gRPC authors.
+//
+//
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,18 +13,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//
 
-#include "test/core/transport/test_suite/test.h"
+#ifndef GRPCPP_EXAMPLES_CPP_OTEL_UTIL_H
+#define GRPCPP_EXAMPLES_CPP_OTEL_UTIL_H
 
-namespace grpc_core {
+#include <string>
 
-TRANSPORT_TEST(NoOp) {}
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 
-TRANSPORT_TEST(WaitForAllPendingWork) { WaitForAllPendingWork(); }
+// Helper function that adds view for gRPC latency instrument \a name with unit
+// \a unit with bucket boundaries that are more useful for RPCs.
+void AddLatencyView(opentelemetry::sdk::metrics::MeterProvider* provider,
+                    const std::string& name, const std::string& unit);
 
-TRANSPORT_TEST(SetServerCallDestinationAndFinish) {
-  SetServerCallDestination();
-  WaitForAllPendingWork();
-}
-
-}  // namespace grpc_core
+#endif  // GRPCPP_EXAMPLES_CPP_OTEL_UTIL_H
