@@ -18,6 +18,7 @@
 # well as the trace flag piece of doc/environment_variables.md.
 
 from io import StringIO
+import os
 import subprocess
 
 from absl import app
@@ -58,9 +59,10 @@ def main(args):
             render_source_file("environment_variables.md.mako", trace_flags)
         )
     if _CHECK.value or _FORMAT.value:
-        env = {
-            "CHANGED_FILES": "src/core/lib/debug/trace.h src/core/lib/debug/trace_flags.cc"
-        }
+        env = os.environ.copy()
+        env[
+            "CHANGED_FILES"
+        ] = "src/core/lib/debug/trace.h src/core/lib/debug/trace_flags.cc"
         subprocess.run(
             ["tools/distrib/clang_format_code.sh"], check=True, env=env
         )
