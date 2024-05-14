@@ -120,7 +120,7 @@ static int create_socket(int* out_port) {
 
   if (bind(s, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
     perror("Unable to bind");
-    LOG(ERROR) << "%s", "Unable to bind to any port";
+    LOG(ERROR) << "Unable to bind to any port";
     close(s);
     return -1;
   }
@@ -136,7 +136,7 @@ static int create_socket(int* out_port) {
           0 ||
       addr_len > sizeof(addr)) {
     perror("getsockname");
-    LOG(ERROR) << "%s", "Unable to get socket local address";
+    LOG(ERROR) << "Unable to get socket local address";
     close(s);
     return -1;
   }
