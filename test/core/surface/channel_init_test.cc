@@ -23,7 +23,10 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -208,7 +211,7 @@ class TestFilter1 {
   explicit TestFilter1(int* p) : p_(p) {}
 
   static absl::StatusOr<std::unique_ptr<TestFilter1>> Create(
-      const ChannelArgs& args, Empty) {
+      const ChannelArgs& args, ChannelFilter::Args) {
     EXPECT_EQ(args.GetInt("foo"), 1);
     return std::make_unique<TestFilter1>(args.GetPointer<int>("p"));
   }
@@ -250,19 +253,23 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
   b.RegisterFilter<TestFilter1>(GRPC_CLIENT_CHANNEL);
   auto init = b.Build();
   int p = 0;
-  auto segment = init.CreateStackSegment(
-      GRPC_CLIENT_CHANNEL,
-      ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p)));
-  ASSERT_TRUE(segment.ok()) << segment.status();
-  CallFilters::StackBuilder stack_builder;
-  segment->AddToCallFilterStack(stack_builder);
-  segment = absl::CancelledError();  // force the segment to be destroyed
-  auto stack = stack_builder.Build();
-  {
-    CallFilters call_filters(Arena::MakePooled<ClientMetadata>());
-    call_filters.SetStack(std::move(stack));
-  }
+  InterceptionChainBuilder chain_builder{
+      ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p))};
+  init.AddToInterceptionChainBuilder(GRPC_CLIENT_CHANNEL, chain_builder);
+  int handled = 0;
+  auto stack = chain_builder.Build(MakeCallDestinationFromHandlerFunction(
+      [&handled](CallHandler) { ++handled; }));
+  ASSERT_TRUE(stack.ok()) << stack.status();
+  RefCountedPtr<CallArenaAllocator> allocator =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test"),
+          1024);
+  auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
+                           allocator->MakeArena(), allocator, nullptr);
+  (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
+  EXPECT_EQ(handled, 1);
 }
 
 }  // namespace

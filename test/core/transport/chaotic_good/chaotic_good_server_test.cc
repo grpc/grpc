@@ -39,6 +39,7 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/server/server.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/test_util/build.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
@@ -67,7 +68,10 @@ class ChaoticGoodServerTest : public ::testing::Test {
     auto ev = grpc_completion_queue_pluck(
         shutdown_cq, nullptr, grpc_timeout_milliseconds_to_deadline(15000),
         nullptr);
-    CHECK(ev.type == GRPC_OP_COMPLETE);
+    if (ev.type == GRPC_QUEUE_TIMEOUT) {
+      AsanAssertNoLeaks();
+    }
+    CHECK_EQ(ev.type, GRPC_OP_COMPLETE);
     CHECK_EQ(ev.tag, nullptr);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
