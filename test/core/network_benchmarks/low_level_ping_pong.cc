@@ -35,10 +35,10 @@
 #endif
 #include <sys/socket.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "third_party/absl/log/check.h"
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/useful.h"

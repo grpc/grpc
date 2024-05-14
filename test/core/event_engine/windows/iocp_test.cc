@@ -14,19 +14,17 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include <thread>
-
 #include <gmock/gmock.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log_windows.h>
 #include <gtest/gtest.h>
+
+#include <thread>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log_windows.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
@@ -50,7 +48,7 @@ using ::grpc_event_engine::experimental::WinSocket;
 //   `ASSERT_OK(...) << GetErrorMessage(error, context);`
 void LogErrorMessage(int messageid, absl::string_view context) {
   char* utf8_message = gpr_format_message(messageid);
-  gpr_log(GPR_ERROR, "Error in %s: %s", context, utf8_message);
+  LOG(ERROR) << "Error in " << context << ": " << utf8_message;
   gpr_free(utf8_message);
 }
 }  // namespace

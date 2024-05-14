@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -36,10 +38,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -98,7 +96,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
       Json config = Json::FromArray({Json::FromObject(
           {{"weighted_round_robin", Json::FromObject(json_)}})});
-      gpr_log(GPR_INFO, "CONFIG: %s", JsonDump(config).c_str());
+      LOG(INFO) << "CONFIG: " << JsonDump(config);
       return MakeConfig(config);
     }
 
@@ -247,10 +245,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     auto picks = GetCompletePicks(picker, NumPicksNeeded(expected), {},
                                   &subchannel_call_trackers, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
-    gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
+    LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
     ReportBackendMetrics(*picks, subchannel_call_trackers, backend_metrics);
     auto actual = MakePickMap(*picks);
-    gpr_log(GPR_INFO, "Pick map: %s", PickMapString(actual).c_str());
+    LOG(INFO) << "Pick map: " << PickMapString(actual);
     EXPECT_EQ(expected, actual)
         << "Expected: " << PickMapString(expected)
         << "\nActual: " << PickMapString(actual) << "\nat " << location.file()
@@ -265,8 +263,8 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       absl::Duration timeout = absl::Seconds(5),
       bool run_timer_callbacks = true,
       SourceLocation location = SourceLocation()) {
-    gpr_log(GPR_INFO, "==> WaitForWeightedRoundRobinPicks(): Expecting %s",
-            PickMapString(expected).c_str());
+    LOG(INFO) << "==> WaitForWeightedRoundRobinPicks(): Expecting "
+              << PickMapString(expected);
     size_t num_picks = NumPicksNeeded(expected);
     absl::Time deadline = absl::Now() + timeout;
     while (true) {
@@ -275,7 +273,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       // to make sure we're consistently returning the right weights.
       size_t num_passes = 0;
       for (; num_passes < 3; ++num_passes) {
-        gpr_log(GPR_INFO, "PASS %" PRIuPTR ": DOING PICKS", num_passes);
+        LOG(INFO) << "PASS " << num_passes << ": DOING PICKS";
         std::vector<std::unique_ptr<
             LoadBalancingPolicy::SubchannelCallTrackerInterface>>
             subchannel_call_trackers;
@@ -284,13 +282,13 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         EXPECT_TRUE(picks.has_value())
             << location.file() << ":" << location.line();
         if (!picks.has_value()) return false;
-        gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
+        LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
         // Report backend metrics to the LB policy.
         ReportBackendMetrics(*picks, subchannel_call_trackers, backend_metrics);
         // Check the observed weights.
         auto actual = MakePickMap(*picks);
-        gpr_log(GPR_INFO, "Pick map:\nExpected: %s\n  Actual: %s",
-                PickMapString(expected).c_str(), PickMapString(actual).c_str());
+        LOG(INFO) << "Pick map:\nExpected: " << PickMapString(expected)
+                  << "\n  Actual: " << PickMapString(actual);
         if (expected != actual) {
           // Make sure each address is one of the expected addresses,
           // even if the weights aren't as expected.

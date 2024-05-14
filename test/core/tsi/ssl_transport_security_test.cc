@@ -18,22 +18,19 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 #include <openssl/crypto.h>
 #include <openssl/err.h>
 #include <openssl/pem.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -800,9 +797,8 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithClientAuthentication) {
 
 TEST_P(SslTransportSecurityTest,
        DoHandshakeWithClientAuthenticationAndRootStore) {
-  gpr_log(
-      GPR_INFO,
-      "ssl_tsi_test_do_handshake_with_client_authentication_and_root_store");
+  LOG(INFO)
+      << "ssl_tsi_test_do_handshake_with_client_authentication_and_root_store";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->SetForceClientAuth(true);
@@ -824,9 +820,8 @@ TEST_P(SslTransportSecurityTest,
 
 TEST_P(SslTransportSecurityTest,
        DoHandshakeWithServerNameIndicationWildStarDomain) {
-  gpr_log(
-      GPR_INFO,
-      "ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_server_name_indication_wild_"
+               "star_domain";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   // server1 cert contains "*.test.google.fr" in SAN.
@@ -847,9 +842,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithWrongServerNameIndication) {
 
 TEST_P(SslTransportSecurityTest,
        DoHandshakeWithInvalidAndIgnoredServerNameIndication) {
-  gpr_log(GPR_INFO,
-          "ssl_tsi_test_do_handshake_with_invalid_and_ignored_server_name_"
-          "indication");
+  LOG(INFO) << "ssl_tsi_test_do_handshake_with_invalid_and_ignored_server_name_indication";
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   // SNI that's an IP address will be ignored.

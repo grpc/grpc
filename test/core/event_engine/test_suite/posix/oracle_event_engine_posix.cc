@@ -14,6 +14,8 @@
 
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -30,10 +32,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
@@ -371,10 +369,9 @@ void PosixOracleListener::HandleIncomingConnections() {
       // pfds[i].fd has a readable event.
       int client_sock_fd = accept(pfds[i].fd, nullptr, nullptr);
       if (client_sock_fd < 0) {
-        gpr_log(GPR_ERROR,
-                "Error accepting new connection: %s. Ignoring connection "
-                "attempt ...",
-                grpc_core::StrError(errno).c_str());
+        LOG(ERROR) << "Error accepting new connection: "
+                   << grpc_core::StrError(errno)
+                   << ". Ignoring connection attempt ...";
         continue;
       }
       on_accept_(PosixOracleEndpoint::Create(client_sock_fd),

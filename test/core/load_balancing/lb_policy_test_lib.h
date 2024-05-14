@@ -17,6 +17,10 @@
 #ifndef GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 #define GRPC_TEST_CORE_LOAD_BALANCING_LB_POLICY_TEST_LIB_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -48,12 +52,6 @@
 #include "absl/types/variant.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -152,8 +150,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
         void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                        const absl::Status& status) override {
-          gpr_log(GPR_INFO, "notifying watcher: state=%s status=%s",
-                  ConnectivityStateName(new_state), status.ToString().c_str());
+          LOG(INFO) << "notifying watcher: state=" << ConnectivityStateName(new_state) << " status=" << status;
           watcher_->OnConnectivityStateChange(new_state, status);
         }
 
@@ -212,11 +209,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           health_watcher_wrapper_ = watcher_wrapper.get();
           state_->state_tracker_.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
                                             std::move(watcher_wrapper));
-          gpr_log(GPR_INFO,
-                  "AddDataWatcher(): added HealthWatch=%p "
-                  "connectivity_watcher=%p watcher_wrapper=%p",
-                  health_watcher_.get(), connectivity_watcher_ptr,
-                  health_watcher_wrapper_);
+          LOG(INFO) << "AddDataWatcher(): added HealthWatch=" << health_watcher_.get() << " connectivity_watcher=" << connectivity_watcher_ptr << " watcher_wrapper=" << health_watcher_wrapper_;
         }
       }
 
@@ -232,10 +225,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           if (health_watcher_.get() != static_cast<HealthWatcher*>(watcher)) {
             return;
           }
-          gpr_log(GPR_INFO,
-                  "CancelDataWatcher(): cancelling HealthWatch=%p "
-                  "watcher_wrapper=%p",
-                  health_watcher_.get(), health_watcher_wrapper_);
+          LOG(INFO) << "CancelDataWatcher(): cancelling HealthWatch=" << health_watcher_.get() << " watcher_wrapper=" << health_watcher_wrapper_;
           state_->state_tracker_.RemoveWatcher(health_watcher_wrapper_);
           health_watcher_wrapper_ = nullptr;
           health_watcher_.reset();
@@ -327,17 +317,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
               AssertValidConnectivityStateTransition(state_tracker_.state(),
                                                      state, location);
             }
-            LOG(INFO) << "Setting state on tracker";
+            VLOG(2) << "Setting state on tracker";
             state_tracker_.SetState(state, status, "set from test");
             // SetState() enqueued the connectivity state notifications for
             // the subchannel, so we add another callback to the queue to be
             // executed after that state notifications has been delivered.
-            LOG(INFO) << "Waiting for state notifications to be delivered";
+            VLOG(2) << "Waiting for state notifications to be delivered";
             test_->work_serializer_->Run(
                 [&]() {
-                  gpr_log(GPR_INFO,
-                          "State notifications delivered, waiting for health "
-                          "notifications");
+                  LOG(INFO) << "State notifications delivered, waiting for health notifications";
                   // Now the connectivity state notifications has been
                   // delivered. If the state reported was READY, then the
                   // pick_first leaf policy will have started a health watch, so
@@ -350,7 +338,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           },
           DEBUG_LOCATION);
       notification.WaitForNotification();
-      LOG(INFO) << "Health notifications delivered";
+      VLOG(2) << "Health notifications delivered";
     }
 
     // Indicates if any of the associated SubchannelInterface objects
@@ -471,8 +459,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           << location.file() << ":" << location.line();
       if (update == nullptr) return absl::nullopt;
       StateUpdate result = std::move(*update);
-      gpr_log(GPR_INFO, "dequeued next state update: %s",
-              result.ToString().c_str());
+      LOG(INFO) << "dequeued next state update: " << result.ToString();
       queue_.pop_front();
       return std::move(result);
     }
@@ -505,8 +492,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       PickerWrapper(LoadBalancingPolicyTest* test,
                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker)
           : test_(test), picker_(std::move(picker)) {
-        gpr_log(GPR_INFO, "creating wrapper %p for picker %p", this,
-                picker_.get());
+        LOG(INFO) << "creating wrapper " << this << " for picker " << picker_.get();
       }
 
       void Orphaned() override {
@@ -578,8 +564,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       StateUpdate update{
           state, status,
           MakeRefCounted<PickerWrapper>(test_, std::move(picker))};
-      gpr_log(GPR_INFO, "enqueuing state update from LB policy: %s",
-              update.ToString().c_str());
+      LOG(INFO) << "enqueuing state update from LB policy: " << update.ToString();
       queue_.push_back(std::move(update));
     }
 
@@ -846,14 +831,10 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           // notifications for the subchannels, so we add another
           // callback to the queue to be executed after those initial
           // state notifications have been delivered.
-          gpr_log(GPR_INFO,
-                  "Applied update, waiting for initial connectivity state "
-                  "notifications");
+          LOG(INFO) << "Applied update, waiting for initial connectivity state notifications";
           work_serializer_->Run(
               [&]() {
-                gpr_log(GPR_INFO,
-                        "Initial connectivity state notifications delivered; "
-                        "waiting for health notifications");
+                LOG(INFO) << "Initial connectivity state notifications delivered; waiting for health notifications";
                 // Now that the initial state notifications have been
                 // delivered, the queue will contain the health watch
                 // notifications for any subchannels in state READY,
@@ -867,7 +848,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         },
         DEBUG_LOCATION);
     notification.WaitForNotification();
-    LOG(INFO) << "health notifications delivered";
+    VLOG(2) << "health notifications delivered";
     return status;
   }
 
@@ -899,15 +880,15 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   bool WaitForStateUpdate(
       std::function<bool(FakeHelper::StateUpdate update)> continue_predicate,
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "==> WaitForStateUpdate()";
+    VLOG(2) << "==> WaitForStateUpdate()";
     while (true) {
       auto update = helper_->GetNextStateUpdate(location);
       if (!update.has_value()) {
-        LOG(INFO) << "WaitForStateUpdate() returning false";
+        VLOG(2) << "WaitForStateUpdate() returning false";
         return false;
       }
       if (!continue_predicate(std::move(*update))) {
-        LOG(INFO) << "WaitForStateUpdate() returning true";
+        VLOG(2) << "WaitForStateUpdate() returning true";
         return true;
       }
     }
@@ -944,7 +925,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // update for state READY, whose picker is returned.
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> WaitForConnected(
       SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "==> WaitForConnected()";
+    VLOG(2) << "==> WaitForConnected()";
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> final_picker;
     WaitForStateUpdate(
         [&](FakeHelper::StateUpdate update) {
@@ -1037,7 +1018,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           EXPECT_TRUE(picks.has_value())
               << location.file() << ":" << location.line();
           if (!picks.has_value()) return false;
-          gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
+          VLOG(2) << "PICKS: " << absl::StrJoin(*picks, " ");
           // If the picks still match the old list, then keep going.
           if (PicksAreRoundRobin(old_addresses, *picks)) return true;
           // Otherwise, the picks should match the new list.
@@ -1052,7 +1033,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
           return false;  // Stop.
         },
         location);
-    LOG(INFO) << "done waiting for expected RR addresses";
+    VLOG(2) << "done waiting for expected RR addresses";
     return retval;
   }
 
@@ -1306,7 +1287,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
   DrainRoundRobinPickerUpdates(absl::Span<const absl::string_view> addresses,
                                SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Draining RR picker updates...";
+    VLOG(2) << "Draining RR picker updates...";
     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker;
     while (!helper_->QueueEmpty()) {
       auto update = helper_->GetNextStateUpdate(location);
@@ -1321,17 +1302,17 @@ class LoadBalancingPolicyTest : public ::testing::Test {
                             location);
       picker = std::move(update->picker);
     }
-    LOG(INFO) << "Done draining RR picker updates";
+    VLOG(2) << "Done draining RR picker updates";
     return picker;
   }
 
   // Expects zero or more CONNECTING updates.
   void DrainConnectingUpdates(SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Draining CONNECTING updates...";
+    VLOG(2) << "Draining CONNECTING updates...";
     while (!helper_->QueueEmpty()) {
       ASSERT_TRUE(ExpectConnectingUpdate(location));
     }
-    LOG(INFO) << "Done draining CONNECTING updates";
+    VLOG(2) << "Done draining CONNECTING updates";
   }
 
   // Triggers a connection failure for the current address for an
@@ -1340,10 +1321,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       absl::Span<const absl::string_view> addresses, size_t current_index,
       size_t new_index, absl::AnyInvocable<void()> expect_after_disconnect,
       SourceLocation location = SourceLocation()) {
-    gpr_log(GPR_INFO,
-            "Expecting endpoint address change: addresses={%s}, "
-            "current_index=%" PRIuPTR ", new_index=%" PRIuPTR,
-            absl::StrJoin(addresses, ", ").c_str(), current_index, new_index);
+    LOG(INFO) << "Expecting endpoint address change: addresses={" << absl::StrJoin(addresses, ", ") << "}, current_index=" << current_index << ", new_index=" << new_index;
     ASSERT_LT(current_index, addresses.size());
     ASSERT_LT(new_index, addresses.size());
     // Find all subchannels.
@@ -1384,7 +1362,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       // interacts with it again.
       subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
     }
-    LOG(INFO) << "Done with endpoint address change";
+    VLOG(2) << "Done with endpoint address change";
   }
 
   // Requests a picker on picker and expects a Fail result.
@@ -1450,19 +1428,18 @@ class LoadBalancingPolicyTest : public ::testing::Test {
 
   void WaitForWorkSerializerToFlush() {
     ExecCtx exec_ctx;
-    LOG(INFO) << "waiting for WorkSerializer to flush...";
+    VLOG(2) << "waiting for WorkSerializer to flush...";
     absl::Notification notification;
     work_serializer_->Run([&]() { notification.Notify(); }, DEBUG_LOCATION);
     notification.WaitForNotification();
-    LOG(INFO) << "WorkSerializer flush complete";
+    VLOG(2) << "WorkSerializer flush complete";
   }
 
   void IncrementTimeBy(Duration duration) {
     ExecCtx exec_ctx;
-    gpr_log(GPR_INFO, "Incrementing time by %s...",
-            duration.ToString().c_str());
+    LOG(INFO) << "Incrementing time by " << duration;
     fuzzing_ee_->TickForDuration(duration);
-    LOG(INFO) << "Done incrementing time";
+    VLOG(2) << "Done incrementing time";
     // Flush WorkSerializer, in case the timer callback enqueued anything.
     WaitForWorkSerializerToFlush();
   }

@@ -16,6 +16,10 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -24,12 +28,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -37,7 +35,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "test/core/test_util/test_config.h"
 
-#define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
+#define LOG_TEST(x) LOG(INFO) << x
 
 static void* create_test_tag(void) {
   static intptr_t i = 0;
@@ -155,20 +153,20 @@ static void producer_thread(void* arg) {
   test_thread_options* opt = static_cast<test_thread_options*>(arg);
   int i;
 
-  gpr_log(GPR_INFO, "producer %d started", opt->id);
+  LOG(INFO) << "producer " << opt->id << " started";
   gpr_event_set(&opt->on_started, reinterpret_cast<void*>(1));
   ASSERT_TRUE(gpr_event_wait(opt->phase1, ten_seconds_time()));
 
-  gpr_log(GPR_INFO, "producer %d phase 1", opt->id);
+  LOG(INFO) << "producer " << opt->id << " phase 1";
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
     ASSERT_TRUE(grpc_cq_begin_op(opt->cc, (void*)(intptr_t)1));
   }
 
-  gpr_log(GPR_INFO, "producer %d phase 1 done", opt->id);
+  LOG(INFO) << "producer " << opt->id << " phase 1 done";
   gpr_event_set(&opt->on_phase1_done, reinterpret_cast<void*>(1));
   ASSERT_TRUE(gpr_event_wait(opt->phase2, ten_seconds_time()));
 
-  gpr_log(GPR_INFO, "producer %d phase 2", opt->id);
+  LOG(INFO) << "producer " << opt->id << " phase 2";
   for (i = 0; i < TEST_THREAD_EVENTS; i++) {
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_end_op(opt->cc, reinterpret_cast<void*>(1), absl::OkStatus(),
@@ -178,7 +176,7 @@ static void producer_thread(void* arg) {
     opt->events_triggered++;
   }
 
-  gpr_log(GPR_INFO, "producer %d phase 2 done", opt->id);
+  LOG(INFO) << "producer " << opt->id << " phase 2 done";
   gpr_event_set(&opt->on_finished, reinterpret_cast<void*>(1));
 }
 
@@ -186,17 +184,17 @@ static void consumer_thread(void* arg) {
   test_thread_options* opt = static_cast<test_thread_options*>(arg);
   grpc_event ev;
 
-  gpr_log(GPR_INFO, "consumer %d started", opt->id);
+  LOG(INFO) << "consumer " << opt->id << " started";
   gpr_event_set(&opt->on_started, reinterpret_cast<void*>(1));
   ASSERT_TRUE(gpr_event_wait(opt->phase1, ten_seconds_time()));
 
-  gpr_log(GPR_INFO, "consumer %d phase 1", opt->id);
+  LOG(INFO) << "consumer " << opt->id << " phase 1";
 
-  gpr_log(GPR_INFO, "consumer %d phase 1 done", opt->id);
+  LOG(INFO) << "consumer " << opt->id << " phase 1 done";
   gpr_event_set(&opt->on_phase1_done, reinterpret_cast<void*>(1));
   ASSERT_TRUE(gpr_event_wait(opt->phase2, ten_seconds_time()));
 
-  gpr_log(GPR_INFO, "consumer %d phase 2", opt->id);
+  LOG(INFO) << "consumer " << opt->id << " phase 2";
   for (;;) {
     ev = grpc_completion_queue_next(
         opt->cc, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
@@ -206,7 +204,7 @@ static void consumer_thread(void* arg) {
         opt->events_triggered++;
         break;
       case GRPC_QUEUE_SHUTDOWN:
-        gpr_log(GPR_INFO, "consumer %d phase 2 done", opt->id);
+        LOG(INFO) << "consumer " << opt->id << " phase 2 done";
         gpr_event_set(&opt->on_finished, reinterpret_cast<void*>(1));
         return;
       case GRPC_QUEUE_TIMEOUT:
@@ -225,8 +223,8 @@ static void test_threading(size_t producers, size_t consumers) {
   size_t total_consumed = 0;
   static int optid = 101;
 
-  gpr_log(GPR_INFO, "%s: %" PRIuPTR " producers, %" PRIuPTR " consumers",
-          "test_threading", producers, consumers);
+  LOG(INFO) << "test_threading: " << producers << " producers, " << consumers
+            << " consumers";
 
   // start all threads: they will wait for phase1
   grpc_core::Thread* threads = static_cast<grpc_core::Thread*>(

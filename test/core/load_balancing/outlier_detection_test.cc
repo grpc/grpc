@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,10 +33,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -219,7 +217,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Do a pick and report a failed call.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection complete";
@@ -269,7 +267,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Do a pick and report a failed call.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  LOG(INFO) << "### failed RPC on " << *address;
   // Based on the address that the failed call went to, we determine
   // which addresses to use in the subsequent steps.
   absl::Span<const absl::string_view> ejected_endpoint_addresses;
@@ -367,7 +365,7 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   // Do a pick and report a failed call.
   auto ejected_address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(ejected_address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", ejected_address->c_str());
+  LOG(INFO) << "### failed RPC on " << *ejected_address;
   // Based on the address that the failed call went to, we determine
   // which addresses to use in the subsequent steps.
   std::vector<absl::string_view> expected_round_robin_while_ejected;
@@ -451,7 +449,7 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // Now have an RPC to that subchannel fail.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection timer pass complete";

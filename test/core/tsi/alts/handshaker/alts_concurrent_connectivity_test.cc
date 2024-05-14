@@ -17,6 +17,17 @@
 //
 
 #include <fcntl.h>
+#include <gmock/gmock.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/server_builder.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,24 +40,10 @@
 #include <set>
 #include <thread>
 
-#include <gmock/gmock.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/impl/service_type.h>
-#include <grpcpp/server_builder.h>
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -113,8 +110,7 @@ class FakeHandshakeServer {
     // TODO(apolcyn): when removing the global concurrent handshake limiting
     // queue, set MAX_CONCURRENT_STREAMS on this server.
     server_ = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Fake handshaker server listening on %s",
-            address_.c_str());
+    LOG(INFO) << "Fake handshaker server listening on " << address_;
   }
 
   ~FakeHandshakeServer() {
@@ -148,13 +144,12 @@ class TestServer {
                                      server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
-    gpr_log(GPR_DEBUG, "Start TestServer %p. listen on %s", this,
-            server_addr_.c_str());
+    VLOG(2) << "Start TestServer " << this << ". listen on " << server_addr_;
     server_thd_ = std::make_unique<std::thread>(PollUntilShutdown, this);
   }
 
   ~TestServer() {
-    gpr_log(GPR_DEBUG, "Begin dtor of TestServer %p", this);
+    VLOG(2) << "Begin dtor of TestServer " << this;
     grpc_server_shutdown_and_notify(server_, server_cq_, this);
     server_thd_->join();
     grpc_server_destroy(server_);
@@ -170,7 +165,7 @@ class TestServer {
         self->server_cq_, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
     CHECK(ev.type == GRPC_OP_COMPLETE);
     CHECK(ev.tag == self);
-    gpr_log(GPR_DEBUG, "TestServer %p stop polling", self);
+    VLOG(2) << "TestServer " << self << " stop polling";
   }
 
  private:
@@ -210,7 +205,7 @@ class ConnectLoopRunner {
 
   static void ConnectLoop(const ConnectLoopRunner* self) {
     for (size_t i = 0; i < self->loops_; i++) {
-      gpr_log(GPR_DEBUG, "runner:%p connect_loop begin loop %ld", self, i);
+      VLOG(2) << "runner:" << self << " connect_loop begin loop " << i;
       grpc_completion_queue* cq =
           grpc_completion_queue_create_for_next(nullptr);
       grpc_channel* channel = create_secure_channel_for_test(
@@ -259,7 +254,7 @@ class ConnectLoopRunner {
       grpc_completion_queue_shutdown(cq);
       drain_cq(cq);
       grpc_completion_queue_destroy(cq);
-      gpr_log(GPR_DEBUG, "runner:%p connect_loop finished loop %ld", self, i);
+      VLOG(2) << "runner:" << self << " connect_loop finished loop " << i;
     }
   }
 

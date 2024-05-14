@@ -18,6 +18,8 @@
 
 #include "src/core/lib/gprpp/mpscq.h"
 
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
@@ -25,10 +27,6 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/test_util/test_config.h"
@@ -106,7 +104,7 @@ TEST(MpscqTest, Mt) {
     if (tn->i == THREAD_ITERATIONS) num_done++;
     delete tn;
   }
-  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, spins);
+  VLOG(2) << "spins: " << spins;
   for (auto& th : thds) {
     th.Join();
   }
@@ -176,7 +174,7 @@ TEST(MpscqTest, MtMultipop) {
   for (auto& pth : pull_thds) {
     pth.Join();
   }
-  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, pa.spins);
+  VLOG(2) << "spins: " << pa.spins;
   for (auto& th : thds) {
     th.Join();
   }
