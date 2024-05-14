@@ -321,7 +321,8 @@ TEST(ChannelTracerTest, TestEviction) {
 
 TEST(ChannelTracerTest, TestMultipleEviction) {
   ExecCtx exec_ctx;
-  const int kTraceEventSize = GetSizeofTraceEvent();
+  const size_t kTraceEventSize = GetSizeofTraceEvent();
+gpr_log(GPR_ERROR, "kTraceEventSize=%lu", kTraceEventSize);
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
   std::list<::testing::Matcher<Json>> matchers;

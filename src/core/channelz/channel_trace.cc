@@ -125,6 +125,7 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   event_list_memory_usage_ += new_trace_event->memory_usage();
   // maybe garbage collect the tail until we are under the memory limit.
   while (event_list_memory_usage_ > max_event_memory_) {
+gpr_log(GPR_ERROR, "GC: event_list_memory_usage_=%lu max_event_memory_=%lu head_trace_->memory_usage()=%lu", event_list_memory_usage_, max_event_memory_, head_trace_->memory_usage());
     TraceEvent* to_free = head_trace_;
     event_list_memory_usage_ -= to_free->memory_usage();
     head_trace_ = head_trace_->next();
