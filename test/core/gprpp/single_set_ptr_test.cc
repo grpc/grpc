@@ -29,7 +29,7 @@ TEST(SingleSetPtrTest, NoOp) { SingleSetPtr<int>(); }
 TEST(SingleSetPtrTest, CanSet) {
   SingleSetPtr<int> p;
   EXPECT_FALSE(p.is_set());
-  EXPECT_DEATH_IF_SUPPORTED(LOG(ERROR) << "%d", *p), "";
+  EXPECT_DEATH_IF_SUPPORTED((LOG(ERROR) << *p), "");
   p.Set(new int(42));
   EXPECT_EQ(*p, 42);
 }
