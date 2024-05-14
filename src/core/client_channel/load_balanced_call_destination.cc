@@ -100,7 +100,7 @@ class LbMetadata : public LoadBalancingPolicy::MetadataInterface {
 };
 
 void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
-  auto* call_tracer = GetContext<ClientCallTracer>();
+  auto* call_tracer = MaybeGetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   SetContext<CallTracerInterface>(tracer);
@@ -276,8 +276,7 @@ void LoadBalancedCallDestination::StartCall(
   // Spawn a promise to do the LB pick.
   // This will eventually start the call.
   unstarted_handler.SpawnGuarded("lb_pick", [was_queued = true,
-                                             unstarted_handler =
-                                                 std::move(unstarted_handler),
+                                             unstarted_handler,
                                              picker = picker_]() mutable {
     return Map(
         // Wait for the LB picker.

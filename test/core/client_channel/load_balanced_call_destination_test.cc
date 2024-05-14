@@ -1,0 +1,148 @@
+// Copyright 2024 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "src/core/client_channel/load_balanced_call_destination.h"
+
+#include <atomic>
+#include <memory>
+#include <queue>
+
+#include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+
+#include <grpc/grpc.h>
+
+#include "test/core/call/yodel/yodel_test.h"
+
+using testing::StrictMock;
+
+namespace grpc_core {
+
+using EventEngine = grpc_event_engine::experimental::EventEngine;
+
+namespace {
+const absl::string_view kTestPath = "/test_method";
+}  // namespace
+
+class LoadBalancedCallDestinationTest : public YodelTest {
+ protected:
+  using YodelTest::YodelTest;
+
+  ClientMetadataHandle MakeClientInitialMetadata() {
+    auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
+    client_initial_metadata->Set(HttpPathMetadata(),
+                                 Slice::FromCopiedString(kTestPath));
+    return client_initial_metadata;
+  }
+
+  CallInitiatorAndHandler MakeCall(
+      ClientMetadataHandle client_initial_metadata) {
+    return MakeCallPair(
+        std::move(client_initial_metadata), event_engine().get(),
+        call_arena_allocator_->MakeArena(), call_arena_allocator_, nullptr);
+  }
+
+  CallHandler TickUntilCallStarted() {
+    auto poll = [this]() -> Poll<CallHandler> {
+      auto handler = call_destination_->PopHandler();
+      if (handler.has_value()) return std::move(*handler);
+      return Pending();
+    };
+    return TickUntil(absl::FunctionRef<Poll<CallHandler>()>(poll));
+  }
+
+  LoadBalancedCallDestination& destination_under_test() {
+    return *destination_under_test_;
+  }
+
+  ClientChannel::PickerObservable& picker() { return picker_; }
+
+ private:
+  class TestCallDestination final : public UnstartedCallDestination {
+   public:
+    void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+      handlers_.push(
+          unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack());
+    }
+
+    absl::optional<CallHandler> PopHandler() {
+      if (handlers_.empty()) return absl::nullopt;
+      auto handler = std::move(handlers_.front());
+      handlers_.pop();
+      return handler;
+    }
+
+    void Orphaned() override {}
+
+   private:
+    std::queue<CallHandler> handlers_;
+  };
+
+  void InitCoreConfiguration() override {}
+
+  void Shutdown() override {}
+
+  OrphanablePtr<ClientChannel> channel_;
+  ClientChannel::PickerObservable picker_{nullptr};
+  RefCountedPtr<TestCallDestination> call_destination_ =
+      MakeRefCounted<TestCallDestination>();
+  RefCountedPtr<LoadBalancedCallDestination> destination_under_test_ =
+      MakeRefCounted<LoadBalancedCallDestination>(picker_);
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test"),
+          1024);
+};
+
+#define LOAD_BALANCED_CALL_DESTINATION_TEST(name) \
+  YODEL_TEST(LoadBalancedCallDestinationTest, name)
+
+class MockPicker : public LoadBalancingPolicy::SubchannelPicker {
+ public:
+  MOCK_METHOD(LoadBalancingPolicy::PickResult, Pick,
+              (LoadBalancingPolicy::PickArgs));
+};
+
+LOAD_BALANCED_CALL_DESTINATION_TEST(NoOp) {}
+
+LOAD_BALANCED_CALL_DESTINATION_TEST(CreateCall) {
+  auto call = MakeCall(MakeClientInitialMetadata());
+  SpawnTestSeq(call.initiator, "initiator",
+               [this, handler = std::move(call.handler)]() {
+                 destination_under_test().StartCall(handler);
+                 return Empty{};
+               });
+  WaitForAllPendingWork();
+}
+
+LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
+  auto call = MakeCall(MakeClientInitialMetadata());
+  SpawnTestSeq(call.initiator, "initiator",
+               [this, handler = std::move(call.handler)]() {
+                 destination_under_test().StartCall(handler);
+                 return Empty{};
+               });
+  auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
+  EXPECT_CALL(*mock_picker, Pick)
+      .WillOnce([](LoadBalancingPolicy::PickArgs args) {
+        return LoadBalancingPolicy::PickResult{args.subchannel};
+      });
+  picker().Set(mock_picker);
+  auto handler = TickUntilCallStarted();
+  WaitForAllPendingWork();
+}
+
+}  // namespace grpc_core
