@@ -82,6 +82,7 @@ py_test(
     deps = [
         ":_from_observability_import_star",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         "//src/python/grpcio_observability/grpc_observability:pyobservability",
         "//src/python/grpcio_tests/tests/testing",
     ],

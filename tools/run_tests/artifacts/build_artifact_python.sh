@@ -92,6 +92,7 @@ ancillary_package_dir=(
   "src/python/grpcio_status/"
   "src/python/grpcio_testing/"
   "src/python/grpcio_observability/"
+  "src/python/grpcio_csm_observability/"
 )
 
 # Copy license to ancillary package directories so it will be distributed.
@@ -301,6 +302,13 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_csm_observability distribution
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csm_observability/setup.py \
+        sdist bdist_wheel
+    cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
+  fi
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
