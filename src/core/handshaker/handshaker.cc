@@ -19,7 +19,9 @@
 #include "src/core/handshaker/handshaker.h"
 
 #include <inttypes.h>
+#include <unistd.h>
 
+#include <atomic>
 #include <string>
 #include <utility>
 
@@ -136,6 +138,8 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
+    gpr_log(GPR_INFO, "Canceling deadline id: %p, pid: %d",
+            &deadline_timer_handle_, getpid());
     event_engine_->Cancel(deadline_timer_handle_);
     ExecCtx::Run(DEBUG_LOCATION, &on_handshake_done_, error);
     is_shutdown_ = true;
@@ -211,13 +215,21 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
     // Start deadline timer, which owns a ref.
     const Duration time_to_deadline = deadline - Timestamp::Now();
     event_engine_ = args_.args.GetObjectRef<EventEngine>();
-    deadline_timer_handle_ =
-        event_engine_->RunAfter(time_to_deadline, [self = Ref()]() mutable {
+    static std::atomic<int> counter = {0};
+    int pid = getpid();
+    int s = counter++;
+    gpr_log(GPR_INFO, "Doing handshake id: %p pid:id: %d:%d",
+            &deadline_timer_handle_, pid, s);
+
+    deadline_timer_handle_ = event_engine_->RunAfter(
+        time_to_deadline, [pid, self = Ref(), s]() mutable {
           ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->Shutdown(GRPC_ERROR_CREATE("Handshake timed out"));
           // HandshakeManager deletion might require an active ExecCtx.
           self.reset();
+          gpr_log(GPR_INFO, "Shutting down pid:id: %d:%d, %s", getpid(), s,
+                  pid == getpid() ? "(correct pid)" : "(incorrect pid)");
         });
     // Start first handshaker, which also owns a ref.
     Ref().release();

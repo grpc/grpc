@@ -20,6 +20,7 @@
 
 #include <inttypes.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include <algorithm>
 #include <memory>
@@ -697,8 +698,9 @@ void Subchannel::OnRetryTimer() {
 
 void Subchannel::OnRetryTimerLocked() {
   if (shutdown_) return;
-  gpr_log(GPR_INFO, "subchannel %p %s: backoff delay elapsed, reporting IDLE",
-          this, key_.ToString().c_str());
+  gpr_log(GPR_INFO,
+          "pid %d tid %d subchannel %p: backoff delay elapsed, reporting IDLE",
+          getpid(), gettid(), this);
   SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
 }
 
@@ -743,10 +745,10 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - Timestamp::Now();
     gpr_log(GPR_INFO,
-            "subchannel %p %s: connect failed (%s), backing off for %" PRId64
-            " ms",
-            this, key_.ToString().c_str(), StatusToString(error).c_str(),
-            time_until_next_attempt.millis());
+            "pid %d subchannel %p %s: connect failed (%s), backing off "
+            "for %" PRId64 " ms",
+            getpid(), this, key_.ToString().c_str(),
+            StatusToString(error).c_str(), time_until_next_attempt.millis());
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = event_engine_->RunAfter(
@@ -765,6 +767,9 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
             self.reset();
           }
         });
+  } else {
+    gpr_log(GPR_INFO, "Connected subchannel %p %s, pid %d", this,
+            key_.ToString().c_str(), getpid());
   }
 }
 

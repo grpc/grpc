@@ -55,8 +55,7 @@ std::string SubchannelKey::ToString() const {
   auto addr_uri = grpc_sockaddr_to_uri(&address_);
   return absl::StrCat(
       "{address=",
-      addr_uri.ok() ? addr_uri.value() : addr_uri.status().ToString(),
-      ", args=", args_.ToString(), "}");
+      addr_uri.ok() ? addr_uri.value() : addr_uri.status().ToString(), "}");
 }
 
 absl::string_view SubchannelPoolInterface::ChannelArgName() {

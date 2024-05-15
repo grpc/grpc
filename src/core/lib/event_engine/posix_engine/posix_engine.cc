@@ -13,6 +13,8 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 
+#include <unistd.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
