@@ -26,11 +26,11 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/workaround_list.h>
@@ -139,10 +139,9 @@ ServerBuilder& ServerBuilder::RegisterService(const std::string& host,
 ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
     AsyncGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
-    gpr_log(GPR_ERROR,
-            "Adding multiple generic services is unsupported for now. "
-            "Dropping the service %p",
-            service);
+    LOG(ERROR) << "Adding multiple generic services is unsupported for now. "
+                  "Dropping the service "
+               << service;
   } else {
     generic_service_ = service;
   }
@@ -152,10 +151,9 @@ ServerBuilder& ServerBuilder::RegisterAsyncGenericService(
 ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
     CallbackGenericService* service) {
   if (generic_service_ || callback_generic_service_) {
-    gpr_log(GPR_ERROR,
-            "Adding multiple generic services is unsupported for now. "
-            "Dropping the service %p",
-            service);
+    LOG(ERROR) << "Adding multiple generic services is unsupported for now. "
+                  "Dropping the service "
+               << service;
   } else {
     callback_generic_service_ = service;
   }
@@ -391,16 +389,16 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
   if (has_sync_methods) {
     // This is a Sync server
-    gpr_log(GPR_INFO,
-            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
-            "%d, CQ timeout (msec): %d",
-            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
-            sync_server_settings_.max_pollers,
-            sync_server_settings_.cq_timeout_msec);
+    LOG(INFO) << "Synchronous server. Num CQs: "
+              << sync_server_settings_.num_cqs
+              << ", Min pollers: " << sync_server_settings_.min_pollers
+              << ", Max Pollers: " << sync_server_settings_.max_pollers
+              << ", CQ timeout (msec): "
+              << sync_server_settings_.cq_timeout_msec;
   }
 
   if (has_callback_methods) {
-    gpr_log(GPR_INFO, "Callback server.");
+    LOG(INFO) << "Callback server.";
   }
 
   std::unique_ptr<grpc::Server> server(new grpc::Server(
@@ -445,22 +443,22 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     if (passive_listener != nullptr) {
       auto* creds = unstarted_listener.credentials->c_creds();
       if (creds == nullptr) {
-        gpr_log(GPR_ERROR, "Credentials missing for PassiveListener");
+        LOG(ERROR) << "Credentials missing for PassiveListener";
         return nullptr;
       }
       auto success = grpc_server_add_passive_listener(
           core_server, creds, std::move(passive_listener));
       if (!success.ok()) {
-        gpr_log(GPR_ERROR, "Failed to create a passive listener: %s",
-                success.ToString().c_str());
+        LOG(ERROR) << "Failed to create a passive listener: "
+                   << success.ToString();
         return nullptr;
       }
     }
   }
 
   if (!has_frequently_polled_cqs) {
-    gpr_log(GPR_ERROR,
-            "At least one of the completion queues must be frequently polled");
+    LOG(ERROR)
+        << "At least one of the completion queues must be frequently polled";
     return nullptr;
   }
 
@@ -483,9 +481,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   } else {
     for (const auto& value : services_) {
       if (value->service->has_generic_methods()) {
-        gpr_log(GPR_ERROR,
-                "Some methods were marked generic but there is no "
-                "generic service registered.");
+        LOG(ERROR) << "Some methods were marked generic but there is no "
+                      "generic service registered.";
         return nullptr;
       }
     }
@@ -525,7 +522,7 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
     case GRPC_WORKAROUND_ID_CRONET_COMPRESSION:
       return AddChannelArgument(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION, 1);
     default:
-      gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
+      LOG(ERROR) << "Workaround " << id << " does not exist or is obsolete.";
       return *this;
   }
 }
