@@ -181,7 +181,7 @@ class TestOpenTelemetryPluginOption(OpenTelemetryPluginOption):
     os.name == "nt" or "darwin" in sys.platform,
     "Observability is not supported in Windows and MacOS",
 )
-class ObservabilityPluginTest(unittest.TestCase):
+class CSMObservabilityPluginTest(unittest.TestCase):
     def setUp(self):
         self.all_metrics = defaultdict(list)
         otel_exporter = OTelMetricExporter(self.all_metrics)

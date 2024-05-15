@@ -20,8 +20,8 @@ from tests.observability import _from_observability_import_star
 
 
 class AllTest(unittest.TestCase):
-    def testAll(self):
-        expected_observability_code_elements = ("OpenTelemetryPlugin",)
+    def testOtel(self):
+        expected_observability_code_elements = ("OpenTelemetryPlugin", "CsmOpenTelemetryPlugin")
 
         self.assertCountEqual(
             expected_observability_code_elements,
