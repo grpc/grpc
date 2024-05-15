@@ -119,7 +119,7 @@ extern TraceFlag ${flag}_trace;
 % endif
 % endfor
 
-const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags();
+const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags();
 
 }  // namespace grpc_core
 

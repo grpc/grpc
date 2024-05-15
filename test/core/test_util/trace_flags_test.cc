@@ -34,8 +34,8 @@ TEST_F(GlobTest, ReturnsFalseWhenNotFound) {
 }
 
 TEST_F(GlobTest, CanSetAValue) {
-  auto it = grpc_core::GetAllTraceFlags()->find("api");
-  ASSERT_NE(it, grpc_core::GetAllTraceFlags()->end());
+  auto it = grpc_core::GetAllTraceFlags().find("api");
+  ASSERT_NE(it, grpc_core::GetAllTraceFlags().end());
   EXPECT_TRUE(grpc_core::ParseTracers("api"));
   EXPECT_TRUE(it->second->enabled());
   EXPECT_TRUE(grpc_core::ParseTracers("-api"));
@@ -43,13 +43,13 @@ TEST_F(GlobTest, CanSetAValue) {
 }
 
 TEST_F(GlobTest, SpecialRefcountFlagWorks) {
-  for (const auto& flag : *grpc_core::GetAllTraceFlags()) {
+  for (const auto& flag : grpc_core::GetAllTraceFlags()) {
     if (absl::StrContains(flag.first, "refcount")) {
       EXPECT_FALSE(flag.second->enabled());
     }
   }
   EXPECT_TRUE(grpc_core::ParseTracers("refcount"));
-  for (const auto& flag : *grpc_core::GetAllTraceFlags()) {
+  for (const auto& flag : grpc_core::GetAllTraceFlags()) {
     if (absl::StrContains(flag.first, "refcount")) {
       EXPECT_TRUE(flag.second->enabled());
     }
@@ -59,11 +59,11 @@ TEST_F(GlobTest, SpecialRefcountFlagWorks) {
 TEST_F(GlobTest, SpecialAllFlagWorks) {
   // Snapshot the trace flag state at the beginning
   EXPECT_TRUE(grpc_core::ParseTracers("all"));
-  for (const auto& flag : *grpc_core::GetAllTraceFlags()) {
+  for (const auto& flag : grpc_core::GetAllTraceFlags()) {
     EXPECT_TRUE(flag.second->enabled()) << flag.first << " was not enabled.";
   }
   EXPECT_TRUE(grpc_core::ParseTracers("-all"));
-  for (const auto& flag : *grpc_core::GetAllTraceFlags()) {
+  for (const auto& flag : grpc_core::GetAllTraceFlags()) {
     EXPECT_FALSE(flag.second->enabled())
         << flag.first << " was still enabled after turning all flags off.";
   }
@@ -72,19 +72,19 @@ TEST_F(GlobTest, SpecialAllFlagWorks) {
 TEST_F(GlobTest, GlobStarAllWorks) {
   // Snapshot the trace flag state at the beginning
   EXPECT_TRUE(grpc_core::ParseTracers("*"));
-  for (const auto& flag : *grpc_core::GetAllTraceFlags()) {
+  for (const auto& flag : grpc_core::GetAllTraceFlags()) {
     EXPECT_TRUE(flag.second->enabled()) << flag.first << " was not enabled.";
   }
   EXPECT_TRUE(grpc_core::ParseTracers("-*"));
-  for (const auto& flag : *grpc_core::GetAllTraceFlags()) {
+  for (const auto& flag : grpc_core::GetAllTraceFlags()) {
     EXPECT_FALSE(flag.second->enabled())
         << flag.first << " was still enabled after turning all flags off.";
   }
 }
 
 TEST_F(GlobTest, SaveAndRestoreWorks) {
-  auto it = grpc_core::GetAllTraceFlags()->find("api");
-  ASSERT_NE(it, grpc_core::GetAllTraceFlags()->end());
+  auto it = grpc_core::GetAllTraceFlags().find("api");
+  ASSERT_NE(it, grpc_core::GetAllTraceFlags().end());
   EXPECT_FALSE(it->second->enabled());
   grpc_core::SavedTraceFlags saved_1;
   EXPECT_TRUE(grpc_core::ParseTracers("all"));
@@ -94,8 +94,8 @@ TEST_F(GlobTest, SaveAndRestoreWorks) {
 }
 
 TEST_F(GlobTest, CApiStillWorks) {
-  auto it = grpc_core::GetAllTraceFlags()->find("api");
-  ASSERT_NE(it, grpc_core::GetAllTraceFlags()->end());
+  auto it = grpc_core::GetAllTraceFlags().find("api");
+  ASSERT_NE(it, grpc_core::GetAllTraceFlags().end());
   EXPECT_FALSE(it->second->enabled());
   EXPECT_TRUE(grpc_tracer_set_enabled("all", true));
   EXPECT_TRUE(it->second->enabled());

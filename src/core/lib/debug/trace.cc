@@ -40,7 +40,7 @@ namespace grpc_core {
 namespace {
 void LogAllTracers() {
   gpr_log(GPR_DEBUG, "available tracers:");
-  for (const auto& name : *GetAllTraceFlags()) {
+  for (const auto& name : GetAllTraceFlags()) {
     LOG(INFO) << "  " << name.first;
   }
 }
@@ -55,7 +55,7 @@ TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
 }
 
 SavedTraceFlags::SavedTraceFlags() {
-  for (const auto& flag : *GetAllTraceFlags()) {
+  for (const auto& flag : GetAllTraceFlags()) {
     values_[flag.first] = {flag.second->enabled(), flag.second};
   }
 }
@@ -78,7 +78,7 @@ bool ParseTracers(absl::string_view tracers) {
     if (trace_glob == "all") trace_glob = "*";
     if (trace_glob == "refcount") trace_glob = "*refcount*";
     bool found = false;
-    for (const auto& flag : *GetAllTraceFlags()) {
+    for (const auto& flag : GetAllTraceFlags()) {
       if (GlobMatch(flag.first, trace_glob)) {
         flag.second->set_enabled(enabled);
         if (enabled) absl::StrAppend(&enabled_tracers, flag.first, ", ");

@@ -212,7 +212,7 @@ extern TraceFlag xds_route_config_resource_type_test_trace;
 extern TraceFlag xds_server_config_fetcher_trace;
 extern TraceFlag xds_wrr_locality_lb_trace;
 
-const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags();
+const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags();
 
 }  // namespace grpc_core
 

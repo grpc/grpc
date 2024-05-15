@@ -130,7 +130,7 @@ TraceFlag xds_route_config_resource_type_test_trace(
 TraceFlag xds_server_config_fetcher_trace(false, "xds_server_config_fetcher");
 TraceFlag xds_wrr_locality_lb_trace(false, "xds_wrr_locality_lb");
 
-const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags() {
+const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
   static const absl::flat_hash_map<std::string, TraceFlag*> all({
       {"api", &api_trace},
       {"backend_metric", &backend_metric_trace},
@@ -240,7 +240,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags() {
       {"work_serializer", &work_serializer_trace},
 #endif
   });
-  return &all;
+  return all;
 }
 
 }  // namespace grpc_core

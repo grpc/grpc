@@ -33,7 +33,7 @@ TraceFlag ${flag}_trace(${str(settings["default"]).lower()}, "${flag}");
 % endif
 % endfor
 
-const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags() {
+const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
   static const absl::flat_hash_map<std::string, TraceFlag*> all({
 % for flag, settings in trace_flags.items():
 % if "debug_only" not in settings or not settings["debug_only"]:
@@ -48,7 +48,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags() {
 % endfor
 #endif
   });
-  return &all;
+  return all;
 }
 
 }  // namespace grpc_core
