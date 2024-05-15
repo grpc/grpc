@@ -48,7 +48,7 @@ typedef enum {
   kUpb_LayoutItemType_Max = kUpb_LayoutItemType_Field,
 } upb_LayoutItemType;
 
-#define kUpb_LayoutItem_IndexSentinel ((uint16_t)-1)
+#define kUpb_LayoutItem_IndexSentinel ((uint16_t) - 1)
 
 typedef struct {
   // Index of the corresponding field.  When this is a oneof field, the field's
@@ -243,6 +243,12 @@ static void upb_MtDecoder_ModifyField(upb_MtDecoder* d,
     upb_MdDecoder_ErrorJmp(
         &d->base, "Field %" PRIu32 " cannot be both singular and required",
         upb_MiniTableField_Number(field));
+  }
+
+  if (singular && upb_MiniTableField_IsSubMessage(field)) {
+    upb_MdDecoder_ErrorJmp(&d->base,
+                           "Field %" PRIu32 " cannot be a singular submessage",
+                           upb_MiniTableField_Number(field));
   }
 
   if (singular) field->UPB_PRIVATE(offset) = kNoPresence;
@@ -731,6 +737,11 @@ static upb_MiniTable* upb_MtDecoder_DoBuildMiniTableWithBuf(
   decoder->table->UPB_PRIVATE(dense_below) = 0;
   decoder->table->UPB_PRIVATE(table_mask) = -1;
   decoder->table->UPB_PRIVATE(required_count) = 0;
+#if UPB_TRACING_ENABLED
+  // MiniTables built from MiniDescriptors will not be able to vend the message
+  // name unless it is explicitly set with upb_MiniTable_SetFullName().
+  decoder->table->UPB_PRIVATE(full_name) = 0;
+#endif
 
   // Strip off and verify the version tag.
   if (!len--) goto done;
