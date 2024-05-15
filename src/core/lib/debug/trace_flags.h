@@ -45,6 +45,7 @@ extern DebugOnlyTraceFlag stream_refcount_trace;
 extern DebugOnlyTraceFlag subchannel_refcount_trace;
 extern DebugOnlyTraceFlag work_serializer_trace;
 extern TraceFlag api_trace;
+extern TraceFlag apple_polling_trace;
 extern TraceFlag backend_metric_trace;
 extern TraceFlag backend_metric_filter_trace;
 extern TraceFlag bdp_estimator_trace;

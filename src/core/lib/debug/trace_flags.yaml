@@ -23,6 +23,10 @@
 api:
   default: false
   description: API calls to the C core.
+apple_polling:
+  default: false
+  description: (legacy) Apple polling trace
+  internal: true
 auth_context_refcount:
   debug_only: true
   default: false

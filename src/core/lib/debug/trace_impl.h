@@ -77,8 +77,7 @@ class TraceFlag {
 };
 
 #define GRPC_TRACE_FLAG_ENABLED_OBJ(obj) GPR_UNLIKELY((obj).enabled())
-#define GRPC_TRACE_FLAG_ENABLED(tracer) \
-  GPR_UNLIKELY((tracer##_trace).enabled())
+#define GRPC_TRACE_FLAG_ENABLED(tracer) GPR_UNLIKELY((tracer##_trace).enabled())
 #define GRPC_TRACE_LOG(tracer, level) \
   LOG_IF(level, GRPC_TRACE_FLAG_ENABLED(tracer))
 

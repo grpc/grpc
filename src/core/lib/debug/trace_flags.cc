@@ -45,6 +45,7 @@ DebugOnlyTraceFlag stream_refcount_trace(false, "stream_refcount");
 DebugOnlyTraceFlag subchannel_refcount_trace(false, "subchannel_refcount");
 DebugOnlyTraceFlag work_serializer_trace(false, "work_serializer");
 TraceFlag api_trace(false, "api");
+TraceFlag apple_polling_trace(false, "apple_polling");
 TraceFlag backend_metric_trace(false, "backend_metric");
 TraceFlag backend_metric_filter_trace(false, "backend_metric_filter");
 TraceFlag bdp_estimator_trace(false, "bdp_estimator");
@@ -133,6 +134,7 @@ TraceFlag xds_wrr_locality_lb_trace(false, "xds_wrr_locality_lb");
 const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
   static const absl::flat_hash_map<std::string, TraceFlag*> all({
       {"api", &api_trace},
+      {"apple_polling", &apple_polling_trace},
       {"backend_metric", &backend_metric_trace},
       {"backend_metric_filter", &backend_metric_filter_trace},
       {"bdp_estimator", &bdp_estimator_trace},
