@@ -135,7 +135,7 @@ class WorkSerializer::LegacyWorkSerializer final : public WorkSerializerImpl {
 
 void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
                                                const DebugLocation& location) {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
     gpr_log(GPR_INFO, "WorkSerializer::Run() %p Scheduling callback [%s:%d]",
             this, location.file(), location.line());
   }
@@ -148,7 +148,7 @@ void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
   if (GetOwners(prev_ref_pair) == 0) {
     // We took ownership of the WorkSerializer. Invoke callback and drain queue.
     SetCurrentThread();
-    if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
       gpr_log(GPR_INFO, "  Executing immediately");
     }
     callback();
@@ -163,7 +163,7 @@ void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
     refs_.fetch_sub(MakeRefPair(1, 0), std::memory_order_acq_rel);
     CallbackWrapper* cb_wrapper =
         new CallbackWrapper(std::move(callback), location);
-    if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
       gpr_log(GPR_INFO, "  Scheduling on queue : item %p", cb_wrapper);
     }
     queue_.Push(&cb_wrapper->mpscq_node);
@@ -174,7 +174,7 @@ void WorkSerializer::LegacyWorkSerializer::Schedule(
     std::function<void()> callback, const DebugLocation& location) {
   CallbackWrapper* cb_wrapper =
       new CallbackWrapper(std::move(callback), location);
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
     gpr_log(GPR_INFO,
             "WorkSerializer::Schedule() %p Scheduling callback %p [%s:%d]",
             this, cb_wrapper, location.file(), location.line());
@@ -184,13 +184,13 @@ void WorkSerializer::LegacyWorkSerializer::Schedule(
 }
 
 void WorkSerializer::LegacyWorkSerializer::Orphan() {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
     gpr_log(GPR_INFO, "WorkSerializer::Orphan() %p", this);
   }
   const uint64_t prev_ref_pair =
       refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0 && GetSize(prev_ref_pair) == 1) {
-    if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
       gpr_log(GPR_INFO, "  Destroying");
     }
     delete this;
@@ -200,7 +200,7 @@ void WorkSerializer::LegacyWorkSerializer::Orphan() {
 // The thread that calls this loans itself to the work serializer so as to
 // execute all the scheduled callbacks.
 void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
     gpr_log(GPR_INFO, "WorkSerializer::DrainQueue() %p", this);
   }
   // Attempt to take ownership of the WorkSerializer. Also increment the queue
@@ -221,7 +221,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueue() {
 }
 
 void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
     gpr_log(GPR_INFO, "WorkSerializer::DrainQueueOwned() %p", this);
   }
   while (true) {
@@ -229,7 +229,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
     // It is possible that while draining the queue, the last callback ended
     // up orphaning the work serializer. In that case, delete the object.
     if (GetSize(prev_ref_pair) == 1) {
-      if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
         gpr_log(GPR_INFO, "  Queue Drained. Destroying");
       }
       delete this;
@@ -249,7 +249,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
       }
       if (GetSize(expected) == 0) {
         // WorkSerializer got orphaned while this was running
-        if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
           gpr_log(GPR_INFO, "  Queue Drained. Destroying");
         }
         delete this;
@@ -269,11 +269,11 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
                 queue_.PopAndCheckEnd(&empty_unused))) == nullptr) {
       // This can happen due to a race condition within the mpscq
       // implementation or because of a race with Run()/Schedule().
-      if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
         gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
       }
     }
-    if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
       gpr_log(GPR_INFO, "  Running item %p : callback scheduled at [%s:%d]",
               cb_wrapper, cb_wrapper->location.file(),
               cb_wrapper->location.line());
@@ -410,7 +410,7 @@ void WorkSerializer::DispatchingWorkSerializer::Orphan() {
 // Implementation of WorkSerializerImpl::Run
 void WorkSerializer::DispatchingWorkSerializer::Run(
     std::function<void()> callback, const DebugLocation& location) {
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
     gpr_log(GPR_INFO, "WorkSerializer[%p] Scheduling callback [%s:%d]", this,
             location.file(), location.line());
   }
@@ -441,7 +441,7 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   // Grab the last element of processing_ - which is the next item in our queue
   // since processing_ is stored in reverse order.
   auto& cb = processing_.back();
-  if (GRPC_TRACE_FLAG_ENABLED(work_serializer_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(work_serializer)) {
     gpr_log(GPR_INFO, "WorkSerializer[%p] Executing callback [%s:%d]", this,
             cb.location.file(), cb.location.line());
   }

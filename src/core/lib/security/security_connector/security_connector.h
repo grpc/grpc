@@ -61,7 +61,7 @@ class grpc_security_connector
  public:
   explicit grpc_security_connector(absl::string_view url_scheme)
       : grpc_core::RefCounted<grpc_security_connector>(
-            GRPC_TRACE_FLAG_ENABLED(security_connector_refcount_trace)
+            GRPC_TRACE_FLAG_ENABLED(security_connector_refcount)
                 ? "security_connector_refcount"
                 : nullptr),
         url_scheme_(url_scheme) {}

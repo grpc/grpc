@@ -63,7 +63,7 @@ GrpcServerAuthzFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
 
 bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
   EvaluateArgs args(&initial_metadata, &per_channel_evaluate_args_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
     gpr_log(GPR_DEBUG,
             "checking request: url_path=%s, transport_security_type=%s, "
             "uri_sans=[%s], dns_sans=[%s], subject=%s",
@@ -79,7 +79,7 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
     AuthorizationEngine::Decision decision =
         engines.deny_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kDeny) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
         gpr_log(GPR_INFO, "chand=%p: request denied by policy %s.", this,
                 decision.matching_policy_name.c_str());
       }
@@ -90,14 +90,14 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
     AuthorizationEngine::Decision decision =
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
         gpr_log(GPR_DEBUG, "chand=%p: request allowed by policy %s.", this,
                 decision.matching_policy_name.c_str());
       }
       return true;
     }
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
     gpr_log(GPR_INFO, "chand=%p: request denied, no matching policy found.",
             this);
   }

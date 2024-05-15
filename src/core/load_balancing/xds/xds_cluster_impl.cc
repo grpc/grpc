@@ -395,7 +395,7 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
       picker_(std::move(picker)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] constructed new picker %p",
             xds_cluster_impl_lb, this);
   }
@@ -477,14 +477,14 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
 XdsClusterImplLb::XdsClusterImplLb(RefCountedPtr<GrpcXdsClient> xds_client,
                                    Args args)
     : LoadBalancingPolicy(std::move(args)), xds_client_(std::move(xds_client)) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] created -- using xds client %p",
             this, xds_client_.get());
   }
 }
 
 XdsClusterImplLb::~XdsClusterImplLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_impl_lb %p] destroying xds_cluster_impl LB policy",
             this);
@@ -492,7 +492,7 @@ XdsClusterImplLb::~XdsClusterImplLb() {
 }
 
 void XdsClusterImplLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] shutting down", this);
   }
   shutting_down_ = true;
@@ -515,7 +515,7 @@ void XdsClusterImplLb::ResetState() {
 }
 
 void XdsClusterImplLb::ReportTransientFailure(absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_impl_lb %p] reporting TRANSIENT_FAILURE: %s", this,
             status.ToString().c_str());
@@ -543,7 +543,7 @@ std::string GetEdsResourceName(const XdsClusterResource& cluster_resource) {
 }
 
 absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO, "[xds_cluster_impl_lb %p] Received update", this);
   }
   // Grab new LB policy config.
@@ -705,7 +705,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // whether) the child has reported.
   if (drop_config_ != nullptr && drop_config_->drop_all()) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity (drop all): "
               "state=READY picker=%p",
@@ -718,7 +718,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
   // Otherwise, update only if we have a child picker.
   if (picker_ != nullptr) {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
-    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
       gpr_log(GPR_INFO,
               "[xds_cluster_impl_lb %p] updating connectivity: state=%s "
               "status=(%s) picker=%p",
@@ -740,7 +740,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsClusterImplLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),
                                          &xds_cluster_impl_lb_trace);
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_impl_lb %p] Created new child policy handler %p",
             this, lb_policy.get());
@@ -768,7 +768,7 @@ absl::Status XdsClusterImplLb::UpdateChildPolicyLocked(
   update_args.args =
       args.Set(GRPC_ARG_XDS_CLUSTER_NAME, config_->cluster_name());
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_impl_lb %p] Updating child policy handler %p", this,
             child_policy_.get());
@@ -823,7 +823,7 @@ void XdsClusterImplLb::Helper::UpdateState(
     grpc_connectivity_state state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (parent()->shutting_down_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     gpr_log(GPR_INFO,
             "[xds_cluster_impl_lb %p] child connectivity state update: "
             "state=%s (%s) picker=%p",

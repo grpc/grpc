@@ -96,7 +96,7 @@ void MetadataQuery::Orphan() {
 
 void MetadataQuery::OnDone(void* arg, grpc_error_handle error) {
   auto* self = static_cast<MetadataQuery*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(metadata_query_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(metadata_query)) {
     gpr_log(GPR_INFO, "MetadataServer Query for %s: HTTP status: %d, error: %s",
             self->attribute_.c_str(), self->response_.status,
             StatusToString(error).c_str());
@@ -117,7 +117,7 @@ void MetadataQuery::OnDone(void* arg, grpc_error_handle error) {
       result = absl::UnavailableError(
           absl::StrFormat("MetadataServer Could not parse zone: %s",
                           std::string(body).c_str()));
-      if (GRPC_TRACE_FLAG_ENABLED(metadata_query_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(metadata_query)) {
         gpr_log(GPR_INFO, "%s", result.status().ToString().c_str());
       }
     } else {

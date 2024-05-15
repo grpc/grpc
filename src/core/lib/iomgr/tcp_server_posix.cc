@@ -177,7 +177,7 @@ static grpc_error_handle CreateEventEngineListener(
                         addr_uri.status().ToString().c_str());
                 return;
               }
-              if (GRPC_TRACE_FLAG_ENABLED(tcp_trace)) {
+              if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
                 gpr_log(GPR_INFO,
                         "SERVER_CONNECT: incoming external connection: %s",
                         addr_uri->c_str());
@@ -467,7 +467,7 @@ static void on_read(void* arg, grpc_error_handle err) {
               addr_uri.status().ToString().c_str());
       goto error;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s",
               addr_uri->c_str());
     }
@@ -928,7 +928,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
               addr_uri.status().ToString().c_str());
       return;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
               addr_uri->c_str());
     }

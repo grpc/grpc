@@ -292,7 +292,7 @@ class ConnectedChannelStream : public Orphanable {
 
   void Orphan() final {
     bool finished = finished_.IsSet();
-    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call)) {
       gpr_log(GPR_DEBUG, "%s[connected] Orphan stream, finished: %d",
               party_->DebugTag().c_str(), finished);
     }
@@ -379,7 +379,7 @@ auto ConnectedChannelStream::RecvMessages(
           bool has_message = status.ok() && status->has_value();
           auto publish_message = [&incoming_messages, &status]() {
             auto pending_message = std::move(**status);
-            if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(call)) {
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: received payload of %" PRIdPTR
                       " bytes",
@@ -389,7 +389,7 @@ auto ConnectedChannelStream::RecvMessages(
             return Map(incoming_messages.Push(std::move(pending_message)),
                        [](bool ok) -> LoopCtl<absl::Status> {
                          if (!ok) {
-                           if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+                           if (GRPC_TRACE_FLAG_ENABLED(call)) {
                              gpr_log(
                                  GPR_INFO,
                                  "%s[connected] RecvMessage: failed to "
@@ -403,7 +403,7 @@ auto ConnectedChannelStream::RecvMessages(
           };
           auto publish_close = [cancel_on_error, &incoming_messages,
                                 &status]() mutable {
-            if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(call)) {
               gpr_log(GPR_INFO,
                       "%s[connected] RecvMessage: reached end of stream with "
                       "status:%s",
@@ -471,7 +471,7 @@ ArenaPromise<ServerMetadataHandle> MakeClientCallPromise(Transport* transport,
                  stream->batch_target()),
              [pipe = call_args.server_initial_metadata](
                  ServerMetadataHandle server_initial_metadata) {
-               if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+               if (GRPC_TRACE_FLAG_ENABLED(call)) {
                  gpr_log(GPR_DEBUG,
                          "%s[connected] Publish client initial metadata: %s",
                          GetContext<Activity>()->DebugTag().c_str(),
@@ -770,7 +770,7 @@ ArenaPromise<ServerMetadataHandle> MakeServerCallPromise(
               stream->batch_target()),
           [failure_latch = &call_data->failure_latch](
               absl::StatusOr<ClientMetadataHandle> status) mutable {
-            if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(call)) {
               gpr_log(
                   GPR_DEBUG,
                   "%s[connected] Got trailing metadata; status=%s metadata=%s",

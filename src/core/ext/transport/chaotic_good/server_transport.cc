@@ -74,7 +74,7 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     CallInitiator call_initiator, ClientFragmentFrame frame,
     uint32_t stream_id) {
   DCHECK(frame.headers == nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
             frame.ToString().c_str());
   }
@@ -132,7 +132,7 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
 auto ChaoticGoodServerTransport::SendFragment(
     ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
-  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: SendFragment: frame=%s",
             frame.ToString().c_str());
   }
@@ -184,7 +184,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
       call_initiator.PullServerInitialMetadata(),
       [stream_id, outgoing_frames, call_initiator,
        this](absl::optional<ServerMetadataHandle> md) mutable {
-        if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
           gpr_log(GPR_INFO,
                   "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md=%s",
                   md.has_value() ? (*md)->DebugString().c_str() : "null");
@@ -210,7 +210,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
   return Seq(Map(SendCallInitialMetadataAndBody(stream_id, outgoing_frames,
                                                 call_initiator),
                  [stream_id](absl::Status main_body_result) {
-                   if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+                   if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
                      gpr_log(GPR_DEBUG,
                              "CHAOTIC_GOOD: CallOutboundLoop: stream_id=%d "
                              "main_body_result=%s",
@@ -342,7 +342,7 @@ auto ChaoticGoodServerTransport::TransportReadLoop(
 auto ChaoticGoodServerTransport::OnTransportActivityDone(
     absl::string_view activity) {
   return [this, activity](absl::Status status) {
-    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
       gpr_log(GPR_INFO,
               "CHAOTIC_GOOD: OnTransportActivityDone: activity=%s status=%s",
               std::string(activity).c_str(), status.ToString().c_str());

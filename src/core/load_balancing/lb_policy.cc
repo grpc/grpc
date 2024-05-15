@@ -32,7 +32,7 @@ namespace grpc_core {
 //
 
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
-    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(lb_policy_refcount_trace)
+    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(lb_policy_refcount)
                                ? "LoadBalancingPolicy"
                                : nullptr,
                            initial_refcount),
@@ -55,7 +55,7 @@ void LoadBalancingPolicy::Orphan() {
 //
 
 LoadBalancingPolicy::SubchannelPicker::SubchannelPicker()
-    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(lb_policy_refcount_trace)
+    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(lb_policy_refcount)
                          ? "SubchannelPicker"
                          : nullptr) {}
 

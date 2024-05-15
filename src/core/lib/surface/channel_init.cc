@@ -239,7 +239,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     post_processor_functions.emplace_back(std::move(post_processors[i]));
   }
   // Log out the graph we built if that's been requested.
-  if (GRPC_TRACE_FLAG_ENABLED(channel_stack_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     // It can happen that multiple threads attempt to construct a core config at
     // once.
     // This is benign - the first one wins and others are discarded.

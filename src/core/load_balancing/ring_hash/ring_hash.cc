@@ -528,7 +528,7 @@ void RingHash::RingHashEndpoint::CreateChildPolicy() {
   child_policy_ =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "pick_first", std::move(lb_policy_args));
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
     const EndpointAddresses& endpoint = ring_hash_->endpoints_[index_];
     gpr_log(GPR_INFO,
             "[RH %p] endpoint %p (index %" PRIuPTR " of %" PRIuPTR
@@ -572,7 +572,7 @@ absl::Status RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
 void RingHash::RingHashEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
     gpr_log(
         GPR_INFO,
         "[RH %p] connectivity changed for endpoint %p (%s, child_policy=%p): "
@@ -600,19 +600,19 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
 //
 
 RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
     gpr_log(GPR_INFO, "[RH %p] Created", this);
   }
 }
 
 RingHash::~RingHash() {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
     gpr_log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
   }
 }
 
 void RingHash::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
     gpr_log(GPR_INFO, "[RH %p] Shutting down", this);
   }
   shutdown_ = true;
@@ -628,7 +628,7 @@ void RingHash::ResetBackoffLocked() {
 absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   // Check address list.
   if (args.addresses.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
       gpr_log(GPR_INFO, "[RH %p] received update", this);
     }
     // De-dup endpoints, taking weight into account.
@@ -644,7 +644,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
             endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         int prev_weight_arg =
             prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-        if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
           gpr_log(GPR_INFO,
                   "[RH %p] merging duplicate endpoint for %s, combined "
                   "weight %d",
@@ -659,7 +659,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
       }
     });
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
       gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
               this, args.addresses.status().ToString().c_str());
     }
@@ -769,7 +769,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
     state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     start_connection_attempt = true;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
     gpr_log(GPR_INFO,
             "[RH %p] setting connectivity state to %s (num_idle=%" PRIuPTR
             ", num_connecting=%" PRIuPTR ", num_ready=%" PRIuPTR
@@ -847,7 +847,7 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       auto it = endpoint_map_.find(
           EndpointAddressSet(endpoints_[first_idle_index].addresses()));
       CHECK(it != endpoint_map_.end());
-      if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
         gpr_log(GPR_INFO,
                 "[RH %p] triggering internal connection attempt for endpoint "
                 "%p (%s) (index %" PRIuPTR " of %" PRIuPTR ")",

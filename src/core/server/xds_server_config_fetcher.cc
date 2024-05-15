@@ -95,9 +95,6 @@ namespace {
 
 using ReadDelayHandle = XdsClient::ReadDelayHandle;
 
-TraceFlag grpc_xds_server_config_fetcher_trace(false,
-                                               "xds_server_config_fetcher");
-
 // A server config fetcher that fetches the information for configuring server
 // listeners from the xDS control plane.
 class XdsServerConfigFetcher final : public grpc_server_config_fetcher {
@@ -587,7 +584,7 @@ XdsServerConfigFetcher::ListenerWatcher::ListenerWatcher(
 void XdsServerConfigFetcher::ListenerWatcher::OnResourceChanged(
     std::shared_ptr<const XdsListenerResource> listener,
     RefCountedPtr<ReadDelayHandle> /* read_delay_handle */) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_server_config_fetcher)) {
     gpr_log(GPR_INFO,
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
             this, xds_client_.get(), listener->ToString().c_str());

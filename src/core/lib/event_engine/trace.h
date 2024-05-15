@@ -20,17 +20,17 @@
 #include "src/core/lib/debug/trace.h"
 
 #define GRPC_EVENT_ENGINE_TRACE(format, ...)                   \
-  if (GRPC_TRACE_FLAG_ENABLED(event_engine_trace)) {           \
+  if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {                 \
     gpr_log(GPR_DEBUG, "(event_engine) " format, __VA_ARGS__); \
   }
 
 #define GRPC_EVENT_ENGINE_ENDPOINT_TRACE(format, ...)                   \
-  if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint_trace)) {           \
+  if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint)) {                 \
     gpr_log(GPR_DEBUG, "(event_engine endpoint) " format, __VA_ARGS__); \
   }
 
 #define GRPC_EVENT_ENGINE_POLLER_TRACE(format, ...)                   \
-  if (GRPC_TRACE_FLAG_ENABLED(event_engine_poller_trace)) {           \
+  if (GRPC_TRACE_FLAG_ENABLED(event_engine_poller)) {                 \
     gpr_log(GPR_DEBUG, "(event_engine poller) " format, __VA_ARGS__); \
   }
 

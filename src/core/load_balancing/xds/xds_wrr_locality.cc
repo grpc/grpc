@@ -135,13 +135,13 @@ XdsWrrLocalityLb::XdsWrrLocalityLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {}
 
 XdsWrrLocalityLb::~XdsWrrLocalityLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
     gpr_log(GPR_INFO, "[xds_wrr_locality_lb %p] destroying", this);
   }
 }
 
 void XdsWrrLocalityLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
     gpr_log(GPR_INFO, "[xds_wrr_locality_lb %p] shutting down", this);
   }
   if (child_policy_ != nullptr) {
@@ -160,7 +160,7 @@ void XdsWrrLocalityLb::ResetBackoffLocked() {
 }
 
 absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
     gpr_log(GPR_INFO, "[xds_wrr_locality_lb %p] Received update", this);
   }
   auto config = args.config.TakeAsSubclass<XdsWrrLocalityLbConfig>();
@@ -202,7 +202,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
            })},
       }),
   });
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
     gpr_log(GPR_INFO,
             "[xds_wrr_locality_lb %p] generated child policy config: %s", this,
             JsonDump(child_config_json, /*indent=*/1).c_str());
@@ -238,7 +238,7 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   update_args.resolution_note = std::move(args.resolution_note);
   update_args.args = std::move(args.args);
   // Update the policy.
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
     gpr_log(GPR_INFO, "[xds_wrr_locality_lb %p] updating child policy %p", this,
             child_policy_.get());
   }
@@ -255,7 +255,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsWrrLocalityLb::CreateChildPolicyLocked(
   auto lb_policy =
       CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
           "weighted_target_experimental", std::move(lb_policy_args));
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
     gpr_log(GPR_INFO, "[xds_wrr_locality_lb %p] created new child policy %p",
             this, lb_policy.get());
   }

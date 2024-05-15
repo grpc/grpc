@@ -117,7 +117,7 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
-  if (GRPC_TRACE_FLAG_ENABLED(channel_stack_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
     for (size_t i = 0; i < filter_count; i++) {
       gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s%s", filters[i]->name,

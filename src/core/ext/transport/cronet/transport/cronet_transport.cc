@@ -67,9 +67,9 @@
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define GRPC_FLUSH_READ_SIZE 4096
 
-#define CRONET_LOG(...)                                              \
-  do {                                                               \
-    if (GRPC_TRACE_FLAG_ENABLED(cronet_trace)) gpr_log(__VA_ARGS__); \
+#define CRONET_LOG(...)                                        \
+  do {                                                         \
+    if (GRPC_TRACE_FLAG_ENABLED(cronet)) gpr_log(__VA_ARGS__); \
   } while (0)
 
 enum e_op_result {

@@ -72,7 +72,7 @@ const auto kMaxConnectionAgeJitter = 0.1;
 
 #define GRPC_IDLE_FILTER_LOG(format, ...)                               \
   do {                                                                  \
-    if (GRPC_TRACE_FLAG_ENABLED(client_idle_filter_trace)) {            \
+    if (GRPC_TRACE_FLAG_ENABLED(client_idle_filter)) {                  \
       gpr_log(GPR_INFO, "(client idle filter) " format, ##__VA_ARGS__); \
     }                                                                   \
   } while (0)

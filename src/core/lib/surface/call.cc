@@ -297,7 +297,7 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   // GRPC_COMPRESS_NONE is always set.
   DCHECK(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
   if (GPR_UNLIKELY(!encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
-    if (GRPC_TRACE_FLAG_ENABLED(compression_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       HandleCompressionAlgorithmNotAccepted(compression_algorithm);
     }
   }
@@ -328,7 +328,7 @@ void Call::HandleCompressionAlgorithmDisabled(
 
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
             deadline_.ToString().c_str(), deadline.ToString().c_str());
   }
@@ -573,7 +573,7 @@ class FilterStackCall final : public ChannelBasedCall {
     bool completed_batch_step(PendingOp op) {
       auto mask = PendingOpMask(op);
       auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
-      if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(call)) {
         gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
                 PendingOpString(mask).c_str(),
                 PendingOpString(r & ~mask).c_str(),
@@ -951,7 +951,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   if (!gpr_atm_rel_cas(&cancelled_with_error_, 0, 1)) {
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(call_error_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call_error)) {
     gpr_log(GPR_INFO, "CancelWithError %s %s", is_client() ? "CLI" : "SVR",
             StatusToString(error).c_str());
   }
@@ -975,7 +975,7 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
 }
 
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_error_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call_error)) {
     gpr_log(GPR_INFO, "set_final_status %s %s", is_client() ? "CLI" : "SVR",
             StatusToString(error).c_str());
   }
@@ -1246,7 +1246,7 @@ void FilterStackCall::BatchControl::PostCompletion() {
     }
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_DEBUG, "tag:%p batch_error=%s op:%s",
             completion_data_.notify_tag.tag, error.ToString().c_str(),
             grpc_transport_stream_op_batch_string(&op_, false).c_str());
@@ -1331,7 +1331,7 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
 
 void FilterStackCall::BatchControl::ReceivingStreamReady(
     grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_DEBUG,
             "tag:%p ReceivingStreamReady error=%s "
             "receiving_slice_buffer.has_value=%d recv_state=%" PRIdPTR,
@@ -1821,7 +1821,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
             PendingOpString(pending_ops).c_str(),
             grpc_transport_stream_op_batch_string(stream_op, false).c_str(),
@@ -1945,13 +1945,13 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
     }
   }
   void InternalRef(const char* reason) final {
-    if (GRPC_TRACE_FLAG_ENABLED(call_refcount_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call_refcount)) {
       gpr_log(GPR_DEBUG, "INTERNAL_REF:%p:%s", this, reason);
     }
     Party::IncrementRefCount();
   }
   void InternalUnref(const char* reason) final {
-    if (GRPC_TRACE_FLAG_ENABLED(call_refcount_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call_refcount)) {
       gpr_log(GPR_DEBUG, "INTERNAL_UNREF:%p:%s", this, reason);
     }
     Party::Unref();
@@ -2216,7 +2216,7 @@ class PromiseBasedCall : public BasicPromiseBasedCall {
   auto WaitForSendingStarted() {
     return [this]() -> Poll<Empty> {
       int n = sends_queued_.load(std::memory_order_relaxed);
-      if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(call)) {
         gpr_log(GPR_DEBUG, "%s[call] WaitForSendingStarted n=%d",
                 DebugTag().c_str(), n);
       }
@@ -2227,7 +2227,7 @@ class PromiseBasedCall : public BasicPromiseBasedCall {
 
   // Mark that a send has been queued - blocks sending trailing metadata.
   void QueueSend() {
-    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call)) {
       gpr_log(GPR_DEBUG, "%s[call] QueueSend", DebugTag().c_str());
     }
     sends_queued_.fetch_add(1, std::memory_order_relaxed);
@@ -2235,7 +2235,7 @@ class PromiseBasedCall : public BasicPromiseBasedCall {
   // Mark that a send has been dequeued - allows sending trailing metadata once
   // zero sends are queued.
   void EnactSend() {
-    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call)) {
       gpr_log(GPR_DEBUG, "%s[call] EnactSend", DebugTag().c_str());
     }
     if (1 == sends_queued_.fetch_sub(1, std::memory_order_relaxed)) {
@@ -2381,7 +2381,7 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
     grpc_cq_begin_op(cq(), tag);
   }
   completion_info_[c.index()].pending.Start(is_closure, tag);
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[call] StartCompletion %s", DebugTag().c_str(),
             CompletionString(c).c_str());
   }
@@ -2390,7 +2390,7 @@ PromiseBasedCall::Completion PromiseBasedCall::StartCompletion(
 
 PromiseBasedCall::Completion PromiseBasedCall::AddOpToCompletion(
     const Completion& completion, PendingOp reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[call] AddOpToCompletion %s %s", DebugTag().c_str(),
             CompletionString(completion).c_str(), PendingOpString(reason));
   }
@@ -2401,7 +2401,7 @@ PromiseBasedCall::Completion PromiseBasedCall::AddOpToCompletion(
 
 void PromiseBasedCall::FailCompletion(const Completion& completion,
                                       SourceLocation location) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_ERROR,
             "%s[call] FailCompletion %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
@@ -2415,7 +2415,7 @@ void PromiseBasedCall::ForceCompletionSuccess(const Completion& completion) {
 
 void PromiseBasedCall::FinishOpOnCompletion(Completion* completion,
                                             PendingOp reason) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[call] FinishOpOnCompletion completion:%s finish:%s",
             DebugTag().c_str(), CompletionString(*completion).c_str(),
             PendingOpString(reason));
@@ -2471,7 +2471,7 @@ void PromiseBasedCall::StartSendMessage(const grpc_op& op,
       },
       [this, completion = AddOpToCompletion(
                  completion, PendingOp::kSendMessage)](bool result) mutable {
-        if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(call)) {
           gpr_log(GPR_DEBUG, "%sSendMessage completes %s", DebugTag().c_str(),
                   result ? "successfully" : "with failure");
         }
@@ -2486,7 +2486,7 @@ void PromiseBasedCall::StartRecvMessage(
     FirstPromiseFactory first_promise_factory,
     PipeReceiver<MessageHandle>* receiver, bool cancel_on_error,
     Party::BulkSpawner& spawner) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[call] Start RecvMessage: %s", DebugTag().c_str(),
             CompletionString(completion).c_str());
   }
@@ -2511,7 +2511,7 @@ void PromiseBasedCall::StartRecvMessage(
           }
           grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
                                       &(*recv_message_)->data.raw.slice_buffer);
-          if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+          if (GRPC_TRACE_FLAG_ENABLED(call)) {
             gpr_log(GPR_INFO,
                     "%s[call] RecvMessage: outstanding_recv "
                     "finishes: received %" PRIdPTR " byte message",
@@ -2519,7 +2519,7 @@ void PromiseBasedCall::StartRecvMessage(
                     (*recv_message_)->data.raw.slice_buffer.length);
           }
         } else if (result.cancelled()) {
-          if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+          if (GRPC_TRACE_FLAG_ENABLED(call)) {
             gpr_log(GPR_INFO,
                     "%s[call] RecvMessage: outstanding_recv "
                     "finishes: received end-of-stream with error",
@@ -2530,7 +2530,7 @@ void PromiseBasedCall::StartRecvMessage(
           if (cancel_on_error) CancelWithError(absl::CancelledError());
           *recv_message_ = nullptr;
         } else {
-          if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+          if (GRPC_TRACE_FLAG_ENABLED(call)) {
             gpr_log(GPR_INFO,
                     "%s[call] RecvMessage: outstanding_recv "
                     "finishes: received end-of-stream",
@@ -3007,7 +3007,7 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
           NextResult<ServerMetadataHandle> next_metadata) mutable {
         server_initial_metadata_.sender.Close();
         ServerMetadataHandle metadata;
-        if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(call)) {
           gpr_log(GPR_INFO, "%s[call] RecvTrailingMetadata: %s",
                   DebugTag().c_str(),
                   next_metadata.has_value()
@@ -3029,7 +3029,7 @@ void ClientPromiseBasedCall::StartRecvInitialMetadata(
 }
 
 void ClientPromiseBasedCall::Finish(ServerMetadataHandle trailing_metadata) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[call] Finish: %s", DebugTag().c_str(),
             trailing_metadata->DebugString().c_str());
   }
@@ -3328,12 +3328,12 @@ class MaybeOpImpl {
       }
         ABSL_FALLTHROUGH_INTENDED;
       case State::kPromise: {
-        if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(call)) {
           gpr_log(GPR_INFO, "%sBeginPoll %s",
                   Activity::current()->DebugTag().c_str(), OpName());
         }
         auto r = poll_cast<StatusFlag>(promise_());
-        if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(call)) {
           gpr_log(
               GPR_INFO, "%sEndPoll %s --> %s",
               Activity::current()->DebugTag().c_str(), OpName(),
@@ -3408,11 +3408,11 @@ class PollBatchLogger {
   PollBatchLogger(void* tag, F f) : tag_(tag), f_(std::move(f)) {}
 
   auto operator()() {
-    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call)) {
       gpr_log(GPR_INFO, "Poll batch %p", tag_);
     }
     auto r = f_();
-    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call)) {
       gpr_log(GPR_INFO, "Poll batch %p --> %s", tag_, ResultString(r).c_str());
     }
     return r;
@@ -3439,7 +3439,7 @@ PollBatchLogger<F> LogPollBatch(void* tag, F f) {
 StatusFlag ServerCall::FinishRecvMessage(
     ValueOrFailure<absl::optional<MessageHandle>> result) {
   if (!result.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call)) {
       gpr_log(GPR_INFO,
               "%s[call] RecvMessage: outstanding_recv "
               "finishes: received end-of-stream with error",
@@ -3450,7 +3450,7 @@ StatusFlag ServerCall::FinishRecvMessage(
     return Failure{};
   }
   if (!result->has_value()) {
-    if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(call)) {
       gpr_log(GPR_INFO,
               "%s[call] RecvMessage: outstanding_recv "
               "finishes: received end-of-stream",
@@ -3471,7 +3471,7 @@ StatusFlag ServerCall::FinishRecvMessage(
   }
   grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
                               &(*recv_message_)->data.raw.slice_buffer);
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO,
             "%s[call] RecvMessage: outstanding_recv "
             "finishes: received %" PRIdPTR " byte message",
@@ -3495,7 +3495,7 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         PrepareOutgoingInitialMetadata(op, *metadata);
         CToMetadata(op.data.send_initial_metadata.metadata,
                     op.data.send_initial_metadata.count, metadata.get());
-        if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(call)) {
           gpr_log(GPR_INFO, "%s[call] Send initial metadata",
                   DebugTag().c_str());
         }

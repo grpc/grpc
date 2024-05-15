@@ -122,7 +122,7 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(
       static_cast<grpc_plugin_credentials::PendingRequest*>(request));
-  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "asynchronously",
@@ -153,7 +153,7 @@ grpc_plugin_credentials::GetRequestMetadata(
       RefAsSubclass<grpc_plugin_credentials>(), std::move(initial_metadata),
       args);
   // Invoke the plugin.  The callback holds a ref to us.
-  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",
             this, request.get());
   }
@@ -171,7 +171,7 @@ grpc_plugin_credentials::GetRequestMetadata(
                             child_request.get(), creds_md, &num_creds_md,
                             &status, &error_details)) {
     child_request.release();
-    if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
       gpr_log(GPR_INFO,
               "plugin_credentials[%p]: request %p: plugin will return "
               "asynchronously",
@@ -180,7 +180,7 @@ grpc_plugin_credentials::GetRequestMetadata(
     return [request] { return request->PollAsyncResult(); };
   }
   // Synchronous return.
-  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "synchronously",

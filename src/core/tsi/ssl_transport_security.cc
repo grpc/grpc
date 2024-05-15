@@ -225,7 +225,7 @@ static void init_openssl(void) {
 // TODO(jboeuf): Remove when we are past the debugging phase with this code.
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
-  if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi_trace)) {
+  if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi)) {
     gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
             SSL_state_string_long(ssl), SSL_state_string(ssl));
   }

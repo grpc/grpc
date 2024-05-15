@@ -153,7 +153,7 @@ static void destroy(secure_endpoint* ep) { delete ep; }
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -166,7 +166,7 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
 
 static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -194,7 +194,7 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(resource_quota_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
               gpr_log(GPR_INFO,
                       "secure endpoint: benign reclamation to free memory");
             }
@@ -231,7 +231,7 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint_trace) &&
+  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) &&
       gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
@@ -390,7 +390,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
 
-    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint_trace) &&
+    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) &&
         gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
       for (i = 0; i < slices->count; i++) {
         char* data =

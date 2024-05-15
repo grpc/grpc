@@ -30,7 +30,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 #define GRPC_FD_TRACE(format, ...)                        \
-  if (GRPC_TRACE_FLAG_ENABLED(fd_trace_trace)) {          \
+  if (GRPC_TRACE_FLAG_ENABLED(fd_trace)) {                \
     gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
   }
 

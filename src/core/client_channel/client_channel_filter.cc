@@ -623,7 +623,7 @@ class ClientChannelFilter::SubchannelWrapper final
  public:
   SubchannelWrapper(ClientChannelFilter* chand,
                     RefCountedPtr<Subchannel> subchannel)
-      : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(client_channel_trace)
+      : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(client_channel)
                                 ? "SubchannelWrapper"
                                 : nullptr),
         chand_(chand),
@@ -2200,8 +2200,8 @@ void ClientChannelFilter::FilterBasedCallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   auto* calld = static_cast<FilterBasedCallData*>(elem->call_data);
   auto* chand = static_cast<ClientChannelFilter*>(elem->channel_data);
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_call_trace) &&
-      !GRPC_TRACE_FLAG_ENABLED(channel_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(client_channel_call) &&
+      !GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from above: %s", chand,
             calld, grpc_transport_stream_op_batch_string(batch, false).c_str());
   }
@@ -2340,7 +2340,7 @@ void ClientChannelFilter::FilterBasedCallData::PendingBatchesFail(
     grpc_error_handle error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   CHECK(!error.ok());
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(client_channel_call)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
@@ -2383,7 +2383,7 @@ void ClientChannelFilter::FilterBasedCallData::ResumePendingBatchInCallCombiner(
 // This is called via the call combiner, so access to calld is synchronized.
 void ClientChannelFilter::FilterBasedCallData::PendingBatchesResume() {
   // Retries not enabled; send down batches as-is.
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(client_channel_call)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
@@ -2701,7 +2701,7 @@ void CreateCallAttemptTracer(grpc_call_context_element* context,
 ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
     ClientChannelFilter* chand, grpc_call_context_element* call_context,
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry)
-    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call_trace)
+    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call)
                                ? "LoadBalancedCall"
                                : nullptr),
       chand_(chand),
@@ -3032,7 +3032,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesFail(
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   CHECK(!error.ok());
   failure_error_ = error;
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
@@ -3074,7 +3074,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
 
 // This is called via the call combiner, so access to calld is synchronized.
 void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesResume() {
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
@@ -3103,8 +3103,8 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesResume() {
 
 void ClientChannelFilter::FilterBasedLoadBalancedCall::
     StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call_trace) ||
-      GRPC_TRACE_FLAG_ENABLED(channel_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call) ||
+      GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: batch started from above: %s, "
             "call_attempt_tracer()=%p",

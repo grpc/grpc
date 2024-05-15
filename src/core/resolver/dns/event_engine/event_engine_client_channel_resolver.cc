@@ -77,14 +77,8 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(hork): Add a test that checks for proper authority from balancer
 // addresses.
 
-// TODO(hork): replace this with `dns_resolver` when all other resolver
-// implementations are removed.
-TraceFlag grpc_event_engine_client_channel_resolver_trace(
-    false, "event_engine_client_channel_resolver");
-
 #define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                    \
-  if (GRPC_TRACE_FLAG_ENABLED(                                           \
-          grpc_event_engine_client_channel_resolver_trace)) {            \
+  if (GRPC_TRACE_FLAG_ENABLED(event_engine_client_channel_resolver)) {   \
     gpr_log(GPR_DEBUG, "(event_engine client channel resolver) " format, \
             __VA_ARGS__);                                                \
   }

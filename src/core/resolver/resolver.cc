@@ -30,8 +30,7 @@ namespace grpc_core {
 //
 
 Resolver::Resolver()
-    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(resolver_refcount_trace)
-                               ? "Resolver"
-                               : nullptr) {}
+    : InternallyRefCounted(
+          GRPC_TRACE_FLAG_ENABLED(resolver_refcount) ? "Resolver" : nullptr) {}
 
 }  // namespace grpc_core

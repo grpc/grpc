@@ -68,11 +68,11 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 
-#define INPROC_LOG(...)                          \
-  do {                                           \
-    if (GRPC_TRACE_FLAG_ENABLED(inproc_trace)) { \
-      gpr_log(__VA_ARGS__);                      \
-    }                                            \
+#define INPROC_LOG(...)                    \
+  do {                                     \
+    if (GRPC_TRACE_FLAG_ENABLED(inproc)) { \
+      gpr_log(__VA_ARGS__);                \
+    }                                      \
   } while (0)
 
 namespace {
@@ -352,7 +352,7 @@ class CopySink {
 
 void fill_in_metadata(inproc_stream* s, const grpc_metadata_batch* metadata,
                       grpc_metadata_batch* out_md, bool* markfilled) {
-  if (GRPC_TRACE_FLAG_ENABLED(inproc_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(inproc)) {
     log_metadata(metadata, s->t->is_client,
                  metadata->get_pointer(grpc_core::WaitForReady()) != nullptr);
   }
@@ -949,7 +949,7 @@ void inproc_transport::PerformStreamOp(grpc_stream* gs,
   gpr_mu* mu = &s->t->mu->mu;  // save aside in case s gets closed
   gpr_mu_lock(mu);
 
-  if (GRPC_TRACE_FLAG_ENABLED(inproc_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(inproc)) {
     if (op->send_initial_metadata) {
       log_metadata(op->payload->send_initial_metadata.send_initial_metadata,
                    s->t->is_client, true);

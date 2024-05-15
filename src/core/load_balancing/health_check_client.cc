@@ -145,7 +145,7 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
 }
 
 void HealthProducer::HealthChecker::StartHealthStreamLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(GPR_INFO,
             "HealthProducer %p HealthChecker %p: "
             "creating HealthClient for \"%s\"",
@@ -155,13 +155,12 @@ void HealthProducer::HealthChecker::StartHealthStreamLocked() {
   stream_client_ = MakeOrphanable<SubchannelStreamClient>(
       producer_->connected_subchannel_, producer_->subchannel_->pollset_set(),
       std::make_unique<HealthStreamEventHandler>(Ref()),
-      GRPC_TRACE_FLAG_ENABLED(health_check_client_trace) ? "HealthClient"
-                                                         : nullptr);
+      GRPC_TRACE_FLAG_ENABLED(health_check_client) ? "HealthClient" : nullptr);
 }
 
 void HealthProducer::HealthChecker::NotifyWatchersLocked(
     grpc_connectivity_state state, absl::Status status) {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(
         GPR_INFO,
         "HealthProducer %p HealthChecker %p: reporting state %s to watchers",
@@ -301,7 +300,7 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
   void SetHealthStatusLocked(SubchannelStreamClient* client,
                              grpc_connectivity_state state,
                              const char* reason) {
-    if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
       gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s",
               client, ConnectivityStateName(state), reason);
     }
@@ -344,7 +343,7 @@ class HealthProducer::ConnectivityWatcher final
 //
 
 void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(GPR_INFO, "HealthProducer %p: starting with subchannel %p", this,
             subchannel.get());
   }
@@ -360,7 +359,7 @@ void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
 }
 
 void HealthProducer::Orphaned() {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(GPR_INFO, "HealthProducer %p: shutting down", this);
   }
   {
@@ -410,7 +409,7 @@ void HealthProducer::RemoveWatcher(
 
 void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
                                                const absl::Status& status) {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(GPR_INFO,
             "HealthProducer %p: subchannel state update: state=%s status=%s",
             this, ConnectivityStateName(state), status.ToString().c_str());
@@ -436,7 +435,7 @@ void HealthProducer::OnConnectivityStateChange(grpc_connectivity_state state,
 //
 
 HealthWatcher::~HealthWatcher() {
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(GPR_INFO,
             "HealthWatcher %p: unregistering from producer %p "
             "(health_check_service_name=\"%s\")",
@@ -472,7 +471,7 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   if (created) producer_->Start(subchannel->Ref());
   // Register ourself with the producer.
   producer_->AddWatcher(this, health_check_service_name_);
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(GPR_INFO,
             "HealthWatcher %p: registered with producer %p (created=%d, "
             "health_check_service_name=\"%s\")",
@@ -504,7 +503,7 @@ MakeHealthCheckWatcher(
     health_check_service_name =
         args.GetOwnedString(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME);
   }
-  if (GRPC_TRACE_FLAG_ENABLED(health_check_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(health_check_client)) {
     gpr_log(GPR_INFO,
             "creating HealthWatcher -- health_check_service_name=\"%s\"",
             health_check_service_name.value_or("N/A").c_str());

@@ -43,7 +43,7 @@
 // Due to the limitations of C89's preprocessor, the arity of the var-arg list
 // 'nargs' must be specified.
 #define GRPC_API_TRACE(fmt, nargs, args)                      \
-  if (GRPC_TRACE_FLAG_ENABLED(api_trace)) {                   \
+  if (GRPC_TRACE_FLAG_ENABLED(api)) {                         \
     gpr_log(GPR_INFO, fmt GRPC_API_TRACE_UNWRAP##nargs args); \
   }
 

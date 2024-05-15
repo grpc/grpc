@@ -66,7 +66,7 @@ class SubchannelKey final {
 class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
  public:
   SubchannelPoolInterface()
-      : RefCounted(GRPC_TRACE_FLAG_ENABLED(subchannel_pool_trace)
+      : RefCounted(GRPC_TRACE_FLAG_ENABLED(subchannel_pool)
                        ? "SubchannelPoolInterface"
                        : nullptr) {}
   ~SubchannelPoolInterface() override {}

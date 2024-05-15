@@ -731,7 +731,7 @@ class HPackParser::Parser {
 
   bool FinishHeaderAndAddToTable(HPackTable::Memento md) {
     // Log if desired
-    if (GRPC_TRACE_FLAG_ENABLED(chttp2_hpack_parser_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(chttp2_hpack_parser)) {
       LogHeader(md);
     }
     // Emit whilst we own the metadata.
@@ -756,7 +756,7 @@ class HPackParser::Parser {
 
   void FinishHeaderOmitFromTable(const HPackTable::Memento& md) {
     // Log if desired
-    if (GRPC_TRACE_FLAG_ENABLED(chttp2_hpack_parser_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(chttp2_hpack_parser)) {
       LogHeader(md);
     }
     EmitHeader(md);

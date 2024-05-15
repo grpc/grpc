@@ -72,7 +72,7 @@ struct grpc_auth_context
       grpc_core::RefCountedPtr<grpc_auth_context> chained)
       : grpc_core::RefCounted<grpc_auth_context,
                               grpc_core::NonPolymorphicRefCount>(
-            GRPC_TRACE_FLAG_ENABLED(auth_context_refcount_trace)
+            GRPC_TRACE_FLAG_ENABLED(auth_context_refcount)
                 ? "auth_context_refcount"
                 : nullptr),
         chained_(std::move(chained)) {

@@ -269,12 +269,12 @@ void OrcaProducer::MaybeStartStreamLocked() {
       connected_subchannel_, subchannel_->pollset_set(),
       std::make_unique<OrcaStreamEventHandler>(
           WeakRefAsSubclass<OrcaProducer>(), report_interval_),
-      GRPC_TRACE_FLAG_ENABLED(orca_client_trace) ? "OrcaClient" : nullptr);
+      GRPC_TRACE_FLAG_ENABLED(orca_client) ? "OrcaClient" : nullptr);
 }
 
 void OrcaProducer::NotifyWatchers(
     const BackendMetricData& backend_metric_data) {
-  if (GRPC_TRACE_FLAG_ENABLED(orca_client_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(orca_client)) {
     gpr_log(GPR_INFO, "OrcaProducer %p: reporting backend metrics to watchers",
             this);
   }

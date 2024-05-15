@@ -56,7 +56,7 @@ class MyEndpointList : public EndpointList {
                  const ChannelArgs& args,
                  std::vector<std::string>* errors)
       : EndpointList(std::move(lb_policy),
-                     GRPC_TRACE_FLAG_ENABLED(my_tracer)
+                     GRPC_TRACE_FLAG_ENABLED(myr)
                          ? "MyEndpointList"
                          : nullptr) {
     Init(endpoints, args,

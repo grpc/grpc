@@ -53,7 +53,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
 
   auto WriteFrame(const FrameInterface& frame) {
     auto buffers = frame.Serialize(&encoder_);
-    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
       gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
               ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                   .value_or("<<unknown peer address>>")
@@ -74,7 +74,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           auto frame_header =
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
-          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
             gpr_log(GPR_INFO, "CHAOTIC_GOOD: ReadHeader from:%s %s",
                     ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                         .value_or("<<unknown peer address>>")
@@ -123,7 +123,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                                 FrameLimits limits) {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
-    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
       gpr_log(GPR_INFO, "CHAOTIC_GOOD: DeserializeFrame %s",
               s.ok() ? frame.ToString().c_str() : s.ToString().c_str());
     }

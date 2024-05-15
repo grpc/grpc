@@ -133,7 +133,7 @@ struct ServerAuthFilter::RunApplicationCode::State {
 ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_ERROR,
             "%s[server-auth]: Delegate to application: filter=%p this=%p "
             "auth_ctx=%p",

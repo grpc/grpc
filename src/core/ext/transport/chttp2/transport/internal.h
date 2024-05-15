@@ -799,11 +799,11 @@ void grpc_chttp2_settings_timeout(
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
 //
-#define GRPC_CHTTP2_IF_TRACING(stmt)           \
-  do {                                         \
-    if (GRPC_TRACE_FLAG_ENABLED(http_trace)) { \
-      (stmt);                                  \
-    }                                          \
+#define GRPC_CHTTP2_IF_TRACING(stmt)     \
+  do {                                   \
+    if (GRPC_TRACE_FLAG_ENABLED(http)) { \
+      (stmt);                            \
+    }                                    \
   } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,

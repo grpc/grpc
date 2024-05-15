@@ -133,10 +133,10 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
           t->channelz_socket->RecordKeepaliveSent();
         }
         grpc_core::global_stats().IncrementHttp2PingsSent();
-        if (GRPC_TRACE_FLAG_ENABLED(http_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(http_keepalive_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(http2_ping_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(http) ||
+            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
+            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
+            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
           gpr_log(GPR_INFO, "%s[%p]: Ping %" PRIx64 " sent [%s]: %s",
                   t->is_client ? "CLIENT" : "SERVER", t, id,
                   std::string(t->peer_string.as_string_view()).c_str(),
@@ -145,10 +145,10 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       },
       [t](grpc_core::Chttp2PingRatePolicy::TooManyRecentPings) {
         // need to receive something of substance before sending a ping again
-        if (GRPC_TRACE_FLAG_ENABLED(http_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(http_keepalive_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(http2_ping_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(http) ||
+            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
+            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
+            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
           gpr_log(GPR_INFO,
                   "%s[%p]: Ping delayed [%s]: too many recent pings: %s",
                   t->is_client ? "CLIENT" : "SERVER", t,
@@ -158,10 +158,10 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
       },
       [t](grpc_core::Chttp2PingRatePolicy::TooSoon too_soon) {
         // not enough elapsed time between successive pings
-        if (GRPC_TRACE_FLAG_ENABLED(http_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(bdp_estimator_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(http_keepalive_trace) ||
-            GRPC_TRACE_FLAG_ENABLED(http2_ping_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(http) ||
+            GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
+            GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
+            GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
           gpr_log(
               GPR_INFO,
               "%s[%p]: Ping delayed [%s]: not enough time elapsed since last "
@@ -207,7 +207,7 @@ static bool update_list(grpc_chttp2_transport* t, int64_t send_bytes,
 
 static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                          const char* staller) {
-  if (GRPC_TRACE_FLAG_ENABLED(flowctl_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(flowctl)) {
     gpr_log(
         GPR_DEBUG,
         "%s:%p stream %d moved to stalled list by %s. This is FULLY expected "
@@ -728,7 +728,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
           grpc_core::ExecCtx exec_ctx;
           grpc_chttp2_ping_timeout(t);
         });
-    if (GRPC_TRACE_FLAG_ENABLED(http2_ping_trace) && id.has_value()) {
+    if (GRPC_TRACE_FLAG_ENABLED(http2_ping) && id.has_value()) {
       gpr_log(GPR_INFO,
               "%s[%p]: Set ping timeout timer of %s for ping id %" PRIx64,
               t->is_client ? "CLIENT" : "SERVER", t, timeout.ToString().c_str(),
@@ -740,8 +740,8 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
         t->keepalive_ping_timeout_handle !=
             grpc_event_engine::experimental::EventEngine::TaskHandle::
                 kInvalid) {
-      if (GRPC_TRACE_FLAG_ENABLED(http2_ping_trace) ||
-          GRPC_TRACE_FLAG_ENABLED(http_keepalive_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(http2_ping) ||
+          GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
         gpr_log(GPR_INFO, "%s[%p]: Set keepalive ping timeout timer of %s",
                 t->is_client ? "CLIENT" : "SERVER", t,
                 t->keepalive_timeout.ToString().c_str());

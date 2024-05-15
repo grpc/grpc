@@ -139,7 +139,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 }
 
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  if (GRPC_TRACE_FLAG_ENABLED(call_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[http-server] Write metadata",
             GetContext<Activity>()->DebugTag().c_str());
   }

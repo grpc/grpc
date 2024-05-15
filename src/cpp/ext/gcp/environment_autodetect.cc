@@ -63,7 +63,7 @@ std::string GetNamespaceName() {
       "/var/run/secrets/kubernetes.io/serviceaccount/namespace";
   auto namespace_name = grpc_core::LoadFile(filename, false);
   if (!namespace_name.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
       gpr_log(GPR_DEBUG, "Reading file %s failed: %s", filename,
               grpc_core::StatusToString(namespace_name.status()).c_str());
     }
@@ -248,7 +248,7 @@ class EnvironmentAutoDetectHelper
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::MetadataQuery>(
           element.first, &pollent_,
           [this](std::string attribute, absl::StatusOr<std::string> result) {
-            if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
               gpr_log(
                   GPR_INFO,
                   "Environment AutoDetect: Attribute: \"%s\" Result: \"%s\"",
@@ -269,7 +269,7 @@ class EnvironmentAutoDetectHelper
                 // If fetching from the MetadataServer failed and we were
                 // assuming a GCE environment, fallback to "global".
                 else if (assuming_gce_) {
-                  if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect_trace)) {
+                  if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
                     gpr_log(GPR_INFO,
                             "Environment Autodetect: Falling back to global "
                             "resource type");

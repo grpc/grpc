@@ -186,9 +186,9 @@ ChannelStackBuilderImpl::Build() {
   const bool is_client =
       grpc_channel_stack_type_is_client(channel_stack_type());
   const bool client_promise_tracing =
-      is_client && is_promising && GRPC_TRACE_FLAG_ENABLED(call_trace);
+      is_client && is_promising && GRPC_TRACE_FLAG_ENABLED(call);
   const bool server_promise_tracing =
-      !is_client && is_promising && GRPC_TRACE_FLAG_ENABLED(call_trace);
+      !is_client && is_promising && GRPC_TRACE_FLAG_ENABLED(call);
 
   for (const auto* filter : this->stack()) {
     if (client_promise_tracing) {

@@ -375,7 +375,7 @@ static grpc_error_handle addbyte(grpc_http_parser* parser, uint8_t byte,
     case GRPC_HTTP_HEADERS:
     case GRPC_HTTP_TRAILERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        if (GRPC_TRACE_FLAG_ENABLED(http1_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(http1)) {
           gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
         }

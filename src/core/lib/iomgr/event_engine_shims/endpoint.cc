@@ -118,7 +118,7 @@ class EventEngineEndpointWrapper {
     grpc_slice_buffer_move_into(read_buffer->c_slice_buffer(),
                                 pending_read_buffer_);
     read_buffer->~SliceBuffer();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
       gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
               status.ToString().c_str());
@@ -149,7 +149,7 @@ class EventEngineEndpointWrapper {
   bool Write(grpc_closure* write_cb, grpc_slice_buffer* slices,
              const EventEngine::Endpoint::WriteArgs* args) {
     Ref();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
       gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s)", this,
               std::string(PeerAddress()).c_str());
@@ -176,7 +176,7 @@ class EventEngineEndpointWrapper {
   void FinishPendingWrite(absl::Status status) {
     auto* write_buffer = reinterpret_cast<SliceBuffer*>(&eeep_->write_buffer);
     write_buffer->~SliceBuffer();
-    if (GRPC_TRACE_FLAG_ENABLED(tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s) error=%s", this,
               std::string(PeerAddress()).c_str(), status.ToString().c_str());
     }
@@ -351,7 +351,7 @@ void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
             why.ToString().c_str());
   }

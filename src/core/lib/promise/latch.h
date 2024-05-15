@@ -67,7 +67,7 @@ class Latch {
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<T> {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%sWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -86,7 +86,7 @@ class Latch {
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<T> {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%sWaitAndCopy %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -100,7 +100,7 @@ class Latch {
 
   // Set the value of the latch. Can only be called once.
   void Set(T value) {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
     DCHECK(!has_value_);
@@ -163,7 +163,7 @@ class Latch<void> {
     has_had_waiters_ = true;
 #endif
     return [this]() -> Poll<Empty> {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -177,7 +177,7 @@ class Latch<void> {
 
   // Set the latch. Can only be called once.
   void Set() {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
     DCHECK(!is_set_);
@@ -226,7 +226,7 @@ class ExternallyObservableLatch<void> {
   // Produce a promise to wait for this latch.
   auto Wait() {
     return [this]() -> Poll<Empty> {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -240,7 +240,7 @@ class ExternallyObservableLatch<void> {
 
   // Set the latch.
   void Set() {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
     is_set_.store(true, std::memory_order_relaxed);
@@ -250,7 +250,7 @@ class ExternallyObservableLatch<void> {
   bool IsSet() const { return is_set_.load(std::memory_order_relaxed); }
 
   void Reset() {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%sReset %s", DebugTag().c_str(),
               StateString().c_str());
     }

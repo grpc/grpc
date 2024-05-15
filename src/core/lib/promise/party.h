@@ -229,7 +229,7 @@ class PartySyncUsingAtomics {
 
   void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
                       DebugLocation loc = {}) {
-    if (GRPC_TRACE_FLAG_ENABLED(party_state_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
       gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
               "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
               prev_state, new_state);
@@ -639,7 +639,7 @@ struct ContextSubclass<Party> {
 template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
             party_->DebugTag().c_str(), this, std::string(name).c_str());
   }

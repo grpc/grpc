@@ -96,9 +96,8 @@ ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const ChannelArgs& args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
     : RefCounted<ConnectedSubchannel>(
-          GRPC_TRACE_FLAG_ENABLED(subchannel_refcount_trace)
-              ? "ConnectedSubchannel"
-              : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(subchannel_refcount) ? "ConnectedSubchannel"
+                                                       : nullptr),
       channel_stack_(channel_stack),
       args_(args),
       channelz_subchannel_(std::move(channelz_subchannel)) {}
@@ -354,7 +353,7 @@ class Subchannel::ConnectedSubchannelStateWatcher final
       if (c->connected_subchannel_ == nullptr) return;
       if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
           new_state == GRPC_CHANNEL_SHUTDOWN) {
-        if (GRPC_TRACE_FLAG_ENABLED(subchannel_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
           gpr_log(GPR_INFO,
                   "subchannel %p %s: Connected subchannel %p reports %s: %s", c,
                   c->key_.ToString().c_str(), c->connected_subchannel_.get(),
@@ -453,9 +452,9 @@ BackOff::Options ParseArgsForBackoffValues(const ChannelArgs& args,
 Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const ChannelArgs& args)
-    : DualRefCounted<Subchannel>(
-          GRPC_TRACE_FLAG_ENABLED(subchannel_refcount_trace) ? "Subchannel"
-                                                             : nullptr),
+    : DualRefCounted<Subchannel>(GRPC_TRACE_FLAG_ENABLED(subchannel_refcount)
+                                     ? "Subchannel"
+                                     : nullptr),
       key_(std::move(key)),
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
@@ -539,7 +538,7 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
-    if (GRPC_TRACE_FLAG_ENABLED(subchannel_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
       gpr_log(GPR_INFO, "subchannel %p %s: throttling keepalive time to %d",
               this, key_.ToString().c_str(), new_keepalive_time);
     }
@@ -791,7 +790,7 @@ bool Subchannel::PublishTransportLocked() {
   // Publish.
   connected_subchannel_.reset(
       new ConnectedSubchannel(stk->release(), args_, channelz_node_));
-  if (GRPC_TRACE_FLAG_ENABLED(subchannel_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
     gpr_log(GPR_INFO, "subchannel %p %s: new connected subchannel at %p", this,
             key_.ToString().c_str(), connected_subchannel_.get());
   }

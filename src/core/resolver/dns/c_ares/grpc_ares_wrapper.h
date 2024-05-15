@@ -41,7 +41,7 @@
 
 #define GRPC_CARES_TRACE_LOG(format, ...)                           \
   do {                                                              \
-    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver_trace)) {            \
+    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {                  \
       gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
     }                                                               \
   } while (0)

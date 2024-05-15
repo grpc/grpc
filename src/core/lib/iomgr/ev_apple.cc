@@ -41,7 +41,7 @@
 
 #ifndef NDEBUG
 #define GRPC_POLLING_TRACE(format, ...)                   \
-  if (GRPC_TRACE_FLAG_ENABLED(apple_polling_trace)) {     \
+  if (GRPC_TRACE_FLAG_ENABLED(apple_polling)) {           \
     gpr_log(GPR_DEBUG, "(polling) " format, __VA_ARGS__); \
   }
 #else

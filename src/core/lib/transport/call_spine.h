@@ -124,7 +124,7 @@ class CallSpineInterface {
     party().Spawn(
         name, std::move(promise_factory), [this, whence](ResultType r) {
           if (!IsStatusOk(r)) {
-            if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
               gpr_log(GPR_INFO, "SpawnGuarded sees failure: %s (source: %s:%d)",
                       r.ToString().c_str(), whence.file(), whence.line());
             }

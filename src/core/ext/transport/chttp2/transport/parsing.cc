@@ -332,7 +332,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     case GRPC_DTS_FH_8:
       DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
-      if (GRPC_TRACE_FLAG_ENABLED(http_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(http)) {
         gpr_log(GPR_INFO, "INCOMING[%p]: %s len:%d id:0x%08x", t,
                 FrameTypeString(t->incoming_frame_type, t->incoming_frame_flags)
                     .c_str(),
@@ -453,7 +453,7 @@ static grpc_error_handle init_frame_parser(grpc_chttp2_transport* t,
     case GRPC_CHTTP2_FRAME_GOAWAY:
       return init_goaway_parser(t);
     default:
-      if (GRPC_TRACE_FLAG_ENABLED(http_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(http)) {
         gpr_log(GPR_ERROR, "Unknown frame type %02x", t->incoming_frame_type);
       }
       return init_non_header_skip_frame_parser(t);
@@ -713,8 +713,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
-    if (GRPC_TRACE_FLAG_ENABLED(http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(chttp2_new_stream_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(http) ||
+        GRPC_TRACE_FLAG_ENABLED(chttp2_new_stream)) {
       gpr_log(GPR_INFO,
               "[t:%p fd:%d peer:%s] Accepting new stream; "
               "num_incoming_streams_before_settings_ack=%u",
@@ -794,7 +794,7 @@ static grpc_error_handle init_window_update_frame_parser(
     grpc_chttp2_stream* s = t->incoming_stream =
         grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
     if (s == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(http_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(http)) {
         gpr_log(GPR_ERROR, "Stream %d not found, ignoring WINDOW_UPDATE",
                 t->incoming_stream_id);
       }
@@ -886,7 +886,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                                            const grpc_slice& slice,
                                            int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
-  if (GRPC_TRACE_FLAG_ENABLED(http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_DEBUG,
             "INCOMING[%p;%p]: Parse %" PRIdPTR "b %sframe fragment with %s", t,
             s, GRPC_SLICE_LENGTH(slice), is_last ? "last " : "",
@@ -898,7 +898,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
   if (GPR_LIKELY(err.ok())) {
     return err;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_ERROR, "INCOMING[%p;%p]: Parse failed with %s", t, s,
             err.ToString().c_str());
   }

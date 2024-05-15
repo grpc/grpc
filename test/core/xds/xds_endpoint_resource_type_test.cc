@@ -64,9 +64,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-TraceFlag xds_endpoint_resource_type_test_trace(
-    true, "xds_endpoint_resource_type_test");
-
 class XdsEndpointTest : public ::testing::Test {
  protected:
   XdsEndpointTest()

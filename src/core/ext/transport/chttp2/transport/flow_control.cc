@@ -233,7 +233,7 @@ void TransportFlowControl::UpdateSetting(
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
   if (new_desired_value != *desired_value) {
-    if (GRPC_TRACE_FLAG_ENABLED(flowctl_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(flowctl)) {
       gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
               std::string(name).c_str(), *desired_value, new_desired_value);
     }

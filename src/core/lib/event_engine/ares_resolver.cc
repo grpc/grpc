@@ -219,8 +219,7 @@ AresResolver::AresResolver(
     std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
     std::shared_ptr<EventEngine> event_engine, ares_channel channel)
     : RefCountedDNSResolverInterface(
-          GRPC_TRACE_FLAG_ENABLED(cares_resolver_trace) ? "AresResolver"
-                                                        : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(cares_resolver) ? "AresResolver" : nullptr),
       channel_(channel),
       polled_fd_factory_(std::move(polled_fd_factory)),
       event_engine_(std::move(event_engine)) {
@@ -765,7 +764,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   }
   GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p Got %zu TXT records", ares_resolver,
                                result.size());
-  if (GRPC_TRACE_FLAG_ENABLED(cares_resolver_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {
     for (const auto& record : result) {
       gpr_log(GPR_INFO, "%s", record.c_str());
     }

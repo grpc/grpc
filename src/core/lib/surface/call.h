@@ -338,11 +338,11 @@ void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
 // Get a context pointer.
 void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
 
-#define GRPC_CALL_LOG_BATCH(sev, ops, nops)   \
-  do {                                        \
-    if (GRPC_TRACE_FLAG_ENABLED(api_trace)) { \
-      grpc_call_log_batch(sev, ops, nops);    \
-    }                                         \
+#define GRPC_CALL_LOG_BATCH(sev, ops, nops) \
+  do {                                      \
+    if (GRPC_TRACE_FLAG_ENABLED(api)) {     \
+      grpc_call_log_batch(sev, ops, nops);  \
+    }                                       \
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);

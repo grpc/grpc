@@ -23,7 +23,7 @@
 
 namespace grpc_core {
 Poll<Empty> WaitForCqEndOp::operator()() {
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     gpr_log(GPR_INFO, "%sWaitForCqEndOp[%p] %s",
             Activity::current()->DebugTag().c_str(), this,
             StateString(state_).c_str());

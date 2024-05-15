@@ -78,8 +78,8 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
   GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
 
   new (&refcount->refs) grpc_core::RefCount(
-      1, GRPC_TRACE_FLAG_ENABLED(stream_refcount_trace) ? "stream_refcount"
-                                                        : nullptr);
+      1,
+      GRPC_TRACE_FLAG_ENABLED(stream_refcount) ? "stream_refcount" : nullptr);
 }
 
 namespace grpc_core {

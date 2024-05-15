@@ -38,7 +38,7 @@
 
 #define EXECUTOR_TRACE(format, ...)                       \
   do {                                                    \
-    if (GRPC_TRACE_FLAG_ENABLED(executor_trace)) {        \
+    if (GRPC_TRACE_FLAG_ENABLED(executor)) {              \
       gpr_log(GPR_INFO, "EXECUTOR " format, __VA_ARGS__); \
     }                                                     \
   } while (0)
