@@ -761,10 +761,6 @@ class ClientChannelFilter::SubchannelWrapper final
     subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
   }
 
-  RefCountedPtr<UnstartedCallDestination> call_destination() override {
-    return nullptr;
-  }
-
  private:
   // This wrapper provides a bridge between the internal Subchannel API
   // and the SubchannelInterface API that we expose to LB policies.

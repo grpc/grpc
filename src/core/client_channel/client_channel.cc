@@ -263,9 +263,10 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
 ClientChannel::SubchannelWrapper::SubchannelWrapper(
     RefCountedPtr<ClientChannel> client_channel,
     RefCountedPtr<Subchannel> subchannel)
-    : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)
-                              ? "SubchannelWrapper"
-                              : nullptr),
+    : SubchannelInterfaceWithCallDestination(
+          GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)
+              ? "SubchannelWrapper"
+              : nullptr),
       client_channel_(std::move(client_channel)),
       subchannel_(std::move(subchannel)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {

@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
+#include "client_channel.h"
+
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/call_tracer.h"
@@ -193,7 +195,10 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         GPR_ASSERT(complete_pick->subchannel != nullptr);
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.
-        auto call_destination = complete_pick->subchannel->call_destination();
+        auto call_destination =
+            DownCast<SubchannelInterfaceWithCallDestination*>(
+                complete_pick->subchannel.get())
+                ->call_destination();
         // If the subchannel has no connected subchannel (e.g., if the
         // subchannel has moved out of state READY but the LB policy hasn't
         // yet seen that change and given us a new picker), then just

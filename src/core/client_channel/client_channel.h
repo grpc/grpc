@@ -39,6 +39,13 @@
 
 namespace grpc_core {
 
+class SubchannelInterfaceWithCallDestination : public SubchannelInterface {
+ public:
+  using SubchannelInterface::SubchannelInterface;
+  // Obtain the call destination for this subchannel.
+  virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
+};
+
 class ClientChannel : public Channel {
  public:
   // This class is a wrapper for Subchannel that hides details of the
@@ -49,7 +56,7 @@ class ClientChannel : public Channel {
   // underlying subchannel is shared between channels, this wrapper will only
   // be used within one channel, so it will always be synchronized by the
   // control plane work_serializer.
-  class SubchannelWrapper : public SubchannelInterface {
+  class SubchannelWrapper : public SubchannelInterfaceWithCallDestination {
    public:
     SubchannelWrapper(RefCountedPtr<ClientChannel> client_channel,
                       RefCountedPtr<Subchannel> subchannel);
