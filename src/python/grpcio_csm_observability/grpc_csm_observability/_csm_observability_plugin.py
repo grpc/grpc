@@ -286,6 +286,9 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         Since servers don't need to be xds enabled to work as part of a service
         mesh, we're returning True and enable this PluginOption for all servers.
 
+        Note: This always returns true because server can be part of the mesh even
+        if it's not xds-enabled. And we want CSM labels for those servers too.
+
         Args:
           xds: Required. if this server is build for xds.
 

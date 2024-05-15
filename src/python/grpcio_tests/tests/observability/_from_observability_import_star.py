@@ -14,8 +14,8 @@
 
 _BEFORE_IMPORT = tuple(globals())
 
-from grpc_observability import *  # pylint: disable=wildcard-import,unused-wildcard-import
 from grpc_csm_observability import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from grpc_observability import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 _AFTER_IMPORT = tuple(globals())
 

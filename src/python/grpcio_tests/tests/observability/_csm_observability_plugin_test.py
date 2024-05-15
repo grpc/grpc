@@ -24,7 +24,6 @@ from typing import Any, Callable, Dict, List, Optional, Set
 import unittest
 from unittest import mock
 
-import grpc_observability
 from grpc_csm_observability import CsmOpenTelemetryPlugin
 from grpc_csm_observability._csm_observability_plugin import (
     CSMOpenTelemetryLabelInjector,
@@ -32,6 +31,7 @@ from grpc_csm_observability._csm_observability_plugin import (
 from grpc_csm_observability._csm_observability_plugin import TYPE_GCE
 from grpc_csm_observability._csm_observability_plugin import TYPE_GKE
 from grpc_csm_observability._csm_observability_plugin import UNKNOWN_VALUE
+import grpc_observability
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPluginOption
@@ -604,7 +604,9 @@ class MetadataExchangeTest(unittest.TestCase):
             self.assertEqual(attributes["csm.remote_workload_type"], "random")
 
     def _verify_no_service_mesh_attributes(self, attributes: Dict[str, str]):
-        self.assertTrue("csm.remote_workload_canonical_service" not in attributes.keys())
+        self.assertTrue(
+            "csm.remote_workload_canonical_service" not in attributes.keys()
+        )
         self.assertTrue("csm.remote_workload_type" not in attributes.keys())
         self.assertTrue(
             "csm.workload_canonical_service" not in attributes.keys()

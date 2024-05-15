@@ -90,14 +90,15 @@ PythonOpenCensusCallTracer::~PythonOpenCensusCallTracer() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, std::string(method_));
     RecordIntMetric(kRpcClientRetriesPerCallMeasureName, retries_ - 1,
-                    context_.Labels(), identifier_,
-                    registered_method_, /*include_exchange_labels=*/true);  // exclude first attempt
+                    context_.Labels(), identifier_, registered_method_,
+                    /*include_exchange_labels=*/true);  // exclude first attempt
     RecordIntMetric(kRpcClientTransparentRetriesPerCallMeasureName,
                     transparent_retries_, context_.Labels(), identifier_,
                     registered_method_, /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcClientRetryDelayPerCallMeasureName,
                        ToDoubleSeconds(retry_delay_), context_.Labels(),
-                       identifier_, registered_method_, /*include_exchange_labels=*/true);
+                       identifier_, registered_method_,
+                       /*include_exchange_labels=*/true);
   }
 
   if (tracing_enabled_) {
@@ -161,7 +162,8 @@ PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   context_.Labels().emplace_back(kClientMethod, std::string(parent_->method_));
   context_.Labels().emplace_back(kClientTarget, std::string(parent_->target_));
   RecordIntMetric(kRpcClientStartedRpcsMeasureName, 1, context_.Labels(),
-                  parent_->identifier_, parent_->registered_method_, /*include_exchange_labels=*/false);
+                  parent_->identifier_, parent_->registered_method_,
+                  /*include_exchange_labels=*/false);
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -289,13 +291,16 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   RecordDoubleMetric(kRpcClientServerLatencyMeasureName,
                      absl::ToDoubleSeconds(absl::Nanoseconds(elapsed_time)),
                      context_.Labels(), parent_->identifier_,
-                     parent_->registered_method_, /*include_exchange_labels=*/true);
+                     parent_->registered_method_,
+                     /*include_exchange_labels=*/true);
   RecordDoubleMetric(kRpcClientRoundtripLatencyMeasureName,
                      absl::ToDoubleSeconds(absl::Now() - start_time_),
                      context_.Labels(), parent_->identifier_,
-                     parent_->registered_method_, /*include_exchange_labels=*/true);
+                     parent_->registered_method_,
+                     /*include_exchange_labels=*/true);
   RecordIntMetric(kRpcClientCompletedRpcMeasureName, 1, context_.Labels(),
-                  parent_->identifier_, parent_->registered_method_, /*include_exchange_labels=*/true);
+                  parent_->identifier_, parent_->registered_method_,
+                  /*include_exchange_labels=*/true);
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
@@ -310,10 +315,12 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
                                    StatusCodeToString(status_code_));
     RecordIntMetric(kRpcClientSentMessagesPerRpcMeasureName,
                     sent_message_count_, context_.Labels(),
-                    parent_->identifier_, parent_->registered_method_, /*include_exchange_labels=*/true);
+                    parent_->identifier_, parent_->registered_method_,
+                    /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcClientReceivedMessagesPerRpcMeasureName,
                     recv_message_count_, context_.Labels(),
-                    parent_->identifier_, parent_->registered_method_, /*include_exchange_labels=*/true);
+                    parent_->identifier_, parent_->registered_method_,
+                    /*include_exchange_labels=*/true);
 
     grpc_core::MutexLock lock(&parent_->mu_);
     if (--parent_->num_active_rpcs_ == 0) {

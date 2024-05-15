@@ -62,7 +62,8 @@ int GetMaxExportBufferSize() {
 
 void RecordIntMetric(MetricsName name, int64_t value,
                      const std::vector<Label>& labels, std::string identifier,
-                     const bool registered_method, const bool include_exchange_labels) {
+                     const bool registered_method,
+                     const bool include_exchange_labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
   measurement_data.name = name;

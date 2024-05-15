@@ -16,7 +16,7 @@ load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:private"])
 
-# Since `protobuf` and `opentelemetry-resourcedetector-gcp` are non-hermetic,
+# Since packages in requirement() are non-hermetic,
 # csm_observability is for internal use only.
 py_library(
     name = "csm_observability",

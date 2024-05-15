@@ -149,17 +149,8 @@ class _OpenTelemetryPlugin:
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
 
-    def get_client_exchange_labels(self, target: bytes) -> Dict[str, AnyStr]:
+    def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
-        target_str = target.decode("utf-8", "replace")
-        # Check if _enabled_client_plugin_options is None so we don't set it multiple times.
-        if not self._enabled_client_plugin_options:
-            self._enabled_client_plugin_options = []
-            for plugin_option in self._plugin.plugin_options:
-                if hasattr(
-                    plugin_option, "is_active_on_client_channel"
-                ) and plugin_option.is_active_on_client_channel(target_str):
-                    self._enabled_client_plugin_options.append(plugin_option)
 
         labels_for_exchange = {}
         for plugin_option in self._enabled_client_plugin_options:
@@ -171,17 +162,8 @@ class _OpenTelemetryPlugin:
                 )
         return labels_for_exchange
 
-    def get_server_exchange_labels(self, xds: bool) -> Dict[str, str]:
+    def get_server_exchange_labels(self) -> Dict[str, str]:
         """Get labels used for server side Metadata Exchange."""
-        # Check if _enabled_server_plugin_options is None so we don't set it multiple times.
-        if not self._enabled_server_plugin_options:
-            self._enabled_server_plugin_options = []
-            for plugin_option in self._plugin.plugin_options:
-                if hasattr(
-                    plugin_option, "is_active_on_server"
-                ) and plugin_option.is_active_on_server(xds):
-                    self._enabled_server_plugin_options.append(plugin_option)
-
         labels_for_exchange = {}
         for plugin_option in self._enabled_server_plugin_options:
             if hasattr(plugin_option, "get_label_injector") and hasattr(
@@ -191,6 +173,27 @@ class _OpenTelemetryPlugin:
                     plugin_option.get_label_injector().get_labels_for_exchange()
                 )
         return labels_for_exchange
+
+    def activate_client_plugin_options(self, target: bytes) -> None:
+        """Activate client plugin options based on option settings."""
+        target_str = target.decode("utf-8", "replace")
+        if not self._enabled_client_plugin_options:
+            self._enabled_client_plugin_options = []
+            for plugin_option in self._plugin.plugin_options:
+                if hasattr(
+                    plugin_option, "is_active_on_client_channel"
+                ) and plugin_option.is_active_on_client_channel(target_str):
+                    self._enabled_client_plugin_options.append(plugin_option)
+
+    def activate_server_plugin_options(self, xds: bool) -> None:
+        """Activate server plugin options based on option settings."""
+        if not self._enabled_server_plugin_options:
+            self._enabled_server_plugin_options = []
+            for plugin_option in self._plugin.plugin_options:
+                if hasattr(
+                    plugin_option, "is_active_on_server"
+                ) and plugin_option.is_active_on_server(xds):
+                    self._enabled_server_plugin_options.append(plugin_option)
 
     def _deserialize_labels(
         self,
@@ -357,6 +360,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     _exporter: "grpc_observability.Exporter"
     _plugins: List[_OpenTelemetryPlugin]
     _registered_method: Set[bytes]
+    _client_option_activated: bool
+    _server_option_activated: bool
 
     def __init__(
         self,
@@ -366,6 +371,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self._exporter = _OpenTelemetryExporterDelegator(plugins)
         self._registered_methods = set()
         self._plugins = plugins
+        self._client_option_activated = False
+        self._server_option_activated = False
 
     def observability_init(self):
         try:
@@ -401,7 +408,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
         trace_id = b"TRACE_ID"
-        exchange_labels = self._get_client_exchange_labels(target)
+        self._maybe_activate_client_plugin_options(target)
+        exchange_labels = self._get_client_exchange_labels()
         enabled_optional_labels = set()
         for plugin in self._plugins:
             enabled_optional_labels.update(plugin.get_enabled_optional_labels())
@@ -423,13 +431,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         xds: bool,
     ) -> Optional[ServerCallTracerFactoryCapsule]:
         capsule = None
-        exchange_labels = self._get_server_exchange_labels(xds)
-        if self.is_server_traced(xds):
-            capsule = (
-                _cyobservability.create_server_call_tracer_factory_capsule(
-                    exchange_labels, self._get_identifier()
-                )
-            )
+        self._maybe_activate_server_plugin_options(xds)
+        exchange_labels = self._get_server_exchange_labels()
+        capsule = _cyobservability.create_server_call_tracer_factory_capsule(
+            exchange_labels, self._get_identifier()
+        )
         return capsule
 
     def delete_client_call_tracer(
@@ -464,32 +470,35 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def save_registered_method(self, method_name: bytes) -> None:
         self._registered_methods.add(method_name)
 
-    def _get_client_exchange_labels(self, target: bytes) -> Dict[str, AnyStr]:
+    def _get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         client_exchange_labels = {}
         for _plugin in self._plugins:
-            client_exchange_labels.update(
-                _plugin.get_client_exchange_labels(target)
-            )
+            client_exchange_labels.update(_plugin.get_client_exchange_labels())
         return client_exchange_labels
 
-    def _get_server_exchange_labels(self, xds: bool) -> Dict[str, AnyStr]:
+    def _get_server_exchange_labels(self) -> Dict[str, AnyStr]:
         server_exchange_labels = {}
         for _plugin in self._plugins:
-            server_exchange_labels.update(
-                _plugin.get_server_exchange_labels(xds)
-            )
+            server_exchange_labels.update(_plugin.get_server_exchange_labels())
         return server_exchange_labels
+
+    def _maybe_activate_client_plugin_options(self, target: bytes) -> None:
+        if not self._client_option_activated:
+            for _plugin in self._plugins:
+                _plugin.activate_client_plugin_options(target)
+            self._client_option_activated = True
+
+    def _maybe_activate_server_plugin_options(self, xds: bool) -> None:
+        if not self._server_option_activated:
+            for _plugin in self._plugins:
+                _plugin.activate_server_plugin_options(xds)
+            self._server_option_activated = True
 
     def _get_identifier(self) -> str:
         plugin_identifiers = []
         for _plugin in self._plugins:
             plugin_identifiers.append(_plugin.identifier)
         return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
-
-    def is_server_traced(
-        self, xds: bool  # pylint: disable=unused-argument
-    ) -> bool:
-        return True
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []

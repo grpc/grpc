@@ -93,7 +93,7 @@ bool KeyInLabels(std::string key, const std::vector<Label>& labels) {
 
 void PythonOpenCensusServerCallTracer::RecordSendInitialMetadata(
     grpc_metadata_batch* send_initial_metadata) {
-  // Only add labels if exchange is needed (Client send metadata with keys in 
+  // Only add labels if exchange is needed (Client send metadata with keys in
   // MetadataExchangeKeyNames).
   for (const auto& key : MetadataExchangeKeyNames) {
     if (KeyInLabels(key, labels_from_peer_)) {
@@ -118,7 +118,8 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, context_.Labels(),
-                    identifier_, registered_method_, /*include_exchange_labels=*/false);
+                    identifier_, registered_method_,
+                    /*include_exchange_labels=*/false);
   }
 
   labels_from_peer_ = labels_injector_.GetExchangeLabels(recv_initial_metadata);
@@ -186,14 +187,18 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     }
     RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName,
                        static_cast<double>(response_size), context_.Labels(),
-                       identifier_, registered_method_, /*include_exchange_labels=*/true);
+                       identifier_, registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
                        static_cast<double>(request_size), context_.Labels(),
-                       identifier_, registered_method_, /*include_exchange_labels=*/true);
+                       identifier_, registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_s,
-                       context_.Labels(), identifier_, registered_method_, /*include_exchange_labels=*/true);
+                       context_.Labels(), identifier_, registered_method_,
+                       /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, context_.Labels(),
-                    identifier_, registered_method_, /*include_exchange_labels=*/true);
+                    identifier_, registered_method_,
+                    /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName,
                     sent_message_count_, context_.Labels(), identifier_,
                     registered_method_, /*include_exchange_labels=*/true);

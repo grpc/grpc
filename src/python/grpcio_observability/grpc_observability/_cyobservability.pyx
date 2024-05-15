@@ -247,8 +247,8 @@ def _get_stats_data(object measurement, object labels, object identifier) -> _ob
       registered_method -> bool
       include_exchange_labels -> bool
       value -> {value_double: float | value_int: int}
-  labels: Labels assciociated with stats data with type of dict[str, AnyStr].
-  identifier: Identifies which plugins this stats data belongs to.
+  labels: Labels assciociated with stats data with type of Mapping[str, AnyStr].
+  identifier: Specifies the plugins associated with this stats data.
   """
   measurement: Measurement
   labels: Mapping[str, AnyStr]
