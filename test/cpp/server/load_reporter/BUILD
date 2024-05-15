@@ -36,7 +36,6 @@ grpc_cc_test(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
-        "absl/log:log",
         "gtest",
         "opencensus-stats-test",
     ],
