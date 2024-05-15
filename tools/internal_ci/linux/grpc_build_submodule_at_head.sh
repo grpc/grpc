@@ -75,7 +75,8 @@ then
   rm -rf third_party/upb/upb
   cp -r third_party/protobuf/upb third_party/upb
   # generate upb gen source codes
-  apt-get update && apt-get install -y build-essential
+  sudo apt-get update
+  sudo apt-get install -y build-essential
   tools/codegen/core/gen_upb_api.sh
   # update utf8_range
   rm -rf third_party/utf8_range
