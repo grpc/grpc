@@ -121,21 +121,6 @@ extern TraceFlag ${flag}_trace;
 
 const absl::flat_hash_map<std::string, TraceFlag*>* GetAllTraceFlags();
 
-constexpr const char* g_all_trace_var_names[] = {
-% for flag, settings in trace_flags.items():
-% if not "debug_only" in settings or not settings["debug_only"]:
-"${flag}",
-% endif
-% endfor
-#ifndef NDEBUG
-% for flag, settings in trace_flags.items():
-% if "debug_only" in settings and settings["debug_only"]:
-"${flag}",
-% endif
-% endfor
-#endif
-};
-
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_DEBUG_TRACE_H
