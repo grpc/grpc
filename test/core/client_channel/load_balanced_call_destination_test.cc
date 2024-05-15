@@ -69,6 +69,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   ClientChannel::PickerObservable& picker() { return picker_; }
 
+  RefCountedPtr<SubchannelInterface> subchannel() { return subchannel_; }
+
  private:
   class TestCallDestination final : public UnstartedCallDestination {
    public:
@@ -90,6 +92,36 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     std::queue<CallHandler> handlers_;
   };
 
+  class TestSubchannel : public SubchannelInterface {
+   public:
+    TestSubchannel(RefCountedPtr<UnstartedCallDestination> call_destination)
+        : call_destination_(std::move(call_destination)) {}
+
+    void WatchConnectivityState(
+        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
+      Crash("not implemented");
+    }
+    void CancelConnectivityStateWatch(
+        ConnectivityStateWatcherInterface* watcher) override {
+      Crash("not implemented");
+    }
+    void RequestConnection() override { Crash("not implemented"); }
+    void ResetBackoff() override { Crash("not implemented"); }
+    void AddDataWatcher(
+        std::unique_ptr<DataWatcherInterface> watcher) override {
+      Crash("not implemented");
+    }
+    void CancelDataWatcher(DataWatcherInterface* watcher) override {
+      Crash("not implemented");
+    }
+    RefCountedPtr<UnstartedCallDestination> call_destination() override {
+      return call_destination_;
+    }
+
+   private:
+    const RefCountedPtr<UnstartedCallDestination> call_destination_;
+  };
+
   void InitCoreConfiguration() override {}
 
   void Shutdown() override {}
@@ -105,6 +137,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test"),
           1024);
+  RefCountedPtr<TestSubchannel> subchannel_ =
+      MakeRefCounted<TestSubchannel>(call_destination_);
 };
 
 #define LOAD_BALANCED_CALL_DESTINATION_TEST(name) \
@@ -137,8 +171,8 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
                });
   auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
   EXPECT_CALL(*mock_picker, Pick)
-      .WillOnce([](LoadBalancingPolicy::PickArgs args) {
-        return LoadBalancingPolicy::PickResult{args.subchannel};
+      .WillOnce([this](LoadBalancingPolicy::PickArgs args) {
+        return LoadBalancingPolicy::PickResult::Complete{subchannel()};
       });
   picker().Set(mock_picker);
   auto handler = TickUntilCallStarted();

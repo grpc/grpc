@@ -100,7 +100,7 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 ConnectedSubchannel::ConnectedSubchannel(
     const ChannelArgs& args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
-    : RefCounted<ConnectedSubchannel>(
+    : UnstartedCallDestination(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount)
               ? "ConnectedSubchannel"
               : nullptr),
@@ -162,7 +162,8 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     // handles the channelz updates.
     return OnCancel(
         Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
-            [self = Ref()](ServerMetadataHandle metadata) {
+            [self = RefAsSubclass<ConnectedSubchannel>()](
+                ServerMetadataHandle metadata) {
               channelz::SubchannelNode* channelz_subchannel =
                   self->channelz_subchannel();
               GPR_ASSERT(channelz_subchannel != nullptr);
@@ -174,7 +175,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
               }
               return metadata;
             }),
-        [self = Ref()]() {
+        [self = RefAsSubclass<ConnectedSubchannel>()]() {
           channelz::SubchannelNode* channelz_subchannel =
               self->channelz_subchannel();
           GPR_ASSERT(channelz_subchannel != nullptr);

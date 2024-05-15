@@ -28,6 +28,7 @@
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/transport/call_destination.h"
 
 namespace grpc_core {
 
@@ -98,6 +99,9 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
   // Cancels a data watch.
   virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
 
+  // Obtain the call destination for this subchannel.
+  virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
+
  protected:
   void Orphaned() override {}
 };
@@ -130,6 +134,10 @@ class DelegatingSubchannel : public SubchannelInterface {
   }
   void CancelDataWatcher(DataWatcherInterface* watcher) override {
     wrapped_subchannel_->CancelDataWatcher(watcher);
+  }
+
+  RefCountedPtr<UnstartedCallDestination> call_destination() override {
+    return wrapped_subchannel_->call_destination();
   }
 
  private:

@@ -64,7 +64,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel : public UnstartedCallDestination {
  public:
   const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
@@ -76,7 +76,6 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Methods for v3 stack.
-  virtual void StartCall(UnstartedCallHandler unstarted_handler) = 0;
   virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
 
   // Methods for legacy stack.
@@ -85,6 +84,8 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args) = 0;
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
+
+  void Orphaned() override {}
 
  protected:
   ConnectedSubchannel(

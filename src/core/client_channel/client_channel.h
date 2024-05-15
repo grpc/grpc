@@ -64,7 +64,7 @@ class ClientChannel : public Channel {
         ConnectivityStateWatcherInterface* watcher) override
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
 
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel() const {
+    RefCountedPtr<UnstartedCallDestination> call_destination() override {
       return subchannel_->connected_subchannel();
     }
 
