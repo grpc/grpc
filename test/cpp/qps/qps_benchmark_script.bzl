@@ -85,7 +85,6 @@ def json_run_localhost_batch():
             ],
             external_deps = [
                 "absl/log:check",
-                "absl/log:log",
             ],
             deps = [
                 "//:gpr",
