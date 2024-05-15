@@ -35,10 +35,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/alloc.h"
 
 #define GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
 // #define GRPC_ARENA_TRACE_POOLED_ALLOCATIONS

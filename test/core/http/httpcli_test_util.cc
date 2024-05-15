@@ -33,7 +33,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/subprocess.h"
+#include "src/core/util/subprocess.h"
 #include "test/core/test_util/port.h"
 
 namespace grpc_core {

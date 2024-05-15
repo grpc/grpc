@@ -49,9 +49,9 @@
 #include <grpcpp/support/server_interceptor.h>
 
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/server/server.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 
 namespace grpc {
