@@ -338,14 +338,12 @@ gpr_log(GPR_ERROR, "kTraceEventSize=%lu", kTraceEventSize);
   // At this point the list is full, and each subsequent enntry will cause an
   // eviction. We will now add in a trace event that has a copied string. This
   // uses more memory, so it will cause a double eviciction.
-  tracer.AddTraceEvent(
-      ChannelTrace::Severity::Info,
-      grpc_slice_from_copied_string(
-          "long enough string to trigger a multiple eviction"));
+  std::string msg(GRPC_SLICE_INLINED_SIZE + 1, 'x');
+  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
+                       grpc_slice_from_cpp_string(msg));
   matchers.pop_front();
   matchers.pop_front();
-  matchers.push_back(IsTraceEvent(
-      "long enough string to trigger a multiple eviction", "CT_INFO"));
+  matchers.push_back(IsTraceEvent(msg, "CT_INFO"));
   Json json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
   EXPECT_THAT(json, IsChannelTrace(kNumEvents + 1,
