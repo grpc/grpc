@@ -1144,6 +1144,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/debug/trace.cc )
   s.files += %w( src/core/lib/debug/trace.h )
   s.files += %w( src/core/lib/debug/trace_flags.cc )
+  s.files += %w( src/core/lib/debug/trace_flags.h )
+  s.files += %w( src/core/lib/debug/trace_impl.h )
   s.files += %w( src/core/lib/event_engine/ares_resolver.cc )
   s.files += %w( src/core/lib/event_engine/ares_resolver.h )
   s.files += %w( src/core/lib/event_engine/cf_engine/cf_engine.cc )
