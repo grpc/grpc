@@ -29,8 +29,8 @@ int main(int argc, char** argv) {
   for (const auto& test : *tests) {
     CHECK(test.make != nullptr) << "test:" << test.name;
     ::testing::RegisterTest(
-        "Yodel", test.name.c_str(), nullptr, nullptr, __FILE__, __LINE__,
-        [test = &test, &bitgen]() -> grpc_core::YodelTest* {
+        test.test_type.c_str(), test.name.c_str(), nullptr, nullptr, __FILE__,
+        __LINE__, [test = &test, &bitgen]() -> grpc_core::YodelTest* {
           return test->make(fuzzing_event_engine::Actions(), bitgen);
         });
   }
