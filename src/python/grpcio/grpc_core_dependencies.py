@@ -27,6 +27,7 @@ CORE_SOURCE_FILES = [
     'src/core/client_channel/config_selector.cc',
     'src/core/client_channel/dynamic_filters.cc',
     'src/core/client_channel/global_subchannel_pool.cc',
+    'src/core/client_channel/load_balanced_call_destination.cc',
     'src/core/client_channel/local_subchannel_pool.cc',
     'src/core/client_channel/retry_filter.cc',
     'src/core/client_channel/retry_filter_legacy_call_data.cc',

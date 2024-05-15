@@ -46,4 +46,4 @@ class LoadBalancedCallDestination final : public UnstartedCallDestination {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_LOAD_BALANCED_CALL_DESTINATION_H

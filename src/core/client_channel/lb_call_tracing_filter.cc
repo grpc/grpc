@@ -14,8 +14,6 @@
 
 #include "src/core/client_channel/lb_call_tracing_filter.h"
 
-#include "lb_call_tracing_filter.h"
-
 namespace grpc_core {
 
 const NoInterceptor LbCallTracingFilter::Call::OnClientToServerMessage;

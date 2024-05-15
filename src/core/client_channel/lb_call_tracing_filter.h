@@ -76,4 +76,4 @@ class LbCallTracingFilter {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_LB_CALL_TRACING_FILTER_H

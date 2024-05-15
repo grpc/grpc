@@ -143,6 +143,8 @@ let package = Package(
         "src/core/client_channel/dynamic_filters.h",
         "src/core/client_channel/global_subchannel_pool.cc",
         "src/core/client_channel/global_subchannel_pool.h",
+        "src/core/client_channel/load_balanced_call_destination.cc",
+        "src/core/client_channel/load_balanced_call_destination.h",
         "src/core/client_channel/local_subchannel_pool.cc",
         "src/core/client_channel/local_subchannel_pool.h",
         "src/core/client_channel/retry_filter.cc",
