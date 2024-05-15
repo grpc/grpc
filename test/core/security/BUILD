@@ -229,6 +229,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+        "absl/status:statusor",
     ],
     language = "C++",
     deps = [

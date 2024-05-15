@@ -27,6 +27,8 @@
 
 #include <vector>
 
+#include "absl/status/statusor.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -52,13 +54,13 @@ std::string Utf8Encode(const std::wstring& wstr) {
 
 }  // namespace
 
-grpc_slice LoadSystemRootCerts() {
+absl::StatusOr<Slice> LoadSystemRootCerts() {
   std::string bundle_string;
 
   // Open root certificate store.
   HANDLE root_cert_store = CertOpenSystemStoreW(NULL, L"ROOT");
   if (!root_cert_store) {
-    return grpc_empty_slice();
+    return Slice();
   }
 
   // Load all root certificates from certificate store.
@@ -76,10 +78,10 @@ grpc_slice LoadSystemRootCerts() {
 
   CertCloseStore(root_cert_store, 0);
   if (bundle_string.size() == 0) {
-    return grpc_empty_slice();
+    return Slice();
   }
 
-  return grpc_slice_from_cpp_string(std::move(bundle_string));
+  return Slice::FromCopiedString(std::move(bundle_string));
 }
 
 }  // namespace grpc_core

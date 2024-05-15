@@ -4112,6 +4112,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
+        "absl/status:statusor",
         "absl/strings",
     ],
     language = "c++",
@@ -4124,6 +4125,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:json",
         "//src/core:load_file",
+        "//src/core:slice",
         "//src/core:useful",
     ],
 )

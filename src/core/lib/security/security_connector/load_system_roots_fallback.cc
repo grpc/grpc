@@ -21,14 +21,17 @@
 #if !defined(GPR_LINUX) && !defined(GPR_ANDROID) && !defined(GPR_FREEBSD) && \
     !defined(GPR_APPLE) && !defined(GPR_WINDOWS)
 
+#include "absl/status/statusor.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
-grpc_slice LoadSystemRootCerts() { return grpc_empty_slice(); }
+absl::StatusOr<Slice> LoadSystemRootCerts() { return Slice(); }
 
 }  // namespace grpc_core
 

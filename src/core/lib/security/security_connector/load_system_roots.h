@@ -19,16 +19,16 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_LOAD_SYSTEM_ROOTS_H
 
-#include <grpc/slice.h>
+#include "absl/status/statusor.h"
+
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
 
-// TODO(matthewstevenson88): Update LoadSystemRootCerts to use Slice
-// instead of grpc_slice.
-
 // Returns a slice containing roots from the OS trust store
-grpc_slice LoadSystemRootCerts();
+absl::StatusOr<Slice> LoadSystemRootCerts();
 
 }  // namespace grpc_core
 
