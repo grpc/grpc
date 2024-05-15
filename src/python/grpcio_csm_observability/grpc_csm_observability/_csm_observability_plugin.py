@@ -142,7 +142,9 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         self, include_exchange_labels: bool
     ) -> Dict[str, str]:
         if include_exchange_labels:
-            return self._additional_labels | self._additional_exchange_labels
+            additional_labels = self._additional_labels
+            additional_labels.update(self._additional_exchange_labels)
+            return additional_labels
         else:
             return self._additional_labels
 
