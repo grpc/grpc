@@ -50,8 +50,8 @@ def render_source_file(tmpl_name, trace_flags):
 def main(args):
     with open("src/core/lib/debug/trace_flags.yaml") as f:
         trace_flags = yaml.safe_load(f.read())
-    with open("src/core/lib/debug/trace.h", "w") as f:
-        f.write(render_source_file("trace.h.mako", trace_flags))
+    with open("src/core/lib/debug/trace_flags.h", "w") as f:
+        f.write(render_source_file("trace_flags.h.mako", trace_flags))
     with open("src/core/lib/debug/trace_flags.cc", "w") as f:
         f.write(render_source_file("trace_flags.cc.mako", trace_flags))
     with open("doc/trace_flags.md", "w") as f:
