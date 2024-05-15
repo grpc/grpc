@@ -424,8 +424,7 @@ ServerLoggingFilter::Create(const ChannelArgs& /*args*/,
 }
 
 // Construct a promise for one call.
-void ServerLoggingFilter::Call::OnClientInitialMetadata(
-    ClientMetadata& md, ServerLoggingFilter* filter) {
+void ServerLoggingFilter::Call::OnClientInitialMetadata(ClientMetadata& md) {
   call_data_.emplace(false, md, "");
   if (!call_data_->ShouldLog()) {
     call_data_.reset();
