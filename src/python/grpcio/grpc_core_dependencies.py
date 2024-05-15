@@ -476,7 +476,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc',
     'src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc',
     'src/core/lib/event_engine/time_util.cc',
-    'src/core/lib/event_engine/trace.cc',
     'src/core/lib/event_engine/utils.cc',
     'src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc',
     'src/core/lib/event_engine/windows/iocp.cc',

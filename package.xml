@@ -1216,7 +1216,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/thready_event_engine/thready_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.h" role="src" />

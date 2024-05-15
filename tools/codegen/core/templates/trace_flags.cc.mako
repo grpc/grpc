@@ -19,6 +19,7 @@
 #include "absl/container/flat_hash_map.h"
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_core {
 
@@ -34,7 +35,8 @@ TraceFlag ${flag}_trace(${str(settings["default"]).lower()}, "${flag}");
 % endfor
 
 const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
-  static const absl::flat_hash_map<std::string, TraceFlag*> all({
+  static const NoDestruct<absl::flat_hash_map<std::string, TraceFlag*>>
+      all(absl::flat_hash_map<std::string, TraceFlag*>({
 % for flag, settings in trace_flags.items():
 % if "debug_only" not in settings or not settings["debug_only"]:
     {"${flag}", &${flag}_trace},
@@ -47,8 +49,8 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
 % endif
 % endfor
 #endif
-  });
-  return all;
+  }));
+  return *all;
 }
 
 }  // namespace grpc_core

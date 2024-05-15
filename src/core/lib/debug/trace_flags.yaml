@@ -353,3 +353,11 @@ xds_server_config_fetcher:
 xds_wrr_locality_lb:
   default: false
   description: XDS WRR locality LB policy.
+fuzzing_ee_writes:
+  default: false
+  description: Fuzzing EventEngine writes.
+  internal: true
+fuzzing_ee_timers:
+  default: false
+  description: Fuzzing EventEngine timers.
+  internal: true

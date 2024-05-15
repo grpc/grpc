@@ -1228,7 +1228,6 @@ let package = Package(
         "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h",
         "src/core/lib/event_engine/time_util.cc",
         "src/core/lib/event_engine/time_util.h",
-        "src/core/lib/event_engine/trace.cc",
         "src/core/lib/event_engine/trace.h",
         "src/core/lib/event_engine/utils.cc",
         "src/core/lib/event_engine/utils.h",

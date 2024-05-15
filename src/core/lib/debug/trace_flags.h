@@ -125,6 +125,8 @@ extern TraceFlag xds_resolver_trace;
 extern TraceFlag xds_route_config_resource_type_test_trace;
 extern TraceFlag xds_server_config_fetcher_trace;
 extern TraceFlag xds_wrr_locality_lb_trace;
+extern TraceFlag fuzzing_ee_writes_trace;
+extern TraceFlag fuzzing_ee_timers_trace;
 
 }  // namespace grpc_core
 

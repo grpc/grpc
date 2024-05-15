@@ -1234,7 +1234,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/thready_event_engine/thready_event_engine.h )
   s.files += %w( src/core/lib/event_engine/time_util.cc )
   s.files += %w( src/core/lib/event_engine/time_util.h )
-  s.files += %w( src/core/lib/event_engine/trace.cc )
   s.files += %w( src/core/lib/event_engine/trace.h )
   s.files += %w( src/core/lib/event_engine/utils.cc )
   s.files += %w( src/core/lib/event_engine/utils.h )

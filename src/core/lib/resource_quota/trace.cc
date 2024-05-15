@@ -13,5 +13,3 @@
 // limitations under the License.
 
 #include <grpc/support/port_platform.h>
-
-grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");

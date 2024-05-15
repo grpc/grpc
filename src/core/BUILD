@@ -2641,11 +2641,9 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): delete this target when refactoring to GRPC_TRACE_LOG(flag, level)
 grpc_cc_library(
     name = "event_engine_trace",
-    srcs = [
-        "lib/event_engine/trace.cc",
-    ],
     hdrs = [
         "lib/event_engine/trace.h",
     ],
