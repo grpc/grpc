@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/http_uri.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -30,6 +31,9 @@ const upb_MiniTable envoy__config__core__v3__HttpUri_msg_init = {
   &envoy_config_core_v3_HttpUri_submsgs[0],
   &envoy_config_core_v3_HttpUri__fields[0],
   UPB_SIZE(40, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.HttpUri",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000003f00000a, &upb_pss_1bt},

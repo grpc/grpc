@@ -3,7 +3,8 @@
  *     envoy/type/metadata/v3/metadata.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -28,6 +29,9 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKey_msg_init = {
   &envoy_type_metadata_v3_MetadataKey_submsgs[0],
   &envoy_type_metadata_v3_MetadataKey__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.metadata.v3.MetadataKey",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -44,6 +48,9 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKey__PathSegment_msg_init
   NULL,
   &envoy_type_metadata_v3_MetadataKey_PathSegment__fields[0],
   UPB_SIZE(24, 32), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.metadata.v3.MetadataKey.PathSegment",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},
@@ -68,6 +75,9 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKind_msg_init = {
   &envoy_type_metadata_v3_MetadataKind_submsgs[0],
   &envoy_type_metadata_v3_MetadataKind__fields[0],
   UPB_SIZE(16, 24), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.metadata.v3.MetadataKind",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max64b},
@@ -84,24 +94,36 @@ const upb_MiniTable envoy__type__metadata__v3__MetadataKind__Request_msg_init = 
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.metadata.v3.MetadataKind.Request",
+#endif
 };
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKind__Route_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.metadata.v3.MetadataKind.Route",
+#endif
 };
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKind__Cluster_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.metadata.v3.MetadataKind.Cluster",
+#endif
 };
 
 const upb_MiniTable envoy__type__metadata__v3__MetadataKind__Host_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.metadata.v3.MetadataKind.Host",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[7] = {

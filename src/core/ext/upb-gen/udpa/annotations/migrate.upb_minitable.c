@@ -3,7 +3,8 @@
  *     udpa/annotations/migrate.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -21,6 +22,9 @@ const upb_MiniTable udpa__annotations__MigrateAnnotation_msg_init = {
   NULL,
   &udpa_annotations_MigrateAnnotation__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "udpa.annotations.MigrateAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -36,6 +40,9 @@ const upb_MiniTable udpa__annotations__FieldMigrateAnnotation_msg_init = {
   NULL,
   &udpa_annotations_FieldMigrateAnnotation__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "udpa.annotations.FieldMigrateAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -52,6 +59,9 @@ const upb_MiniTable udpa__annotations__FileMigrateAnnotation_msg_init = {
   NULL,
   &udpa_annotations_FileMigrateAnnotation__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "udpa.annotations.FileMigrateAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

@@ -3,7 +3,8 @@
  *     envoy/admin/v3/certs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_ADMIN_V3_CERTS_PROTO_UPB_MINITABLE_H_
 #define ENVOY_ADMIN_V3_CERTS_PROTO_UPB_MINITABLE_H_

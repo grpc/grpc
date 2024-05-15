@@ -3129,6 +3129,8 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/message/copy.h )
   s.files += %w( third_party/upb/upb/message/internal/accessors.h )
   s.files += %w( third_party/upb/upb/message/internal/array.h )
+  s.files += %w( third_party/upb/upb/message/internal/compare_unknown.c )
+  s.files += %w( third_party/upb/upb/message/internal/compare_unknown.h )
   s.files += %w( third_party/upb/upb/message/internal/extension.c )
   s.files += %w( third_party/upb/upb/message/internal/extension.h )
   s.files += %w( third_party/upb/upb/message/internal/map.h )

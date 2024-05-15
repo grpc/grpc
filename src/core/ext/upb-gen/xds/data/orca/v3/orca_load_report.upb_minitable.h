@@ -3,7 +3,8 @@
  *     xds/data/orca/v3/orca_load_report.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_MINITABLE_H_
 #define XDS_DATA_ORCA_V3_ORCA_LOAD_REPORT_PROTO_UPB_MINITABLE_H_

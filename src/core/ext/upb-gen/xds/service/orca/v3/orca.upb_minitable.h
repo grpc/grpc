@@ -3,7 +3,8 @@
  *     xds/service/orca/v3/orca.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_MINITABLE_H_
 #define XDS_SERVICE_ORCA_V3_ORCA_PROTO_UPB_MINITABLE_H_

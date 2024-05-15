@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/proxy_protocol.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -23,6 +24,9 @@ const upb_MiniTable envoy__config__core__v3__ProxyProtocolPassThroughTLVs_msg_in
   NULL,
   &envoy_config_core_v3_ProxyProtocolPassThroughTLVs__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.ProxyProtocolPassThroughTLVs",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -44,6 +48,9 @@ const upb_MiniTable envoy__config__core__v3__ProxyProtocolConfig_msg_init = {
   &envoy_config_core_v3_ProxyProtocolConfig_submsgs[0],
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.ProxyProtocolConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},

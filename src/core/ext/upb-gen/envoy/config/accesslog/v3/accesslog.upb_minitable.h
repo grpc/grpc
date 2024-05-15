@@ -3,7 +3,8 @@
  *     envoy/config/accesslog/v3/accesslog.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_MINITABLE_H_
 #define ENVOY_CONFIG_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_MINITABLE_H_

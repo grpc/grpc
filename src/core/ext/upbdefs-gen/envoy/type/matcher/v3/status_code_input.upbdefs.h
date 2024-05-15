@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/status_code_input.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_MATCHER_V3_STATUS_CODE_INPUT_PROTO_UPBDEFS_H_
 #define ENVOY_TYPE_MATCHER_V3_STATUS_CODE_INPUT_PROTO_UPBDEFS_H_

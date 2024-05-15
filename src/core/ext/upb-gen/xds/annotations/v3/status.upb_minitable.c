@@ -3,7 +3,8 @@
  *     xds/annotations/v3/status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -21,6 +22,9 @@ const upb_MiniTable xds__annotations__v3__FileStatusAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_FileStatusAnnotation__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.annotations.v3.FileStatusAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -35,6 +39,9 @@ const upb_MiniTable xds__annotations__v3__MessageStatusAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_MessageStatusAnnotation__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.annotations.v3.MessageStatusAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -49,6 +56,9 @@ const upb_MiniTable xds__annotations__v3__FieldStatusAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_FieldStatusAnnotation__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.annotations.v3.FieldStatusAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},
@@ -64,6 +74,9 @@ const upb_MiniTable xds__annotations__v3__StatusAnnotation_msg_init = {
   NULL,
   &xds_annotations_v3_StatusAnnotation__fields[0],
   16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.annotations.v3.StatusAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},

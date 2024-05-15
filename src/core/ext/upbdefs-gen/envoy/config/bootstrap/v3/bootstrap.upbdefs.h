@@ -3,7 +3,8 @@
  *     envoy/config/bootstrap/v3/bootstrap.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_BOOTSTRAP_V3_BOOTSTRAP_PROTO_UPBDEFS_H_

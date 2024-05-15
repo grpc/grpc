@@ -3,7 +3,8 @@
  *     envoy/admin/v3/clusters.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPBDEFS_H_
 #define ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPBDEFS_H_

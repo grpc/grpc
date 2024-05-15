@@ -3043,6 +3043,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/message/copy.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/accessors.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/array.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/compare_unknown.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/message/internal/compare_unknown.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/extension.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/extension.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/message/internal/map.h" role="src" />

@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -39,6 +40,9 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__ring_0hash__v3
   &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash_submsgs[0],
   &envoy_extensions_load_balancing_policies_ring_hash_v3_RingHash__fields[0],
   UPB_SIZE(40, 64), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.ring_hash.v3.RingHash",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},

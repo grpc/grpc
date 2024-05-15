@@ -3,7 +3,8 @@
  *     udpa/annotations/security.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -23,6 +24,9 @@ const upb_MiniTable udpa__annotations__FieldSecurityAnnotation_msg_init = {
   NULL,
   &udpa_annotations_FieldSecurityAnnotation__fields[0],
   16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "udpa.annotations.FieldSecurityAnnotation",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},

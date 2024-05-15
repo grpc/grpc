@@ -3,7 +3,8 @@
  *     xds/type/v3/cel.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_TYPE_V3_CEL_PROTO_UPB_MINITABLE_H_
 #define XDS_TYPE_V3_CEL_PROTO_UPB_MINITABLE_H_

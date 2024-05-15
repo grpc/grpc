@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_CLIENT_SIDE_WEIGHTED_ROUND_ROBIN_V3_CLIENT_SIDE_WEIGHTED_ROUND_ROBIN_PROTO_UPB_MINITABLE_H_
 #define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_CLIENT_SIDE_WEIGHTED_ROUND_ROBIN_V3_CLIENT_SIDE_WEIGHTED_ROUND_ROBIN_PROTO_UPB_MINITABLE_H_

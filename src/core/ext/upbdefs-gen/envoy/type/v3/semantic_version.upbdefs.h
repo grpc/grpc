@@ -3,7 +3,8 @@
  *     envoy/type/v3/semantic_version.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPBDEFS_H_
 #define ENVOY_TYPE_V3_SEMANTIC_VERSION_PROTO_UPBDEFS_H_

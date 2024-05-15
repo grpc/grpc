@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_MINITABLE_H_
 #define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_RING_HASH_V3_RING_HASH_PROTO_UPB_MINITABLE_H_

@@ -3,7 +3,8 @@
  *     google/protobuf/descriptor.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef GOOGLE_PROTOBUF_DESCRIPTOR_PROTO_UPB_MINITABLE_H_
 #define GOOGLE_PROTOBUF_DESCRIPTOR_PROTO_UPB_MINITABLE_H_
@@ -35,6 +36,7 @@ extern const upb_MiniTable google__protobuf__FileOptions_msg_init;
 extern const upb_MiniTable google__protobuf__MessageOptions_msg_init;
 extern const upb_MiniTable google__protobuf__FieldOptions_msg_init;
 extern const upb_MiniTable google__protobuf__FieldOptions__EditionDefault_msg_init;
+extern const upb_MiniTable google__protobuf__FieldOptions__FeatureSupport_msg_init;
 extern const upb_MiniTable google__protobuf__OneofOptions_msg_init;
 extern const upb_MiniTable google__protobuf__EnumOptions_msg_init;
 extern const upb_MiniTable google__protobuf__EnumValueOptions_msg_init;

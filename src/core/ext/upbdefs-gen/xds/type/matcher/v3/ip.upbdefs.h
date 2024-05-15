@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/ip.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_TYPE_MATCHER_V3_IP_PROTO_UPBDEFS_H_
 #define XDS_TYPE_MATCHER_V3_IP_PROTO_UPBDEFS_H_

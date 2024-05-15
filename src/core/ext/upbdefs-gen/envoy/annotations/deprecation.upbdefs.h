@@ -3,7 +3,8 @@
  *     envoy/annotations/deprecation.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_ANNOTATIONS_DEPRECATION_PROTO_UPBDEFS_H_
 #define ENVOY_ANNOTATIONS_DEPRECATION_PROTO_UPBDEFS_H_
