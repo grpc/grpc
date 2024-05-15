@@ -115,6 +115,7 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
     }
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;

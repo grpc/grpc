@@ -2083,6 +2083,7 @@ grpc_cc_library(
         "//src/core:call_final_info",
         "//src/core:call_finalization",
         "//src/core:call_spine",
+        "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
