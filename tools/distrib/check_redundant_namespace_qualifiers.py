@@ -28,7 +28,7 @@ IGNORED_FILES = [
     "src/core/server/server.h",
     # generated code adds a necessary grpc_core:: for a logging macro which can
     # be used anywhere.
-    "src/core/lib/debug/trace.h",
+    "src/core/lib/debug/trace_impl.h",
 ]
 
 
