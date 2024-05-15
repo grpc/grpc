@@ -208,6 +208,9 @@ class TestRegistry {
   TestRegistry() : next_(root_) { root_ = this; }
 
   struct Test {
+    absl::string_view file;
+    int line;
+    std::string test_type;
     std::string name;
     absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
                                   absl::BitGenRef) const>
@@ -234,22 +237,14 @@ class SimpleTestRegistry final : public TestRegistry {
   ~SimpleTestRegistry() = delete;
 
   void RegisterTest(
+      absl::string_view file, int line, absl::string_view test_type,
       absl::string_view name,
       absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
                                     absl::BitGenRef) const>
           create);
 
  private:
-  void ContributeTests(std::vector<Test>& tests) override {
-    for (const auto& test : tests_) {
-      tests.push_back(
-          {test.name,
-           [test = &test](const fuzzing_event_engine::Actions& actions,
-                          absl::BitGenRef rng) {
-             return test->make(actions, rng);
-           }});
-    }
-  }
+  void ContributeTests(std::vector<Test>& tests) override;
 
   std::vector<Test> tests_;
 };
@@ -260,34 +255,39 @@ class ParameterizedTestRegistry final : public TestRegistry {
   ParameterizedTestRegistry() {}
   ~ParameterizedTestRegistry() = delete;
 
-  void RegisterTest(absl::string_view name,
+  void RegisterTest(absl::string_view file, int line,
+                    absl::string_view test_type, absl::string_view name,
                     absl::AnyInvocable<YodelTest*(
                         const T&, const fuzzing_event_engine::Actions&,
                         absl::BitGenRef) const>
                         make) {
-    tests_.push_back({std::string(name), std::move(make)});
+    tests_.push_back({file, line, test_type, name, std::move(make)});
   }
 
   void RegisterParameter(absl::string_view name, T value) {
-    parameters_.push_back({std::string(name), std::move(value)});
+    parameters_.push_back({name, std::move(value)});
   }
 
  private:
   struct ParameterizedTest {
-    std::string name;
+    absl::string_view file;
+    int line;
+    absl::string_view test_type;
+    absl::string_view name;
     absl::AnyInvocable<YodelTest*(
         const T&, const fuzzing_event_engine::Actions&, absl::BitGenRef) const>
         make;
   };
   struct Parameter {
-    std::string name;
+    absl::string_view name;
     T value;
   };
 
   void ContributeTests(std::vector<Test>& tests) override {
     for (const auto& test : tests_) {
       for (const auto& parameter : parameters_) {
-        tests.push_back({test.name + "/" + parameter.name,
+        tests.push_back({test.file, test.line, std::string(test.test_type),
+                         absl::StrCat(test.name, "/", parameter.name),
                          [test = &test, parameter = &parameter](
                              const fuzzing_event_engine::Actions& actions,
                              absl::BitGenRef rng) {
@@ -415,7 +415,7 @@ class YodelTest : public ::testing::Test {
   int YodelTest_##name::registered_ =                                        \
       (grpc_core::NoDestructSingleton<                                       \
            grpc_core::yodel_detail::SimpleTestRegistry>::Get()               \
-           ->RegisterTest(#name, &Create),                                   \
+           ->RegisterTest(__FILE__, __LINE__, #test_type, #name, &Create),   \
        0);                                                                   \
   void YodelTest_##name::TestImpl()
 
@@ -439,7 +439,7 @@ class YodelTest : public ::testing::Test {
       (grpc_core::NoDestructSingleton<                                       \
            grpc_core::yodel_detail::ParameterizedTestRegistry<               \
                grpc_core::test_type, parameter_type>>::Get()                 \
-           ->RegisterTest(#name, &Create),                                   \
+           ->RegisterTest(__FILE__, __LINE__, #test_type, #name, &Create),   \
        0);                                                                   \
   void YodelTest_##name::TestImpl()
 

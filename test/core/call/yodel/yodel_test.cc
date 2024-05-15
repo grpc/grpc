@@ -79,9 +79,34 @@ std::vector<TestRegistry::Test> TestRegistry::AllTests() {
     if (absl::StartsWith(test.name, "DISABLED_")) continue;
     out.emplace_back(std::move(test));
   }
-  std::sort(out.begin(), out.end(),
-            [](const Test& a, const Test& b) { return a.name < b.name; });
+  std::stable_sort(out.begin(), out.end(), [](const Test& a, const Test& b) {
+    return std::make_tuple(a.file, a.line) < std::make_tuple(b.file, b.line);
+  });
   return out;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SimpleTestRegistry
+
+void SimpleTestRegistry::RegisterTest(
+    absl::string_view file, int line, absl::string_view test_type,
+    absl::string_view name,
+    absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
+                                  absl::BitGenRef) const>
+        create) {
+  tests_.push_back({file, line, std::string(test_type), std::string(name),
+                    std::move(create)});
+}
+
+void SimpleTestRegistry::ContributeTests(std::vector<Test>& tests) {
+  for (const auto& test : tests_) {
+    tests.push_back(
+        {test.file, test.line, test.test_type, test.name,
+         [test = &test](const fuzzing_event_engine::Actions& actions,
+                        absl::BitGenRef rng) {
+           return test->make(actions, rng);
+         }});
+  }
 }
 
 }  // namespace yodel_detail
