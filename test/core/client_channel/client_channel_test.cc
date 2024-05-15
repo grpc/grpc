@@ -107,7 +107,8 @@ class ClientChannelTest : public YodelTest {
   class TestClientChannelFactory final : public ClientChannelFactory {
    public:
     RefCountedPtr<Subchannel> CreateSubchannel(
-        const grpc_resolved_address& address, const ChannelArgs& args) {
+        const grpc_resolved_address& address,
+        const ChannelArgs& args) override {
       gpr_log(GPR_INFO, "CreateSubchannel: args=%s", args.ToString().c_str());
       return Subchannel::Create(MakeOrphanable<TestConnector>(), address, args);
     }
@@ -136,10 +137,11 @@ class ClientChannelTest : public YodelTest {
   class TestCallDestinationFactory final
       : public ClientChannel::CallDestinationFactory {
    public:
-    TestCallDestinationFactory(ClientChannelTest* test) : test_(test) {}
+    explicit TestCallDestinationFactory(ClientChannelTest* test)
+        : test_(test) {}
 
-    virtual RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
-        ClientChannel::PickerObservable picker) {
+    RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
+        ClientChannel::PickerObservable picker) override {
       CHECK(!test_->picker_.has_value());
       test_->picker_ = std::move(picker);
       return test_->call_destination_;

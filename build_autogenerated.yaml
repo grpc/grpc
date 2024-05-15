@@ -236,6 +236,7 @@ libs:
   - src/core/client_channel/connector.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
@@ -1261,6 +1262,7 @@ libs:
   - src/core/client_channel/config_selector.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -2227,6 +2229,7 @@ libs:
   - src/core/client_channel/connector.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
@@ -2721,6 +2724,7 @@ libs:
   - src/core/client_channel/config_selector.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -7875,12 +7879,22 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
   - test/core/client_channel/client_channel_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: client_context_test_peer_test
   gtest: true
@@ -12739,6 +12753,27 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: load_balanced_call_destination_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/client_channel/load_balanced_call_destination_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: load_config_test
   gtest: true
   build: test
@@ -18995,6 +19030,17 @@ targets:
   headers: []
   src:
   - test/core/gpr/string_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
+- name: subchannel_args_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/subchannel_args_test.cc
   deps:
   - gtest
   - grpc_test_util

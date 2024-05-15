@@ -94,7 +94,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   class TestSubchannel : public SubchannelInterface {
    public:
-    TestSubchannel(RefCountedPtr<UnstartedCallDestination> call_destination)
+    explicit TestSubchannel(
+        RefCountedPtr<UnstartedCallDestination> call_destination)
         : call_destination_(std::move(call_destination)) {}
 
     void WatchConnectivityState(
