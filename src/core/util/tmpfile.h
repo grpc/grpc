@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2017 gRPC authors.
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,20 +16,17 @@
 //
 //
 
+#ifndef GRPC_SRC_CORE_UTIL_TMPFILE_H
+#define GRPC_SRC_CORE_UTIL_TMPFILE_H
+
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/atm.h>
+#include <stdio.h>
 
-#include "src/core/lib/gpr/useful.h"
+// Creates a temporary file from a prefix.
+// If tmp_filename is not NULL, *tmp_filename is assigned the name of the
+// created file and it is the responsibility of the caller to gpr_free it
+// unless an error occurs in which case it will be set to NULL.
+FILE* gpr_tmpfile(const char* prefix, char** tmp_filename);
 
-gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm* value, gpr_atm delta,
-                                       gpr_atm min, gpr_atm max) {
-  gpr_atm current_value;
-  gpr_atm new_value;
-  do {
-    current_value = gpr_atm_no_barrier_load(value);
-    new_value = grpc_core::Clamp(current_value + delta, min, max);
-    if (new_value == current_value) break;
-  } while (!gpr_atm_no_barrier_cas(value, current_value, new_value));
-  return new_value;
-}
+#endif  // GRPC_SRC_CORE_UTIL_TMPFILE_H

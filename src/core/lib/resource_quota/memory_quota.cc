@@ -34,7 +34,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 

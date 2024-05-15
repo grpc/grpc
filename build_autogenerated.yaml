@@ -55,11 +55,6 @@ libs:
   - src/core/lib/config/config_vars.h
   - src/core/lib/config/load_config.h
   - src/core/lib/event_engine/thread_local.h
-  - src/core/lib/gpr/alloc.h
-  - src/core/lib/gpr/string.h
-  - src/core/lib/gpr/time_precise.h
-  - src/core/lib/gpr/tmpfile.h
-  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/construct_destruct.h
   - src/core/lib/gprpp/crash.h
   - src/core/lib/gprpp/debug_location.h
@@ -76,37 +71,16 @@ libs:
   - src/core/lib/gprpp/tchar.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/gprpp/time_util.h
+  - src/core/util/alloc.h
+  - src/core/util/string.h
+  - src/core/util/time_precise.h
+  - src/core/util/tmpfile.h
+  - src/core/util/useful.h
   src:
   - src/core/lib/config/config_vars.cc
   - src/core/lib/config/config_vars_non_generated.cc
   - src/core/lib/config/load_config.cc
   - src/core/lib/event_engine/thread_local.cc
-  - src/core/lib/gpr/alloc.cc
-  - src/core/lib/gpr/android/log.cc
-  - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/iphone/cpu.cc
-  - src/core/lib/gpr/linux/cpu.cc
-  - src/core/lib/gpr/linux/log.cc
-  - src/core/lib/gpr/log.cc
-  - src/core/lib/gpr/msys/tmpfile.cc
-  - src/core/lib/gpr/posix/cpu.cc
-  - src/core/lib/gpr/posix/log.cc
-  - src/core/lib/gpr/posix/string.cc
-  - src/core/lib/gpr/posix/sync.cc
-  - src/core/lib/gpr/posix/time.cc
-  - src/core/lib/gpr/posix/tmpfile.cc
-  - src/core/lib/gpr/string.cc
-  - src/core/lib/gpr/sync.cc
-  - src/core/lib/gpr/sync_abseil.cc
-  - src/core/lib/gpr/time.cc
-  - src/core/lib/gpr/time_precise.cc
-  - src/core/lib/gpr/windows/cpu.cc
-  - src/core/lib/gpr/windows/log.cc
-  - src/core/lib/gpr/windows/string.cc
-  - src/core/lib/gpr/windows/string_util.cc
-  - src/core/lib/gpr/windows/sync.cc
-  - src/core/lib/gpr/windows/time.cc
-  - src/core/lib/gpr/windows/tmpfile.cc
   - src/core/lib/gprpp/crash.cc
   - src/core/lib/gprpp/examine_stack.cc
   - src/core/lib/gprpp/fork.cc
@@ -122,6 +96,32 @@ libs:
   - src/core/lib/gprpp/windows/env.cc
   - src/core/lib/gprpp/windows/stat.cc
   - src/core/lib/gprpp/windows/thd.cc
+  - src/core/util/alloc.cc
+  - src/core/util/android/log.cc
+  - src/core/util/atm.cc
+  - src/core/util/iphone/cpu.cc
+  - src/core/util/linux/cpu.cc
+  - src/core/util/linux/log.cc
+  - src/core/util/log.cc
+  - src/core/util/msys/tmpfile.cc
+  - src/core/util/posix/cpu.cc
+  - src/core/util/posix/log.cc
+  - src/core/util/posix/string.cc
+  - src/core/util/posix/sync.cc
+  - src/core/util/posix/time.cc
+  - src/core/util/posix/tmpfile.cc
+  - src/core/util/string.cc
+  - src/core/util/sync.cc
+  - src/core/util/sync_abseil.cc
+  - src/core/util/time.cc
+  - src/core/util/time_precise.cc
+  - src/core/util/windows/cpu.cc
+  - src/core/util/windows/log.cc
+  - src/core/util/windows/string.cc
+  - src/core/util/windows/string_util.cc
+  - src/core/util/windows/sync.cc
+  - src/core/util/windows/time.cc
+  - src/core/util/windows/tmpfile.cc
   deps:
   - absl/base:base
   - absl/base:core_headers
@@ -882,7 +882,6 @@ libs:
   - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -1211,6 +1210,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/spinlock.h
   - src/core/xds/grpc/certificate_provider_store.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
   - src/core/xds/grpc/upb_utils.h
@@ -2410,7 +2410,6 @@ libs:
   - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -2672,6 +2671,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
@@ -3997,7 +3997,7 @@ libs:
   language: c++
   public_headers: []
   headers:
-  - src/core/lib/gpr/subprocess.h
+  - src/core/util/subprocess.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
@@ -4016,8 +4016,8 @@ libs:
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
+  - src/core/util/subprocess_posix.cc
+  - src/core/util/subprocess_windows.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
   - test/core/end2end/data/server1_key.cc
@@ -4493,7 +4493,6 @@ libs:
   - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -4595,6 +4594,7 @@ libs:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/join_state.h
@@ -4711,6 +4711,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
@@ -5262,7 +5263,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
+  - src/core/util/subprocess.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
   - test/core/test_util/fuzzer_util.h
@@ -5278,8 +5279,8 @@ targets:
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
+  - src/core/util/subprocess_posix.cc
+  - src/core/util/subprocess_windows.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -5868,7 +5869,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
+  - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
@@ -5881,8 +5882,8 @@ targets:
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
+  - src/core/util/subprocess_posix.cc
+  - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/cmdline.cc
@@ -5906,7 +5907,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/subprocess.h
+  - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/cmdline.h
   - test/core/test_util/evaluate_args_test_util.h
@@ -5919,8 +5920,8 @@ targets:
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
   src:
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
+  - src/core/util/subprocess_posix.cc
+  - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/cmdline.cc
@@ -6218,8 +6219,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/util/useful.h
   src:
   - test/core/gprpp/bitset_test.cc
   deps:
@@ -6356,7 +6357,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -6421,6 +6421,7 @@ targets:
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
+  - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -7637,7 +7638,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -7680,6 +7680,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
@@ -9146,7 +9147,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
@@ -9175,6 +9175,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
@@ -9759,7 +9760,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
@@ -9803,6 +9803,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/http2_errors.h
+  - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
@@ -9892,7 +9893,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
@@ -9943,6 +9943,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -11668,7 +11669,6 @@ targets:
   - src/core/lib/event_engine/work_queue/work_queue.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
@@ -11768,6 +11768,7 @@ targets:
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/cancel_callback.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/join_state.h
@@ -11859,6 +11860,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -12156,7 +12158,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
@@ -12199,6 +12200,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/spinlock.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -12840,7 +12842,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
@@ -12891,6 +12892,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/spinlock.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -14075,7 +14077,6 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gpr/spinlock.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -14093,6 +14094,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
@@ -19024,9 +19026,9 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/table.h
+  - src/core/util/useful.h
   src:
   - test/core/gprpp/table_test.cc
   deps:
@@ -20215,8 +20217,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/unique_type_name.h
+  - src/core/util/useful.h
   src:
   - test/core/gprpp/unique_type_name_test.cc
   deps:
@@ -20252,7 +20254,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/gpr/useful.h
+  - src/core/util/useful.h
   src:
   - test/core/gpr/useful_test.cc
   deps:

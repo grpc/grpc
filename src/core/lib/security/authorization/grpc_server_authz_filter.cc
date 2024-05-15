@@ -39,6 +39,7 @@ namespace grpc_core {
 const NoInterceptor GrpcServerAuthzFilter::Call::OnServerInitialMetadata;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerMessage;
+const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnServerToClientMessage;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnFinalize;
 

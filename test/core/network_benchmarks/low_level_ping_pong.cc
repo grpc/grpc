@@ -41,11 +41,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/histogram.h"
 

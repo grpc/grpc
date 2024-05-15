@@ -58,7 +58,6 @@
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -72,6 +71,7 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/useful.h"
 
 // IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
 

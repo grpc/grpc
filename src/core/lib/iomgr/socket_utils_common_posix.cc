@@ -51,10 +51,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/string.h"
 
 // set a socket to use zerocopy
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {

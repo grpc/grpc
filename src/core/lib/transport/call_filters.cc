@@ -29,6 +29,12 @@ void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
 
 namespace filters_detail {
 
+void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data) {
+  for (const auto& op : ops) {
+    op.half_close(Offset(call_data, op.call_offset), op.channel_data);
+  }
+}
+
 template <typename T>
 OperationExecutor<T>::~OperationExecutor() {
   if (promise_data_ != nullptr) {

@@ -59,6 +59,7 @@
 namespace grpc_core {
 
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
+const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
 const NoInterceptor StatefulSessionFilter::Call::OnFinalize;
 

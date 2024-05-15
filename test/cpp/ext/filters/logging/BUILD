@@ -26,7 +26,6 @@ grpc_cc_library(
     srcs = ["library.cc"],
     hdrs = ["library.h"],
     external_deps = [
-        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -58,6 +57,7 @@ grpc_cc_test(
     deps = [
         ":logging_test_library",
         "//:grpc++",
+        "//src/core:dump_args",
         "//src/core:logging_filter",
         "//src/cpp/ext/gcp:observability_logging_sink",
         "//src/proto/grpc/testing:echo_proto",

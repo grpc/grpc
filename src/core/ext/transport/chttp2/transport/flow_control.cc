@@ -37,8 +37,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace chttp2 {

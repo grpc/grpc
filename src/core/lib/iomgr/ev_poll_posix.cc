@@ -42,13 +42,13 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/util/useful.h"
 
 #define GRPC_POLLSET_KICK_BROADCAST ((grpc_pollset_worker*)1)
 

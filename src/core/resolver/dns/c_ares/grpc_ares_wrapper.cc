@@ -60,7 +60,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -71,6 +70,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/string.h"
 
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;

@@ -329,6 +329,7 @@ class XdsResolver final : public Resolver {
       static const NoInterceptor OnServerInitialMetadata;
       static const NoInterceptor OnServerTrailingMetadata;
       static const NoInterceptor OnClientToServerMessage;
+      static const NoInterceptor OnClientToServerHalfClose;
       static const NoInterceptor OnServerToClientMessage;
       static const NoInterceptor OnFinalize;
     };
@@ -382,6 +383,8 @@ const NoInterceptor
     XdsResolver::ClusterSelectionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor
     XdsResolver::ClusterSelectionFilter::Call::OnClientToServerMessage;
+const NoInterceptor
+    XdsResolver::ClusterSelectionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor
     XdsResolver::ClusterSelectionFilter::Call::OnServerToClientMessage;
 const NoInterceptor XdsResolver::ClusterSelectionFilter::Call::OnFinalize;

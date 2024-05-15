@@ -24,7 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/alloc.h"
+#include "src/core/util/alloc.h"
 
 namespace {
 

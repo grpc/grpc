@@ -101,8 +101,6 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -143,6 +141,8 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6

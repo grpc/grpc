@@ -36,9 +36,9 @@
 #endif
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/useful.h"
 
 absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
                                 const grpc_core::DebugLocation& location,

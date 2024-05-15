@@ -26,7 +26,6 @@ grpc_cc_library(
     hdrs = ["parse_json.h"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "protobuf",
     ],
     deps = ["//:grpc++"],
@@ -50,10 +49,7 @@ grpc_cc_library(
         "qps_worker.h",
         "server.h",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         ":histogram",
         ":interarrival",
@@ -137,7 +133,6 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
-        "absl/log:log",
     ],
     deps = [
         ":benchmark_config",
@@ -151,7 +146,6 @@ grpc_cc_binary(
 grpc_cc_test(
     name = "inproc_sync_unary_ping_pong_test",
     srcs = ["inproc_sync_unary_ping_pong_test.cc"],
-    external_deps = ["absl/log:log"],
     deps = [
         ":benchmark_config",
         ":driver_impl",
@@ -188,7 +182,6 @@ grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
     exec_properties = LARGE_MACHINE,
-    external_deps = ["absl/log:log"],
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         ":benchmark_config",
@@ -202,7 +195,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
-    external_deps = ["absl/log:log"],
     deps = [
         ":benchmark_config",
         ":driver_impl",
@@ -216,7 +208,6 @@ grpc_cc_library(
     name = "usage_timer",
     srcs = ["usage_timer.cc"],
     hdrs = ["usage_timer.h"],
-    external_deps = ["absl/log:log"],
     deps = ["//:gpr"],
 )
 
@@ -225,7 +216,6 @@ grpc_cc_binary(
     srcs = ["worker.cc"],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:log",
     ],
     deps = [
         ":qps_worker_impl",
@@ -241,7 +231,6 @@ grpc_py_binary(
     testonly = True,
     srcs = ["scenario_runner.py"],
     data = ["scenario_runner_cc"],
-    external_deps = ["absl/log:log"],
     python_version = "PY3",
 )
 
