@@ -39,7 +39,6 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {

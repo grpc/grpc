@@ -75,7 +75,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
       auto poll = promise${i}();
       if (grpc_trace_promise_primitives.enabled()) {
         auto* p = poll.value_if_ready();
-        gpr_log(GPR_DEBUG, "join[%p]: joint ${i+1}/${n} %s", this, 
+        gpr_log(GPR_DEBUG, "join[%p]: joint ${i+1}/${n} %s", this,
                 p != nullptr? (Traits::IsOk(*p)? "ready" : "early-error") : "pending");
       }
       if (auto* p = poll.value_if_ready()) {
@@ -118,7 +118,6 @@ front_matter = """
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 namespace promise_detail {

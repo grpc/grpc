@@ -41,9 +41,6 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-grpc_core::DebugOnlyTraceFlag polling_trace(false,
-                                            "polling");  // Disabled by default
-
 // Traces fd create/close operations
 
 // Polling API trace only enabled in debug builds

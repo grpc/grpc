@@ -33,15 +33,13 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
-
-grpc_core::DebugOnlyTraceFlag auth_context_refcount_trace(
-    false, "auth_context_refcount");
 
 // --- grpc_call ---
 

@@ -22,7 +22,6 @@
 
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 

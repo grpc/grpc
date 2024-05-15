@@ -148,11 +148,11 @@ tail${i}:
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: poll step ${i+1}/${n} gets %s", this, 
+          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: poll step ${i+1}/${n} gets %s", this,
                   p != nullptr
                     ? (PromiseResultTraits${i}::IsOk(*p)
-                      ? "ready" 
-                      : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str()) 
+                      ? "ready"
+                      : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str())
                     : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -208,7 +208,6 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -216,8 +215,8 @@ front_matter = """
 // previous step and yield a promise. Note that most of the machinery in
 // PromiseFactory exists to make it possible for those promise-factory-like
 // objects to be anything that's convenient.
-// Traits defines how we move from one step to the next. Traits sets up the 
-// wrapping and escape handling for the sequence. 
+// Traits defines how we move from one step to the next. Traits sets up the
+// wrapping and escape handling for the sequence.
 // Promises return wrapped values that the trait can inspect and unwrap before
 // passing them to the next element of the sequence. The trait can
 // also interpret a wrapped value as an escape value, which terminates

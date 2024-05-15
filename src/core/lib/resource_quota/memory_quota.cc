@@ -41,7 +41,6 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
-#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice_refcount.h"
 
 namespace grpc_core {

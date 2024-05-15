@@ -25,10 +25,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/promise/wait_set.h"
 
 namespace grpc_core {

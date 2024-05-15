@@ -37,3 +37,31 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "trace_flags_test",
+    srcs = ["trace_flags_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "glob_test",
+    srcs = ["glob_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)

@@ -57,7 +57,6 @@
 #include "src/core/lib/security/transport/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 

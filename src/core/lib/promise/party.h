@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -40,7 +41,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.

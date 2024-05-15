@@ -26,14 +26,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-
-// These trace flags default to 1. The corresponding lines are only traced
-// if api_trace is also truthy
 
 typedef struct grpc_cq_completion {
   grpc_core::ManualConstructor<

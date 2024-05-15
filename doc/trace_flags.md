@@ -10,28 +10,28 @@ names or glob patterns that provide additional insight into how gRPC C core is
 processing requests via debug logs. Available tracers include:
 
   - api - API calls to the C core.
-  - backend_metric
-  - backend_metric_filter
+  - backend_metric - C++ backend metric recorder APIs.
+  - backend_metric_filter - Filter that populates backend metric data in server trailing metadata.
   - bdp_estimator - Behavior of bdp estimation logic.
-  - call
+  - call - Traces operations on a call through the gRPC stack.
   - call_error - Possible errors contributing to final call statuses.
   - cares_address_sorting - Operations of the c-ares based DNS resolver's address sorter.
   - cares_resolver - Operations of the c-ares based DNS resolver.
   - cds_lb - CDS LB policy.
   - channel - Operations on the C core channel stack.
   - channel_stack - Construction of the set of filters in a channel stack.
-  - chaotic_good
-  - chttp2_hpack_parser
-  - chttp2_new_stream
+  - chaotic_good - Chaotic good transport.
+  - chttp2_hpack_parser - HTTP/2 HPACK parser.
+  - chttp2_new_stream - HTTP/2 incoming stream creation.
   - client_channel - Client channel control plane activity, including resolver and load balancing policy interaction.
   - client_channel_call - Client channel call activity related to name resolution.
   - client_channel_lb_call - Client channel call activity related to load balancing picking.
-  - client_idle_filter
+  - client_idle_filter - Client idleness filter.
   - compression - Compression operations.
   - connectivity_state - Connectivity state changes to channels.
   - cronet - Cronet transport engine.
   - dns_resolver - The active DNS resolver.
-  - environment_autodetect
+  - environment_autodetect - GCP environment auto-detection.
   - event_engine - High-level EventEngine operations.
   - event_engine_client_channel_resolver - EventEngine-based client channel resolver state and events.
   - event_engine_dns - EventEngine DNS resolver.
@@ -39,9 +39,9 @@ processing requests via debug logs. Available tracers include:
   - event_engine_endpoint_data - Detailed dump of EventEngine endpoint TCP data.
   - event_engine_poller - EventEngine Poller events.
   - executor - gRPC's legacy thread pool ('the executor').
-  - fault_injection_filter
+  - fault_injection_filter - Fault injection.
   - flowctl - Http2 flow control.
-  - fork
+  - fork - Fork support.
   - glb - gRPClb load balancer.
   - grpc_authz_api - gRPC authorization.
   - handshaker - Handshaking state.
@@ -52,22 +52,22 @@ processing requests via debug logs. Available tracers include:
   - http2_stream_state - Http2 stream state mutations.
   - http_keepalive - gRPC keepalive pings.
   - inproc - In-process transport.
-  - metadata_query
-  - op_failure - Error information when failure is pushed onto a completion queue.
-  - orca_client
-  - outlier_detection_lb
+  - metadata_query - GCP metadata queries.
+  - op_failure - Error information when failure is pushed onto a completion queue. API tracing must be enabled for this flag to have any effect.
+  - orca_client - Out-of-band backend metric reporting client.
+  - outlier_detection_lb - Outlier detection.
   - pick_first - Pick first load balancing policy.
   - plugin_credentials - Plugin credentials.
   - priority_lb - Priority LB policy.
-  - queue_pluck
+  - queue_pluck - Completion queue plucking. API tracing must be enabled for this flag to have any effect.
   - resource_quota - Resource quota objects internals.
-  - retry
+  - retry - Call retries.
   - ring_hash_lb - Ring hash load balancing policy.
   - rls_lb - RLS load balancing policy.
   - round_robin - Round robin load balancing policy.
   - secure_endpoint - Bytes flowing through encrypted channels.
   - server_channel - Lightweight trace of significant server channel events.
-  - stateful_session_filter
+  - stateful_session_filter - Stateful session affinity.
   - subchannel - Connectivity state of subchannels.
   - subchannel_pool - Subchannel pool.
   - tcp - Bytes in and out of a channel.
@@ -87,27 +87,27 @@ processing requests via debug logs. Available tracers include:
 
 The following tracers will only run in binaries built in DEBUG mode. This is
 accomplished by invoking `bazel build --config=dbg <target>`
-  - auth_context_refcount
+  - auth_context_refcount - Auth context refcounting.
   - call_combiner - Call combiner state.
-  - call_refcount
+  - call_refcount - Refcount on call.
   - closure - Legacy closure creation, scheduling, and completion.
   - combiner - Combiner lock state.
-  - cq_refcount
-  - error_refcount
-  - fd_refcount
+  - cq_refcount - Completion queue refcounting.
+  - error_refcount - Error refcounting.
+  - fd_refcount - File descriptor refcounting.
   - fd_trace - Legacy file descriptor create(), shutdown() and close() calls for channel fds.
-  - lb_policy_refcount
-  - party_state
-  - pending_tags - Still-in-progress tags on completion queues.
+  - lb_policy_refcount - LB policy refcounting.
+  - party_state - Coordination of activities related to a call.
+  - pending_tags - Still-in-progress tags on completion queues. API tracing must be enabled for this flag to have any effect.
   - polling - The active polling engine.
   - polling_api - API calls to polling engine.
-  - promise_primitives
-  - resolver_refcount
-  - security_connector_refcount
-  - slice_refcount
-  - stream_refcount - null.
-  - subchannel_refcount
-  - work_serializer
+  - promise_primitives - Low-level primitives in the promise library.
+  - resolver_refcount - Resolver refcouting.
+  - security_connector_refcount - Refcounting for security connectors (part of channel credentials).
+  - slice_refcount - Slice refcounting.
+  - stream_refcount - Stream refcounting.
+  - subchannel_refcount - Subchannel refcounting.
+  - work_serializer - A synchronization mechanism used to ensure that only one thread is executing at a given time.
 
 Glob patterns and special cases:
   - `*` can be used to turn all traces on.

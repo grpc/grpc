@@ -25,24 +25,24 @@ api:
   description: API calls to the C core.
 apple_polling:
   default: false
-  description: (legacy) Apple polling trace
+  description: (legacy) Apple polling trace.
   internal: true
 auth_context_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Auth context refcounting.
 backend_metric:
   default: false
-  description: null
+  description: C++ backend metric recorder APIs.
 backend_metric_filter:
   default: false
-  description: null
+  description: Filter that populates backend metric data in server trailing metadata.
 bdp_estimator:
   default: false
   description: Behavior of bdp estimation logic.
 call:
   default: false
-  description: null
+  description: Traces operations on a call through the gRPC stack.
 call_combiner:
   debug_only: true
   default: false
@@ -53,7 +53,7 @@ call_error:
 call_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Refcount on call.
 cares_address_sorting:
   default: false
   description: Operations of the c-ares based DNS resolver's address sorter.
@@ -71,13 +71,13 @@ channel_stack:
   description: Construction of the set of filters in a channel stack.
 chaotic_good:
   default: false
-  description: null
+  description: Chaotic good transport.
 chttp2_hpack_parser:
   default: false
-  description: null
+  description: HTTP/2 HPACK parser.
 chttp2_new_stream:
   default: false
-  description: null
+  description: HTTP/2 incoming stream creation.
 client_channel:
   default: false
   description: Client channel control plane activity, including resolver and load balancing policy interaction.
@@ -89,7 +89,7 @@ client_channel_lb_call:
   description: Client channel call activity related to load balancing picking.
 client_idle_filter:
   default: false
-  description: null
+  description: Client idleness filter.
 closure:
   debug_only: true
   default: false
@@ -107,7 +107,7 @@ connectivity_state:
 cq_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Completion queue refcounting.
 cronet:
   default: false
   description: Cronet transport engine.
@@ -116,11 +116,11 @@ dns_resolver:
   description: The active DNS resolver.
 environment_autodetect:
   default: false
-  description: null
+  description: GCP environment auto-detection.
 error_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Error refcounting.
 event_engine:
   default: false
   description: High-level EventEngine operations.
@@ -144,11 +144,11 @@ executor:
   description: gRPC's legacy thread pool ('the executor').
 fault_injection_filter:
   default: false
-  description: null
+  description: Fault injection.
 fd_refcount:
   debug_only: true
   default: false
-  description: null
+  description: File descriptor refcounting.
 fd_trace:
   debug_only: true
   default: false
@@ -158,7 +158,7 @@ flowctl:
   description: Http2 flow control.
 fork:
   default: false
-  description: null
+  description: Fork support.
 glb:
   default: false
   description: gRPClb load balancer.
@@ -192,27 +192,27 @@ inproc:
 lb_policy_refcount:
   debug_only: true
   default: false
-  description: null
+  description: LB policy refcounting.
 metadata_query:
   default: false
-  description: null
+  description: GCP metadata queries.
 op_failure:
   default: false
-  description: Error information when failure is pushed onto a completion queue.
+  description: Error information when failure is pushed onto a completion queue. API tracing must be enabled for this flag to have any effect.
 orca_client:
   default: false
-  description: null
+  description: Out-of-band backend metric reporting client.
 outlier_detection_lb:
   default: false
-  description: null
+  description: Outlier detection.
 party_state:
   debug_only: true
   default: false
-  description: null
+  description: Coordination of activities related to a call.
 pending_tags:
   debug_only: true
   default: false
-  description: Still-in-progress tags on completion queues.
+  description: Still-in-progress tags on completion queues. API tracing must be enabled for this flag to have any effect.
 pick_first:
   default: false
   description: Pick first load balancing policy.
@@ -233,20 +233,20 @@ priority_lb:
 promise_primitives:
   debug_only: true
   default: false
-  description: null
+  description: Low-level primitives in the promise library.
 queue_pluck:
   default: false
-  description: null
+  description: Completion queue plucking. API tracing must be enabled for this flag to have any effect.
 resolver_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Resolver refcouting.
 resource_quota:
   default: false
   description: Resource quota objects internals.
 retry:
   default: false
-  description: null
+  description: Call retries.
 ring_hash_lb:
   default: false
   description: Ring hash load balancing policy.
@@ -262,21 +262,21 @@ secure_endpoint:
 security_connector_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Refcounting for security connectors (part of channel credentials).
 server_channel:
   default: false
   description: Lightweight trace of significant server channel events.
 slice_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Slice refcounting.
 stateful_session_filter:
   default: false
-  description: null
+  description: Stateful session affinity.
 stream_refcount:
   debug_only: true
   default: false
-  description: null.
+  description: Stream refcounting.
 subchannel:
   default: false
   description: Connectivity state of subchannels.
@@ -286,7 +286,7 @@ subchannel_pool:
 subchannel_refcount:
   debug_only: true
   default: false
-  description: null
+  description: Subchannel refcounting.
 tcp:
   default: false
   description: Bytes in and out of a channel.
@@ -308,7 +308,7 @@ weighted_target_lb:
 work_serializer:
   debug_only: true
   default: false
-  description: null
+  description: A synchronization mechanism used to ensure that only one thread is executing at a given time.
 xds_client:
   default: false
   description: XDS client.

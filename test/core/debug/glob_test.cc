@@ -21,32 +21,30 @@
 
 #include "test/core/test_util/test_config.h"
 
-class GlobTest : public ::testing::Test {};
-
 namespace grpc_core {
 namespace testing {
 
-TEST_F(GlobTest, DefaultsToStringMatching) {
+TEST(GlobTest, DefaultsToStringMatching) {
   EXPECT_TRUE(GlobMatch("arst", "arst"));
 }
 
-TEST_F(GlobTest, AsteriskMatchesMultipleCharacters) {
+TEST(GlobTest, AsteriskMatchesMultipleCharacters) {
   EXPECT_TRUE(GlobMatch("a", "*"));
   EXPECT_TRUE(GlobMatch("arst", "*"));
 }
 
-TEST_F(GlobTest, QuestionMarkMatchesSingleCharacter) {
+TEST(GlobTest, QuestionMarkMatchesSingleCharacter) {
   EXPECT_TRUE(GlobMatch("a", "?"));
   EXPECT_FALSE(GlobMatch("arst", "?"));
 }
 
-TEST_F(GlobTest, AsteriskMatchesEmpty) { EXPECT_TRUE(GlobMatch("", "*")); }
+TEST(GlobTest, AsteriskMatchesEmpty) { EXPECT_TRUE(GlobMatch("", "*")); }
 
-TEST_F(GlobTest, QuestionMarkDoesNotMatcheEmpty) {
+TEST(GlobTest, QuestionMarkDoesNotMatcheEmpty) {
   EXPECT_FALSE(GlobMatch("", "?"));
 }
 
-TEST_F(GlobTest, EmbeddedAsterisk) {
+TEST(GlobTest, EmbeddedAsterisk) {
   EXPECT_TRUE(GlobMatch("arst", "a*t"));
   EXPECT_TRUE(GlobMatch("arst", "*rst"));
   EXPECT_TRUE(GlobMatch("arst", "ar*"));
@@ -55,7 +53,7 @@ TEST_F(GlobTest, EmbeddedAsterisk) {
   EXPECT_FALSE(GlobMatch("*arst", "**q*"));
 }
 
-TEST_F(GlobTest, EmbeddedQuestionMark) {
+TEST(GlobTest, EmbeddedQuestionMark) {
   EXPECT_TRUE(GlobMatch("arst", "?rst"));
   EXPECT_TRUE(GlobMatch("arst", "a?st"));
   EXPECT_TRUE(GlobMatch("arst", "ar?t"));
@@ -65,7 +63,7 @@ TEST_F(GlobTest, EmbeddedQuestionMark) {
   EXPECT_FALSE(GlobMatch("?arst", "arst"));
 }
 
-TEST_F(GlobTest, BothWildcardsWorkTogether) {
+TEST(GlobTest, BothWildcardsWorkTogether) {
   EXPECT_TRUE(GlobMatch("arst", "?r*"));
   EXPECT_TRUE(GlobMatch("arst", "*s?"));
   EXPECT_TRUE(GlobMatch("arst", "a?*"));

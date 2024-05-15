@@ -98,7 +98,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/http_trace.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
@@ -109,7 +108,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
-    src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/transport/inproc/legacy_inproc_transport.cc \
     src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c \
@@ -589,7 +587,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
-    src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/event_engine_shims/closure.cc \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
@@ -658,7 +655,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
-    src/core/lib/promise/trace.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/connection_quota.cc \
@@ -666,7 +662,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
-    src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -734,7 +729,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/slice/slice_buffer.cc \
     src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
@@ -823,7 +817,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
-    src/core/resolver/xds/xds_resolver_trace.cc \
     src/core/server/server.cc \
     src/core/server/server_call_tracer_filter.cc \
     src/core/server/server_config_selector_filter.cc \

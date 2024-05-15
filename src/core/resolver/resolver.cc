@@ -20,9 +20,6 @@
 
 #include <grpc/support/port_platform.h>
 
-grpc_core::DebugOnlyTraceFlag resolver_refcount_trace(false,
-                                                      "resolver_refcount");
-
 namespace grpc_core {
 
 //

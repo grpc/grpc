@@ -75,7 +75,6 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 

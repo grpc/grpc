@@ -1885,7 +1885,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
@@ -1896,7 +1895,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
-  src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
   src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c
@@ -2331,7 +2329,6 @@ add_library(grpc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -2400,7 +2397,6 @@ add_library(grpc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -2408,7 +2404,6 @@ add_library(grpc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
@@ -2476,7 +2471,6 @@ add_library(grpc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -2565,7 +2559,6 @@ add_library(grpc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
-  src/core/resolver/xds/xds_resolver_trace.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/server/server_config_selector_filter.cc
@@ -2977,7 +2970,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
@@ -2988,7 +2980,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
-  src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
@@ -3122,7 +3113,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -3189,7 +3179,6 @@ add_library(grpc_unsecure
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -3197,7 +3186,6 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -3231,7 +3219,6 @@ add_library(grpc_unsecure
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -5237,7 +5224,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -5303,7 +5289,6 @@ add_library(grpc_authorization_provider
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -5311,7 +5296,6 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
@@ -5348,7 +5332,6 @@ add_library(grpc_authorization_provider
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -6003,7 +5986,6 @@ add_executable(activity_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -6278,7 +6260,6 @@ add_executable(all_ok_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/all_ok_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8526,17 +8507,14 @@ add_executable(call_filters_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
@@ -10192,14 +10170,12 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -14234,13 +14210,11 @@ add_executable(flow_control_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
@@ -14323,14 +14297,12 @@ add_executable(for_each_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -14802,16 +14774,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(glob_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/glob_test.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/tracer_util.cc
+  test/core/debug/glob_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17768,7 +17731,6 @@ add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -17922,7 +17884,6 @@ add_executable(interception_chain_test
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -17986,7 +17947,6 @@ add_executable(interception_chain_test
   src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -17994,7 +17954,6 @@ add_executable(interception_chain_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
   src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
@@ -18008,7 +17967,6 @@ add_executable(interception_chain_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -18133,14 +18091,12 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -18516,7 +18472,6 @@ add_executable(join_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18918,7 +18873,6 @@ add_executable(latch_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19274,7 +19228,6 @@ add_executable(loop_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/loop_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19335,14 +19288,12 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
@@ -22681,7 +22632,6 @@ add_executable(promise_mutex_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -26742,7 +26692,6 @@ add_executable(seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31541,16 +31490,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(trace_flags_test
-  test/core/test_util/cmdline.cc
-  test/core/test_util/fuzzer_util.cc
-  test/core/test_util/grpc_profiler.cc
-  test/core/test_util/histogram.cc
-  test/core/test_util/mock_endpoint.cc
-  test/core/test_util/parse_hexstring.cc
-  test/core/test_util/resolve_localhost_ip46.cc
-  test/core/test_util/slice_splitter.cc
-  test/core/test_util/trace_flags_test.cc
-  test/core/test_util/tracer_util.cc
+  test/core/debug/trace_flags_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31892,7 +31832,6 @@ add_executable(try_join_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/try_join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31983,7 +31922,6 @@ add_executable(try_seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/glob.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/try_seq_test.cc
 )
 if(WIN32 AND MSVC)

@@ -83,7 +83,6 @@
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
-#include "src/core/resolver/xds/xds_resolver_trace.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"

@@ -20,20 +20,20 @@
 #include "src/core/lib/debug/trace.h"
 #include "test/core/test_util/test_config.h"
 
-class GlobTest : public ::testing::Test {
+class TraceFlags : public ::testing::Test {
  public:
-  GlobTest() {}
-  ~GlobTest() override { saved_flags_.Restore(); }
+  TraceFlags() {}
+  ~TraceFlags() override { saved_flags_.Restore(); }
 
  private:
   grpc_core::SavedTraceFlags saved_flags_;
 };
 
-TEST_F(GlobTest, ReturnsFalseWhenNotFound) {
+TEST_F(TraceFlags, ReturnsFalseWhenNotFound) {
   ASSERT_FALSE(grpc_core::ParseTracers("arst"));
 }
 
-TEST_F(GlobTest, CanSetAValue) {
+TEST_F(TraceFlags, CanSetAValue) {
   auto it = grpc_core::GetAllTraceFlags().find("api");
   ASSERT_NE(it, grpc_core::GetAllTraceFlags().end());
   EXPECT_TRUE(grpc_core::ParseTracers("api"));
@@ -42,7 +42,7 @@ TEST_F(GlobTest, CanSetAValue) {
   EXPECT_FALSE(it->second->enabled());
 }
 
-TEST_F(GlobTest, SpecialRefcountFlagWorks) {
+TEST_F(TraceFlags, SpecialRefcountFlagWorks) {
   for (const auto& flag : grpc_core::GetAllTraceFlags()) {
     if (absl::StrContains(flag.first, "refcount")) {
       EXPECT_FALSE(flag.second->enabled());
@@ -56,7 +56,7 @@ TEST_F(GlobTest, SpecialRefcountFlagWorks) {
   }
 }
 
-TEST_F(GlobTest, SpecialAllFlagWorks) {
+TEST_F(TraceFlags, SpecialAllFlagWorks) {
   // Snapshot the trace flag state at the beginning
   EXPECT_TRUE(grpc_core::ParseTracers("all"));
   for (const auto& flag : grpc_core::GetAllTraceFlags()) {
@@ -69,7 +69,7 @@ TEST_F(GlobTest, SpecialAllFlagWorks) {
   }
 }
 
-TEST_F(GlobTest, GlobStarAllWorks) {
+TEST_F(TraceFlags, GlobStarAllWorks) {
   // Snapshot the trace flag state at the beginning
   EXPECT_TRUE(grpc_core::ParseTracers("*"));
   for (const auto& flag : grpc_core::GetAllTraceFlags()) {
@@ -82,7 +82,7 @@ TEST_F(GlobTest, GlobStarAllWorks) {
   }
 }
 
-TEST_F(GlobTest, SaveAndRestoreWorks) {
+TEST_F(TraceFlags, SaveAndRestoreWorks) {
   auto it = grpc_core::GetAllTraceFlags().find("api");
   ASSERT_NE(it, grpc_core::GetAllTraceFlags().end());
   EXPECT_FALSE(it->second->enabled());
@@ -93,7 +93,7 @@ TEST_F(GlobTest, SaveAndRestoreWorks) {
   EXPECT_FALSE(it->second->enabled());
 }
 
-TEST_F(GlobTest, CApiStillWorks) {
+TEST_F(TraceFlags, CApiStillWorks) {
   auto it = grpc_core::GetAllTraceFlags().find("api");
   ASSERT_NE(it, grpc_core::GetAllTraceFlags().end());
   EXPECT_FALSE(it->second->enabled());

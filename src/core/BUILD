@@ -546,7 +546,6 @@ grpc_cc_library(
         "pipe",
         "poll",
         "promise_factory",
-        "promise_trace",
         "try_seq",
         "//:gpr",
         "//:gpr_platform",
@@ -576,11 +575,11 @@ grpc_cc_library(
         "context",
         "poll",
         "promise_factory",
-        "promise_trace",
         "ref_counted",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
+        "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
 )
@@ -793,9 +792,8 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_like",
-        "promise_trace",
         "//:gpr",
-        "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -884,9 +882,9 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
-        "promise_trace",
         "//:debug_location",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1022,7 +1020,6 @@ grpc_cc_library(
     deps = [
         "activity",
         "poll",
-        "promise_trace",
         "//:gpr",
     ],
 )
@@ -1041,7 +1038,6 @@ grpc_cc_library(
     deps = [
         "activity",
         "poll",
-        "promise_trace",
         "wait_set",
         "//:gpr",
     ],
@@ -1065,7 +1061,6 @@ grpc_cc_library(
         "context",
         "poll",
         "promise_factory",
-        "promise_trace",
         "//:debug_location",
         "//:gpr",
     ],
@@ -1092,7 +1087,6 @@ grpc_cc_library(
         "interceptor_list",
         "map",
         "poll",
-        "promise_trace",
         "seq",
         "//:debug_location",
         "//:gpr",
@@ -1130,21 +1124,6 @@ grpc_cc_library(
         "ref_counted",
         "//:gpr",
         "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "promise_trace",
-    srcs = [
-        "lib/promise/trace.cc",
-    ],
-    hdrs = [
-        "lib/promise/trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -1202,7 +1181,6 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_status",
-        "promise_trace",
         "status_flag",
         "//:gpr",
         "//:gpr_platform",
@@ -1441,7 +1419,6 @@ grpc_cc_library(
         "periodic_update",
         "poll",
         "race",
-        "resource_quota_trace",
         "seq",
         "slice_refcount",
         "time",
@@ -1528,20 +1505,6 @@ grpc_cc_library(
         "ref_counted",
         "//:gpr",
         "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "resource_quota_trace",
-    srcs = [
-        "lib/resource_quota/trace.cc",
-    ],
-    hdrs = [
-        "lib/resource_quota/trace.h",
-    ],
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -4744,7 +4707,6 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "validation_errors",
-        "//:call_trace",
         "//:channel_arg_names",
         "//:config",
         "//:gpr",
@@ -6570,21 +6532,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_xds_trace",
-    srcs = [
-        "resolver/xds/xds_resolver_trace.cc",
-    ],
-    hdrs = [
-        "resolver/xds/xds_resolver_trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "xds_dependency_manager",
     srcs = [
         "resolver/xds/xds_dependency_manager.cc",
@@ -6602,7 +6549,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_lb_xds_channel_args",
-        "grpc_resolver_xds_trace",
         "grpc_xds_client",
         "match",
         "ref_counted",
@@ -6644,7 +6590,6 @@ grpc_cc_library(
         "experiments",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_attributes",
-        "grpc_resolver_xds_trace",
         "grpc_service_config",
         "grpc_xds_client",
         "iomgr_fwd",
@@ -7055,7 +7000,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_inproc",
     srcs = [
-        "ext/transport/inproc/inproc_plugin.cc",
         "ext/transport/inproc/inproc_transport.cc",
         "ext/transport/inproc/legacy_inproc_transport.cc",
     ],

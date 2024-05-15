@@ -53,7 +53,6 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"

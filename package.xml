@@ -223,8 +223,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http_trace.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
@@ -244,7 +242,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_size_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_size_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/legacy_inproc_transport.cc" role="src" />
@@ -1391,7 +1388,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_poll_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/closure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/endpoint.cc" role="src" />
@@ -1544,8 +1540,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/sleep.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/status_flag.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/trace.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
@@ -1562,8 +1556,6 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resource_quota/trace.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/resource_quota/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/audit_logging.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/audit_logging.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.h" role="src" />
@@ -1692,7 +1684,6 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_refcount.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/api_trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/byte_buffer_reader.cc" role="src" />
@@ -1701,7 +1692,6 @@
     <file baseinstalldir="/" name="src/core/lib/surface/call_details.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_log_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/call_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_create.cc" role="src" />
@@ -1865,8 +1855,6 @@
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_attributes.h" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_trace.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/server/server.cc" role="src" />
     <file baseinstalldir="/" name="src/core/server/server.h" role="src" />
     <file baseinstalldir="/" name="src/core/server/server_call_tracer_filter.cc" role="src" />

@@ -47,7 +47,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
-#include "src/core/lib/resource_quota/trace.h"
 
 namespace grpc_core {
 
