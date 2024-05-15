@@ -113,8 +113,7 @@ class ServerLoggingFilter final
 
   class Call {
    public:
-    void OnClientInitialMetadata(ClientMetadata& md,
-                                 ServerLoggingFilter* filter);
+    void OnClientInitialMetadata(ClientMetadata& md);
     void OnServerInitialMetadata(ServerMetadata& md);
     void OnServerTrailingMetadata(ServerMetadata& md);
     void OnClientToServerMessage(const Message& message);
