@@ -79,23 +79,23 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         workload_name_value = os.getenv("CSM_WORKLOAD_NAME", UNKNOWN_VALUE)
 
         gcp_resource = GoogleCloudResourceDetector().detect()
-        resource_type_value = self._get_resource_type(gcp_resource)
-        namespace_value = self._get_str_value_from_resource(
+        resource_type_value = get_resource_type(gcp_resource)
+        namespace_value = get_str_value_from_resource(
             ResourceAttributes.K8S_NAMESPACE_NAME, gcp_resource
         )
-        cluster_name_value = self._get_str_value_from_resource(
+        cluster_name_value = get_str_value_from_resource(
             ResourceAttributes.K8S_CLUSTER_NAME, gcp_resource
         )
         # ResourceAttributes.CLOUD_AVAILABILITY_ZONE are called
         # "zones" on Google Cloud.
-        location_value = self._get_str_value_from_resource(
+        location_value = get_str_value_from_resource(
             "cloud.zone", gcp_resource
         )
         if UNKNOWN_VALUE == location_value:
-            location_value = self._get_str_value_from_resource(
+            location_value = get_str_value_from_resource(
                 ResourceAttributes.CLOUD_REGION, gcp_resource
             )
-        project_id_value = self._get_str_value_from_resource(
+        project_id_value = get_str_value_from_resource(
             ResourceAttributes.CLOUD_ACCOUNT_ID, gcp_resource
         )
 
@@ -133,7 +133,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         self._additional_exchange_labels[
             "csm.workload_canonical_service"
         ] = canonical_service_value
-        self._additional_exchange_labels["csm.mesh_id"] = self._get_mesh_id()
+        self._additional_exchange_labels["csm.mesh_id"] = get_mesh_id()
 
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
         return self._exchange_labels
@@ -157,99 +157,36 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
                 pb_struct = struct_pb2.Struct()
                 pb_struct.ParseFromString(value)
 
-                remote_type = self._get_value_from_struct("type", pb_struct)
+                remote_type = get_value_from_struct("type", pb_struct)
 
-                for key, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
+                for local_key, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
                     deserialized_labels[
                         remote_key
-                    ] = self._get_value_from_struct(key, pb_struct)
+                    ] = get_value_from_struct(local_key, pb_struct)
                 if remote_type == TYPE_GKE:
                     for (
-                        key,
+                        local_key,
                         remote_key,
                     ) in METADATA_EXCHANGE_KEY_GKE_MAP.items():
                         deserialized_labels[
                             remote_key
-                        ] = self._get_value_from_struct(key, pb_struct)
+                        ] = get_value_from_struct(local_key, pb_struct)
                 elif remote_type == TYPE_GCE:
                     for (
-                        key,
+                        local_key,
                         remote_key,
                     ) in METADATA_EXCHANGE_KEY_GCE_MAP.items():
                         deserialized_labels[
                             remote_key
-                        ] = self._get_value_from_struct(key, pb_struct)
+                        ] = get_value_from_struct(local_key, pb_struct)
             # If CSM label injector is enabled on server side but client didn't send
             # XEnvoyPeerMetadata, we'll record remote label as unknown.
             else:
                 for _, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
                     deserialized_labels[remote_key] = UNKNOWN_VALUE
-                deserialized_labels[key] = value
+                deserialized_labels[local_key] = value
 
         return deserialized_labels
-
-    def _get_value_from_struct(
-        self, key: str, struct: struct_pb2.Struct
-    ) -> str:
-        value = struct.fields.get(key)
-        if not value:
-            return UNKNOWN_VALUE
-        return value.string_value
-
-    def _get_str_value_from_resource(
-        self, attribute: Union[ResourceAttributes, str], resource: Resource
-    ) -> str:
-        value = resource.attributes.get(attribute, UNKNOWN_VALUE)
-        return str(value)
-
-    def _get_resource_type(self, gcp_resource: Resource):
-        # Convert resource type from GoogleCloudResourceDetector to the value we used for
-        # metadata exchange.
-        # Reference: http://shortn/_eY0hMnWTVd
-        gcp_resource_type = self._get_str_value_from_resource(
-            "gcp.resource_type", gcp_resource
-        )
-        if gcp_resource_type == "gke_container":
-            return TYPE_GKE
-        elif gcp_resource_type == "gce_instance":
-            return TYPE_GCE
-        else:
-            return gcp_resource_type
-
-    # Returns the mesh ID by reading and parsing the bootstrap file. Returns "unknown"
-    # if for some reason, mesh ID could not be figured out.
-    def _get_mesh_id(self) -> str:
-        config_contents = self._get_bootstrap_config_contents()
-
-        try:
-            config_json = json.loads(config_contents)
-            # The expected format of the Node ID is -
-            # projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
-            node_id_parts = config_json.get("node", {}).get("id", "").split("/")
-            if len(node_id_parts) == 6 and "mesh:" in node_id_parts[3]:
-                return node_id_parts[3][len("mesh:") :]
-        except json.decoder.JSONDecodeError:
-            return UNKNOWN_VALUE
-
-        return UNKNOWN_VALUE
-
-    def _get_bootstrap_config_contents(self) -> str:
-        """Get the contents of the bootstrap config from environment variable or file.
-
-        Returns:
-            The content from environment variable. Or empty str if no config was found.
-        """
-        contents_str = ""
-        for source in ("GRPC_XDS_BOOTSTRAP", "GRPC_XDS_BOOTSTRAP_CONFIG"):
-            config = os.getenv(source)
-            if config:
-                if os.path.isfile(config):  # Prioritize file over raw config
-                    with open(config, "r") as f:
-                        contents_str = f.read()
-                else:
-                    contents_str = config
-
-        return contents_str
 
 
 class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
@@ -282,7 +219,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         else:
             return True
 
-    def is_active_on_server(self, xds: bool) -> bool:
+    def is_active_on_server(self, xds: bool) -> bool:  # pylint: disable=unused-argument
         """Determines whether this plugin option is active on a given server.
 
         Since servers don't need to be xds enabled to work as part of a service
@@ -364,3 +301,68 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return [OptionalLabelType.XDS_SERVICE_LABELS]
+
+
+def get_value_from_struct(
+    key: str, struct: struct_pb2.Struct
+) -> str:
+    value = struct.fields.get(key)
+    if not value:
+        return UNKNOWN_VALUE
+    return value.string_value
+
+def get_str_value_from_resource(
+    attribute: Union[ResourceAttributes, str], resource: Resource
+) -> str:
+    value = resource.attributes.get(attribute, UNKNOWN_VALUE)
+    return str(value)
+
+def get_resource_type(gcp_resource: Resource) -> str:
+    # Convert resource type from GoogleCloudResourceDetector to the value we used for
+    # metadata exchange.
+    # Reference: http://shortn/_eY0hMnWTVd
+    gcp_resource_type = get_str_value_from_resource(
+        "gcp.resource_type", gcp_resource
+    )
+    if gcp_resource_type == "gke_container":
+        return TYPE_GKE
+    elif gcp_resource_type == "gce_instance":
+        return TYPE_GCE
+    else:
+        return gcp_resource_type
+
+
+# Returns the mesh ID by reading and parsing the bootstrap file. Returns "unknown"
+# if for some reason, mesh ID could not be figured out.
+def get_mesh_id() -> str:
+    config_contents = get_bootstrap_config_contents()
+
+    try:
+        config_json = json.loads(config_contents)
+        # The expected format of the Node ID is -
+        # projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
+        node_id_parts = config_json.get("node", {}).get("id", "").split("/")
+        if len(node_id_parts) == 6 and "mesh:" in node_id_parts[3]:
+            return node_id_parts[3][len("mesh:") :]
+    except json.decoder.JSONDecodeError:
+        return UNKNOWN_VALUE
+
+    return UNKNOWN_VALUE
+
+def get_bootstrap_config_contents() -> str:
+    """Get the contents of the bootstrap config from environment variable or file.
+
+    Returns:
+        The content from environment variable. Or empty str if no config was found.
+    """
+    contents_str = ""
+    for source in ("GRPC_XDS_BOOTSTRAP", "GRPC_XDS_BOOTSTRAP_CONFIG"):
+        config = os.getenv(source)
+        if config:
+            if os.path.isfile(config):  # Prioritize file over raw config
+                with open(config, "r") as f:
+                    contents_str = f.read()
+            else:
+                contents_str = config
+
+    return contents_str
