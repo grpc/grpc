@@ -53,6 +53,7 @@ class StatsData:
         value.
       value_int: The actual metric value if measure_double is False.
       value_float: The actual metric value if measure_double is True.
+      include_exchange_labels: Whether this data should include exchanged labels.
       labels: A dictionary that maps label tags associated with this metric to
        corresponding label value.
       identifiers: A set of strings identifying which stats plugins this StatsData
@@ -65,6 +66,7 @@ class StatsData:
     measure_double: bool
     value_int: int = 0
     value_float: float = 0.0
+    include_exchange_labels: bool = False
     labels: Dict[str, AnyStr] = field(default_factory=dict)
     identifiers: Set[str] = field(default_factory=set)
     registered_method: bool = False

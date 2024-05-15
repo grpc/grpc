@@ -15,7 +15,7 @@
 import json
 import os
 import re
-from typing import AnyStr, Callable, Dict, Iterable, List, Optional
+from typing import AnyStr, Callable, Dict, Iterable, List, Optional, Union
 
 from google.protobuf import struct_pb2
 from grpc_observability import _open_telemetry_observability
@@ -30,7 +30,6 @@ from opentelemetry.resourcedetector.gcp_resource_detector import (
     GoogleCloudResourceDetector,
 )
 from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.resources import get_aggregated_resources
 from opentelemetry.semconv.resource import ResourceAttributes
 
 TRAFFIC_DIRECTOR_AUTHORITY = "traffic-director-global.xds.googleapis.com"
@@ -64,12 +63,14 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     """
 
     _exchange_labels: Dict[str, AnyStr]
-    _local_labels: Dict[str, str]
+    _additional_labels: Dict[str, str]
+    _additional_exchange_labels: Dict[str, str]
 
     def __init__(self):
         fields = {}
         self._exchange_labels = {}
-        self._local_labels = {}
+        self._additional_labels = {}
+        self._additional_exchange_labels = {}
 
         # Labels from environment
         canonical_service_value = os.getenv(
@@ -77,19 +78,18 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         )
         workload_name_value = os.getenv("CSM_WORKLOAD_NAME", UNKNOWN_VALUE)
 
-        # Labels from resource detector.
-        gcp_resource = get_aggregated_resources([GoogleCloudResourceDetector()])
-        resource_type_value = self._get_str_value_from_resource(
-            ResourceAttributes.CLOUD_PLATFORM, gcp_resource
-        )
+        gcp_resource = GoogleCloudResourceDetector().detect()
+        resource_type_value = self._get_resource_type(gcp_resource)
         namespace_value = self._get_str_value_from_resource(
             ResourceAttributes.K8S_NAMESPACE_NAME, gcp_resource
         )
         cluster_name_value = self._get_str_value_from_resource(
             ResourceAttributes.K8S_CLUSTER_NAME, gcp_resource
         )
+        # ResourceAttributes.CLOUD_AVAILABILITY_ZONE are called
+        # "zones" on Google Cloud.
         location_value = self._get_str_value_from_resource(
-            ResourceAttributes.CLOUD_AVAILABILITY_ZONE, gcp_resource
+            "cloud.zone", gcp_resource
         )
         if UNKNOWN_VALUE == location_value:
             location_value = self._get_str_value_from_resource(
@@ -103,7 +103,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         fields["canonical_service"] = struct_pb2.Value(
             string_value=canonical_service_value
         )
-        if resource_type_value == "GKE":
+        if resource_type_value == TYPE_GKE:
             fields["workload_name"] = struct_pb2.Value(
                 string_value=workload_name_value
             )
@@ -117,7 +117,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             fields["project_id"] = struct_pb2.Value(
                 string_value=project_id_value
             )
-        elif resource_type_value == "GCE":
+        elif resource_type_value == TYPE_GCE:
             fields["workload_name"] = struct_pb2.Value(
                 string_value=workload_name_value
             )
@@ -130,16 +130,21 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         serialized_str = serialized_struct.SerializeToString()
 
         self._exchange_labels = {"XEnvoyPeerMetadata": serialized_str}
-        self._local_labels[
+        self._additional_exchange_labels[
             "csm.workload_canonical_service"
         ] = canonical_service_value
-        self._local_labels["csm.mesh_id"] = self._get_mesh_id()
+        self._additional_exchange_labels["csm.mesh_id"] = self._get_mesh_id()
 
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
         return self._exchange_labels
 
-    def get_additional_labels(self) -> Dict[str, str]:
-        return self._local_labels
+    def get_additional_labels(
+        self, include_exchange_labels: bool
+    ) -> Dict[str, str]:
+        if include_exchange_labels:
+            return self._additional_labels | self._additional_exchange_labels
+        else:
+            return self._additional_labels
 
     def deserialize_labels(
         self, labels: Dict[str, AnyStr]
@@ -156,8 +161,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
                     deserialized_labels[
                         remote_key
                     ] = self._get_value_from_struct(key, pb_struct)
-
-                if TYPE_GKE in remote_type:
+                if remote_type == TYPE_GKE:
                     for (
                         key,
                         remote_key,
@@ -165,7 +169,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
                         deserialized_labels[
                             remote_key
                         ] = self._get_value_from_struct(key, pb_struct)
-                elif TYPE_GCE in remote_type:
+                elif remote_type == TYPE_GCE:
                     for (
                         key,
                         remote_key,
@@ -173,7 +177,11 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
                         deserialized_labels[
                             remote_key
                         ] = self._get_value_from_struct(key, pb_struct)
+            # If CSM label injector is enabled on server side but client didn't send
+            # XEnvoyPeerMetadata, we'll record remote label as unknown.
             else:
+                for _, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
+                    deserialized_labels[remote_key] = UNKNOWN_VALUE
                 deserialized_labels[key] = value
 
         return deserialized_labels
@@ -187,10 +195,24 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         return value.string_value
 
     def _get_str_value_from_resource(
-        self, attribute: ResourceAttributes, resource: Resource
+        self, attribute: Union[ResourceAttributes, str], resource: Resource
     ) -> str:
         value = resource.attributes.get(attribute, UNKNOWN_VALUE)
         return str(value)
+
+    def _get_resource_type(self, gcp_resource: Resource):
+        # Convert resource type from GoogleCloudResourceDetector to the value we used for
+        # metadata exchange.
+        # Reference: http://shortn/_eY0hMnWTVd
+        gcp_resource_type = self._get_str_value_from_resource(
+            "gcp.resource_type", gcp_resource
+        )
+        if gcp_resource_type == "gke_container":
+            return TYPE_GKE
+        elif gcp_resource_type == "gce_instance":
+            return TYPE_GCE
+        else:
+            return gcp_resource_type
 
     # Returns the mesh ID by reading and parsing the bootstrap file. Returns "unknown"
     # if for some reason, mesh ID could not be figured out.

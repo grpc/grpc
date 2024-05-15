@@ -126,7 +126,9 @@ class TestLabelInjector(OpenTelemetryLabelInjector):
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
         return self._exchange_labels
 
-    def get_additional_labels(self) -> Dict[str, str]:
+    def get_additional_labels(
+        self, include_exchange_labels: bool
+    ) -> Dict[str, str]:
         return self._local_labels
 
     def deserialize_labels(

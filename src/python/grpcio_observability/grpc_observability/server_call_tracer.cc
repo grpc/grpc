@@ -118,7 +118,7 @@ void PythonOpenCensusServerCallTracer::RecordReceivedInitialMetadata(
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     RecordIntMetric(kRpcServerStartedRpcsMeasureName, 1, context_.Labels(),
-                    identifier_, registered_method_);
+                    identifier_, registered_method_, /*include_exchange_labels=*/false);
   }
 
   labels_from_peer_ = labels_injector_.GetExchangeLabels(recv_initial_metadata);
@@ -174,8 +174,8 @@ void PythonOpenCensusServerCallTracer::RecordCancel(
 void PythonOpenCensusServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   if (PythonCensusStatsEnabled()) {
-    const uint64_t request_size = GetOutgoingDataSize(final_info);
-    const uint64_t response_size = GetIncomingDataSize(final_info);
+    const uint64_t request_size = GetIncomingDataSize(final_info);
+    const uint64_t response_size = GetOutgoingDataSize(final_info);
     double elapsed_time_s = absl::ToDoubleSeconds(elapsed_time_);
     context_.Labels().emplace_back(kServerMethod, std::string(method_));
     context_.Labels().emplace_back(
@@ -186,20 +186,20 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     }
     RecordDoubleMetric(kRpcServerSentBytesPerRpcMeasureName,
                        static_cast<double>(response_size), context_.Labels(),
-                       identifier_, registered_method_);
+                       identifier_, registered_method_, /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcServerReceivedBytesPerRpcMeasureName,
                        static_cast<double>(request_size), context_.Labels(),
-                       identifier_, registered_method_);
+                       identifier_, registered_method_, /*include_exchange_labels=*/true);
     RecordDoubleMetric(kRpcServerServerLatencyMeasureName, elapsed_time_s,
-                       context_.Labels(), identifier_, registered_method_);
+                       context_.Labels(), identifier_, registered_method_, /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcServerCompletedRpcMeasureName, 1, context_.Labels(),
-                    identifier_, registered_method_);
+                    identifier_, registered_method_, /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcServerSentMessagesPerRpcMeasureName,
                     sent_message_count_, context_.Labels(), identifier_,
-                    registered_method_);
+                    registered_method_, /*include_exchange_labels=*/true);
     RecordIntMetric(kRpcServerReceivedMessagesPerRpcMeasureName,
                     recv_message_count_, context_.Labels(), identifier_,
-                    registered_method_);
+                    registered_method_, /*include_exchange_labels=*/true);
   }
   if (PythonCensusTracingEnabled()) {
     context_.EndSpan();

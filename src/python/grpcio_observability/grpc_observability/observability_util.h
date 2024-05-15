@@ -73,11 +73,12 @@ void AddCensusDataToBuffer(const CensusData& buffer);
 
 void RecordIntMetric(MetricsName name, int64_t value,
                      const std::vector<Label>& labels, std::string identifier,
-                     const bool registered_method);
+                     const bool registered_method, const bool include_exchange_labels);
 
 void RecordDoubleMetric(MetricsName name, double value,
                         const std::vector<Label>& labels,
-                        std::string identifier, const bool registered_method);
+                        std::string identifier, const bool registered_method,
+                        const bool include_exchange_labels);
 
 void RecordSpan(const SpanCensusData& span_census_data);
 

@@ -67,7 +67,6 @@ py_test(
         ":test_server",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
-        "//src/python/grpcio_observability/grpc_observability:pyobservability",
         "//src/python/grpcio_tests/tests/testing",
         requirement("protobuf"),
         requirement("opentelemetry-sdk"),

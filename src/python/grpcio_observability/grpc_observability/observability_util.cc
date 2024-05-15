@@ -62,11 +62,12 @@ int GetMaxExportBufferSize() {
 
 void RecordIntMetric(MetricsName name, int64_t value,
                      const std::vector<Label>& labels, std::string identifier,
-                     const bool registered_method) {
+                     const bool registered_method, const bool include_exchange_labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementInt;
   measurement_data.name = name;
   measurement_data.registered_method = registered_method;
+  measurement_data.include_exchange_labels = include_exchange_labels;
   measurement_data.value.value_int = value;
 
   CensusData data = CensusData(measurement_data, labels, identifier);
@@ -75,11 +76,13 @@ void RecordIntMetric(MetricsName name, int64_t value,
 
 void RecordDoubleMetric(MetricsName name, double value,
                         const std::vector<Label>& labels,
-                        std::string identifier, const bool registered_method) {
+                        std::string identifier, const bool registered_method,
+                        const bool include_exchange_labels) {
   Measurement measurement_data;
   measurement_data.type = kMeasurementDouble;
   measurement_data.name = name;
   measurement_data.registered_method = registered_method;
+  measurement_data.include_exchange_labels = include_exchange_labels;
   measurement_data.value.value_double = value;
 
   CensusData data = CensusData(measurement_data, labels, identifier);

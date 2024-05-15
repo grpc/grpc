@@ -197,6 +197,7 @@ def _c_measurement_to_measurement(object measurement
     name -> cMetricsName
     type -> MeasurementType
     registered_method -> bool
+    include_exchange_labels -> bool
     value -> {value_double: float | value_int: int}
   """
   measurement: Measurement
@@ -205,6 +206,7 @@ def _c_measurement_to_measurement(object measurement
   py_measurement['name'] = measurement['name']
   py_measurement['type'] = measurement['type']
   py_measurement['registered_method'] = measurement['registered_method']
+  py_measurement['include_exchange_labels'] = measurement['include_exchange_labels']
   if measurement['type'] == kMeasurementDouble:
     py_measurement['value'] = {'value_double': measurement['value']['value_double']}
   else:
@@ -242,6 +244,8 @@ def _get_stats_data(object measurement, object labels, object identifier) -> _ob
     with keys and values as following:
       name -> cMetricsName
       type -> MeasurementType
+      registered_method -> bool
+      include_exchange_labels -> bool
       value -> {value_double: float | value_int: int}
   labels: Labels assciociated with stats data with type of dict[str, AnyStr].
   identifier: Identifies which plugins this stats data belongs to.
@@ -256,13 +260,15 @@ def _get_stats_data(object measurement, object labels, object identifier) -> _ob
                                        value_float=measurement['value']['value_double'],
                                        labels=labels,
                                        identifiers=identifiers,
-                                       registered_method=measurement['registered_method'],)
+                                       registered_method=measurement['registered_method'],
+                                       include_exchange_labels=measurement['include_exchange_labels'],)
   else:
     py_stat = _observability.StatsData(name=metric_name, measure_double=False,
                                        value_int=measurement['value']['value_int'],
                                        labels=labels,
                                        identifiers=identifiers,
-                                       registered_method=measurement['registered_method'],)
+                                       registered_method=measurement['registered_method'],
+                                       include_exchange_labels=measurement['include_exchange_labels'],)
   return py_stat
 
 
@@ -292,6 +298,7 @@ def _record_rpc_latency(object exporter, str method, str target, float rpc_laten
   measurement['type'] = kMeasurementDouble
   measurement['value'] = {'value_double': rpc_latency}
   measurement['registered_method'] = registered_method
+  measurement['include_exchange_labels'] = False
 
   labels = {}
   labels[_decode(kClientMethod)] = method.strip("/")

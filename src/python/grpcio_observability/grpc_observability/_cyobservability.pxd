@@ -59,6 +59,7 @@ cdef extern from "python_observability_context.h" namespace "grpc_observability"
     MeasurementType type
     MeasurementValue value
     bint registered_method
+    bint include_exchange_labels
 
   ctypedef struct SpanCensusData:
     string name

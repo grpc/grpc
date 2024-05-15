@@ -43,11 +43,16 @@ class OpenTelemetryLabelInjector(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_additional_labels(self) -> Dict[str, str]:
+    def get_additional_labels(
+        self, include_exchange_labels: bool
+    ) -> Dict[str, str]:
         """
         Get additional labels added by this injector.
 
         The return value from this method will be added directly to metric data.
+
+        Args:
+          include_exchange_labels: Whether to add additional metadata exchange related labels.
 
         Returns:
           A dict of labels.

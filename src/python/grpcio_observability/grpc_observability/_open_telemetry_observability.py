@@ -104,11 +104,18 @@ class _OpenTelemetryPlugin:
             enabled_plugin_options = self._enabled_client_plugin_options
         else:
             enabled_plugin_options = self._enabled_server_plugin_options
-        deserialized_labels = self._deserialize_labels(
-            stats_data.labels, enabled_plugin_options
-        )
+        # Only deserialize labels if we need add exchanged labels.
+        if stats_data.include_exchange_labels:
+            deserialized_labels = self._deserialize_labels(
+                stats_data.labels, enabled_plugin_options
+            )
+        else:
+            deserialized_labels = stats_data.labels
+
         labels = self._maybe_add_labels(
-            deserialized_labels, enabled_plugin_options
+            stats_data.include_exchange_labels,
+            deserialized_labels,
+            enabled_plugin_options,
         )
         decoded_labels = self.decode_labels(labels)
 
@@ -118,7 +125,10 @@ class _OpenTelemetryPlugin:
             decoded_labels[GRPC_TARGET_LABEL] = GRPC_OTHER_LABEL_VALUE
 
         method = decoded_labels.get(GRPC_METHOD_LABEL, "")
-        if not (stats_data.registered_method or self._plugin.generic_method_attribute_filter(method)):
+        if not (
+            stats_data.registered_method
+            or self._plugin.generic_method_attribute_filter(method)
+        ):
             # Filter method name if it's not registered method and
             # generic_method_attribute_filter returns false.
             decoded_labels[GRPC_METHOD_LABEL] = GRPC_OTHER_LABEL_VALUE
@@ -203,6 +213,7 @@ class _OpenTelemetryPlugin:
 
     def _maybe_add_labels(
         self,
+        include_exchange_labels: bool,
         labels: Dict[str, str],
         enabled_plugin_options: List[OpenTelemetryPluginOption],
     ) -> Dict[str, AnyStr]:
@@ -217,7 +228,9 @@ class _OpenTelemetryPlugin:
                 ]
             ):
                 labels.update(
-                    plugin_option.get_label_injector().get_additional_labels()
+                    plugin_option.get_label_injector().get_additional_labels(
+                        include_exchange_labels
+                    )
                 )
         return labels
 

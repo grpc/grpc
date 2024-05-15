@@ -24,11 +24,14 @@ from typing import Any, Callable, Dict, List, Optional, Set
 import unittest
 from unittest import mock
 
+import grpc_observability
 from grpc_csm_observability import CsmOpenTelemetryPlugin
 from grpc_csm_observability._csm_observability_plugin import (
     CSMOpenTelemetryLabelInjector,
 )
-import grpc_observability
+from grpc_csm_observability._csm_observability_plugin import TYPE_GCE
+from grpc_csm_observability._csm_observability_plugin import TYPE_GKE
+from grpc_csm_observability._csm_observability_plugin import UNKNOWN_VALUE
 from grpc_observability import _open_telemetry_measures
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPluginOption
@@ -38,6 +41,7 @@ from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.resources import Resource
 
 from tests.observability import _test_server
 
@@ -53,7 +57,7 @@ CSM_METADATA_EXCHANGE_DEFAULT_LABELS = [
 # The following metrics should have optional labels when optional
 # labels is enabled through OpenTelemetryPlugin.
 METRIC_NAME_WITH_OPTIONAL_LABEL = [
-    "grpc.client.attempt.duration"
+    "grpc.client.attempt.duration",
     "grpc.client.attempt.sent_total_compressed_message_size",
     "grpc.client.attempt.rcvd_total_compressed_message_size",
 ]
@@ -62,13 +66,39 @@ CSM_OPTIONAL_LABEL_KEYS = ["csm.service_name", "csm.service_namespace_name"]
 # The following metrics should have metadata exchange labels when metadata
 # exchange flow is triggered.
 METRIC_NAME_WITH_EXCHANGE_LABEL = [
-    "grpc.client.attempt.duration"
+    "grpc.client.attempt.duration",
     "grpc.client.attempt.sent_total_compressed_message_size",
     "grpc.client.attempt.rcvd_total_compressed_message_size",
     "grpc.server.call.duration",
     "grpc.server.call.sent_total_compressed_message_size",
     "grpc.server.call.rcvd_total_compressed_message_size",
 ]
+
+MOCK_GKE_RESOURCE = Resource.create(
+    attributes={
+        "gcp.resource_type": "gke_container",
+        "k8s.pod.name": "pod",
+        "k8s.container.name": "container",
+        "k8s.namespace.name": "namespace",
+        "k8s.cluster.name": "cluster",
+        "cloud.region": "region",
+        "cloud.account.id": "id",
+    }
+)
+
+MOCK_GCE_RESOURCE = Resource.create(
+    attributes={
+        "gcp.resource_type": "gce_instance",
+        "cloud.zone": "zone",
+        "cloud.account.id": "id",
+    }
+)
+
+MOCK_UNKNOWN_RESOURCE = Resource.create(
+    attributes={
+        "gcp.resource_type": "random",
+    }
+)
 
 
 class OTelMetricExporter(MetricExporter):
@@ -177,36 +207,15 @@ class ObservabilityPluginTest(unittest.TestCase):
         _test_server.unary_unary_call(port=port)
         csm_plugin.deregister_global()
 
-        self._validate_metrics_exist(self.all_metrics)
+        validate_metrics_exist(self, self.all_metrics)
         for name, label_list in self.all_metrics.items():
             if name in METRIC_NAME_WITH_OPTIONAL_LABEL:
                 self._validate_label_exist(
                     name, label_list, CSM_OPTIONAL_LABEL_KEYS
                 )
-
-    def testMetadataExchange(self):
-        plugin_option = TestOpenTelemetryPluginOption(
-            label_injector=CSMOpenTelemetryLabelInjector()
-        )
-        # Have to manually create csm_plugin so that we can enable it for all
-        # channels.
-        csm_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider, plugin_options=[plugin_option]
-        )
-
-        csm_plugin.register_global()
-        self._server, port = _test_server.start_server()
-        _test_server.unary_unary_call(port=port)
-        csm_plugin.deregister_global()
-
-        self._validate_metrics_exist(self.all_metrics)
-        for name, label_list in self.all_metrics.items():
-            if name in METRIC_NAME_WITH_EXCHANGE_LABEL:
-                self._validate_label_exist(
-                    name, label_list, CSM_METADATA_EXCHANGE_DEFAULT_LABELS
-                )
+            else:
                 self._validate_label_not_exist(
-                    name, label_list, ["XEnvoyPeerMetadata"]
+                    name, label_list, CSM_OPTIONAL_LABEL_KEYS
                 )
 
     def testPluginOptionOnlyEnabledForXdsTargets(self):
@@ -266,8 +275,10 @@ class ObservabilityPluginTest(unittest.TestCase):
             csm_label_injector = csm_plugin.plugin_options[
                 0
             ].get_label_injector()
-            mesh_id = csm_label_injector._local_labels["csm.mesh_id"]
-            self.assertEqual(mesh_id, "test_mesh_id")
+            additional_labels = csm_label_injector.get_additional_labels(
+                include_exchange_labels=True
+            )
+            self.assertEqual(additional_labels["csm.mesh_id"], "test_mesh_id")
 
     def testGetMeshIdFromFile(self):
         config_json = {
@@ -288,8 +299,10 @@ class ObservabilityPluginTest(unittest.TestCase):
             csm_label_injector = csm_plugin.plugin_options[
                 0
             ].get_label_injector()
-            mesh_id = csm_label_injector._local_labels["csm.mesh_id"]
-            self.assertEqual(mesh_id, "test_mesh_id")
+            additional_labels = csm_label_injector.get_additional_labels(
+                include_exchange_labels=True
+            )
+            self.assertEqual(additional_labels["csm.mesh_id"], "test_mesh_id")
 
     def testGetMeshIdFromInvalidConfig(self):
         config_json = {"node": {"id": "12345"}}
@@ -303,32 +316,10 @@ class ObservabilityPluginTest(unittest.TestCase):
             csm_label_injector = csm_plugin.plugin_options[
                 0
             ].get_label_injector()
-            mesh_id = csm_label_injector._local_labels["csm.mesh_id"]
-            self.assertEqual(mesh_id, "unknown")
-
-    def assert_eventually(
-        self,
-        predicate: Callable[[], bool],
-        *,
-        timeout: Optional[datetime.timedelta] = None,
-        message: Optional[Callable[[], str]] = None,
-    ) -> None:
-        message = message or (lambda: "Proposition did not evaluate to true")
-        timeout = timeout or datetime.timedelta(seconds=5)
-        end = datetime.datetime.now() + timeout
-        while datetime.datetime.now() < end:
-            if predicate():
-                break
-            time.sleep(0.5)
-        else:
-            self.fail(message() + " after " + str(timeout))
-
-    def _validate_metrics_exist(self, all_metrics: Dict[str, Any]) -> None:
-        # Sleep here to make sure we have at least one export from OTel MetricExporter.
-        self.assert_eventually(
-            lambda: len(all_metrics.keys()) > 1,
-            message=lambda: f"No metrics was exported",
-        )
+            additional_labels = csm_label_injector.get_additional_labels(
+                include_exchange_labels=True
+            )
+            self.assertEqual(additional_labels["csm.mesh_id"], "unknown")
 
     def _validate_all_metrics_names(self, metric_names: Set[str]) -> None:
         self._validate_server_metrics_names(metric_names)
@@ -375,6 +366,280 @@ class ObservabilityPluginTest(unittest.TestCase):
                     label in metric_label,
                     msg=f"found unexpected label with key {label} in metric {metric_name}, found label list: {metric_label}",
                 )
+
+
+@unittest.skipIf(
+    os.name == "nt" or "darwin" in sys.platform,
+    "Observability is not supported in Windows and MacOS",
+)
+class MetadataExchangeTest(unittest.TestCase):
+    def setUp(self):
+        self.all_metrics = defaultdict(list)
+        otel_exporter = OTelMetricExporter(self.all_metrics)
+        reader = PeriodicExportingMetricReader(
+            exporter=otel_exporter,
+            export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
+        )
+        self._provider = MeterProvider(metric_readers=[reader])
+        self._server = None
+        self._port = None
+
+    def tearDown(self):
+        if self._server:
+            self._server.stop(0)
+
+    @mock.patch(
+        "opentelemetry.resourcedetector.gcp_resource_detector.GoogleCloudResourceDetector.detect"
+    )
+    def testMetadataExchangeClientDoesNotSendMetadata(self, mock_detector):
+        mock_detector.return_value = MOCK_GKE_RESOURCE
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CSM_CANONICAL_SERVICE_NAME": "canonical_service",
+                "CSM_WORKLOAD_NAME": "workload",
+            },
+        ):
+            plugin_option = TestOpenTelemetryPluginOption(
+                label_injector=CSMOpenTelemetryLabelInjector(),
+                active_on_client=False,
+            )
+
+        # Manually create csm_plugin so that it's always disabled on client.
+        csm_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
+        )
+
+        csm_plugin.register_global()
+        self._server, port = _test_server.start_server()
+        _test_server.unary_unary_call(port=port)
+        csm_plugin.deregister_global()
+
+        validate_metrics_exist(self, self.all_metrics)
+        for name, label_list in self.all_metrics.items():
+            attributes = label_list[0]
+            # Verifies that the server records unknown when the client does not send metadata
+            if name in ["grpc.server.call.duration"]:
+                self.assertEqual(
+                    attributes["csm.workload_canonical_service"],
+                    "canonical_service",
+                )
+                self.assertEqual(
+                    attributes["csm.remote_workload_canonical_service"],
+                    "unknown",
+                )
+            # Client metric should not have CSM labels.
+            elif "grpc.client" in name:
+                self.assertTrue(
+                    "csm.workload_canonical_service" not in attributes.keys()
+                )
+                self.assertTrue(
+                    "csm.remote_workload_canonical_service"
+                    not in attributes.keys()
+                )
+
+    @mock.patch(
+        "opentelemetry.resourcedetector.gcp_resource_detector.GoogleCloudResourceDetector.detect"
+    )
+    def testResourceDetectorGCE(self, mock_detector):
+        mock_detector.return_value = MOCK_GCE_RESOURCE
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CSM_CANONICAL_SERVICE_NAME": "canonical_service",
+                "CSM_WORKLOAD_NAME": "workload",
+            },
+        ):
+            plugin_option = TestOpenTelemetryPluginOption(
+                label_injector=CSMOpenTelemetryLabelInjector(),
+            )
+
+        # Have to manually create csm_plugin so that we can enable it for all
+        # channels.
+        csm_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
+        )
+
+        csm_plugin.register_global()
+        self._server, port = _test_server.start_server()
+        _test_server.unary_unary_call(port=port)
+        csm_plugin.deregister_global()
+
+        validate_metrics_exist(self, self.all_metrics)
+        for name, label_list in self.all_metrics.items():
+            # started metrics shouldn't have any csm labels.
+            if name in [
+                "grpc.client.attempt.started",
+                "grpc.server.call.started",
+            ]:
+                self._verify_no_service_mesh_attributes(label_list[0])
+            # duration metrics should have all csm related labels.
+            elif name in [
+                "grpc.client.attempt.duration",
+                "grpc.server.call.duration",
+            ]:
+                self._verify_service_mesh_attributes(label_list[0], TYPE_GCE)
+
+    @mock.patch(
+        "opentelemetry.resourcedetector.gcp_resource_detector.GoogleCloudResourceDetector.detect"
+    )
+    def testResourceDetectorGKE(self, mock_detector):
+        mock_detector.return_value = MOCK_GKE_RESOURCE
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CSM_CANONICAL_SERVICE_NAME": "canonical_service",
+                "CSM_WORKLOAD_NAME": "workload",
+            },
+        ):
+            plugin_option = TestOpenTelemetryPluginOption(
+                label_injector=CSMOpenTelemetryLabelInjector()
+            )
+
+        # Have to manually create csm_plugin so that we can enable it for all
+        # channels.
+        csm_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
+        )
+
+        csm_plugin.register_global()
+        self._server, port = _test_server.start_server()
+        _test_server.unary_unary_call(port=port)
+        csm_plugin.deregister_global()
+
+        validate_metrics_exist(self, self.all_metrics)
+        for name, label_list in self.all_metrics.items():
+            # started metrics shouldn't have any csm labels.
+            if name in [
+                "grpc.client.attempt.started",
+                "grpc.server.call.started",
+            ]:
+                self._verify_no_service_mesh_attributes(label_list[0])
+            # duration metrics should have all csm related labels.
+            elif name in [
+                "grpc.client.attempt.duration",
+                "grpc.server.call.duration",
+            ]:
+                self._verify_service_mesh_attributes(label_list[0], TYPE_GKE)
+
+    @mock.patch(
+        "opentelemetry.resourcedetector.gcp_resource_detector.GoogleCloudResourceDetector.detect"
+    )
+    def testResourceDetectorUnknown(self, mock_detector):
+        mock_detector.return_value = MOCK_UNKNOWN_RESOURCE
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CSM_CANONICAL_SERVICE_NAME": "canonical_service",
+                "CSM_WORKLOAD_NAME": "workload",
+            },
+        ):
+            plugin_option = TestOpenTelemetryPluginOption(
+                label_injector=CSMOpenTelemetryLabelInjector()
+            )
+
+        # Have to manually create csm_plugin so that we can enable it for all
+        # channels.
+        csm_plugin = grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._provider, plugin_options=[plugin_option]
+        )
+
+        csm_plugin.register_global()
+        self._server, port = _test_server.start_server()
+        _test_server.unary_unary_call(port=port)
+        csm_plugin.deregister_global()
+
+        validate_metrics_exist(self, self.all_metrics)
+        for name, label_list in self.all_metrics.items():
+            # started metrics shouldn't have any csm labels.
+            if name in [
+                "grpc.client.attempt.started",
+                "grpc.server.call.started",
+            ]:
+                self._verify_no_service_mesh_attributes(label_list[0])
+            # duration metrics should have all csm related labels.
+            elif name in [
+                "grpc.client.attempt.duration",
+                "grpc.server.call.duration",
+            ]:
+                self._verify_service_mesh_attributes(
+                    label_list[0], UNKNOWN_VALUE
+                )
+
+    def _verify_service_mesh_attributes(
+        self, attributes: Dict[str, str], resource_type: str
+    ):
+        # Assuming attributes is a dictionary
+        self.assertEqual(
+            attributes["csm.workload_canonical_service"], "canonical_service"
+        )
+        self.assertEqual(
+            attributes["csm.remote_workload_canonical_service"],
+            "canonical_service",
+        )
+
+        if resource_type == TYPE_GKE:
+            self.assertEqual(
+                attributes["csm.remote_workload_type"], "gcp_kubernetes_engine"
+            )
+            self.assertEqual(attributes["csm.remote_workload_name"], "workload")
+            self.assertEqual(
+                attributes["csm.remote_workload_namespace_name"], "namespace"
+            )
+            self.assertEqual(
+                attributes["csm.remote_workload_cluster_name"], "cluster"
+            )
+            self.assertEqual(
+                attributes["csm.remote_workload_location"], "region"
+            )
+            self.assertEqual(attributes["csm.remote_workload_project_id"], "id")
+        elif resource_type == TYPE_GCE:
+            self.assertEqual(
+                attributes["csm.remote_workload_type"], "gcp_compute_engine"
+            )
+            self.assertEqual(attributes["csm.remote_workload_name"], "workload")
+            self.assertEqual(attributes["csm.remote_workload_location"], "zone")
+            self.assertEqual(attributes["csm.remote_workload_project_id"], "id")
+        elif resource_type == UNKNOWN_VALUE:
+            self.assertEqual(attributes["csm.remote_workload_type"], "random")
+
+    def _verify_no_service_mesh_attributes(self, attributes: Dict[str, str]):
+        self.assertTrue("csm.remote_workload_canonical_service" not in attributes.keys())
+        self.assertTrue("csm.remote_workload_type" not in attributes.keys())
+        self.assertTrue(
+            "csm.workload_canonical_service" not in attributes.keys()
+        )
+        self.assertTrue("csm.workload_type" not in attributes.keys())
+        self.assertTrue("csm.mesh_id" not in attributes.keys())
+
+
+def validate_metrics_exist(
+    testCase: unittest.TestCase, all_metrics: Dict[str, Any]
+) -> None:
+    # Sleep here to make sure we have at least one export from OTel MetricExporter.
+    assert_eventually(
+        testCase=testCase,
+        predicate=lambda: len(all_metrics.keys()) > 1,
+        message=lambda: f"No metrics was exported",
+    )
+
+
+def assert_eventually(
+    testCase: unittest.TestCase,
+    predicate: Callable[[], bool],
+    *,
+    timeout: Optional[datetime.timedelta] = None,
+    message: Optional[Callable[[], str]] = None,
+) -> None:
+    message = message or (lambda: "Proposition did not evaluate to true")
+    timeout = timeout or datetime.timedelta(seconds=5)
+    end = datetime.datetime.now() + timeout
+    while datetime.datetime.now() < end:
+        if predicate():
+            break
+        time.sleep(0.5)
+    else:
+        testCase.fail(message() + " after " + str(timeout))
 
 
 if __name__ == "__main__":
