@@ -537,7 +537,7 @@ auto RunCall(Interceptor interceptor, CallArgs call_args,
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
     void (Derived::Call::*fn)(const Message&),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+    FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
     call_data->call.OnClientToServerMessage(*msg);
@@ -548,7 +548,7 @@ inline auto InterceptClientToServerMessageHandler(
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+    FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
     auto return_md = call_data->call.OnClientToServerMessage(*msg);
@@ -562,7 +562,7 @@ inline auto InterceptClientToServerMessageHandler(
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+    FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
     auto return_md =
@@ -577,7 +577,7 @@ inline auto InterceptClientToServerMessageHandler(
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
     MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+    FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
     return call_data->call.OnClientToServerMessage(std::move(msg),
@@ -588,7 +588,7 @@ inline auto InterceptClientToServerMessageHandler(
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
     absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+    FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
     auto r = call_data->call.OnClientToServerMessage(std::move(msg),
@@ -611,7 +611,7 @@ inline void InterceptClientToServerMessage(HookFunction hook,
 
 template <typename Derived, typename HookFunction>
 inline void InterceptClientToServerMessage(HookFunction hook,
-                                           void (Derived::Call::*half_close)(),
+                                           void (Derived::Call::*)(),
                                            FilterCallData<Derived>* call_data,
                                            const CallArgs& call_args) {
   call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
@@ -642,7 +642,7 @@ inline auto InterceptClientToServerMessageHandler(
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
     void (Derived::Call::*fn)(const Message&), typename Derived::Call* call,
-    Derived*, PipeBasedCallSpine* call_spine) {
+    Derived*, PipeBasedCallSpine*) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call](MessageHandle msg) -> absl::optional<MessageHandle> {
     call->OnClientToServerMessage(*msg);
@@ -668,8 +668,7 @@ inline auto InterceptClientToServerMessageHandler(
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
     MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
-    typename Derived::Call* call, Derived* channel,
-    PipeBasedCallSpine* call_spine) {
+    typename Derived::Call* call, Derived* channel, PipeBasedCallSpine*) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call, channel](MessageHandle msg) {
     return call->OnClientToServerMessage(std::move(msg), channel);
