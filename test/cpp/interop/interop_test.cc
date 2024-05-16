@@ -65,7 +65,7 @@ int test_client(const char* root, const char* host, int port) {
     return 1;
   }
   // wait for client
-  gpr_log(GPR_INFO, "Waiting for client: %s", host);
+  LOG(INFO) << "Waiting for client: " << host;
   if (waitpid(cli, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;
   if (WEXITSTATUS(status)) return WEXITSTATUS(status);
