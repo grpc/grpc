@@ -389,8 +389,9 @@ int main(int argc, char** argv) {
       if (!test_cases.empty()) test_cases += "\n";
       test_cases += action.first;
     }
-    gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
-            absl::GetFlag(FLAGS_test_case).c_str(), test_cases.c_str());
+    LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
+               << ". Valid options are\n"
+               << test_cases;
     ret = 1;
   }
 
