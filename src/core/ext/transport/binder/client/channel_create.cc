@@ -35,6 +35,7 @@
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/substitute.h"
 #include "absl/time/clock.h"
