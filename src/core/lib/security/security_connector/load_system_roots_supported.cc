@@ -32,6 +32,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -110,7 +112,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
       // no subdirectories.
       if (stat_return == -1) {
-        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+        LOG(ERROR) << "failed to get status for file: " << file_data.path;
       }
       continue;
     }
@@ -131,7 +133,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       if (read_ret != -1) {
         bytes_read += read_ret;
       } else {
-        gpr_log(GPR_ERROR, "failed to read file: %s", roots_filenames[i].path);
+        LOG(ERROR) << "failed to read file: " << roots_filenames[i].path;
       }
     }
   }

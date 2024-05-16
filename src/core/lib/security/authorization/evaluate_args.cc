@@ -16,6 +16,7 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -41,7 +42,7 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   EvaluateArgs::PerChannelArgs::Address address;
   absl::StatusOr<URI> uri = URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_DEBUG, "Failed to parse uri.");
+    VLOG(2) << "Failed to parse uri.";
     return address;
   }
   absl::string_view host_view;
