@@ -19,6 +19,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -126,7 +127,7 @@ class EventEngineEndpointWrapper {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
+          VLOG(2) << "READ DATA: " << dump;
           gpr_free(dump);
         }
       }
@@ -157,7 +158,7 @@ class EventEngineEndpointWrapper {
         for (i = 0; i < slices->count; i++) {
           char* dump =
               grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          gpr_log(GPR_DEBUG, "WRITE DATA: %s", dump);
+          VLOG(2) << "WRITE DATA: " << dump;
           gpr_free(dump);
         }
       }

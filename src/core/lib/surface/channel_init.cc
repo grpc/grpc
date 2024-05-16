@@ -27,6 +27,7 @@
 #include <type_traits>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -312,7 +313,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       const auto filter_str =
           absl::StrCat("  ", loc_strs[filter.filter],
                        NameFromChannelFilter(filter.filter), after_str);
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+      LOG(INFO) << filter_str;
     }
     // Finally list out the terminal filters and where they were registered
     // from.
@@ -324,7 +325,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                           strlen(NameFromChannelFilter(terminal.filter)),
                       ' '),
           "[terminal]");
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+      LOG(INFO) << filter_str;
     }
   }
   // Check if there are no terminal filters: this would be an error.
@@ -397,7 +398,7 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
             "\n");
       }
     }
-    gpr_log(GPR_ERROR, "%s", error.c_str());
+    LOG(ERROR) << error;
     return false;
   }
   for (const auto& post_processor : stack_config.post_processors) {

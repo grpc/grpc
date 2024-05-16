@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -219,9 +220,8 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   }
   // Finally, try fallback config.
   if (fallback_config != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      gpr_log(GPR_INFO, "Got bootstrap contents from fallback config");
-    }
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "Got bootstrap contents from fallback config";
     return fallback_config;
   }
   // No bootstrap config found.

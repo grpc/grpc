@@ -21,6 +21,8 @@
 
 #include <string>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/port_platform.h>
 
 /// Simple command line parser.
@@ -43,7 +45,7 @@
 ///  gpr_cmdline_destroy(cl);
 
 ///  if (verbose) {
-///    gpr_log(GPR_INFO, "Goodbye cruel world!");
+///    LOG(INFO) << "Goodbye cruel world!";
 ///  }
 
 ///  return 0;

@@ -872,7 +872,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
+        VLOG(2) << "READ DATA: " << dump;
         gpr_free(dump);
       }
     }
@@ -1849,9 +1849,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
     tcp->current_zerocopy_send = nullptr;
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
-    }
+    GRPC_TRACE_LOG(tcp, INFO) << "write: " << grpc_core::StatusToString(error);
     // No need to take a ref on error since tcp_flush provides a ref.
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
     TCP_UNREF(tcp, "write");
@@ -1874,7 +1872,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_DEBUG, "WRITE DATA: %s", data);
+        VLOG(2) << "WRITE DATA: " << data;
         gpr_free(data);
       }
     }
@@ -1917,9 +1915,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     }
     notify_on_write(tcp);
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      gpr_log(GPR_INFO, "write: %s", grpc_core::StatusToString(error).c_str());
-    }
+    GRPC_TRACE_LOG(tcp, INFO) << "write: " << grpc_core::StatusToString(error);
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
   }
 }

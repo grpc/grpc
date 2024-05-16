@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -86,9 +87,7 @@ static void start_timer_thread_and_unlock(void) {
   ++g_waiter_count;
   ++g_thread_count;
   gpr_mu_unlock(&g_mu);
-  if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-    gpr_log(GPR_INFO, "Spawn timer thread");
-  }
+  GRPC_TRACE_LOG(timer_check, INFO) << "Spawn timer thread";
   completed_thread* ct =
       static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
   ct->thd = grpc_core::Thread("grpc_global_timer", timer_thread, ct);
@@ -122,17 +121,13 @@ static void run_some_timers() {
     // if there's no thread waiting with a timeout, kick an existing untimed
     // waiter so that the next deadline is not missed
     if (!g_has_timed_waiter) {
-      if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-        gpr_log(GPR_INFO, "kick untimed waiter");
-      }
+      GRPC_TRACE_LOG(timer_check, INFO) << "kick untimed waiter";
       gpr_cv_signal(&g_cv_wait);
     }
     gpr_mu_unlock(&g_mu);
   }
   // without our lock, flush the exec_ctx
-  if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-    gpr_log(GPR_INFO, "flush exec_ctx");
-  }
+  GRPC_TRACE_LOG(timer_check, INFO) << "flush exec_ctx";
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&g_mu);
   // garbage collect any threads that are dead
@@ -197,7 +192,7 @@ static bool wait_until(grpc_core::Timestamp next) {
 
     if (GRPC_TRACE_FLAG_ENABLED(timer_check) &&
         next == grpc_core::Timestamp::InfFuture()) {
-      gpr_log(GPR_INFO, "sleep until kicked");
+      LOG(INFO) << "sleep until kicked";
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu, next.as_timespec(GPR_CLOCK_MONOTONIC));
@@ -248,9 +243,8 @@ static void timer_main_loop() {
 
         // Consequently, we can just sleep forever here and be happy at some
         // saved wakeup cycles.
-        if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-          gpr_log(GPR_INFO, "timers not checked: expect another thread to");
-        }
+        GRPC_TRACE_LOG(timer_check, INFO)
+            << "timers not checked: expect another thread to";
         next = grpc_core::Timestamp::InfFuture();
         ABSL_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
@@ -274,9 +268,7 @@ static void timer_thread_cleanup(completed_thread* ct) {
   ct->next = g_completed_threads;
   g_completed_threads = ct;
   gpr_mu_unlock(&g_mu);
-  if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-    gpr_log(GPR_INFO, "End timer thread");
-  }
+  GRPC_TRACE_LOG(timer_check, INFO) << "End timer thread";
 }
 
 static void timer_thread(void* completed_thread_ptr) {
@@ -315,20 +307,17 @@ void grpc_timer_manager_init(void) {
 
 static void stop_threads(void) {
   gpr_mu_lock(&g_mu);
-  if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-    gpr_log(GPR_INFO, "stop timer threads: threaded=%d", g_threaded);
-  }
+  GRPC_TRACE_LOG(timer_check, INFO)
+      << "stop timer threads: threaded=" << g_threaded;
   if (g_threaded) {
     g_threaded = false;
     gpr_cv_broadcast(&g_cv_wait);
-    if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-      gpr_log(GPR_INFO, "num timer threads: %d", g_thread_count);
-    }
+    GRPC_TRACE_LOG(timer_check, INFO)
+        << "num timer threads: " << g_thread_count;
     while (g_thread_count > 0) {
       gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
-      if (GRPC_TRACE_FLAG_ENABLED(timer_check)) {
-        gpr_log(GPR_INFO, "num timer threads: %d", g_thread_count);
-      }
+      GRPC_TRACE_LOG(timer_check, INFO)
+          << "num timer threads: " << g_thread_count;
       gc_completed_threads();
     }
   }

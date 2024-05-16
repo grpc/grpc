@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -117,9 +118,7 @@ void MetadataQuery::OnDone(void* arg, grpc_error_handle error) {
       result = absl::UnavailableError(
           absl::StrFormat("MetadataServer Could not parse zone: %s",
                           std::string(body).c_str()));
-      if (GRPC_TRACE_FLAG_ENABLED(metadata_query)) {
-        gpr_log(GPR_INFO, "%s", result.status().ToString().c_str());
-      }
+      GRPC_TRACE_LOG(metadata_query, INFO) << result.status();
     } else {
       result = std::string(body.substr(pos + 1));
     }

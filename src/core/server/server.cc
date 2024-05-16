@@ -33,6 +33,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -978,7 +979,7 @@ grpc_error_handle Server::SetupTransport(
     }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
-    gpr_log(GPR_INFO, "Adding connection");
+    LOG(INFO) << "Adding connection";
     connections_.emplace(std::move(t));
     ++connections_open_;
   } else {
@@ -1491,9 +1492,7 @@ void Server::ChannelData::Destroy() {
                          "Server::ChannelData::Destroy");
   GRPC_CLOSURE_INIT(&finish_destroy_channel_closure_, FinishDestroy, this,
                     grpc_schedule_on_exec_ctx);
-  if (GRPC_TRACE_FLAG_ENABLED(server_channel)) {
-    gpr_log(GPR_INFO, "Disconnected client");
-  }
+  GRPC_TRACE_LOG(server_channel, INFO) << "Disconnected client";
   grpc_transport_op* op =
       grpc_make_transport_op(&finish_destroy_channel_closure_);
   op->set_accept_stream = true;

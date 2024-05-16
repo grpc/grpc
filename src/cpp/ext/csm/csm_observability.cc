@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "google/cloud/opentelemetry/resource_detector.h"
@@ -30,7 +31,6 @@
 #include "opentelemetry/sdk/resource/resource.h"
 #include "opentelemetry/sdk/resource/resource_detector.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/ext/csm_observability.h>
 
@@ -56,7 +56,7 @@ bool CsmChannelTargetSelector(absl::string_view target) {
   if (!g_csm_plugin_enabled) return false;
   auto uri = grpc_core::URI::Parse(target);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Failed to parse URI: %s", std::string(target).c_str());
+    LOG(ERROR) << "Failed to parse URI: " << target;
     return false;
   }
   // CSM channels should have an "xds" scheme

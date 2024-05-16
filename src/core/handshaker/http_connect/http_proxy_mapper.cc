@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -150,7 +151,7 @@ absl::optional<std::string> GetHttpProxyServer(
     // User cred found
     *user_cred = authority_strs[0];
     proxy_name = authority_strs[1];
-    gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
+    VLOG(2) << "userinfo found in proxy URI";
   } else {
     // Bad authority
     proxy_name = absl::nullopt;

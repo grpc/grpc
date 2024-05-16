@@ -21,6 +21,7 @@
 #include <inttypes.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -127,15 +128,11 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
             prev_size + 1);
   }
   if (prev_size == 0) {
-    if (GRPC_TRACE_FLAG_ENABLED(call_combiner)) {
-      gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
-    }
+    GRPC_TRACE_LOG(call_combiner, INFO) << "  EXECUTING IMMEDIATELY";
     // Queue was empty, so execute this closure immediately.
     ScheduleClosure(closure, error);
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(call_combiner)) {
-      gpr_log(GPR_INFO, "  QUEUING");
-    }
+    GRPC_TRACE_LOG(call_combiner, INFO) << "  QUEUING";
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = internal::StatusAllocHeapPtr(error);
     queue_.Push(
@@ -157,18 +154,15 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
   CHECK_GE(prev_size, 1u);
   if (prev_size > 1) {
     while (true) {
-      if (GRPC_TRACE_FLAG_ENABLED(call_combiner)) {
-        gpr_log(GPR_INFO, "  checking queue");
-      }
+      GRPC_TRACE_LOG(call_combiner, INFO) << "  checking queue";
       bool empty;
       grpc_closure* closure =
           reinterpret_cast<grpc_closure*>(queue_.PopAndCheckEnd(&empty));
       if (closure == nullptr) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with Start().
-        if (GRPC_TRACE_FLAG_ENABLED(call_combiner)) {
-          gpr_log(GPR_INFO, "  queue returned no result; checking again");
-        }
+        GRPC_TRACE_LOG(call_combiner, INFO)
+            << "  queue returned no result; checking again";
         continue;
       }
       grpc_error_handle error =
@@ -181,8 +175,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
       ScheduleClosure(closure, error);
       break;
     }
-  } else if (GRPC_TRACE_FLAG_ENABLED(call_combiner)) {
-    gpr_log(GPR_INFO, "  queue empty");
+    GRPC_TRACE_LOG(call_combiner, INFO) << "  queue empty";
   }
 }
 

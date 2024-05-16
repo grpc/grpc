@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -282,7 +283,7 @@ class GoogleCloud2ProdResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
-      gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
+      LOG(ERROR) << "google-c2p URI scheme does not support authorities";
       return false;
     }
     return true;

@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -118,7 +119,7 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
+    LOG(INFO) << "CHANNEL_STACK: init " << name;
     for (size_t i = 0; i < filter_count; i++) {
       gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s%s", filters[i]->name,
               filters[i]->make_call_promise ? " [promise-capable]" : "");
