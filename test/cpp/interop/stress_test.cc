@@ -185,7 +185,7 @@ bool ParseTestCasesString(const std::string& test_cases,
     int weight = std::stoi(it->substr(colon_pos + 1));
     TestCaseType test_case = GetTestTypeFromName(test_name);
     if (test_case == UNKNOWN_TEST) {
-      LOG(ERROR) << "Unknown test case: " << test_name.c_str();
+      LOG(ERROR) << "Unknown test case: " << test_name;
       is_success = false;
       break;
     }
@@ -199,9 +199,8 @@ bool ParseTestCasesString(const std::string& test_cases,
 // For debugging purposes
 void LogParameterInfo(const std::vector<std::string>& addresses,
                       const std::vector<std::pair<TestCaseType, int>>& tests) {
-  LOG(INFO) << "server_addresses: "
-            << absl::GetFlag(FLAGS_server_addresses).c_str();
-  LOG(INFO) << "test_cases : " << absl::GetFlag(FLAGS_test_cases).c_str();
+  LOG(INFO) << "server_addresses: " << absl::GetFlag(FLAGS_server_addresses);
+  LOG(INFO) << "test_cases : " << absl::GetFlag(FLAGS_test_cases);
   LOG(INFO) << "sleep_duration_ms: " << absl::GetFlag(FLAGS_sleep_duration_ms);
   LOG(INFO) << "test_duration_secs: "
             << absl::GetFlag(FLAGS_test_duration_secs);
@@ -217,7 +216,7 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
 
   int num = 0;
   for (auto it = addresses.begin(); it != addresses.end(); it++) {
-    LOG(INFO) << ++num << ":" << it->c_str();
+    LOG(INFO) << ++num << ":" << it;
   }
 
   num = 0;
@@ -260,7 +259,7 @@ int main(int argc, char** argv) {
   std::vector<std::pair<TestCaseType, int>> tests;
   if (!ParseTestCasesString(absl::GetFlag(FLAGS_test_cases), tests)) {
     LOG(ERROR) << "Error in parsing test cases string "
-               << absl::GetFlag(FLAGS_test_cases).c_str();
+               << absl::GetFlag(FLAGS_test_cases);
     return 1;
   }
 
