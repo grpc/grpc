@@ -31,8 +31,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/string.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
 #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"

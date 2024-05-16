@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_GPR_SUBPROCESS_H
-#define GRPC_SRC_CORE_LIB_GPR_SUBPROCESS_H
+#ifndef GRPC_SRC_CORE_UTIL_SUBPROCESS_H
+#define GRPC_SRC_CORE_UTIL_SUBPROCESS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -43,4 +43,4 @@ int gpr_subprocess_join(gpr_subprocess* p);
 void gpr_subprocess_interrupt(gpr_subprocess* p);
 int gpr_subprocess_get_process_id(gpr_subprocess* p);
 
-#endif  // GRPC_SRC_CORE_LIB_GPR_SUBPROCESS_H
+#endif  // GRPC_SRC_CORE_UTIL_SUBPROCESS_H

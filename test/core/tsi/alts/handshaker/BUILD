@@ -22,6 +22,7 @@ grpc_cc_library(
     name = "alts_handshaker_service_api_test_lib",
     srcs = ["alts_handshaker_service_api_test_lib.cc"],
     hdrs = ["alts_handshaker_service_api_test_lib.h"],
+    external_deps = ["absl/log:log"],
     deps = [
         "//:grpc",
     ],
@@ -83,6 +84,7 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,

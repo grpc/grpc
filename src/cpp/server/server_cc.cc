@@ -30,13 +30,13 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -446,7 +446,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
       deserialized_request_ = handler->Deserialize(call_, request_payload_,
                                                    &request_status_, nullptr);
       if (!request_status_.ok()) {
-        gpr_log(GPR_DEBUG, "Failed to deserialize message.");
+        VLOG(2) << "Failed to deserialize message.";
       }
       request_payload_ = nullptr;
       interceptor_methods_.AddInterceptionHookPoint(
@@ -689,7 +689,7 @@ class Server::CallbackRequest final
             req_->call_, req_->request_payload_, &req_->request_status_,
             &req_->handler_data_);
         if (!(req_->request_status_.ok())) {
-          gpr_log(GPR_DEBUG, "Failed to deserialize message.");
+          VLOG(2) << "Failed to deserialize message.";
         }
         req_->request_payload_ = nullptr;
         req_->interceptor_methods_.AddInterceptionHookPoint(
@@ -1058,8 +1058,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
         server_, method->name(), addr ? addr->c_str() : nullptr,
         PayloadHandlingForMethod(method.get()), 0);
     if (method_registration_tag == nullptr) {
-      gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
-              method->name());
+      VLOG(2) << "Attempt to register " << method->name() << " multiple times";
       return false;
     }
 
