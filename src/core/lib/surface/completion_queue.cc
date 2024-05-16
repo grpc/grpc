@@ -42,7 +42,6 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -55,6 +54,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/event_string.h"
+#include "src/core/util/spinlock.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/experiments/experiments.h"

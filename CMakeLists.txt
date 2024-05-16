@@ -1667,32 +1667,6 @@ add_library(gpr
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
-  src/core/lib/gpr/alloc.cc
-  src/core/lib/gpr/android/log.cc
-  src/core/lib/gpr/atm.cc
-  src/core/lib/gpr/iphone/cpu.cc
-  src/core/lib/gpr/linux/cpu.cc
-  src/core/lib/gpr/linux/log.cc
-  src/core/lib/gpr/log.cc
-  src/core/lib/gpr/msys/tmpfile.cc
-  src/core/lib/gpr/posix/cpu.cc
-  src/core/lib/gpr/posix/log.cc
-  src/core/lib/gpr/posix/string.cc
-  src/core/lib/gpr/posix/sync.cc
-  src/core/lib/gpr/posix/time.cc
-  src/core/lib/gpr/posix/tmpfile.cc
-  src/core/lib/gpr/string.cc
-  src/core/lib/gpr/sync.cc
-  src/core/lib/gpr/sync_abseil.cc
-  src/core/lib/gpr/time.cc
-  src/core/lib/gpr/time_precise.cc
-  src/core/lib/gpr/windows/cpu.cc
-  src/core/lib/gpr/windows/log.cc
-  src/core/lib/gpr/windows/string.cc
-  src/core/lib/gpr/windows/string_util.cc
-  src/core/lib/gpr/windows/sync.cc
-  src/core/lib/gpr/windows/time.cc
-  src/core/lib/gpr/windows/tmpfile.cc
   src/core/lib/gprpp/crash.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
@@ -1708,6 +1682,32 @@ add_library(gpr
   src/core/lib/gprpp/windows/env.cc
   src/core/lib/gprpp/windows/stat.cc
   src/core/lib/gprpp/windows/thd.cc
+  src/core/util/alloc.cc
+  src/core/util/android/log.cc
+  src/core/util/atm.cc
+  src/core/util/iphone/cpu.cc
+  src/core/util/linux/cpu.cc
+  src/core/util/linux/log.cc
+  src/core/util/log.cc
+  src/core/util/msys/tmpfile.cc
+  src/core/util/posix/cpu.cc
+  src/core/util/posix/log.cc
+  src/core/util/posix/string.cc
+  src/core/util/posix/sync.cc
+  src/core/util/posix/time.cc
+  src/core/util/posix/tmpfile.cc
+  src/core/util/string.cc
+  src/core/util/sync.cc
+  src/core/util/sync_abseil.cc
+  src/core/util/time.cc
+  src/core/util/time_precise.cc
+  src/core/util/windows/cpu.cc
+  src/core/util/windows/log.cc
+  src/core/util/windows/string.cc
+  src/core/util/windows/string_util.cc
+  src/core/util/windows/sync.cc
+  src/core/util/windows/time.cc
+  src/core/util/windows/tmpfile.cc
 )
 
 target_compile_features(gpr PUBLIC cxx_std_14)
@@ -4747,8 +4747,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_util
-  src/core/lib/gpr/subprocess_posix.cc
-  src/core/lib/gpr/subprocess_windows.cc
+  src/core/util/subprocess_posix.cc
+  src/core/util/subprocess_windows.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
@@ -6099,8 +6099,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(address_sorting_test_unsecure
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/test_util/cmdline.cc
     test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
@@ -7634,8 +7634,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_alpn_test
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
@@ -7690,8 +7690,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_cert_test
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc

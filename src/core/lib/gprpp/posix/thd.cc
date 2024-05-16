@@ -39,11 +39,11 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace {

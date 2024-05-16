@@ -58,6 +58,7 @@ grpc_cc_library(
     srcs = ["transport_test.cc"],
     hdrs = ["transport_test.h"],
     external_deps = [
+        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "gtest",

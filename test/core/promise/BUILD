@@ -599,7 +599,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "sleep_test",
     srcs = ["sleep_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "c++",
     tags = ["promise_test"],
     uses_event_engine = False,
@@ -652,6 +655,7 @@ grpc_cc_test(
     srcs = ["party_test.cc"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:log",
         "gtest",
     ],
     language = "c++",

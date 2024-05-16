@@ -35,7 +35,10 @@ grpc_proto_library(
 grpc_cc_library(
     name = "fuzzer_utils",
     srcs = ["fuzzer_utils.cc"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     language = "c++",
     public_hdrs = ["fuzzer_utils.h"],
     deps = [
