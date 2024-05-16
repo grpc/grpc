@@ -986,9 +986,11 @@ grpc_error_handle Server::SetupTransport(
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
+    CHECK(channel.value() != nullptr);
+    auto* channel_stack = (*channel)->channel_stack();
+    CHECK(channel_stack != nullptr);
     ChannelData* chand = static_cast<ChannelData*>(
-        grpc_channel_stack_element((*channel)->channel_stack(), 0)
-            ->channel_data);
+        grpc_channel_stack_element(channel_stack, 0)->channel_data);
     // Set up CQs.
     size_t cq_idx;
     for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {

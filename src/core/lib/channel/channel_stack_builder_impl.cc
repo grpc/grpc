@@ -58,6 +58,10 @@ absl::StatusOr<RefCountedPtr<grpc_channel_stack>>
 ChannelStackBuilderImpl::Build() {
   std::vector<const grpc_channel_filter*> stack;
 
+  for (const auto* filter : this->stack()) {
+    stack.push_back(filter);
+  }
+
   // calculate the size of the channel stack
   size_t channel_stack_size =
       grpc_channel_stack_size(stack.data(), stack.size());
