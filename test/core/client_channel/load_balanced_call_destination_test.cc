@@ -92,7 +92,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     std::queue<CallHandler> handlers_;
   };
 
-  class TestSubchannel : public SubchannelInterface {
+  class TestSubchannel : public SubchannelInterfaceWithCallDestination {
    public:
     explicit TestSubchannel(
         RefCountedPtr<UnstartedCallDestination> call_destination)

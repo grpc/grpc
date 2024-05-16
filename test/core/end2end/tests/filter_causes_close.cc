@@ -97,14 +97,6 @@ void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter test_filter = {
     start_transport_stream_op_batch,
-    [](grpc_channel_element*, CallArgs,
-       NextPromiseFactory) -> ArenaPromise<ServerMetadataHandle> {
-      return Immediate(ServerMetadataFromStatus(
-          absl::PermissionDeniedError("Failure that's not preventable.")));
-    },
-    [](grpc_channel_element*, CallSpineInterface*) {
-      Crash("Should never be called");
-    },
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

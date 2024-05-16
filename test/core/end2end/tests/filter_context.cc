@@ -83,11 +83,10 @@ grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
 void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter test_filter = {
-    start_transport_stream_op_batch, nullptr, nullptr, grpc_channel_next_op,
-    sizeof(call_data), init_call_elem,
-    grpc_call_stack_ignore_set_pollset_or_pollset_set, destroy_call_elem, 0,
-    init_channel_elem, grpc_channel_stack_no_post_init, destroy_channel_elem,
-    grpc_channel_next_get_info,
+    start_transport_stream_op_batch, grpc_channel_next_op, sizeof(call_data),
+    init_call_elem, grpc_call_stack_ignore_set_pollset_or_pollset_set,
+    destroy_call_elem, 0, init_channel_elem, grpc_channel_stack_no_post_init,
+    destroy_channel_elem, grpc_channel_next_get_info,
     // Want to add the filter as close to the end as possible, to
     // make sure that all of the filters work well together.
     // However, we can't add it at the very end, because the

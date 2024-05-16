@@ -65,7 +65,6 @@
     If set, enable the chaotic good load transport (this is mostly here for testing)
   expiry: 2024/09/09
   owner: ctiller@google.com
-  requires: [promise_based_client_call]
   test_tags: [core_end2end_test]
 - name: client_privacy
   description:
@@ -145,14 +144,6 @@
   expiry: 2024/07/30
   owner: roth@google.com
   test_tags: ["lb_unit_test", "cpp_lb_end2end_test", "xds_end2end_test"]
-- name: promise_based_client_call
-  description:
-    If set, use the new gRPC promise based call code when it's appropriate
-    (ie when all filters in a stack are promise based)
-  expiry: 2024/06/14
-  owner: ctiller@google.com
-  test_tags: ["core_end2end_test", "lame_client_test"]
-  requires: ["event_engine_listener", "event_engine_client"]
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
@@ -160,7 +151,6 @@
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
-  requires: [promise_based_client_call]
 - name: rstpit
   description:
     On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short duration
