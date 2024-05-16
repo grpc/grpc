@@ -243,11 +243,8 @@ void HttpRequest::AppendError(grpc_error_handle error) {
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
   auto addr_text = grpc_sockaddr_to_uri(addr);
-  absl::Status modified_error =
-      addr_text.ok() ? AddMessagePrefix(*addr_text, std::move(error))
-                     : std::move(error);
-  overall_error_ =
-      grpc_error_add_child(overall_error_, std::move(modified_error));
+  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, std::move(error));
+  overall_error_ = grpc_error_add_child(overall_error_, std::move(error));
 }
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {
