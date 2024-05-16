@@ -58,6 +58,7 @@ TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
 const NoInterceptor FaultInjectionFilter::Call::OnServerInitialMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnClientToServerMessage;
+const NoInterceptor FaultInjectionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor FaultInjectionFilter::Call::OnServerToClientMessage;
 const NoInterceptor FaultInjectionFilter::Call::OnFinalize;
 

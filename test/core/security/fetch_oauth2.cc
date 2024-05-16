@@ -20,13 +20,13 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/security/credentials.h>
 
@@ -44,7 +44,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
   if (strlen(json_file_path) == 0) {
     auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
+      LOG(ERROR) << status.error_message();
       return nullptr;
     }
   } else {
@@ -53,7 +53,7 @@ static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
     auto status = grpc::experimental::StsCredentialsOptionsFromJson(sts_options,
                                                                     &options);
     if (!status.ok()) {
-      gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
+      LOG(ERROR) << status.error_message();
       return nullptr;
     }
   }
@@ -97,46 +97,41 @@ int main(int argc, char** argv) {
 
   if (json_sts_options_file_path != nullptr &&
       json_refresh_token_file_path != nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "--json_sts_options and --json_refresh_token are mutually exclusive.");
+    LOG(ERROR) << "--json_sts_options and --json_refresh_token are mutually "
+                  "exclusive.";
     exit(1);
   }
 
   if (use_gce) {
     if (json_sts_options_file_path != nullptr ||
         json_refresh_token_file_path != nullptr) {
-      gpr_log(GPR_INFO,
-              "Ignoring json refresh token or sts options to get a token from "
-              "the GCE metadata server.");
+      LOG(INFO)
+          << "Ignoring json refresh token or sts options to get a token from "
+             "the GCE metadata server.";
     }
     creds = grpc_google_compute_engine_credentials_create(nullptr);
     if (creds == nullptr) {
-      gpr_log(GPR_ERROR, "Could not create gce credentials.");
+      LOG(ERROR) << "Could not create gce credentials.";
       exit(1);
     }
   } else if (json_refresh_token_file_path != nullptr) {
     creds = create_refresh_token_creds(json_refresh_token_file_path);
     if (creds == nullptr) {
-      gpr_log(GPR_ERROR,
-              "Could not create refresh token creds. %s does probably not "
-              "contain a valid json refresh token.",
-              json_refresh_token_file_path);
+      LOG(ERROR) << "Could not create refresh token creds. "
+                 << json_refresh_token_file_path
+                 << " does probably not contain a valid json refresh token.";
       exit(1);
     }
   } else if (json_sts_options_file_path != nullptr) {
     creds = create_sts_creds(json_sts_options_file_path);
     if (creds == nullptr) {
-      gpr_log(GPR_ERROR,
-              "Could not create sts creds. %s does probably not contain a "
-              "valid json for sts options.",
-              json_sts_options_file_path);
+      LOG(ERROR) << "Could not create sts creds. " << json_sts_options_file_path
+                 << " does probably not contain a valid json for sts options.";
       exit(1);
     }
   } else {
-    gpr_log(
-        GPR_ERROR,
-        "Missing --gce, --json_sts_options, or --json_refresh_token option.");
+    LOG(ERROR)
+        << "Missing --gce, --json_sts_options, or --json_refresh_token option.";
     exit(1);
   }
   CHECK_NE(creds, nullptr);

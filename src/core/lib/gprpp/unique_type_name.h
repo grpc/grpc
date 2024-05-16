@@ -23,7 +23,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 // Provides a type name that is unique by instance rather than by
 // string content.  This is useful in cases where there are different

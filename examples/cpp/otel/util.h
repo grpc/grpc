@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2015 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,17 +16,16 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_GPR_TMPFILE_H
-#define GRPC_SRC_CORE_LIB_GPR_TMPFILE_H
+#ifndef GRPCPP_EXAMPLES_CPP_OTEL_UTIL_H
+#define GRPCPP_EXAMPLES_CPP_OTEL_UTIL_H
 
-#include <grpc/support/port_platform.h>
+#include <string>
 
-#include <stdio.h>
+#include "opentelemetry/sdk/metrics/meter_provider.h"
 
-// Creates a temporary file from a prefix.
-// If tmp_filename is not NULL, *tmp_filename is assigned the name of the
-// created file and it is the responsibility of the caller to gpr_free it
-// unless an error occurs in which case it will be set to NULL.
-FILE* gpr_tmpfile(const char* prefix, char** tmp_filename);
+// Helper function that adds view for gRPC latency instrument \a name with unit
+// \a unit with bucket boundaries that are more useful for RPCs.
+void AddLatencyView(opentelemetry::sdk::metrics::MeterProvider* provider,
+                    const std::string& name, const std::string& unit);
 
-#endif  // GRPC_SRC_CORE_LIB_GPR_TMPFILE_H
+#endif  // GRPCPP_EXAMPLES_CPP_OTEL_UTIL_H

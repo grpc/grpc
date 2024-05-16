@@ -29,6 +29,7 @@
 #include <grpcpp/support/status.h>
 
 #include "src/core/ext/filters/logging/logging_filter.h"
+#include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -843,7 +844,7 @@ TEST_F(LoggingTest, CancelledRpc) {
       break;
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
-    EXPECT_LT(absl::Now() - initial_time, absl::Seconds(10));
+    ASSERT_LT(absl::Now() - initial_time, absl::Seconds(10));
   }
 }
 
