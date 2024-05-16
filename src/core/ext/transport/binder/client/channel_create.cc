@@ -112,7 +112,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   std::string connection_id =
       grpc_binder::GetConnectionIdGenerator()->Generate(uri);
 
-  gpr_log(GPR_ERROR, "connection id is %s", connection_id.c_str());
+  LOG(ERROR) << "connection id is " << connection_id;
 
   // After invoking this Java method, Java code will put endpoint binder into
   // `EndpointBinderPool` after the connection succeeds
