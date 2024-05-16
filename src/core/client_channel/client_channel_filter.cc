@@ -366,19 +366,6 @@ class DynamicTerminationFilter final {
   static void GetChannelInfo(grpc_channel_element* /*elem*/,
                              const grpc_channel_info* /*info*/) {}
 
-  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      grpc_channel_element* elem, CallArgs call_args, NextPromiseFactory) {
-    auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
-    return chand->chand_->CreateLoadBalancedCallPromise(
-        std::move(call_args),
-        []() {
-          auto* service_config_call_data =
-              GetServiceConfigCallData(GetContext<grpc_call_context_element>());
-          service_config_call_data->Commit();
-        },
-        /*is_transparent_retry=*/false);
-  }
-
  private:
   explicit DynamicTerminationFilter(const ChannelArgs& args)
       : chand_(args.GetObject<ClientChannelFilter>()) {}

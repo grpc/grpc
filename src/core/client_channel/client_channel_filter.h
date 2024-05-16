@@ -59,8 +59,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/promise/activity.h"
-#include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -111,10 +109,6 @@ class ClientChannelFilter final {
     return "grpc.internal.client_channel_filter";
   }
 
-  static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      grpc_channel_element* elem, CallArgs call_args,
-      NextPromiseFactory next_promise_factory);
-
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
   // Starts a one-time connectivity state watch.  When the channel's state
@@ -158,10 +152,6 @@ class ClientChannelFilter final {
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete,
       absl::AnyInvocable<void()> on_commit, bool is_transparent_retry);
-
-  ArenaPromise<ServerMetadataHandle> CreateLoadBalancedCallPromise(
-      CallArgs call_args, absl::AnyInvocable<void()> on_commit,
-      bool is_transparent_retry);
 
  private:
   class CallData;
