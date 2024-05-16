@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>

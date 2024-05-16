@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
