@@ -53,7 +53,6 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -201,7 +200,7 @@ AresResolver::CreateAresResolver(
   ares_channel channel;
   int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
-    LOG(ERROR) << "ares_init_options failed, status: " << status;
+    gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
     return AresStatusToAbslStatus(
         status,
         absl::StrCat("Failed to init c-ares channel: ", ares_strerror(status)));
@@ -770,7 +769,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
                                result.size());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {
     for (const auto& record : result) {
-      LOG(INFO) << record;
+      gpr_log(GPR_INFO, "%s", record.c_str());
     }
   }
   // Clean up.

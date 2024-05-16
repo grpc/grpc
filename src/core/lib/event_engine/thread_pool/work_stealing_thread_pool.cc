@@ -27,7 +27,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
@@ -268,7 +267,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
-  LOG(INFO) << "WorkStealingThreadPoolImpl::Quiesce";
+  gpr_log(GPR_INFO, "WorkStealingThreadPoolImpl::Quiesce");
   SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
@@ -320,7 +319,7 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::PrepareFork() {
-  LOG(INFO) << "WorkStealingThreadPoolImpl::PrepareFork";
+  gpr_log(GPR_INFO, "WorkStealingThreadPoolImpl::PrepareFork");
   SetForking(true);
   work_signal_.SignalAll();
   auto threads_were_shut_down = living_thread_count_.BlockUntilThreadCount(

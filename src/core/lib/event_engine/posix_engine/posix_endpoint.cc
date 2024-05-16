@@ -27,7 +27,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -719,7 +718,7 @@ bool PosixEndpointImpl::ProcessErrors() {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
-      LOG(ERROR) << "Error message was truncated.";
+      gpr_log(GPR_ERROR, "Error message was truncated.");
     }
 
     if (msg.msg_controllen == 0) {
@@ -814,7 +813,7 @@ struct cmsghdr* PosixEndpointImpl::ProcessTimestamp(msghdr* msg,
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(next_cmsg));
   if (serr->ee_errno != ENOMSG ||
       serr->ee_origin != SO_EE_ORIGIN_TIMESTAMPING) {
-    LOG(ERROR) << "Unexpected control message";
+    gpr_log(GPR_ERROR, "Unexpected control message");
     return cmsg;
   }
   traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
@@ -1304,7 +1303,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
           0) {
         zerocopy_enabled = false;
-        LOG(ERROR) << "Failed to set zerocopy options on the socket.";
+        gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
       }
     }
 
