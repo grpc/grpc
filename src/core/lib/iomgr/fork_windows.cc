@@ -22,8 +22,6 @@
 
 #ifndef GRPC_POSIX_FORK
 
-#include "absl/log/log.h"
-
 #include <grpc/fork.h>
 #include <grpc/support/log.h>
 
@@ -32,7 +30,7 @@
 //       AROUND VERY SPECIFIC USE CASES.
 //
 
-void grpc_prefork() { LOG(ERROR) << "Forking not supported on Windows"; }
+void grpc_prefork() { gpr_log(GPR_ERROR, "Forking not supported on Windows"); }
 
 void grpc_postfork_parent() {}
 

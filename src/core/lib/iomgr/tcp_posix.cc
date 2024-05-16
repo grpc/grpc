@@ -872,7 +872,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << "READ DATA: " << dump;
+        gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
         gpr_free(dump);
       }
     }
@@ -1872,7 +1872,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
       if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << "WRITE DATA: " << data;
+        gpr_log(GPR_DEBUG, "WRITE DATA: %s", data);
         gpr_free(data);
       }
     }

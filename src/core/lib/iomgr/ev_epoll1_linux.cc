@@ -122,7 +122,7 @@ static bool epoll_set_init() {
     return false;
   }
 
-  LOG(INFO) << "grpc epoll fd: " << g_epoll_set.epfd;
+  gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set.epfd);
   gpr_atm_no_barrier_store(&g_epoll_set.num_events, 0);
   gpr_atm_no_barrier_store(&g_epoll_set.cursor, 0);
   return true;
@@ -1073,7 +1073,7 @@ static grpc_error_handle pollset_kick(grpc_pollset* pollset,
       log.push_back(absl::StrFormat(" worker_kick_state=%s",
                                     kick_state_string(specific_worker->state)));
     }
-    VLOG(2) << absl::StrJoin(log, "");
+    gpr_log(GPR_DEBUG, "%s", absl::StrJoin(log, "").c_str());
   }
 
   if (specific_worker == nullptr) {

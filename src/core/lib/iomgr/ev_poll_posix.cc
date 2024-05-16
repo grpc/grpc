@@ -34,7 +34,6 @@
 #include <string>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -1396,7 +1395,7 @@ const grpc_event_engine_vtable grpc_ev_poll_posix = {
     // check_engine_available =
     [](bool) {
       if (!grpc_has_wakeup_fd()) {
-        LOG(ERROR) << "Skipping poll because of no wakeup fd.";
+        gpr_log(GPR_ERROR, "Skipping poll because of no wakeup fd.");
         return false;
       }
       if (!GRPC_LOG_IF_ERROR("pollset_global_init", pollset_global_init())) {

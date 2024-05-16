@@ -21,7 +21,6 @@
 #include <inttypes.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -192,7 +191,7 @@ static bool wait_until(grpc_core::Timestamp next) {
 
     if (GRPC_TRACE_FLAG_ENABLED(timer_check) &&
         next == grpc_core::Timestamp::InfFuture()) {
-      LOG(INFO) << "sleep until kicked";
+      gpr_log(GPR_INFO, "sleep until kicked");
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu, next.as_timespec(GPR_CLOCK_MONOTONIC));
