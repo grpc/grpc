@@ -194,8 +194,8 @@ class _OpenTelemetryPlugin:
                 ) and plugin_option.is_active_on_server(xds):
                     self._enabled_server_plugin_options.append(plugin_option)
 
+    @staticmethod
     def _deserialize_labels(
-        self,
         labels: Dict[str, AnyStr],
         enabled_plugin_options: List[OpenTelemetryPluginOption],
     ) -> Dict[str, AnyStr]:
@@ -213,8 +213,8 @@ class _OpenTelemetryPlugin:
                 )
         return labels
 
+    @staticmethod
     def _maybe_add_labels(
-        self,
         include_exchange_labels: bool,
         labels: Dict[str, str],
         enabled_plugin_options: List[OpenTelemetryPluginOption],
@@ -239,8 +239,9 @@ class _OpenTelemetryPlugin:
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return self._plugin._get_enabled_optional_labels()
 
+    @staticmethod
     def _register_metrics(
-        self, meter: Meter, metrics: List[_open_telemetry_measures.Metric]
+        meter: Meter, metrics: List[_open_telemetry_measures.Metric]
     ) -> Dict[MetricsName, Union[Counter, Histogram]]:
         metric_to_recorder_map = {}
         recorder = None
@@ -304,7 +305,8 @@ class _OpenTelemetryPlugin:
             metric_to_recorder_map[metric.cyname] = recorder
         return metric_to_recorder_map
 
-    def decode_labels(self, labels: Dict[str, AnyStr]) -> Dict[str, str]:
+    @staticmethod
+    def decode_labels(labels: Dict[str, AnyStr]) -> Dict[str, str]:
         decoded_labels = {}
         for key, value in labels.items():
             if isinstance(value, bytes):

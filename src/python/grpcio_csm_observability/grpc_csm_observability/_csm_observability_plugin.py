@@ -222,8 +222,8 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
 
     @staticmethod
     def is_active_on_server(
-        xds: bool,
-    ) -> bool:  # pylint: disable=unused-argument
+        xds: bool,  # pylint: disable=unused-argument
+    ) -> bool:
         """Determines whether this plugin option is active on a given server.
 
         Since servers don't need to be xds enabled to work as part of a service
