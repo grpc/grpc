@@ -78,6 +78,8 @@ extern TraceFlag executor_trace;
 extern TraceFlag fault_injection_filter_trace;
 extern TraceFlag flowctl_trace;
 extern TraceFlag fork_trace;
+extern TraceFlag fuzzing_ee_timers_trace;
+extern TraceFlag fuzzing_ee_writes_trace;
 extern TraceFlag glb_trace;
 extern TraceFlag grpc_authz_api_trace;
 extern TraceFlag handshaker_trace;
@@ -125,8 +127,6 @@ extern TraceFlag xds_resolver_trace;
 extern TraceFlag xds_route_config_resource_type_test_trace;
 extern TraceFlag xds_server_config_fetcher_trace;
 extern TraceFlag xds_wrr_locality_lb_trace;
-extern TraceFlag fuzzing_ee_writes_trace;
-extern TraceFlag fuzzing_ee_timers_trace;
 
 }  // namespace grpc_core
 

@@ -80,6 +80,8 @@ TraceFlag executor_trace(false, "executor");
 TraceFlag fault_injection_filter_trace(false, "fault_injection_filter");
 TraceFlag flowctl_trace(false, "flowctl");
 TraceFlag fork_trace(false, "fork");
+TraceFlag fuzzing_ee_timers_trace(false, "fuzzing_ee_timers");
+TraceFlag fuzzing_ee_writes_trace(false, "fuzzing_ee_writes");
 TraceFlag glb_trace(false, "glb");
 TraceFlag grpc_authz_api_trace(false, "grpc_authz_api");
 TraceFlag handshaker_trace(false, "handshaker");
@@ -131,8 +133,6 @@ TraceFlag xds_route_config_resource_type_test_trace(
     true, "xds_route_config_resource_type_test");
 TraceFlag xds_server_config_fetcher_trace(false, "xds_server_config_fetcher");
 TraceFlag xds_wrr_locality_lb_trace(false, "xds_wrr_locality_lb");
-TraceFlag fuzzing_ee_writes_trace(false, "fuzzing_ee_writes");
-TraceFlag fuzzing_ee_timers_trace(false, "fuzzing_ee_timers");
 
 const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
   static const NoDestruct<absl::flat_hash_map<std::string, TraceFlag*>> all(
@@ -172,6 +172,8 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"fault_injection_filter", &fault_injection_filter_trace},
           {"flowctl", &flowctl_trace},
           {"fork", &fork_trace},
+          {"fuzzing_ee_timers", &fuzzing_ee_timers_trace},
+          {"fuzzing_ee_writes", &fuzzing_ee_writes_trace},
           {"glb", &glb_trace},
           {"grpc_authz_api", &grpc_authz_api_trace},
           {"handshaker", &handshaker_trace},
@@ -223,8 +225,6 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
            &xds_route_config_resource_type_test_trace},
           {"xds_server_config_fetcher", &xds_server_config_fetcher_trace},
           {"xds_wrr_locality_lb", &xds_wrr_locality_lb_trace},
-          {"fuzzing_ee_writes", &fuzzing_ee_writes_trace},
-          {"fuzzing_ee_timers", &fuzzing_ee_timers_trace},
 #ifndef NDEBUG
           {"auth_context_refcount", &auth_context_refcount_trace},
           {"call_combiner", &call_combiner_trace},
