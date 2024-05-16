@@ -74,8 +74,7 @@ ABSL_FLAG(std::string, test_case, "rpc_soak",
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing these cases: %s",
-          absl::GetFlag(FLAGS_test_case).c_str());
+  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   // validate flags
   std::vector<std::string> uris =
@@ -83,10 +82,9 @@ int main(int argc, char** argv) {
   std::vector<std::string> creds =
       absl::StrSplit(absl::GetFlag(FLAGS_credentials_types), ',');
   if (uris.size() != creds.size()) {
-    gpr_log(GPR_ERROR,
-            "Number of entries in --server_uris %ld != number of entries in "
-            "--credentials_types %ld",
-            uris.size(), creds.size());
+    LOG(ERROR) << "Number of entries in --server_uris " << uris.size()
+               << " != number of entries in --credentials_types "
+               << creds.size();
     CHECK(0);
   }
   if (uris.empty()) {
