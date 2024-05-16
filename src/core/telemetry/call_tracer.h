@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
-#define GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
+#ifndef GRPC_SRC_CORE_TELEMETRY_CALL_TRACER_H
+#define GRPC_SRC_CORE_TELEMETRY_CALL_TRACER_H
 
 #include <memory>
 #include <string>
@@ -31,13 +31,13 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_core {
 
@@ -223,4 +223,4 @@ void AddServerCallTracerToContext(grpc_call_context_element* call_context,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_CHANNEL_CALL_TRACER_H
+#endif  // GRPC_SRC_CORE_TELEMETRY_CALL_TRACER_H

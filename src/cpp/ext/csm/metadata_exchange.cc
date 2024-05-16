@@ -39,7 +39,6 @@
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
@@ -47,6 +46,7 @@
 #include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 
 namespace grpc {

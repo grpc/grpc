@@ -30,9 +30,9 @@
 
 #include <grpc/status.h>
 
+#include "src/core/lib/gprpp/time.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
-#include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using testing::HasSubstr;

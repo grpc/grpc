@@ -49,8 +49,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 
-#include "src/core/telemetry/stats.h"
-#include "src/core/telemetry/stats_data.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -59,6 +57,8 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 

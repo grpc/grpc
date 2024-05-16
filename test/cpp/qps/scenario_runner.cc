@@ -16,9 +16,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
-#define GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
+#ifndef GRPC_SRC_CORE_TELEMETRY_METRICS_H
+#define GRPC_SRC_CORE_TELEMETRY_METRICS_H
 
 #include <cstdint>
 #include <memory>
@@ -29,13 +29,13 @@
 #include <grpc/support/metrics.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
@@ -536,4 +536,4 @@ class RegisteredMetricCallback {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_CHANNEL_METRICS_H
+#endif  // GRPC_SRC_CORE_TELEMETRY_METRICS_H
