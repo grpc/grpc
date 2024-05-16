@@ -83,6 +83,7 @@ class ServiceConfigChannelArgFilter final
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
@@ -97,6 +98,8 @@ const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnClientToServerMessage;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServiceConfigChannelArgFilter::Call::OnFinalize;

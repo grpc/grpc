@@ -1331,6 +1331,7 @@ TEST(CallFiltersTest, CanBuildStack) {
       void OnClientInitialMetadata(ClientMetadata&) {}
       void OnServerInitialMetadata(ServerMetadata&) {}
       void OnClientToServerMessage(Message&) {}
+      void OnClientToServerHalfClose() {}
       void OnServerToClientMessage(Message&) {}
       void OnServerTrailingMetadata(ServerMetadata&) {}
       void OnFinalize(const grpc_call_final_info*) {}
@@ -1354,6 +1355,10 @@ TEST(CallFiltersTest, UnaryCall) {
       }
       void OnClientToServerMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnClientToServerMessage"));
+      }
+      void OnClientToServerHalfClose(Filter* f) {
+        f->steps.push_back(
+            absl::StrCat(f->label, ":OnClientToServerHalfClose"));
       }
       void OnServerToClientMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnServerToClientMessage"));

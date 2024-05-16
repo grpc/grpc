@@ -29,6 +29,7 @@ grpc_cc_library(
     hdrs = ["lb_policy_test_lib.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -104,7 +105,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "outlier_detection_test",
     srcs = ["outlier_detection_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "lb_unit_test",
@@ -140,7 +144,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "xds_override_host_test",
     srcs = ["xds_override_host_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "lb_unit_test",
@@ -230,7 +237,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "weighted_round_robin_test",
     srcs = ["weighted_round_robin_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     tags = [
         "lb_unit_test",

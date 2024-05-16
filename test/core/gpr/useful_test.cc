@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 #include <stdint.h>
 

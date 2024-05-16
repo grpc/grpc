@@ -61,7 +61,7 @@ using grpc_event_engine::experimental::URIToResolvedAddress;
 
 void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
-constexpr int kIterations = 10000;
+constexpr int kIterations = 1000;
 constexpr int kSnapshotEvery = kIterations / 10;
 }  // namespace
 
@@ -216,17 +216,20 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
       EchoTestService::NewStub(fixture->channel()));
   auto baseline = grpc_core::global_stats().Collect();
   auto snapshot = grpc_core::global_stats().Collect();
+  auto last_snapshot = absl::Now();
   for (int iteration = 0; iteration < kIterations; iteration++) {
-    if (iteration % kSnapshotEvery == 0) {
+    if (iteration > 0 && iteration % kSnapshotEvery == 0) {
       auto new_snapshot = grpc_core::global_stats().Collect();
       auto diff = new_snapshot->Diff(*snapshot);
-      gpr_log(GPR_DEBUG,
-              "  SNAPSHOT: UnaryPingPong(%d, %d): writes_per_iteration=%0.3f "
-              "(total=%lu, i=%d) pings=%lu",
-              request_size, response_size,
-              static_cast<double>(diff->syscall_write) /
-                  static_cast<double>(kSnapshotEvery),
-              diff->syscall_write, iteration, diff->http2_pings_sent);
+      auto now = absl::Now();
+      LOG(ERROR) << "  SNAPSHOT: UnaryPingPong(" << request_size << ", "
+                 << response_size << "): writes_per_iteration="
+                 << static_cast<double>(diff->syscall_write) /
+                        static_cast<double>(kSnapshotEvery)
+                 << " (total=" << diff->syscall_write << ", i=" << iteration
+                 << ") pings=" << diff->http2_pings_sent
+                 << "; duration=" << now - last_snapshot;
+      last_snapshot = now;
       snapshot = std::move(new_snapshot);
     }
     recv_response.Clear();
@@ -238,7 +241,7 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     CHECK(fixture->cq()->Next(&t, &ok));
     CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1));
+    CHECK(t == tag(0) || t == tag(1)) << "Found unexpected tag " << t;
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));

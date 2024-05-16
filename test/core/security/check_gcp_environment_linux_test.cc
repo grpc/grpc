@@ -25,9 +25,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/util/tmpfile.h"
 
 #if GPR_LINUX
 

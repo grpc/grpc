@@ -516,32 +516,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
-    src/core/lib/gpr/alloc.cc \
-    src/core/lib/gpr/android/log.cc \
-    src/core/lib/gpr/atm.cc \
-    src/core/lib/gpr/iphone/cpu.cc \
-    src/core/lib/gpr/linux/cpu.cc \
-    src/core/lib/gpr/linux/log.cc \
-    src/core/lib/gpr/log.cc \
-    src/core/lib/gpr/msys/tmpfile.cc \
-    src/core/lib/gpr/posix/cpu.cc \
-    src/core/lib/gpr/posix/log.cc \
-    src/core/lib/gpr/posix/string.cc \
-    src/core/lib/gpr/posix/sync.cc \
-    src/core/lib/gpr/posix/time.cc \
-    src/core/lib/gpr/posix/tmpfile.cc \
-    src/core/lib/gpr/string.cc \
-    src/core/lib/gpr/sync.cc \
-    src/core/lib/gpr/sync_abseil.cc \
-    src/core/lib/gpr/time.cc \
-    src/core/lib/gpr/time_precise.cc \
-    src/core/lib/gpr/windows/cpu.cc \
-    src/core/lib/gpr/windows/log.cc \
-    src/core/lib/gpr/windows/string.cc \
-    src/core/lib/gpr/windows/string_util.cc \
-    src/core/lib/gpr/windows/sync.cc \
-    src/core/lib/gpr/windows/time.cc \
-    src/core/lib/gpr/windows/tmpfile.cc \
     src/core/lib/gprpp/crash.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
@@ -860,6 +834,32 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/util/alloc.cc \
+    src/core/util/android/log.cc \
+    src/core/util/atm.cc \
+    src/core/util/iphone/cpu.cc \
+    src/core/util/linux/cpu.cc \
+    src/core/util/linux/log.cc \
+    src/core/util/log.cc \
+    src/core/util/msys/tmpfile.cc \
+    src/core/util/posix/cpu.cc \
+    src/core/util/posix/log.cc \
+    src/core/util/posix/string.cc \
+    src/core/util/posix/sync.cc \
+    src/core/util/posix/time.cc \
+    src/core/util/posix/tmpfile.cc \
+    src/core/util/string.cc \
+    src/core/util/sync.cc \
+    src/core/util/sync_abseil.cc \
+    src/core/util/time.cc \
+    src/core/util/time_precise.cc \
+    src/core/util/windows/cpu.cc \
+    src/core/util/windows/log.cc \
+    src/core/util/windows/string.cc \
+    src/core/util/windows/string_util.cc \
+    src/core/util/windows/sync.cc \
+    src/core/util/windows/time.cc \
+    src/core/util/windows/tmpfile.cc \
     src/core/xds/grpc/certificate_provider_store.cc \
     src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
     src/core/xds/grpc/xds_audit_logger_registry.cc \
@@ -1526,13 +1526,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/work_queue)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/android)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/iphone)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/linux)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/msys)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/posix)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/linux)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/posix)
@@ -1606,6 +1599,13 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/android)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/iphone)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/linux)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/msys)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/posix)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
