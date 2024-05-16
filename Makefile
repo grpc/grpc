@@ -1248,10 +1248,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json_object_loader.cc \
-    src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_util.cc \
-    src/core/lib/json/json_writer.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
@@ -1463,6 +1459,10 @@ LIBGRPC_SRC = \
     src/core/util/android/log.cc \
     src/core/util/atm.cc \
     src/core/util/iphone/cpu.cc \
+    src/core/util/json/json_object_loader.cc \
+    src/core/util/json/json_reader.cc \
+    src/core/util/json/json_util.cc \
+    src/core/util/json/json_writer.cc \
     src/core/util/linux/cpu.cc \
     src/core/util/linux/log.cc \
     src/core/util/log.cc \

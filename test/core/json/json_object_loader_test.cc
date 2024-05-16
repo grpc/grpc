@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/json/json_object_loader.h"
+#include "src/core/util/json/json_object_loader.h"
 
 #include <cstdint>
 
@@ -24,8 +24,8 @@
 
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 namespace {

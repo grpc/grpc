@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
-#define GRPC_SRC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
+#ifndef GRPC_SRC_CORE_UTIL_JSON_JSON_OBJECT_LOADER_H
+#define GRPC_SRC_CORE_UTIL_JSON_JSON_OBJECT_LOADER_H
+
+#include <grpc/support/port_platform.h>
 
 #include <cstdint>
 #include <cstring>
@@ -30,14 +32,12 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
 
 // Provides a means to load JSON objects into C++ objects, with the aim of
 // minimizing object code size.
@@ -642,4 +642,4 @@ absl::optional<T> LoadJsonObjectField(const Json::Object& json,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_OBJECT_LOADER_H
+#endif  // GRPC_SRC_CORE_UTIL_JSON_JSON_OBJECT_LOADER_H

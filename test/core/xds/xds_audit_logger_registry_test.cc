@@ -37,9 +37,9 @@
 #include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/proto/grpc/testing/xds/v3/audit_logger_stream.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"

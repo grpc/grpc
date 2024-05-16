@@ -623,10 +623,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/json/json_object_loader.cc \
-    src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_util.cc \
-    src/core/lib/json/json_writer.cc \
     src/core/lib/matchers/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
@@ -838,6 +834,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/android/log.cc \
     src/core/util/atm.cc \
     src/core/util/iphone/cpu.cc \
+    src/core/util/json/json_object_loader.cc \
+    src/core/util/json/json_reader.cc \
+    src/core/util/json/json_util.cc \
+    src/core/util/json/json_writer.cc \
     src/core/util/linux/cpu.cc \
     src/core/util/linux/log.cc \
     src/core/util/log.cc \
@@ -1533,7 +1533,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine_shims)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
@@ -1602,6 +1601,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/android)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/iphone)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/linux)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/msys)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/posix)

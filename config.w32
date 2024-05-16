@@ -588,10 +588,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\wakeup_fd_nospecial.cc " +
     "src\\core\\lib\\iomgr\\wakeup_fd_pipe.cc " +
     "src\\core\\lib\\iomgr\\wakeup_fd_posix.cc " +
-    "src\\core\\lib\\json\\json_object_loader.cc " +
-    "src\\core\\lib\\json\\json_reader.cc " +
-    "src\\core\\lib\\json\\json_util.cc " +
-    "src\\core\\lib\\json\\json_writer.cc " +
     "src\\core\\lib\\matchers\\matchers.cc " +
     "src\\core\\lib\\promise\\activity.cc " +
     "src\\core\\lib\\promise\\party.cc " +
@@ -803,6 +799,10 @@ if (PHP_GRPC != "no") {
     "src\\core\\util\\android\\log.cc " +
     "src\\core\\util\\atm.cc " +
     "src\\core\\util\\iphone\\cpu.cc " +
+    "src\\core\\util\\json\\json_object_loader.cc " +
+    "src\\core\\util\\json\\json_reader.cc " +
+    "src\\core\\util\\json\\json_util.cc " +
+    "src\\core\\util\\json\\json_writer.cc " +
     "src\\core\\util\\linux\\cpu.cc " +
     "src\\core\\util\\linux\\log.cc " +
     "src\\core\\util\\log.cc " +
@@ -1670,7 +1670,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\event_engine_shims");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\matchers");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\promise");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\resource_quota");
@@ -1742,6 +1741,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\android");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\iphone");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\linux");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\msys");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\posix");

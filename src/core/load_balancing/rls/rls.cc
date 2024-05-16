@@ -88,10 +88,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -107,6 +103,10 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
 using ::grpc_event_engine::experimental::EventEngine;

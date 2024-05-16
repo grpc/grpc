@@ -1,4 +1,5 @@
-// Copyright 2020 gRPC authors.
+//
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,24 +12,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_ARGS_H
-#define GRPC_SRC_CORE_LIB_JSON_JSON_ARGS_H
-
-#include "absl/strings/string_view.h"
+#ifndef GRPC_SRC_CORE_UTIL_JSON_JSON_H
+#define GRPC_SRC_CORE_UTIL_JSON_JSON_H
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/support/json.h>
+
 namespace grpc_core {
 
-class JsonArgs {
- public:
-  JsonArgs() = default;
-  virtual ~JsonArgs() = default;
-
-  virtual bool IsEnabled(absl::string_view /*key*/) const { return true; }
-};
+using Json = experimental::Json;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_ARGS_H
+#endif  // GRPC_SRC_CORE_UTIL_JSON_JSON_H

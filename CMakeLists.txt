@@ -2389,10 +2389,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_object_loader.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_util.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
@@ -2600,6 +2596,10 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/json/json_object_loader.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_util.cc
+  src/core/util/json/json_writer.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3179,9 +3179,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_object_loader.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
@@ -3317,6 +3314,9 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/json/json_object_loader.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -5293,8 +5293,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
@@ -5387,6 +5385,8 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -17922,7 +17922,6 @@ add_executable(interception_chain_test
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/trace.cc
@@ -17989,6 +17988,7 @@ add_executable(interception_chain_test
   src/core/resolver/resolver_registry.cc
   src/core/service_config/service_config_parser.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/json/json_writer.cc
   test/core/transport/interception_chain_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c

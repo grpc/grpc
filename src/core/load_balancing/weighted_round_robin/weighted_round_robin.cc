@@ -61,9 +61,6 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/endpoint_list.h"
@@ -74,6 +71,9 @@
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 
 namespace grpc_core {
 

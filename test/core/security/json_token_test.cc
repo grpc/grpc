@@ -32,10 +32,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/test_config.h"
 
 using grpc_core::Json;
