@@ -173,7 +173,7 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
 
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
-  if ((where & flag)) {
+  if (where & flag) {
     GRPC_TRACE_LOG(tsi, INFO)
         << absl::StrFormat("%20.20s - %30.30s  - %5.10s", msg,
                            SSL_state_string_long(ssl), SSL_state_string(ssl));
