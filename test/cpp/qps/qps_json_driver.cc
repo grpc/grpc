@@ -23,8 +23,8 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/core/lib/gprpp/crash.h"

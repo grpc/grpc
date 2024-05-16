@@ -33,7 +33,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/support/byte_buffer.h>

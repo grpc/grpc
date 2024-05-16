@@ -22,7 +22,6 @@
 
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server.h>

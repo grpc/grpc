@@ -26,12 +26,12 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
