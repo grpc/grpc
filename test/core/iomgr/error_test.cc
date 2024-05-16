@@ -30,7 +30,6 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/iomgr/error.h"
 #include "test/core/test_util/test_config.h"
 
 TEST(ErrorTest, SetGetInt) {
