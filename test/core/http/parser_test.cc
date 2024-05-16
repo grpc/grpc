@@ -29,7 +29,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
 

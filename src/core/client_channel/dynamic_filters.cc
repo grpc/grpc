@@ -32,10 +32,10 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
+#include "src/core/util/alloc.h"
 
 // Conversion between call and call stack.
 #define CALL_TO_CALL_STACK(call)                                     \

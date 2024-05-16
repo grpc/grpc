@@ -66,9 +66,6 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -106,6 +103,9 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/alloc.h"
+#include "src/core/util/time_precise.h"
+#include "src/core/util/useful.h"
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");

@@ -33,9 +33,11 @@
 #include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
+#include "examples/cpp/otel/util.h"
 #include "examples/protos/helloworld.grpc.pb.h"
 #else
 #include "helloworld.grpc.pb.h"
+#include "util.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
@@ -110,6 +112,10 @@ int main(int argc, char** argv) {
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+  // The default histogram boundaries are not granular enough for RPCs. Override
+  // the "grpc.client.attempt.duration" view as recommended by
+  // https://github.com/grpc/proposal/blob/master/A66-otel-stats.md.
+  AddLatencyView(meter_provider.get(), "grpc.client.attempt.duration", "s");
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
   auto status = grpc::OpenTelemetryPluginBuilder()
                     .SetMeterProvider(std::move(meter_provider))

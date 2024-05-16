@@ -31,8 +31,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_trace.h"
-#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/util/alloc.h"
 
 using grpc_event_engine::experimental::EventEngine;
 

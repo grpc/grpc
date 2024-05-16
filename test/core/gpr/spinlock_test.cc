@@ -18,7 +18,7 @@
 
 // Test of gpr spin-lock support.
 
-#include "src/core/lib/gpr/spinlock.h"
+#include "src/core/util/spinlock.h"
 
 #include <stdint.h>
 #include <stdio.h>

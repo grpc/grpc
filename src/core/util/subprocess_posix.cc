@@ -34,9 +34,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/subprocess.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/subprocess.h"
 
 struct gpr_subprocess {
   int pid;

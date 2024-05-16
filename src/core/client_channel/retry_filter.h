@@ -40,10 +40,10 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/useful.h"
 
 extern grpc_core::TraceFlag grpc_retry_trace;
 

@@ -31,10 +31,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/string.h"
+#include "src/core/util/tmpfile.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   FILE* result = nullptr;
