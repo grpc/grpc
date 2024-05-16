@@ -216,7 +216,7 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
 
   int num = 0;
   for (auto it = addresses.begin(); it != addresses.end(); it++) {
-    LOG(INFO) << ++num << ":" << it;
+    LOG(INFO) << ++num << ":" << it->c_str();
   }
 
   num = 0;
