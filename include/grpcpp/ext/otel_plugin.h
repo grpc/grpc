@@ -88,11 +88,25 @@ class OpenTelemetryPluginBuilder {
   /// If `SetMeterProvider()` is not called, no metrics are collected.
   OpenTelemetryPluginBuilder& SetMeterProvider(
       std::shared_ptr<opentelemetry::metrics::MeterProvider> meter_provider);
-  /// If set, \a target_attribute_filter is called per channel to decide whether
-  /// to record the target attribute on client or to replace it with "other".
-  /// This helps reduce the cardinality on metrics in cases where many channels
-  /// are created with different targets in the same binary (which might happen
-  /// for example, if the channel target string uses IP addresses directly).
+  /// DEPRECATED: If set, \a target_attribute_filter is called per channel to
+  /// decide whether to record the target attribute on client or to replace it
+  /// with "other". This helps reduce the cardinality on metrics in cases where
+  /// many channels are created with different targets in the same binary (which
+  /// might happen for example, if the channel target string uses IP addresses
+  /// directly).
+  /// This filtration only works for the per-call metrics -
+  /// grpc.client.attempt.started
+  /// grpc.client.attempt.duration
+  /// grpc.client.attempt.sent_total_compressed_message_size
+  /// grpc.client.attempt.rcvd_total_compressed_message_size
+  /// For example, the grpc.target attribute on pick first lb policy metrics
+  /// defined in
+  /// https://github.com/grpc/proposal/blob/master/A78-grpc-metrics-wrr-pf-xds.md
+  /// will not be filtered. Please contact the grpc team if this filtration is
+  /// of interest to you.
+  GRPC_DEPRECATED(
+      "Does not work as expected. Please raise an issue on "
+      "https://github.com/grpc/grpc if this would be of use to you.")
   OpenTelemetryPluginBuilder& SetTargetAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*target*/) const>
           target_attribute_filter);

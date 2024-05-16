@@ -28,8 +28,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/time_precise.h"
 
 #ifndef GPR_CYCLE_COUNTER_CUSTOM
 #if GPR_CYCLE_COUNTER_RDTSC_32 || GPR_CYCLE_COUNTER_RDTSC_64

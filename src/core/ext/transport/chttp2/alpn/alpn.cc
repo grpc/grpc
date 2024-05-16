@@ -23,7 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 // in order of preference
 static const char* const supported_versions[] = {"h2"};

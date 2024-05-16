@@ -29,7 +29,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/string.h"
+#include "src/core/util/string.h"
 
 int gpr_asprintf(char** strp, const char* format, ...) {
   va_list args;

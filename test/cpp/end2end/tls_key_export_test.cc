@@ -31,7 +31,7 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/util/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
