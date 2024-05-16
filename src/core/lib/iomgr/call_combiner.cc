@@ -21,7 +21,6 @@
 #include <inttypes.h>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -131,13 +130,13 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
   }
   if (prev_size == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-      LOG(INFO) << "  EXECUTING IMMEDIATELY";
+      gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
     }
     // Queue was empty, so execute this closure immediately.
     ScheduleClosure(closure, error);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-      LOG(INFO) << "  QUEUING";
+      gpr_log(GPR_INFO, "  QUEUING");
     }
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = internal::StatusAllocHeapPtr(error);
@@ -161,7 +160,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
   if (prev_size > 1) {
     while (true) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-        LOG(INFO) << "  checking queue";
+        gpr_log(GPR_INFO, "  checking queue");
       }
       bool empty;
       grpc_closure* closure =
@@ -170,7 +169,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with Start().
         if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-          LOG(INFO) << "  queue returned no result; checking again";
+          gpr_log(GPR_INFO, "  queue returned no result; checking again");
         }
         continue;
       }
@@ -185,7 +184,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
       break;
     }
   } else if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-    LOG(INFO) << "  queue empty";
+    gpr_log(GPR_INFO, "  queue empty");
   }
 }
 

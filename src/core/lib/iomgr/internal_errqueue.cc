@@ -14,8 +14,6 @@
 
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-#include "absl/log/log.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -39,7 +37,7 @@ bool KernelSupportsErrqueue() {
     // least 4.0.0
     struct utsname buffer;
     if (uname(&buffer) != 0) {
-      LOG(ERROR) << "uname: " << StrError(errno);
+      gpr_log(GPR_ERROR, "uname: %s", StrError(errno).c_str());
       return false;
     }
     char* release = buffer.release;
@@ -50,7 +48,7 @@ bool KernelSupportsErrqueue() {
     if (strtol(release, nullptr, 10) >= 4) {
       return true;
     } else {
-      VLOG(2) << "ERRQUEUE support not enabled";
+      gpr_log(GPR_DEBUG, "ERRQUEUE support not enabled");
     }
 #endif  // GRPC_LINUX_ERRQUEUE
     return false;
