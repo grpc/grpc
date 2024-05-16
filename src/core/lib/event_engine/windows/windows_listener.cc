@@ -267,7 +267,6 @@ WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     SOCKET sock, const EventEngine::ResolvedAddress& addr) {
   auto fail = [&](absl::Status error) -> absl::Status {
     CHECK(!error.ok());
-    auto addr_uri = ResolvedAddressToURI(addr);
     error = grpc_error_set_int(
         GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket", &error,
                                       1),
