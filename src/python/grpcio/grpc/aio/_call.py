@@ -222,7 +222,8 @@ class Call:
         else:
             return False
 
-    def cancel(self) -> bool:
+    def cancel(self, msg=None) -> bool:
+        _ = msg  # Ignore to allow super().cancel(msg=msg) in derived classes
         return self._cancel(_LOCAL_CANCELLATION_DETAILS)
 
     def done(self) -> bool:
@@ -286,9 +287,9 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
     def _init_unary_response_mixin(self, response_task: asyncio.Task):
         self._call_response = response_task
 
-    def cancel(self) -> bool:
-        if super().cancel():
-            self._call_response.cancel()
+    def cancel(self, msg=None) -> bool:
+        if super().cancel(msg=msg):
+            self._call_response.cancel(msg=msg)
             return True
         else:
             return False
@@ -297,13 +298,13 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         """Wait till the ongoing RPC request finishes."""
         try:
             response = yield from self._call_response
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as exc:
             # Even if we caught all other CancelledError, there is still
             # this corner case. If the application cancels immediately after
             # the Call object is created, we will observe this
             # `CancelledError`.
             if not self.cancelled():
-                self.cancel()
+                self.cancel(msg=exc.args[0] if exc.args else None)
             raise
 
         # NOTE(lidiz) If we raise RpcError in the task, and users doesn't
@@ -339,9 +340,9 @@ class _StreamResponseMixin(Call):
         elif self._response_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
-    def cancel(self) -> bool:
-        if super().cancel():
-            self._preparation.cancel()
+    def cancel(self, msg=None) -> bool:
+        if super().cancel(msg=msg):
+            self._preparation.cancel(msg=msg)
             return True
         else:
             return False
@@ -368,9 +369,9 @@ class _StreamResponseMixin(Call):
         # Reads response message from Core
         try:
             raw_response = await self._cython_call.receive_serialized_message()
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as exc:
             if not self.cancelled():
-                self.cancel()
+                self.cancel(msg=exc.args[0] if exc.args else None)
             raise
 
         if raw_response is cygrpc.EOF:
@@ -420,10 +421,10 @@ class _StreamRequestMixin(Call):
         if self._request_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
-    def cancel(self) -> bool:
-        if super().cancel():
+    def cancel(self, msg=None) -> bool:
+        if super().cancel(msg=msg):
             if self._async_request_poller is not None:
-                self._async_request_poller.cancel()
+                self._async_request_poller.cancel(msg=msg)
             return True
         else:
             return False
@@ -465,7 +466,7 @@ class _StreamRequestMixin(Call):
                         return
 
             await self._done_writing()
-        except:  # pylint: disable=bare-except
+        except BaseException as exc:  # pylint: disable=broad-exception-caught
             # Client iterators can raise exceptions, which we should handle by
             # cancelling the RPC and logging the client's error. No exceptions
             # should escape this function.
@@ -473,7 +474,10 @@ class _StreamRequestMixin(Call):
                 "Client request_iterator raised exception:\n%s",
                 traceback.format_exc(),
             )
-            self.cancel()
+            if isinstance(exc, asyncio.CancelledError):
+                self.cancel(msg=exc.args[0] if exc.args else None)
+            else:
+                self.cancel()
 
     async def _write(self, request: RequestType) -> None:
         if self.done():
@@ -577,9 +581,9 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             serialized_response = await self._cython_call.unary_unary(
                 serialized_request, self._metadata, self._context
             )
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as exc:
             if not self.cancelled():
-                self.cancel()
+                self.cancel(msg=exc.args[0] if exc.args else None)
 
         if self._cython_call.is_ok():
             return _common.deserialize(
@@ -639,9 +643,9 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
             await self._cython_call.initiate_unary_stream(
                 serialized_request, self._metadata, self._context
             )
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as exc:
             if not self.cancelled():
-                self.cancel()
+                self.cancel(msg=exc.args[0] if exc.args else None)
             raise
 
     async def wait_for_connection(self) -> None:
@@ -690,9 +694,9 @@ class StreamUnaryCall(
             serialized_response = await self._cython_call.stream_unary(
                 self._metadata, self._metadata_sent_observer, self._context
             )
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as exc:
             if not self.cancelled():
-                self.cancel()
+                self.cancel(msg=exc.args[0] if exc.args else None)
             raise
 
         if self._cython_call.is_ok():
@@ -749,7 +753,7 @@ class StreamStreamCall(
             await self._cython_call.initiate_stream_stream(
                 self._metadata, self._metadata_sent_observer, self._context
             )
-        except asyncio.CancelledError:
+        except asyncio.CancelledError as exc:
             if not self.cancelled():
-                self.cancel()
+                self.cancel(msg=exc.args[0] if exc.args else None)
             # No need to raise RpcError here, because no one will `await` this task.
