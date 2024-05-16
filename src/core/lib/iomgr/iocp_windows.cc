@@ -27,6 +27,7 @@
 #include <limits>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -157,7 +158,7 @@ void grpc_iocp_add_socket(grpc_winsocket* socket) {
                                (uintptr_t)socket, 0);
   if (!ret) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);
+    LOG(ERROR) << "Unable to add socket to iocp: " << utf8_message;
     gpr_free(utf8_message);
     __debugbreak();
     abort();
