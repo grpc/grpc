@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -33,8 +34,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/gcp/metadata_query.h"
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -52,6 +51,8 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
@@ -282,7 +283,7 @@ class GoogleCloud2ProdResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
-      gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
+      LOG(ERROR) << "google-c2p URI scheme does not support authorities";
       return false;
     }
     return true;

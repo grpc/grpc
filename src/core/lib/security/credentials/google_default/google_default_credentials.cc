@@ -24,6 +24,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -138,7 +139,7 @@ grpc_google_default_channel_credentials::create_security_connector(
                         is_xds_non_cfe_cluster;
   // Return failure if ALTS is selected but not running on GCE.
   if (use_alts && alts_creds_ == nullptr) {
-    gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
+    LOG(ERROR) << "ALTS is selected, but not running on GCE.";
     return nullptr;
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =

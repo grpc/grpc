@@ -30,7 +30,7 @@ extern grpc_core::TraceFlag grpc_inproc_trace;
 namespace grpc_core {
 
 std::pair<OrphanablePtr<Transport>, OrphanablePtr<Transport>>
-MakeInProcessTransportPair();
+MakeInProcessTransportPair(const ChannelArgs& server_channel_args);
 
 }
 

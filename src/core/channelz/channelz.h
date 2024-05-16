@@ -38,13 +38,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channel_trace.h"
-#include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/json/json.h"
+#include "src/core/util/time_precise.h"
+#include "src/core/util/useful.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.internal.channelz_channel_node"
@@ -72,7 +72,7 @@ class ListenSocketNode;
 
 namespace testing {
 class CallCountingHelperPeer;
-class ChannelNodePeer;
+class SubchannelNodePeer;
 }  // namespace testing
 
 // base class for all channelz entities
@@ -228,9 +228,6 @@ class ChannelNode final : public BaseNode {
   void RemoveChildSubchannel(intptr_t child_uuid);
 
  private:
-  // Allows the channel trace test to access trace_.
-  friend class testing::ChannelNodePeer;
-
   void PopulateChildRefs(Json::Object* json);
 
   std::string target_;
@@ -277,6 +274,9 @@ class SubchannelNode final : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
+  // Allows the channel trace test to access trace_.
+  friend class testing::SubchannelNodePeer;
+
   std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
   Mutex socket_mu_;
   RefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);

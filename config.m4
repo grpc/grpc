@@ -429,30 +429,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c \
     src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c \
-    src/core/ext/xds/certificate_provider_store.cc \
-    src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
-    src/core/ext/xds/xds_api.cc \
-    src/core/ext/xds/xds_audit_logger_registry.cc \
-    src/core/ext/xds/xds_bootstrap.cc \
-    src/core/ext/xds/xds_bootstrap_grpc.cc \
-    src/core/ext/xds/xds_certificate_provider.cc \
-    src/core/ext/xds/xds_client.cc \
-    src/core/ext/xds/xds_client_grpc.cc \
-    src/core/ext/xds/xds_client_stats.cc \
-    src/core/ext/xds/xds_cluster.cc \
-    src/core/ext/xds/xds_cluster_specifier_plugin.cc \
-    src/core/ext/xds/xds_common_types.cc \
-    src/core/ext/xds/xds_endpoint.cc \
-    src/core/ext/xds/xds_health_status.cc \
-    src/core/ext/xds/xds_http_fault_filter.cc \
-    src/core/ext/xds/xds_http_filters.cc \
-    src/core/ext/xds/xds_http_rbac_filter.cc \
-    src/core/ext/xds/xds_http_stateful_session_filter.cc \
-    src/core/ext/xds/xds_lb_policy_registry.cc \
-    src/core/ext/xds/xds_listener.cc \
-    src/core/ext/xds/xds_route_config.cc \
-    src/core/ext/xds/xds_routing.cc \
-    src/core/ext/xds/xds_transport_grpc.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
@@ -539,32 +515,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
-    src/core/lib/gpr/alloc.cc \
-    src/core/lib/gpr/android/log.cc \
-    src/core/lib/gpr/atm.cc \
-    src/core/lib/gpr/iphone/cpu.cc \
-    src/core/lib/gpr/linux/cpu.cc \
-    src/core/lib/gpr/linux/log.cc \
-    src/core/lib/gpr/log.cc \
-    src/core/lib/gpr/msys/tmpfile.cc \
-    src/core/lib/gpr/posix/cpu.cc \
-    src/core/lib/gpr/posix/log.cc \
-    src/core/lib/gpr/posix/string.cc \
-    src/core/lib/gpr/posix/sync.cc \
-    src/core/lib/gpr/posix/time.cc \
-    src/core/lib/gpr/posix/tmpfile.cc \
-    src/core/lib/gpr/string.cc \
-    src/core/lib/gpr/sync.cc \
-    src/core/lib/gpr/sync_abseil.cc \
-    src/core/lib/gpr/time.cc \
-    src/core/lib/gpr/time_precise.cc \
-    src/core/lib/gpr/windows/cpu.cc \
-    src/core/lib/gpr/windows/log.cc \
-    src/core/lib/gpr/windows/string.cc \
-    src/core/lib/gpr/windows/string_util.cc \
-    src/core/lib/gpr/windows/sync.cc \
-    src/core/lib/gpr/windows/time.cc \
-    src/core/lib/gpr/windows/tmpfile.cc \
     src/core/lib/gprpp/crash.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
@@ -785,6 +735,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/call_spine.cc \
     src/core/lib/transport/connectivity_state.cc \
     src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/interception_chain.cc \
     src/core/lib/transport/message.cc \
     src/core/lib/transport/metadata.cc \
     src/core/lib/transport/metadata_batch.cc \
@@ -882,6 +833,56 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/ssl_transport_security_utils.cc \
     src/core/tsi/transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/util/alloc.cc \
+    src/core/util/android/log.cc \
+    src/core/util/atm.cc \
+    src/core/util/iphone/cpu.cc \
+    src/core/util/linux/cpu.cc \
+    src/core/util/linux/log.cc \
+    src/core/util/log.cc \
+    src/core/util/msys/tmpfile.cc \
+    src/core/util/posix/cpu.cc \
+    src/core/util/posix/log.cc \
+    src/core/util/posix/string.cc \
+    src/core/util/posix/sync.cc \
+    src/core/util/posix/time.cc \
+    src/core/util/posix/tmpfile.cc \
+    src/core/util/string.cc \
+    src/core/util/sync.cc \
+    src/core/util/sync_abseil.cc \
+    src/core/util/time.cc \
+    src/core/util/time_precise.cc \
+    src/core/util/windows/cpu.cc \
+    src/core/util/windows/log.cc \
+    src/core/util/windows/string.cc \
+    src/core/util/windows/string_util.cc \
+    src/core/util/windows/sync.cc \
+    src/core/util/windows/time.cc \
+    src/core/util/windows/tmpfile.cc \
+    src/core/xds/grpc/certificate_provider_store.cc \
+    src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
+    src/core/xds/grpc/xds_audit_logger_registry.cc \
+    src/core/xds/grpc/xds_bootstrap_grpc.cc \
+    src/core/xds/grpc/xds_certificate_provider.cc \
+    src/core/xds/grpc/xds_client_grpc.cc \
+    src/core/xds/grpc/xds_cluster.cc \
+    src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
+    src/core/xds/grpc/xds_common_types.cc \
+    src/core/xds/grpc/xds_endpoint.cc \
+    src/core/xds/grpc/xds_health_status.cc \
+    src/core/xds/grpc/xds_http_fault_filter.cc \
+    src/core/xds/grpc/xds_http_filters.cc \
+    src/core/xds/grpc/xds_http_rbac_filter.cc \
+    src/core/xds/grpc/xds_http_stateful_session_filter.cc \
+    src/core/xds/grpc/xds_lb_policy_registry.cc \
+    src/core/xds/grpc/xds_listener.cc \
+    src/core/xds/grpc/xds_route_config.cc \
+    src/core/xds/grpc/xds_routing.cc \
+    src/core/xds/grpc/xds_transport_grpc.cc \
+    src/core/xds/xds_client/xds_api.cc \
+    src/core/xds/xds_client/xds_bootstrap.cc \
+    src/core/xds/xds_client/xds_client.cc \
+    src/core/xds/xds_client/xds_client_stats.cc \
     src/php/ext/grpc/byte_buffer.c \
     src/php/ext/grpc/call.c \
     src/php/ext/grpc/call_credentials.c \
@@ -1382,7 +1383,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.64.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.65.0dev\""')
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
@@ -1505,7 +1506,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/core/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/matcher/v3)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/type/v3)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)
@@ -1525,13 +1525,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/event_engine/work_queue)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/experiments)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/android)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/iphone)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/linux)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/msys)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/posix)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/linux)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/posix)
@@ -1605,6 +1598,15 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/key_logging)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/android)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/iphone)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/linux)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/msys)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/posix)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/windows)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/grpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/xds/xds_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)

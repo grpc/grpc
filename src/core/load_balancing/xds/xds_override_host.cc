@@ -32,6 +32,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -49,7 +50,6 @@
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
-#include "src/core/ext/xds/xds_health_status.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -82,6 +82,7 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/xds/grpc/xds_health_status.h"
 
 namespace grpc_core {
 
@@ -530,7 +531,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // a connection attempt and queue the pick until that attempt completes.
   if (idle_subchannel != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(GPR_INFO, "Picker override found IDLE subchannel");
+      LOG(INFO) << "Picker override found IDLE subchannel";
     }
     // Deletes itself after the connection is requested.
     new SubchannelConnectionRequester(std::move(idle_subchannel));
@@ -540,7 +541,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // queue the pick and wait for the connection attempt to complete.
   if (found_connecting) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(GPR_INFO, "Picker override found CONNECTING subchannel");
+      LOG(INFO) << "Picker override found CONNECTING subchannel";
     }
     return PickResult::Queue();
   }
@@ -549,7 +550,7 @@ XdsOverrideHostLb::Picker::PickOverridenHost(
   // creation of a subchannel for that entry.
   if (!address_with_no_subchannel.empty()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_override_host_trace)) {
-      gpr_log(GPR_INFO, "Picker override found entry with no subchannel");
+      LOG(INFO) << "Picker override found entry with no subchannel";
     }
     if (!IsWorkSerializerDispatchEnabled()) {
       new SubchannelCreationRequester(policy_, address_with_no_subchannel);

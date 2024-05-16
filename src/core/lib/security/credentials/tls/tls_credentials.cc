@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -31,33 +32,33 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
+#include "src/core/util/useful.h"
 
 namespace {
 
 bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
                                  bool is_client) {
   if (options == nullptr) {
-    gpr_log(GPR_ERROR, "TLS credentials options is nullptr.");
+    LOG(ERROR) << "TLS credentials options is nullptr.";
     return false;
   }
   // In this case, there will be non-retriable handshake errors.
   if (options->min_tls_version() > options->max_tls_version()) {
-    gpr_log(GPR_ERROR, "TLS min version must not be higher than max version.");
+    LOG(ERROR) << "TLS min version must not be higher than max version.";
     grpc_tls_credentials_options_destroy(options);
     return false;
   }
   if (options->max_tls_version() > grpc_tls_version::TLS1_3) {
-    gpr_log(GPR_ERROR, "TLS max version must not be higher than v1.3.");
+    LOG(ERROR) << "TLS max version must not be higher than v1.3.";
     grpc_tls_credentials_options_destroy(options);
     return false;
   }
   if (options->min_tls_version() < grpc_tls_version::TLS1_2) {
-    gpr_log(GPR_ERROR, "TLS min version must not be lower than v1.2.");
+    LOG(ERROR) << "TLS min version must not be lower than v1.2.";
     grpc_tls_credentials_options_destroy(options);
     return false;
   }

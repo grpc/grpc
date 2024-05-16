@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/certificate_provider_store.h"
+#include "src/core/xds/grpc/certificate_provider_store.h"
 
 #include <algorithm>
 #include <memory>

@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -400,7 +401,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   if (!wsa_success) {
     if (!sp->shutting_down) {
       char* utf8_message = gpr_format_message(WSAGetLastError());
-      gpr_log(GPR_ERROR, "on_accept error: %s", utf8_message);
+      LOG(ERROR) << "on_accept error: " << utf8_message;
       gpr_free(utf8_message);
     }
     closesocket(sock);
@@ -410,7 +411,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
                        (char*)&sp->socket->socket, sizeof(sp->socket->socket));
       if (err) {
         char* utf8_message = gpr_format_message(WSAGetLastError());
-        gpr_log(GPR_ERROR, "setsockopt error: %s", utf8_message);
+        LOG(ERROR) << "setsockopt error: " << utf8_message;
         gpr_free(utf8_message);
       }
       int peer_name_len = (int)peer_name.len;
@@ -427,7 +428,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
         }
       } else {
         char* utf8_message = gpr_format_message(WSAGetLastError());
-        gpr_log(GPR_ERROR, "getpeername error: %s", utf8_message);
+        LOG(ERROR) << "getpeername error: " << utf8_message;
         gpr_free(utf8_message);
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);

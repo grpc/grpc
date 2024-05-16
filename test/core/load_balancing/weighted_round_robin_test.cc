@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -38,7 +39,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -98,7 +98,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     RefCountedPtr<LoadBalancingPolicy::Config> Build() {
       Json config = Json::FromArray({Json::FromObject(
           {{"weighted_round_robin", Json::FromObject(json_)}})});
-      gpr_log(GPR_INFO, "CONFIG: %s", JsonDump(config).c_str());
+      LOG(INFO) << "CONFIG: " << JsonDump(config);
       return MakeConfig(config);
     }
 
@@ -247,10 +247,10 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
     auto picks = GetCompletePicks(picker, NumPicksNeeded(expected), {},
                                   &subchannel_call_trackers, location);
     ASSERT_TRUE(picks.has_value()) << location.file() << ":" << location.line();
-    gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
+    LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
     ReportBackendMetrics(*picks, subchannel_call_trackers, backend_metrics);
     auto actual = MakePickMap(*picks);
-    gpr_log(GPR_INFO, "Pick map: %s", PickMapString(actual).c_str());
+    LOG(INFO) << "Pick map: " << PickMapString(actual);
     EXPECT_EQ(expected, actual)
         << "Expected: " << PickMapString(expected)
         << "\nActual: " << PickMapString(actual) << "\nat " << location.file()
@@ -265,17 +265,17 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
       absl::Duration timeout = absl::Seconds(5),
       bool run_timer_callbacks = true,
       SourceLocation location = SourceLocation()) {
-    gpr_log(GPR_INFO, "==> WaitForWeightedRoundRobinPicks(): Expecting %s",
-            PickMapString(expected).c_str());
+    LOG(INFO) << "==> WaitForWeightedRoundRobinPicks(): Expecting "
+              << PickMapString(expected);
     size_t num_picks = NumPicksNeeded(expected);
     absl::Time deadline = absl::Now() + timeout;
     while (true) {
-      gpr_log(GPR_INFO, "TOP OF LOOP");
+      LOG(INFO) << "TOP OF LOOP";
       // We need to see the expected weights for 3 consecutive passes, just
       // to make sure we're consistently returning the right weights.
       size_t num_passes = 0;
       for (; num_passes < 3; ++num_passes) {
-        gpr_log(GPR_INFO, "PASS %" PRIuPTR ": DOING PICKS", num_passes);
+        LOG(INFO) << "PASS " << num_passes << ": DOING PICKS";
         std::vector<std::unique_ptr<
             LoadBalancingPolicy::SubchannelCallTrackerInterface>>
             subchannel_call_trackers;
@@ -284,13 +284,13 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
         EXPECT_TRUE(picks.has_value())
             << location.file() << ":" << location.line();
         if (!picks.has_value()) return false;
-        gpr_log(GPR_INFO, "PICKS: %s", absl::StrJoin(*picks, " ").c_str());
+        LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
         // Report backend metrics to the LB policy.
         ReportBackendMetrics(*picks, subchannel_call_trackers, backend_metrics);
         // Check the observed weights.
         auto actual = MakePickMap(*picks);
-        gpr_log(GPR_INFO, "Pick map:\nExpected: %s\n  Actual: %s",
-                PickMapString(expected).c_str(), PickMapString(actual).c_str());
+        LOG(INFO) << "Pick map:\nExpected: " << PickMapString(expected)
+                  << "\n  Actual: " << PickMapString(actual);
         if (expected != actual) {
           // Make sure each address is one of the expected addresses,
           // even if the weights aren't as expected.
@@ -321,7 +321,7 @@ class WeightedRoundRobinTest : public LoadBalancingPolicyTest {
             << location.file() << ":" << location.line();
         if (*picker == nullptr) return false;
       } else if (run_timer_callbacks) {
-        gpr_log(GPR_INFO, "running timer callback...");
+        LOG(INFO) << "running timer callback...";
         // Increment time and run any timer callbacks.
         IncrementTimeBy(Duration::Seconds(1));
       }
@@ -1113,8 +1113,8 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                                              /*qps=*/100.0, /*eps=*/0.0)}},
       {{kAddresses[0], 1}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // Check endpoint weights.
-  EXPECT_THAT(stats_plugin->GetHistogramValue(kEndpointWeights, kLabelValues,
-                                              kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetDoubleHistogramValue(
+                  kEndpointWeights, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::ElementsAre(
                   // Picker created for first endpoint becoming READY.
                   0,
@@ -1135,29 +1135,30 @@ TEST_F(WeightedRoundRobinTest, MetricValues) {
                   ::testing::DoubleNear(333.333344, 0.000001))));
   // RR fallback should trigger for the first 5 updates above, because
   // there are less than two endpoints with valid weights.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kRrFallback, kLabelValues,
-                                            kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kRrFallback, kLabelValues,
+                                                  kOptionalLabelValues),
               ::testing::Optional(5));
   // Endpoint-not-yet-usable will be incremented once for every endpoint
   // with weight 0 above.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kEndpointWeightNotYetUsable,
-                                            kLabelValues, kOptionalLabelValues),
-              ::testing::Optional(10));
+  EXPECT_THAT(
+      stats_plugin->GetUInt64CounterValue(kEndpointWeightNotYetUsable,
+                                          kLabelValues, kOptionalLabelValues),
+      ::testing::Optional(10));
   // There are no stale endpoint weights so far.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kEndpointWeightStale, kLabelValues,
-                                            kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
+                  kEndpointWeightStale, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(0));
   // Advance time to make weights stale and trigger the timer callback
   // to recompute weights.
-  gpr_log(GPR_INFO, "advancing time to trigger staleness...");
+  LOG(INFO) << "advancing time to trigger staleness...";
   IncrementTimeBy(Duration::Seconds(2));
   // Picker should now be falling back to round-robin.
   ExpectWeightedRoundRobinPicks(
       picker.get(), {},
       {{kAddresses[0], 3}, {kAddresses[1], 3}, {kAddresses[2], 3}});
   // All three endpoints should now have stale weights.
-  EXPECT_THAT(stats_plugin->GetCounterValue(kEndpointWeightStale, kLabelValues,
-                                            kOptionalLabelValues),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(
+                  kEndpointWeightStale, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(3));
 }
 

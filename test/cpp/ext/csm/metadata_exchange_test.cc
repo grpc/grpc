@@ -31,8 +31,8 @@
 
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/util/tmpfile.h"
 #include "src/cpp/ext/csm/csm_observability.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/test_util/test_config.h"
@@ -397,6 +397,9 @@ TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.remote_workload_type")),
             "unknown");
+  EXPECT_EQ(absl::get<std::string>(
+                attributes.at("csm.remote_workload_canonical_service")),
+            "unknown");
 }
 
 TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
@@ -424,6 +427,8 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
             "mynamespace");
 }
 
+// Test that metadata exchange works and corresponding service mesh labels are
+// received and recorded even if the server sends a trailers-only response.
 TEST_P(MetadataExchangeTest, Retries) {
   Init(std::move(
       Options()

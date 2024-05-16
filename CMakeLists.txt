@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.64.0-dev")
+set(PACKAGE_VERSION       "1.65.0-dev")
 set(gRPC_CORE_VERSION     "41.0.0")
 set(gRPC_CORE_SOVERSION   "41")
-set(gRPC_CPP_VERSION      "1.64.0-dev")
-set(gRPC_CPP_SOVERSION    "1.64")
+set(gRPC_CPP_VERSION      "1.65.0-dev")
+set(gRPC_CPP_SOVERSION    "1.65")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -1052,6 +1052,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx dualstack_socket_test)
   endif()
+  add_dependencies(buildtests_cxx dump_args_test)
   add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
   add_dependencies(buildtests_cxx empty_batch_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -1660,32 +1661,6 @@ add_library(gpr
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
-  src/core/lib/gpr/alloc.cc
-  src/core/lib/gpr/android/log.cc
-  src/core/lib/gpr/atm.cc
-  src/core/lib/gpr/iphone/cpu.cc
-  src/core/lib/gpr/linux/cpu.cc
-  src/core/lib/gpr/linux/log.cc
-  src/core/lib/gpr/log.cc
-  src/core/lib/gpr/msys/tmpfile.cc
-  src/core/lib/gpr/posix/cpu.cc
-  src/core/lib/gpr/posix/log.cc
-  src/core/lib/gpr/posix/string.cc
-  src/core/lib/gpr/posix/sync.cc
-  src/core/lib/gpr/posix/time.cc
-  src/core/lib/gpr/posix/tmpfile.cc
-  src/core/lib/gpr/string.cc
-  src/core/lib/gpr/sync.cc
-  src/core/lib/gpr/sync_abseil.cc
-  src/core/lib/gpr/time.cc
-  src/core/lib/gpr/time_precise.cc
-  src/core/lib/gpr/windows/cpu.cc
-  src/core/lib/gpr/windows/log.cc
-  src/core/lib/gpr/windows/string.cc
-  src/core/lib/gpr/windows/string_util.cc
-  src/core/lib/gpr/windows/sync.cc
-  src/core/lib/gpr/windows/time.cc
-  src/core/lib/gpr/windows/tmpfile.cc
   src/core/lib/gprpp/crash.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
@@ -1701,6 +1676,32 @@ add_library(gpr
   src/core/lib/gprpp/windows/env.cc
   src/core/lib/gprpp/windows/stat.cc
   src/core/lib/gprpp/windows/thd.cc
+  src/core/util/alloc.cc
+  src/core/util/android/log.cc
+  src/core/util/atm.cc
+  src/core/util/iphone/cpu.cc
+  src/core/util/linux/cpu.cc
+  src/core/util/linux/log.cc
+  src/core/util/log.cc
+  src/core/util/msys/tmpfile.cc
+  src/core/util/posix/cpu.cc
+  src/core/util/posix/log.cc
+  src/core/util/posix/string.cc
+  src/core/util/posix/sync.cc
+  src/core/util/posix/time.cc
+  src/core/util/posix/tmpfile.cc
+  src/core/util/string.cc
+  src/core/util/sync.cc
+  src/core/util/sync_abseil.cc
+  src/core/util/time.cc
+  src/core/util/time_precise.cc
+  src/core/util/windows/cpu.cc
+  src/core/util/windows/log.cc
+  src/core/util/windows/string.cc
+  src/core/util/windows/string_util.cc
+  src/core/util/windows/sync.cc
+  src/core/util/windows/time.cc
+  src/core/util/windows/tmpfile.cc
 )
 
 target_compile_features(gpr PUBLIC cxx_std_14)
@@ -2213,30 +2214,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/xds/type/v3/cel.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/range.upbdefs.c
   src/core/ext/upbdefs-gen/xds/type/v3/typed_struct.upbdefs.c
-  src/core/ext/xds/certificate_provider_store.cc
-  src/core/ext/xds/file_watcher_certificate_provider_factory.cc
-  src/core/ext/xds/xds_api.cc
-  src/core/ext/xds/xds_audit_logger_registry.cc
-  src/core/ext/xds/xds_bootstrap.cc
-  src/core/ext/xds/xds_bootstrap_grpc.cc
-  src/core/ext/xds/xds_certificate_provider.cc
-  src/core/ext/xds/xds_client.cc
-  src/core/ext/xds/xds_client_grpc.cc
-  src/core/ext/xds/xds_client_stats.cc
-  src/core/ext/xds/xds_cluster.cc
-  src/core/ext/xds/xds_cluster_specifier_plugin.cc
-  src/core/ext/xds/xds_common_types.cc
-  src/core/ext/xds/xds_endpoint.cc
-  src/core/ext/xds/xds_health_status.cc
-  src/core/ext/xds/xds_http_fault_filter.cc
-  src/core/ext/xds/xds_http_filters.cc
-  src/core/ext/xds/xds_http_rbac_filter.cc
-  src/core/ext/xds/xds_http_stateful_session_filter.cc
-  src/core/ext/xds/xds_lb_policy_registry.cc
-  src/core/ext/xds/xds_listener.cc
-  src/core/ext/xds/xds_route_config.cc
-  src/core/ext/xds/xds_routing.cc
-  src/core/ext/xds/xds_transport_grpc.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -2524,6 +2501,7 @@ add_library(grpc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
@@ -2621,6 +2599,30 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/xds/grpc/certificate_provider_store.cc
+  src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
+  src/core/xds/grpc/xds_audit_logger_registry.cc
+  src/core/xds/grpc/xds_bootstrap_grpc.cc
+  src/core/xds/grpc/xds_certificate_provider.cc
+  src/core/xds/grpc/xds_client_grpc.cc
+  src/core/xds/grpc/xds_cluster.cc
+  src/core/xds/grpc/xds_cluster_specifier_plugin.cc
+  src/core/xds/grpc/xds_common_types.cc
+  src/core/xds/grpc/xds_endpoint.cc
+  src/core/xds/grpc/xds_health_status.cc
+  src/core/xds/grpc/xds_http_fault_filter.cc
+  src/core/xds/grpc/xds_http_filters.cc
+  src/core/xds/grpc/xds_http_rbac_filter.cc
+  src/core/xds/grpc/xds_http_stateful_session_filter.cc
+  src/core/xds/grpc/xds_lb_policy_registry.cc
+  src/core/xds/grpc/xds_listener.cc
+  src/core/xds/grpc/xds_route_config.cc
+  src/core/xds/grpc/xds_routing.cc
+  src/core/xds/grpc/xds_transport_grpc.cc
+  src/core/xds/xds_client/xds_api.cc
+  src/core/xds/xds_client/xds_bootstrap.cc
+  src/core/xds/xds_client/xds_client.cc
+  src/core/xds/xds_client/xds_client_stats.cc
 )
 
 target_compile_features(grpc PUBLIC cxx_std_14)
@@ -3252,6 +3254,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
@@ -4732,8 +4735,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_util
-  src/core/lib/gpr/subprocess_posix.cc
-  src/core/lib/gpr/subprocess_windows.cc
+  src/core/util/subprocess_posix.cc
+  src/core/util/subprocess_windows.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
@@ -5362,6 +5365,7 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
@@ -6082,8 +6086,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(address_sorting_test_unsecure
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/test_util/cmdline.cc
     test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
@@ -7617,8 +7621,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_alpn_test
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
@@ -7673,8 +7677,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_cert_test
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
@@ -12384,6 +12388,41 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(dump_args_test
+  src/core/lib/gprpp/dump_args.cc
+  test/core/gprpp/dump_args_test.cc
+)
+target_compile_features(dump_args_test PUBLIC cxx_std_14)
+target_include_directories(dump_args_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(dump_args_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::any_invocable
+  absl::check
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -26339,6 +26378,7 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_load_report.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/test_lb_policies.cc
   test/cpp/end2end/rls_end2end_test.cc

@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -83,7 +84,7 @@ grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
                  !GRPC_LOG_IF_ERROR(
                      "validate_metadata_from_plugin",
                      grpc_validate_header_nonbin_value_is_legal(md[i].value))) {
-        gpr_log(GPR_ERROR, "Plugin added invalid metadata value.");
+        LOG(ERROR) << "Plugin added invalid metadata value.";
         seen_illegal_header = true;
         break;
       }

@@ -18,6 +18,7 @@
 #include <limits.h>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -27,10 +28,10 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
@@ -653,7 +654,7 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
       }
       if (newval != timeout) {
         // Do not fail on failing to set TCP_USER_TIMEOUT
-        gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
         return;
       }
     }
@@ -684,7 +685,7 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
     bool loopback_available = false;
     if (fd < 0) {
-      gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+      LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
     } else {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));

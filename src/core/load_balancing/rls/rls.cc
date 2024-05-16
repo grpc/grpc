@@ -128,26 +128,27 @@ constexpr absl::string_view kMetricLabelPickResult = "grpc.lb.pick_result";
 const auto kMetricCacheSize =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_size", "EXPERIMENTAL.  Size of the RLS cache.", "By",
-        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricLabelRlsInstanceUuid},
-        {}, false);
+        false)
+        .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
+                kMetricLabelRlsInstanceUuid)
+        .Build();
 
 const auto kMetricCacheEntries =
     GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
         "grpc.lb.rls.cache_entries",
-        "EXPERIMENTAL.  Number of entries in the RLS cache.", "{entry}",
-        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricLabelRlsInstanceUuid},
-        {}, false);
+        "EXPERIMENTAL.  Number of entries in the RLS cache.", "{entry}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
+                kMetricLabelRlsInstanceUuid)
+        .Build();
 
 const auto kMetricDefaultTargetPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.rls.default_target_picks",
         "EXPERIMENTAL.  Number of LB picks sent to the default target.",
-        "{pick}",
-        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
-        {}, false);
+        "{pick}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
+                kMetricRlsDataPlaneTarget, kMetricLabelPickResult)
+        .Build();
 
 const auto kMetricTargetPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -156,17 +157,19 @@ const auto kMetricTargetPicks =
         "if the default target is also returned by the RLS server, RPCs sent "
         "to that target from the cache will be counted in this metric, not "
         "in grpc.rls.default_target_picks.",
-        "{pick}",
-        {kMetricLabelTarget, kMetricLabelRlsServerTarget,
-         kMetricRlsDataPlaneTarget, kMetricLabelPickResult},
-        {}, false);
+        "{pick}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget,
+                kMetricRlsDataPlaneTarget, kMetricLabelPickResult)
+        .Build();
 
 const auto kMetricFailedPicks =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.rls.failed_picks",
         "EXPERIMENTAL.  Number of LB picks failed due to either a failed RLS "
         "request or the RLS channel being throttled.",
-        "{pick}", {kMetricLabelTarget, kMetricLabelRlsServerTarget}, {}, false);
+        "{pick}", false)
+        .Labels(kMetricLabelTarget, kMetricLabelRlsServerTarget)
+        .Build();
 
 constexpr absl::string_view kRls = "rls_experimental";
 const char kGrpc[] = "grpc";
@@ -754,9 +757,9 @@ class RlsLb final : public LoadBalancingPolicy {
   // Updates the picker in the work serializer.
   void UpdatePickerLocked() ABSL_LOCKS_EXCLUDED(&mu_);
 
-  void MaybeExportPickCount(
-      GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
-      absl::string_view target, const PickResult& pick_result);
+  template <typename HandleType>
+  void MaybeExportPickCount(HandleType handle, absl::string_view target,
+                            const PickResult& pick_result);
 
   const std::string instance_uuid_;
 
@@ -1961,7 +1964,7 @@ RlsLb::RlsLb(Args args)
                 MutexLock lock(&mu_);
                 cache_.ReportMetricsLocked(reporter);
               },
-              {kMetricCacheSize, kMetricCacheEntries})) {
+              Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_rls_trace)) {
     gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
   }
@@ -2230,9 +2233,9 @@ void RlsLb::UpdatePickerLocked() {
       MakeRefCounted<Picker>(RefAsSubclass<RlsLb>(DEBUG_LOCATION, "Picker")));
 }
 
-void RlsLb::MaybeExportPickCount(
-    GlobalInstrumentsRegistry::GlobalUInt64CounterHandle handle,
-    absl::string_view target, const PickResult& pick_result) {
+template <typename HandleType>
+void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
+                                 const PickResult& pick_result) {
   absl::string_view pick_result_string = Match(
       pick_result.result,
       [](const LoadBalancingPolicy::PickResult::Complete&) {

@@ -70,14 +70,6 @@ const char* const description_peer_state_based_framing =
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
-const char* const description_pending_queue_cap =
-    "In the sync & async apis (but not the callback api), cap the number of "
-    "received but unrequested requests in the server for each call type. A "
-    "received message is one that was read from the wire on the server. A "
-    "requested message is one explicitly requested by the application using "
-    "grpc_server_request_call or grpc_server_request_registered_call (or their "
-    "wrappers in the C++ API).";
-const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
@@ -88,23 +80,17 @@ const char* const additional_constraints_promise_based_client_call = "{}";
 const uint8_t required_experiments_promise_based_client_call[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_promise_based_server_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_server_call = "{}";
 const char* const description_chaotic_good =
     "If set, enable the chaotic good load transport (this is mostly here for "
     "testing)";
 const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -177,22 +163,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
-    {"pending_queue_cap", description_pending_queue_cap,
-     additional_constraints_pending_queue_cap, nullptr, 0, true, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
-    {"promise_based_server_call", description_promise_based_server_call,
-     additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
+     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
      false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 2, false, false},
+     required_experiments_promise_based_inproc_transport, 1, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -270,14 +252,6 @@ const char* const description_peer_state_based_framing =
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
-const char* const description_pending_queue_cap =
-    "In the sync & async apis (but not the callback api), cap the number of "
-    "received but unrequested requests in the server for each call type. A "
-    "received message is one that was read from the wire on the server. A "
-    "requested message is one explicitly requested by the application using "
-    "grpc_server_request_call or grpc_server_request_registered_call (or their "
-    "wrappers in the C++ API).";
-const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
@@ -288,23 +262,17 @@ const char* const additional_constraints_promise_based_client_call = "{}";
 const uint8_t required_experiments_promise_based_client_call[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_promise_based_server_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_server_call = "{}";
 const char* const description_chaotic_good =
     "If set, enable the chaotic good load transport (this is mostly here for "
     "testing)";
 const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -358,7 +326,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, false, true},
+     additional_constraints_event_engine_client, nullptr, 0, true, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, false, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -377,22 +345,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
-    {"pending_queue_cap", description_pending_queue_cap,
-     additional_constraints_pending_queue_cap, nullptr, 0, true, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
-    {"promise_based_server_call", description_promise_based_server_call,
-     additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
+     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
      false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 2, false, false},
+     required_experiments_promise_based_inproc_transport, 1, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -470,14 +434,6 @@ const char* const description_peer_state_based_framing =
     "on the peer's memory pressure which is reflected in its max http2 frame "
     "size.";
 const char* const additional_constraints_peer_state_based_framing = "{}";
-const char* const description_pending_queue_cap =
-    "In the sync & async apis (but not the callback api), cap the number of "
-    "received but unrequested requests in the server for each call type. A "
-    "received message is one that was read from the wire on the server. A "
-    "requested message is one explicitly requested by the application using "
-    "grpc_server_request_call or grpc_server_request_registered_call (or their "
-    "wrappers in the C++ API).";
-const char* const additional_constraints_pending_queue_cap = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
@@ -488,23 +444,17 @@ const char* const additional_constraints_promise_based_client_call = "{}";
 const uint8_t required_experiments_promise_based_client_call[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_promise_based_server_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_server_call = "{}";
 const char* const description_chaotic_good =
     "If set, enable the chaotic good load transport (this is mostly here for "
     "testing)";
 const char* const additional_constraints_chaotic_good = "{}";
 const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall),
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedServerCall)};
+    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -577,22 +527,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
      nullptr, 0, false, true},
     {"peer_state_based_framing", description_peer_state_based_framing,
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
-    {"pending_queue_cap", description_pending_queue_cap,
-     additional_constraints_pending_queue_cap, nullptr, 0, true, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
     {"promise_based_client_call", description_promise_based_client_call,
      additional_constraints_promise_based_client_call,
      required_experiments_promise_based_client_call, 2, false, true},
-    {"promise_based_server_call", description_promise_based_server_call,
-     additional_constraints_promise_based_server_call, nullptr, 0, false, true},
     {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 2,
+     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
      false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
      additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 2, false, false},
+     required_experiments_promise_based_inproc_transport, 1, false, false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",

@@ -141,7 +141,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_decoder_test",
     srcs = ["bin_decoder_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -169,7 +172,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "bin_encoder_test",
     srcs = ["bin_encoder_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -292,7 +298,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "hpack_encoder_test",
     srcs = ["hpack_encoder_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     tags = ["hpack_test"],
     uses_event_engine = False,
@@ -373,6 +382,7 @@ grpc_cc_test(
     srcs = ["settings_timeout_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -391,6 +401,7 @@ grpc_cc_test(
     srcs = ["too_many_pings_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,
@@ -410,7 +421,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "varint_test",
     srcs = ["varint_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -434,6 +448,7 @@ grpc_cc_test(
     exec_properties = LARGE_MACHINE,
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -454,6 +469,7 @@ grpc_cc_test(
     srcs = ["stream_leak_with_queued_flow_control_update_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",

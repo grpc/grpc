@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -99,8 +100,8 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr) {
   if (grpc_chaotic_good_trace.enabled()) {
     auto str = grpc_event_engine::experimental::ResolvedAddressToString(addr);
-    gpr_log(GPR_INFO, "CHAOTIC_GOOD: Listen on %s",
-            str.ok() ? str->c_str() : str.status().ToString().c_str());
+    LOG(INFO) << "CHAOTIC_GOOD: Listen on "
+              << (str.ok() ? str->c_str() : str.status().ToString());
   }
   EventEngine::Listener::AcceptCallback accept_cb =
       [self = RefAsSubclass<ChaoticGoodServerListener>()](
@@ -123,8 +124,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
       std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
   if (!ee_listener.ok()) {
-    gpr_log(GPR_ERROR, "Bind failed: %s",
-            ee_listener.status().ToString().c_str());
+    LOG(ERROR) << "Bind failed: " << ee_listener.status().ToString();
     return ee_listener.status();
   }
   ee_listener_ = std::move(ee_listener.value());
@@ -139,9 +139,9 @@ absl::Status ChaoticGoodServerListener::StartListening() {
   CHECK(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
   if (!status.ok()) {
-    gpr_log(GPR_ERROR, "Start listening failed: %s", status.ToString().c_str());
+    LOG(ERROR) << "Start listening failed: " << status.ToString();
   } else if (grpc_chaotic_good_trace.enabled()) {
-    gpr_log(GPR_INFO, "CHAOTIC_GOOD: Started listening");
+    LOG(INFO) << "CHAOTIC_GOOD: Started listening";
   }
   return status;
 }
@@ -161,7 +161,7 @@ ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
 
 void ChaoticGoodServerListener::ActiveConnection::Orphan() {
   if (grpc_chaotic_good_trace.enabled()) {
-    gpr_log(GPR_INFO, "ActiveConnection::Orphan() %p", this);
+    LOG(INFO) << "ActiveConnection::Orphan() " << this;
   }
   if (handshaking_state_ != nullptr) {
     handshaking_state_->Shutdown();
@@ -193,8 +193,7 @@ void ChaoticGoodServerListener::ActiveConnection::NewConnectionID() {
 void ChaoticGoodServerListener::ActiveConnection::Done(
     absl::optional<absl::string_view> error) {
   if (error.has_value()) {
-    gpr_log(GPR_ERROR, "ActiveConnection::Done:%p %s", this,
-            std::string(*error).c_str());
+    LOG(ERROR) << "ActiveConnection::Done:" << this << " " << *error;
   }
   // Can easily be holding various locks here: bounce through EE to ensure no
   // deadlocks.
@@ -459,7 +458,7 @@ Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 void ChaoticGoodServerListener::Orphan() {
   if (grpc_chaotic_good_trace.enabled()) {
-    gpr_log(GPR_INFO, "ChaoticGoodServerListener::Orphan()");
+    LOG(INFO) << "ChaoticGoodServerListener::Orphan()";
   }
   {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
@@ -481,8 +480,8 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
   const auto resolved_or = grpc_core::GetDNSResolver()->LookupHostnameBlocking(
       parsed_addr, absl::StrCat(0xd20));
   if (!resolved_or.ok()) {
-    gpr_log(GPR_ERROR, "Failed to resolve %s: %s", addr,
-            resolved_or.status().ToString().c_str());
+    LOG(ERROR) << "Failed to resolve " << addr << ": "
+               << resolved_or.status().ToString();
     return 0;
   }
   int port_num = 0;
@@ -497,8 +496,8 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
                 ->c_str());
     auto bind_result = listener->Bind(ee_addr);
     if (!bind_result.ok()) {
-      gpr_log(GPR_ERROR, "Failed to bind to %s: %s", addr,
-              bind_result.status().ToString().c_str());
+      LOG(ERROR) << "Failed to bind to " << addr << ": "
+                 << bind_result.status().ToString();
       return 0;
     }
     if (port_num == 0) {
