@@ -465,8 +465,7 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-static grpc_error_handle error_for_fd(int fd,
-                                      const grpc_resolved_address* addr) {
+static grpc_error_handle error_for_fd(int fd) {
   if (fd >= 0) return absl::OkStatus();
   return GRPC_OS_ERROR(errno, "socket");
 }
@@ -519,7 +518,7 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
     // If this isn't an IPv4 address, then return whatever we've got.
     if (!grpc_sockaddr_is_v4mapped(resolved_addr, nullptr)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return error_for_fd(*newfd, resolved_addr);
+      return error_for_fd(*newfd);
     }
     // Fall back to AF_INET.
     if (*newfd >= 0) {
@@ -529,7 +528,7 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = create_socket(factory, family, type, protocol);
-  return error_for_fd(*newfd, resolved_addr);
+  return error_for_fd(*newfd);
 }
 
 #endif
