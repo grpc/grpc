@@ -814,13 +814,21 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
     absl::string_view prefix) {
   return absl::StrCat(
       prefix,
-      "(UNKNOWN|UNAVAILABLE): (ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      "(UNKNOWN|UNAVAILABLE): "
+      // IP address
+      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      // Prefixes added for context
       "(Failed to connect to remote host: )?"
-      "(connect: Connection refused \\([0-9]+\\)|"
-      "Connection reset by peer|"
-      "recvmsg:Connection reset by peer|"
-      "getsockopt\\(SO\\_ERROR\\): Connection reset by peer|"
-      "Socket closed|FD shutdown)");
+      "(Timeout occurred: )?"
+      // Syscall
+      "((connect|recvmsg|getsockopt\\(SO\\_ERROR\\)): )?"
+      // strerror() output or other message
+      "(Connection refused"
+      "|Connection reset by peer"
+      "|Socket closed"
+      "|FD shutdown)"
+      // errno value
+      "( \\([0-9]+\\))?");
 }
 
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(
