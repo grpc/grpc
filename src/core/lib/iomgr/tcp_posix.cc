@@ -1005,15 +1005,12 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       // 0 read size ==> end of stream
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
       if (read_bytes == 0) {
-        *error = tcp_annotate_error(
-            absl::InternalError(
-                absl::StrCat("Socket closed, peer_address=", tcp->peer_string)),
-            tcp);
+        *error = tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
       } else {
-        *error = tcp_annotate_error(absl::InternalError(absl::StrCat(
-                                        "recvmsg:", grpc_core::StrError(errno),
-                                        ", peer_address=", tcp->peer_string)),
-                                    tcp);
+        *error =
+            tcp_annotate_error(absl::InternalError(absl::StrCat(
+                                   "recvmsg:", grpc_core::StrError(errno))),
+                               tcp);
       }
       return true;
     }
@@ -1164,9 +1161,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   } else {
     if (!tcp->memory_owner.is_valid() && error.ok()) {
       tcp_read_error =
-          tcp_annotate_error(absl::InternalError(absl::StrCat(
-                                 "Socket closed to ", tcp->peer_string)),
-                             tcp);
+          tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
     } else {
       tcp_read_error = error;
     }
@@ -1670,14 +1665,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        *error = tcp_annotate_error(
-            grpc_core::StatusCreate(
-                absl::StatusCode::kUnknown,
-                absl::StrCat("sendmsg: ", grpc_core::StrError(saved_errno),
-                             " (", saved_errno,
-                             "), peer_address=", tcp->peer_string),
-                DEBUG_LOCATION, {}),
-            tcp);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
         return true;
       }
@@ -1787,14 +1775,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
         }
         return false;
       } else {
-        *error = tcp_annotate_error(
-            grpc_core::StatusCreate(
-                absl::StatusCode::kUnknown,
-                absl::StrCat("sendmsg: ", grpc_core::StrError(saved_errno),
-                             " (", saved_errno,
-                             "), peer_address=", tcp->peer_string),
-                DEBUG_LOCATION, {}),
-            tcp);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
@@ -1896,9 +1877,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     grpc_core::Closure::Run(
         DEBUG_LOCATION, cb,
         grpc_fd_is_shutdown(tcp->em_fd)
-            ? tcp_annotate_error(GRPC_ERROR_CREATE(absl::StrCat(
-                                     "EOF from ", tcp->peer_string)),
-                                 tcp)
+            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
             : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;

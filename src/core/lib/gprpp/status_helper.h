@@ -127,6 +127,9 @@ GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
 ///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
 GRPC_MUST_USE_RESULT std::string StatusToString(const absl::Status& status);
 
+/// Adds prefix to the message of status.
+absl::Status AddMessagePrefix(absl::string_view prefix, absl::Status status);
+
 namespace internal {
 
 /// Builds a upb message, google_rpc_Status from a status

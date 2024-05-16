@@ -243,15 +243,11 @@ void HttpRequest::AppendError(grpc_error_handle error) {
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
   auto addr_text = grpc_sockaddr_to_uri(addr);
-  absl::Status modified_error(
-      error.code(),
-      absl::StrCat(
-          error.message(), ", peer_address=",
-          addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
-  error.ForEachPayload([&](absl::string_view url, const absl::Cord& value) {
-    modified_error.SetPayload(url, value);
-  });
-  overall_error_ = grpc_error_add_child(overall_error_, modified_error);
+  absl::Status modified_error =
+      addr_text.ok() ? AddMessagePrefix(*addr_text, std::move(error))
+                     : std::move(error);
+  overall_error_ =
+      grpc_error_add_child(overall_error_, std::move(modified_error));
 }
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {

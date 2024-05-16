@@ -294,14 +294,9 @@ static grpc_error_handle prepare_socket(SOCKET sock,
 
 failure:
   CHECK(!error.ok());
-  auto addr_uri = grpc_sockaddr_to_uri(addr);
-  error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_REFERENCING(
-          absl::StrCat(
-              "Failed to prepare server socket, peer_address=",
-              addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
-          &error, 1),
-      grpc_core::StatusIntProperty::kFd, (intptr_t)sock);
+  error = grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING(
+                                 "Failed to prepare server socket", &error, 1),
+                             grpc_core::StatusIntProperty::kFd, (intptr_t)sock);
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }

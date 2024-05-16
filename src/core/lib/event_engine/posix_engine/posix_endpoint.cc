@@ -211,11 +211,9 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
-absl::Status PosixOSError(int error_no, absl::string_view call_name,
-                          absl::string_view peer_address) {
-  return absl::UnknownError(
-      absl::StrCat(call_name, ": ", grpc_core::StrError(error_no), " (",
-                   error_no, ") peer_address=", peer_address));
+absl::Status PosixOSError(int error_no, absl::string_view call_name) {
+  return absl::UnknownError(absl::StrCat(
+      call_name, ": ", grpc_core::StrError(error_no), " (", error_no, ")"));
 }
 
 }  // namespace
@@ -276,10 +274,6 @@ void PosixEndpointImpl::FinishEstimate() {
     target_length_ = 0.99 * target_length_ + 0.01 * bytes_read_this_round_;
   }
   bytes_read_this_round_ = 0;
-}
-
-std::string PosixEndpointImpl::PeerAddress() const {
-  return ResolvedAddressToNormalizedString(peer_address_).value_or("<unknown>");
 }
 
 absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
@@ -359,12 +353,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
       if (read_bytes == 0) {
-        status = TcpAnnotateError(absl::InternalError(
-            absl::StrCat("Socket closed, peer_address=", PeerAddress())));
+        status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
         status = TcpAnnotateError(absl::InternalError(
-            absl::StrCat("recvmsg:", grpc_core::StrError(errno),
-                         ", peer_address=", PeerAddress())));
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
       }
       return true;
     }
@@ -559,8 +551,7 @@ bool PosixEndpointImpl::HandleReadLocked(absl::Status& status) {
     }
   } else {
     if (!memory_owner_.is_valid() && status.ok()) {
-      status = TcpAnnotateError(absl::UnknownError(absl::StrCat(
-          "Shutting down endpoint, peer_address=", PeerAddress())));
+      status = TcpAnnotateError(absl::UnknownError("Shutting down endpoint"));
     }
     incoming_buffer_->Clear();
     last_read_buffer_.Clear();
@@ -999,8 +990,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        status = TcpAnnotateError(
-            PosixOSError(saved_errno, "sendmsg", PeerAddress()));
+        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
         TcpShutdownTracedBufferList();
         return true;
       }
@@ -1093,8 +1083,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
         }
         return false;
       } else {
-        status = TcpAnnotateError(
-            PosixOSError(saved_errno, "sendmsg", PeerAddress()));
+        status = TcpAnnotateError(PosixOSError(saved_errno, "sendmsg"));
         outgoing_buffer_->Clear();
         TcpShutdownTracedBufferList();
         return true;
@@ -1169,8 +1158,7 @@ bool PosixEndpointImpl::Write(
   if (data->Length() == 0) {
     TcpShutdownTracedBufferList();
     if (handle_->IsHandleShutdown()) {
-      status = TcpAnnotateError(absl::InternalError(
-          absl::StrCat("EOF, peer_address=", PeerAddress())));
+      status = TcpAnnotateError(absl::InternalError("EOF"));
       engine_->Run(
           [on_writable = std::move(on_writable), status, this]() mutable {
             GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write failed: %s",

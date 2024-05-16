@@ -585,7 +585,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
                         "; last error: (UNKNOWN|UNAVAILABLE): "
                         "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
                         "(Failed to connect to remote host: )?"
-                        "(Connection refused|Connection reset by peer|"
+                        "(connect: Connection refused \\([0-9]+\\)|"
+                        "Connection reset by peer|"
                         "recvmsg:Connection reset by peer|"
                         "getsockopt\\(SO\\_ERROR\\): Connection reset by peer|"
                         "Socket closed|FD shutdown)");

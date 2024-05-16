@@ -317,6 +317,17 @@ std::string StatusToString(const absl::Status& status) {
                      : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
 }
 
+absl::Status AddMessagePrefix(absl::string_view prefix, absl::Status status) {
+  absl::Status new_status(status.code(),
+                          absl::StrCat(prefix, ": ", status.message()));
+  // TODO(roth): Remove this once we elimiate all status attributes.
+  status.ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        new_status.SetPayload(type_url, payload);
+      });
+  return new_status;
+}
+
 namespace internal {
 
 google_rpc_Status* StatusToProto(const absl::Status& status, upb_Arena* arena) {
