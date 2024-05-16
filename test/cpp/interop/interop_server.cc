@@ -35,8 +35,10 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "src/core/lib/gpr/string.h"
+
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

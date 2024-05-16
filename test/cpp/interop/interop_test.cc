@@ -34,9 +34,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/string.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/util/test_config.h"
 

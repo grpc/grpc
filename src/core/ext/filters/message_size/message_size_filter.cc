@@ -51,10 +51,12 @@ namespace grpc_core {
 const NoInterceptor ClientMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ClientMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ClientMessageSizeFilter::Call::OnFinalize;
 const NoInterceptor ServerMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ServerMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 
 //

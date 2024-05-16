@@ -28,8 +28,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 

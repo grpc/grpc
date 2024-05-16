@@ -19,17 +19,23 @@
 #ifndef GRPC_TEST_CPP_UTIL_CHANNEL_TRACE_PROTO_HELPER_H
 #define GRPC_TEST_CPP_UTIL_CHANNEL_TRACE_PROTO_HELPER_H
 
+#include "absl/strings/string_view.h"
+
 namespace grpc {
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(const char* json_c_str);
-void ValidateChannelProtoJsonTranslation(const char* json_c_str);
-void ValidateGetTopChannelsResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateGetChannelResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateGetServerResponseProtoJsonTranslation(const char* json_c_str);
-void ValidateSubchannelProtoJsonTranslation(const char* json_c_str);
-void ValidateServerProtoJsonTranslation(const char* json_c_str);
-void ValidateGetServersResponseProtoJsonTranslation(const char* json_c_str);
+void ValidateChannelTraceProtoJsonTranslation(absl::string_view json_string);
+void ValidateChannelProtoJsonTranslation(absl::string_view json_string);
+void ValidateGetTopChannelsResponseProtoJsonTranslation(
+    absl::string_view json_string);
+void ValidateGetChannelResponseProtoJsonTranslation(
+    absl::string_view json_string);
+void ValidateGetServerResponseProtoJsonTranslation(
+    absl::string_view json_string);
+void ValidateSubchannelProtoJsonTranslation(absl::string_view json_string);
+void ValidateServerProtoJsonTranslation(absl::string_view json_string);
+void ValidateGetServersResponseProtoJsonTranslation(
+    absl::string_view json_string);
 
 }  // namespace testing
 }  // namespace grpc

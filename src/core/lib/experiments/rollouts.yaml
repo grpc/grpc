@@ -94,8 +94,6 @@
     ios: broken
     windows: broken
     posix: false
-- name: promise_based_server_call
-  default: false
 - name: rstpit
   default: false
 - name: schedule_cancellation_over_write

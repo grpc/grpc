@@ -37,10 +37,10 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/useful.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/test_util/mock_endpoint.h"
 

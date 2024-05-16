@@ -103,9 +103,6 @@ CORE_END2END_TEST(CoreEnd2endTest, FilterContext) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     for (auto type : {GRPC_CLIENT_CHANNEL, GRPC_CLIENT_SUBCHANNEL,
                       GRPC_CLIENT_DIRECT_CHANNEL, GRPC_SERVER_CHANNEL}) {
-      if (type == GRPC_SERVER_CHANNEL && IsPromiseBasedServerCallEnabled()) {
-        continue;
-      }
       builder->channel_init()->RegisterFilter(type, &test_filter);
     }
   });

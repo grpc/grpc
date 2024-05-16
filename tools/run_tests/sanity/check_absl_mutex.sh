@@ -29,7 +29,7 @@ find . \( \( -name "*.cc" \) -or \( -name "*.h" \) \) \
             -or \( -wholename "./test/*" \) \) \
         -a -not -wholename "./include/grpcpp/impl/sync.h" \
         -a -not -wholename "./src/core/lib/gprpp/sync.h" \
-        -a -not -wholename "./src/core/lib/gpr/sync_abseil.cc" \
+        -a -not -wholename "./src/core/util/sync_abseil.cc" \
         -print0 |\
     xargs -0 grep -n "absl::Mutex" | \
     diff - /dev/null

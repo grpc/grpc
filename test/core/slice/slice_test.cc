@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
@@ -182,7 +183,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -211,7 +212,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.

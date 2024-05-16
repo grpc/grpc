@@ -171,6 +171,8 @@ class ValueOrFailure {
   T& value() { return value_.value(); }
   const T& operator*() const { return *value_; }
   T& operator*() { return *value_; }
+  const T* operator->() const { return &*value_; }
+  T* operator->() { return &*value_; }
 
   bool operator==(const ValueOrFailure& other) const {
     return value_ == other.value_;
