@@ -110,9 +110,6 @@ const grpc_channel_filter test_filter = {
     "filter_causes_close"};
 
 CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
-  if (IsPromiseBasedClientCallEnabled()) {
-    GTEST_SKIP() << "disabled for promises until callv3 is further along";
-  }
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
     builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL, &test_filter);
   });

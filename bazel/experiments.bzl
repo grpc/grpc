@@ -19,6 +19,7 @@
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "canary_client_privacy": "canary_client_privacy",
+    "chaotic_good": "chaotic_good",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
@@ -31,9 +32,7 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
     "pick_first_new": "pick_first_new",
-    "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
-    "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call",
-    "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport",
+    "promise_based_inproc_transport": "promise_based_inproc_transport",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
@@ -134,7 +133,6 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good",
                 "event_engine_client",
-                "promise_based_client_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -149,9 +147,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lame_client_test": [
-                "promise_based_client_call",
             ],
             "resource_quota_test": [
                 "free_large_allocator",

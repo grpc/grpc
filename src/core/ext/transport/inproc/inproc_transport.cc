@@ -175,7 +175,6 @@ class InprocClientTransport final : public ClientTransport {
 
 bool UsePromiseBasedTransport() {
   if (!IsPromiseBasedInprocTransportEnabled()) return false;
-  CHECK(IsPromiseBasedClientCallEnabled());
   return true;
 }
 

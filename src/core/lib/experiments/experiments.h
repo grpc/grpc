@@ -60,6 +60,7 @@ namespace grpc_core {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -75,8 +76,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
-inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -95,6 +94,7 @@ inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -112,8 +112,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
-inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -132,6 +130,7 @@ inline bool IsCallV3Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
+inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -149,8 +148,6 @@ inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
-inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
@@ -171,6 +168,7 @@ inline bool IsCallV3Enabled() { return false; }
 enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCanaryClientPrivacy,
+  kExperimentIdChaoticGood,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -183,8 +181,6 @@ enum ExperimentIds {
   kExperimentIdMultiping,
   kExperimentIdPeerStateBasedFraming,
   kExperimentIdPickFirstNew,
-  kExperimentIdPromiseBasedClientCall,
-  kExperimentIdChaoticGood,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRstpit,
   kExperimentIdScheduleCancellationOverWrite,
@@ -205,6 +201,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD
+inline bool IsChaoticGoodEnabled() {
+  return IsExperimentEnabled(kExperimentIdChaoticGood);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
@@ -253,14 +253,6 @@ inline bool IsPeerStateBasedFramingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() {
   return IsExperimentEnabled(kExperimentIdPickFirstNew);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
-inline bool IsPromiseBasedClientCallEnabled() {
-  return IsExperimentEnabled(kExperimentIdPromiseBasedClientCall);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD
-inline bool IsChaoticGoodEnabled() {
-  return IsExperimentEnabled(kExperimentIdChaoticGood);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_INPROC_TRANSPORT
 inline bool IsPromiseBasedInprocTransportEnabled() {

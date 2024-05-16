@@ -32,6 +32,10 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good =
+    "If set, enable the chaotic good load transport (this is mostly here for "
+    "testing)";
+const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -71,24 +75,9 @@ const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
-const char* const description_promise_based_client_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_client_call = "{}";
-const uint8_t required_experiments_promise_based_client_call[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
-const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -143,6 +132,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good", description_chaotic_good,
+     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -167,16 +158,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
-    {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call,
-     required_experiments_promise_based_client_call, 2, false, true},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 1, false, false},
+     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
+     false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -218,6 +203,10 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good =
+    "If set, enable the chaotic good load transport (this is mostly here for "
+    "testing)";
+const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -257,24 +246,9 @@ const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
-const char* const description_promise_based_client_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_client_call = "{}";
-const uint8_t required_experiments_promise_based_client_call[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
-const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -329,6 +303,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good", description_chaotic_good,
+     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -353,16 +329,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
-    {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call,
-     required_experiments_promise_based_client_call, 2, false, true},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 1, false, false},
+     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
+     false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -404,6 +374,10 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
+const char* const description_chaotic_good =
+    "If set, enable the chaotic good load transport (this is mostly here for "
+    "testing)";
+const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -443,24 +417,9 @@ const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
-const char* const description_promise_based_client_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_client_call = "{}";
-const uint8_t required_experiments_promise_based_client_call[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
-const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -515,6 +474,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
+    {"chaotic_good", description_chaotic_good,
+     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -539,16 +500,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
-    {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call,
-     required_experiments_promise_based_client_call, 2, false, true},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 1, false, false},
+     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
+     false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
