@@ -1536,9 +1536,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "slice_refcount",
-    srcs = [
-        "lib/slice/slice_refcount.cc",
-    ],
     hdrs = [
         "lib/slice/slice_refcount.h",
     ],

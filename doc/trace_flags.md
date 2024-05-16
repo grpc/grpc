@@ -53,13 +53,13 @@ processing requests via debug logs. Available tracers include:
   - http_keepalive - gRPC keepalive pings.
   - inproc - In-process transport.
   - metadata_query - GCP metadata queries.
-  - op_failure - Error information when failure is pushed onto a completion queue. API tracing must be enabled for this flag to have any effect.
+  - op_failure - Error information when failure is pushed onto a completion queue. The `api` tracer must be enabled for this flag to have any effect.
   - orca_client - Out-of-band backend metric reporting client.
   - outlier_detection_lb - Outlier detection.
   - pick_first - Pick first load balancing policy.
   - plugin_credentials - Plugin credentials.
   - priority_lb - Priority LB policy.
-  - queue_pluck - Completion queue plucking. API tracing must be enabled for this flag to have any effect.
+  - queue_pluck - Completion queue plucking. The `api` tracer must be enabled for this flag to have any effect.
   - resource_quota - Resource quota objects internals.
   - retry - Call retries.
   - ring_hash_lb - Ring hash load balancing policy.
@@ -98,7 +98,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - fd_trace - Legacy file descriptor create(), shutdown() and close() calls for channel fds.
   - lb_policy_refcount - LB policy refcounting.
   - party_state - Coordination of activities related to a call.
-  - pending_tags - Still-in-progress tags on completion queues. API tracing must be enabled for this flag to have any effect.
+  - pending_tags - Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
   - polling - The active polling engine.
   - polling_api - API calls to polling engine.
   - promise_primitives - Low-level primitives in the promise library.

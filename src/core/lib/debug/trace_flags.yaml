@@ -206,7 +206,7 @@ metadata_query:
   description: GCP metadata queries.
 op_failure:
   default: false
-  description: Error information when failure is pushed onto a completion queue. API tracing must be enabled for this flag to have any effect.
+  description: Error information when failure is pushed onto a completion queue. The `api` tracer must be enabled for this flag to have any effect.
 orca_client:
   default: false
   description: Out-of-band backend metric reporting client.
@@ -220,7 +220,7 @@ party_state:
 pending_tags:
   debug_only: true
   default: false
-  description: Still-in-progress tags on completion queues. API tracing must be enabled for this flag to have any effect.
+  description: Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
 pick_first:
   default: false
   description: Pick first load balancing policy.
@@ -244,7 +244,7 @@ promise_primitives:
   description: Low-level primitives in the promise library.
 queue_pluck:
   default: false
-  description: Completion queue plucking. API tracing must be enabled for this flag to have any effect.
+  description: Completion queue plucking. The `api` tracer must be enabled for this flag to have any effect.
 resolver_refcount:
   debug_only: true
   default: false
