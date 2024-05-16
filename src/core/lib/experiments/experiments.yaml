@@ -139,17 +139,6 @@
   expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: ["flow_control_test"]
-- name: pending_queue_cap
-  description:
-    In the sync & async apis (but not the callback api), cap the number of
-    received but unrequested requests in the server for each call type.
-    A received message is one that was read from the wire on the server.
-    A requested message is one explicitly requested by the application using
-    grpc_server_request_call or grpc_server_request_registered_call (or their
-    wrappers in the C++ API).
-  expiry: 2024/05/05
-  owner: ctiller@google.com
-  test_tags: []
 - name: pick_first_new
   description: New pick_first impl with memory reduction.
   expiry: 2024/07/30
