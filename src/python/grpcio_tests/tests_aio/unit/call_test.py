@@ -210,6 +210,20 @@ class TestUnaryUnaryCall(_MulticallableTestMixin, AioTestBase):
         with self.assertRaises(asyncio.CancelledError):
             await task
 
+    async def test_cancel_unary_unary_with_msg(self):
+        call = self._stub.EmptyCall(messages_pb2.SimpleRequest())
+        msg = 'Lorem Ipsum'
+
+        call.cancel(msg)
+
+        with self.assertRaises(asyncio.CancelledError):
+            try:
+                await call
+            except asyncio.CancelledError as exc:
+                self.assertEqual(len(exc.args), 1)
+                self.assertEqual(exc.args[0], msg)
+                raise
+
     async def test_passing_credentials_fails_over_insecure_channel(self):
         call_credentials = grpc.composite_call_credentials(
             grpc.access_token_call_credentials("abc"),
@@ -527,6 +541,32 @@ class TestUnaryStreamCall(_MulticallableTestMixin, AioTestBase):
         with self.assertRaises(asyncio.CancelledError):
             await task
 
+    async def test_cancel_unary_stream_with_msg(self):
+        # Prepares the request
+        request = messages_pb2.StreamingOutputCallRequest()
+        for _ in range(_NUM_STREAM_RESPONSES):
+            request.response_parameters.append(
+                messages_pb2.ResponseParameters(
+                    size=_RESPONSE_PAYLOAD_SIZE,
+                    interval_us=_RESPONSE_INTERVAL_US,
+                )
+            )
+
+        # Invokes the actual RPC
+        call = self._stub.StreamingOutputCall(request)
+
+        msg = 'Lorem Ipsum'
+
+        call.cancel(msg)
+
+        with self.assertRaises(asyncio.CancelledError):
+            try:
+                await call.read()
+            except asyncio.CancelledError as exc:
+                self.assertEqual(len(exc.args), 1)
+                self.assertEqual(exc.args[0], msg)
+                raise
+
     async def test_time_remaining(self):
         request = messages_pb2.StreamingOutputCallRequest()
         # First message comes back immediately
@@ -626,6 +666,26 @@ class TestStreamUnaryCall(_MulticallableTestMixin, AioTestBase):
 
         with self.assertRaises(asyncio.CancelledError):
             await call
+
+    async def test_cancel_stream_unary_with_msg(self):
+        call = self._stub.StreamingInputCall()
+        msg = 'Lorem Ipsum'
+
+        # Prepares the request
+        payload = messages_pb2.Payload(body=b"\0" * _REQUEST_PAYLOAD_SIZE)
+        request = messages_pb2.StreamingInputCallRequest(payload=payload)
+
+        # Sends out requests
+        for _ in range(_NUM_STREAM_RESPONSES):
+            await call.write(request)
+
+        with self.assertRaises(asyncio.CancelledError):
+            try:
+                await call
+            except asyncio.CancelledError as exc:
+                self.assertEqual(len(exc.args), 1)
+                self.assertEqual(exc.args[0], msg)
+                raise
 
     async def test_write_after_done_writing(self):
         call = self._stub.StreamingInputCall()
@@ -836,6 +896,22 @@ class TestStreamStreamCall(_MulticallableTestMixin, AioTestBase):
 
         # Status is still OK
         self.assertEqual(grpc.StatusCode.OK, await call.code())
+
+    async def test_cancel_with_msg(self):
+        call = self._stub.FullDuplexCall()
+        msg = 'Lorem Ipsum'
+        await call.write(_STREAM_OUTPUT_REQUEST_ONE_RESPONSE)
+
+        # Cancels the RPC
+        call.cancel(msg)
+
+        with self.assertRaises(asyncio.CancelledError):
+            try:
+                async for response in call:
+                    pass
+            except asyncio.CancelledError as exc:
+                self.assertEqual(len(exc.args), 1)
+                self.assertEqual(exc.args[0], msg)
 
     async def test_async_generator(self):
         async def request_generator():
