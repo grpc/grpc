@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gpr/string.h"
+#include "src/core/util/string.h"
 
 #include <limits.h>
 #include <stddef.h>

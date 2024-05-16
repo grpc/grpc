@@ -47,6 +47,7 @@ grpc_cc_test(
     external_deps = [
         "absl/debugging:stacktrace",
         "absl/debugging:symbolize",
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -193,7 +194,10 @@ grpc_cc_test(
     name = "mpscq_test",
     srcs = ["mpscq_test.cc"],
     exec_properties = LARGE_MACHINE,
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     uses_event_engine = False,
@@ -381,7 +385,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "single_set_ptr_test",
     srcs = ["single_set_ptr_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "c++",
     uses_event_engine = False,
     uses_polling = False,

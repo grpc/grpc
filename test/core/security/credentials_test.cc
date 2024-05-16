@@ -27,6 +27,7 @@
 #include <openssl/rsa.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -42,8 +43,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -72,6 +71,8 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/string.h"
+#include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -2011,7 +2012,7 @@ void auth_metadata_context_build(const char* url_scheme,
   char* service_url = nullptr;
   grpc_auth_metadata_context_reset(auth_md_context);
   if (last_slash == nullptr) {
-    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
+    LOG(ERROR) << "No '/' found in fully qualified method name";
     service[0] = '\0';
     method_name = gpr_strdup("");
   } else if (last_slash == service) {
