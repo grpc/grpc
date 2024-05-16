@@ -29,8 +29,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
 using grpc_core::MultiProducerSingleConsumerQueue;

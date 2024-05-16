@@ -43,8 +43,8 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/useful.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/test_config.h"
 

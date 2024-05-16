@@ -38,7 +38,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/avl/avl.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -46,6 +45,7 @@
 #include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/util/useful.h"
 
 // TODO(hork): When we're ready to allow setting via a channel arg from the
 // application, replace this with a macro in

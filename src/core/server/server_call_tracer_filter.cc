@@ -80,6 +80,7 @@ class ServerCallTracerFilter
     }
 
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
 
    private:
@@ -92,6 +93,7 @@ class ServerCallTracerFilter
 };
 
 const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =

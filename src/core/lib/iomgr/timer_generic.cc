@@ -31,8 +31,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/time.h"
@@ -41,6 +39,8 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
+#include "src/core/util/spinlock.h"
+#include "src/core/util/useful.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
