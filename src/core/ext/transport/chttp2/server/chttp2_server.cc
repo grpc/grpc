@@ -773,6 +773,10 @@ Chttp2ServerListener* Chttp2ServerListener::CreateForPassiveListener(
       server, args, /*args_modifier=*/
       [](const ChannelArgs& args, grpc_error_handle*) { return args; }, nullptr,
       std::move(passive_listener));
+  grpc_error_handle error = grpc_tcp_server_create(
+      &listener->tcp_server_shutdown_complete_, ChannelArgsEndpointConfig(args),
+      OnAccept, listener.get(), &listener->tcp_server_);
+  CHECK(error.ok()) << "Could not create tcp_server: " << error;
   auto listener_ptr = listener.get();
   server->AddListener(std::move(listener));
   return listener_ptr;
@@ -846,8 +850,17 @@ void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
 
 void Chttp2ServerListener::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
+  grpc_tcp_server_acceptor* acceptor =
+      static_cast<grpc_tcp_server_acceptor*>(gpr_malloc(sizeof(*acceptor)));
+  CHECK_NE(tcp_server_, nullptr);
+  acceptor->from_server = tcp_server_;
+  acceptor->listener_fd = -1;
+  acceptor->fd_index = -1;
+  acceptor->external_connection = true;
+  acceptor->port_index = -1;
+  acceptor->pending_data = nullptr;
   OnAccept(this, grpc_event_engine_endpoint_create(std::move(endpoint)),
-           /*accepting_pollset=*/nullptr, /*acceptor=*/nullptr);
+           /*accepting_pollset=*/nullptr, /*acceptor=*/acceptor);
 }
 
 void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
