@@ -175,10 +175,9 @@ bool ParseAdditionalMetadataFlag(
         "abcdefghijklmnopqrstuvwxyz"
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     if (key.find_first_not_of(alphanum_and_hyphen) != std::string::npos) {
-      gpr_log(GPR_ERROR,
-              "Couldn't parse metadata flag: key contains characters other "
-              "than alphanumeric and hyphens: %s",
-              key.c_str());
+      LOG(ERROR) << "Couldn't parse metadata flag: key contains characters "
+                    "other than alphanumeric and hyphens: "
+                 << key;
       return false;
     }
 
@@ -189,8 +188,8 @@ bool ParseAdditionalMetadataFlag(
       }
     }
 
-    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
-            key.c_str(), value.c_str());
+    LOG(INFO) << "Adding additional metadata with key " << key << " and value "
+              << value;
     additional_metadata->insert({key, value});
 
     if (semicolon_pos == std::string::npos) {
@@ -208,15 +207,14 @@ bool ParseAdditionalMetadataFlag(
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing these cases: %s",
-          absl::GetFlag(FLAGS_test_case).c_str());
+  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   int ret = 0;
 
   if (absl::GetFlag(FLAGS_enable_observability)) {
     // TODO(someone): remove deprecated usage
     // NOLINTNEXTLINE(clang-diagnostic-deprecated-declarations)
     auto status = grpc::experimental::GcpObservabilityInit();
-    gpr_log(GPR_DEBUG, "GcpObservabilityInit() status_code: %d", status.code());
+    VLOG(2) << "GcpObservabilityInit() status_code: " << status.code();
     if (!status.ok()) {
       return 1;
     }

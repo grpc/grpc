@@ -90,7 +90,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
 
       // Send a simple response after a small delay that would ensure the client
       // deadline is exceeded.
-      gpr_log(GPR_INFO, "Got request %d", n);
+      LOG(INFO) << "Got request " << n;
       testing::EchoResponse response;
       response.set_message("foobar");
       // A bit of sleep to make sure the deadline elapses.
@@ -103,7 +103,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
           // Continue flushing the CQ.
           continue;
         }
-        gpr_log(GPR_INFO, "Finishing request %d", n);
+        LOG(INFO) << "Finishing request " << n;
         responder.Finish(response, grpc::Status::OK,
                          reinterpret_cast<void*>(2));
         if (!cq->Next(&tag, &ok)) {
@@ -118,7 +118,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       grpc::CreateChannel(address, InsecureChannelCredentials()));
 
   for (int i = 0; i < 100; i++) {
-    gpr_log(GPR_INFO, "Sending %d.", i);
+    LOG(INFO) << "Sending " << i;
     testing::EchoRequest request;
 
     /////////

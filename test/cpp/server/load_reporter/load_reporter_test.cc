@@ -174,9 +174,8 @@ class LbFeedbackTest : public LoadReporterTest {
                 DoubleNear(expected_qps, expected_qps * 0.3));
     ASSERT_THAT(static_cast<double>(lb_feedback.errors_per_second()),
                 DoubleNear(expected_eps, expected_eps * 0.3));
-    gpr_log(GPR_INFO,
-            "Verified LB feedback matches the samples of index [%zu, %zu).",
-            start, start + count);
+    LOG(INFO) << "Verified LB feedback matches the samples of index [" << start
+              << ", " << start + count << ").";
   }
 
   const std::vector<std::pair<double, double>> kQpsEpsSamples = {

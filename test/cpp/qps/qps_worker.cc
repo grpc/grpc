@@ -52,10 +52,10 @@ namespace grpc {
 namespace testing {
 
 static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
-  gpr_log(GPR_INFO, "Starting client of type %s %s %d",
-          ClientType_Name(config.client_type()).c_str(),
-          RpcType_Name(config.rpc_type()).c_str(),
-          config.payload_config().has_bytebuf_params());
+  LOG(INFO) << "Starting client of type "
+            << ClientType_Name(config.client_type()) << " "
+            << RpcType_Name(config.rpc_type()) << " "
+            << config.payload_config().has_bytebuf_params();
 
   switch (config.client_type()) {
     case ClientType::SYNC_CLIENT:
@@ -72,8 +72,8 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
 }
 
 static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
-  gpr_log(GPR_INFO, "Starting server of type %s",
-          ServerType_Name(config.server_type()).c_str());
+  LOG(INFO) << "Starting server of type "
+            << ServerType_Name(config.server_type());
 
   switch (config.server_type()) {
     case ServerType::SYNC_SERVER:
@@ -293,13 +293,11 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
 
   server_ = builder->BuildAndStart();
   if (server_ == nullptr) {
-    gpr_log(GPR_ERROR,
-            "QpsWorker: Fail to BuildAndStart(driver_port=%d, server_port=%d)",
-            driver_port, server_port);
+    LOG(ERROR) << "QpsWorker: Fail to BuildAndStart(driver_port=" << driver_port
+               << ", server_port=" << server_port << ")";
   } else {
-    gpr_log(GPR_INFO,
-            "QpsWorker: BuildAndStart(driver_port=%d, server_port=%d) done",
-            driver_port, server_port);
+    LOG(INFO) << "QpsWorker: BuildAndStart(driver_port=" << driver_port
+              << ", server_port=" << server_port << ") done";
   }
 }
 
