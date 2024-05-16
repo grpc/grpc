@@ -38,7 +38,6 @@ CC_FILES=[
     'grpc_root/src/core/lib/gprpp/windows/stat.cc',
     'grpc_root/src/core/lib/gprpp/windows/thd.cc',
     'grpc_root/src/core/lib/slice/slice.cc',
-    'grpc_root/src/core/lib/slice/slice_refcount.cc',
     'grpc_root/src/core/lib/slice/slice_string_helpers.cc',
     'grpc_root/src/core/util/alloc.cc',
     'grpc_root/src/core/util/android/log.cc',

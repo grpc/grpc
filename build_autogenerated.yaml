@@ -1884,7 +1884,6 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -2989,7 +2988,6 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -4949,7 +4947,6 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -6469,7 +6466,6 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_filters.cc
@@ -7725,7 +7721,6 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -9214,7 +9209,6 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -9851,7 +9845,6 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - test/core/transport/chttp2/flow_control_test.cc
@@ -9989,7 +9982,6 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -10119,7 +10111,6 @@ targets:
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/transport/chttp2/frame_test.cc
   deps:
@@ -10193,7 +10184,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/debug/glob_test.cc
+  - test/core/gprpp/glob_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12069,7 +12060,6 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -12246,7 +12236,6 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/interceptor_list_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -12938,7 +12927,6 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -14133,7 +14121,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -18573,7 +18560,6 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
@@ -19310,7 +19296,6 @@ targets:
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
