@@ -3457,10 +3457,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "stats",
     srcs = [
-        "//src/core:lib/debug/stats.cc",
+        "//src/core:telemetry/stats.cc",
     ],
     hdrs = [
-        "//src/core:lib/debug/stats.h",
+        "//src/core:telemetry/stats.h",
     ],
     external_deps = [
         "absl/strings",

@@ -29,8 +29,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/histogram_view.h"
-#include "src/core/lib/debug/stats_data.h"
+#include "src/core/telemetry/histogram_view.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
 namespace grpc_core {

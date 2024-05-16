@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/debug/stats.h"
+#include "src/core/telemetry/stats.h"
 
 #include <algorithm>
 #include <memory>
@@ -25,7 +25,7 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/debug/stats_data.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/test_config.h"
 

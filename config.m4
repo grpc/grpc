@@ -462,9 +462,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/config/core_configuration.cc \
     src/core/lib/config/load_config.cc \
     src/core/lib/debug/event_log.cc \
-    src/core/lib/debug/histogram_view.cc \
-    src/core/lib/debug/stats.cc \
-    src/core/lib/debug/stats_data.cc \
+    src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/stats.cc \
+    src/core/telemetry/stats_data.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
