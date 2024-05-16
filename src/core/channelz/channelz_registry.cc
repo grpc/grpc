@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
@@ -171,7 +172,7 @@ void ChannelzRegistry::InternalLogAllEntities() {
   }
   for (size_t i = 0; i < nodes.size(); ++i) {
     std::string json = nodes[i]->RenderJsonString();
-    gpr_log(GPR_INFO, "%s", json.c_str());
+    LOG(INFO) << json;
   }
 }
 

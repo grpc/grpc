@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -952,7 +953,7 @@ static bool resolve_as_ip_literal_locked(
 static bool target_matches_localhost_inner(const char* name, std::string* host,
                                            std::string* port) {
   if (!grpc_core::SplitHostPort(name, host, port)) {
-    gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
+    LOG(ERROR) << "Unable to split host and port for name: " << name;
     return false;
   }
   return gpr_stricmp(host->c_str(), "localhost") == 0;

@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -260,7 +261,7 @@ struct cq_next_data {
     CHECK_EQ(queue.num_items(), 0);
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
-      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+      LOG(ERROR) << "Destroying CQ without draining it fully.";
     }
 #endif
   }
@@ -290,7 +291,7 @@ struct cq_pluck_data {
     CHECK(completed_head.next == reinterpret_cast<uintptr_t>(&completed_head));
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
-      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+      LOG(ERROR) << "Destroying CQ without draining it fully.";
     }
 #endif
   }
@@ -327,7 +328,7 @@ struct cq_callback_data {
   ~cq_callback_data() {
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
-      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+      LOG(ERROR) << "Destroying CQ without draining it fully.";
     }
 #endif
   }
@@ -942,7 +943,7 @@ static void dump_pending_tags(grpc_completion_queue* cq) {
     parts.push_back(absl::StrFormat(" %p", cq->outstanding_tags[i]));
   }
   gpr_mu_unlock(cq->mu);
-  gpr_log(GPR_DEBUG, "%s", absl::StrJoin(parts, "").c_str());
+  VLOG(2) << absl::StrJoin(parts, "");
 }
 #else
 static void dump_pending_tags(grpc_completion_queue* /*cq*/) {}

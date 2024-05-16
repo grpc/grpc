@@ -24,6 +24,7 @@
 #include <zlib.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -67,12 +68,12 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
       }
     } while (zs->avail_out == 0);
     if (zs->avail_in) {
-      gpr_log(GPR_INFO, "zlib: not all input consumed");
+      LOG(INFO) << "zlib: not all input consumed";
       goto error;
     }
   }
   if (r != Z_STREAM_END) {
-    gpr_log(GPR_INFO, "zlib: Data error");
+    LOG(INFO) << "zlib: Data error";
     goto error;
   }
 
@@ -165,7 +166,7 @@ static int compress_inner(grpc_compression_algorithm algorithm,
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
-  gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);
+  LOG(ERROR) << "invalid compression algorithm " << algorithm;
   return 0;
 }
 
@@ -190,6 +191,6 @@ int grpc_msg_decompress(grpc_compression_algorithm algorithm,
     case GRPC_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
-  gpr_log(GPR_ERROR, "invalid compression algorithm %d", algorithm);
+  LOG(ERROR) << "invalid compression algorithm " << algorithm;
   return 0;
 }

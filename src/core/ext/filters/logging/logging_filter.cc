@@ -31,6 +31,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/numeric/int128.h"
 #include "absl/random/random.h"
 #include "absl/random/uniform_int_distribution.h"
@@ -160,7 +161,7 @@ LoggingSink::Entry::Address PeerStringToAddress(const Slice& peer_string) {
   LoggingSink::Entry::Address address;
   absl::StatusOr<URI> uri = URI::Parse(peer_string.as_string_view());
   if (!uri.ok()) {
-    gpr_log(GPR_DEBUG, "peer_string is in invalid format and cannot be logged");
+    VLOG(2) << "peer_string is in invalid format and cannot be logged";
     return address;
   }
 
