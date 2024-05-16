@@ -8703,7 +8703,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_tracer_test
-  test/core/channel/call_tracer_test.cc
+  test/core/telemetry/call_tracer_test.cc
   test/core/test_util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
@@ -20000,7 +20000,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(metrics_test
-  test/core/channel/metrics_test.cc
+  test/core/telemetry/metrics_test.cc
   test/core/test_util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
@@ -28801,7 +28801,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(stats_test
-  test/core/debug/stats_test.cc
+  test/core/telemetry/stats_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

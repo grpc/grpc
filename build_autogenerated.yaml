@@ -6605,7 +6605,7 @@ targets:
   headers:
   - test/core/test_util/fake_stats_plugin.h
   src:
-  - test/core/channel/call_tracer_test.cc
+  - test/core/telemetry/call_tracer_test.cc
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
@@ -13379,7 +13379,7 @@ targets:
   headers:
   - test/core/test_util/fake_stats_plugin.h
   src:
-  - test/core/channel/metrics_test.cc
+  - test/core/telemetry/metrics_test.cc
   - test/core/test_util/fake_stats_plugin.cc
   deps:
   - gtest
@@ -18776,7 +18776,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/debug/stats_test.cc
+  - test/core/telemetry/stats_test.cc
   deps:
   - gtest
   - grpc_test_util
