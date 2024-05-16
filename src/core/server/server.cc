@@ -769,10 +769,6 @@ class Server::TransportConnectivityWatcher
 
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
-    nullptr,
-    [](grpc_channel_element*, CallSpineInterface*) {
-      // TODO(ctiller): remove the server filter when call-v3 is finalized
-    },
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,

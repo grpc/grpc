@@ -90,9 +90,6 @@ BaseCallData::BaseCallData(
       arena_(args->arena),
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
-      call_context_(flags & kFilterExaminesCallContext
-                        ? arena_->New<CallContext>(nullptr)
-                        : nullptr),
       context_(args->context),
       server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
@@ -281,7 +278,7 @@ BaseCallData::Flusher::~Flusher() {
   };
   for (size_t i = 1; i < release_.size(); i++) {
     auto* batch = release_[i];
-    if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+    if (call_->call() != nullptr && call_->call()->traced()) {
       batch->is_traced = true;
     }
     if (grpc_trace_channel.enabled()) {
@@ -301,7 +298,7 @@ BaseCallData::Flusher::~Flusher() {
     gpr_log(GPR_INFO, "FLUSHER:forward batch: %s",
             grpc_transport_stream_op_batch_string(release_[0], false).c_str());
   }
-  if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+  if (call_->call() != nullptr && call_->call()->traced()) {
     release_[0]->is_traced = true;
   }
   grpc_call_next_op(call_->elem(), release_[0]);

@@ -1999,7 +1999,6 @@ grpc_cc_library(
         "//src/core:lib/surface/validate_metadata.cc",
         "//src/core:lib/surface/version.cc",
         "//src/core:lib/surface/wait_for_cq_end_op.cc",
-        "//src/core:lib/transport/batch_builder.cc",
         "//src/core:lib/transport/transport.cc",
         "//src/core:lib/transport/transport_op_string.cc",
     ],
@@ -2019,7 +2018,6 @@ grpc_cc_library(
         "//src/core:lib/surface/lame_client.h",
         "//src/core:lib/surface/validate_metadata.h",
         "//src/core:lib/surface/wait_for_cq_end_op.h",
-        "//src/core:lib/transport/batch_builder.h",
         "//src/core:lib/transport/transport.h",
     ],
     defines = select({

@@ -132,6 +132,9 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   gpr_cycle_counter start_time() const { return start_time_; }
 
+  void set_traced(bool traced) { traced_ = traced; }
+  bool traced() const { return traced_; }
+
  protected:
   // The maximum number of concurrent batches possible.
   // Based upon the maximum number of individually queueable ops in the batch
@@ -220,6 +223,8 @@ class Call : public CppImplOf<Call, grpc_call>,
   const bool is_client_;
   // flag indicating that cancellation is inherited
   bool cancellation_is_inherited_ = false;
+  // Is this call traced?
+  bool traced_ = false;
   // Compression algorithm for *incoming* data
   grpc_compression_algorithm incoming_compression_algorithm_ =
       GRPC_COMPRESS_NONE;
@@ -240,60 +245,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   grpc_event_engine::experimental::EventEngine* const event_engine_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
-
-class BasicPromiseBasedCall;
-class ServerPromiseBasedCall;
-
-// TODO(ctiller): move more call things into this type
-class CallContext {
- public:
-  explicit CallContext(BasicPromiseBasedCall* call) : call_(call) {}
-
-  // Run some action in the call activity context. This is needed to adapt some
-  // legacy systems to promises, and will likely disappear once that conversion
-  // is complete.
-  void RunInContext(absl::AnyInvocable<void()> fn);
-
-  // TODO(ctiller): remove this once transport APIs are promise based
-  void IncrementRefCount(const char* reason = "call_context");
-
-  // TODO(ctiller): remove this once transport APIs are promise based
-  void Unref(const char* reason = "call_context");
-
-  RefCountedPtr<CallContext> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<CallContext>(this);
-  }
-
-  grpc_call_stats* call_stats() { return &call_stats_; }
-  gpr_atm* peer_string_atm_ptr();
-  gpr_cycle_counter call_start_time() { return start_time_; }
-
-  void set_traced(bool traced) { traced_ = traced; }
-  bool traced() const { return traced_; }
-
-  // TEMPORARY HACK
-  // Create a call spine object for this call.
-  // Said object should only be created once.
-  // Allows interop between the v2 call stack and the v3 (which is required by
-  // transports).
-  RefCountedPtr<CallSpineInterface> MakeCallSpine(CallArgs call_args);
-  grpc_call* c_call();
-
- private:
-  friend class PromiseBasedCall;
-  // Call final info.
-  grpc_call_stats call_stats_;
-  // TODO(ctiller): remove this once transport APIs are promise based and we
-  // don't need refcounting here.
-  BasicPromiseBasedCall* const call_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
-  // Is this call traced?
-  bool traced_ = false;
-};
-
-template <>
-struct ContextType<CallContext> {};
 
 // TODO(ctiller): remove once call-v3 finalized
 grpc_call* MakeServerCall(CallHandler call_handler,

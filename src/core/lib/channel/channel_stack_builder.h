@@ -74,11 +74,6 @@ class ChannelStackBuilder {
   // Helper to add a filter to the end of the stack.
   void AppendFilter(const grpc_channel_filter* filter);
 
-  // Determine whether a promise-based call stack is able to be built.
-  // Iterates each filter and ensures that there's a promise factory there.
-  // This will go away once the promise conversion is completed.
-  virtual bool IsPromising() const = 0;
-
   // Build the channel stack.
   // After success, *result holds the new channel stack,
   // prefix_bytes are allocated before the channel stack,

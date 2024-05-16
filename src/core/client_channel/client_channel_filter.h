@@ -100,12 +100,10 @@ namespace grpc_core {
 
 class ClientChannelFilter final {
  public:
-  static const grpc_channel_filter kFilterVtableWithPromises;
-  static const grpc_channel_filter kFilterVtableWithoutPromises;
+  static const grpc_channel_filter kFilter;
 
   class LoadBalancedCall;
   class FilterBasedLoadBalancedCall;
-  class PromiseBasedLoadBalancedCall;
 
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
@@ -168,7 +166,6 @@ class ClientChannelFilter final {
  private:
   class CallData;
   class FilterBasedCallData;
-  class PromiseBasedCallData;
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
@@ -585,33 +582,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   // passed the batch down to the subchannel call and are not
   // intercepting any of its callbacks).
   grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
-};
-
-class ClientChannelFilter::PromiseBasedLoadBalancedCall final
-    : public ClientChannelFilter::LoadBalancedCall {
- public:
-  PromiseBasedLoadBalancedCall(ClientChannelFilter* chand,
-                               absl::AnyInvocable<void()> on_commit,
-                               bool is_transparent_retry);
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call);
-
- private:
-  Arena* arena() const override;
-  grpc_polling_entity* pollent() override { return &pollent_; }
-  grpc_metadata_batch* send_initial_metadata() const override;
-
-  void RetryPickLocked() override;
-
-  void OnAddToQueueLocked() override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
-
-  grpc_polling_entity pollent_;
-  ClientMetadataHandle client_initial_metadata_;
-  Waker waker_;
-  bool was_queued_ = false;
-  Slice peer_string_;
 };
 
 }  // namespace grpc_core

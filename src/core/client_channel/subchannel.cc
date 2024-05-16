@@ -152,37 +152,6 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
            channel_stack_->call_stack_size;
   }
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) override {
-    // If not using channelz, we just need to call the channel stack.
-    if (channelz_subchannel() == nullptr) {
-      return channel_stack_->MakeClientCallPromise(std::move(call_args));
-    }
-    // Otherwise, we need to wrap the channel stack promise with code that
-    // handles the channelz updates.
-    return OnCancel(
-        Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
-            [self = RefAsSubclass<ConnectedSubchannel>()](
-                ServerMetadataHandle metadata) {
-              channelz::SubchannelNode* channelz_subchannel =
-                  self->channelz_subchannel();
-              GPR_ASSERT(channelz_subchannel != nullptr);
-              if (metadata->get(GrpcStatusMetadata())
-                      .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
-                channelz_subchannel->RecordCallFailed();
-              } else {
-                channelz_subchannel->RecordCallSucceeded();
-              }
-              return metadata;
-            }),
-        [self = RefAsSubclass<ConnectedSubchannel>()]() {
-          channelz::SubchannelNode* channelz_subchannel =
-              self->channelz_subchannel();
-          GPR_ASSERT(channelz_subchannel != nullptr);
-          channelz_subchannel->RecordCallFailed();
-        });
-  }
-
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->send_ping.on_initiate = on_initiate;
@@ -228,11 +197,6 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
   grpc_channel_stack* channel_stack() const override { return nullptr; }
 
   size_t GetInitialCallSizeEstimate() const override { return 0; }
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) override {
-    Crash("legacy MakeCallPromise() method called in call v3 impl");
-  }
 
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
     Crash("legacy ping method called in call v3 impl");

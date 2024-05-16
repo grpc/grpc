@@ -142,8 +142,6 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(
 
 const grpc_channel_filter RetryFilter::kVtable = {
     RetryFilter::LegacyCallData::StartTransportStreamOpBatch,
-    nullptr,
-    /* init_call: */ nullptr,
     RetryFilter::StartTransportOp,
     sizeof(RetryFilter::LegacyCallData),
     RetryFilter::LegacyCallData::Init,

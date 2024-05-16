@@ -81,8 +81,6 @@ class ConnectedSubchannel : public UnstartedCallDestination {
   // Methods for legacy stack.
   virtual grpc_channel_stack* channel_stack() const = 0;
   virtual size_t GetInitialCallSizeEstimate() const = 0;
-  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) = 0;
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
   void Orphaned() override {}

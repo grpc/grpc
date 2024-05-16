@@ -120,14 +120,6 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
-  if (grpc_trace_channel_stack.enabled()) {
-    gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
-    for (size_t i = 0; i < filter_count; i++) {
-      gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s%s", filters[i]->name,
-              filters[i]->make_call_promise ? " [promise-capable]" : "");
-    }
-  }
-
   stack->on_destroy.Init([]() {});
   stack->event_engine.Init(channel_args.GetObjectRef<EventEngine>());
   stack->stats_plugin_group.Init();
@@ -295,35 +287,6 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
 
 void grpc_channel_stack_no_post_init(grpc_channel_stack*,
                                      grpc_channel_element*) {}
-
-namespace {
-
-grpc_core::NextPromiseFactory ClientNext(grpc_channel_element* elem) {
-  return [elem](grpc_core::CallArgs args) {
-    return elem->filter->make_call_promise(elem, std::move(args),
-                                           ClientNext(elem + 1));
-  };
-}
-
-}  // namespace
-
-grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-grpc_channel_stack::MakeClientCallPromise(grpc_core::CallArgs call_args) {
-  return ClientNext(grpc_channel_stack_element(this, 0))(std::move(call_args));
-}
-
-void grpc_channel_stack::InitClientCallSpine(
-    grpc_core::CallSpineInterface* call) {
-  for (size_t i = 0; i < count; i++) {
-    auto* elem = grpc_channel_stack_element(this, i);
-    if (elem->filter->init_call == nullptr) {
-      grpc_core::Crash(
-          absl::StrCat("Filter '", elem->filter->name,
-                       "' does not support the call-v3 interface"));
-    }
-    elem->filter->init_call(elem, call);
-  }
-}
 
 void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
                       grpc_call_element* elem,

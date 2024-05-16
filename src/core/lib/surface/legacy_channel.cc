@@ -103,16 +103,14 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
   }
   return MakeOrphanable<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
-      builder.IsPromising(), std::move(target), args, std::move(*r));
+      std::move(target), args, std::move(*r));
 }
 
-LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
-                             std::string target,
+LegacyChannel::LegacyChannel(bool is_client, std::string target,
                              const ChannelArgs& channel_args,
                              RefCountedPtr<grpc_channel_stack> channel_stack)
     : Channel(std::move(target), channel_args),
       is_client_(is_client),
-      is_promising_(is_promising),
       channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
@@ -401,8 +399,7 @@ void LegacyChannel::Ping(grpc_completion_queue* cq, void* tag) {
 ClientChannelFilter* LegacyChannel::GetClientChannelFilter() const {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel_stack_.get());
-  if (elem->filter != &ClientChannelFilter::kFilterVtableWithPromises &&
-      elem->filter != &ClientChannelFilter::kFilterVtableWithoutPromises) {
+  if (elem->filter != &ClientChannelFilter::kFilter) {
     return nullptr;
   }
   return static_cast<ClientChannelFilter*>(elem->channel_data);
