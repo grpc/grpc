@@ -45,7 +45,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/metrics.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"

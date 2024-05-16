@@ -25,7 +25,7 @@
 
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/surface/call.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"

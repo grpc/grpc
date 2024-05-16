@@ -38,7 +38,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"

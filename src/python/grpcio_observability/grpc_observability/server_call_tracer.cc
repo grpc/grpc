@@ -35,7 +35,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"

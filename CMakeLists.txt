@@ -2228,7 +2228,7 @@ add_library(grpc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/backoff/random_early_detection.cc
-  src/core/lib/channel/call_tracer.cc
+  src/core/telemetry/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -2236,7 +2236,7 @@ add_library(grpc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
+  src/core/telemetry/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -3021,7 +3021,7 @@ add_library(grpc_unsecure
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/backoff/random_early_detection.cc
-  src/core/lib/channel/call_tracer.cc
+  src/core/telemetry/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -3029,7 +3029,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
+  src/core/telemetry/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -5139,7 +5139,7 @@ add_library(grpc_authorization_provider
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
-  src/core/lib/channel/call_tracer.cc
+  src/core/telemetry/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -5147,7 +5147,7 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
+  src/core/telemetry/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -17768,7 +17768,7 @@ add_executable(interception_chain_test
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
-  src/core/lib/channel/call_tracer.cc
+  src/core/telemetry/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -17776,7 +17776,7 @@ add_executable(interception_chain_test
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
+  src/core/telemetry/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc

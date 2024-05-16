@@ -28,14 +28,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/metrics.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"

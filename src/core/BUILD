@@ -7887,10 +7887,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "metrics",
     srcs = [
-        "lib/channel/metrics.cc",
+        "telemetry/metrics.cc",
     ],
     hdrs = [
-        "lib/channel/metrics.h",
+        "telemetry/metrics.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",

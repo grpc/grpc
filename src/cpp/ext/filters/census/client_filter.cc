@@ -54,7 +54,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"

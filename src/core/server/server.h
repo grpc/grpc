@@ -47,7 +47,7 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/backoff/random_early_detection.h"
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

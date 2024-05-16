@@ -37,7 +37,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 
-#include "src/core/lib/channel/metrics.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"

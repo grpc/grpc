@@ -1080,8 +1080,8 @@
     <file baseinstalldir="/" name="src/core/lib/backoff/random_early_detection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/random_early_detection.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/call_finalization.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/call_tracer.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/call_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/call_tracer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/call_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args_preconditioning.cc" role="src" />
@@ -1098,13 +1098,13 @@
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/metrics.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/metrics.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/metrics.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/promise_based_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/tcp_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />

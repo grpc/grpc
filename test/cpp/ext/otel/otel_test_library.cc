@@ -30,7 +30,7 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/notification.h"

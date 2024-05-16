@@ -54,7 +54,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"

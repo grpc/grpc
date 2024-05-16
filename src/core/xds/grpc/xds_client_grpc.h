@@ -26,7 +26,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/metrics.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"

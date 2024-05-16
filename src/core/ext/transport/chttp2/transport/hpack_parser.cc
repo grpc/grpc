@@ -44,7 +44,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"

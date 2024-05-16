@@ -40,7 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/backoff/random_early_detection.h"
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_refcount.h"

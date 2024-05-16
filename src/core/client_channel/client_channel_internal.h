@@ -26,7 +26,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"

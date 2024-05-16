@@ -58,7 +58,7 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
