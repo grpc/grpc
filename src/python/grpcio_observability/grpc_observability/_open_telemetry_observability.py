@@ -143,7 +143,6 @@ class _OpenTelemetryPlugin:
         elif isinstance(recorder, Histogram):
             recorder.record(value, attributes=decoded_labels)
 
-    # pylint: disable=no-self-use
     def maybe_record_stats_data(self, stats_data: List[StatsData]) -> None:
         # Records stats data to MeterProvider.
         if self._should_record(stats_data):

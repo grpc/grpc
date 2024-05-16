@@ -88,9 +88,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         )
         # ResourceAttributes.CLOUD_AVAILABILITY_ZONE are called
         # "zones" on Google Cloud.
-        location_value = get_str_value_from_resource(
-            "cloud.zone", gcp_resource
-        )
+        location_value = get_str_value_from_resource("cloud.zone", gcp_resource)
         if UNKNOWN_VALUE == location_value:
             location_value = get_str_value_from_resource(
                 ResourceAttributes.CLOUD_REGION, gcp_resource
@@ -148,9 +146,8 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         else:
             return self._additional_labels
 
-    def deserialize_labels(
-        self, labels: Dict[str, AnyStr]
-    ) -> Dict[str, AnyStr]:
+    @staticmethod
+    def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
         deserialized_labels = {}
         for key, value in labels.items():
             if "XEnvoyPeerMetadata" == key:
@@ -159,32 +156,35 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
 
                 remote_type = get_value_from_struct("type", pb_struct)
 
-                for local_key, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
-                    deserialized_labels[
-                        remote_key
-                    ] = get_value_from_struct(local_key, pb_struct)
+                for (
+                    local_key,
+                    remote_key,
+                ) in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
+                    deserialized_labels[remote_key] = get_value_from_struct(
+                        local_key, pb_struct
+                    )
                 if remote_type == TYPE_GKE:
                     for (
                         local_key,
                         remote_key,
                     ) in METADATA_EXCHANGE_KEY_GKE_MAP.items():
-                        deserialized_labels[
-                            remote_key
-                        ] = get_value_from_struct(local_key, pb_struct)
+                        deserialized_labels[remote_key] = get_value_from_struct(
+                            local_key, pb_struct
+                        )
                 elif remote_type == TYPE_GCE:
                     for (
                         local_key,
                         remote_key,
                     ) in METADATA_EXCHANGE_KEY_GCE_MAP.items():
-                        deserialized_labels[
-                            remote_key
-                        ] = get_value_from_struct(local_key, pb_struct)
+                        deserialized_labels[remote_key] = get_value_from_struct(
+                            local_key, pb_struct
+                        )
             # If CSM label injector is enabled on server side but client didn't send
             # XEnvoyPeerMetadata, we'll record remote label as unknown.
             else:
                 for _, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
                     deserialized_labels[remote_key] = UNKNOWN_VALUE
-                deserialized_labels[local_key] = value
+                deserialized_labels[key] = value
 
         return deserialized_labels
 
@@ -199,7 +199,8 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
     def __init__(self):
         self._label_injector = CSMOpenTelemetryLabelInjector()
 
-    def is_active_on_client_channel(self, target: str) -> bool:
+    @staticmethod
+    def is_active_on_client_channel(target: str) -> bool:
         """Determines whether this plugin option is active on a channel based on target.
 
         Args:
@@ -219,7 +220,10 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         else:
             return True
 
-    def is_active_on_server(self, xds: bool) -> bool:  # pylint: disable=unused-argument
+    @staticmethod
+    def is_active_on_server(
+        xds: bool,
+    ) -> bool:  # pylint: disable=unused-argument
         """Determines whether this plugin option is active on a given server.
 
         Since servers don't need to be xds enabled to work as part of a service
@@ -303,19 +307,19 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
         return [OptionalLabelType.XDS_SERVICE_LABELS]
 
 
-def get_value_from_struct(
-    key: str, struct: struct_pb2.Struct
-) -> str:
+def get_value_from_struct(key: str, struct: struct_pb2.Struct) -> str:
     value = struct.fields.get(key)
     if not value:
         return UNKNOWN_VALUE
     return value.string_value
+
 
 def get_str_value_from_resource(
     attribute: Union[ResourceAttributes, str], resource: Resource
 ) -> str:
     value = resource.attributes.get(attribute, UNKNOWN_VALUE)
     return str(value)
+
 
 def get_resource_type(gcp_resource: Resource) -> str:
     # Convert resource type from GoogleCloudResourceDetector to the value we used for
@@ -348,6 +352,7 @@ def get_mesh_id() -> str:
         return UNKNOWN_VALUE
 
     return UNKNOWN_VALUE
+
 
 def get_bootstrap_config_contents() -> str:
     """Get the contents of the bootstrap config from environment variable or file.
