@@ -28,8 +28,8 @@ class StatsPluginChannelScope {
  public:
   StatsPluginChannelScope(absl::string_view target,
                           absl::string_view default_authority)
-      : target_(std::string(target)),
-        default_authority_(std::string(default_authority)) {}
+      : target_(target),
+        default_authority_(default_authority) {}
 
   /// Returns the target used for creating the channel in the canonical form.
   /// (Canonicalized target definition -
