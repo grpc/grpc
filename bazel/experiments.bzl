@@ -90,11 +90,11 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
-            "resolver_component_tests_runner_invoker": [
-                "event_engine_dns",
-            ],
             "lb_unit_test": [
                 "pick_first_new",
+            ],
+            "resolver_component_tests_runner_invoker": [
+                "event_engine_dns",
             ],
             "xds_end2end_test": [
                 "pick_first_new",
