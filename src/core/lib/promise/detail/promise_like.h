@@ -17,6 +17,7 @@
 
 #include <utility>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 
 #include <grpc/support/port_platform.h>
@@ -63,6 +64,10 @@ auto WrapInPoll(T&& x) -> decltype(PollWrapper<T>::Wrap(std::forward<T>(x))) {
   return PollWrapper<T>::Wrap(std::forward<T>(x));
 }
 
+// T -> T, const T& -> T
+template <typename T>
+using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
+
 template <typename F, typename SfinaeVoid = void>
 class PromiseLike;
 
@@ -73,7 +78,7 @@ template <typename F>
 class PromiseLike<F, absl::enable_if_t<!std::is_void<
                          typename std::result_of<F()>::type>::value>> {
  private:
-  GPR_NO_UNIQUE_ADDRESS F f_;
+  GPR_NO_UNIQUE_ADDRESS RemoveCVRef<F> f_;
 
  public:
   // NOLINTNEXTLINE - internal detail that drastically simplifies calling code.
@@ -81,10 +86,6 @@ class PromiseLike<F, absl::enable_if_t<!std::is_void<
   auto operator()() -> decltype(WrapInPoll(f_())) { return WrapInPoll(f_()); }
   using Result = typename PollTraits<decltype(WrapInPoll(f_()))>::Type;
 };
-
-// T -> T, const T& -> T
-template <typename T>
-using RemoveCVRef = absl::remove_cv_t<absl::remove_reference_t<T>>;
 
 }  // namespace promise_detail
 }  // namespace grpc_core

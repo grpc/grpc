@@ -22,6 +22,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
@@ -63,7 +65,7 @@ class NextResult final {
   NextResult() : center_(nullptr) {}
   explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
       : center_(std::move(center)) {
-    GPR_ASSERT(center_ != nullptr);
+    CHECK(center_ != nullptr);
   }
   explicit NextResult(bool cancelled)
       : center_(nullptr), cancelled_(cancelled) {}
@@ -79,11 +81,11 @@ class NextResult final {
   bool has_value() const;
   // Only valid if has_value()
   const T& value() const {
-    GPR_ASSERT(has_value());
+    CHECK(has_value());
     return **this;
   }
   T& value() {
-    GPR_ASSERT(has_value());
+    CHECK(has_value());
     return **this;
   }
   const T& operator*() const;
@@ -118,10 +120,10 @@ class Center : public InterceptorList<T> {
   // Add one ref to this object, and return this.
   void IncrementRefCount() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s", DebugOpString("IncrementRefCount").c_str());
+      VLOG(2) << DebugOpString("IncrementRefCount");
     }
     refs_++;
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
   }
 
   RefCountedPtr<Center> Ref() {
@@ -133,9 +135,9 @@ class Center : public InterceptorList<T> {
   // If no refs remain, destroy this object
   void Unref() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s", DebugOpString("Unref").c_str());
+      VLOG(2) << DebugOpString("Unref");
     }
-    GPR_DEBUG_ASSERT(refs_ > 0);
+    DCHECK_GT(refs_, 0);
     refs_--;
     if (0 == refs_) {
       this->~Center();
@@ -148,9 +150,9 @@ class Center : public InterceptorList<T> {
   // Return false if the recv end is closed.
   Poll<bool> Push(T* value) {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("Push").c_str());
+      LOG(INFO) << DebugOpString("Push");
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kClosed:
       case ValueState::kReadyClosed:
@@ -172,9 +174,9 @@ class Center : public InterceptorList<T> {
 
   Poll<bool> PollAck() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("PollAck").c_str());
+      LOG(INFO) << DebugOpString("PollAck");
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kClosed:
         return true;
@@ -200,9 +202,9 @@ class Center : public InterceptorList<T> {
   // Return nullopt if the send end is closed and no value had been pushed.
   Poll<absl::optional<T>> Next() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("Next").c_str());
+      LOG(INFO) << DebugOpString("Next");
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -226,9 +228,9 @@ class Center : public InterceptorList<T> {
   // but the pipe is closed, reports closed).
   Poll<bool> PollClosedForSender() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForSender").c_str());
+      LOG(INFO) << DebugOpString("PollClosedForSender");
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -249,9 +251,9 @@ class Center : public InterceptorList<T> {
   // but the pipe is closed, reports open).
   Poll<bool> PollClosedForReceiver() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("PollClosedForReceiver").c_str());
+      LOG(INFO) << DebugOpString("PollClosedForReceiver");
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kEmpty:
       case ValueState::kAcked:
@@ -270,9 +272,9 @@ class Center : public InterceptorList<T> {
 
   Poll<Empty> PollEmpty() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("PollEmpty").c_str());
+      LOG(INFO) << DebugOpString("PollEmpty");
     }
-    GPR_DEBUG_ASSERT(refs_ != 0);
+    DCHECK_NE(refs_, 0);
     switch (value_state_) {
       case ValueState::kReady:
       case ValueState::kReadyClosed:
@@ -290,7 +292,7 @@ class Center : public InterceptorList<T> {
 
   void AckNext() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("AckNext").c_str());
+      LOG(INFO) << DebugOpString("AckNext");
     }
     switch (value_state_) {
       case ValueState::kReady:
@@ -317,7 +319,7 @@ class Center : public InterceptorList<T> {
 
   void MarkClosed() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("MarkClosed").c_str());
+      LOG(INFO) << DebugOpString("MarkClosed");
     }
     switch (value_state_) {
       case ValueState::kEmpty:
@@ -346,7 +348,7 @@ class Center : public InterceptorList<T> {
 
   void MarkCancelled() {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_INFO, "%s", DebugOpString("MarkCancelled").c_str());
+      LOG(INFO) << DebugOpString("MarkCancelled");
     }
     switch (value_state_) {
       case ValueState::kEmpty:
@@ -668,7 +670,7 @@ class Push {
         return Pending{};
       }
     }
-    GPR_DEBUG_ASSERT(absl::holds_alternative<AwaitingAck>(state_));
+    DCHECK(absl::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 

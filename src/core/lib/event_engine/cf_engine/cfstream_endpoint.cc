@@ -249,9 +249,9 @@ void CFStreamEndpointImpl::Shutdown() {
   read_event_.SetShutdown(shutdownStatus);
   write_event_.SetShutdown(shutdownStatus);
 
-  CFReadStreamSetClient(cf_read_stream_, kCFStreamEventNone, nullptr, nullptr);
-  CFWriteStreamSetClient(cf_write_stream_, kCFStreamEventNone, nullptr,
-                         nullptr);
+  CFReadStreamSetDispatchQueue(cf_read_stream_, nullptr);
+  CFWriteStreamSetDispatchQueue(cf_write_stream_, nullptr);
+
   CFReadStreamClose(cf_read_stream_);
   CFWriteStreamClose(cf_write_stream_);
 }

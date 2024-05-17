@@ -31,14 +31,12 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
 
-#include "src/core/client_channel/client_channel_channelz.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -60,6 +58,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/time_precise.h"
 
 namespace grpc_core {
 

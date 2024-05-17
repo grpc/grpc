@@ -23,11 +23,12 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -35,6 +36,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/time_precise.h"
 
 #define SUBCHANNEL_STREAM_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define SUBCHANNEL_STREAM_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -110,7 +112,7 @@ void SubchannelStreamClient::StartCall() {
 
 void SubchannelStreamClient::StartCallLocked() {
   if (event_handler_ == nullptr) return;
-  GPR_ASSERT(call_state_ == nullptr);
+  CHECK(call_state_ == nullptr);
   if (event_handler_ != nullptr) {
     event_handler_->OnCallStartLocked(this);
   }
@@ -235,7 +237,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  GPR_ASSERT(error.ok());
+  CHECK(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   batch_.send_initial_metadata = true;
@@ -444,7 +446,7 @@ void SubchannelStreamClient::CallState::CallEndedLocked(bool retry) {
   if (this == subchannel_stream_client_->call_state_.get()) {
     subchannel_stream_client_->call_state_.reset();
     if (retry) {
-      GPR_ASSERT(subchannel_stream_client_->event_handler_ != nullptr);
+      CHECK(subchannel_stream_client_->event_handler_ != nullptr);
       if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.

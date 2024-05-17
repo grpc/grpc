@@ -28,12 +28,11 @@
 
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/useful.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
 
 typedef enum { ONE_A = 0, ONE_KB_A, ONE_MB_A, TEST_VALUE_COUNT } test_value;
 

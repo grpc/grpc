@@ -22,17 +22,19 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/useful.h"
+#include "test/core/test_util/test_config.h"
 
 //
 // General test notes:
@@ -61,7 +63,7 @@ size_t count_slices(grpc_slice* slices, size_t nslices, int* current_data) {
   for (i = 0; i < nslices; ++i) {
     buf = GRPC_SLICE_START_PTR(slices[i]);
     for (j = 0; j < GRPC_SLICE_LENGTH(slices[i]); ++j) {
-      GPR_ASSERT(buf[j] == *current_data);
+      CHECK(buf[j] == *current_data);
       *current_data = (*current_data + 1) % 256;
     }
     num_bytes += GRPC_SLICE_LENGTH(slices[i]);
@@ -72,7 +74,7 @@ size_t count_slices(grpc_slice* slices, size_t nslices, int* current_data) {
 static grpc_endpoint_test_fixture begin_test(grpc_endpoint_test_config config,
                                              const char* test_name,
                                              size_t slice_size) {
-  gpr_log(GPR_INFO, "%s/%s", test_name, config.name);
+  LOG(INFO) << test_name << "/" << config.name;
   return config.create_fixture(slice_size);
 }
 
@@ -99,7 +101,7 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
       (*current_data)++;
     }
   }
-  GPR_ASSERT(num_bytes_left == 0);
+  CHECK_EQ(num_bytes_left, 0u);
   return slices;
 }
 
@@ -132,7 +134,7 @@ static void read_scheduler(void* data, grpc_error_handle /* error */) {
 
 static void read_and_write_test_read_handler_read_done(
     read_and_write_test_state* state, int read_done_state) {
-  gpr_log(GPR_DEBUG, "Read handler done");
+  VLOG(2) << "Read handler done";
   gpr_mu_lock(g_mu);
   state->read_done = read_done_state;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
@@ -195,7 +197,7 @@ static void read_and_write_test_write_handler(void* data,
     }
   }
 
-  gpr_log(GPR_DEBUG, "Write handler done");
+  VLOG(2) << "Write handler done";
   gpr_mu_lock(g_mu);
   state->write_done = 1 + (error.ok());
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr));
@@ -216,18 +218,14 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_core::ExecCtx exec_ctx;
   auto deadline = grpc_core::Timestamp::FromTimespecRoundUp(
       grpc_timeout_seconds_to_deadline(300));
-  gpr_log(GPR_DEBUG,
-          "num_bytes=%" PRIuPTR " write_size=%" PRIuPTR " slice_size=%" PRIuPTR
-          " shutdown=%d",
-          num_bytes, write_size, slice_size, shutdown);
+  VLOG(2) << "num_bytes=" << num_bytes << " write_size=" << write_size
+          << " slice_size=" << slice_size << " shutdown=" << shutdown;
 
   if (shutdown) {
-    gpr_log(GPR_INFO, "Start read and write shutdown test");
+    LOG(INFO) << "Start read and write shutdown test";
   } else {
-    gpr_log(GPR_INFO,
-            "Start read and write test with %" PRIuPTR
-            " bytes, slice size %" PRIuPTR,
-            num_bytes, slice_size);
+    LOG(INFO) << "Start read and write test with " << num_bytes
+              << " bytes, slice size " << slice_size;
   }
 
   state.read_ep = f.client_ep;
@@ -263,9 +261,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
   if (shutdown) {
-    gpr_log(GPR_DEBUG, "shutdown read");
+    VLOG(2) << "shutdown read";
     grpc_endpoint_shutdown(state.read_ep, GRPC_ERROR_CREATE("Test Shutdown"));
-    gpr_log(GPR_DEBUG, "shutdown write");
+    VLOG(2) << "shutdown write";
     grpc_endpoint_shutdown(state.write_ep, GRPC_ERROR_CREATE("Test Shutdown"));
   }
   grpc_core::ExecCtx::Get()->Flush();
@@ -273,9 +271,9 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   gpr_mu_lock(g_mu);
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(grpc_core::Timestamp::Now() < deadline);
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(grpc_core::Timestamp::Now() < deadline);
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_core::ExecCtx::Get()->Flush();
@@ -290,7 +288,7 @@ static void read_and_write_test(grpc_endpoint_test_config config,
 static void inc_on_failure(void* arg, grpc_error_handle error) {
   gpr_mu_lock(g_mu);
   *static_cast<int*>(arg) += (!error.ok());
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
+  CHECK(GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
@@ -302,13 +300,13 @@ static void wait_for_fail_count(int* fail_count, int want_fail_count) {
   while (grpc_core::Timestamp::Now() < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = nullptr;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
+    CHECK(GRPC_LOG_IF_ERROR("pollset_work",
+                            grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
-  GPR_ASSERT(*fail_count == want_fail_count);
+  CHECK(*fail_count == want_fail_count);
   gpr_mu_unlock(g_mu);
 }
 

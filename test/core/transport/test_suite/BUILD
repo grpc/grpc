@@ -48,7 +48,10 @@ grpc_cc_library(
     name = "chaotic_good_fixture",
     testonly = 1,
     srcs = ["chaotic_good_fixture.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     deps = [
         "fixture",
         "//src/core:chaotic_good_client_transport",
@@ -68,6 +71,7 @@ grpc_cc_library(
     hdrs = ["test.h"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/log:log",
         "absl/random",
         "absl/random:bit_gen_ref",
         "absl/strings",
@@ -94,7 +98,7 @@ grpc_cc_library(
         "fixture",
         "test",
         "//:grpc_trace",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -138,7 +142,7 @@ grpc_proto_library(
     has_services = False,
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "//test/core/util:fuzz_config_vars_proto",
+        "//test/core/test_util:fuzz_config_vars_proto",
     ],
 )
 

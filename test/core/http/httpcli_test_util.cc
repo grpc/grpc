@@ -22,18 +22,19 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/subprocess.h"
-#include "test/core/util/port.h"
+#include "src/core/util/subprocess.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_core {
 namespace testing {
@@ -60,7 +61,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   } else {
     root = gpr_strdup(".");
   }
-  GPR_ASSERT(argc <= 2);
+  CHECK_LE(argc, 2);
   if (argc == 2) {
     args.push_back(gpr_strdup(argv[1]));
   } else {
@@ -85,14 +86,14 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
         absl::StrCat(root, "/src/core/tsi/test_creds/ca.pem");
     ConfigVars::SetOverrides(overrides);
   }
-  gpr_log(GPR_INFO, "starting HttpRequest test server subprocess:");
+  LOG(INFO) << "starting HttpRequest test server subprocess:";
   for (size_t i = 0; i < args.size(); i++) {
-    gpr_log(GPR_INFO, "  HttpRequest test server subprocess argv[%ld]: %s", i,
-            args[i]);
+    LOG(INFO) << "  HttpRequest test server subprocess argv[" << i
+              << "]: " << args[i];
   }
   gpr_subprocess* server =
       gpr_subprocess_create(args.size(), const_cast<const char**>(args.data()));
-  GPR_ASSERT(server);
+  CHECK(server);
   for (size_t i = 0; i < args.size(); i++) {
     gpr_free(args[i]);
   }

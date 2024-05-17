@@ -31,10 +31,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/util/string.h"
 
 static void add_metadata(const grpc_metadata* md, size_t count,
                          std::vector<std::string>* b) {

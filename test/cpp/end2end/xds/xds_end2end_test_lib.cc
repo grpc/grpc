@@ -37,14 +37,14 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client_grpc.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
+#include "src/core/util/tmpfile.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
 

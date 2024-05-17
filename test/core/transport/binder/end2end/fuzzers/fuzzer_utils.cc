@@ -14,6 +14,9 @@
 
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
 namespace grpc_binder {
 namespace fuzzing {
 
@@ -23,7 +26,7 @@ std::thread* g_fuzzing_thread = nullptr;
 
 template <typename... Args>
 void CreateFuzzingThread(Args&&... args) {
-  GPR_ASSERT(g_fuzzing_thread == nullptr);
+  CHECK_EQ(g_fuzzing_thread, nullptr);
   g_fuzzing_thread = new std::thread(std::forward<Args>(args)...);
 }
 
@@ -137,7 +140,7 @@ TransactionReceiverForFuzzing::TransactionReceiverForFuzzing(
     binder_transport_fuzzer::IncomingParcels incoming_parcels,
     grpc_core::RefCountedPtr<WireReader> wire_reader_ref,
     TransactionReceiver::OnTransactCb cb) {
-  gpr_log(GPR_INFO, "Construct TransactionReceiverForFuzzing");
+  LOG(INFO) << "Construct TransactionReceiverForFuzzing";
   CreateFuzzingThread(FuzzingLoop, std::move(incoming_parcels),
                       std::move(wire_reader_ref), std::move(cb));
 }

@@ -23,6 +23,8 @@
 #include <new>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/support/log.h>
@@ -31,10 +33,10 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
+#include "src/core/util/alloc.h"
 
 // Conversion between call and call stack.
 #define CALL_TO_CALL_STACK(call)                                     \
@@ -67,7 +69,7 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(channel_stack_->channel_stack_.get(), 1,
                                 Destroy, this, &call_args);
   if (GPR_UNLIKELY(!error->ok())) {
-    gpr_log(GPR_ERROR, "error: %s", StatusToString(*error).c_str());
+    LOG(ERROR) << "error: " << StatusToString(*error);
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(call_stack, args.pollent);
@@ -82,8 +84,8 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
 }
 
 void DynamicFilters::Call::SetAfterCallStackDestroy(grpc_closure* closure) {
-  GPR_ASSERT(after_call_stack_destroy_ == nullptr);
-  GPR_ASSERT(closure != nullptr);
+  CHECK_EQ(after_call_stack_destroy_, nullptr);
+  CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 

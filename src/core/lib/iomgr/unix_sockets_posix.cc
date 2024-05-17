@@ -33,23 +33,24 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/useful.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
 #ifdef GPR_WINDOWS
   grpc_core::Crash("AF_UNIX socket pairs are not supported on Windows");
 #else
-  GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
+  CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
 #endif
 }
 

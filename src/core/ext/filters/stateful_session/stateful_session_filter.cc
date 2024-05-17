@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -59,6 +60,7 @@ namespace grpc_core {
 
 TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
+const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
 const NoInterceptor StatefulSessionFilter::Call::OnFinalize;
 
@@ -143,7 +145,7 @@ absl::string_view GetClusterToUse(
   // Get cluster assigned by the XdsConfigSelector.
   auto cluster_attribute =
       service_config_call_data->GetCallAttribute<XdsClusterAttribute>();
-  GPR_ASSERT(cluster_attribute != nullptr);
+  CHECK_NE(cluster_attribute, nullptr);
   auto current_cluster = cluster_attribute->cluster();
   static constexpr absl::string_view kClusterPrefix = "cluster:";
   // If prefix is not "cluster:", then we can't use cluster override.
@@ -157,7 +159,7 @@ absl::string_view GetClusterToUse(
   // Use cluster from the cookie if it is configured for the route.
   auto route_data =
       service_config_call_data->GetCallAttribute<XdsRouteStateAttribute>();
-  GPR_ASSERT(route_data != nullptr);
+  CHECK_NE(route_data, nullptr);
   // Cookie cluster was not configured for route - use the one from the
   // attribute
   if (!route_data->HasClusterForRoute(cluster_from_cookie)) {
@@ -202,7 +204,7 @@ bool IsConfiguredPath(absl::string_view configured_path,
   // Check to see if the configured path matches the request path.
   const Slice* path_slice =
       client_initial_metadata.get_pointer(HttpPathMetadata());
-  GPR_ASSERT(path_slice != nullptr);
+  CHECK_NE(path_slice, nullptr);
   absl::string_view path = path_slice->as_string_view();
   // Matching criteria from
   // https://www.rfc-editor.org/rfc/rfc6265#section-5.1.4.
@@ -227,13 +229,13 @@ void StatefulSessionFilter::Call::OnClientInitialMetadata(
       GetContext<
           grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
           .value);
-  GPR_ASSERT(service_config_call_data != nullptr);
+  CHECK_NE(service_config_call_data, nullptr);
   auto* method_params = static_cast<StatefulSessionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           filter->service_config_parser_index_));
-  GPR_ASSERT(method_params != nullptr);
+  CHECK_NE(method_params, nullptr);
   cookie_config_ = method_params->GetConfig(filter->index_);
-  GPR_ASSERT(cookie_config_ != nullptr);
+  CHECK_NE(cookie_config_, nullptr);
   if (!cookie_config_->name.has_value() ||
       !IsConfiguredPath(cookie_config_->path, md)) {
     return;

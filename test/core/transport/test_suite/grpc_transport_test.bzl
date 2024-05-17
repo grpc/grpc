@@ -17,7 +17,7 @@ Generate one transport test & associated fuzzer
 """
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 def grpc_transport_test(name, deps):
     grpc_cc_test(
@@ -35,6 +35,7 @@ def grpc_transport_test(name, deps):
         srcs = ["fuzzer_main.cc"],
         tags = ["no_windows", "no_mac"],
         external_deps = [
+            "absl/log:check",
             "gtest",
         ],
         deps = [
@@ -51,8 +52,8 @@ def grpc_transport_test(name, deps):
             "//src/core:env",
             "//src/core:experiments",
             "//test/core/event_engine/fuzzing_event_engine",
-            "//test/core/util:fuzz_config_vars",
-            "//test/core/util:proto_bit_gen",
+            "//test/core/test_util:fuzz_config_vars",
+            "//test/core/test_util:proto_bit_gen",
         ] + deps,
         corpus = "corpus/%s" % name,
         proto = None,

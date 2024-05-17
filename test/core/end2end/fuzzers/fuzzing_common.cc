@@ -23,6 +23,8 @@
 #include <memory>
 #include <new>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
@@ -58,7 +60,7 @@ int force_experiments = []() {
 namespace testing {
 
 static void free_non_null(void* p) {
-  GPR_ASSERT(p != nullptr);
+  CHECK_NE(p, nullptr);
   gpr_free(p);
 }
 
@@ -92,7 +94,7 @@ class Call : public std::enable_shared_from_this<Call> {
   }
 
   void SetCall(grpc_call* call) {
-    GPR_ASSERT(call_ == nullptr);
+    CHECK_EQ(call_, nullptr);
     call_ = call;
   }
 
@@ -273,10 +275,10 @@ class Call : public std::enable_shared_from_this<Call> {
     ++pending_ops_;
     auto self = shared_from_this();
     return MakeValidator([self](bool success) {
-      GPR_ASSERT(self->pending_ops_ > 0);
+      CHECK_GT(self->pending_ops_, 0);
       --self->pending_ops_;
       if (success) {
-        GPR_ASSERT(self->call_ != nullptr);
+        CHECK_NE(self->call_, nullptr);
         self->type_ = CallType::SERVER;
       } else {
         self->type_ = CallType::TOMBSTONED;
@@ -335,7 +337,7 @@ Validator* ValidateConnectivityWatch(gpr_timespec deadline, int* counter) {
   return MakeValidator([deadline, counter](bool success) {
     if (!success) {
       auto now = gpr_now(deadline.clock_type);
-      GPR_ASSERT(gpr_time_cmp(now, deadline) >= 0);
+      CHECK_GE(gpr_time_cmp(now, deadline), 0);
     }
     --*counter;
   });
@@ -368,13 +370,13 @@ BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
 }
 
 BasicFuzzer::~BasicFuzzer() {
-  GPR_ASSERT(ActiveCall() == nullptr);
-  GPR_ASSERT(calls_.empty());
+  CHECK_EQ(ActiveCall(), nullptr);
+  CHECK(calls_.empty());
 
   engine_->TickUntilIdle();
 
   grpc_completion_queue_shutdown(cq_);
-  GPR_ASSERT(PollCq() == Result::kComplete);
+  CHECK(PollCq() == Result::kComplete);
   grpc_completion_queue_destroy(cq_);
 
   grpc_shutdown_blocking();
@@ -637,7 +639,7 @@ bool BasicFuzzer::Continue() {
 
 BasicFuzzer::Result BasicFuzzer::ExecuteAction(
     const api_fuzzer::Action& action) {
-  gpr_log(GPR_DEBUG, "EXECUTE_ACTION: %s", action.DebugString().c_str());
+  VLOG(2) << "EXECUTE_ACTION: " << action.DebugString();
   switch (action.type_case()) {
     case api_fuzzer::Action::TYPE_NOT_SET:
       return BasicFuzzer::Result::kFailed;
@@ -735,7 +737,7 @@ void BasicFuzzer::TryShutdown() {
   ShutdownCalls();
 
   grpc_timer_manager_tick();
-  GPR_ASSERT(PollCq() == Result::kPending);
+  CHECK(PollCq() == Result::kPending);
 }
 
 void BasicFuzzer::Run(absl::Span<const api_fuzzer::Action* const> actions) {

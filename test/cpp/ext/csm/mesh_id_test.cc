@@ -20,10 +20,10 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/util/tmpfile.h"
 #include "src/cpp/ext/csm/metadata_exchange.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {

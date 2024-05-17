@@ -29,8 +29,8 @@
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/surface/call.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
-#include "test/core/util/fake_stats_plugin.h"
-#include "test/core/util/scoped_env_var.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -355,13 +355,6 @@ TEST_P(CdsTest, MetricLabels) {
                           "mynamespace"),
           ::testing::Pair(OptionalLabelKey::kLocality,
                           LocalityNameString("locality1"))));
-  // TODO(yashkt, yijiem): This shutdown shouldn't actually be necessary. The
-  // only reason it's here is to add a delay before
-  // fake_client_call_tracer_factory goes out of scope, since there may be
-  // lingering callbacks in the call stack that are using the CallAttemptTracer
-  // even after we get here, which would then cause a crash.  Find a cleaner way
-  // to fix this.
-  balancer_->Shutdown();
 }
 
 //

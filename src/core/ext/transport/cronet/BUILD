@@ -40,6 +40,8 @@ grpc_cc_library(
         "transport/cronet_transport.h",
     ],
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "cronet_c_for_grpc",
     ],
     language = "c++",

@@ -20,6 +20,8 @@
 
 #include <stddef.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -28,13 +30,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/useful.h"
 
 class grpc_ssl_credentials : public grpc_channel_credentials {
  public:
@@ -116,7 +118,7 @@ class grpc_ssl_server_credentials final : public grpc_server_credentials {
 
   grpc_ssl_certificate_config_reload_status FetchCertConfig(
       grpc_ssl_server_certificate_config** config) {
-    GPR_DEBUG_ASSERT(has_cert_config_fetcher());
+    DCHECK(has_cert_config_fetcher());
     return certificate_config_fetcher_.cb(certificate_config_fetcher_.user_data,
                                           config);
   }

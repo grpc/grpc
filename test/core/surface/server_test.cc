@@ -34,13 +34,13 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/useful.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 void test_register_method_fail(void) {
   grpc_server* server = grpc_server_create(nullptr, nullptr);

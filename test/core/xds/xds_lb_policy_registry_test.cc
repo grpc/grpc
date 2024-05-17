@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/xds/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_lb_policy_registry.h"
 
 #include <string>
 
@@ -34,7 +34,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/xds/xds_bootstrap_grpc.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/proto/grpc/testing/xds/v3/client_side_weighted_round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/extension.pb.h"
@@ -51,7 +51,7 @@
 #include "src/proto/grpc/testing/xds/v3/round_robin.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "src/proto/grpc/testing/xds/v3/wrr_locality.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {

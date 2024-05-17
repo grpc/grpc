@@ -20,6 +20,9 @@
 
 #include <inttypes.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
@@ -86,7 +89,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   if (lock != nullptr) {
     TSAN_ANNOTATE_RWLOCK_RELEASED(&lock->taken, true);
     bool prev = true;
-    GPR_ASSERT(lock->taken.compare_exchange_strong(prev, false));
+    CHECK(lock->taken.compare_exchange_strong(prev, false));
   }
 }
 #endif
@@ -128,13 +131,13 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
   }
   if (prev_size == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-      gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
+      LOG(INFO) << "  EXECUTING IMMEDIATELY";
     }
     // Queue was empty, so execute this closure immediately.
     ScheduleClosure(closure, error);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-      gpr_log(GPR_INFO, "  QUEUING");
+      LOG(INFO) << "  QUEUING";
     }
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = internal::StatusAllocHeapPtr(error);
@@ -154,11 +157,11 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
     gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size - 1);
   }
-  GPR_ASSERT(prev_size >= 1);
+  CHECK_GE(prev_size, 1u);
   if (prev_size > 1) {
     while (true) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-        gpr_log(GPR_INFO, "  checking queue");
+        LOG(INFO) << "  checking queue";
       }
       bool empty;
       grpc_closure* closure =
@@ -167,7 +170,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with Start().
         if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-          gpr_log(GPR_INFO, "  queue returned no result; checking again");
+          LOG(INFO) << "  queue returned no result; checking again";
         }
         continue;
       }
@@ -182,7 +185,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
       break;
     }
   } else if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
-    gpr_log(GPR_INFO, "  queue empty");
+    LOG(INFO) << "  queue empty";
   }
 }
 

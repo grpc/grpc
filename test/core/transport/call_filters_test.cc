@@ -19,6 +19,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "test/core/promise/poll_matcher.h"
+
 using testing::Mock;
 using testing::StrictMock;
 
@@ -56,34 +58,6 @@ class MockActivity : public Activity, public Wakeable {
  private:
   std::unique_ptr<ScopedActivity> scoped_activity_;
 };
-
-MATCHER(IsPending, "") {
-  if (arg.ready()) {
-    *result_listener << "is ready";
-    return false;
-  }
-  return true;
-}
-
-MATCHER(IsReady, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  return true;
-}
-
-MATCHER_P(IsReady, value, "") {
-  if (arg.pending()) {
-    *result_listener << "is pending";
-    return false;
-  }
-  if (arg.value() != value) {
-    *result_listener << "is " << ::testing::PrintToString(arg.value());
-    return false;
-  }
-  return true;
-}
 
 }  // namespace
 
@@ -1357,6 +1331,7 @@ TEST(CallFiltersTest, CanBuildStack) {
       void OnClientInitialMetadata(ClientMetadata&) {}
       void OnServerInitialMetadata(ServerMetadata&) {}
       void OnClientToServerMessage(Message&) {}
+      void OnClientToServerHalfClose() {}
       void OnServerToClientMessage(Message&) {}
       void OnServerTrailingMetadata(ServerMetadata&) {}
       void OnFinalize(const grpc_call_final_info*) {}
@@ -1380,6 +1355,10 @@ TEST(CallFiltersTest, UnaryCall) {
       }
       void OnClientToServerMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnClientToServerMessage"));
+      }
+      void OnClientToServerHalfClose(Filter* f) {
+        f->steps.push_back(
+            absl::StrCat(f->label, ":OnClientToServerHalfClose"));
       }
       void OnServerToClientMessage(Message&, Filter* f) {
         f->steps.push_back(absl::StrCat(f->label, ":OnServerToClientMessage"));

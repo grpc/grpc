@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -30,8 +31,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/time.h"
@@ -40,6 +39,8 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_heap.h"
+#include "src/core/util/spinlock.h"
+#include "src/core/util/useful.h"
 
 #define INVALID_HEAP_INDEX 0xffffffffu
 
@@ -120,7 +121,7 @@ static bool is_in_ht(grpc_timer* t) {
 }
 
 static void add_to_ht(grpc_timer* t) {
-  GPR_ASSERT(!t->hash_table_next);
+  CHECK(!t->hash_table_next);
   size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
 
   gpr_mu_lock(&g_hash_mu[i]);

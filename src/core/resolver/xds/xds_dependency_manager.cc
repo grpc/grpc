@@ -18,16 +18,17 @@
 
 #include <set>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/xds/xds_routing.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/xds/xds_resolver_trace.h"
+#include "src/core/xds/grpc/xds_routing.h"
 
 namespace grpc_core {
 
@@ -729,7 +730,7 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
     std::set<absl::string_view>* eds_resources_seen,
     std::set<absl::string_view>* dns_names_seen,
     absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters) {
-  if (depth > 0) GPR_ASSERT(leaf_clusters != nullptr);
+  if (depth > 0) CHECK_NE(leaf_clusters, nullptr);
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     *leaf_clusters =
         absl::UnavailableError("aggregate cluster graph exceeds max depth");

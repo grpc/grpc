@@ -47,7 +47,7 @@
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
@@ -243,7 +243,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     virtual ~ServerThread() {
       // Shutdown should be called manually. Shutdown calls virtual methods and
       // can't be called from the base class destructor.
-      GPR_ASSERT(!running_);
+      CHECK(!running_);
     }
 
     void Start();

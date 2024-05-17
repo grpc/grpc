@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
@@ -137,7 +138,7 @@ struct grpc_channel_credentials
   // two different `grpc_channel_credentials` objects are used but they compare
   // as equal (assuming other channel args match).
   int cmp(const grpc_channel_credentials* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);
@@ -218,7 +219,7 @@ struct grpc_call_credentials
   // If this method returns 0, it means that gRPC can treat the two call
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);

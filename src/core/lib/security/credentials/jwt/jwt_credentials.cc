@@ -24,6 +24,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
@@ -133,7 +135,7 @@ grpc_core::RefCountedPtr<grpc_call_credentials>
 grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     grpc_auth_json_key key, gpr_timespec token_lifetime) {
   if (!grpc_auth_json_key_is_valid(&key)) {
-    gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
+    LOG(ERROR) << "Invalid input for jwt credentials creation";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_service_account_jwt_access_credentials>(
@@ -167,7 +169,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
             static_cast<int>(token_lifetime.clock_type), reserved);
     gpr_free(clean_json);
   }
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(

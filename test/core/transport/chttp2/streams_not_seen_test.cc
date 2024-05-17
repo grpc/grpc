@@ -56,7 +56,6 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -73,10 +72,11 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/test_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/test_tcp_server.h"
 
 namespace grpc_core {
 namespace {
@@ -365,7 +365,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   }
 
   static void OnWriteDone(void* arg, grpc_error_handle error) {
-    CHECK(error.ok());
+    CHECK_OK(error);
     Notification* on_write_done_notification_ = static_cast<Notification*>(arg);
     on_write_done_notification_->Notify();
   }

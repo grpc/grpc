@@ -41,6 +41,8 @@
 #include <openssl/param_build.h>
 #endif
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -53,7 +55,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -71,6 +72,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/ssl_types.h"
+#include "src/core/util/string.h"
 
 using grpc_core::Json;
 
@@ -113,7 +115,7 @@ static const EVP_MD* evp_md_from_alg(const char* alg) {
 static Json parse_json_part_from_jwt(const char* str, size_t len) {
   std::string string;
   if (!absl::WebSafeBase64Unescape(absl::string_view(str, len), &string)) {
-    gpr_log(GPR_ERROR, "Invalid base64.");
+    LOG(ERROR) << "Invalid base64.";
     return Json();  // JSON null
   }
   auto json = grpc_core::JsonParse(string);
@@ -162,13 +164,13 @@ static jose_header* jose_header_from_json(Json json) {
   Json::Object::const_iterator it;
   jose_header* h = grpc_core::Zalloc<jose_header>();
   if (json.type() != Json::Type::kObject) {
-    gpr_log(GPR_ERROR, "JSON value is not an object");
+    LOG(ERROR) << "JSON value is not an object";
     goto error;
   }
   // Check alg field.
   it = json.object().find("alg");
   if (it == json.object().end()) {
-    gpr_log(GPR_ERROR, "Missing alg field.");
+    LOG(ERROR) << "Missing alg field.";
     goto error;
   }
   // We only support RSA-1.5 signatures for now.
@@ -179,7 +181,7 @@ static jose_header* jose_header_from_json(Json json) {
   if (it->second.type() != Json::Type::kString ||
       strncmp(alg_value, "RS", 2) != 0 ||
       evp_md_from_alg(alg_value) == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid alg field");
+    LOG(ERROR) << "Invalid alg field";
     goto error;
   }
   h->alg = alg_value;
@@ -313,18 +315,18 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
   gpr_timespec skewed_now;
   int audience_ok;
 
-  GPR_ASSERT(claims != nullptr);
+  CHECK_NE(claims, nullptr);
 
   skewed_now =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
   if (gpr_time_cmp(skewed_now, claims->nbf) < 0) {
-    gpr_log(GPR_ERROR, "JWT is not valid yet.");
+    LOG(ERROR) << "JWT is not valid yet.";
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
   skewed_now =
       gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), grpc_jwt_verifier_clock_skew);
   if (gpr_time_cmp(skewed_now, claims->exp) > 0) {
-    gpr_log(GPR_ERROR, "JWT is expired.");
+    LOG(ERROR) << "JWT is expired.";
     return GRPC_JWT_VERIFIER_TIME_CONSTRAINT_FAILURE;
   }
 
@@ -429,7 +431,7 @@ struct grpc_jwt_verifier {
 
 static Json json_from_http(const grpc_http_response* response) {
   if (response == nullptr) {
-    gpr_log(GPR_ERROR, "HTTP response is NULL.");
+    LOG(ERROR) << "HTTP response is NULL.";
     return Json();  // JSON null
   }
   if (response->status != 200) {
@@ -440,7 +442,7 @@ static Json json_from_http(const grpc_http_response* response) {
   auto json = grpc_core::JsonParse(
       absl::string_view(response->body, response->body_length));
   if (!json.ok()) {
-    gpr_log(GPR_ERROR, "Invalid JSON found in response.");
+    LOG(ERROR) << "Invalid JSON found in response.";
     return Json();  // JSON null
   }
   return std::move(*json);
@@ -459,16 +461,16 @@ static EVP_PKEY* extract_pkey_from_x509(const char* x509_str) {
   EVP_PKEY* result = nullptr;
   BIO* bio = BIO_new(BIO_s_mem());
   size_t len = strlen(x509_str);
-  GPR_ASSERT(len < INT_MAX);
+  CHECK_LT(len, static_cast<size_t>(INT_MAX));
   BIO_write(bio, x509_str, static_cast<int>(len));
   x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
   if (x509 == nullptr) {
-    gpr_log(GPR_ERROR, "Unable to parse x509 cert.");
+    LOG(ERROR) << "Unable to parse x509 cert.";
     goto end;
   }
   result = X509_get_pubkey(x509);
   if (result == nullptr) {
-    gpr_log(GPR_ERROR, "Cannot find public key in X509 cert.");
+    LOG(ERROR) << "Cannot find public key in X509 cert.";
   }
 
 end:
@@ -481,7 +483,7 @@ static BIGNUM* bignum_from_base64(const char* b64) {
   if (b64 == nullptr) return nullptr;
   std::string string;
   if (!absl::WebSafeBase64Unescape(b64, &string)) {
-    gpr_log(GPR_ERROR, "Invalid base64 for big num.");
+    LOG(ERROR) << "Invalid base64 for big num.";
     return nullptr;
   }
   return BN_bin2bn(reinterpret_cast<const uint8_t*>(string.data()),
@@ -530,8 +532,8 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   BIGNUM* tmp_e = nullptr;
   Json::Object::const_iterator it;
 
-  GPR_ASSERT(json.type() == Json::Type::kObject);
-  GPR_ASSERT(kty != nullptr);
+  CHECK(json.type() == Json::Type::kObject);
+  CHECK_NE(kty, nullptr);
   if (strcmp(kty, "RSA") != 0) {
     gpr_log(GPR_ERROR, "Unsupported key type %s.", kty);
     goto end;
@@ -539,27 +541,27 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   rsa = RSA_new();
   if (rsa == nullptr) {
-    gpr_log(GPR_ERROR, "Could not create rsa key.");
+    LOG(ERROR) << "Could not create rsa key.";
     goto end;
   }
 #endif
   it = json.object().find("n");
   if (it == json.object().end()) {
-    gpr_log(GPR_ERROR, "Missing RSA public key field.");
+    LOG(ERROR) << "Missing RSA public key field.";
     goto end;
   }
   tmp_n = bignum_from_base64(validate_string_field(it->second, "n"));
   if (tmp_n == nullptr) goto end;
   it = json.object().find("e");
   if (it == json.object().end()) {
-    gpr_log(GPR_ERROR, "Missing RSA public key field.");
+    LOG(ERROR) << "Missing RSA public key field.";
     goto end;
   }
   tmp_e = bignum_from_base64(validate_string_field(it->second, "e"));
   if (tmp_e == nullptr) goto end;
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   if (!RSA_set0_key(rsa, tmp_n, tmp_e, nullptr)) {
-    gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
+    LOG(ERROR) << "Cannot set RSA key from inputs.";
     goto end;
   }
   // RSA_set0_key takes ownership on success.
@@ -572,21 +574,21 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   if (!OSSL_PARAM_BLD_push_BN(bld, "n", tmp_n) ||
       !OSSL_PARAM_BLD_push_BN(bld, "e", tmp_e) ||
       (params = OSSL_PARAM_BLD_to_param(bld)) == NULL) {
-    gpr_log(GPR_ERROR, "Could not create OSSL_PARAM");
+    LOG(ERROR) << "Could not create OSSL_PARAM";
     goto end;
   }
 
   ctx = EVP_PKEY_CTX_new_from_name(nullptr, "RSA", nullptr);
   if (ctx == nullptr) {
-    gpr_log(GPR_ERROR, "Could not create rsa key.");
+    LOG(ERROR) << "Could not create rsa key.";
     goto end;
   }
   if (EVP_PKEY_fromdata_init(ctx) <= 0) {
-    gpr_log(GPR_ERROR, "Could not create rsa key.");
+    LOG(ERROR) << "Could not create rsa key.";
     goto end;
   }
   if (EVP_PKEY_fromdata(ctx, &result, EVP_PKEY_KEYPAIR, params) <= 0) {
-    gpr_log(GPR_ERROR, "Cannot set RSA key from inputs.");
+    LOG(ERROR) << "Cannot set RSA key from inputs.";
     goto end;
   }
 #endif
@@ -617,8 +619,7 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
     return extract_pkey_from_x509(cur->string().c_str());
   }
   if (jwt_keys->type() != Json::Type::kArray) {
-    gpr_log(GPR_ERROR,
-            "Unexpected value type of keys property in jwks key set.");
+    LOG(ERROR) << "Unexpected value type of keys property in jwks key set.";
     return nullptr;
   }
   // Key format is specified in:
@@ -658,23 +659,23 @@ static int verify_jwt_signature(EVP_PKEY* key, const char* alg,
   const EVP_MD* md = evp_md_from_alg(alg);
   int result = 0;
 
-  GPR_ASSERT(md != nullptr);  // Checked before.
+  CHECK_NE(md, nullptr);  // Checked before.
   if (md_ctx == nullptr) {
-    gpr_log(GPR_ERROR, "Could not create EVP_MD_CTX.");
+    LOG(ERROR) << "Could not create EVP_MD_CTX.";
     goto end;
   }
   if (EVP_DigestVerifyInit(md_ctx, nullptr, md, nullptr, key) != 1) {
-    gpr_log(GPR_ERROR, "EVP_DigestVerifyInit failed.");
+    LOG(ERROR) << "EVP_DigestVerifyInit failed.";
     goto end;
   }
   if (EVP_DigestVerifyUpdate(md_ctx, GRPC_SLICE_START_PTR(signed_data),
                              GRPC_SLICE_LENGTH(signed_data)) != 1) {
-    gpr_log(GPR_ERROR, "EVP_DigestVerifyUpdate failed.");
+    LOG(ERROR) << "EVP_DigestVerifyUpdate failed.";
     goto end;
   }
   if (EVP_DigestVerifyFinal(md_ctx, GRPC_SLICE_START_PTR(signature),
                             GRPC_SLICE_LENGTH(signature)) != 1) {
-    gpr_log(GPR_ERROR, "JWT signature verification failed.");
+    LOG(ERROR) << "JWT signature verification failed.";
 
     goto end;
   }
@@ -741,7 +742,7 @@ static void on_openid_config_retrieved(void* user_data,
   if (json.type() == Json::Type::kNull) goto error;
   cur = find_property_by_name(json, "jwks_uri");
   if (cur == nullptr) {
-    gpr_log(GPR_ERROR, "Could not find jwks_uri in openid config.");
+    LOG(ERROR) << "Could not find jwks_uri in openid config.";
     goto error;
   }
   jwks_uri = validate_string_field(*cur, "jwks_uri");
@@ -797,7 +798,7 @@ static email_key_mapping* verifier_get_mapping(grpc_jwt_verifier* v,
 static void verifier_put_mapping(grpc_jwt_verifier* v, const char* email_domain,
                                  const char* key_url_prefix) {
   email_key_mapping* mapping = verifier_get_mapping(v, email_domain);
-  GPR_ASSERT(v->num_mappings < v->allocated_mappings);
+  CHECK(v->num_mappings < v->allocated_mappings);
   if (mapping != nullptr) {
     gpr_free(mapping->key_url_prefix);
     mapping->key_url_prefix = gpr_strdup(key_url_prefix);
@@ -806,7 +807,7 @@ static void verifier_put_mapping(grpc_jwt_verifier* v, const char* email_domain,
   v->mappings[v->num_mappings].email_domain = gpr_strdup(email_domain);
   v->mappings[v->num_mappings].key_url_prefix = gpr_strdup(key_url_prefix);
   v->num_mappings++;
-  GPR_ASSERT(v->num_mappings <= v->allocated_mappings);
+  CHECK(v->num_mappings <= v->allocated_mappings);
 }
 
 // Very non-sophisticated way to detect an email address. Should be good
@@ -818,7 +819,7 @@ const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   if (*email_domain == '\0') return nullptr;
   const char* dot = strrchr(email_domain, '.');
   if (dot == nullptr || dot == email_domain) return email_domain;
-  GPR_ASSERT(dot > email_domain);
+  CHECK(dot > email_domain);
   // There may be a subdomain, we just want the domain.
   dot = static_cast<const char*>(
       gpr_memrchr(email_domain, '.', static_cast<size_t>(dot - email_domain)));
@@ -839,15 +840,14 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   char* path;
   absl::StatusOr<grpc_core::URI> uri;
 
-  GPR_ASSERT(ctx != nullptr && ctx->header != nullptr &&
-             ctx->claims != nullptr);
+  CHECK(ctx != nullptr && ctx->header != nullptr && ctx->claims != nullptr);
   iss = ctx->claims->iss;
   if (ctx->header->kid == nullptr) {
-    gpr_log(GPR_ERROR, "Missing kid in jose header.");
+    LOG(ERROR) << "Missing kid in jose header.";
     goto error;
   }
   if (iss == nullptr) {
-    gpr_log(GPR_ERROR, "Missing iss in claims.");
+    LOG(ERROR) << "Missing iss in claims.";
     goto error;
   }
 
@@ -859,10 +859,10 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   email_domain = grpc_jwt_issuer_email_domain(iss);
   if (email_domain != nullptr) {
     email_key_mapping* mapping;
-    GPR_ASSERT(ctx->verifier != nullptr);
+    CHECK_NE(ctx->verifier, nullptr);
     mapping = verifier_get_mapping(ctx->verifier, email_domain);
     if (mapping == nullptr) {
-      gpr_log(GPR_ERROR, "Missing mapping for issuer email.");
+      LOG(ERROR) << "Missing mapping for issuer email.";
       goto error;
     }
     host = gpr_strdup(mapping->key_url_prefix);
@@ -926,8 +926,8 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   Json json;
   std::string signature_str;
 
-  GPR_ASSERT(verifier != nullptr && jwt != nullptr && audience != nullptr &&
-             cb != nullptr);
+  CHECK(verifier != nullptr && jwt != nullptr && audience != nullptr &&
+        cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));

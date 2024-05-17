@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_package(name = "test/core/slice")
 
@@ -23,12 +23,13 @@ grpc_fuzzer(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
     corpus = "percent_encode_corpus",
+    external_deps = ["absl/log:check"],
     language = "C++",
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -41,7 +42,7 @@ grpc_fuzzer(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -56,7 +57,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:slice",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -64,6 +65,7 @@ grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
     external_deps = [
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -73,14 +75,17 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:slice",
-        "//test/core/util:build",
+        "//test/core/test_util:build",
     ],
 )
 
 grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -93,12 +98,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -113,6 +121,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:slice",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

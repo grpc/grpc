@@ -27,15 +27,19 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:fake_stats_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -43,7 +47,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -58,7 +62,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -74,7 +78,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:closure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -82,6 +86,7 @@ grpc_cc_test(
     name = "minimal_stack_is_minimal_test",
     srcs = ["minimal_stack_is_minimal_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -91,59 +96,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "channel_trace_test",
-    srcs = ["channel_trace_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:channel_trace_proto_helper",
-    ],
-)
-
-grpc_cc_test(
-    name = "channelz_test",
-    srcs = ["channelz_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//src/core:channel_args",
-        "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/util:grpc_test_util",
-        "//test/cpp/util:channel_trace_proto_helper",
-    ],
-)
-
-grpc_cc_test(
-    name = "channelz_registry_test",
-    srcs = ["channelz_registry_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -158,7 +111,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -173,7 +126,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/promise:test_context",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -189,7 +142,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -197,6 +150,7 @@ grpc_cc_test(
     name = "metrics_test",
     srcs = ["metrics_test.cc"],
     external_deps = [
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -204,7 +158,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:metrics",
-        "//test/core/util:fake_stats_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

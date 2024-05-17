@@ -32,6 +32,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/test_suite/fixture.h"
 
 namespace grpc_core {
@@ -86,10 +87,11 @@ class ActionState {
   explicit ActionState(NameAndLocation name_and_location);
 
   State Get() const { return state_; }
-  void Set(State state) {
+  void Set(State state, SourceLocation whence = {}) {
     gpr_log(GPR_INFO, "%s",
             absl::StrCat(StateString(state), " ", name(), " [", step(), "] ",
-                         file(), ":", line())
+                         file(), ":", line(), " @ ", whence.file(), ":",
+                         whence.line())
                 .c_str());
     state_ = state;
   }
@@ -219,7 +221,7 @@ class TransportTest : public ::testing::Test {
         fixture_(std::move(fixture)),
         rng_(rng) {}
 
-  void SetServerAcceptor();
+  void SetServerCallDestination();
   CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
 
   std::string RandomString(int min_length, int max_length,
@@ -236,6 +238,12 @@ class TransportTest : public ::testing::Test {
 
   CallHandler TickUntilServerCall();
   void WaitForAllPendingWork();
+
+  auto MakeCall(ClientMetadataHandle client_initial_metadata) {
+    auto* arena = call_arena_allocator_->MakeArena();
+    return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
+                        arena, call_arena_allocator_, nullptr);
+  }
 
   // Alternative for Seq for test driver code.
   // Registers each step so that WaitForAllPendingWork() can report progress,
@@ -263,21 +271,14 @@ class TransportTest : public ::testing::Test {
 
   void Timeout();
 
-  class Acceptor final : public ServerTransport::Acceptor {
+  class ServerCallDestination final : public UnstartedCallDestination {
    public:
-    Acceptor(grpc_event_engine::experimental::EventEngine* event_engine,
-             MemoryAllocator* allocator)
-        : event_engine_(event_engine), allocator_(allocator) {}
-
-    Arena* CreateArena() override;
-    absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadataHandle client_initial_metadata, Arena* arena) override;
+    void StartCall(UnstartedCallHandler unstarted_call_handler) override;
+    void Orphaned() override {}
     absl::optional<CallHandler> PopHandler();
 
    private:
     std::queue<CallHandler> handlers_;
-    grpc_event_engine::experimental::EventEngine* const event_engine_;
-    MemoryAllocator* const allocator_;
   };
 
   class WatchDog {
@@ -292,6 +293,7 @@ class TransportTest : public ::testing::Test {
                                        [this]() { test_->Timeout(); })};
   };
 
+  grpc::testing::TestGrpcScope grpc_scope_;
   std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
       event_engine_{
           std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
@@ -303,10 +305,14 @@ class TransportTest : public ::testing::Test {
               }(),
               fuzzing_event_engine::Actions())};
   std::unique_ptr<TransportFixture> fixture_;
-  MemoryAllocator allocator_ = MakeResourceQuota("test-quota")
-                                   ->memory_quota()
-                                   ->CreateMemoryAllocator("test-allocator");
-  Acceptor acceptor_{event_engine_.get(), &allocator_};
+  RefCountedPtr<CallArenaAllocator> call_arena_allocator_{
+      MakeRefCounted<CallArenaAllocator>(
+          MakeResourceQuota("test-quota")
+              ->memory_quota()
+              ->CreateMemoryAllocator("test-allocator"),
+          1024)};
+  RefCountedPtr<ServerCallDestination> server_call_destination_ =
+      MakeRefCounted<ServerCallDestination>();
   TransportFixture::ClientAndServerTransportPair transport_pair_ =
       fixture_->CreateTransportPair(event_engine_);
   std::queue<std::shared_ptr<transport_test_detail::ActionState>>

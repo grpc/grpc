@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
@@ -109,8 +110,10 @@ class ForEach {
  public:
   using Result =
       typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
-  ForEach(Reader reader, Action action)
-      : reader_(std::move(reader)), action_factory_(std::move(action)) {
+  ForEach(Reader reader, Action action, DebugLocation whence = {})
+      : reader_(std::move(reader)),
+        action_factory_(std::move(action)),
+        whence_(whence) {
     Construct(&reader_next_, reader_.Next());
   }
   ~ForEach() {
@@ -125,17 +128,19 @@ class ForEach {
   ForEach& operator=(const ForEach&) = delete;
   ForEach(ForEach&& other) noexcept
       : reader_(std::move(other.reader_)),
-        action_factory_(std::move(other.action_factory_)) {
-    GPR_DEBUG_ASSERT(reading_next_);
-    GPR_DEBUG_ASSERT(other.reading_next_);
+        action_factory_(std::move(other.action_factory_)),
+        whence_(other.whence_) {
+    DCHECK(reading_next_);
+    DCHECK(other.reading_next_);
     Construct(&reader_next_, std::move(other.reader_next_));
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    GPR_DEBUG_ASSERT(reading_next_);
-    GPR_DEBUG_ASSERT(other.reading_next_);
+    DCHECK(reading_next_);
+    DCHECK(other.reading_next_);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
     reader_next_ = std::move(other.reader_next_);
+    whence_ = other.whence_;
     return *this;
   }
 
@@ -154,7 +159,8 @@ class ForEach {
 
   std::string DebugTag() {
     return absl::StrCat(GetContext<Activity>()->DebugTag(), " FOR_EACH[0x",
-                        reinterpret_cast<uintptr_t>(this), "]: ");
+                        reinterpret_cast<uintptr_t>(this), "@", whence_.file(),
+                        ":", whence_.line(), "]: ");
   }
 
   Poll<Result> PollReaderNext() {
@@ -215,6 +221,7 @@ class ForEach {
 
   GPR_NO_UNIQUE_ADDRESS Reader reader_;
   GPR_NO_UNIQUE_ADDRESS ActionFactory action_factory_;
+  GPR_NO_UNIQUE_ADDRESS DebugLocation whence_;
   bool reading_next_ = true;
   union {
     ReaderNext reader_next_;
@@ -226,9 +233,10 @@ class ForEach {
 
 /// For each item acquired by calling Reader::Next, run the promise Action.
 template <typename Reader, typename Action>
-for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action) {
+for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action,
+                                                 DebugLocation whence = {}) {
   return for_each_detail::ForEach<Reader, Action>(std::move(reader),
-                                                  std::move(action));
+                                                  std::move(action), whence);
 }
 
 }  // namespace grpc_core

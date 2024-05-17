@@ -24,6 +24,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -39,13 +40,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/client_channel/client_channel_channelz.h"
+#include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -133,7 +133,7 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
       state_ = GRPC_CHANNEL_CONNECTING;
       status_ = absl::OkStatus();
     } else {
-      GPR_ASSERT(state_ == GRPC_CHANNEL_CONNECTING);
+      CHECK(state_ == GRPC_CHANNEL_CONNECTING);
     }
     // Start the health watch stream.
     StartHealthStreamLocked();

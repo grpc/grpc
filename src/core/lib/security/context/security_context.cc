@@ -22,6 +22,9 @@
 
 #include <algorithm>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -50,7 +53,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
   GRPC_API_TRACE("grpc_call_set_credentials(call=%p, creds=%p)", 2,
                  (call, creds));
   if (!grpc_call_is_client(call)) {
-    gpr_log(GPR_ERROR, "Method is client-side only.");
+    LOG(ERROR) << "Method is client-side only.";
     return GRPC_CALL_ERROR_NOT_ON_SERVER;
   }
   ctx = static_cast<grpc_client_security_context*>(
@@ -193,7 +196,7 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
     while (it->index < it->ctx->properties().count) {
       const grpc_auth_property* prop =
           &it->ctx->properties().array[it->index++];
-      GPR_ASSERT(prop->name != nullptr);
+      CHECK_NE(prop->name, nullptr);
       if (strcmp(it->name, prop->name) == 0) {
         return prop;
       }

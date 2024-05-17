@@ -35,9 +35,9 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -76,8 +76,8 @@ const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
-  CHECK(client_metadata.count(kEchoInitialMetadataKey) <= 1);
-  CHECK(client_metadata.count(kEchoTrailingBinMetadataKey) <= 1);
+  CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
+  CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
@@ -420,7 +420,7 @@ void grpc::testing::interop::RunServer(
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
-  CHECK(port != 0);
+  CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
   auto server_metric_recorder =

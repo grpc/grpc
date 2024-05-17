@@ -52,14 +52,14 @@ void TransportTest::RunTest() {
   event_engine_->UnsetGlobalHooks();
 }
 
-void TransportTest::SetServerAcceptor() {
-  transport_pair_.server->server_transport()->SetAcceptor(&acceptor_);
+void TransportTest::SetServerCallDestination() {
+  transport_pair_.server->server_transport()->SetCallDestination(
+      server_call_destination_);
 }
 
 CallInitiator TransportTest::CreateCall(
     ClientMetadataHandle client_initial_metadata) {
-  auto call = MakeCall(std::move(client_initial_metadata), event_engine_.get(),
-                       Arena::Create(1024, &allocator_), true);
+  auto call = MakeCall(std::move(client_initial_metadata));
   call.handler.SpawnInfallible(
       "start-call", [this, handler = call.handler]() mutable {
         transport_pair_.client->client_transport()->StartCall(
@@ -72,8 +72,10 @@ CallInitiator TransportTest::CreateCall(
 CallHandler TransportTest::TickUntilServerCall() {
   WatchDog watchdog(this);
   for (;;) {
-    auto handler = acceptor_.PopHandler();
-    if (handler.has_value()) return std::move(*handler);
+    auto handler = server_call_destination_->PopHandler();
+    if (handler.has_value()) {
+      return std::move(*handler);
+    }
     event_engine_->Tick();
   }
 }
@@ -228,21 +230,14 @@ std::string TransportTest::RandomMessage() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// TransportTest::Acceptor
+// TransportTest::ServerCallDestination
 
-Arena* TransportTest::Acceptor::CreateArena() {
-  return Arena::Create(1024, allocator_);
+void TransportTest::ServerCallDestination::StartCall(
+    UnstartedCallHandler handler) {
+  handlers_.push(handler.V2HackToStartCallWithoutACallFilterStack());
 }
 
-absl::StatusOr<CallInitiator> TransportTest::Acceptor::CreateCall(
-    ClientMetadataHandle client_initial_metadata, Arena* arena) {
-  auto call =
-      MakeCall(std::move(client_initial_metadata), event_engine_, arena, true);
-  handlers_.push(call.handler.V2HackToStartCallWithoutACallFilterStack());
-  return std::move(call.initiator);
-}
-
-absl::optional<CallHandler> TransportTest::Acceptor::PopHandler() {
+absl::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {
   if (!handlers_.empty()) {
     auto handler = std::move(handlers_.front());
     handlers_.pop();

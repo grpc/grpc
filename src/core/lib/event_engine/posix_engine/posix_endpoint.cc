@@ -26,6 +26,8 @@
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -245,7 +247,7 @@ msg_iovlen_type TcpZerocopySendRecord::PopulateIovs(size_t* unwind_slice_idx,
     ++(out_offset_.slice_idx);
     out_offset_.byte_idx = 0;
   }
-  GPR_DEBUG_ASSERT(iov_size > 0);
+  DCHECK_GT(iov_size, 0u);
   return iov_size;
 }
 
@@ -314,8 +316,8 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     iov[i].iov_len = slice.length();
   }
 
-  GPR_ASSERT(incoming_buffer_->Length() != 0);
-  GPR_DEBUG_ASSERT(min_progress_size_ > 0);
+  CHECK_NE(incoming_buffer_->Length(), 0u);
+  DCHECK_GT(min_progress_size_, 0);
 
   do {
     // Assume there is something on the queue. If we receive TCP_INQ from
@@ -371,12 +373,11 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
 
     AddToEstimate(static_cast<size_t>(read_bytes));
-    GPR_DEBUG_ASSERT((size_t)read_bytes <=
-                     incoming_buffer_->Length() - total_read_bytes);
+    DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {
-      GPR_DEBUG_ASSERT(!(msg.msg_flags & MSG_CTRUNC));
+      DCHECK(!(msg.msg_flags & MSG_CTRUNC));
       struct cmsghdr* cmsg = CMSG_FIRSTHDR(&msg);
       for (; cmsg != nullptr; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
         if (cmsg->cmsg_level == SOL_TCP && cmsg->cmsg_type == TCP_CM_INQ &&
@@ -419,7 +420,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     FinishEstimate();
   }
 
-  GPR_DEBUG_ASSERT(total_read_bytes > 0);
+  DCHECK_GT(total_read_bytes, 0u);
   status = absl::OkStatus();
   if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
     // Update min progress size based on the total number of bytes read in
@@ -595,7 +596,7 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              const EventEngine::Endpoint::ReadArgs* args) {
   grpc_core::ReleasableMutexLock lock(&read_mu_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Read", this);
-  GPR_ASSERT(read_cb_ == nullptr);
+  CHECK(read_cb_ == nullptr);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
@@ -670,8 +671,8 @@ TcpZerocopySendRecord* PosixEndpointImpl::TcpGetSendZerocopyRecord(
     }
     if (zerocopy_send_record != nullptr) {
       zerocopy_send_record->PrepareForSends(buf);
-      GPR_DEBUG_ASSERT(buf.Count() == 0);
-      GPR_DEBUG_ASSERT(buf.Length() == 0);
+      DCHECK_EQ(buf.Count(), 0u);
+      DCHECK_EQ(buf.Length(), 0u);
       outgoing_byte_idx_ = 0;
       outgoing_buffer_ = nullptr;
     }
@@ -718,7 +719,7 @@ bool PosixEndpointImpl::ProcessErrors() {
       return processed_err;
     }
     if (GPR_UNLIKELY((msg.msg_flags & MSG_CTRUNC) != 0)) {
-      gpr_log(GPR_ERROR, "Error message was truncated.");
+      LOG(ERROR) << "Error message was truncated.";
     }
 
     if (msg.msg_controllen == 0) {
@@ -758,10 +759,10 @@ void PosixEndpointImpl::ZerocopyDisableAndWaitForRemaining() {
 
 // Reads \a cmsg to process zerocopy control messages.
 void PosixEndpointImpl::ProcessZerocopy(struct cmsghdr* cmsg) {
-  GPR_DEBUG_ASSERT(cmsg);
+  DCHECK(cmsg);
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(cmsg));
-  GPR_DEBUG_ASSERT(serr->ee_errno == 0);
-  GPR_DEBUG_ASSERT(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
+  DCHECK_EQ(serr->ee_errno, 0u);
+  DCHECK(serr->ee_origin == SO_EE_ORIGIN_ZEROCOPY);
   const uint32_t lo = serr->ee_info;
   const uint32_t hi = serr->ee_data;
   for (uint32_t seq = lo; seq <= hi; ++seq) {
@@ -771,7 +772,7 @@ void PosixEndpointImpl::ProcessZerocopy(struct cmsghdr* cmsg) {
     // both; if so, batch the unref/put.
     TcpZerocopySendRecord* record =
         tcp_zerocopy_send_ctx_->ReleaseSendRecord(seq);
-    GPR_DEBUG_ASSERT(record);
+    DCHECK(record);
     UnrefMaybePutZerocopySendRecord(record);
   }
   if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterFree()) {
@@ -813,7 +814,7 @@ struct cmsghdr* PosixEndpointImpl::ProcessTimestamp(msghdr* msg,
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(next_cmsg));
   if (serr->ee_errno != ENOMSG ||
       serr->ee_origin != SO_EE_ORIGIN_TIMESTAMPING) {
-    gpr_log(GPR_ERROR, "Unexpected control message");
+    LOG(ERROR) << "Unexpected control message";
     return cmsg;
   }
   traced_buffers_.ProcessTimestamp(serr, opt_stats, tss);
@@ -1057,7 +1058,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       outgoing_slice_idx++;
       outgoing_byte_idx_ = 0;
     }
-    GPR_ASSERT(iov_size > 0);
+    CHECK_GT(iov_size, 0u);
 
     msg.msg_name = nullptr;
     msg.msg_namelen = 0;
@@ -1100,7 +1101,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       }
     }
 
-    GPR_ASSERT(outgoing_byte_idx_ == 0);
+    CHECK_EQ(outgoing_byte_idx_, 0u);
     bytes_counter_ += sent_length;
     trailing = sending_length - static_cast<size_t>(sent_length);
     while (trailing > 0) {
@@ -1139,7 +1140,7 @@ void PosixEndpointImpl::HandleWrite(absl::Status status) {
                           ? TcpFlushZerocopy(current_zerocopy_send_, status)
                           : TcpFlush(status);
   if (!flush_result) {
-    GPR_DEBUG_ASSERT(status.ok());
+    DCHECK(status.ok());
     handle_->NotifyOnWrite(on_write_);
   } else {
     GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write complete: %s", this,
@@ -1158,9 +1159,9 @@ bool PosixEndpointImpl::Write(
   absl::Status status = absl::OkStatus();
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
-  GPR_ASSERT(write_cb_ == nullptr);
-  GPR_DEBUG_ASSERT(current_zerocopy_send_ == nullptr);
-  GPR_DEBUG_ASSERT(data != nullptr);
+  CHECK(write_cb_ == nullptr);
+  DCHECK_EQ(current_zerocopy_send_, nullptr);
+  DCHECK_NE(data, nullptr);
 
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("Endpoint[%p]: Write %" PRIdPTR " bytes",
                                    this, data->Length());
@@ -1191,7 +1192,7 @@ bool PosixEndpointImpl::Write(
     outgoing_buffer_arg_ = args->google_specific;
   }
   if (outgoing_buffer_arg_) {
-    GPR_ASSERT(poller_->CanTrackErrors());
+    CHECK(poller_->CanTrackErrors());
   }
 
   bool flush_result = zerocopy_send_record != nullptr
@@ -1266,7 +1267,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       engine_(engine) {
   PosixSocketWrapper sock(handle->WrappedFd());
   fd_ = handle_->WrappedFd();
-  GPR_ASSERT(options.resource_quota != nullptr);
+  CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
@@ -1303,7 +1304,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
           0) {
         zerocopy_enabled = false;
-        gpr_log(GPR_ERROR, "Failed to set zerocopy options on the socket.");
+        LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }
     }
 
@@ -1348,7 +1349,7 @@ std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
     EventHandle* handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
     const PosixTcpOptions& options) {
-  GPR_DEBUG_ASSERT(handle != nullptr);
+  DCHECK_NE(handle, nullptr);
   return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
                                          std::move(allocator), options);
 }

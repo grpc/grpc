@@ -12,15 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/utils/ndk_binder.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <dlfcn.h>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 
@@ -36,7 +39,7 @@ void* GetNdkBinderHandle() {
     gpr_log(
         GPR_ERROR,
         "Cannot open libbinder_ndk.so. Does this device support API level 29?");
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   return handle;
 }
@@ -58,10 +61,10 @@ void SetJvm(JNIEnv* env) {
   JavaVM* jvm = nullptr;
   jint error = env->GetJavaVM(&jvm);
   if (error != JNI_OK) {
-    gpr_log(GPR_ERROR, "Failed to get JVM");
+    LOG(ERROR) << "Failed to get JVM";
   }
   g_jvm = jvm;
-  gpr_log(GPR_INFO, "JVM cached");
+  LOG(INFO) << "JVM cached";
 }
 
 // `SetJvm` need to be called in the process before `AttachJvm`. This is always
@@ -75,14 +78,14 @@ bool AttachJvm() {
   // Note: The following code would be run at most once per thread.
   grpc_core::MutexLock lock(&g_jvm_mu);
   if (g_jvm == nullptr) {
-    gpr_log(GPR_ERROR, "JVM not cached yet");
+    LOG(ERROR) << "JVM not cached yet";
     return false;
   }
   JNIEnv* env_unused;
   // Note that attach a thread that is already attached is a no-op, so it is
   // fine to call this again if the thread has already been attached by other.
   g_jvm->AttachCurrentThread(&env_unused, /* thr_args= */ nullptr);
-  gpr_log(GPR_INFO, "JVM attached successfully");
+  LOG(INFO) << "JVM attached successfully";
   g_is_jvm_attached = true;
   return true;
 }
@@ -102,7 +105,7 @@ namespace ndk_util {
             "dlsym failed. Cannot find %s in libbinder_ndk.so. "       \
             "BinderTransport requires API level >= 33",                \
             #name);                                                    \
-    GPR_ASSERT(0);                                                     \
+    CHECK(0);                                                          \
   }                                                                    \
   return ptr
 
@@ -149,7 +152,7 @@ binder_status_t AIBinder_transact(AIBinder* binder, transaction_code_t code,
                                   AParcel** in, AParcel** out,
                                   binder_flags_t flags) {
   if (!AttachJvm()) {
-    gpr_log(GPR_ERROR, "failed to attach JVM. AIBinder_transact might fail.");
+    LOG(ERROR) << "failed to attach JVM. AIBinder_transact might fail.";
   }
   FORWARD(AIBinder_transact)(binder, code, in, out, flags);
 }

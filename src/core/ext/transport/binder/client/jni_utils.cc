@@ -12,9 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/client/jni_utils.h"
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"  // IWYU pragma: keep
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_NO_BINDER
 
@@ -41,7 +44,7 @@ jclass FindNativeConnectionHelper(
     }
     jclass global_cl = static_cast<jclass>(env->NewGlobalRef(cl));
     env->DeleteLocalRef(cl);
-    GPR_ASSERT(global_cl != nullptr);
+    CHECK_NE(global_cl, nullptr);
     return global_cl;
   };
   static jclass connection_helper_class = do_find();
@@ -81,7 +84,7 @@ void TryEstablishConnection(JNIEnv* env, jobject application,
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+    LOG(ERROR) << "No method id " << method;
   }
 
   env->CallStaticVoidMethod(cl, mid, application,
@@ -105,7 +108,7 @@ void TryEstablishConnectionWithUri(JNIEnv* env, jobject application,
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+    LOG(ERROR) << "No method id " << method;
   }
 
   env->CallStaticVoidMethod(cl, mid, application,
@@ -124,7 +127,7 @@ bool IsSignatureMatch(JNIEnv* env, jobject context, int uid1, int uid2) {
 
   jmethodID mid = env->GetStaticMethodID(cl, method.c_str(), type.c_str());
   if (mid == nullptr) {
-    gpr_log(GPR_ERROR, "No method id %s", method.c_str());
+    LOG(ERROR) << "No method id " << method;
   }
 
   jboolean result = env->CallStaticBooleanMethod(cl, mid, context, uid1, uid2);

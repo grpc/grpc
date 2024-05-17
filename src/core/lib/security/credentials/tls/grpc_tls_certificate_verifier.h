@@ -21,6 +21,7 @@
 #include <map>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/credentials.h>
@@ -29,10 +30,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/util/useful.h"
 
 // An abstraction of the verifier that all verifier subclasses should extend.
 struct grpc_tls_certificate_verifier
@@ -58,7 +59,7 @@ struct grpc_tls_certificate_verifier
   // If this method returns 0, it means that gRPC can treat the two certificate
   // verifiers as effectively the same.
   int Compare(const grpc_tls_certificate_verifier* other) const {
-    GPR_ASSERT(other != nullptr);
+    CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

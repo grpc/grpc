@@ -29,7 +29,6 @@
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/deadline/deadline_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -52,10 +51,12 @@ namespace grpc_core {
 const NoInterceptor ClientMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ClientMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ClientMessageSizeFilter::Call::OnFinalize;
 const NoInterceptor ServerMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ServerMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 
 //
@@ -250,18 +251,10 @@ void RegisterMessageSizeFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientMessageSizeFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .ExcludeFromMinimalStack()
-      .If(HasMessageSizeLimits)
-      // TODO(ctiller): ordering constraint is here to match the ordering that
-      // existed prior to ordering constraints did. Re-examine the ordering of
-      // filters from first principles.
-      .Before({&grpc_client_deadline_filter});
+      .If(HasMessageSizeLimits);
   builder->channel_init()
       ->RegisterFilter<ServerMessageSizeFilter>(GRPC_SERVER_CHANNEL)
       .ExcludeFromMinimalStack()
-      .If(HasMessageSizeLimits)
-      // TODO(ctiller): ordering constraint is here to match the ordering that
-      // existed prior to ordering constraints did. Re-examine the ordering of
-      // filters from first principles.
-      .Before({&grpc_server_deadline_filter});
+      .If(HasMessageSizeLimits);
 }
 }  // namespace grpc_core
