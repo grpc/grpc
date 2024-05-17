@@ -19,7 +19,15 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import Any, AsyncIterator, Generator, Generic, Optional, Tuple
+from typing import (
+    Any,
+    AsyncIterator,
+    Generator,
+    Generic,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import grpc
 from grpc import _common
@@ -29,6 +37,7 @@ from . import _base_call
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
+from ._typing import EOFType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
@@ -380,7 +389,7 @@ class _StreamResponseMixin(Call):
                 raw_response, self._response_deserializer
             )
 
-    async def read(self) -> ResponseType:
+    async def read(self) -> Union[EOFType, ResponseType]:
         if self.done():
             await self._raise_for_status()
             return cygrpc.EOF
