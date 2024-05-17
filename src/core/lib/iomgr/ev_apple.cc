@@ -194,8 +194,10 @@ static void pollset_global_init(void) {
       grpc_apple_register_write_stream_run_loop;
 
   grpc_core::MutexLock lock(&gGlobalRunLoopContext->mu);
+  bool success = false;
   gGlobalRunLoopThread =
-      new grpc_core::Thread("apple_ev", GlobalRunLoopFunc, nullptr);
+      new grpc_core::Thread("apple_ev", GlobalRunLoopFunc, nullptr, &success);
+  GPR_ASSERT(success);
   gGlobalRunLoopThread->Start();
   while (gGlobalRunLoopContext->run_loop == NULL)
     gGlobalRunLoopContext->init_cv.Wait(&gGlobalRunLoopContext->mu);

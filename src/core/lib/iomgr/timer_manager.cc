@@ -83,7 +83,7 @@ static void gc_completed_threads(void) {
   }
 }
 
-static void start_timer_thread_and_unlock(void) {
+static bool start_timer_thread_and_unlock(void) {
   CHECK(g_threaded);
   ++g_waiter_count;
   ++g_thread_count;
@@ -93,8 +93,12 @@ static void start_timer_thread_and_unlock(void) {
   }
   completed_thread* ct =
       static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
-  ct->thd = grpc_core::Thread("grpc_global_timer", timer_thread, ct);
-  ct->thd.Start();
+  bool success = false;
+  ct->thd = grpc_core::Thread("grpc_global_timer", timer_thread, ct, &success);
+  if (success) {
+    ct->thd.Start();
+  }
+  return success;
 }
 
 void grpc_timer_manager_tick() {
@@ -119,7 +123,13 @@ static void run_some_timers() {
     // The number of timer threads is always increasing until all the threads
     // are stopped. In rare cases, if a large number of timers fire
     // simultaneously, we may end up using a large number of threads.
-    start_timer_thread_and_unlock();
+    if (!start_timer_thread_and_unlock()) {
+      gpr_log(GPR_ERROR, "unable to start additional timer threads");
+      gpr_mu_lock(&g_mu);
+      --g_waiter_count;
+      --g_thread_count;
+      gpr_mu_unlock(&g_mu);
+    }
   } else {
     // if there's no thread waiting with a timeout, kick an existing untimed
     // waiter so that the next deadline is not missed
@@ -294,7 +304,7 @@ static void start_threads(void) {
   gpr_mu_lock(&g_mu);
   if (!g_threaded) {
     g_threaded = true;
-    start_timer_thread_and_unlock();
+    GPR_ASSERT(start_timer_thread_and_unlock());
   } else {
     gpr_mu_unlock(&g_mu);
   }

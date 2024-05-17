@@ -59,7 +59,7 @@ TEST(ThreadTest, CanCreateWaitAndJoin) {
   t.n = NUM_THREADS;
   t.is_done = 0;
   for (auto& th : thds) {
-    th = grpc_core::Thread("grpc_thread_body1_test", &thd_body1, &t);
+    th = grpc_core::Thread("grpc_thread_body1_test", &thd_body1, &t, nullptr);
     th.Start();
   }
   gpr_mu_lock(&t.mu);

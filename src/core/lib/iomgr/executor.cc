@@ -162,7 +162,10 @@ void Executor::SetThreading(bool threading) {
       thd_state_[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
-    thd_state_[0].thd = Thread(name_, &Executor::ThreadMain, &thd_state_[0]);
+    bool success = false;
+    thd_state_[0].thd =
+        Thread(name_, &Executor::ThreadMain, &thd_state_[0], &success);
+    GPR_ASSERT(success);
     thd_state_[0].thd.Start();
   } else {  // !threading
     if (curr_num_threads == 0) {
@@ -351,13 +354,17 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
     if (try_new_thread && gpr_spinlock_trylock(&adding_thread_lock_)) {
       cur_thread_count = static_cast<size_t>(gpr_atm_acq_load(&num_threads_));
       if (cur_thread_count < max_threads_) {
-        // Increment num_threads (safe to do a store instead of a cas because we
-        // always increment num_threads under the 'adding_thread_lock')
-        gpr_atm_rel_store(&num_threads_, cur_thread_count + 1);
-
+        bool success = false;
         thd_state_[cur_thread_count].thd =
-            Thread(name_, &Executor::ThreadMain, &thd_state_[cur_thread_count]);
-        thd_state_[cur_thread_count].thd.Start();
+            Thread(name_, &Executor::ThreadMain, &thd_state_[cur_thread_count],
+                   &success);
+        if (success) {
+          thd_state_[cur_thread_count].thd.Start();
+
+          // Increment num_threads (safe to do a store instead of a cas because
+          // we always increment num_threads under the 'adding_thread_lock')
+          gpr_atm_rel_store(&num_threads_, cur_thread_count + 1);
+        }
       }
       gpr_spinlock_unlock(&adding_thread_lock_);
     }

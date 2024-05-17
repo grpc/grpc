@@ -197,13 +197,13 @@ PosixOracleEndpoint::PosixOracleEndpoint(int socket_fd)
       [](void* arg) {
         static_cast<PosixOracleEndpoint*>(arg)->ProcessReadOperations();
       },
-      this);
+      this, nullptr);
   write_ops_ = grpc_core::Thread(
       "write_ops_thread",
       [](void* arg) {
         static_cast<PosixOracleEndpoint*>(arg)->ProcessWriteOperations();
       },
-      this);
+      this, nullptr);
   read_ops_.Start();
   write_ops_.Start();
 }
@@ -320,7 +320,7 @@ absl::Status PosixOracleListener::Start() {
       [](void* arg) {
         static_cast<PosixOracleListener*>(arg)->HandleIncomingConnections();
       },
-      this);
+      this, nullptr);
   serve_.Start();
   return absl::OkStatus();
 }

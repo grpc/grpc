@@ -132,7 +132,7 @@ TEST_F(ArenaTest, ConcurrentAlloc) {
             *static_cast<char*>(a->arena->Alloc(1)) = static_cast<char>(i);
           }
         },
-        &args);
+        &args, nullptr);
     thds[i].Start();
   }
 
@@ -163,7 +163,7 @@ TEST_F(ArenaTest, ConcurrentManagedNew) {
                 std::make_unique<int>(static_cast<int>(i)));
           }
         },
-        &args);
+        &args, nullptr);
     thds[i].Start();
   }
 
@@ -285,7 +285,7 @@ TEST_F(ArenaTest, ConcurrentMakePooled) {
             EXPECT_EQ(a->arena->MakePooled<Type1>()->Foo(), 1);
           }
         },
-        &args);
+        &args, nullptr);
     thds1[i].Start();
 
     thds2[i] = Thread(
@@ -297,7 +297,7 @@ TEST_F(ArenaTest, ConcurrentMakePooled) {
             EXPECT_EQ(a->arena->MakePooled<Type2>()->Foo(), 2);
           }
         },
-        &args);
+        &args, nullptr);
     thds2[i].Start();
   }
 

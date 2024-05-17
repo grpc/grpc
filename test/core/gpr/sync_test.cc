@@ -197,7 +197,7 @@ static void test_destroy(struct test* m) {
 static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   int i;
   for (i = 0; i != m->nthreads; i++) {
-    m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m);
+    m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m, nullptr);
     m->threads[i].Start();
   }
 }
@@ -258,7 +258,7 @@ static void test(const char* name, void (*body)(void* m),
     m = test_new(10, iterations, incr_step);
     grpc_core::Thread extra_thd;
     if (extra != nullptr) {
-      extra_thd = grpc_core::Thread(name, extra, m);
+      extra_thd = grpc_core::Thread(name, extra, m, nullptr);
       extra_thd.Start();
       m->done++;  // one more thread to wait for
     }

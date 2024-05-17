@@ -89,7 +89,8 @@ TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
 class TestThread {
  public:
   explicit TestThread(WorkSerializer* lock)
-      : lock_(lock), thread_("grpc_execute_many", ExecuteManyLoop, this) {
+      : lock_(lock),
+        thread_("grpc_execute_many", ExecuteManyLoop, this, nullptr) {
     gpr_event_init(&done_);
     thread_.Start();
   }
@@ -150,7 +151,8 @@ TEST(WorkSerializerTest, ExecuteMany) {
 class TestThreadScheduleAndDrain {
  public:
   explicit TestThreadScheduleAndDrain(WorkSerializer* lock)
-      : lock_(lock), thread_("grpc_execute_many", ExecuteManyLoop, this) {
+      : lock_(lock),
+        thread_("grpc_execute_many", ExecuteManyLoop, this, nullptr) {
     gpr_event_init(&done_);
     thread_.Start();
   }

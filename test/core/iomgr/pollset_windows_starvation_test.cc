@@ -103,7 +103,7 @@ int main(int argc, char** argv) {
           gpr_cv_signal(&tparams->cv);
           gpr_mu_unlock(&tparams->mu);
         },
-        &params);
+        &params, nullptr);
     thd.Start();
     threads.push_back(std::move(thd));
   }

@@ -589,7 +589,8 @@ static int run_benchmark(const char* socket_type, thread_args* client_args,
   LOG(INFO) << "Starting test " << client_args->strategy_name << " "
             << socket_type << " " << client_args->msg_size;
 
-  grpc_core::Thread server("server_thread", server_thread_wrap, server_args);
+  grpc_core::Thread server("server_thread", server_thread_wrap, server_args,
+                           nullptr);
   server.Start();
   client_thread(client_args);
   server.Join();

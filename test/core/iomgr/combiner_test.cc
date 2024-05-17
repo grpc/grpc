@@ -105,7 +105,8 @@ TEST(CombinerTest, TestExecuteMany) {
     ta[i].ctr = 0;
     ta[i].lock = lock;
     gpr_event_init(&ta[i].done);
-    thds[i] = grpc_core::Thread("grpc_execute_many", execute_many_loop, &ta[i]);
+    thds[i] = grpc_core::Thread("grpc_execute_many", execute_many_loop, &ta[i],
+                                nullptr);
     thds[i].Start();
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
