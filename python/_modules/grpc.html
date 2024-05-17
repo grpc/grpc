@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc &#8212; gRPC Python 1.62.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.64.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=faf92259"></script>
+    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=057799ce"></script>
     <script src="../_static/doctools.js?v=888ff710"></script>
     <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.62.0</p>
+<p class="blurb">1.64.0</p>
 
 
 
@@ -1092,6 +1092,7 @@
         <span class="n">method</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary method.</span>
 
@@ -1102,6 +1103,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
+<span class="sd">          _registered_method: Implementation Private. A bool representing whether the method</span>
+<span class="sd">            is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A UnaryUnaryMultiCallable value for the named unary-unary method.</span>
@@ -1114,6 +1117,7 @@
         <span class="n">method</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream method.</span>
 
@@ -1124,6 +1128,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None is</span>
 <span class="sd">            passed.</span>
+<span class="sd">          _registered_method: Implementation Private. A bool representing whether the method</span>
+<span class="sd">            is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A UnaryStreamMultiCallable value for the name unary-stream method.</span>
@@ -1136,6 +1142,7 @@
         <span class="n">method</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary method.</span>
 
@@ -1146,6 +1153,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None is</span>
 <span class="sd">            passed.</span>
+<span class="sd">          _registered_method: Implementation Private. A bool representing whether the method</span>
+<span class="sd">            is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A StreamUnaryMultiCallable value for the named stream-unary method.</span>
@@ -1158,6 +1167,7 @@
         <span class="n">method</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream method.</span>
 
@@ -1168,6 +1178,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
+<span class="sd">          _registered_method: Implementation Private. A bool representing whether the method</span>
+<span class="sd">            is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A StreamStreamMultiCallable value for the named stream-stream method.</span>
@@ -1530,6 +1542,22 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
 
+<div class="viewcode-block" id="Server.add_registered_method_handlers"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_registered_method_handlers">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+    <span class="k">def</span> <span class="nf">add_registered_method_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
+
+<span class="sd">        This method is only safe to call before the server is started.</span>
+
+<span class="sd">        If the same method have both generic and registered handler,</span>
+<span class="sd">        registered handler will take precedence.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          service_name: The service name.</span>
+<span class="sd">          method_handlers: A dictionary that maps method names to corresponding</span>
+<span class="sd">            RpcMethodHandler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
 <div class="viewcode-block" id="Server.add_insecure_port"><a class="viewcode-back" href="../grpc.html#grpc.Server.add_insecure_port">[docs]</a>    <span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
     <span class="k">def</span> <span class="nf">add_insecure_port</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Opens an insecure port for accepting RPCs.</span>
@@ -1576,8 +1604,9 @@
 
 <span class="sd">        This method immediately stop service of new RPCs in all cases.</span>
 
-<span class="sd">        If a grace period is specified, this method returns immediately</span>
-<span class="sd">        and all RPCs active at the end of the grace period are aborted.</span>
+<span class="sd">        If a grace period is specified, this method waits until all active</span>
+<span class="sd">        RPCs are finished or until the grace period is reached. RPCs that haven&#39;t</span>
+<span class="sd">        been terminated within the grace period are aborted.</span>
 <span class="sd">        If a grace period is not specified (by passing None for `grace`),</span>
 <span class="sd">        all existing RPCs are aborted immediately and this method</span>
 <span class="sd">        blocks until the last RPC handler terminates.</span>

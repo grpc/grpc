@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">39.0.0</span>
+   &#160;<span id="projectnumber">41.0.0</span>
    </div>
   </td>
  </tr>
@@ -82,7 +82,7 @@ $(function() {
 <ol type="1">
 <li>MIN_CONNECT_TIMEOUT (minimum time we're willing to give a connection to complete)</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md80"></a>
+<h1><a class="anchor" id="autotoc_md81"></a>
 Proposed Backoff Algorithm</h1>
 <p>Exponentially back off the start time of connection attempts up to a limit of MAX_BACKOFF, with jitter.</p>
 <div class="fragment"><div class="line">ConnectWithBackoff()</div>
@@ -97,7 +97,7 @@ Proposed Backoff Algorithm</h1>
 </div><!-- fragment --><p>With specific parameters of MIN_CONNECT_TIMEOUT = 20 seconds INITIAL_BACKOFF = 1 second MULTIPLIER = 1.6 MAX_BACKOFF = 120 seconds JITTER = 0.2</p>
 <p>Implementations with pressing concerns (such as minimizing the number of wakeups on a mobile phone) may wish to use a different algorithm, and in particular different jitter logic.</p>
 <p>Alternate implementations must ensure that connection backoffs started at the same time disperse, and must not attempt connections substantially more often than the above algorithm.</p>
-<h1><a class="anchor" id="autotoc_md81"></a>
+<h1><a class="anchor" id="autotoc_md82"></a>
 Reset Backoff</h1>
 <p>The back off should be reset to INITIAL_BACKOFF at some time point, so that the reconnecting behavior is consistent no matter the connection is a newly started one or a previously disconnected one.</p>
 <p>We choose to reset the Backoff when the SETTINGS frame is received, at that time point, we know for sure that this connection was accepted by the server. </p>
@@ -105,7 +105,7 @@ Reset Backoff</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:02:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

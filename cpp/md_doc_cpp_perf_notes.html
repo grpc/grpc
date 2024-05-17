@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.62.0</span>
+   &#160;<span id="projectnumber">1.64.0</span>
    </div>
   </td>
  </tr>
@@ -66,7 +66,7 @@ $(function() {
 <div class="title">C++ Performance Notes </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md85"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md86"></a>
 Streaming write buffering</h1>
 <p>Generally, each write operation (Write(), WritesDone()) implies a syscall. gRPC will try to batch together separate write operations from different threads, but currently cannot automatically infer batching in a single stream.</p>
 <p>If message k+1 in a stream does not rely on responses from message k, it's possible to enable write batching by passing a WriteOptions argument to Write with the buffer_hint set:</p>
@@ -76,14 +76,14 @@ Streaming write buffering</h1>
 <li>a subsequent Write without buffer_hint set is posted</li>
 <li>the call is finished for writing (WritesDone() called on the client, or Finish() called on an async server stream, or the service handler returns for a sync server stream)</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md86"></a>
+<h1><a class="anchor" id="autotoc_md87"></a>
 Completion Queues and Threading in the Async API</h1>
 <p>Right now, the best performance trade-off is having numcpu's threads and one completion queue per thread. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:03:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

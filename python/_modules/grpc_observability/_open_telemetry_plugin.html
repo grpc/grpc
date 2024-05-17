@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python 1.62.0 documentation</title>
+    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python 1.64.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=faf92259"></script>
+    <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=057799ce"></script>
     <script src="../../_static/doctools.js?v=888ff710"></script>
     <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.62.0</p>
+<p class="blurb">1.64.0</p>
 
 
 
@@ -101,21 +101,11 @@
 <span class="c1"># limitations under the License.</span>
 
 <span class="kn">import</span> <span class="nn">abc</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="c1"># pytype: disable=pyi-error</span>
-<span class="kn">import</span> <span class="nn">grpc</span>
-<span class="kn">from</span> <span class="nn">grpc_observability</span> <span class="kn">import</span> <span class="n">_open_telemetry_measures</span>
-<span class="kn">from</span> <span class="nn">grpc_observability._cyobservability</span> <span class="kn">import</span> <span class="n">MetricsName</span>
-<span class="kn">from</span> <span class="nn">grpc_observability._observability</span> <span class="kn">import</span> <span class="n">StatsData</span>
-<span class="kn">from</span> <span class="nn">opentelemetry.metrics</span> <span class="kn">import</span> <span class="n">Counter</span>
-<span class="kn">from</span> <span class="nn">opentelemetry.metrics</span> <span class="kn">import</span> <span class="n">Histogram</span>
-<span class="kn">from</span> <span class="nn">opentelemetry.metrics</span> <span class="kn">import</span> <span class="n">Meter</span>
+<span class="kn">from</span> <span class="nn">grpc_observability</span> <span class="kn">import</span> <span class="n">_open_telemetry_observability</span>
 <span class="kn">from</span> <span class="nn">opentelemetry.metrics</span> <span class="kn">import</span> <span class="n">MeterProvider</span>
-
-<span class="n">GRPC_METHOD_LABEL</span> <span class="o">=</span> <span class="s2">&quot;grpc.method&quot;</span>
-<span class="n">GRPC_TARGET_LABEL</span> <span class="o">=</span> <span class="s2">&quot;grpc.target&quot;</span>
-<span class="n">GRPC_OTHER_LABEL_VALUE</span> <span class="o">=</span> <span class="s2">&quot;other&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">OpenTelemetryLabelInjector</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABC</span><span class="p">):</span>
@@ -178,187 +168,83 @@
 
 <span class="c1"># pylint: disable=no-self-use</span>
 <div class="viewcode-block" id="OpenTelemetryPlugin"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin">[docs]</a><span class="k">class</span> <span class="nc">OpenTelemetryPlugin</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Describes a Plugin for OpenTelemetry observability.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Describes a Plugin for OpenTelemetry observability.&quot;&quot;&quot;</span>
 
-<span class="sd">    This is class is part of an EXPERIMENTAL API.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plugin_options</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]</span>
+    <span class="n">meter_provider</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeterProvider</span><span class="p">]</span>
+    <span class="n">target_attribute_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span>
+    <span class="n">generic_method_attribute_filter</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span>
+    <span class="n">_plugin</span><span class="p">:</span> <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">_OpenTelemetryPlugin</span>
 
-<div class="viewcode-block" id="OpenTelemetryPlugin.get_plugin_options"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.get_plugin_options">[docs]</a>    <span class="k">def</span> <span class="nf">get_plugin_options</span><span class="p">(</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]:</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">plugin_options</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">meter_provider</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeterProvider</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">target_attribute_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">generic_method_attribute_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This function will be used to get plugin options which are enabled for</span>
-<span class="sd">        this OpenTelemetryPlugin instance.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            An Iterable of class OpenTelemetryPluginOption which will be enabled for</span>
-<span class="sd">            this OpenTelemetryPlugin.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">[]</span></div>
-
-<div class="viewcode-block" id="OpenTelemetryPlugin.get_meter_provider"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.get_meter_provider">[docs]</a>    <span class="k">def</span> <span class="nf">get_meter_provider</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeterProvider</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This function will be used to get the MeterProvider for this OpenTelemetryPlugin</span>
-<span class="sd">        instance.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            A MeterProvider which will be used to collect telemetry data, or None which</span>
-<span class="sd">            means no metrics will be collected.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="kc">None</span></div>
-
-<div class="viewcode-block" id="OpenTelemetryPlugin.target_attribute_filter"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.target_attribute_filter">[docs]</a>    <span class="k">def</span> <span class="nf">target_attribute_filter</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># pylint: disable=unused-argument</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Once overridden, this will be called per channel to decide whether to record the</span>
-<span class="sd">        target attribute on client or to replace it with &quot;other&quot;.</span>
+<span class="sd">        Args:</span>
+<span class="sd">          plugin_options: An Iterable of OpenTelemetryPluginOption which will be</span>
+<span class="sd">        enabled for this OpenTelemetryPlugin.</span>
+<span class="sd">          meter_provider: A MeterProvider which will be used to collect telemetry data,</span>
+<span class="sd">        or None which means no metrics will be collected.</span>
+<span class="sd">          target_attribute_filter: Once provided, this will be called per channel to decide</span>
+<span class="sd">        whether to record the target attribute on client or to replace it with &quot;other&quot;.</span>
 <span class="sd">        This helps reduce the cardinality on metrics in cases where many channels</span>
 <span class="sd">        are created with different targets in the same binary (which might happen</span>
 <span class="sd">        for example, if the channel target string uses IP addresses directly).</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            target: The target for the RPC.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            bool: True means the original target string will be used, False means target string</span>
-<span class="sd">            will be replaced with &quot;other&quot;.</span>
+<span class="sd">        Return True means the original target string will be used, False means target string</span>
+<span class="sd">        will be replaced with &quot;other&quot;.</span>
+<span class="sd">          generic_method_attribute_filter: Once provided, this will be called with a generic</span>
+<span class="sd">        method type to decide whether to record the method name or to replace it with</span>
+<span class="sd">        &quot;other&quot;. Note that pre-registered methods will always be recorded no matter what</span>
+<span class="sd">        this function returns.</span>
+<span class="sd">        Return True means the original method name will be used, False means method name will</span>
+<span class="sd">        be replaced with &quot;other&quot;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="kc">True</span></div>
-
-<div class="viewcode-block" id="OpenTelemetryPlugin.generic_method_attribute_filter"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.generic_method_attribute_filter">[docs]</a>    <span class="k">def</span> <span class="nf">generic_method_attribute_filter</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># pylint: disable=unused-argument</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Once overridden, this will be called with a generic method type to decide whether to</span>
-<span class="sd">        record the method name or to replace it with &quot;other&quot;.</span>
-
-<span class="sd">        Note that pre-registered methods will always be recorded no matter what this</span>
-<span class="sd">        function returns.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            method: The method name for the RPC.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            bool: True means the original method name will be used, False means method name</span>
-<span class="sd">            will be replaced with &quot;other&quot;.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="kc">False</span></div></div>
-
-
-<span class="k">class</span> <span class="nc">_OpenTelemetryPlugin</span><span class="p">:</span>
-    <span class="n">_plugin</span><span class="p">:</span> <span class="n">OpenTelemetryPlugin</span>
-    <span class="n">_metric_to_recorder</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">MetricsName</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Counter</span><span class="p">,</span> <span class="n">Histogram</span><span class="p">]]</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plugin</span><span class="p">:</span> <span class="n">OpenTelemetryPlugin</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_plugin</span> <span class="o">=</span> <span class="n">plugin</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_metric_to_recorder</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-
-        <span class="n">meter_provider</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plugin</span><span class="o">.</span><span class="n">get_meter_provider</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">meter_provider</span><span class="p">:</span>
-            <span class="n">meter</span> <span class="o">=</span> <span class="n">meter_provider</span><span class="o">.</span><span class="n">get_meter</span><span class="p">(</span><span class="s2">&quot;grpc-python&quot;</span><span class="p">,</span> <span class="n">grpc</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-            <span class="n">enabled_metrics</span> <span class="o">=</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">base_metrics</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_metric_to_recorder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_register_metrics</span><span class="p">(</span>
-                <span class="n">meter</span><span class="p">,</span> <span class="n">enabled_metrics</span>
-            <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_should_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stats_data</span><span class="p">:</span> <span class="n">StatsData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="c1"># Decide if this plugin should record the stats_data.</span>
-        <span class="k">return</span> <span class="n">stats_data</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metric_to_recorder</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">_record_stats_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stats_data</span><span class="p">:</span> <span class="n">StatsData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">recorder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_metric_to_recorder</span><span class="p">[</span><span class="n">stats_data</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
-
-        <span class="n">target</span> <span class="o">=</span> <span class="n">stats_data</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">GRPC_TARGET_LABEL</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plugin</span><span class="o">.</span><span class="n">target_attribute_filter</span><span class="p">(</span><span class="n">target</span><span class="p">):</span>
-            <span class="c1"># Filter target name.</span>
-            <span class="n">stats_data</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">GRPC_TARGET_LABEL</span><span class="p">]</span> <span class="o">=</span> <span class="n">GRPC_OTHER_LABEL_VALUE</span>
-
-        <span class="n">method</span> <span class="o">=</span> <span class="n">stats_data</span><span class="o">.</span><span class="n">labels</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">GRPC_METHOD_LABEL</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plugin</span><span class="o">.</span><span class="n">generic_method_attribute_filter</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
-            <span class="c1"># Filter method name.</span>
-            <span class="n">stats_data</span><span class="o">.</span><span class="n">labels</span><span class="p">[</span><span class="n">GRPC_METHOD_LABEL</span><span class="p">]</span> <span class="o">=</span> <span class="n">GRPC_OTHER_LABEL_VALUE</span>
-
-        <span class="n">value</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">if</span> <span class="n">stats_data</span><span class="o">.</span><span class="n">measure_double</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">stats_data</span><span class="o">.</span><span class="n">value_float</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plugin_options</span> <span class="o">=</span> <span class="n">plugin_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">meter_provider</span> <span class="o">=</span> <span class="n">meter_provider</span>
+        <span class="k">if</span> <span class="n">target_attribute_filter</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_attribute_filter</span> <span class="o">=</span> <span class="n">target_attribute_filter</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">stats_data</span><span class="o">.</span><span class="n">value_int</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">recorder</span><span class="p">,</span> <span class="n">Counter</span><span class="p">):</span>
-            <span class="n">recorder</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="n">stats_data</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">recorder</span><span class="p">,</span> <span class="n">Histogram</span><span class="p">):</span>
-            <span class="n">recorder</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">attributes</span><span class="o">=</span><span class="n">stats_data</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">target_attribute_filter</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">target</span><span class="p">:</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">generic_method_attribute_filter</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">generic_method_attribute_filter</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">generic_method_attribute_filter</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">generic_method_attribute_filter</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">method</span><span class="p">:</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_plugin</span> <span class="o">=</span> <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">_OpenTelemetryPlugin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
-    <span class="c1"># pylint: disable=no-self-use</span>
-    <span class="k">def</span> <span class="nf">maybe_record_stats_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stats_data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">StatsData</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># Records stats data to MeterProvider.</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_record</span><span class="p">(</span><span class="n">stats_data</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_record_stats_data</span><span class="p">(</span><span class="n">stats_data</span><span class="p">)</span>
+<div class="viewcode-block" id="OpenTelemetryPlugin.register_global"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.register_global">[docs]</a>    <span class="k">def</span> <span class="nf">register_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Registers a global plugin that acts on all channels and servers running on the process.</span>
 
-    <span class="k">def</span> <span class="nf">_register_metrics</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">meter</span><span class="p">:</span> <span class="n">Meter</span><span class="p">,</span> <span class="n">metrics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">Metric</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">MetricsName</span><span class="p">,</span> <span class="n">Union</span><span class="p">[</span><span class="n">Counter</span><span class="p">,</span> <span class="n">Histogram</span><span class="p">]]:</span>
-        <span class="n">metric_to_recorder_map</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">recorder</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">CLIENT_ATTEMPT_STARTED</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_counter</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">CLIENT_ATTEMPT_DURATION</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_histogram</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">CLIENT_RPC_DURATION</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_histogram</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">CLIENT_ATTEMPT_SEND_BYTES</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_histogram</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="p">(</span>
-                <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">CLIENT_ATTEMPT_RECEIVED_BYTES</span>
-            <span class="p">):</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_histogram</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">SERVER_STARTED_RPCS</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_counter</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">SERVER_RPC_DURATION</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_histogram</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">SERVER_RPC_SEND_BYTES</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_histogram</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="n">_open_telemetry_measures</span><span class="o">.</span><span class="n">SERVER_RPC_RECEIVED_BYTES</span><span class="p">:</span>
-                <span class="n">recorder</span> <span class="o">=</span> <span class="n">meter</span><span class="o">.</span><span class="n">create_histogram</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                    <span class="n">unit</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">unit</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="n">metric</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="n">metric_to_recorder_map</span><span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">cyname</span><span class="p">]</span> <span class="o">=</span> <span class="n">recorder</span>
-        <span class="k">return</span> <span class="n">metric_to_recorder_map</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If a global plugin was already registered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">start_open_telemetry_observability</span><span class="p">(</span>
+            <span class="n">plugins</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_plugin</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="OpenTelemetryPlugin.deregister_global"><a class="viewcode-back" href="../../grpc_observability.html#grpc_observability.OpenTelemetryPlugin.deregister_global">[docs]</a>    <span class="k">def</span> <span class="nf">deregister_global</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        De-register the global plugin that acts on all channels and servers running on the process.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            RuntimeError: If no global plugin was registered.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">end_open_telemetry_observability</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="fm">__enter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">start_open_telemetry_observability</span><span class="p">(</span>
+            <span class="n">plugins</span><span class="o">=</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_plugin</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__exit__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exc_type</span><span class="p">,</span> <span class="n">exc_val</span><span class="p">,</span> <span class="n">exc_tb</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">end_open_telemetry_observability</span><span class="p">()</span></div>
 </pre></div>
 
           </div>

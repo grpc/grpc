@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">39.0.0</span>
+   &#160;<span id="projectnumber">41.0.0</span>
    </div>
   </td>
  </tr>
@@ -100,6 +100,9 @@ Compression Levels and Algorithms</h2>
 Propagation to child RPCs</h2>
 <p>The inheritance of the compression configuration by child RPCs is left up to the implementation. Note that in the absence of changes to the parent channel, its configuration will be used.</p>
 <h2><a class="anchor" id="autotoc_md61"></a>
+Deflate Compression</h2>
+<p>Like HTTP implementations, gRPC implementations MUST use the "deflate" compression to mean the zlib structure (defined in <a href="https://datatracker.ietf.org/doc/html/rfc1950">RFC 1950</a>) with the deflate compression algorithm (defined in <a href="https://datatracker.ietf.org/doc/html/rfc1951">RFC 1951</a>). Servers and clients MUST NOT send raw deflate data.</p>
+<h2><a class="anchor" id="autotoc_md62"></a>
 Test cases</h2>
 <ol type="1">
 <li>When a compression level is not specified for either the channel or the message, the default channel level <em>none</em> is considered: data MUST NOT be compressed.</li>
@@ -123,7 +126,7 @@ Test cases</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:02:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

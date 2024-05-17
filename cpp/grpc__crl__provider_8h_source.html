@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.62.0</span>
+   &#160;<span id="projectnumber">1.64.0</span>
    </div>
   </td>
  </tr>
@@ -91,15 +91,15 @@ $(function() {
 <div class="line"><a name="l00019"></a><span class="lineno">   19</span>&#160;<span class="preprocessor">#ifndef GRPC_GRPC_CRL_PROVIDER_H</span></div>
 <div class="line"><a name="l00020"></a><span class="lineno">   20</span>&#160;<span class="preprocessor">#define GRPC_GRPC_CRL_PROVIDER_H</span></div>
 <div class="line"><a name="l00021"></a><span class="lineno">   21</span>&#160; </div>
-<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
-<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160; </div>
-<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
-<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160; </div>
-<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160;<span class="preprocessor">#include &quot;absl/status/statusor.h&quot;</span></div>
-<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &quot;absl/strings/string_view.h&quot;</span></div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160; </div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc__security_8h.html">grpc/grpc_security.h</a>&gt;</span></div>
+<div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;<span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;<span class="preprocessor">#include &lt;string&gt;</span></div>
+<div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160; </div>
+<div class="line"><a name="l00025"></a><span class="lineno">   25</span>&#160;<span class="preprocessor">#include &quot;absl/status/statusor.h&quot;</span></div>
+<div class="line"><a name="l00026"></a><span class="lineno">   26</span>&#160;<span class="preprocessor">#include &quot;absl/strings/string_view.h&quot;</span></div>
+<div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
+<div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc_2credentials_8h.html">grpc/credentials.h</a>&gt;</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="grpc__security_8h.html">grpc/grpc_security.h</a>&gt;</span></div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;<span class="preprocessor">#include &lt;<a class="code" href="support_2port__platform_8h.html">grpc/support/port_platform.h</a>&gt;</span></div>
 <div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160; </div>
 <div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc__core.html">grpc_core</a> {</div>
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;<span class="keyword">namespace </span>experimental {</div>
@@ -119,68 +119,71 @@ $(function() {
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; <span class="keyword">public</span>:</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_certificate_info.html#a222487b70a7cd74427ab34cfb83e7601">~CertificateInfo</a>() = <span class="keywordflow">default</span>;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;  <span class="keyword">virtual</span> absl::string_view <a class="code" href="classgrpc__core_1_1experimental_1_1_certificate_info.html#a2998b1fc7c7b9a18a9804fc079b98253">Issuer</a>() <span class="keyword">const</span> = 0;</div>
-<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;};</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160; </div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;<span class="comment">// The base class for CRL Provider implementations.</span></div>
-<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">// CrlProviders can be passed in as a way to supply CRLs during handshakes.</span></div>
-<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">// CrlProviders must be thread safe. They are on the critical path of gRPC</span></div>
-<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">// creating a connection and doing a handshake, so the implementation of</span></div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">// `GetCrl` should be very fast. It is suggested to have an in-memory map of</span></div>
-<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">// CRLs for quick lookup and return, and doing expensive updates to this map</span></div>
-<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">// asynchronously.</span></div>
-<div class="line"><a name="l00059"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_crl_provider.html">   59</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc__core_1_1experimental_1_1_crl_provider.html">CrlProvider</a> {</div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; <span class="keyword">public</span>:</div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_crl_provider.html#a71e2b35b7a6f4bf5e7c832c2eac79f1c">~CrlProvider</a>() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="comment">// Get the CRL associated with a certificate. Read-only.</span></div>
-<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Crl&gt; <a class="code" href="classgrpc__core_1_1experimental_1_1_crl_provider.html#a06501e40e85c1aefb3f9601ae29238c3">GetCrl</a>(</div>
-<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;      <span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_certificate_info.html">CertificateInfo</a>&amp; certificate_info) = 0;</div>
-<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;};</div>
-<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160; </div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;absl::StatusOr&lt;std::shared_ptr&lt;CrlProvider&gt;&gt; <a class="code" href="namespacegrpc__core_1_1experimental.html#a2c01a7d897936dbbccc8f010e128eaf9">CreateStaticCrlProvider</a>(</div>
-<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    absl::Span&lt;const std::string&gt; crls);</div>
-<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160; </div>
-<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;<span class="comment">// Creates a CRL Provider that periodically and asynchronously reloads a</span></div>
-<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">// directory. The refresh_duration minimum is 60 seconds. The</span></div>
-<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">// reload_error_callback provides a way for the user to specifically log or</span></div>
-<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">// otherwise notify of errors during reloading. Since reloading is asynchronous</span></div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">// and not on the main codepath, the grpc process will continue to run through</span></div>
-<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">// reloading errors, so this mechanism is an important way to provide signals to</span></div>
-<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">// your monitoring and alerting setup.</span></div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;absl::StatusOr&lt;std::shared_ptr&lt;CrlProvider&gt;&gt; <a class="code" href="namespacegrpc__core_1_1experimental.html#a6e81a74a0bec0c212f21c8f1cca17255">CreateDirectoryReloaderCrlProvider</a>(</div>
-<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    absl::string_view directory, std::chrono::seconds refresh_duration,</div>
-<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    std::function&lt;<span class="keywordtype">void</span>(<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">absl::Status</a>)&gt; reload_error_callback);</div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160; </div>
-<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;}  <span class="comment">// namespace experimental</span></div>
-<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;}  <span class="comment">// namespace grpc_core</span></div>
-<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160; </div>
-<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;<span class="comment">// TODO(gtcooke94) - Mark with api macro when all wrapped langauges support C++</span></div>
-<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="comment">// in core APIs</span></div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="comment"></span><span class="keywordtype">void</span> <a class="code" href="grpc__crl__provider_8h.html#ac766616d26c45e37b3156fb35e8649d6">grpc_tls_credentials_options_set_crl_provider</a>(</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <a class="code" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a>* options,</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    std::shared_ptr&lt;grpc_core::experimental::CrlProvider&gt; provider);</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_GRPC_CRL_PROVIDER_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;  <span class="keyword">virtual</span> absl::string_view <a class="code" href="classgrpc__core_1_1experimental_1_1_certificate_info.html#a1f19db4bbb7f8728a56109e4296ea06c">AuthorityKeyIdentifier</a>() <span class="keyword">const</span> = 0;</div>
+<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;};</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160; </div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;<span class="comment">// The base class for CRL Provider implementations.</span></div>
+<div class="line"><a name="l00054"></a><span class="lineno">   54</span>&#160;<span class="comment">// CrlProviders can be passed in as a way to supply CRLs during handshakes.</span></div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="comment">// CrlProviders must be thread safe. They are on the critical path of gRPC</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="comment">// creating a connection and doing a handshake, so the implementation of</span></div>
+<div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="comment">// `GetCrl` should be very fast. It is suggested to have an in-memory map of</span></div>
+<div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="comment">// CRLs for quick lookup and return, and doing expensive updates to this map</span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="comment">// asynchronously.</span></div>
+<div class="line"><a name="l00060"></a><span class="lineno"><a class="line" href="classgrpc__core_1_1experimental_1_1_crl_provider.html">   60</a></span>&#160;<span class="keyword">class </span><a class="code" href="classgrpc__core_1_1experimental_1_1_crl_provider.html">CrlProvider</a> {</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; <span class="keyword">public</span>:</div>
+<div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;  <span class="keyword">virtual</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_crl_provider.html#a71e2b35b7a6f4bf5e7c832c2eac79f1c">~CrlProvider</a>() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a name="l00063"></a><span class="lineno">   63</span>&#160;  <span class="comment">// Get the CRL associated with a certificate. Read-only.</span></div>
+<div class="line"><a name="l00064"></a><span class="lineno">   64</span>&#160;  <span class="keyword">virtual</span> std::shared_ptr&lt;Crl&gt; <a class="code" href="classgrpc__core_1_1experimental_1_1_crl_provider.html#a06501e40e85c1aefb3f9601ae29238c3">GetCrl</a>(</div>
+<div class="line"><a name="l00065"></a><span class="lineno">   65</span>&#160;      <span class="keyword">const</span> <a class="code" href="classgrpc__core_1_1experimental_1_1_certificate_info.html">CertificateInfo</a>&amp; certificate_info) = 0;</div>
+<div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;};</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160; </div>
+<div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;absl::StatusOr&lt;std::shared_ptr&lt;CrlProvider&gt;&gt; <a class="code" href="namespacegrpc__core_1_1experimental.html#a2c01a7d897936dbbccc8f010e128eaf9">CreateStaticCrlProvider</a>(</div>
+<div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    absl::Span&lt;const std::string&gt; crls);</div>
+<div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160; </div>
+<div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="comment">// Creates a CRL Provider that periodically and asynchronously reloads a</span></div>
+<div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;<span class="comment">// directory. The refresh_duration minimum is 60 seconds. The</span></div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="comment">// reload_error_callback provides a way for the user to specifically log or</span></div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;<span class="comment">// otherwise notify of errors during reloading. Since reloading is asynchronous</span></div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;<span class="comment">// and not on the main codepath, the grpc process will continue to run through</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;<span class="comment">// reloading errors, so this mechanism is an important way to provide signals to</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="comment">// your monitoring and alerting setup.</span></div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;absl::StatusOr&lt;std::shared_ptr&lt;CrlProvider&gt;&gt; <a class="code" href="namespacegrpc__core_1_1experimental.html#a6e81a74a0bec0c212f21c8f1cca17255">CreateDirectoryReloaderCrlProvider</a>(</div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    absl::string_view directory, std::chrono::seconds refresh_duration,</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    std::function&lt;<span class="keywordtype">void</span>(<a class="code" href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">absl::Status</a>)&gt; reload_error_callback);</div>
+<div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160; </div>
+<div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;}  <span class="comment">// namespace experimental</span></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;}  <span class="comment">// namespace grpc_core</span></div>
+<div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160; </div>
+<div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;<span class="comment">// TODO(gtcooke94) - Mark with api macro when all wrapped langauges support C++</span></div>
+<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="comment">// in core APIs</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="comment"></span><span class="keywordtype">void</span> <a class="code" href="grpc__crl__provider_8h.html#ac766616d26c45e37b3156fb35e8649d6">grpc_tls_credentials_options_set_crl_provider</a>(</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <a class="code" href="grpc_2credentials_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a>* options,</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    std::shared_ptr&lt;grpc_core::experimental::CrlProvider&gt; provider);</div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_GRPC_CRL_PROVIDER_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_provider_html_a71e2b35b7a6f4bf5e7c832c2eac79f1c"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl_provider.html#a71e2b35b7a6f4bf5e7c832c2eac79f1c">grpc_core::experimental::CrlProvider::~CrlProvider</a></div><div class="ttdeci">virtual ~CrlProvider()=default</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_html"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl.html">grpc_core::experimental::Crl</a></div><div class="ttdef"><b>Definition:</b> grpc_crl_provider.h:36</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_certificate_info_html"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_certificate_info.html">grpc_core::experimental::CertificateInfo</a></div><div class="ttdef"><b>Definition:</b> grpc_crl_provider.h:46</div></div>
 <div class="ttc" id="agrpc__crl__provider_8h_html_ac766616d26c45e37b3156fb35e8649d6"><div class="ttname"><a href="grpc__crl__provider_8h.html#ac766616d26c45e37b3156fb35e8649d6">grpc_tls_credentials_options_set_crl_provider</a></div><div class="ttdeci">void grpc_tls_credentials_options_set_crl_provider(grpc_tls_credentials_options *options, std::shared_ptr&lt; grpc_core::experimental::CrlProvider &gt; provider)</div><div class="ttdoc">EXPERIMENTAL API - Subject to change.</div></div>
-<div class="ttc" id="anamespacegrpc__core_html"><div class="ttname"><a href="namespacegrpc__core.html">grpc_core</a></div><div class="ttdef"><b>Definition:</b> grpc_audit_logging.h:32</div></div>
+<div class="ttc" id="anamespacegrpc__core_html"><div class="ttname"><a href="namespacegrpc__core.html">grpc_core</a></div><div class="ttdef"><b>Definition:</b> grpc_audit_logging.h:31</div></div>
+<div class="ttc" id="agrpc_2credentials_8h_html"><div class="ttname"><a href="grpc_2credentials_8h.html">credentials.h</a></div></div>
 <div class="ttc" id="agrpc__security_8h_html"><div class="ttname"><a href="grpc__security_8h.html">grpc_security.h</a></div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_html_ae23a2824f4520c90f27ff01ac37f7848"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl.html#ae23a2824f4520c90f27ff01ac37f7848">grpc_core::experimental::Crl::~Crl</a></div><div class="ttdeci">virtual ~Crl()=default</div></div>
-<div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_provider_html"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl_provider.html">grpc_core::experimental::CrlProvider</a></div><div class="ttdef"><b>Definition:</b> grpc_crl_provider.h:59</div></div>
+<div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_provider_html"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl_provider.html">grpc_core::experimental::CrlProvider</a></div><div class="ttdef"><b>Definition:</b> grpc_crl_provider.h:60</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_provider_html_a06501e40e85c1aefb3f9601ae29238c3"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl_provider.html#a06501e40e85c1aefb3f9601ae29238c3">grpc_core::experimental::CrlProvider::GetCrl</a></div><div class="ttdeci">virtual std::shared_ptr&lt; Crl &gt; GetCrl(const CertificateInfo &amp;certificate_info)=0</div></div>
 <div class="ttc" id="anamespacegrpc__core_1_1experimental_html_a2c01a7d897936dbbccc8f010e128eaf9"><div class="ttname"><a href="namespacegrpc__core_1_1experimental.html#a2c01a7d897936dbbccc8f010e128eaf9">grpc_core::experimental::CreateStaticCrlProvider</a></div><div class="ttdeci">absl::StatusOr&lt; std::shared_ptr&lt; CrlProvider &gt; &gt; CreateStaticCrlProvider(absl::Span&lt; const std::string &gt; crls)</div></div>
 <div class="ttc" id="anamespacegrpc__core_1_1experimental_html_a6e81a74a0bec0c212f21c8f1cca17255"><div class="ttname"><a href="namespacegrpc__core_1_1experimental.html#a6e81a74a0bec0c212f21c8f1cca17255">grpc_core::experimental::CreateDirectoryReloaderCrlProvider</a></div><div class="ttdeci">absl::StatusOr&lt; std::shared_ptr&lt; CrlProvider &gt; &gt; CreateDirectoryReloaderCrlProvider(absl::string_view directory, std::chrono::seconds refresh_duration, std::function&lt; void(absl::Status)&gt; reload_error_callback)</div></div>
-<div class="ttc" id="agrpc__security_8h_html_a8fe8a5a9b93ff8671a7843add47d57be"><div class="ttname"><a href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a></div><div class="ttdeci">struct grpc_tls_credentials_options grpc_tls_credentials_options</div><div class="ttdoc">— TLS channel/server credentials — It is used for experimental purpose for now and subject to change.</div><div class="ttdef"><b>Definition:</b> grpc_security.h:714</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_certificate_info_html_a2998b1fc7c7b9a18a9804fc079b98253"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_certificate_info.html#a2998b1fc7c7b9a18a9804fc079b98253">grpc_core::experimental::CertificateInfo::Issuer</a></div><div class="ttdeci">virtual absl::string_view Issuer() const =0</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_html_a91043899fa3e641bfe2fa9079bc788c1"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl.html#a91043899fa3e641bfe2fa9079bc788c1">grpc_core::experimental::Crl::Parse</a></div><div class="ttdeci">static absl::StatusOr&lt; std::unique_ptr&lt; Crl &gt; &gt; Parse(absl::string_view crl_string)</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_crl_html_a554b6edf7888886aad8d853336012e87"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_crl.html#a554b6edf7888886aad8d853336012e87">grpc_core::experimental::Crl::Issuer</a></div><div class="ttdeci">virtual absl::string_view Issuer()=0</div></div>
+<div class="ttc" id="agrpc_2credentials_8h_html_a8fe8a5a9b93ff8671a7843add47d57be"><div class="ttname"><a href="grpc_2credentials_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a></div><div class="ttdeci">struct grpc_tls_credentials_options grpc_tls_credentials_options</div><div class="ttdoc">EXPERIMENTAL API - Subject to change.</div><div class="ttdef"><b>Definition:</b> credentials.h:572</div></div>
 <div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_certificate_info_html_a222487b70a7cd74427ab34cfb83e7601"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_certificate_info.html#a222487b70a7cd74427ab34cfb83e7601">grpc_core::experimental::CertificateInfo::~CertificateInfo</a></div><div class="ttdeci">virtual ~CertificateInfo()=default</div></div>
-<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:97</div></div>
+<div class="ttc" id="aclassgrpc__core_1_1experimental_1_1_certificate_info_html_a1f19db4bbb7f8728a56109e4296ea06c"><div class="ttname"><a href="classgrpc__core_1_1experimental_1_1_certificate_info.html#a1f19db4bbb7f8728a56109e4296ea06c">grpc_core::experimental::CertificateInfo::AuthorityKeyIdentifier</a></div><div class="ttdeci">virtual absl::string_view AuthorityKeyIdentifier() const =0</div></div>
+<div class="ttc" id="anamespacegrpc_1_1protobuf_1_1util_html_ad372120c6db3d26bf54ab69b6f595fe4"><div class="ttname"><a href="namespacegrpc_1_1protobuf_1_1util.html#ad372120c6db3d26bf54ab69b6f595fe4">grpc::protobuf::util::Status</a></div><div class="ttdeci">::absl::Status Status</div><div class="ttdef"><b>Definition:</b> config_protobuf.h:106</div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:02:59 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:15 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

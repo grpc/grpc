@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">39.0.0</span>
+   &#160;<span id="projectnumber">41.0.0</span>
    </div>
   </td>
  </tr>
@@ -115,9 +115,6 @@ Macros</h2></td></tr>
 <tr class="memitem:gaccb671d1056c84381ac5ebbd710b70f9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaccb671d1056c84381ac5ebbd710b70f9">GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION</a>&#160;&#160;&#160;&quot;grpc.per_message_decompression&quot;</td></tr>
 <tr class="memdesc:gaccb671d1056c84381ac5ebbd710b70f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Experimental Arg.  <a href="group__grpc__arg__keys.html#gaccb671d1056c84381ac5ebbd710b70f9">More...</a><br /></td></tr>
 <tr class="separator:gaccb671d1056c84381ac5ebbd710b70f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga405daab19c0dceb2a64d0b1a77f8fe97"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga405daab19c0dceb2a64d0b1a77f8fe97">GRPC_ARG_ENABLE_DEADLINE_CHECKS</a>&#160;&#160;&#160;&quot;grpc.enable_deadline_checking&quot;</td></tr>
-<tr class="memdesc:ga405daab19c0dceb2a64d0b1a77f8fe97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable/disable support for deadline checking.  <a href="group__grpc__arg__keys.html#ga405daab19c0dceb2a64d0b1a77f8fe97">More...</a><br /></td></tr>
-<tr class="separator:ga405daab19c0dceb2a64d0b1a77f8fe97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaecc45a63163796ca1bc5453938bdfb36"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaecc45a63163796ca1bc5453938bdfb36">GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER</a>&#160;&#160;&#160;&quot;grpc.http2.initial_sequence_number&quot;</td></tr>
 <tr class="memdesc:gaecc45a63163796ca1bc5453938bdfb36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initial stream ID for http2 transports.  <a href="group__grpc__arg__keys.html#gaecc45a63163796ca1bc5453938bdfb36">More...</a><br /></td></tr>
 <tr class="separator:gaecc45a63163796ca1bc5453938bdfb36"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -344,6 +341,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY</a>&#160;&#160;&#160;&quot;grpc.event_engine_use_memory_allocator_factory&quot;</td></tr>
 <tr class="memdesc:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="mdescLeft">&#160;</td><td class="mdescRight">It accepts a MemoryAllocatorFactory as input and If specified, it forces the default event engine to use memory allocators created using the provided factory.  <a href="group__grpc__arg__keys.html#ga7e1a4b301b2e9682abff15ea1cc5b371">More...</a><br /></td></tr>
 <tr class="separator:ga7e1a4b301b2e9682abff15ea1cc5b371"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gabd42b553fb7664f8a0231bec0268089c"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabd42b553fb7664f8a0231bec0268089c">GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS</a>&#160;&#160;&#160;&quot;grpc.max_allowed_incoming_connections&quot;</td></tr>
+<tr class="memdesc:gabd42b553fb7664f8a0231bec0268089c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Configure the max number of allowed incoming connections to the server.  <a href="group__grpc__arg__keys.html#gabd42b553fb7664f8a0231bec0268089c">More...</a><br /></td></tr>
+<tr class="separator:gabd42b553fb7664f8a0231bec0268089c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga33cd5668b4ebacb59b657f4674cc1cf5">GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM</a>&#160;&#160;&#160;&quot;grpc.default_compression_algorithm&quot;</td></tr>
 <tr class="memdesc:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default compression algorithm for the channel.  <a href="group__grpc__arg__keys.html#ga33cd5668b4ebacb59b657f4674cc1cf5">More...</a><br /></td></tr>
 <tr class="separator:ga33cd5668b4ebacb59b657f4674cc1cf5"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -620,23 +620,6 @@ Macros</h2></td></tr>
 
 <p>If non-zero, gRPC library will track stats and information at at per channel level. </p>
 <p>Disabling channelz naturally disables channel tracing. The default is for channelz to be enabled. </p>
-
-</div>
-</div>
-<a id="ga405daab19c0dceb2a64d0b1a77f8fe97"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga405daab19c0dceb2a64d0b1a77f8fe97">&#9670;&nbsp;</a></span>GRPC_ARG_ENABLE_DEADLINE_CHECKS</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GRPC_ARG_ENABLE_DEADLINE_CHECKS&#160;&#160;&#160;&quot;grpc.enable_deadline_checking&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Enable/disable support for deadline checking. </p>
-<p>Defaults to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 </p>
 
 </div>
 </div>
@@ -1180,6 +1163,23 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>LB policy name. </p>
+
+</div>
+</div>
+<a id="gabd42b553fb7664f8a0231bec0268089c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gabd42b553fb7664f8a0231bec0268089c">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS&#160;&#160;&#160;&quot;grpc.max_allowed_incoming_connections&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Configure the max number of allowed incoming connections to the server. </p>
+<p>If unspecified, it is unlimited </p>
 
 </div>
 </div>
@@ -1949,7 +1949,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:02:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

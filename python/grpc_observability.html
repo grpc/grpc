@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC Python Observability &#8212; gRPC Python 1.62.0 documentation</title>
+    <title>gRPC Python Observability &#8212; gRPC Python 1.64.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=faf92259"></script>
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=057799ce"></script>
     <script src="_static/doctools.js?v=888ff710"></script>
     <script src="_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -30,7 +30,7 @@
 
 
 
-<p class="blurb">1.62.0</p>
+<p class="blurb">1.64.0</p>
 
 
 
@@ -51,19 +51,9 @@
 <li class="toctree-l1"><a class="reference internal" href="grpc_testing.html">gRPC Testing</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC Python Observability</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-grpc_observability">Module Contents</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#grpc_observability.OpenTelemetryObservability"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryObservability</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryObservability.create_client_call_tracer"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryObservability.create_client_call_tracer()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryObservability.create_server_call_tracer_factory"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryObservability.create_server_call_tracer_factory()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryObservability.delete_client_call_tracer"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryObservability.delete_client_call_tracer()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryObservability.record_rpc_latency"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryObservability.record_rpc_latency()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryObservability.save_trace_context"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryObservability.save_trace_context()</span></code></a></li>
-</ul>
-</li>
 <li class="toctree-l3"><a class="reference internal" href="#grpc_observability.OpenTelemetryPlugin"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryPlugin</span></code></a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryPlugin.generic_method_attribute_filter"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryPlugin.generic_method_attribute_filter()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryPlugin.get_meter_provider"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryPlugin.get_meter_provider()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryPlugin.get_plugin_options"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryPlugin.get_plugin_options()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryPlugin.target_attribute_filter"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryPlugin.target_attribute_filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryPlugin.deregister_global"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryPlugin.deregister_global()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#grpc_observability.OpenTelemetryPlugin.register_global"><code class="docutils literal notranslate"><span class="pre">OpenTelemetryPlugin.register_global()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -113,203 +103,43 @@
 <section id="module-grpc_observability">
 <span id="module-contents"></span><h2>Module Contents<a class="headerlink" href="#module-grpc_observability" title="Permalink to this heading">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryObservability">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_observability.</span></span><span class="sig-name descname"><span class="pre">OpenTelemetryObservability</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plugins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_observability.html#OpenTelemetryObservability"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryObservability" title="Permalink to this definition">¶</a></dt>
-<dd><p>OpenTelemetry based plugin implementation.</p>
-<p>This is class is part of an EXPERIMENTAL API.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>plugin</strong> – OpenTelemetryPlugin to enable.</p>
-</dd>
-</dl>
-<dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryObservability.create_client_call_tracer">
-<span class="sig-name descname"><span class="pre">create_client_call_tracer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_observability.html#OpenTelemetryObservability.create_client_call_tracer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryObservability.create_client_call_tracer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a ClientCallTracerCapsule.</p>
-<p>After register the plugin, if tracing or stats is enabled, this method
-will be called after a call was created, the ClientCallTracer created
-by this method will be saved to call context.</p>
-<p>The ClientCallTracer is an object which implements <cite>grpc_core::ClientCallTracer</cite>
-interface and wrapped in a PyCapsule using <cite>client_call_tracer</cite> as name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>method_name</strong> (<em>bytes</em>) – The method name of the call in byte format.</p></li>
-<li><p><strong>target</strong> (<em>bytes</em>) – The channel target of the call in byte format.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A PyCapsule which stores a ClientCallTracer object.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><em>Any</em></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryObservability.create_server_call_tracer_factory">
-<span class="sig-name descname"><span class="pre">create_server_call_tracer_factory</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_observability.html#OpenTelemetryObservability.create_server_call_tracer_factory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryObservability.create_server_call_tracer_factory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a ServerCallTracerFactoryCapsule.</p>
-<p>After register the plugin, if tracing or stats is enabled, this method
-will be called by calling observability_init, the ServerCallTracerFactory
-created by this method will be registered to gRPC core.</p>
-<p>The ServerCallTracerFactory is an object which implements
-<cite>grpc_core::ServerCallTracerFactory</cite> interface and wrapped in a PyCapsule
-using <cite>server_call_tracer_factory</cite> as name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A PyCapsule which stores a ServerCallTracerFactory object.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Any</em></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryObservability.delete_client_call_tracer">
-<span class="sig-name descname"><span class="pre">delete_client_call_tracer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client_call_tracer</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_observability.html#OpenTelemetryObservability.delete_client_call_tracer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryObservability.delete_client_call_tracer" title="Permalink to this definition">¶</a></dt>
-<dd><p>Deletes the ClientCallTracer stored in ClientCallTracerCapsule.</p>
-<p>After register the plugin, if tracing or stats is enabled, this method
-will be called at the end of the call to destroy the ClientCallTracer.</p>
-<p>The ClientCallTracer is an object which implements <cite>grpc_core::ClientCallTracer</cite>
-interface and wrapped in a PyCapsule using <cite>client_call_tracer</cite> as name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>client_call_tracer</strong> (<em>Any</em>) – A PyCapsule which stores a ClientCallTracer object.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryObservability.record_rpc_latency">
-<span class="sig-name descname"><span class="pre">record_rpc_latency</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rpc_latency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">status_code</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_observability.html#OpenTelemetryObservability.record_rpc_latency"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryObservability.record_rpc_latency" title="Permalink to this definition">¶</a></dt>
-<dd><p>Record the latency of the RPC.</p>
-<p>After register the plugin, if stats is enabled, this method will be
-called at the end of each RPC.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>method</strong> (<em>str</em>) – The fully-qualified name of the RPC method being invoked.</p></li>
-<li><p><strong>target</strong> (<em>str</em>) – The target name of the RPC method being invoked.</p></li>
-<li><p><strong>rpc_latency</strong> (<em>float</em>) – The latency for the RPC in seconds, equals to the time between
-when the client invokes the RPC and when the client receives the status.</p></li>
-<li><p><strong>status_code</strong> (<a class="reference internal" href="grpc.html#grpc.StatusCode" title="grpc.StatusCode"><em>StatusCode</em></a>) – An element of grpc.StatusCode in string format representing the
-final status for the RPC.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryObservability.save_trace_context">
-<span class="sig-name descname"><span class="pre">save_trace_context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trace_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">span_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_sampled</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_observability.html#OpenTelemetryObservability.save_trace_context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryObservability.save_trace_context" title="Permalink to this definition">¶</a></dt>
-<dd><p>Saves the trace_id and span_id related to the current span.</p>
-<p>After register the plugin, if tracing is enabled, this method will be
-called after the server finished sending response.</p>
-<p>This method can be used to propagate census context.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>trace_id</strong> (<em>str</em>) – The identifier for the trace associated with the span as a
-32-character hexadecimal encoded string,
-e.g. 26ed0036f2eff2b7317bccce3e28d01f</p></li>
-<li><p><strong>span_id</strong> (<em>str</em>) – The identifier for the span as a 16-character hexadecimal encoded
-string. e.g. 113ec879e62583bc</p></li>
-<li><p><strong>is_sampled</strong> (<em>bool</em>) – A bool indicates whether the span is sampled.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>None</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="grpc_observability.OpenTelemetryPlugin">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_observability.</span></span><span class="sig-name descname"><span class="pre">OpenTelemetryPlugin</span></span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">grpc_observability.</span></span><span class="sig-name descname"><span class="pre">OpenTelemetryPlugin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plugin_options</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meter_provider</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_attribute_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generic_method_attribute_filter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes a Plugin for OpenTelemetry observability.</p>
-<p>This is class is part of an EXPERIMENTAL API.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryPlugin.generic_method_attribute_filter">
-<span class="sig-name descname"><span class="pre">generic_method_attribute_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">method</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin.generic_method_attribute_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin.generic_method_attribute_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Once overridden, this will be called with a generic method type to decide whether to
-record the method name or to replace it with “other”.</p>
-<p>Note that pre-registered methods will always be recorded no matter what this
-function returns.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>method</strong> (<em>str</em>) – The method name for the RPC.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True means the original method name will be used, False means method name
-will be replaced with “other”.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>plugin_options</strong> (<em>Iterable</em><em>[</em><em>OpenTelemetryPluginOption</em><em>]</em>) – </p></li>
+<li><p><strong>meter_provider</strong> (<em>MeterProvider</em><em> | </em><em>None</em>) – </p></li>
+<li><p><strong>target_attribute_filter</strong> (<em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>]</em>) – </p></li>
+<li><p><strong>generic_method_attribute_filter</strong> (<em>Callable</em><em>[</em><em>[</em><em>str</em><em>]</em><em>, </em><em>bool</em><em>]</em>) – </p></li>
+</ul>
 </dd>
 </dl>
-</dd></dl>
-
 <dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryPlugin.get_meter_provider">
-<span class="sig-name descname"><span class="pre">get_meter_provider</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin.get_meter_provider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin.get_meter_provider" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function will be used to get the MeterProvider for this OpenTelemetryPlugin
-instance.</p>
+<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryPlugin.deregister_global">
+<span class="sig-name descname"><span class="pre">deregister_global</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin.deregister_global"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin.deregister_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>De-register the global plugin that acts on all channels and servers running on the process.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>A MeterProvider which will be used to collect telemetry data, or None which
-means no metrics will be collected.</p>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If no global plugin was registered.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>MeterProvider</em> | None</p>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryPlugin.get_plugin_options">
-<span class="sig-name descname"><span class="pre">get_plugin_options</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin.get_plugin_options"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin.get_plugin_options" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function will be used to get plugin options which are enabled for
-this OpenTelemetryPlugin instance.</p>
+<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryPlugin.register_global">
+<span class="sig-name descname"><span class="pre">register_global</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin.register_global"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin.register_global" title="Permalink to this definition">¶</a></dt>
+<dd><p>Registers a global plugin that acts on all channels and servers running on the process.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>An Iterable of class OpenTelemetryPluginOption which will be enabled for
-this OpenTelemetryPlugin.</p>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>RuntimeError</strong> – If a global plugin was already registered.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>Iterable</em>[<em>OpenTelemetryPluginOption</em>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="grpc_observability.OpenTelemetryPlugin.target_attribute_filter">
-<span class="sig-name descname"><span class="pre">target_attribute_filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_observability/_open_telemetry_plugin.html#OpenTelemetryPlugin.target_attribute_filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_observability.OpenTelemetryPlugin.target_attribute_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Once overridden, this will be called per channel to decide whether to record the
-target attribute on client or to replace it with “other”.
-This helps reduce the cardinality on metrics in cases where many channels
-are created with different targets in the same binary (which might happen
-for example, if the channel target string uses IP addresses directly).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>target</strong> (<em>str</em>) – The target for the RPC.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True means the original target string will be used, False means target string
-will be replaced with “other”.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
