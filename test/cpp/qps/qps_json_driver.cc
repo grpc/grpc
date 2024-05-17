@@ -183,7 +183,7 @@ static double BinarySearch(
     double mid = low + (high - low) / 2;
     double current_cpu_load =
         GetCpuLoad(scenario, mid, per_worker_credential_types, success);
-    VLOG(2) << "Binary Search: current_offered_load " << mid;
+    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f", mid);
     if (!*success) {
       LOG(ERROR) << "Client/Server Failure";
       break;
@@ -215,7 +215,8 @@ static double SearchOfferedLoad(
     current_offered_load *= 2;
     current_cpu_load = GetCpuLoad(scenario, current_offered_load,
                                   per_worker_credential_types, success);
-    VLOG(2) << "Binary Search: current_offered_load  " << current_offered_load;
+    VLOG(2) << absl::StrFormat("Binary Search: current_offered_load %.0f",
+                               current_offered_load);
   }
 
   double targeted_offered_load =
