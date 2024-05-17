@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">39.0.0</span>
+   &#160;<span id="projectnumber">41.0.0</span>
    </div>
   </td>
  </tr>
@@ -72,13 +72,13 @@ $(function() {
 <p>EXPERIMENTAL API - Subject to change.  
  <a href="structgrpc__tls__certificate__verifier__external.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="grpc__security_8h_source.html">grpc_security.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="credentials_8h_source.html">credentials.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
 <tr class="memitem:a4426af18abaac5dde24da04e796d251b"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__certificate__verifier__external.html#a4426af18abaac5dde24da04e796d251b">user_data</a></td></tr>
 <tr class="separator:a4426af18abaac5dde24da04e796d251b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6eb957132a37782a572b5c2f0a3ee532"><td class="memItemLeft" align="right" valign="top">int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__certificate__verifier__external.html#a6eb957132a37782a572b5c2f0a3ee532">verify</a> )(void *<a class="el" href="structgrpc__tls__certificate__verifier__external.html#a4426af18abaac5dde24da04e796d251b">user_data</a>, <a class="el" href="structgrpc__tls__custom__verification__check__request.html">grpc_tls_custom_verification_check_request</a> *request, <a class="el" href="grpc__security_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_tls_on_custom_verification_check_done_cb</a> callback, void *callback_arg, <a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *sync_status, char **sync_error_details)</td></tr>
+<tr class="memitem:a6eb957132a37782a572b5c2f0a3ee532"><td class="memItemLeft" align="right" valign="top">int(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__certificate__verifier__external.html#a6eb957132a37782a572b5c2f0a3ee532">verify</a> )(void *<a class="el" href="structgrpc__tls__certificate__verifier__external.html#a4426af18abaac5dde24da04e796d251b">user_data</a>, <a class="el" href="structgrpc__tls__custom__verification__check__request.html">grpc_tls_custom_verification_check_request</a> *request, <a class="el" href="credentials_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_tls_on_custom_verification_check_done_cb</a> callback, void *callback_arg, <a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *sync_status, char **sync_error_details)</td></tr>
 <tr class="memdesc:a6eb957132a37782a572b5c2f0a3ee532"><td class="mdescLeft">&#160;</td><td class="mdescRight">A function pointer containing the verification logic that will be performed after the TLS handshake is done.  <a href="structgrpc__tls__certificate__verifier__external.html#a6eb957132a37782a572b5c2f0a3ee532">More...</a><br /></td></tr>
 <tr class="separator:a6eb957132a37782a572b5c2f0a3ee532"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad107cc92fee39f42179f4ff647469db1"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__tls__certificate__verifier__external.html#ad107cc92fee39f42179f4ff647469db1">cancel</a> )(void *<a class="el" href="structgrpc__tls__certificate__verifier__external.html#a4426af18abaac5dde24da04e796d251b">user_data</a>, <a class="el" href="structgrpc__tls__custom__verification__check__request.html">grpc_tls_custom_verification_check_request</a> *request)</td></tr>
@@ -149,7 +149,7 @@ Data Fields</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">int(* grpc_tls_certificate_verifier_external::verify) (void *<a class="el" href="structgrpc__tls__certificate__verifier__external.html#a4426af18abaac5dde24da04e796d251b">user_data</a>, <a class="el" href="structgrpc__tls__custom__verification__check__request.html">grpc_tls_custom_verification_check_request</a> *request, <a class="el" href="grpc__security_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_tls_on_custom_verification_check_done_cb</a> callback, void *callback_arg, <a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *sync_status, char **sync_error_details)</td>
+          <td class="memname">int(* grpc_tls_certificate_verifier_external::verify) (void *<a class="el" href="structgrpc__tls__certificate__verifier__external.html#a4426af18abaac5dde24da04e796d251b">user_data</a>, <a class="el" href="structgrpc__tls__custom__verification__check__request.html">grpc_tls_custom_verification_check_request</a> *request, <a class="el" href="credentials_8h.html#acb2cccf44dad8776d1a0abbd36781ee7">grpc_tls_on_custom_verification_check_done_cb</a> callback, void *callback_arg, <a class="el" href="status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> *sync_status, char **sync_error_details)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -164,12 +164,12 @@ Data Fields</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/grpc/<a class="el" href="grpc__security_8h_source.html">grpc_security.h</a></li>
+<li>include/grpc/<a class="el" href="credentials_8h_source.html">credentials.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:02:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:15 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

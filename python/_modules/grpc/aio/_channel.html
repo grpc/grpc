@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python 1.62.0 documentation</title>
+    <title>grpc.aio._channel &#8212; gRPC Python 1.64.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=faf92259"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=057799ce"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.62.0</p>
+<p class="blurb">1.64.0</p>
 
 
 
@@ -568,11 +568,20 @@
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">wait_for_state_change</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
             <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_state</span><span class="p">(</span><span class="n">try_to_connect</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
+    <span class="c1"># TODO(xuanwn): Implement this method after we have</span>
+    <span class="c1"># observability for Asyncio.</span>
+    <span class="k">def</span> <span class="nf">_get_registered_call_handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
+    <span class="c1"># observability for Asyncio.</span>
+    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
     <span class="k">def</span> <span class="nf">unary_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
@@ -584,11 +593,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
+    <span class="c1"># observability for Asyncio.</span>
+    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
     <span class="k">def</span> <span class="nf">unary_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
@@ -600,11 +613,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
+    <span class="c1"># observability for Asyncio.</span>
+    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
     <span class="k">def</span> <span class="nf">stream_unary</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>
@@ -616,11 +633,15 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
         <span class="p">)</span>
 
+    <span class="c1"># TODO(xuanwn): Implement _registered_method after we have</span>
+    <span class="c1"># observability for Asyncio.</span>
+    <span class="c1"># pylint: disable=arguments-differ,unused-argument</span>
     <span class="k">def</span> <span class="nf">stream_stream</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamStreamMultiCallable</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">StreamStreamMultiCallable</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel</span><span class="p">,</span>

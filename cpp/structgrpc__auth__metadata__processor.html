@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.62.0</span>
+   &#160;<span id="projectnumber">1.64.0</span>
    </div>
   </td>
  </tr>
@@ -72,11 +72,11 @@ $(function() {
 <p>Pluggable server-side metadata processor object.  
  <a href="structgrpc__auth__metadata__processor.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="grpc__security_8h_source.html">grpc_security.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="grpc_2credentials_8h_source.html">credentials.h</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Data Fields</h2></td></tr>
-<tr class="memitem:aac9b9b7b0057c688c19fd7c5a2f2d808"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html#aac9b9b7b0057c688c19fd7c5a2f2d808">process</a> )(void *<a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a>, <a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *context, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *md, size_t num_md, <a class="el" href="grpc__security_8h.html#a34b93b8c1e0dbdaae9dc11bbce706cb4">grpc_process_auth_metadata_done_cb</a> cb, void *user_data)</td></tr>
+<tr class="memitem:aac9b9b7b0057c688c19fd7c5a2f2d808"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html#aac9b9b7b0057c688c19fd7c5a2f2d808">process</a> )(void *<a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a>, <a class="el" href="grpc_2credentials_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *context, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *md, size_t num_md, <a class="el" href="grpc_2credentials_8h.html#a34b93b8c1e0dbdaae9dc11bbce706cb4">grpc_process_auth_metadata_done_cb</a> cb, void *user_data)</td></tr>
 <tr class="memdesc:aac9b9b7b0057c688c19fd7c5a2f2d808"><td class="mdescLeft">&#160;</td><td class="mdescRight">The context object is read/write: it contains the properties of the channel peer and it is the job of the process function to augment it with properties derived from the passed-in metadata.  <a href="structgrpc__auth__metadata__processor.html#aac9b9b7b0057c688c19fd7c5a2f2d808">More...</a><br /></td></tr>
 <tr class="separator:aac9b9b7b0057c688c19fd7c5a2f2d808"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a33be2059783190555aee0edb42bca475"><td class="memItemLeft" align="right" valign="top">void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__processor.html#a33be2059783190555aee0edb42bca475">destroy</a> )(void *<a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a>)</td></tr>
@@ -108,7 +108,7 @@ Data Fields</h2></td></tr>
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void(* grpc_auth_metadata_processor::process) (void *<a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a>, <a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *context, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *md, size_t num_md, <a class="el" href="grpc__security_8h.html#a34b93b8c1e0dbdaae9dc11bbce706cb4">grpc_process_auth_metadata_done_cb</a> cb, void *user_data)</td>
+          <td class="memname">void(* grpc_auth_metadata_processor::process) (void *<a class="el" href="structgrpc__auth__metadata__processor.html#af85de1293dfd5e846339d5ef4b7b41dc">state</a>, <a class="el" href="grpc_2credentials_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *context, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *md, size_t num_md, <a class="el" href="grpc_2credentials_8h.html#a34b93b8c1e0dbdaae9dc11bbce706cb4">grpc_process_auth_metadata_done_cb</a> cb, void *user_data)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -133,12 +133,12 @@ Data Fields</h2></td></tr>
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li>include/grpc/<a class="el" href="grpc__security_8h_source.html">grpc_security.h</a></li>
+<li>include/grpc/<a class="el" href="grpc_2credentials_8h_source.html">credentials.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:03:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:16 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

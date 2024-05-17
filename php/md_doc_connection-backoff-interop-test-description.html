@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.62.0</span>
+   &#160;<span id="projectnumber">1.64.0</span>
    </div>
   </td>
  </tr>
@@ -76,7 +76,7 @@ $(function() {
 <li>The client checks the response to see whether the server thinks the backoffs are conforming the spec or do its own check on the backoffs in the response.</li>
 </ol>
 <p>Client and server use <a href="https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto">test.proto</a>. Each language should implement its own client. The C++ server is shared among languages.</p>
-<h1><a class="anchor" id="autotoc_md78"></a>
+<h1><a class="anchor" id="autotoc_md79"></a>
 Client</h1>
 <p>Clients should accept these arguments:</p><ul>
 <li>&ndash;server_control_port=PORT<ul>
@@ -97,7 +97,7 @@ Client</h1>
 <li>Checks the response to see whether the server thinks the backoffs passed the test.</li>
 <li>Optionally, the client can do its own check on the returned backoffs.</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md79"></a>
+<h1><a class="anchor" id="autotoc_md80"></a>
 Server</h1>
 <p>A C++ server can be used for the test. Other languages do NOT need to implement a server. To minimize the network delay, the server binary should run on the same machine or on a nearby machine (in terms of network distance) with the client binary.</p>
 <p>A server implements the ReconnectService to its state. It also opens a tcp server on the retry_port, which just shuts down all incoming tcp connections to simulate connection failures. The server will keep a record of all the reconnection timestamps and return the connection backoffs in the response in milliseconds. The server also checks the backoffs to see whether they conform the spec and returns whether the client passes the test.</p>
@@ -117,7 +117,7 @@ Server</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:03:57 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:55 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

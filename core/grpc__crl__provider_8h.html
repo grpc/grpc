@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">39.0.0</span>
+   &#160;<span id="projectnumber">41.0.0</span>
    </div>
   </td>
  </tr>
@@ -74,12 +74,13 @@ $(function() {
 <div class="title">grpc_crl_provider.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
-<code>#include &lt;memory&gt;</code><br />
+<div class="textblock"><code>#include &lt;memory&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
 <code>#include &quot;absl/status/statusor.h&quot;</code><br />
 <code>#include &quot;absl/strings/string_view.h&quot;</code><br />
+<code>#include &lt;<a class="el" href="credentials_8h_source.html">grpc/credentials.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpc__security_8h_source.html">grpc/grpc_security.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
 </div>
 <p><a href="grpc__crl__provider_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -105,7 +106,7 @@ Functions</h2></td></tr>
 <tr class="separator:a2c01a7d897936dbbccc8f010e128eaf9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6e81a74a0bec0c212f21c8f1cca17255"><td class="memItemLeft" align="right" valign="top">absl::StatusOr&lt; std::shared_ptr&lt; CrlProvider &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__core_1_1experimental.html#a6e81a74a0bec0c212f21c8f1cca17255">grpc_core::experimental::CreateDirectoryReloaderCrlProvider</a> (absl::string_view directory, std::chrono::seconds refresh_duration, std::function&lt; void(absl::Status)&gt; reload_error_callback)</td></tr>
 <tr class="separator:a6e81a74a0bec0c212f21c8f1cca17255"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac766616d26c45e37b3156fb35e8649d6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__crl__provider_8h.html#ac766616d26c45e37b3156fb35e8649d6">grpc_tls_credentials_options_set_crl_provider</a> (<a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, std::shared_ptr&lt; <a class="el" href="classgrpc__core_1_1experimental_1_1_crl_provider.html">grpc_core::experimental::CrlProvider</a> &gt; provider)</td></tr>
+<tr class="memitem:ac766616d26c45e37b3156fb35e8649d6"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__crl__provider_8h.html#ac766616d26c45e37b3156fb35e8649d6">grpc_tls_credentials_options_set_crl_provider</a> (<a class="el" href="credentials_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *options, std::shared_ptr&lt; <a class="el" href="classgrpc__core_1_1experimental_1_1_crl_provider.html">grpc_core::experimental::CrlProvider</a> &gt; provider)</td></tr>
 <tr class="memdesc:ac766616d26c45e37b3156fb35e8649d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">EXPERIMENTAL API - Subject to change.  <a href="grpc__crl__provider_8h.html#ac766616d26c45e37b3156fb35e8649d6">More...</a><br /></td></tr>
 <tr class="separator:ac766616d26c45e37b3156fb35e8649d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
@@ -119,7 +120,7 @@ Functions</h2></td></tr>
         <tr>
           <td class="memname">void grpc_tls_credentials_options_set_crl_provider </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="credentials_8h.html#a8fe8a5a9b93ff8671a7843add47d57be">grpc_tls_credentials_options</a> *&#160;</td>
           <td class="paramname"><em>options</em>, </td>
         </tr>
         <tr>
@@ -144,7 +145,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:02:57 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

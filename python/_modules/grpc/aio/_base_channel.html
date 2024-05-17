@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._base_channel &#8212; gRPC Python 1.62.0 documentation</title>
+    <title>grpc.aio._base_channel &#8212; gRPC Python 1.64.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=4f649999" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=8090fdca" />
-    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=faf92259"></script>
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=057799ce"></script>
     <script src="../../../_static/doctools.js?v=888ff710"></script>
     <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -27,7 +27,7 @@
 
 
 
-<p class="blurb">1.62.0</p>
+<p class="blurb">1.64.0</p>
 
 
 
@@ -299,10 +299,11 @@
 <span class="sd">        This method immediately stops the channel from executing new RPCs in</span>
 <span class="sd">        all cases.</span>
 
-<span class="sd">        If a grace period is specified, this method wait until all active</span>
-<span class="sd">        RPCs are finshed, once the grace period is reached the ones that haven&#39;t</span>
-<span class="sd">        been terminated are cancelled. If a grace period is not specified</span>
-<span class="sd">        (by passing None for grace), all existing RPCs are cancelled immediately.</span>
+<span class="sd">        If a grace period is specified, this method waits until all active</span>
+<span class="sd">        RPCs are finished or until the grace period is reached. RPCs that haven&#39;t</span>
+<span class="sd">        been terminated within the grace period are aborted.</span>
+<span class="sd">        If a grace period is not specified (by passing None for grace),</span>
+<span class="sd">        all existing RPCs are cancelled immediately.</span>
 
 <span class="sd">        This method is idempotent.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
@@ -362,6 +363,7 @@
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryMultiCallable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a UnaryUnaryMultiCallable for a unary-unary method.</span>
 
@@ -372,6 +374,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
+<span class="sd">          _registered_method: Implementation Private. Optional: A bool representing</span>
+<span class="sd">            whether the method is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A UnaryUnaryMultiCallable value for the named unary-unary method.</span>
@@ -383,6 +387,7 @@
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamMultiCallable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a UnaryStreamMultiCallable for a unary-stream method.</span>
 
@@ -393,6 +398,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
+<span class="sd">          _registered_method: Implementation Private. Optional: A bool representing</span>
+<span class="sd">            whether the method is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A UnarySteramMultiCallable value for the named unary-stream method.</span>
@@ -404,6 +411,7 @@
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamUnaryMultiCallable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StreamUnaryMultiCallable for a stream-unary method.</span>
 
@@ -414,6 +422,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
+<span class="sd">          _registered_method: Implementation Private. Optional: A bool representing</span>
+<span class="sd">            whether the method is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A StreamUnaryMultiCallable value for the named stream-unary method.</span>
@@ -425,6 +435,7 @@
         <span class="n">method</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">_registered_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamStreamMultiCallable</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a StreamStreamMultiCallable for a stream-stream method.</span>
 
@@ -435,6 +446,8 @@
 <span class="sd">          response_deserializer: Optional :term:`deserializer` for deserializing the</span>
 <span class="sd">            response message. Response goes undeserialized in case None</span>
 <span class="sd">            is passed.</span>
+<span class="sd">          _registered_method: Implementation Private. Optional: A bool representing</span>
+<span class="sd">            whether the method is registered.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A StreamStreamMultiCallable value for the named stream-stream method.</span>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.62.0</span>
+   &#160;<span id="projectnumber">1.64.0</span>
    </div>
   </td>
  </tr>
@@ -66,13 +66,13 @@ $(function() {
 <div class="title">gRPC (Core) Compression Cookbook </div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><h1><a class="anchor" id="autotoc_md63"></a>
+<div class="textblock"><h1><a class="anchor" id="autotoc_md64"></a>
 Introduction</h1>
 <p>This document describes compression as implemented by the gRPC C core. See <a class="el" href="compression_8md.html">the</a>full compression specification" for details.</p>
-<h2><a class="anchor" id="autotoc_md64"></a>
+<h2><a class="anchor" id="autotoc_md65"></a>
 Intended Audience</h2>
 <p>Wrapped languages developers, for the purposes of supporting compression by interacting with the C core.</p>
-<h1><a class="anchor" id="autotoc_md65"></a>
+<h1><a class="anchor" id="autotoc_md66"></a>
 Criteria for GA readiness</h1>
 <ol type="1">
 <li>Be able to set compression at <a href="#per-channel-settings">channel</a>, <a href="#per-call-settings">call</a> and <a href="#per-message-settings">message</a> level. In principle this API should be based on <em>compression levels</em> as opposed to algorithms. See the discussion <a href="#level-vs-algorithms">below</a>.</li>
@@ -83,49 +83,49 @@ Criteria for GA readiness</h1>
 <ol type="1">
 <li>Interop tests implemented and passing on Jenkins. The two relevant interop test cases are <a href="https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md#large_compressed_unary">large_compressed_unary</a> and <a href="https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md#server_compressed_streaming">server_compressed_streaming</a>.</li>
 </ol>
-<h1><a class="anchor" id="autotoc_md66"></a>
+<h1><a class="anchor" id="autotoc_md67"></a>
 Summary Flowcharts</h1>
 <p>The following flowcharts depict the evolution of a message, both <em>incoming</em> and <em>outgoing</em>, irrespective of the client/server character of the call. Aspects still not symmetric between clients and servers (e.g. the <a href="https://github.com/grpc/grpc/blob/master/doc/compression.md#compression-levels-and-algorithms">use of compression levels</a>) are explicitly marked. The in-detail textual description for the different scenarios is described in subsequent sections.</p>
-<h1><a class="anchor" id="autotoc_md67"></a>
+<h1><a class="anchor" id="autotoc_md68"></a>
 Incoming Messages</h1>
 <p><img src="images/compression_cookbook_incoming.png" alt="image" class="inline"/></p>
-<h1><a class="anchor" id="autotoc_md68"></a>
+<h1><a class="anchor" id="autotoc_md69"></a>
 Outgoing Messages</h1>
 <p><img src="images/compression_cookbook_outgoing.png" alt="image" class="inline"/></p>
-<h1><a class="anchor" id="autotoc_md69"></a>
+<h1><a class="anchor" id="autotoc_md70"></a>
 Levels vs Algorithms</h1>
 <p>As mentioned in <a href="https://github.com/grpc/grpc/blob/master/doc/compression.md#compression-levels-and-algorithms">the relevant discussion on the spec document</a>, compression <em>levels</em> are the primary mechanism for compression selection <em>at the server side</em>. In the future, it'll also be at the client side. The use of levels abstracts away the intricacies of selecting a concrete algorithm supported by a peer, on top of removing the burden of choice from the developer. As of this writing (Q2 2016), clients can only specify compression <em>algorithms</em>. Clients will support levels as soon as an automatic retry/negotiation mechanism is in place.</p>
-<h1><a class="anchor" id="autotoc_md70"></a>
+<h1><a class="anchor" id="autotoc_md71"></a>
 Per Channel Settings</h1>
 <p>Compression may be configured at channel creation. This is a convenience to avoid having to repeatedly configure compression for every call. Note that any compression setting on individual <a href="#per-call-settings">calls</a> or <a href="#per-message-settings">messages</a> overrides channel settings.</p>
 <p>The following aspects can be configured at channel-creation time via channel arguments:</p>
-<h3><a class="anchor" id="autotoc_md71"></a>
+<h3><a class="anchor" id="autotoc_md72"></a>
 Disable Compression &lt;em&gt;Algorithms&lt;/em&gt;</h3>
 <p>Use the channel argument key <code>GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET</code> (from <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), takes a 32 bit bitset value. A set bit means the algorithm with that enum value according to <code>grpc_compression_algorithm</code> is <em>enabled</em>. For example, <code>GRPC_COMPRESS_GZIP</code> currently has a numeric value of 2. To enable/disable GZIP for a channel, one would set/clear the 3rd LSB (eg, 0b100 = 0x4). Note that setting/clearing 0th position, that corresponding to <code>GRPC_COMPRESS_NONE</code>, has no effect, as no-compression (a.k.a. <em>identity</em>) is always supported. Incoming messages compressed (ie, encoded) with a disabled algorithm will result in the call being closed with <code>GRPC_STATUS_UNIMPLEMENTED</code>.</p>
-<h3><a class="anchor" id="autotoc_md72"></a>
+<h3><a class="anchor" id="autotoc_md73"></a>
 Default Compression &lt;em&gt;Level&lt;/em&gt;</h3>
 <p>**(currently, Q2 2016, only applicable for server side channels. It's ignored for clients.)** Use the channel argument key <code>GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL</code> (from <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), valued by an integer corresponding to a value from the <code>grpc_compression_level</code> enum.</p>
-<h3><a class="anchor" id="autotoc_md73"></a>
+<h3><a class="anchor" id="autotoc_md74"></a>
 Default Compression &lt;em&gt;Algorithm&lt;/em&gt;</h3>
 <p>Use the channel argument key <code>GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM</code> (from <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), valued by an integer corresponding to a value from the <code>grpc_compression_level</code> enum.</p>
-<h1><a class="anchor" id="autotoc_md74"></a>
+<h1><a class="anchor" id="autotoc_md75"></a>
 Per Call Settings</h1>
-<h2><a class="anchor" id="autotoc_md75"></a>
+<h2><a class="anchor" id="autotoc_md76"></a>
 Compression &lt;strong&gt;Level&lt;/strong&gt; in Call Responses</h2>
 <p>The server requests a compression level via initial metadata. The <code>send_initial_metadata</code> <code>grpc_op</code> contains a <code>maybe_compression_level</code> field with two fields, <code>is_set</code> and <code>compression_level</code>. The former must be set when actively choosing a level to disambiguate the default value of zero (no compression) from the proactive selection of no compression.</p>
 <p>The core will receive the request for the compression level and automatically choose a compression algorithm based on its knowledge about the peer (communicated by the client via the <code>grpc-accept-encoding</code> header. Note that the absence of this header means no compression is supported by the client/peer).</p>
-<h2><a class="anchor" id="autotoc_md76"></a>
+<h2><a class="anchor" id="autotoc_md77"></a>
 Compression &lt;strong&gt;Algorithm&lt;/strong&gt; in Call Responses</h2>
 <p><b>Server should avoid setting the compression algorithm directly</b>. Prefer setting compression levels unless there's a <em>very</em> compelling reason to choose specific algorithms (benchmarking, testing).</p>
 <p>Selection of concrete compression algorithms is performed by adding a <code>(GRPC_COMPRESS_REQUEST_ALGORITHM_KEY, &lt;algorithm-name&gt;)</code> key-value pair to the initial metadata, where <code>GRPC_COMPRESS_REQUEST_ALGORITHM_KEY</code> is defined in <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), and <code>&lt;algorithm-name&gt;</code> is the human readable name of the algorithm as given in <a href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">the HTTP2 spec</a> for <code>Message-Encoding</code> (e.g. gzip, identity, etc.). See <a href="https://github.com/grpc/grpc/blob/master/src/core/lib/compression/compression.c"><code>grpc_compression_algorithm_name</code></a> for the mapping between the <code>grpc_compression_algorithm</code> enum values and their textual representation.</p>
-<h1><a class="anchor" id="autotoc_md77"></a>
+<h1><a class="anchor" id="autotoc_md78"></a>
 Per Message Settings</h1>
 <p>To disable compression for a specific message, the <code>flags</code> field of <code>grpc_op</code> instances of type <code>GRPC_OP_SEND_MESSAGE</code> must have its <code>GRPC_WRITE_NO_COMPRESS</code> bit set. Refer to <a href="https://github.com/grpc/grpc/blob/master/include/grpc/impl/codegen/compression_types.h"><code>grpc/impl/codegen/compression_types.h</code></a>), </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:03:56 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:54 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">39.0.0</span>
+   &#160;<span id="projectnumber">41.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,10 +68,10 @@ $(function() {
 <div class="contents">
 <div class="textblock"><p><a href="https://github.com/grpc/proposal/blob/master/A1-http-connect-proxy-support.md">A1-http-connect-proxy-support.md</a> proposed how gRPC supports TCP-level proxies via the HTTP CONNECT request, defined in <a href="https://www.rfc-editor.org/rfc/rfc2817">RFC-2817</a>.</p>
 <p>This guide documents gRPC C-Core's default proxy mapper implementation.</p>
-<h1><a class="anchor" id="autotoc_md87"></a>
+<h1><a class="anchor" id="autotoc_md88"></a>
 HTTP Proxy</h1>
 <p><b>Case 1</b> in the proposal documents a use-case where all outbound traffic from an environment must go through a proxy. Configurations for such environments are usually performed using environment variables such as <code>http_proxy</code>. gRPC supports this by providing a default proxy mapper implementation that allows for overriding the server name (provided in the channel creation hostname) to resolve based on such configurations.</p>
-<h2><a class="anchor" id="autotoc_md88"></a>
+<h2><a class="anchor" id="autotoc_md89"></a>
 Enabling the HTTP Proxy</h2>
 <p>C-Core checks the following places to determine the HTTP proxy to use, stopping at the first one that is set:</p>
 <ol type="1">
@@ -82,7 +82,7 @@ Enabling the HTTP Proxy</h2>
 </ol>
 <p>If none of the above are set, then no HTTP proxy will be used.</p>
 <p>The allowed format is an <a href="https://www.rfc-editor.org/rfc/rfc3986">RFC3986</a> URI string where the scheme is expected to be "http" and the authority portion is used to determine the proxy to be used. For example, for an HTTP proxy setting of <code><a href="http://username:password">http://username:password</a>@proxy.google.com:443</code>, <code>username:password</code> would be used as user credentials for proxy authentication as per <a href="https://www.rfc-editor.org/rfc/rfc7617">RFC7617</a> and <code>proxy.google.com:443</code> would be the host:port HTTP proxy target. If the port part of the authority is omitted, a default port of 443 is used. Note that user credential can also be omitted if the proxy does not need authentication.</p>
-<h2><a class="anchor" id="autotoc_md89"></a>
+<h2><a class="anchor" id="autotoc_md90"></a>
 Disabling HTTP Proxy</h2>
 <p>If an HTTP proxy is set, C-Core then checks the following places to exclude traffic destined to listed hosts from going through the proxy determined above, again stopping at the first one that is set:</p>
 <ol type="1">
@@ -92,10 +92,10 @@ Disabling HTTP Proxy</h2>
 <p>If none of the above are set, then the previously found HTTP proxy is used.</p>
 <p>The format takes a comma-separated list of names, and if any of these names matches as a suffix of the server host (provided in the channel target), then the proxy will not be used for that target. For example, with a <code>grpc_proxy</code> setting of <code>proxy.google.com</code> and a <code>no_grpc_proxy</code> setting of <code>example.com, google.com</code>, channel targets such as <code>dns:///foo.google.com:50051</code> and <code>bar.example.com:1234</code> will not use the proxy, but <code>baz.googleapis.com:443</code> would still use the configured proxy <code>proxy.google.com</code>.</p>
 <p>As of <a href="https://github.com/grpc/grpc/pull/31119">PR#31119</a>, CIDR blocks are also supported in the list of names. For example, a <code>no_proxy</code> setting of <code>10.10.0.0/24</code> would not use the proxy for channel targets that mention IP addresses as the host between the range <code>10.10.0.0</code> to <code>10.10.0.255</code>.</p>
-<h2><a class="anchor" id="autotoc_md90"></a>
+<h2><a class="anchor" id="autotoc_md91"></a>
 Disabling HTTP Proxy Channel-wide</h2>
 <p>The lookup and subsequent usage of an HTTP proxy for a specific channel can also be disabled by setting the channel arg <code>GRPC_ARG_ENABLE_HTTP_PROXY</code> to 0.</p>
-<h1><a class="anchor" id="autotoc_md91"></a>
+<h1><a class="anchor" id="autotoc_md92"></a>
 Address Proxy</h1>
 <p><b>Case 2</b> in the proposal documents a partially protected environment, where access to certain addresses must go through a proxy. Name resolution of protected servers works normally, and the proxy allows the CONNECT request to use an IP address instead of a hostname.</p>
 <p>Only requests for certain hosts must go through the proxy. Requests to other servers work without the proxy. Custom logic is used to determine which hosts the proxy will be used for.</p>
@@ -109,7 +109,7 @@ Address Proxy</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:02:58 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:14 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

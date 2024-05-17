@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.62.0</span>
+   &#160;<span id="projectnumber">1.64.0</span>
    </div>
   </td>
  </tr>
@@ -154,6 +154,8 @@ v1.38.0 (Python) </td><td class="markdownTableBodyNone">v1.37.1 </td><td class="
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/aggregate_cluster.html">Aggregate Clusters</a> and <a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/service_discovery.html#logical-dns">Logical DNS Clusters</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A37-xds-aggregate-and-logical-dns-clusters.md">A37</a> </td><td class="markdownTableBodyNone">v1.47.0 </td><td class="markdownTableBodyNone">v1.39.0 </td><td class="markdownTableBodyNone">v1.52.2 </td><td class="markdownTableBodyNone">v1.9.0  </td></tr>
 <tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Aggregate Cluster Behavior Fixes </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A75-xds-aggregate-cluster-behavior-fixes.md">A75</a> </td><td class="markdownTableBodyNone">v1.61.0 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers#ring-hash">Ring hash</a> load balancing policy:<br  />
  Only the following <a href="https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/route/v3/route_components.proto#L706">policy specifiers</a> are supported:<ul>
 <li>
@@ -162,8 +164,8 @@ header</li>
 filter_state with key <code>io.grpc.channel_id</code></li>
 </ul>
 Only <a href="https://github.com/envoyproxy/envoy/blob/2443032526cf6e50d63d35770df9473dd0460fc0/api/envoy/config/cluster/v3/cluster.proto#L383"><code>XX_HASH</code></a> function is supported. </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A42-xds-ring-hash-lb-policy.md">A42</a> </td><td class="markdownTableBodyNone">v1.40.0<br  />
-(C++ and Python) </td><td class="markdownTableBodyNone">v1.40.1 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowOdd">
+(C++ and Python) </td><td class="markdownTableBodyNone">v1.40.1 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone">v1.10.0  </td></tr>
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/route/v3/route_components.proto#envoy-v3-api-msg-config-route-v3-retrypolicy">Retry</a>:<br  />
 Only the following fields are supported:<ul>
 <li>
@@ -175,11 +177,11 @@ retry_back_off</li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A44-xds-retry.md">A44</a> </td><td class="markdownTableBodyNone">v1.40.0<br  />
 (C++ and Python) </td><td class="markdownTableBodyNone">v1.40.1 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone">v1.8.0  </td></tr>
-<tr class="markdownTableRowEven">
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/configuration/security/security">Security</a>:<br  />
 Uses <a href="https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md#certificate-provider-plugin-framework">certificate providers</a> instead of SDS </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A29-xds-tls-security.md">A29</a> </td><td class="markdownTableBodyNone">v1.41.0<br  />
 (C++ and Python) </td><td class="markdownTableBodyNone">v1.41.0 </td><td class="markdownTableBodyNone">1.41.0 </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowOdd">
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/http/rbac/v3/rbac.proto">Authorization (RBAC)</a>:<br  />
 <ul>
 <li>
@@ -189,9 +191,9 @@ CEL unsupported and rejected</li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A41-xds-rbac.md">A41</a> </td><td class="markdownTableBodyNone">v1.51.0<br  />
 (C++ and Python) </td><td class="markdownTableBodyNone">v1.42.0 </td><td class="markdownTableBodyNone">1.42.0 </td><td class="markdownTableBodyNone"></td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers.html#weighted-least-request">Least Request LB Policy</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A48-xds-least-request-lb-policy.md">A48</a> </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">v1.48.0 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/load_balancing/load_balancers.html#weighted-least-request">Least Request LB Policy</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A48-xds-least-request-lb-policy.md">A48</a> </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">v1.48.0 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone"><a href="https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/upstream/outlier">Outlier Detection</a>:<br  />
 Only the following detection types are supported:<ul>
 <li>
@@ -200,22 +202,28 @@ Success Rate</li>
 Failure Percentage</li>
 </ul>
 </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A50-xds-outlier-detection.md">A50</a> </td><td class="markdownTableBodyNone">v1.51.0 </td><td class="markdownTableBodyNone">v1.49.0 </td><td class="markdownTableBodyNone">v1.50.0 </td><td class="markdownTableBodyNone">v1.7.0  </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/57be3189ffa3372b34e9480d1f02b2d165e49077/api/envoy/config/cluster/v3/cluster.proto#L1208">Custom Load Balancer Configuration</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A52-xds-custom-lb-policies.md">A52</a> </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone">v1.47.0 </td><td class="markdownTableBodyNone">v1.56.0 </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><a href="https://github.com/cncf/xds/blob/main/proposals/TP1-xds-transport-next.md">xDS Federation</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A47-xds-federation.md">A47</a> </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/57be3189ffa3372b34e9480d1f02b2d165e49077/api/envoy/config/cluster/v3/cluster.proto#L1208">Custom Load Balancer Configuration</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A52-xds-custom-lb-policies.md">A52</a> </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone">v1.47.0 </td><td class="markdownTableBodyNone">v1.56.0 </td><td class="markdownTableBodyNone">v1.10.0  </td></tr>
 <tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><a href="https://github.com/cncf/xds/blob/main/proposals/TP1-xds-transport-next.md">xDS Federation</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A47-xds-federation.md">A47</a> </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/a6d46b6ac4750720eec9a49abe701f0df9bf8e0a/api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto#L36">Client-Side Weighted Round Robin LB Policy</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A58-client-side-weighted-round-robin-lb-policy.md">A58</a> </td><td class="markdownTableBodyNone">v1.55.0 </td><td class="markdownTableBodyNone">v1.54.0 </td><td class="markdownTableBodyNone">v1.56.0 </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Pick First </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A62-pick-first.md">A62</a> </td><td class="markdownTableBodyNone">v1.58.0 </td><td class="markdownTableBodyNone">v1.58.1 </td><td class="markdownTableBodyNone">v1.56.0 </td><td class="markdownTableBodyNone"></td></tr>
 <tr class="markdownTableRowOdd">
 <td class="markdownTableBodyNone"><a href="https://github.com/envoyproxy/envoy/blob/3fe4b8d335fa339ef6f17325c8d31f87ade7bb1a/api/envoy/config/route/v3/route_components.proto#L2280">StringMatcher for Header Matching</a> </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A63-xds-string-matcher-in-header-matching.md">A63</a> </td><td class="markdownTableBodyNone">v1.56.0 </td><td class="markdownTableBodyNone">v1.53.0 </td><td class="markdownTableBodyNone">v1.56.0 </td><td class="markdownTableBodyNone">v1.9.0  </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">mTLS Credentials in xDS Bootstrap File </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md">A65</a> </td><td class="markdownTableBodyNone">v1.57.0 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
+<td class="markdownTableBodyNone">LRS Custom Metrics Support </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A64-lrs-custom-metrics.md">A64</a> </td><td class="markdownTableBodyNone">v1.54.0 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">mTLS Credentials in xDS Bootstrap File </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md">A65</a> </td><td class="markdownTableBodyNone">v1.57.0 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone">v1.61.0 </td><td class="markdownTableBodyNone"></td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">Stateful Session Affinity </td><td class="markdownTableBodyNone"><a href="https://github.com/grpc/proposal/blob/master/A55-xds-stateful-session-affinity.md">A55</a>, <a href="https://github.com/grpc/proposal/blob/master/A60-xds-stateful-session-affinity-weighted-clusters.md">A60</a>, <a href="https://github.com/grpc/proposal/blob/master/A75-xds-aggregate-cluster-behavior-fixes.md">A75</a> </td><td class="markdownTableBodyNone">v1.61.0 </td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td><td class="markdownTableBodyNone"></td></tr>
 </table>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Feb 23 2024 23:03:56 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 17 2024 01:17:54 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
