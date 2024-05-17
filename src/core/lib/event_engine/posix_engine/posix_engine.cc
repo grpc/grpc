@@ -26,7 +26,6 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -232,7 +231,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       // your program or another program on the same computer
       // opened too many network connections.  The "easy" fix:
       // don't do that!
-      LOG(ERROR) << "kernel out of buffers";
+      gpr_log(GPR_ERROR, "kernel out of buffers");
       mu_.Unlock();
       fd->NotifyOnWrite(on_writable_);
       // Don't run the cleanup function for this case.

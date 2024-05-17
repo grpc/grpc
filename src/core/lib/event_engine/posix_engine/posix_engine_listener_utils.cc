@@ -23,7 +23,6 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
@@ -157,7 +156,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
 #ifdef GRPC_LINUX_ERRQUEUE
   if (!socket.sock.SetSocketZeroCopy().ok()) {
     // it's not fatal, so just log it.
-    VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
+    gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
   } else {
     socket.zero_copy_enabled = true;
   }
@@ -245,7 +244,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     auto result = GetUnusedPort();
     GRPC_RETURN_IF_ERROR(result.status());
     requested_port = *result;
-    VLOG(2) << "Picked unused port " << requested_port;
+    gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
   }
   if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
     return absl::FailedPreconditionError(
