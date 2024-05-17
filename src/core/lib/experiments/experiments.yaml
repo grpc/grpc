@@ -216,3 +216,9 @@
   expiry: 2024/06/30
   owner: ysseung@google.com
   test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "lb_unit_test"]
+- name: test_do_not_submit
+  description:
+    This is a test experiment that should never be enabled.
+  expiry: 2024/06/01
+  owner: hork@google.com
+  test_tags: []
