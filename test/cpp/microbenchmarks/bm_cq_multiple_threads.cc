@@ -23,10 +23,10 @@
 #include <benchmark/benchmark.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
@@ -77,7 +77,7 @@ static grpc_error_handle pollset_work(grpc_pollset* ps,
                                       grpc_pollset_worker** /*worker*/,
                                       grpc_core::Timestamp deadline) {
   if (deadline == grpc_core::Timestamp::ProcessEpoch()) {
-    gpr_log(GPR_DEBUG, "no-op");
+    VLOG(2) << "no-op";
     return absl::OkStatus();
   }
 
