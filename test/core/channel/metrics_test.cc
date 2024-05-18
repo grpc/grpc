@@ -646,19 +646,6 @@ TEST_F(MetricsDeathTest, RegisterTheSameMetricNameWouldCrash) {
       "Metric name double_histogram has already been registered.");
 }
 
-// Test that we can use the target and authority after the original strings are
-// freed.
-TEST(StatsPluginChannelScopeTest, UseAfterFree) {
-  // Force the strings to be allocated on the heap
-  std::string target = absl::StrCat("target", "1");
-  std::string authority = absl::StrCat("authority", "2");
-  StatsPluginChannelScope scope(target, authority);
-  target.clear();
-  authority.clear();
-  EXPECT_EQ(scope.target(), "target1");
-  EXPECT_EQ(scope.default_authority(), "authority2");
-}
-
 }  // namespace
 }  // namespace grpc_core
 

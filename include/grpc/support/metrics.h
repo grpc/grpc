@@ -41,8 +41,8 @@ class StatsPluginChannelScope {
   // Disable copy constructor and copy-assignment operator.
   StatsPluginChannelScope(const StatsPluginChannelScope&) = delete;
   StatsPluginChannelScope& operator=(const StatsPluginChannelScope&) = delete;
-  std::string target_;
-  std::string default_authority_;
+  absl::string_view target_;
+  absl::string_view default_authority_;
 };
 
 }  // namespace experimental
