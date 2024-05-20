@@ -29,14 +29,14 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/string.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/util/test_config.h"
 
@@ -65,7 +65,7 @@ int test_client(const char* root, const char* host, int port) {
     return 1;
   }
   // wait for client
-  gpr_log(GPR_INFO, "Waiting for client: %s", host);
+  LOG(INFO) << "Waiting for client: " << host;
   if (waitpid(cli, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;
   if (WEXITSTATUS(status)) return WEXITSTATUS(status);
@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
   // concurrently running test binary
   srand(getpid());
   if (!grpc_ipv6_loopback_available()) {
-    gpr_log(GPR_INFO, "Can't bind to ::1.  Skipping IPv6 tests.");
+    LOG(INFO) << "Can't bind to ::1.  Skipping IPv6 tests.";
     do_ipv6 = 0;
   }
   // figure out where we are
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
     if (ret != 0) return ret;
   }
   // wait for server
-  gpr_log(GPR_INFO, "Waiting for server");
+  LOG(INFO) << "Waiting for server";
   kill(svr, SIGINT);
   if (waitpid(svr, &status, 0) == -1) return 2;
   if (!WIFEXITED(status)) return 4;

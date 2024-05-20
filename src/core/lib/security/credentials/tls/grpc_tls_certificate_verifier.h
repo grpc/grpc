@@ -30,10 +30,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/util/useful.h"
 
 // An abstraction of the verifier that all verifier subclasses should extend.
 struct grpc_tls_certificate_verifier

@@ -42,6 +42,9 @@ grpc_cc_library(
     testonly = True,
     srcs = ["timer_test.cc"],
     hdrs = ["timer_test.h"],
+    external_deps = [
+        "absl/log:log",
+    ],
     deps = [
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite:event_engine_test_framework",
@@ -62,6 +65,7 @@ grpc_cc_library(
         "//test/cpp/naming/utils:tcp_connect",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",

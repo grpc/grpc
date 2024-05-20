@@ -1052,6 +1052,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx dualstack_socket_test)
   endif()
+  add_dependencies(buildtests_cxx dump_args_test)
   add_dependencies(buildtests_cxx duplicate_header_bad_client_test)
   add_dependencies(buildtests_cxx empty_batch_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -1457,7 +1458,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
-  add_dependencies(buildtests_cxx test_core_gpr_time_test)
   add_dependencies(buildtests_cxx test_core_gprpp_time_test)
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
@@ -1467,6 +1467,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx test_core_transport_test_suite_chaotic_good_test)
   endif()
+  add_dependencies(buildtests_cxx test_core_util_time_test)
   add_dependencies(buildtests_cxx test_cpp_client_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_end2end_ssl_credentials_test)
   add_dependencies(buildtests_cxx test_cpp_ext_chaotic_good_test)
@@ -1660,32 +1661,6 @@ add_library(gpr
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
-  src/core/lib/gpr/alloc.cc
-  src/core/lib/gpr/android/log.cc
-  src/core/lib/gpr/atm.cc
-  src/core/lib/gpr/iphone/cpu.cc
-  src/core/lib/gpr/linux/cpu.cc
-  src/core/lib/gpr/linux/log.cc
-  src/core/lib/gpr/log.cc
-  src/core/lib/gpr/msys/tmpfile.cc
-  src/core/lib/gpr/posix/cpu.cc
-  src/core/lib/gpr/posix/log.cc
-  src/core/lib/gpr/posix/string.cc
-  src/core/lib/gpr/posix/sync.cc
-  src/core/lib/gpr/posix/time.cc
-  src/core/lib/gpr/posix/tmpfile.cc
-  src/core/lib/gpr/string.cc
-  src/core/lib/gpr/sync.cc
-  src/core/lib/gpr/sync_abseil.cc
-  src/core/lib/gpr/time.cc
-  src/core/lib/gpr/time_precise.cc
-  src/core/lib/gpr/windows/cpu.cc
-  src/core/lib/gpr/windows/log.cc
-  src/core/lib/gpr/windows/string.cc
-  src/core/lib/gpr/windows/string_util.cc
-  src/core/lib/gpr/windows/sync.cc
-  src/core/lib/gpr/windows/time.cc
-  src/core/lib/gpr/windows/tmpfile.cc
   src/core/lib/gprpp/crash.cc
   src/core/lib/gprpp/examine_stack.cc
   src/core/lib/gprpp/fork.cc
@@ -1701,6 +1676,32 @@ add_library(gpr
   src/core/lib/gprpp/windows/env.cc
   src/core/lib/gprpp/windows/stat.cc
   src/core/lib/gprpp/windows/thd.cc
+  src/core/util/alloc.cc
+  src/core/util/android/log.cc
+  src/core/util/atm.cc
+  src/core/util/iphone/cpu.cc
+  src/core/util/linux/cpu.cc
+  src/core/util/linux/log.cc
+  src/core/util/log.cc
+  src/core/util/msys/tmpfile.cc
+  src/core/util/posix/cpu.cc
+  src/core/util/posix/log.cc
+  src/core/util/posix/string.cc
+  src/core/util/posix/sync.cc
+  src/core/util/posix/time.cc
+  src/core/util/posix/tmpfile.cc
+  src/core/util/string.cc
+  src/core/util/sync.cc
+  src/core/util/sync_abseil.cc
+  src/core/util/time.cc
+  src/core/util/time_precise.cc
+  src/core/util/windows/cpu.cc
+  src/core/util/windows/log.cc
+  src/core/util/windows/string.cc
+  src/core/util/windows/string_util.cc
+  src/core/util/windows/sync.cc
+  src/core/util/windows/time.cc
+  src/core/util/windows/tmpfile.cc
 )
 
 target_compile_features(gpr PUBLIC cxx_std_14)
@@ -2501,6 +2502,7 @@ add_library(grpc
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
@@ -3254,6 +3256,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
@@ -4734,8 +4737,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_util
-  src/core/lib/gpr/subprocess_posix.cc
-  src/core/lib/gpr/subprocess_windows.cc
+  src/core/util/subprocess_posix.cc
+  src/core/util/subprocess_windows.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
   test/core/end2end/data/server1_key.cc
@@ -5365,6 +5368,7 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/call_spine.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/interception_chain.cc
   src/core/lib/transport/message.cc
   src/core/lib/transport/metadata.cc
   src/core/lib/transport/metadata_batch.cc
@@ -6085,8 +6089,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(address_sorting_test_unsecure
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/test_util/cmdline.cc
     test/core/test_util/fuzzer_util.cc
     test/core/test_util/grpc_profiler.cc
@@ -6309,7 +6313,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alloc_test
-  test/core/gpr/alloc_test.cc
+  test/core/util/alloc_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -7620,8 +7624,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_alpn_test
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
@@ -7676,8 +7680,8 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(bad_ssl_cert_test
-    src/core/lib/gpr/subprocess_posix.cc
-    src/core/lib/gpr/subprocess_windows.cc
+    src/core/util/subprocess_posix.cc
+    src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
     test/core/test_util/cmdline.cc
@@ -11718,7 +11722,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cpu_test
-  test/core/gpr/cpu_test.cc
+  test/core/util/cpu_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12390,6 +12394,41 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(dump_args_test
+  src/core/lib/gprpp/dump_args.cc
+  test/core/gprpp/dump_args_test.cc
+)
+target_compile_features(dump_args_test PUBLIC cxx_std_14)
+target_include_directories(dump_args_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(dump_args_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::any_invocable
+  absl::check
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(duplicate_header_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/duplicate_header.cc
@@ -12879,7 +12918,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(env_test
-  test/core/gpr/env_test.cc
+  test/core/util/env_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19079,7 +19118,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(log_test
-  test/core/gpr/log_test.cc
+  test/core/util/log_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28501,7 +28540,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(spinlock_test
-  test/core/gpr/spinlock_test.cc
+  test/core/util/spinlock_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29247,7 +29286,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(string_test
-  test/core/gpr/string_test.cc
+  test/core/util/string_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29332,7 +29371,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sync_test
-  test/core/gpr/sync_test.cc
+  test/core/util/sync_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29962,48 +30001,6 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_core_gpr_time_test
-  test/core/gpr/time_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_gpr_time_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_gpr_time_test PUBLIC cxx_std_14)
-target_include_directories(test_core_gpr_time_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_gpr_time_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(test_core_gprpp_time_test
   src/core/lib/gprpp/time.cc
   test/core/gprpp/time_test.cc
@@ -30345,6 +30342,48 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(test_core_util_time_test
+  test/core/util/time_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(test_core_util_time_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(test_core_util_time_test PUBLIC cxx_std_14)
+target_include_directories(test_core_util_time_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(test_core_util_time_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
@@ -32025,7 +32064,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(useful_test
-  test/core/gpr/useful_test.cc
+  test/core/util/useful_test.cc
 )
 target_compile_features(useful_test PUBLIC cxx_std_14)
 target_include_directories(useful_test

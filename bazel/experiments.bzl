@@ -31,12 +31,10 @@ EXPERIMENT_ENABLES = {
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
-    "pending_queue_cap": "pending_queue_cap",
     "pick_first_new": "pick_first_new",
     "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
-    "promise_based_server_call": "promise_based_server_call",
-    "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
-    "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport,promise_based_server_call",
+    "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call",
+    "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
@@ -59,9 +57,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "core_end2end_test": [
-                "promise_based_server_call",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -72,9 +67,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "logging_test": [
-                "promise_based_server_call",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -107,9 +99,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "core_end2end_test": [
-                "promise_based_server_call",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -120,9 +109,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "logging_test": [
-                "promise_based_server_call",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
@@ -149,7 +135,6 @@ EXPERIMENTS = {
                 "chaotic_good",
                 "event_engine_client",
                 "promise_based_client_call",
-                "promise_based_server_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -167,9 +152,6 @@ EXPERIMENTS = {
             ],
             "lame_client_test": [
                 "promise_based_client_call",
-            ],
-            "logging_test": [
-                "promise_based_server_call",
             ],
             "resource_quota_test": [
                 "free_large_allocator",

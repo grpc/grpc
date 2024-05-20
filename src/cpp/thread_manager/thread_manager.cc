@@ -21,9 +21,8 @@
 #include <climits>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -41,7 +40,7 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
       [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
       this, &created_);
   if (!created_) {
-    gpr_log(GPR_ERROR, "Could not create grpc_sync_server worker-thread");
+    LOG(ERROR) << "Could not create grpc_sync_server worker-thread";
   }
 }
 

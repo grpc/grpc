@@ -39,7 +39,6 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -48,6 +47,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
 #include "src/core/lib/resource_quota/trace.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 

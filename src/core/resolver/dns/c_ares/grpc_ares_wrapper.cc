@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -60,7 +61,6 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -71,6 +71,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/string.h"
 
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;
@@ -952,7 +953,7 @@ static bool resolve_as_ip_literal_locked(
 static bool target_matches_localhost_inner(const char* name, std::string* host,
                                            std::string* port) {
   if (!grpc_core::SplitHostPort(name, host, port)) {
-    gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
+    LOG(ERROR) << "Unable to split host and port for name: " << name;
     return false;
   }
   return gpr_stricmp(host->c_str(), "localhost") == 0;

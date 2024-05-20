@@ -175,10 +175,21 @@ class InterceptionChainBuilder final {
     return *this;
   };
 
+  // Add a filter that just mutates client initial metadata.
+  template <typename F>
+  void AddOnClientInitialMetadata(F f) {
+    stack_builder().AddOnClientInitialMetadata(std::move(f));
+  }
+
   // Add a filter that just mutates server trailing metadata.
   template <typename F>
   void AddOnServerTrailingMetadata(F f) {
     stack_builder().AddOnServerTrailingMetadata(std::move(f));
+  }
+
+  void Fail(absl::Status status) {
+    CHECK(!status.ok()) << status;
+    if (status_.ok()) status_ = std::move(status);
   }
 
   // Build this stack

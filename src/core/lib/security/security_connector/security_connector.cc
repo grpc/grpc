@@ -28,9 +28,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/useful.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
