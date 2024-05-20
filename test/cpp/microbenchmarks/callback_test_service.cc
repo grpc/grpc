@@ -19,6 +19,7 @@
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -93,7 +94,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
     }
     void OnWriteDone(bool ok) override {
       if (!ok) {
-        gpr_log(GPR_ERROR, "Server write failed");
+        LOG(ERROR) << "Server write failed";
         return;
       }
       StartRead(&request_);
