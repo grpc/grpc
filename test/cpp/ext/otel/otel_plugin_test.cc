@@ -471,6 +471,28 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
   SendRPC();
 }
 
+// Test that the otel plugin sees the expected channel target and default
+// authority.
+TEST_F(OpenTelemetryPluginEnd2EndTest, VerifyChannelScopeTargetAndAuthority) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName})
+          .set_channel_scope_filter(
+              [&](const OpenTelemetryPluginBuilder::ChannelScope& scope) {
+                return scope.target() == canonical_server_address_ &&
+                       scope.default_authority() == server_address_;
+              })));
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+}
+
 // Test that a channel scope filter returning true records metrics on the
 // channel.
 TEST_F(OpenTelemetryPluginEnd2EndTest, ChannelScopeFilterReturnsTrue) {
