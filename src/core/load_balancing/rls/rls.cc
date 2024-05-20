@@ -687,7 +687,7 @@ class RlsLb final : public LoadBalancingPolicy {
     RefCountedPtr<RlsLb> lb_policy_;
     bool is_shutdown_ = false;
 
-    OrphanablePtr<Channel> channel_;
+    RefCountedPtr<Channel> channel_;
     RefCountedPtr<channelz::ChannelNode> parent_channelz_node_;
     StateWatcher* watcher_ = nullptr;
     Throttle throttle_ ABSL_GUARDED_BY(&RlsLb::mu_);

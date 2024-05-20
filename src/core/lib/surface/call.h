@@ -124,8 +124,9 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual grpc_call_stack* call_stack() = 0;
 
   // Return the EventEngine used for this call's async execution.
-  virtual grpc_event_engine::experimental::EventEngine* event_engine()
-      const = 0;
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
+    return event_engine_;
+  }
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() final;

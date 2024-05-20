@@ -33,7 +33,7 @@ namespace grpc_core {
 class Transport;
 
 // Creates a client channel.
-absl::StatusOr<OrphanablePtr<Channel>> ChannelCreate(
+absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport);
 

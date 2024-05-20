@@ -481,7 +481,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 
 }  // namespace
 
-absl::StatusOr<OrphanablePtr<Channel>> ClientChannel::Create(
+absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
     std::string target, ChannelArgs channel_args) {
   gpr_log(GPR_ERROR, "ARGS: %s", channel_args.ToString().c_str());
   // Get URI to resolve, using proxy mapper if needed.
@@ -599,16 +599,13 @@ ClientChannel::~ClientChannel() {
   }
 }
 
-void ClientChannel::Orphan() {
+void ClientChannel::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: shutting down", this);
   }
-  Ref().release();
   work_serializer_->Run(
-      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-        DestroyResolverAndLbPolicyLocked();
-        Unref();
-      },
+      [self = RefAsSubclass<ClientChannel>()]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *work_serializer_) { self->DestroyResolverAndLbPolicyLocked(); },
       DEBUG_LOCATION);
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.

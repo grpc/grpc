@@ -272,6 +272,7 @@ class CallSpine final : public Party {
 
 class CallInitiator {
  public:
+  CallInitiator() = default;
   explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
@@ -296,7 +297,8 @@ class CallInitiator {
     return spine_->PullServerTrailingMetadata();
   }
 
-  void Cancel() {
+  void Cancel(absl::Status error = absl::CancelledError()) {
+    CHECK(!error.ok());
     auto status = ServerMetadataFromStatus(absl::CancelledError());
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
@@ -320,6 +322,19 @@ class CallInitiator {
   }
 
   Arena* arena() { return spine_->arena(); }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
+    return spine_->event_engine();
+  }
+
+  // TODO(ctiller): re-evaluate this API
+  const grpc_call_context_element* legacy_context() const {
+    return spine_->legacy_context();
+  }
+
+  grpc_call_context_element* legacy_context() {
+    return spine_->legacy_context();
+  }
 
  private:
   RefCountedPtr<CallSpine> spine_;
@@ -381,16 +396,16 @@ class CallHandler {
   Arena* arena() { return spine_->arena(); }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return DownCast<CallSpine*>(spine_.get())->event_engine();
+    return spine_->event_engine();
   }
 
   // TODO(ctiller): re-evaluate this API
   const grpc_call_context_element* legacy_context() const {
-    return DownCast<CallSpine*>(spine_.get())->legacy_context();
+    return spine_->legacy_context();
   }
 
   grpc_call_context_element* legacy_context() {
-    return DownCast<CallSpine*>(spine_.get())->legacy_context();
+    return spine_->legacy_context();
   }
 
  private:
@@ -439,9 +454,7 @@ class UnstartedCallHandler {
   }
 
   CallHandler StartCall(RefCountedPtr<CallFilters::Stack> call_filters) {
-    DownCast<CallSpine*>(spine_.get())
-        ->call_filters()
-        .SetStack(std::move(call_filters));
+    spine_->call_filters().SetStack(std::move(call_filters));
     return CallHandler(std::move(spine_));
   }
 

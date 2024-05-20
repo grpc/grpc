@@ -981,7 +981,7 @@ grpc_error_handle Server::SetupTransport(
     ++connections_open_;
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
-    absl::StatusOr<OrphanablePtr<Channel>> channel = LegacyChannel::Create(
+    absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
@@ -1376,7 +1376,7 @@ Server::ChannelData::~ChannelData() {
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
-                                        OrphanablePtr<Channel> channel,
+                                        RefCountedPtr<Channel> channel,
                                         size_t cq_idx, Transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);

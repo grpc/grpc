@@ -550,7 +550,7 @@ class GrpcLb final : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // The channel for communicating with the LB server.
-  OrphanablePtr<Channel> lb_channel_;
+  RefCountedPtr<Channel> lb_channel_;
   StateWatcher* watcher_ = nullptr;
   // Response generator to inject address updates into lb_channel_.
   RefCountedPtr<FakeResolverResponseGenerator> response_generator_;

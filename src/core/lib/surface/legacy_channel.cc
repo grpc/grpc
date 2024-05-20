@@ -60,7 +60,7 @@
 
 namespace grpc_core {
 
-absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
+absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type) {
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
@@ -101,7 +101,7 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
   }
-  return MakeOrphanable<LegacyChannel>(
+  return MakeRefCounted<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
       std::move(target), args, std::move(*r));
 }
@@ -142,13 +142,12 @@ LegacyChannel::LegacyChannel(bool is_client, std::string target,
   };
 }
 
-void LegacyChannel::Orphan() {
+void LegacyChannel::Orphaned() {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   grpc_channel_element* elem =
       grpc_channel_stack_element(channel_stack_.get(), 0);
   elem->filter->start_transport_op(elem, op);
-  Unref();
 }
 
 bool LegacyChannel::IsLame() const {
@@ -165,7 +164,7 @@ grpc_call* LegacyChannel::CreateCall(
   CHECK(is_client_);
   CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
-  args.channel = Ref();
+  args.channel = RefAsSubclass<LegacyChannel>();
   args.server = nullptr;
   args.parent = parent_call;
   args.propagation_mask = propagation_mask;

@@ -46,7 +46,7 @@ namespace grpc_core {
 
 class LegacyChannel final : public Channel {
  public:
-  static absl::StatusOr<OrphanablePtr<Channel>> Create(
+  static absl::StatusOr<RefCountedPtr<Channel>> Create(
       std::string target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type);
 
@@ -55,7 +55,7 @@ class LegacyChannel final : public Channel {
                 const ChannelArgs& channel_args,
                 RefCountedPtr<grpc_channel_stack> channel_stack);
 
-  void Orphan() override;
+  void Orphaned() override;
 
   bool IsLame() const override;
 
@@ -64,6 +64,10 @@ class LegacyChannel final : public Channel {
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         absl::optional<Slice> authority, Timestamp deadline,
                         bool registered_method) override;
+
+  void StartCall(UnstartedCallHandler unstarted_handler) override {
+    Crash("StartCall() not supported on LegacyChannel");
+  }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return channel_stack_->EventEngine();

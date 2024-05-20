@@ -133,7 +133,7 @@ class ClientChannel : public Channel {
         PickerObservable) = 0;
   };
 
-  static absl::StatusOr<OrphanablePtr<Channel>> Create(
+  static absl::StatusOr<RefCountedPtr<Channel>> Create(
       std::string target, ChannelArgs channel_args);
 
   // Do not instantiate directly -- use Create() instead.
@@ -145,7 +145,7 @@ class ClientChannel : public Channel {
 
   ~ClientChannel() override;
 
-  void Orphan() override;
+  void Orphaned() override;
 
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,

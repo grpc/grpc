@@ -44,6 +44,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // Forward declaration to avoid dependency loop.
@@ -54,7 +55,7 @@ namespace grpc_core {
 // Forward declaration to avoid dependency loop.
 class Transport;
 
-class Channel : public RefCounted<Channel>,
+class Channel : public UnstartedCallDestination,
                 public CppImplOf<Channel, grpc_channel> {
  public:
   struct RegisteredCall {
@@ -67,8 +68,6 @@ class Channel : public RefCounted<Channel>,
 
     ~RegisteredCall();
   };
-
-  virtual void Orphan() = 0;
 
   virtual bool IsLame() const = 0;
 
@@ -154,7 +153,7 @@ class Channel : public RefCounted<Channel>,
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
 /// is safe to use from within core.
 inline void grpc_channel_destroy_internal(grpc_channel* channel) {
-  grpc_core::Channel::FromC(channel)->Orphan();
+  grpc_core::Channel::FromC(channel)->Unref();
 }
 
 // Return the channel's compression options.
