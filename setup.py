@@ -35,7 +35,6 @@ import subprocess
 from subprocess import PIPE
 import sys
 import sysconfig
-
 import _metadata
 from setuptools import Extension
 from setuptools.command import egg_info
