@@ -22,7 +22,7 @@
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
 
-#include "absl/log/log.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/port_platform.h>
 

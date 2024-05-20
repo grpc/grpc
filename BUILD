@@ -827,6 +827,8 @@ grpc_cc_library(
     name = "gpr_public_hdrs",
     hdrs = GPR_PUBLIC_HDRS,
     external_deps = [
+        "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "absl/types:variant",
     ],
