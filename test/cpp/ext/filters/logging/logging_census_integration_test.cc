@@ -319,5 +319,6 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::RegisterOpenCensusPlugin();
   return RUN_ALL_TESTS();
 }
