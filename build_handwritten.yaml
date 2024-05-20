@@ -155,6 +155,7 @@ defaults:
 php_config_m4:
   deps:
   - grpc
+  - absl/log
   - address_sorting
   - boringssl
   - re2
