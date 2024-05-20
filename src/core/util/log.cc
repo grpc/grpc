@@ -52,11 +52,6 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
-void gpr_assertion_failed(const char* filename, int line, const char* message) {
-  grpc_core::Crash(absl::StrCat("ASSERTION FAILED: ", message),
-                   grpc_core::SourceLocation(filename, line));
-}
-
 const char* gpr_log_severity_string(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
