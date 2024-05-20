@@ -4070,11 +4070,11 @@ try:
             # https://github.com/grpc/psm-interop/blob/main/tests/circuit_breaking_test.py
             # To avoid backports, skipping it in the driver.
             if test_case == "circuit_breaking":
-              logger.info(
+                logger.info(
                     "Ported to https://github.com/grpc/psm-interop/"
                     "blob/main/tests/circuit_breaking_test.py"
                 )
-              continue
+                continue
 
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info(
