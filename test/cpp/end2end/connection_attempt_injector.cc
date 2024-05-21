@@ -252,7 +252,8 @@ void ConnectionAttemptInjector::Hold::Fail(grpc_error_handle error) {
 }
 
 void ConnectionAttemptInjector::Hold::WaitForCompletion() {
-  LOG(INFO) << "=== WAITING FOR CONNECTION COMPLETION ON PORT " << port_ << " ===";
+  LOG(INFO) << "=== WAITING FOR CONNECTION COMPLETION ON PORT " << port_
+            << " ===";
   grpc_core::MutexLock lock(&injector_->mu_);
   while (original_on_complete_ != nullptr) {
     complete_cv_.Wait(&injector_->mu_);
