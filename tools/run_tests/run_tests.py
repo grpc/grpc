@@ -958,12 +958,14 @@ class RubyLanguage(object):
                 # indefinitely, and on "dbg" builds until the Event Engine
                 # migration completes.
                 continue
+            environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
+            environment["LD_DEBUG"] = "all"
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],
                     shortname=test,
                     timeout_seconds=20 * 60,
-                    environ=_FORCE_ENVIRON_FOR_WRAPPERS,
+                    environ=environment,
                 )
             )
         return tests
