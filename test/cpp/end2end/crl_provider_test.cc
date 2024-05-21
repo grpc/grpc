@@ -30,7 +30,6 @@
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>

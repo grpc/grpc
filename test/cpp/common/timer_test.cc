@@ -24,7 +24,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"

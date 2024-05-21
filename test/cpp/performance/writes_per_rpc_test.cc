@@ -23,7 +23,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
