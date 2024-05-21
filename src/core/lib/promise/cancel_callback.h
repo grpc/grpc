@@ -70,6 +70,20 @@ auto OnCancel(MainFn main_fn, CancelFn cancel_fn) {
   };
 }
 
+// Similar to OnCancel, but returns a factory that uses main_fn to construct the
+// resulting promise. If the factory is dropped without being called, cancel_fn
+// is called.
+template <typename MainFn, typename CancelFn>
+auto OnCancelFactory(MainFn main_fn, CancelFn cancel_fn) {
+  return [on_cancel =
+              cancel_callback_detail::Handler<CancelFn>(std::move(cancel_fn)),
+          main_fn = std::move(main_fn)]() mutable {
+    auto r = main_fn();
+    on_cancel.Done();
+    return r;
+  };
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_CANCEL_CALLBACK_H

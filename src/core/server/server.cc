@@ -1132,7 +1132,7 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
   std::vector<RefCountedPtr<Channel>> channels;
   channels.reserve(channels_.size());
   for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel()->Ref());
+    channels.push_back(chand->channel()->RefAsSubclass<Channel>());
   }
   return channels;
 }
@@ -1339,7 +1339,7 @@ class Server::ChannelData::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit ConnectivityWatcher(ChannelData* chand)
-      : chand_(chand), channel_(chand_->channel_->Ref()) {}
+      : chand_(chand), channel_(chand_->channel_->RefAsSubclass<Channel>()) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -1448,7 +1448,7 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   auto* chand = static_cast<Server::ChannelData*>(arg);
   // create a call
   grpc_call_create_args args;
-  args.channel = chand->channel_->Ref();
+  args.channel = chand->channel_->RefAsSubclass<Channel>();
   args.server = chand->server_.get();
   args.parent = nullptr;
   args.propagation_mask = 0;

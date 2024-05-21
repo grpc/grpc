@@ -153,7 +153,7 @@ class ClientChannel : public Channel {
                         Slice path, absl::optional<Slice> authority,
                         Timestamp deadline, bool registered_method) override;
 
-  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
+  void StartCall(UnstartedCallHandler unstarted_handler) override;
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_.get();

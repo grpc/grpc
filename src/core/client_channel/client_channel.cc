@@ -527,7 +527,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
         "Missing event engine in args for client channel");
   }
   // Success.  Construct channel.
-  return MakeOrphanable<ClientChannel>(
+  return MakeRefCounted<ClientChannel>(
       std::move(target), std::move(channel_args), std::move(uri_to_resolve),
       std::move(*default_service_config), client_channel_factory,
       call_destination_factory);
@@ -603,9 +603,13 @@ void ClientChannel::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: shutting down", this);
   }
+  // Weird capture then copy needed to satisfy thread safety analysis, otherwise
+  // it seems to fail to recognize the correct lock is taken in the lambda.
+  auto self = RefAsSubclass<ClientChannel>();
   work_serializer_->Run(
-      [self = RefAsSubclass<ClientChannel>()]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-          *work_serializer_) { self->DestroyResolverAndLbPolicyLocked(); },
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+        self->DestroyResolverAndLbPolicyLocked();
+      },
       DEBUG_LOCATION);
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
@@ -725,22 +729,16 @@ grpc_call* ClientChannel::CreateCall(
   return nullptr;
 }
 
-CallInitiator ClientChannel::CreateCall(
-    ClientMetadataHandle client_initial_metadata) {
+void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
   // Increment call count.
   if (idle_timeout_ != Duration::Zero()) idle_state_.IncreaseCallCount();
   // Exit IDLE if needed.
   CheckConnectivityState(/*try_to_connect=*/true);
-  // Create an initiator/unstarted-handler pair.
-  auto call = MakeCallPair(
-      std::move(client_initial_metadata), event_engine_.get(),
-      call_arena_allocator_->MakeArena(), call_arena_allocator_, nullptr);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
-  call.initiator.SpawnGuarded(
+  unstarted_handler.SpawnGuarded(
       "wait-for-name-resolution",
-      [self = RefAsSubclass<ClientChannel>(),
-       unstarted_handler = std::move(call.handler)]() mutable {
+      [self = RefAsSubclass<ClientChannel>(), unstarted_handler]() mutable {
         const bool wait_for_ready =
             unstarted_handler.UnprocessedClientInitialMetadata()
                 .GetOrCreatePointer(WaitForReady())
@@ -790,8 +788,6 @@ CallInitiator ClientChannel::CreateCall(
               return absl::OkStatus();
             });
       });
-  // Return the initiator.
-  return call.initiator;
 }
 
 void ClientChannel::CreateResolverLocked() {

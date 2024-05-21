@@ -111,10 +111,8 @@ class Call : public CppImplOf<Call, grpc_call>,
     return deadline_;
   }
 
-  grpc_compression_algorithm test_only_compression_algorithm() {
-    return incoming_compression_algorithm_;
-  }
-  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
+  virtual grpc_compression_algorithm test_only_compression_algorithm() = 0;
+  virtual uint32_t test_only_message_flags() = 0;
   CompressionAlgorithmSet encodings_accepted_by_peer() {
     return encodings_accepted_by_peer_;
   }
@@ -203,12 +201,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   // internal headers against external modification.
   void PrepareOutgoingInitialMetadata(const grpc_op& op,
                                       grpc_metadata_batch& md);
-  void NoteLastMessageFlags(uint32_t flags) {
-    test_only_last_message_flags_ = flags;
-  }
-  grpc_compression_algorithm incoming_compression_algorithm() const {
-    return incoming_compression_algorithm_;
-  }
 
   void HandleCompressionAlgorithmDisabled(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
@@ -216,6 +208,10 @@ class Call : public CppImplOf<Call, grpc_call>,
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
 
   virtual grpc_compression_options compression_options() = 0;
+
+  virtual grpc_compression_algorithm incoming_compression_algorithm() = 0;
+  virtual void set_incoming_compression_algorithm(
+      grpc_compression_algorithm algorithm) = 0;
 
  private:
   std::atomic<ParentCall*> parent_call_{nullptr};
@@ -226,13 +222,9 @@ class Call : public CppImplOf<Call, grpc_call>,
   bool cancellation_is_inherited_ = false;
   // Is this call traced?
   bool traced_ = false;
-  // Compression algorithm for *incoming* data
-  grpc_compression_algorithm incoming_compression_algorithm_ =
-      GRPC_COMPRESS_NONE;
   // Supported encodings (compression algorithms), a bitset.
   // Always support no compression.
   CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
-  uint32_t test_only_last_message_flags_ = 0;
   // Peer name is protected by a mutex because it can be accessed by the
   // application at the same moment as it is being set by the completion
   // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
