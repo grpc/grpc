@@ -384,6 +384,7 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
   if (r.ok()) {
     return r->release()->c_ptr();
   }
+  LOG(ERROR) << "Failed to create chaotic good client channel: " << r.status();
   error = absl_status_to_grpc_error(r.status());
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
@@ -392,6 +393,6 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
     status = static_cast<grpc_status_code>(integer);
   }
   channel = grpc_lame_client_channel_create(
-      target, status, "Failed to create secure client channel");
+      target, status, "Failed to create chaotic good client channel");
   return channel;
 }
