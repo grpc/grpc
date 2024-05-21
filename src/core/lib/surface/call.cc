@@ -2791,11 +2791,11 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           });
   auto recv_message =
       op_index.OpHandler<GRPC_OP_RECV_MESSAGE>([this](const grpc_op& op) {
-        CHECK_EQ(recv_message_, nullptr);
-        recv_message_ = op.data.recv_message.recv_message;
+        CHECK_EQ(recv_message, nullptr);
+        recv_message = op.data.recv_message.recv_message;
         return [this]() mutable {
           return Map(call_handler_.PullMessage(),
-                     [this](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                     [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
                        return FinishRecvMessage(std::move(msg));
                      });
         };

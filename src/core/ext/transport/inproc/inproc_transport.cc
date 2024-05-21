@@ -174,8 +174,7 @@ class InprocClientTransport final : public ClientTransport {
 };
 
 bool UsePromiseBasedTransport() {
-  if (!IsPromiseBasedInprocTransportEnabled()) return false;
-  return true;
+  return IsPromiseBasedInprocTransportEnabled();
 }
 
 OrphanablePtr<InprocClientTransport>
