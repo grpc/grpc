@@ -19,6 +19,7 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/support/port_platform.h>
@@ -59,7 +60,7 @@ grpc_gcp_HandshakerResp* alts_tsi_utils_deserialize_response(
   grpc_core::CSliceUnref(slice);
   grpc_byte_buffer_reader_destroy(&bbr);
   if (resp == nullptr) {
-    gpr_log(GPR_ERROR, "grpc_gcp_handshaker_resp_decode() failed");
+    LOG(ERROR) << "grpc_gcp_handshaker_resp_decode() failed";
     return nullptr;
   }
   return resp;

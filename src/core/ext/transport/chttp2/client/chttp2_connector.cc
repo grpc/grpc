@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -311,7 +312,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 absl::StatusOr<OrphanablePtr<Channel>> CreateChannel(const char* target,
                                                      const ChannelArgs& args) {
   if (target == nullptr) {
-    gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
+    LOG(ERROR) << "cannot create channel with NULL target name";
     return absl::InvalidArgumentError("channel target is NULL");
   }
   return ChannelCreate(target, args, GRPC_CLIENT_CHANNEL, nullptr);

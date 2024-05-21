@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
@@ -196,7 +197,7 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
   if (GPR_UNLIKELY(!error->ok())) {
-    gpr_log(GPR_ERROR, "error: %s", StatusToString(*error).c_str());
+    LOG(ERROR) << "error: " << StatusToString(*error);
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
