@@ -35,6 +35,7 @@
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/substitute.h"
 #include "absl/time/clock.h"
@@ -111,7 +112,7 @@ std::shared_ptr<grpc::Channel> CreateCustomBinderChannel(
   std::string connection_id =
       grpc_binder::GetConnectionIdGenerator()->Generate(uri);
 
-  gpr_log(GPR_ERROR, "connection id is %s", connection_id.c_str());
+  LOG(ERROR) << "connection id is " << connection_id;
 
   // After invoking this Java method, Java code will put endpoint binder into
   // `EndpointBinderPool` after the connection succeeds

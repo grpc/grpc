@@ -74,13 +74,14 @@ class TransportTest : public YodelTest {
 
 #define TRANSPORT_TEST(name) YODEL_TEST_P(TransportTest, TransportFixture, name)
 
-#define TRANSPORT_FIXTURE(name)                                            \
-  static grpc_core::ClientAndServerTransportPair name(                     \
-      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> \
-          event_engine);                                                   \
-  YODEL_TEST_PARAM(TransportTest, TransportFixture, name, name);           \
-  static grpc_core::ClientAndServerTransportPair name(                     \
-      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> \
-          event_engine)
+#define TRANSPORT_FIXTURE(name)                                                \
+  static grpc_core::ClientAndServerTransportPair name(                         \
+      std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>     \
+          event_engine);                                                       \
+  YODEL_TEST_PARAM(TransportTest, TransportFixture, name, name);               \
+  static grpc_core::ClientAndServerTransportPair name(                         \
+      GRPC_UNUSED                                                              \
+          std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine> \
+              event_engine)
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_TEST_SUITE_TRANSPORT_TEST_H

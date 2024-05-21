@@ -30,6 +30,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
@@ -183,7 +184,7 @@ class TcpZerocopySendCtx {
     if (send_records_ == nullptr || free_send_records_ == nullptr) {
       gpr_free(send_records_);
       gpr_free(free_send_records_);
-      gpr_log(GPR_INFO, "Disabling TCP TX zerocopy due to memory pressure.\n");
+      LOG(INFO) << "Disabling TCP TX zerocopy due to memory pressure.\n";
       memory_limited_ = true;
       enabled_ = false;
     } else {

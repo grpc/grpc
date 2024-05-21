@@ -22,10 +22,10 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
@@ -69,7 +69,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     HandshakerContext context;
     HandshakerReq request;
     HandshakerResp response;
-    gpr_log(GPR_DEBUG, "Start a new handshake.");
+    VLOG(2) << "Start a new handshake.";
     while (stream->Read(&request)) {
       status = ProcessRequest(&context, request, &response);
       if (!status.ok()) return WriteErrorResponse(stream, status);
@@ -101,13 +101,13 @@ class FakeHandshakerService : public HandshakerService::Service {
     CHECK_NE(response, nullptr);
     response->Clear();
     if (request.has_client_start()) {
-      gpr_log(GPR_DEBUG, "Process client start request.");
+      VLOG(2) << "Process client start request.";
       return ProcessClientStart(context, request.client_start(), response);
     } else if (request.has_server_start()) {
-      gpr_log(GPR_DEBUG, "Process server start request.");
+      VLOG(2) << "Process server start request.";
       return ProcessServerStart(context, request.server_start(), response);
     } else if (request.has_next()) {
-      gpr_log(GPR_DEBUG, "Process next request.");
+      VLOG(2) << "Process next request.";
       return ProcessNext(context, request.next(), response);
     }
     return Status(StatusCode::INVALID_ARGUMENT, "Request is empty.");
