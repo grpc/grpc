@@ -25,6 +25,7 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
@@ -109,7 +110,7 @@ static void try_engine(absl::string_view engine) {
     if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
         g_vtables[i]->check_engine_available(engine == g_vtables[i]->name)) {
       g_event_engine = g_vtables[i];
-      gpr_log(GPR_DEBUG, "Using polling engine: %s", g_event_engine->name);
+      VLOG(2) << "Using polling engine: " << g_event_engine->name;
       return;
     }
   }

@@ -22,6 +22,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -75,9 +76,9 @@ void TraceFlagList::Add(TraceFlag* flag) {
 }
 
 void TraceFlagList::LogAllTracers() {
-  gpr_log(GPR_DEBUG, "available tracers:");
+  VLOG(2) << "available tracers:";
   for (TraceFlag* t = root_tracer_; t != nullptr; t = t->next_tracer_) {
-    gpr_log(GPR_DEBUG, "\t%s", t->name_);
+    VLOG(2) << "\t" << t->name_;
   }
 }
 

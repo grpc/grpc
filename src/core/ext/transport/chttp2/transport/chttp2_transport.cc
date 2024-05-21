@@ -803,8 +803,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     if (grpc_http_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "HTTP:%p/%p creating accept stream %d [from %p]", t,
-              this, id, server_data);
+      VLOG(2) << "HTTP:" << t << "/" << this << " creating accept stream " << id
+              << " [from " << server_data << "]";
     }
     *t->accepting_stream = this;
     t->stream_map.emplace(id, this);
@@ -1037,8 +1037,8 @@ static void write_action(grpc_chttp2_transport* t) {
     max_frame_size = INT_MAX;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    gpr_log(GPR_INFO, "%s[%p]: Write %" PRIdPTR " bytes",
-            t->is_client ? "CLIENT" : "SERVER", t, t->outbuf.Length());
+    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
+              << t->outbuf.Length() << " bytes";
   }
   t->write_size_policy.BeginWrite(t->outbuf.Length());
   grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
@@ -1051,8 +1051,8 @@ static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
                              grpc_error_handle error) {
   auto* tp = t.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    gpr_log(GPR_INFO, "%s[%p]: Finish write",
-            t->is_client ? "CLIENT" : "SERVER", t.get());
+    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t.get()
+              << "]: Finish write";
   }
   tp->combiner->Run(grpc_core::InitTransportClosure<write_action_end_locked>(
                         std::move(t), &tp->write_action_end_locked),
@@ -1329,7 +1329,7 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
   const std::string prefix = absl::StrCat(
       "HTTP:", id, is_initial ? ":HDR" : ":TRL", is_client ? ":CLI:" : ":SVR:");
   md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
-    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
+    LOG(INFO) << absl::StrCat(prefix, key, ": ", value);
   });
 }
 

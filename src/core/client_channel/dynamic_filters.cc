@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/support/log.h>
@@ -68,7 +69,7 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(channel_stack_->channel_stack_.get(), 1,
                                 Destroy, this, &call_args);
   if (GPR_UNLIKELY(!error->ok())) {
-    gpr_log(GPR_ERROR, "error: %s", StatusToString(*error).c_str());
+    LOG(ERROR) << "error: " << StatusToString(*error);
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(call_stack, args.pollent);

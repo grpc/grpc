@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -120,6 +121,13 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
+  if (grpc_trace_channel_stack.enabled()) {
+    LOG(INFO) << "CHANNEL_STACK: init " << name;
+    for (size_t i = 0; i < filter_count; i++) {
+      LOG(INFO) << "CHANNEL_STACK:   filter " << filters[i]->name;
+    }
+  }
+
   stack->on_destroy.Init([]() {});
   stack->event_engine.Init(channel_args.GetObjectRef<EventEngine>());
   stack->stats_plugin_group.Init();

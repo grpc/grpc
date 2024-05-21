@@ -104,7 +104,6 @@ class LoggingTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     g_test_logging_sink = new TestLoggingSink;
-    grpc::RegisterOpenCensusPlugin();
     grpc_core::RegisterLoggingFilter(g_test_logging_sink);
   }
 
