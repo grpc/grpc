@@ -1307,8 +1307,8 @@ TEST_F(PickFirstTest, MetricValues) {
   // The first subchannel's connection attempt fails.
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::UnavailableError("failed to connect"));
-  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionAttemptsFailed,
-                                            kLabelValues, {}),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kConnectionAttemptsFailed,
+                                                  kLabelValues, {}),
               ::testing::Optional(1));
   // The LB policy will start a connection attempt on the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
@@ -1317,8 +1317,8 @@ TEST_F(PickFirstTest, MetricValues) {
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
-  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionAttemptsSucceeded,
-                                            kLabelValues, {}),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kConnectionAttemptsSucceeded,
+                                                  kLabelValues, {}),
               ::testing::Optional(1));
   // The LB policy will report CONNECTING some number of times (doesn't
   // matter how many) and then report READY.
@@ -1332,8 +1332,9 @@ TEST_F(PickFirstTest, MetricValues) {
   subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
   ExpectReresolutionRequest();
   ExpectState(GRPC_CHANNEL_IDLE);
-  EXPECT_THAT(stats_plugin->GetCounterValue(kDisconnections, kLabelValues, {}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin->GetUInt64CounterValue(kDisconnections, kLabelValues, {}),
+      ::testing::Optional(1));
 }
 
 class PickFirstHealthCheckingEnabledTest : public PickFirstTest {

@@ -21,6 +21,7 @@ grpc_cc_test(
     timeout = "short",
     srcs = ["iocp_test.cc"],
     external_deps = [
+        "absl/log:log",
         "gtest",
         "absl/types:variant",
     ],
@@ -92,6 +93,7 @@ grpc_cc_library(
     hdrs = ["create_sockpair.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/status",
     ],
     language = "C++",

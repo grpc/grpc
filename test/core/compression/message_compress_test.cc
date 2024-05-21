@@ -28,10 +28,9 @@
 
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
 

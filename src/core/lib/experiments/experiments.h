@@ -74,12 +74,9 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
@@ -100,8 +97,10 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() { return true; }
 inline bool IsCallV3Enabled() { return false; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
-inline bool IsEventEngineClientEnabled() { return false; }
-inline bool IsEventEngineDnsEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
+inline bool IsEventEngineClientEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
+inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
 inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -113,12 +112,9 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
@@ -153,12 +149,9 @@ inline bool IsKeepaliveServerFixEnabled() { return false; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPeerStateBasedFramingEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() { return true; }
 inline bool IsPromiseBasedClientCallEnabled() { return false; }
-inline bool IsPromiseBasedServerCallEnabled() { return false; }
 inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRstpitEnabled() { return false; }
@@ -191,10 +184,8 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdPeerStateBasedFraming,
-  kExperimentIdPendingQueueCap,
   kExperimentIdPickFirstNew,
   kExperimentIdPromiseBasedClientCall,
-  kExperimentIdPromiseBasedServerCall,
   kExperimentIdChaoticGood,
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRstpit,
@@ -264,10 +255,6 @@ inline bool IsMultipingEnabled() {
 inline bool IsPeerStateBasedFramingEnabled() {
   return IsExperimentEnabled(kExperimentIdPeerStateBasedFraming);
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_PENDING_QUEUE_CAP
-inline bool IsPendingQueueCapEnabled() {
-  return IsExperimentEnabled(kExperimentIdPendingQueueCap);
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_NEW
 inline bool IsPickFirstNewEnabled() {
   return IsExperimentEnabled(kExperimentIdPickFirstNew);
@@ -275,10 +262,6 @@ inline bool IsPickFirstNewEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 inline bool IsPromiseBasedClientCallEnabled() {
   return IsExperimentEnabled(kExperimentIdPromiseBasedClientCall);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_SERVER_CALL
-inline bool IsPromiseBasedServerCallEnabled() {
-  return IsExperimentEnabled(kExperimentIdPromiseBasedServerCall);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD
 inline bool IsChaoticGoodEnabled() {

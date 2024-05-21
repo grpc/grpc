@@ -23,9 +23,8 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -51,10 +50,9 @@ void AdsServiceImpl::SetResource(google::protobuf::Any resource,
   resource_state.resource_type_version =
       resource_type_state.resource_type_version;
   resource_state.resource = std::move(resource);
-  gpr_log(GPR_INFO,
-          "ADS[%s]: Updating %s resource %s; resource_type_version now %u",
-          debug_label_.c_str(), type_url.c_str(), name.c_str(),
-          resource_type_state.resource_type_version);
+  LOG(INFO) << "ADS[" << debug_label_ << "]: Updating " << type_url
+            << " resource " << name << "; resource_type_version now "
+            << resource_type_state.resource_type_version;
   for (SubscriptionState* subscription : resource_state.subscriptions) {
     subscription->update_queue->emplace_back(type_url, name);
   }
@@ -69,10 +67,9 @@ void AdsServiceImpl::UnsetResource(const std::string& type_url,
   resource_state.resource_type_version =
       resource_type_state.resource_type_version;
   resource_state.resource.reset();
-  gpr_log(GPR_INFO,
-          "ADS[%s]: Unsetting %s resource %s; resource_type_version now %u",
-          debug_label_.c_str(), type_url.c_str(), name.c_str(),
-          resource_type_state.resource_type_version);
+  LOG(INFO) << "ADS[" << debug_label_ << "]: Unsetting " << type_url
+            << " resource " << name << "; resource_type_version now "
+            << resource_type_state.resource_type_version;
   for (SubscriptionState* subscription : resource_state.subscriptions) {
     subscription->update_queue->emplace_back(type_url, name);
   }
@@ -101,9 +98,9 @@ bool AdsServiceImpl::MaybeSubscribe(const std::string& resource_type,
   if (subscription_state->update_queue != nullptr) return false;
   subscription_state->update_queue = update_queue;
   resource_state->subscriptions.emplace(subscription_state);
-  gpr_log(GPR_INFO, "ADS[%s]: subscribe to resource type %s name %s state %p",
-          debug_label_.c_str(), resource_type.c_str(), resource_name.c_str(),
-          &subscription_state);
+  LOG(INFO) << "ADS[" << debug_label_ << "]: subscribe to resource type "
+            << resource_type << " name " << resource_name << " state "
+            << &subscription_state;
   return true;
 }
 
@@ -123,9 +120,9 @@ void AdsServiceImpl::ProcessUnsubscriptions(
       ++it;
       continue;
     }
-    gpr_log(GPR_INFO, "ADS[%s]: Unsubscribe to type=%s name=%s state=%p",
-            debug_label_.c_str(), resource_type.c_str(), resource_name.c_str(),
-            &subscription_state);
+    LOG(INFO) << "ADS[" << debug_label_
+              << "]: Unsubscribe to type=" << resource_type
+              << " name=" << resource_name << " state=" << &subscription_state;
     auto resource_it = resource_name_map->find(resource_name);
     CHECK(resource_it != resource_name_map->end());
     auto& resource_state = resource_it->second;
@@ -152,7 +149,7 @@ void AdsServiceImpl::Shutdown() {
     }
     resource_type_response_state_.clear();
   }
-  gpr_log(GPR_INFO, "ADS[%s]: shut down", debug_label_.c_str());
+  LOG(INFO) << "ADS[" << debug_label_ << "]: shut down";
 }
 
 //
@@ -233,7 +230,7 @@ void LrsServiceImpl::Shutdown() {
       lrs_cv_.SignalAll();
     }
   }
-  gpr_log(GPR_INFO, "LRS[%s]: shut down", debug_label_.c_str());
+  LOG(INFO) << "LRS[" << debug_label_ << "]: shut down";
 }
 
 std::vector<LrsServiceImpl::ClientStats> LrsServiceImpl::WaitForLoadReport(
@@ -245,7 +242,7 @@ std::vector<LrsServiceImpl::ClientStats> LrsServiceImpl::WaitForLoadReport(
     load_report_cond_ = &cv;
     while (result_queue_.empty()) {
       if (cv.WaitWithTimeout(&load_report_mu_, timeout)) {
-        gpr_log(GPR_ERROR, "timed out waiting for load report");
+        LOG(ERROR) << "timed out waiting for load report";
         return {};
       }
     }

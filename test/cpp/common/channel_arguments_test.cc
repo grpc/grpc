@@ -22,9 +22,9 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

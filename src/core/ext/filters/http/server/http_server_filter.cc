@@ -50,6 +50,7 @@
 namespace grpc_core {
 
 const NoInterceptor HttpServerFilter::Call::OnClientToServerMessage;
+const NoInterceptor HttpServerFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor HttpServerFilter::Call::OnServerToClientMessage;
 const NoInterceptor HttpServerFilter::Call::OnFinalize;
 

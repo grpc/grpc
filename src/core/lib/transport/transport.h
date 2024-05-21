@@ -55,6 +55,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -481,6 +482,15 @@ typedef struct grpc_transport_op {
   grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
 
+// Allocate a grpc_transport_op, and preconfigure the on_complete closure to
+// \a on_complete and then delete the returned transport op
+grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
+// Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
+// closure
+// to \a on_complete and then delete the returned transport op
+grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
+    grpc_closure* on_complete);
+
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
@@ -507,6 +517,21 @@ class Transport : public InternallyRefCounted<Transport> {
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
+  // Though internally ref counted transports expose their "Ref" method to
+  // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
+  // singleton decision maker on whether the transport should be destroyed or
+  // not.
+  // TODO(ctiller): consider moving to a DualRefCounted model (with the
+  // disadvantage that we would accidentally have many strong owners which is
+  // unnecessary for this type).
+  RefCountedPtr<Transport> Ref() {
+    return InternallyRefCounted<Transport>::Ref();
+  }
+  template <typename T>
+  RefCountedPtr<T> RefAsSubclass() {
+    return InternallyRefCounted<Transport>::RefAsSubclass<T>();
+  }
+
   virtual FilterStackTransport* filter_stack_transport() = 0;
   virtual ClientTransport* client_transport() = 0;
   virtual ServerTransport* server_transport() = 0;
@@ -526,6 +551,20 @@ class Transport : public InternallyRefCounted<Transport> {
 
   // implementation of grpc_transport_perform_op
   virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  void StartConnectivityWatch(
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->start_connectivity_watch = std::move(watcher);
+    PerformOp(op);
+  }
+
+  void DisconnectWithError(grpc_error_handle error) {
+    CHECK(!error.ok()) << error;
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->disconnect_with_error = error;
+    PerformOp(op);
+  }
 
   // implementation of grpc_transport_get_endpoint
   virtual grpc_endpoint* GetEndpoint() = 0;
@@ -582,39 +621,15 @@ class ClientTransport : public Transport {
 
 class ServerTransport : public Transport {
  public:
-  // Acceptor helps transports create calls.
-  class Acceptor {
-   public:
-    // Returns an arena that can be used to allocate memory for initial metadata
-    // parsing, and later passed to CreateCall() as the underlying arena for
-    // that call.
-    virtual Arena* CreateArena() = 0;
-    // Create a call at the server (or fail)
-    // arena must have been previously allocated by CreateArena()
-    virtual absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadataHandle client_initial_metadata, Arena* arena) = 0;
-
-   protected:
-    ~Acceptor() = default;
-  };
-
   // Called once slightly after transport setup to register the accept function.
-  virtual void SetAcceptor(Acceptor* acceptor) = 0;
+  virtual void SetCallDestination(
+      RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;
 
  protected:
   ~ServerTransport() override = default;
 };
 
 }  // namespace grpc_core
-
-// Allocate a grpc_transport_op, and preconfigure the on_complete closure to
-// \a on_complete and then delete the returned transport op
-grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
-// Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
-// closure
-// to \a on_complete and then delete the returned transport op
-grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
-    grpc_closure* on_complete);
 
 namespace grpc_core {
 // This is the key to be used for loading/storing keepalive_throttling in the
