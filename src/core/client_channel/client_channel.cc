@@ -62,6 +62,7 @@
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -603,8 +604,9 @@ void ClientChannel::Orphaned() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: shutting down", this);
   }
-  // Weird capture then copy needed to satisfy thread safety analysis, otherwise
-  // it seems to fail to recognize the correct lock is taken in the lambda.
+  // Weird capture then copy needed to satisfy thread safety analysis,
+  // otherwise it seems to fail to recognize the correct lock is taken in the
+  // lambda.
   auto self = RefAsSubclass<ClientChannel>();
   work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
@@ -652,7 +654,8 @@ void ClientChannel::AddConnectivityWatcher(
   //      [self = RefAsSubclass<ClientChannel>(), initial_state,
   //       watcher = std::move(watcher)]()
   //            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-  //        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
+  //        self->state_tracker_.AddWatcher(initial_state,
+  //        std::move(watcher));
   //      },
   //      DEBUG_LOCATION);
 }
@@ -1071,8 +1074,8 @@ absl::Status ClientChannel::CreateOrUpdateLbPolicyLocked(
   update_args.config = std::move(lb_policy_config);
   update_args.resolution_note = std::move(result.resolution_note);
   // Remove the config selector from channel args so that we're not holding
-  // unnecessary refs that cause it to be destroyed somewhere other than in the
-  // WorkSerializer.
+  // unnecessary refs that cause it to be destroyed somewhere other than in
+  // the WorkSerializer.
   update_args.args = result.args.Remove(GRPC_ARG_CONFIG_SELECTOR);
   // Add health check service name to channel args.
   if (health_check_service_name.has_value()) {

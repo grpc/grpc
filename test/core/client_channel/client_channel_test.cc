@@ -47,7 +47,7 @@ class ClientChannelTest : public YodelTest {
   ClientChannel& InitChannel(const ChannelArgs& args) {
     auto channel = ClientChannel::Create(TestTarget(), CompleteArgs(args));
     CHECK_OK(channel);
-    channel_ = OrphanablePtr<ClientChannel>(
+    channel_ = RefCountedPtr<ClientChannel>(
         DownCast<ClientChannel*>(channel->release()));
     return *channel_;
   }
@@ -229,7 +229,7 @@ class ClientChannelTest : public YodelTest {
     picker_.reset();
   }
 
-  OrphanablePtr<ClientChannel> channel_;
+  RefCountedPtr<ClientChannel> channel_;
   absl::optional<ClientChannel::PickerObservable> picker_;
   TestCallDestinationFactory call_destination_factory_{this};
   TestClientChannelFactory client_channel_factory_;
@@ -245,14 +245,12 @@ class ClientChannelTest : public YodelTest {
 
 CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 
-CLIENT_CHANNEL_TEST(CreateCall) {
-  auto& channel = InitChannel(ChannelArgs());
-  channel.CreateCall(MakeClientInitialMetadata());
-}
-
 CLIENT_CHANNEL_TEST(StartCall) {
   auto& channel = InitChannel(ChannelArgs());
-  auto call_initiator = channel.CreateCall(MakeClientInitialMetadata());
+  auto call =
+      MakeCallPair(MakeClientInitialMetadata(), channel.event_engine(),
+                   channel.call_arena_allocator()->MakeArena(), nullptr);
+  channel.StartCall(std::move(call.handler));
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
   auto call_handler = TickUntilCallStarted();

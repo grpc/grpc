@@ -49,9 +49,9 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   CallInitiatorAndHandler MakeCall(
       ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(
-        std::move(client_initial_metadata), event_engine().get(),
-        call_arena_allocator_->MakeArena(), call_arena_allocator_, nullptr);
+    return MakeCallPair(std::move(client_initial_metadata),
+                        event_engine().get(),
+                        call_arena_allocator_->MakeArena(), nullptr);
   }
 
   CallHandler TickUntilCallStarted() {
@@ -127,7 +127,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   void Shutdown() override {}
 
-  OrphanablePtr<ClientChannel> channel_;
+  RefCountedPtr<ClientChannel> channel_;
   ClientChannel::PickerObservable picker_{nullptr};
   RefCountedPtr<TestCallDestination> call_destination_ =
       MakeRefCounted<TestCallDestination>();

@@ -267,7 +267,7 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
               "test"),
           1024);
   auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
-                           allocator->MakeArena(), allocator, nullptr);
+                           allocator->MakeArena(), nullptr);
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
   EXPECT_EQ(handled, 1);

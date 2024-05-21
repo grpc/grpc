@@ -64,7 +64,6 @@ class BinderTransportTest : public ::testing::Test {
       gbs->~grpc_binder_stream();
       gpr_free(gbs);
     }
-    arena_->Destroy();
   }
 
   void PerformStreamOp(grpc_binder_stream* gbs,
@@ -81,7 +80,7 @@ class BinderTransportTest : public ::testing::Test {
     grpc_binder_stream* gbs = static_cast<grpc_binder_stream*>(
         gpr_malloc(transport_->filter_stack_transport()->SizeOfStream()));
     transport_->filter_stack_transport()->InitStream(
-        reinterpret_cast<grpc_stream*>(gbs), &ref_, nullptr, arena_);
+        reinterpret_cast<grpc_stream*>(gbs), &ref_, nullptr, arena_.get());
     stream_buffer_.push_back(gbs);
     return gbs;
   }
@@ -95,12 +94,8 @@ class BinderTransportTest : public ::testing::Test {
   static void TearDownTestSuite() { grpc_shutdown(); }
 
  protected:
-  grpc_core::MemoryAllocator memory_allocator_ =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  grpc_core::Arena* arena_ =
-      grpc_core::Arena::Create(/* initial_size = */ 1, &memory_allocator_);
+  grpc_core::RefCountedPtr<grpc_core::Arena> arena_ =
+      grpc_core::SimpleArenaAllocator()->MakeArena();
   grpc_core::Transport* transport_;
   grpc_stream_refcount ref_;
   std::vector<grpc_binder_stream*> stream_buffer_;
@@ -234,12 +229,6 @@ struct MakeSendInitialMetadata {
   }
   ~MakeSendInitialMetadata() {}
 
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_initial_metadata;
 };
 
@@ -269,8 +258,6 @@ struct MakeSendTrailingMetadata {
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
-  grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata;
 };
 
@@ -297,8 +284,6 @@ struct MakeRecvInitialMetadata {
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
-  grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_initial_metadata;
   grpc_core::Notification notification;
 };
@@ -345,8 +330,6 @@ struct MakeRecvTrailingMetadata {
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
-  grpc_core::ScopedArenaPtr arena =
-      grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch grpc_trailing_metadata;
   grpc_core::Notification notification;
 };

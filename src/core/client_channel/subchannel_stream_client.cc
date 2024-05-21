@@ -59,12 +59,13 @@ SubchannelStreamClient::SubchannelStreamClient(
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
       tracer_(tracer),
-      call_allocator_(
+      call_allocator_(MakeRefCounted<CallArenaAllocator>(
           connected_subchannel_->args()
               .GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator(
-                  (tracer != nullptr) ? tracer : "SubchannelStreamClient")),
+                  (tracer != nullptr) ? tracer : "SubchannelStreamClient"),
+          1024)),
       event_handler_(std::move(event_handler)),
       retry_backoff_(
           BackOff::Options()
@@ -171,9 +172,7 @@ SubchannelStreamClient::CallState::CallState(
     grpc_pollset_set* interested_parties)
     : subchannel_stream_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
-      arena_(Arena::Create(subchannel_stream_client_->connected_subchannel_
-                               ->GetInitialCallSizeEstimate(),
-                           &subchannel_stream_client_->call_allocator_)),
+      arena_(subchannel_stream_client_->call_allocator_->MakeArena()),
       payload_(context_) {}
 
 SubchannelStreamClient::CallState::~CallState() {

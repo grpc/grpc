@@ -289,6 +289,19 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
   std::unique_ptr<Context, Deleter> value_;
 };
 
+template <typename Context>
+class ContextHolder<RefCountedPtr<Context>> {
+ public:
+  using ContextType = Context;
+
+  explicit ContextHolder(RefCountedPtr<Context> value)
+      : value_(std::move(value)) {}
+  Context* GetContext() { return value_.get(); }
+
+ private:
+  RefCountedPtr<Context> value_;
+};
+
 template <>
 class Context<Activity> {
  public:
@@ -296,19 +309,23 @@ class Context<Activity> {
 };
 
 template <typename HeldContext>
-using ContextTypeFromHeld = typename ContextHolder<HeldContext>::ContextType;
+using ContextTypeFromHeld = typename ContextHolder<
+    typename std::remove_reference<HeldContext>::type>::ContextType;
 
 template <typename... Contexts>
-class ActivityContexts : public ContextHolder<Contexts>... {
+class ActivityContexts
+    : public ContextHolder<typename std::remove_reference<Contexts>::type>... {
  public:
   explicit ActivityContexts(Contexts&&... contexts)
-      : ContextHolder<Contexts>(std::forward<Contexts>(contexts))... {}
+      : ContextHolder<typename std::remove_reference<Contexts>::type>(
+            std::forward<Contexts>(contexts))... {}
 
   class ScopedContext : public Context<ContextTypeFromHeld<Contexts>>... {
    public:
     explicit ScopedContext(ActivityContexts* contexts)
         : Context<ContextTypeFromHeld<Contexts>>(
-              static_cast<ContextHolder<Contexts>*>(contexts)
+              static_cast<ContextHolder<
+                  typename std::remove_reference<Contexts>::type>*>(contexts)
                   ->GetContext())... {
       // Silence `unused-but-set-parameter` in case of Contexts = {}
       (void)contexts;

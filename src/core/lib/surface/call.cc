@@ -383,15 +383,15 @@ void Call::Run() {
 
 class ChannelBasedCall : public Call {
  protected:
-  ChannelBasedCall(Arena* arena, bool is_client, Timestamp send_deadline,
-                   RefCountedPtr<Channel> channel)
+  ChannelBasedCall(RefCountedPtr<Arena> arena, bool is_client,
+                   Timestamp send_deadline, RefCountedPtr<Channel> channel)
       : Call(is_client, send_deadline, channel->event_engine()),
         arena_(arena),
         channel_(std::move(channel)) {
-    DCHECK_NE(arena_, nullptr);
+    DCHECK_NE(arena_.get(), nullptr);
   }
 
-  Arena* arena() final { return arena_; }
+  Arena* arena() final { return arena_.get(); }
 
   char* GetPeer() final {
     Slice peer_slice = GetPeerString();
@@ -414,18 +414,17 @@ class ChannelBasedCall : public Call {
 
   void DeleteThis() {
     RefCountedPtr<Channel> channel = std::move(channel_);
-    Arena* arena = arena_;
+    RefCountedPtr<Arena> arena = arena_;
     this->~ChannelBasedCall();
-    channel->DestroyArena(arena);
   }
 
   Channel* channel() const { return channel_.get(); }
 
   // Non-virtual arena accessor -- needed by PipeBasedCall
-  Arena* GetArena() { return arena_; }
+  Arena* GetArena() { return arena_.get(); }
 
  private:
-  Arena* const arena_;
+  const RefCountedPtr<Arena> arena_;
   RefCountedPtr<Channel> channel_;
 };
 
@@ -600,10 +599,10 @@ class FilterStackCall final : public ChannelBasedCall {
     void FinishBatch(grpc_error_handle error);
   };
 
-  FilterStackCall(Arena* arena, const grpc_call_create_args& args)
-      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
-                         args.send_deadline,
-                         args.channel->RefAsSubclass<Channel>()),
+  FilterStackCall(RefCountedPtr<Arena> arena, const grpc_call_create_args& args)
+      : ChannelBasedCall(
+            std::move(arena), args.server_transport_data == nullptr,
+            args.send_deadline, args.channel->RefAsSubclass<Channel>()),
         cq_(args.cq),
         stream_op_payload_(context_) {
     context_[GRPC_CONTEXT_CALL].value = this;
@@ -748,7 +747,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
 
-  Arena* arena = channel->CreateArena();
+  RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   DCHECK(FromC(call->c_ptr()) == call);
   DCHECK(FromCallStack(call->call_stack()) == call);
@@ -787,7 +786,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-              arena, args->server->channel_args());
+              arena.get(), args->server->channel_args());
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -2527,7 +2526,7 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
   auto cur_state = call_state_.load(std::memory_order_acquire);
   ClientMetadataHandle client_initial_metadata;
   auto call = MakeCallPair(std::move(client_initial_metadata), event_engine(),
-                           nullptr, nullptr, nullptr);
+                           arena()->Ref(), nullptr);
   call_initiator_ = std::move(call.initiator);
   while (true) {
     switch (cur_state) {
