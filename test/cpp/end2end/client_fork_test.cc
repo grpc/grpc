@@ -23,11 +23,11 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
-#include "absl/log/log.h"
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -53,10 +53,10 @@ class ServiceImpl final : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
-      gpr_log(GPR_INFO, "wrote msg %s", response.message().c_str());
+      LOG(INFO) << "wrote msg " << response.message();
     }
     return Status::OK;
   }

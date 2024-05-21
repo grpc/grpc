@@ -21,9 +21,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
-#include "absl/log/log.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/ext/server_load_reporting.h>
@@ -142,7 +143,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
   const std::string& lb_id = response.initial_response().load_balancer_id();
-  gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
+  LOG(INFO) << "Initial response received (lb_id: " << lb_id << ").";
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
 
   unsigned load_count = 0;

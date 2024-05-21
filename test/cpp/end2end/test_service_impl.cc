@@ -24,8 +24,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
-
 #include "absl/log/log.h"
+
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
@@ -96,7 +96,7 @@ int GetIntValueFromMetadataHelper(
   if (metadata.find(key) != metadata.end()) {
     std::istringstream iss(ToString(metadata.find(key)->second));
     iss >> default_value;
-    gpr_log(GPR_INFO, "%s : %d", key, default_value);
+    LOG(INFO) << key << " : " << default_value;
   }
 
   return default_value;
@@ -397,7 +397,7 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
         num_msgs_read_++;
         StartRead(&request_);
       } else {
-        gpr_log(GPR_INFO, "Read: %d messages", num_msgs_read_);
+        LOG(INFO) << "Read: " << num_msgs_read_ << " messages";
 
         if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
           // Let OnCancel recover this

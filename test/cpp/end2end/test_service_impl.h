@@ -28,9 +28,9 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include "absl/log/log.h"
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
@@ -104,10 +104,9 @@ class TestServiceSignaller {
         absl::ToChronoTime(deadline);
     std::unique_lock<std::mutex> lock(mu_);
     cv_rpc_started_.wait_until(lock, chrono_deadline, [this, desired_rpcs] {
-      gpr_log(
-          GPR_DEBUG,
-          "*** desired_rpcs: %d rpcs_waiting_for_server_to_continue_: %d ***",
-          desired_rpcs, rpcs_waiting_for_server_to_continue_);
+      VLOG(2) << "*** desired_rpcs: " << desired_rpcs
+              << " rpcs_waiting_for_server_to_continue_: "
+              << rpcs_waiting_for_server_to_continue_ << " ***";
       return rpcs_waiting_for_server_to_continue_ >= desired_rpcs;
     });
     VLOG(2) << "*** leave ClientWaitUntilNRpcsStarted ***";
@@ -330,7 +329,7 @@ class TestMultipleServiceImpl : public RpcService {
     while (reader->Read(&request)) {
       response->mutable_message()->append(request.message());
     }
-    gpr_log(GPR_INFO, "Read: %d messages", num_msgs_read);
+    LOG(INFO) << "Read: " << num_msgs_read << " messages";
 
     if (server_try_cancel_thd != nullptr) {
       server_try_cancel_thd->join();
@@ -441,7 +440,7 @@ class TestMultipleServiceImpl : public RpcService {
     int read_counts = 0;
     while (stream->Read(&request)) {
       read_counts++;
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       if (read_counts == server_write_last) {
         stream->WriteLast(response, WriteOptions());

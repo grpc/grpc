@@ -105,7 +105,7 @@ class OrcaServiceEnd2endTest : public ::testing::Test {
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
     builder.RegisterService(&orca_service_);
     server_ = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "server started on %s", server_address_.c_str());
+    LOG(INFO) << "server started on " << server_address_;
     auto channel = CreateChannel(server_address, InsecureChannelCredentials());
     stub_ = OpenRcaService::NewStub(channel);
   }

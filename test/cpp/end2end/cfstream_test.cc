@@ -25,11 +25,11 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include "absl/log/log.h"
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -159,7 +159,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
       VLOG(2) << "RPC with succeeded";
       EXPECT_EQ(msg, response->message());
     } else {
-      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
+      VLOG(2) << "RPC failed: " << status.error_message();
     }
     if (expect_success) {
       EXPECT_TRUE(status.ok());
@@ -241,7 +241,7 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
         : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
-      gpr_log(GPR_INFO, "starting server on port %d", port_);
+      LOG(INFO) << "starting server on port " << port_;
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
@@ -380,8 +380,7 @@ TEST_P(CFStreamTest, NetworkFlapRpcsInFlight) {
       CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
-                call->status.error_message().c_str());
+        VLOG(2) << "RPC failed with error: " << call->status.error_message();
         // Bring network up when RPCs start failing
         if (network_down) {
           NetworkUp();
@@ -427,8 +426,7 @@ TEST_P(CFStreamTest, ConcurrentRpc) {
       CHECK(ok);
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
       if (!call->status.ok()) {
-        gpr_log(GPR_DEBUG, "RPC failed with error: %s",
-                call->status.error_message().c_str());
+        VLOG(2) << "RPC failed with error: " << call->status.error_message();
         // Bring network up when RPCs start failing
       } else {
         VLOG(2) << "RPC succeeded";

@@ -33,8 +33,7 @@ namespace testing {
 ::grpc::Status RlsServiceImpl::RouteLookup(grpc::ServerContext* context,
                                            const RouteLookupRequest* request,
                                            RouteLookupResponse* response) {
-  gpr_log(GPR_INFO, "RLS: Received request: %s",
-          request->DebugString().c_str());
+  LOG(INFO) << "RLS: Received request: " << request->DebugString();
   if (context_proc_ != nullptr) {
     context_proc_(context);
   }
@@ -59,8 +58,8 @@ namespace testing {
   }
   IncreaseResponseCount();
   *response = res.response;
-  gpr_log(GPR_INFO, "RLS: returning configured response: %s",
-          response->DebugString().c_str());
+  LOG(INFO) << "RLS: returning configured response: "
+            << response->DebugString();
   return Status::OK;
 }
 

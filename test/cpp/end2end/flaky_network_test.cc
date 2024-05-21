@@ -25,12 +25,12 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include "absl/log/log.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -228,7 +228,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
     if (ok) {
       VLOG(2) << "RPC succeeded";
     } else {
-      gpr_log(GPR_DEBUG, "RPC failed: %s", status.error_message().c_str());
+      VLOG(2) << "RPC failed: " << status.error_message();
     }
     return ok;
   }
@@ -245,7 +245,7 @@ class FlakyNetworkTest : public ::testing::TestWithParam<TestScenario> {
         : port_(port), creds_(creds) {}
 
     void Start(const std::string& server_host) {
-      gpr_log(GPR_INFO, "starting server on port %d", port_);
+      LOG(INFO) << "starting server on port " << port_;
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
