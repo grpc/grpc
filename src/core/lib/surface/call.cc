@@ -287,7 +287,7 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   Slice* peer_string = md.get_pointer(PeerString());
   if (peer_string != nullptr) SetPeerString(peer_string->Ref());
 
-  set_incoming_compression_algorithm(
+  SetIncomingCompressionAlgorithm(
       md.Take(GrpcEncodingMetadata()).value_or(GRPC_COMPRESS_NONE));
   encodings_accepted_by_peer_ =
       md.Take(GrpcAcceptEncodingMetadata())
@@ -632,7 +632,7 @@ class FilterStackCall final : public ChannelBasedCall {
   grpc_compression_algorithm incoming_compression_algorithm() override {
     return incoming_compression_algorithm_;
   }
-  void set_incoming_compression_algorithm(
+  void SetIncomingCompressionAlgorithm(
       grpc_compression_algorithm algorithm) override {
     incoming_compression_algorithm_ = algorithm;
   }
@@ -2267,6 +2267,29 @@ grpc_call_error ValidateServerBatch(const grpc_op* ops, size_t nops) {
 
 class MessageReceiver {
  public:
+  grpc_compression_algorithm incoming_compression_algorithm() const {
+    return incoming_compression_algorithm_;
+  }
+
+  void SetIncomingCompressionAlgorithm(
+      grpc_compression_algorithm incoming_compression_algorithm) {
+    incoming_compression_algorithm_ = incoming_compression_algorithm;
+  }
+
+  uint32_t last_message_flags() const { return test_only_last_message_flags_; }
+
+  template <typename Puller>
+  auto MakeBatchOp(const grpc_op& op, Puller* puller) {
+    CHECK_EQ(recv_message_, nullptr);
+    recv_message_ = op.data.recv_message.recv_message;
+    return [this, puller]() mutable {
+      return Map(puller->PullMessage(),
+                 [this](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                   return FinishRecvMessage(std::move(msg));
+                 });
+    };
+  }
+
  private:
   StatusFlag FinishRecvMessage(
       ValueOrFailure<absl::optional<MessageHandle>> result) {
@@ -2336,7 +2359,7 @@ class ClientCall final : public Call, public DualRefCounted<ClientCall> {
   }
 
   void CancelWithError(grpc_error_handle error) override {
-    call_initiator().SpawnInfallible(
+    call_initiator_.SpawnInfallible(
         "CancelWithError", [self = WeakRefAsSubclass<ClientCall>(),
                             error = std::move(error)]() mutable {
           self->call_initiator_.Cancel(std::move(error));
@@ -2397,6 +2420,19 @@ class ClientCall final : public Call, public DualRefCounted<ClientCall> {
   bool Completed() final { Crash("unimplemented"); }
   bool failed_before_recv_message() const final { Crash("unimplemented"); }
 
+  grpc_compression_algorithm incoming_compression_algorithm() override {
+    return message_receiver_.incoming_compression_algorithm();
+  }
+
+  void SetIncomingCompressionAlgorithm(
+      grpc_compression_algorithm algorithm) override {
+    message_receiver_.SetIncomingCompressionAlgorithm(algorithm);
+  }
+
+  uint32_t test_only_message_flags() override {
+    return message_receiver_.last_message_flags();
+  }
+
  private:
   struct UnorderedStart {
     absl::AnyInvocable<void()> start_pending_batch;
@@ -2410,12 +2446,6 @@ class ClientCall final : public Call, public DualRefCounted<ClientCall> {
   void StartCall(const grpc_op& send_initial_metadata_op);
   StatusFlag FinishRecvMessage(
       ValueOrFailure<absl::optional<MessageHandle>> result);
-
-  CallInitiator& call_initiator() {
-    auto cur_state = call_state_.load(std::memory_order_acquire);
-    DCHECK(cur_state == kStarted || cur_state == kCancelled);
-    return call_initiator_;
-  }
 
   std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
@@ -2432,7 +2462,7 @@ class ClientCall final : public Call, public DualRefCounted<ClientCall> {
   };
   std::atomic<uintptr_t> call_state_{kUnstarted};
   CallInitiator call_initiator_;
-  grpc_byte_buffer** recv_message_ = nullptr;
+  MessageReceiver message_receiver_;
   grpc_completion_queue* const cq_;
   RefCountedPtr<UnstartedCallDestination> channel_;
   ServerMetadataHandle received_initial_metadata_;
@@ -2548,27 +2578,20 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
             send.c_slice_buffer());
         auto msg = arena()->MakePooled<Message>(std::move(send), op.flags);
         return [this, msg = std::move(msg)]() mutable {
-          return call_initiator().PushMessage(std::move(msg));
+          return call_initiator_.PushMessage(std::move(msg));
         };
       });
   auto send_close_from_client =
       op_index.OpHandler<GRPC_OP_SEND_CLOSE_FROM_CLIENT>(
           [this](const grpc_op& op) {
             return [this]() {
-              call_initiator().FinishSends();
+              call_initiator_.FinishSends();
               return Success{};
             };
           });
   auto recv_message =
       op_index.OpHandler<GRPC_OP_RECV_MESSAGE>([this](const grpc_op& op) {
-        CHECK_EQ(recv_message_, nullptr);
-        recv_message_ = op.data.recv_message.recv_message;
-        return [this]() mutable {
-          return Map(call_initiator().PullMessage(),
-                     [this](ValueOrFailure<absl::optional<MessageHandle>> msg) {
-                       return FinishRecvMessage(std::move(msg));
-                     });
-        };
+        return message_receiver_.MakeBatchOp(op, &call_initiator_);
       });
   auto recv_initial_metadata =
       op_index.OpHandler<GRPC_OP_RECV_INITIAL_METADATA>([this](
@@ -2576,7 +2599,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         return [this,
                 array = op.data.recv_initial_metadata.recv_initial_metadata]() {
           return Map(
-              call_initiator().PullServerInitialMetadata(),
+              call_initiator_.PullServerInitialMetadata(),
               [this,
                array](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
                 ServerMetadataHandle metadata;
@@ -2702,6 +2725,19 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   bool Completed() final { Crash("unimplemented"); }
   bool failed_before_recv_message() const final { Crash("unimplemented"); }
 
+  uint32_t test_only_message_flags() override {
+    return message_receiver_.last_message_flags();
+  }
+
+  grpc_compression_algorithm incoming_compression_algorithm() override {
+    return message_receiver_.incoming_compression_algorithm();
+  }
+
+  void SetIncomingCompressionAlgorithm(
+      grpc_compression_algorithm algorithm) override {
+    message_receiver_.SetIncomingCompressionAlgorithm(algorithm);
+  }
+
  private:
   void CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                    bool is_notify_tag_closure);
@@ -2791,14 +2827,7 @@ void ServerCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           });
   auto recv_message =
       op_index.OpHandler<GRPC_OP_RECV_MESSAGE>([this](const grpc_op& op) {
-        CHECK_EQ(recv_message_, nullptr);
-        recv_message_ = op.data.recv_message.recv_message;
-        return [this]() mutable {
-          return Map(call_handler_.PullMessage(),
-                     [this](ValueOrFailure<absl::optional<MessageHandle>> msg) {
-                       return FinishRecvMessage(std::move(msg));
-                     });
-        };
+        return message_receiver_.MakeBatchOp(op, &call_handler_);
       });
   auto primary_ops = AllOk<StatusFlag>(
       TrySeq(AllOk<StatusFlag>(std::move(send_initial_metadata),
@@ -2916,7 +2945,7 @@ void grpc_call_cancel_internal(grpc_call* call) {
 
 grpc_compression_algorithm grpc_call_test_only_get_compression_algorithm(
     grpc_call* call) {
-  return grpc_core::Call::FromC(call)->test_only_compression_algorithm();
+  return grpc_core::Call::FromC(call)->incoming_compression_algorithm();
 }
 
 uint32_t grpc_call_test_only_get_message_flags(grpc_call* call) {

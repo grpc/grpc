@@ -3728,6 +3728,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
+        "absl/log",
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",

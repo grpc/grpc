@@ -111,7 +111,6 @@ class Call : public CppImplOf<Call, grpc_call>,
     return deadline_;
   }
 
-  virtual grpc_compression_algorithm test_only_compression_algorithm() = 0;
   virtual uint32_t test_only_message_flags() = 0;
   CompressionAlgorithmSet encodings_accepted_by_peer() {
     return encodings_accepted_by_peer_;
@@ -133,6 +132,8 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   void set_traced(bool traced) { traced_ = traced; }
   bool traced() const { return traced_; }
+
+  virtual grpc_compression_algorithm incoming_compression_algorithm() = 0;
 
  protected:
   // The maximum number of concurrent batches possible.
@@ -209,8 +210,7 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   virtual grpc_compression_options compression_options() = 0;
 
-  virtual grpc_compression_algorithm incoming_compression_algorithm() = 0;
-  virtual void set_incoming_compression_algorithm(
+  virtual void SetIncomingCompressionAlgorithm(
       grpc_compression_algorithm algorithm) = 0;
 
  private:
