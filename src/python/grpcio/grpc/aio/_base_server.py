@@ -146,7 +146,6 @@ class Server(abc.ABC):
           method_handlers: A dictionary that maps method names to corresponding
             RpcMethodHandler.
         """
-        pass
 
 
 # pylint: disable=too-many-public-methods

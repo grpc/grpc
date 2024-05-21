@@ -1467,7 +1467,6 @@ class Server(abc.ABC):
           method_handlers: A dictionary that maps method names to corresponding
             RpcMethodHandler.
         """
-        pass
 
     @abc.abstractmethod
     def add_insecure_port(self, address):
