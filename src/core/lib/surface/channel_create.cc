@@ -82,7 +82,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     args = args.SetObject(optional_transport);
   }
   // Delegate to appropriate channel impl.
-  if (args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) {
+  if (!args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false)) {
     return LegacyChannel::Create(std::move(target), std::move(args),
                                  channel_stack_type);
   }
