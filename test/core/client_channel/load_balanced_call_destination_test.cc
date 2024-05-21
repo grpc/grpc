@@ -115,7 +115,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     void CancelDataWatcher(DataWatcherInterface* watcher) override {
       Crash("not implemented");
     }
-    RefCountedPtr<UnstartedCallDestination> call_destination() override {
+    RefCountedPtr<UnstartedCallDestination> call_destination() {
       return call_destination_;
     }
 
