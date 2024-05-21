@@ -266,7 +266,7 @@ class CallSpine final : public CallSpineInterface, public Party {
       RefCountedPtr<Arena> arena, grpc_call_context_element* legacy_context) {
     return RefCountedPtr<CallSpine>(
         arena->New<CallSpine>(std::move(client_initial_metadata), event_engine,
-                              std::move(arena), legacy_context));
+                              arena, legacy_context));
   }
 
   ~CallSpine() override {
@@ -373,8 +373,8 @@ class CallSpine final : public CallSpineInterface, public Party {
         call_filters_(std::move(client_initial_metadata)),
         event_engine_(event_engine) {
     if (legacy_context == nullptr) {
-      legacy_context_ = static_cast<grpc_call_context_element*>(
-          arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
+      legacy_context_ = static_cast<grpc_call_context_element*>(arena_->Alloc(
+          sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
       memset(legacy_context_, 0,
              sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT);
       legacy_context_is_owned_ = true;
@@ -405,10 +405,11 @@ class CallSpine final : public CallSpineInterface, public Party {
   }
 
   void PartyOver() override {
+    auto arena = arena_;
     {
       ScopedContext context(this);
       CancelRemainingParticipants();
-      arena_->DestroyManagedNewObjects();
+      arena->DestroyManagedNewObjects();
     }
     this->~CallSpine();
   }

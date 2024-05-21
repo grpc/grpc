@@ -96,6 +96,7 @@ CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine,
     RefCountedPtr<Arena> arena, grpc_call_context_element* legacy_context) {
+  CHECK_NE(arena.get(), nullptr);
   auto spine =
       CallSpine::Create(std::move(client_initial_metadata), event_engine,
                         std::move(arena), legacy_context);
