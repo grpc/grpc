@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "channel_create.h"
+#include "src/core/lib/surface/channel_create.h"
 
 #include "absl/log/check.h"
 
