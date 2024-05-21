@@ -258,7 +258,7 @@ void ConnectionAttemptInjector::Hold::WaitForCompletion() {
   while (original_on_complete_ != nullptr) {
     complete_cv_.Wait(&injector_->mu_);
   }
-  LOG(INFO) << "=== CONNECTION COMPLETED ON PORT " << port_;
+  LOG(INFO) << "=== CONNECTION COMPLETED ON PORT " << port_ << " ===";
 }
 
 bool ConnectionAttemptInjector::Hold::IsStarted() {
