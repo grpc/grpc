@@ -14,11 +14,11 @@
 
 _BEFORE_IMPORT = tuple(globals())
 
-from grpc_observability import *  # pylint: disable=wildcard-import,unused-wildcard-import
+from grpc_csm_observability import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
 _AFTER_IMPORT = tuple(globals())
 
-GRPC_OBSERVABILITY_ELEMENTS = tuple(
+GRPC_CSM_OBSERVABILITY_ELEMENTS = tuple(
     element
     for element in _AFTER_IMPORT
     if element not in _BEFORE_IMPORT and element != "_BEFORE_IMPORT"

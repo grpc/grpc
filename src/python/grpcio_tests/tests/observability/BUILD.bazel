@@ -26,6 +26,11 @@ py_library(
     srcs = ["_from_observability_import_star.py"],
 )
 
+py_library(
+    name = "_from_csm_observability_import_star",
+    srcs = ["_from_csm_observability_import_star.py"],
+)
+
 py_test(
     name = "_open_telemetry_observability_test",
     size = "small",
@@ -80,6 +85,7 @@ py_test(
     imports = ["../../"],
     main = "_observability_api_test.py",
     deps = [
+        ":_from_csm_observability_import_star",
         ":_from_observability_import_star",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",

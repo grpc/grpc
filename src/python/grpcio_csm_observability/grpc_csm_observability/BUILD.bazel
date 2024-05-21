@@ -14,7 +14,7 @@
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
-package(default_visibility = ["//visibility:private"])
+package(default_visibility = ["//:__subpackages__"])
 
 # Since packages in requirement() are non-hermetic,
 # csm_observability is for internal use only.
@@ -26,13 +26,10 @@ py_library(
         "../",
     ],
     srcs_version = "PY3ONLY",
-    visibility = [
-        "//:__subpackages__",
-    ],
     deps = [
-        requirement("protobuf"),
         requirement("opentelemetry-resourcedetector-gcp"),
         requirement("opentelemetry-sdk"),
+        "@com_google_protobuf//:protobuf_python",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_observability/grpc_observability:pyobservability",
     ],

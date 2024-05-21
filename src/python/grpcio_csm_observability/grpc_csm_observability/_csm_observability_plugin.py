@@ -36,6 +36,7 @@ TRAFFIC_DIRECTOR_AUTHORITY = "traffic-director-global.xds.googleapis.com"
 UNKNOWN_VALUE = "unknown"
 TYPE_GCE = "gcp_compute_engine"
 TYPE_GKE = "gcp_kubernetes_engine"
+MESH_ID_PREFIX = "mesh:"
 
 METADATA_EXCHANGE_KEY_FIXED_MAP = {
     "type": "csm.remote_workload_type",
@@ -60,6 +61,7 @@ METADATA_EXCHANGE_KEY_GCE_MAP = {
 class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     """
     An implementation of OpenTelemetryLabelInjector for CSM.
+    TODO(xuanwn): Add more details.
     """
 
     _exchange_labels: Dict[str, AnyStr]
@@ -218,6 +220,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         if match:
             return TRAFFIC_DIRECTOR_AUTHORITY in match.group(1)
         else:
+            # Return True if the authority doesn't exist
             return True
 
     @staticmethod
@@ -265,43 +268,13 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
         target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
-        """
-        Args:
-          plugin_options: An Iterable of OpenTelemetryPluginOption which will be
-        enabled for this OpenTelemetryPlugin.
-          meter_provider: A MeterProvider which will be used to collect telemetry data,
-        or None which means no metrics will be collected.
-          target_attribute_filter: Once provided, this will be called per channel to decide
-        whether to record the target attribute on client or to replace it with "other".
-        This helps reduce the cardinality on metrics in cases where many channels
-        are created with different targets in the same binary (which might happen
-        for example, if the channel target string uses IP addresses directly).
-        Return True means the original target string will be used, False means target string
-        will be replaced with "other".
-          generic_method_attribute_filter: Once provided, this will be called with a generic
-        method type to decide whether to record the method name or to replace it with
-        "other". Note that pre-registered methods will always be recorded no matter what
-        this function returns.
-        Return True means the original method name will be used, False means method name will
-        be replaced with "other".
-        """
-        self.plugin_options = list(plugin_options) + [
-            CsmOpenTelemetryPluginOption()
-        ]
-        self.meter_provider = meter_provider
-        if target_attribute_filter:
-            self.target_attribute_filter = target_attribute_filter
-        else:
-            self.target_attribute_filter = lambda target: True
-        if generic_method_attribute_filter:
-            self.generic_method_attribute_filter = (
-                generic_method_attribute_filter
-            )
-        else:
-            self.generic_method_attribute_filter = lambda method: False
-        self._plugins = [
-            _open_telemetry_observability._OpenTelemetryPlugin(self)
-        ]
+        super().__init__(
+            plugin_options=list(plugin_options)
+            + [CsmOpenTelemetryPluginOption()],
+            meter_provider=meter_provider,
+            target_attribute_filter=target_attribute_filter,
+            generic_method_attribute_filter=generic_method_attribute_filter,
+        )
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return [OptionalLabelType.XDS_SERVICE_LABELS]
@@ -324,7 +297,7 @@ def get_str_value_from_resource(
 def get_resource_type(gcp_resource: Resource) -> str:
     # Convert resource type from GoogleCloudResourceDetector to the value we used for
     # metadata exchange.
-    # Reference: http://shortn/_eY0hMnWTVd
+    # Reference: https://github.com/GoogleCloudPlatform/opentelemetry-operations-python/blob/main/opentelemetry-resourcedetector-gcp/src/opentelemetry/resourcedetector/gcp_resource_detector/__init__.py#L96
     gcp_resource_type = get_str_value_from_resource(
         "gcp.resource_type", gcp_resource
     )
@@ -346,8 +319,10 @@ def get_mesh_id() -> str:
         # The expected format of the Node ID is -
         # projects/[GCP Project number]/networks/mesh:[Mesh ID]/nodes/[UUID]
         node_id_parts = config_json.get("node", {}).get("id", "").split("/")
-        if len(node_id_parts) == 6 and "mesh:" in node_id_parts[3]:
-            return node_id_parts[3][len("mesh:") :]
+        if len(node_id_parts) == 6 and node_id_parts[3].startswith(
+            MESH_ID_PREFIX
+        ):
+            return node_id_parts[3][len(MESH_ID_PREFIX) :]
     except json.decoder.JSONDecodeError:
         return UNKNOWN_VALUE
 

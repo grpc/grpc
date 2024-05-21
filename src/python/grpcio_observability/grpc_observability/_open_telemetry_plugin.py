@@ -132,16 +132,12 @@ class OpenTelemetryPlugin:
         """
         self.plugin_options = plugin_options
         self.meter_provider = meter_provider
-        if target_attribute_filter:
-            self.target_attribute_filter = target_attribute_filter
-        else:
-            self.target_attribute_filter = lambda target: True
-        if generic_method_attribute_filter:
-            self.generic_method_attribute_filter = (
-                generic_method_attribute_filter
-            )
-        else:
-            self.generic_method_attribute_filter = lambda method: False
+        self.target_attribute_filter = target_attribute_filter or (
+            lambda target: True
+        )
+        self.generic_method_attribute_filter = (
+            generic_method_attribute_filter or (lambda target: False)
+        )
         self._plugins = [
             _open_telemetry_observability._OpenTelemetryPlugin(self)
         ]

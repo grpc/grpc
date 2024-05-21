@@ -241,6 +241,13 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
     cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
   fi
   cp -r src/python/grpcio_observability/dist/*.tar.gz "$ARTIFACT_DIR"
+
+  # Build grpcio_csm_observability distribution
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csm_observability/setup.py \
+        sdist bdist_wheel
+    cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
+  fi
 fi
 
 # We need to use the built grpcio-tools/grpcio to compile the health proto
@@ -302,13 +309,6 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
-
-  # Build grpcio_csm_observability distribution
-  if [ "$GRPC_BUILD_MAC" == "" ]; then
-    ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csm_observability/setup.py \
-        sdist bdist_wheel
-    cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
-  fi
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
