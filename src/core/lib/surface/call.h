@@ -245,6 +245,11 @@ grpc_call* MakeServerCall(CallHandler call_handler,
                           ServerInterface* server, grpc_completion_queue* cq,
                           grpc_metadata_array* publish_initial_metadata);
 
+grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
+                          grpc_completion_queue* cq, Slice path,
+                          absl::optional<Slice> authority, Timestamp deadline,
+                          RefCountedPtr<UnstartedCallDestination> destination);
+
 }  // namespace grpc_core
 
 // Create a new call based on \a args.

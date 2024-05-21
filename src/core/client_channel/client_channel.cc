@@ -723,10 +723,8 @@ grpc_call* ClientChannel::CreateCall(
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
     Slice path, absl::optional<Slice> authority, Timestamp deadline,
     bool registered_method) {
-  // FIXME: code to convert from C-core batch API to v3 call, then invoke
-  // CreateCall(client_initial_metadata, arena)
-  // FIXME: make sure call holds a ref to ClientChannel for its entire lifetime
-  return nullptr;
+  return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
+                        std::move(authority), deadline, Ref());
 }
 
 void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {

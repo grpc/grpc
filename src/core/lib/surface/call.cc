@@ -2637,6 +2637,13 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
   }
 }
 
+grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
+                          grpc_completion_queue* cq, Slice path,
+                          absl::optional<Slice> authority, Timestamp deadline,
+                          RefCountedPtr<UnstartedCallDestination> destination) {
+
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // CallSpine based Server Call
 
