@@ -19,6 +19,7 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 
 namespace grpc_core {
 
@@ -327,6 +328,22 @@ void LoadBalancedCallDestination::StartCall(
           (*connected_subchannel)->StartCall(unstarted_handler);
           return absl::OkStatus();
         });
+  });
+}
+
+void RegisterLoadBalancedCallDestination(CoreConfiguration::Builder* builder) {
+  class LoadBalancedCallDestinationFactory
+      : public ClientChannel::CallDestinationFactory {
+   public:
+    RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
+        ClientChannel::PickerObservable picker) override {
+      return MakeRefCounted<LoadBalancedCallDestination>(std::move(picker));
+    }
+  };
+
+  builder->channel_args_preconditioning()->RegisterStage([](ChannelArgs args) {
+    return args.SetObject(
+        NoDestructSingleton<LoadBalancedCallDestinationFactory>::Get());
   });
 }
 
