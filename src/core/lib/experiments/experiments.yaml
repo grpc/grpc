@@ -47,12 +47,6 @@
   expiry: 2024/08/01
   owner: vigneshbabu@google.com
   test_tags: []
-- name: call_v3
-  description: Promise-based call version 3.
-  expiry: 2024/06/01
-  owner: ctiller@google.com
-  test_tags: []
-  requires: ["work_serializer_dispatch", "event_engine_listener", "event_engine_client"]
 - name: canary_client_privacy
   description:
     If set, canary client privacy

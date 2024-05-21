@@ -42,7 +42,6 @@ EXPERIMENT_ENABLES = {
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
-    "call_v3": "call_v3,event_engine_client,event_engine_listener,work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [

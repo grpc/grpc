@@ -115,12 +115,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
-const uint8_t required_experiments_call_v3[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -187,8 +181,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, true},
 };
 
 }  // namespace grpc_core
@@ -286,12 +278,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
-const uint8_t required_experiments_call_v3[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -358,8 +344,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, true},
 };
 
 }  // namespace grpc_core
@@ -457,12 +441,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
-const uint8_t required_experiments_call_v3[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -529,8 +507,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, true, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, true},
 };
 
 }  // namespace grpc_core

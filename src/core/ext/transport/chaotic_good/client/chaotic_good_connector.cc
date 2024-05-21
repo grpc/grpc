@@ -377,9 +377,9 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .SetObject(
-              grpc_core::NoDestructSingleton<
-                  grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get()),
+          .SetObject(grpc_core::NoDestructSingleton<
+                     grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get())
+          .Set(GRPC_ARG_USE_V3_STACK, true),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
