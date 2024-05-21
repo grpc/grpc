@@ -33,6 +33,7 @@
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -45,7 +46,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -398,8 +398,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
           DEBUG_LOCATION,
           [&](const RpcResult& result) {
             if (result.status.ok()) {
-              gpr_log(GPR_ERROR,
-                      "RPC succeeded. Failure expected. Trying again.");
+              LOG(ERROR) << "RPC succeeded. Failure expected. Trying again.";
               return true;
             }
             EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
@@ -1051,7 +1050,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       std::vector<std::string> expected_client_identity,
       bool test_expects_failure = false,
       absl::optional<grpc::StatusCode> expected_status = absl::nullopt) {
-    gpr_log(GPR_INFO, "Sending RPC");
+    LOG(INFO) << "Sending RPC";
     int num_tries = 0;
     constexpr int kRetryCount = 100;
     auto overall_deadline = absl::Now() + absl::Seconds(5);
@@ -1073,7 +1072,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       Status status = stub->Echo(&context, request, &response);
       if (test_expects_failure) {
         if (status.ok()) {
-          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
+          LOG(ERROR) << "RPC succeeded. Failure expected. Trying again.";
           continue;
         }
         if (expected_status.has_value() &&

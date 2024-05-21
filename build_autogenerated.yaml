@@ -5389,7 +5389,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gpr/alloc_test.cc
+  - test/core/util/alloc_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8371,7 +8371,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gpr/cpu_test.cc
+  - test/core/util/cpu_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8961,7 +8961,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gpr/env_test.cc
+  - test/core/util/env_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12768,7 +12768,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gpr/log_test.cc
+  - test/core/util/log_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -18650,7 +18650,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gpr/spinlock_test.cc
+  - test/core/util/spinlock_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -18944,7 +18944,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gpr/string_test.cc
+  - test/core/util/string_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -18973,7 +18973,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gpr/sync_test.cc
+  - test/core/util/sync_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -19305,17 +19305,6 @@ targets:
   - absl/status:statusor
   - absl/utility:utility
   - gpr
-- name: test_core_gpr_time_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/gpr/time_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
 - name: test_core_gprpp_time_test
   gtest: true
   build: test
@@ -19485,6 +19474,17 @@ targets:
   platforms:
   - linux
   - posix
+  uses_polling: false
+- name: test_core_util_time_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/time_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
@@ -20241,7 +20241,7 @@ targets:
   headers:
   - src/core/util/useful.h
   src:
-  - test/core/gpr/useful_test.cc
+  - test/core/util/useful_test.cc
   deps:
   - gtest
   uses_polling: false

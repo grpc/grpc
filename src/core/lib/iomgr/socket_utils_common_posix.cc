@@ -44,6 +44,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
@@ -440,7 +441,7 @@ static void probe_ipv6_once(void) {
   int fd = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (fd < 0) {
-    gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+    LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
