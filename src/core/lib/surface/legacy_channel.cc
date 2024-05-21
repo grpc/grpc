@@ -93,13 +93,13 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   } else {
-    experimental::StatsPluginChannelScope scope(
-        target, args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
-                    .value_or(CoreConfiguration::Get()
-                                  .resolver_registry()
-                                  .GetDefaultAuthority(target)));
+    std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+                                .value_or(CoreConfiguration::Get()
+                                              .resolver_registry()
+                                              .GetDefaultAuthority(target));
     *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+            experimental::StatsPluginChannelScope(target, authority));
   }
   return MakeOrphanable<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
