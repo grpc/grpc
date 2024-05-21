@@ -147,8 +147,8 @@ void DoRpc(const std::string& server_addr,
   if (expect_success) {
     EXPECT_TRUE(result.ok());
     if (!result.ok()) {
-      LOG(ERROR) << result.error_message().c_str() << ", "
-              result.error_details().c_str());
+      LOG(ERROR) << result.error_message().c_str()
+                 << ", " result.error_details().c_str();
     }
     EXPECT_EQ(response.message(), kMessage);
   } else {
