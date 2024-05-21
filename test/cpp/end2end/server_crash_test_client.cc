@@ -67,8 +67,7 @@ int main(int argc, char** argv) {
       CHECK(stream->Read(&response));
     }
   } else {
-    gpr_log(GPR_ERROR, "invalid test mode '%s'",
-            absl::GetFlag(FLAGS_mode).c_str());
+    LOG(ERROR) << "invalid test mode '" << absl::GetFlag(FLAGS_mode) << "'";
     return 1;
   }
 }
