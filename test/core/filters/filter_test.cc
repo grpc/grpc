@@ -83,8 +83,7 @@ class FilterTestBase::Call::Impl
 
   Call* const call_;
   std::shared_ptr<Channel::Impl> const channel_;
-  ScopedArenaPtr arena_{MakeScopedArena(channel_->initial_arena_size,
-                                        &channel_->memory_allocator)};
+  RefCountedPtr<Arena> arena_ = channel_->arena_factory->MakeArena();
   bool run_call_finalization_ = false;
   CallFinalization call_finalization_;
   absl::optional<ArenaPromise<ServerMetadataHandle>> promise_;

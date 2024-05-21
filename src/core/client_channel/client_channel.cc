@@ -752,9 +752,9 @@ CallInitiator ClientChannel::CreateCall(
   // Exit IDLE if needed.
   CheckConnectivityState(/*try_to_connect=*/true);
   // Create an initiator/unstarted-handler pair.
-  auto call = MakeCallPair(
-      std::move(client_initial_metadata), event_engine_.get(),
-      call_arena_allocator_->MakeArena(), call_arena_allocator_, nullptr);
+  auto call =
+      MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
+                   call_arena_allocator_->MakeArena(), nullptr);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuarded(

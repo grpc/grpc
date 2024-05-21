@@ -42,6 +42,8 @@
 
 namespace grpc_core {
 
+class Arena;
+
 namespace arena_detail {
 
 template <typename T, typename A, typename B>
@@ -54,19 +56,35 @@ struct IfArray<T[], A, B> {
   using Result = B;
 };
 
+struct UnrefDestroy {
+  void operator()(Arena* arena) const;
+};
+
 }  // namespace arena_detail
 
-class Arena {
+class ArenaFactory : public RefCounted<ArenaFactory> {
+ public:
+  virtual RefCountedPtr<Arena> MakeArena() = 0;
+  virtual void FinalizeArena(Arena* arena) = 0;
+
+  MemoryAllocator& allocator() { return allocator_; }
+
+ protected:
+  explicit ArenaFactory(MemoryAllocator allocator)
+      : allocator_(std::move(allocator)) {}
+
+ private:
+  MemoryAllocator allocator_;
+};
+
+RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size = 1024);
+
+class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
+                                arena_detail::UnrefDestroy> {
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
-  static Arena* Create(size_t initial_size, MemoryAllocator* memory_allocator);
-
-  // Create an arena, with \a initial_size bytes in the first allocated buffer,
-  // and return both a void pointer to the returned arena and a void* with the
-  // first allocation.
-  static std::pair<Arena*, void*> CreateWithAlloc(
-      size_t initial_size, size_t alloc_size,
-      MemoryAllocator* memory_allocator);
+  static RefCountedPtr<Arena> Create(size_t initial_size,
+                                     RefCountedPtr<ArenaFactory> arena_factory);
 
   // Destroy all `ManagedNew` allocated objects.
   // Allows safe destruction of these objects even if they need context held by
@@ -74,9 +92,6 @@ class Arena {
   // Idempotent.
   // TODO(ctiller): eliminate ManagedNew.
   void DestroyManagedNewObjects();
-
-  // Destroy an arena.
-  void Destroy();
 
   // Return the total amount of memory allocated by this arena.
   size_t TotalUsedBytes() const {
@@ -201,6 +216,8 @@ class Arena {
   }
 
  private:
+  friend struct arena_detail::UnrefDestroy;
+
   struct Zone {
     Zone* prev;
   };
@@ -231,14 +248,12 @@ class Arena {
   //   where we wish to create an arena and then perform an immediate
   //   allocation.
   explicit Arena(size_t initial_size, size_t initial_alloc,
-                 MemoryAllocator* memory_allocator)
-      : total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc)),
-        initial_zone_size_(initial_size),
-        memory_allocator_(memory_allocator) {}
+                 RefCountedPtr<ArenaFactory> arena_factory);
 
   ~Arena();
 
   void* AllocZone(size_t size);
+  void Destroy();
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
@@ -252,23 +267,16 @@ class Arena {
   // last zone; the zone list is reverse-walked during arena destruction only.
   std::atomic<Zone*> last_zone_{nullptr};
   std::atomic<ManagedNewObject*> managed_new_head_{nullptr};
-  // The backing memory quota
-  MemoryAllocator* const memory_allocator_;
+  RefCountedPtr<ArenaFactory> arena_factory_;
 };
-
-// Smart pointer for arenas when the final size is not required.
-struct ScopedArenaDeleter {
-  void operator()(Arena* arena) { arena->Destroy(); }
-};
-using ScopedArenaPtr = std::unique_ptr<Arena, ScopedArenaDeleter>;
-inline ScopedArenaPtr MakeScopedArena(size_t initial_size,
-                                      MemoryAllocator* memory_allocator) {
-  return ScopedArenaPtr(Arena::Create(initial_size, memory_allocator));
-}
 
 // Arenas form a context for activities
 template <>
 struct ContextType<Arena> {};
+
+namespace arena_detail {
+inline void UnrefDestroy::operator()(Arena* arena) const { arena->Destroy(); }
+}  // namespace arena_detail
 
 }  // namespace grpc_core
 

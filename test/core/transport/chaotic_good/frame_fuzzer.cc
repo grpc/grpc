@@ -104,9 +104,7 @@ void Run(const frame_fuzzer::Test& test) {
   gpr_log(GPR_INFO, "Read frame header: %s", r->ToString().c_str());
   control_data += 24;
   control_size -= 24;
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   TestContext<Arena> ctx(arena.get());
   BufferPair buffers{
       SliceBuffer(Slice::FromCopiedBuffer(control_data, control_size)),

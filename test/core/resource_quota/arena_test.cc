@@ -57,9 +57,8 @@ class AllocTest : public ::testing::TestWithParam<AllocShape> {};
 
 TEST_P(AllocTest, Works) {
   ExecCtx exec_ctx;
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  Arena* a = Arena::Create(GetParam().initial_size, &memory_allocator);
+  RefCountedPtr<Arena> a =
+      SimpleArenaAllocator(GetParam().initial_size)->MakeArena();
   std::vector<void*> allocated;
   for (auto alloc : GetParam().allocs) {
     void* p = a->Alloc(alloc);
@@ -73,7 +72,6 @@ TEST_P(AllocTest, Works) {
     memset(p, 1, alloc);
     allocated.push_back(p);
   }
-  a->Destroy();
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -92,33 +90,23 @@ size_t concurrent_test_iterations() {
 
 typedef struct {
   gpr_event ev_start;
-  Arena* arena;
+  RefCountedPtr<Arena> arena;
 } concurrent_test_args;
 
-class ArenaTest : public ::testing::Test {
- protected:
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-};
+TEST(ArenaTest, NoOp) { SimpleArenaAllocator()->MakeArena(); }
 
-TEST_F(ArenaTest, NoOp) {
+TEST(ArenaTest, ManagedNew) {
   ExecCtx exec_ctx;
-  Arena::Create(1, &memory_allocator_)->Destroy();
-}
-
-TEST_F(ArenaTest, ManagedNew) {
-  ExecCtx exec_ctx;
-  Arena* arena = Arena::Create(1, &memory_allocator_);
+  auto arena = SimpleArenaAllocator(1)->MakeArena();
   for (int i = 0; i < 100; i++) {
     arena->ManagedNew<std::unique_ptr<int>>(std::make_unique<int>(i));
   }
-  arena->Destroy();
 }
 
-TEST_F(ArenaTest, ConcurrentAlloc) {
+TEST(ArenaTest, ConcurrentAlloc) {
   concurrent_test_args args;
   gpr_event_init(&args.ev_start);
-  args.arena = Arena::Create(1024, &memory_allocator_);
+  args.arena = SimpleArenaAllocator()->MakeArena();
 
   Thread thds[CONCURRENT_TEST_THREADS];
 
@@ -141,14 +129,12 @@ TEST_F(ArenaTest, ConcurrentAlloc) {
   for (auto& th : thds) {
     th.Join();
   }
-
-  args.arena->Destroy();
 }
 
-TEST_F(ArenaTest, ConcurrentManagedNew) {
+TEST(ArenaTest, ConcurrentManagedNew) {
   concurrent_test_args args;
   gpr_event_init(&args.ev_start);
-  args.arena = Arena::Create(1024, &memory_allocator_);
+  args.arena = SimpleArenaAllocator()->MakeArena();
 
   Thread thds[CONCURRENT_TEST_THREADS];
 
@@ -172,8 +158,6 @@ TEST_F(ArenaTest, ConcurrentManagedNew) {
   for (auto& th : thds) {
     th.Join();
   }
-
-  args.arena->Destroy();
 }
 
 template <typename Int>
@@ -192,12 +176,12 @@ bool IsScribbled(Int* ints, int n, int offset) {
 }
 
 #ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
-TEST_F(ArenaTest, PooledObjectsArePooled) {
+TEST(ArenaTest, PooledObjectsArePooled) {
   struct TestObj {
     char a[100];
   };
 
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   auto obj = arena->MakePooled<TestObj>();
   Scribble(obj->a, 100, 1);
   EXPECT_TRUE(IsScribbled(obj->a, 100, 1));
@@ -211,11 +195,11 @@ TEST_F(ArenaTest, PooledObjectsArePooled) {
 }
 #endif
 
-TEST_F(ArenaTest, CreateManyObjects) {
+TEST(ArenaTest, CreateManyObjects) {
   struct TestObj {
     char a[100];
   };
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   std::vector<Arena::PoolPtr<TestObj>> objs;
   objs.reserve(1000);
   for (int i = 0; i < 1000; i++) {
@@ -227,9 +211,9 @@ TEST_F(ArenaTest, CreateManyObjects) {
   }
 }
 
-TEST_F(ArenaTest, CreateManyObjectsWithDestructors) {
+TEST(ArenaTest, CreateManyObjectsWithDestructors) {
   using TestObj = std::unique_ptr<int>;
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   std::vector<Arena::PoolPtr<TestObj>> objs;
   objs.reserve(1000);
   for (int i = 0; i < 1000; i++) {
@@ -237,8 +221,8 @@ TEST_F(ArenaTest, CreateManyObjectsWithDestructors) {
   }
 }
 
-TEST_F(ArenaTest, CreatePoolArray) {
-  auto arena = MakeScopedArena(1024, &memory_allocator_);
+TEST(ArenaTest, CreatePoolArray) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
   auto p = arena->MakePooledArray<int>(1024);
 #ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
   EXPECT_FALSE(p.get_deleter().has_freelist());
@@ -251,10 +235,10 @@ TEST_F(ArenaTest, CreatePoolArray) {
   EXPECT_TRUE(IsScribbled(p.get(), 5, 1));
 }
 
-TEST_F(ArenaTest, ConcurrentMakePooled) {
+TEST(ArenaTest, ConcurrentMakePooled) {
   concurrent_test_args args;
   gpr_event_init(&args.ev_start);
-  args.arena = Arena::Create(1024, &memory_allocator_);
+  args.arena = SimpleArenaAllocator()->MakeArena();
 
   class BaseClass {
    public:
@@ -309,8 +293,6 @@ TEST_F(ArenaTest, ConcurrentMakePooled) {
   for (auto& th : thds2) {
     th.Join();
   }
-
-  args.arena->Destroy();
 }
 
 }  // namespace grpc_core

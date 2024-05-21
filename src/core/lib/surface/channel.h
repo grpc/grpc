@@ -124,11 +124,13 @@ class Channel : public RefCounted<Channel>,
   virtual void Ping(grpc_completion_queue* cq, void* tag) = 0;
 
   // TODO(roth): Remove these methods when LegacyChannel goes away.
-  Arena* CreateArena();
-  void DestroyArena(Arena* arena);
   virtual grpc_channel_stack* channel_stack() const { return nullptr; }
   virtual bool is_client() const { return true; }
   virtual bool is_promising() const { return true; }
+
+  CallArenaAllocator* call_arena_allocator() const {
+    return call_arena_allocator_.get();
+  }
 
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
@@ -138,15 +140,13 @@ class Channel : public RefCounted<Channel>,
   const RefCountedPtr<channelz::ChannelNode> channelz_node_;
   const grpc_compression_options compression_options_;
 
-  CallSizeEstimator call_size_estimator_;
-  MemoryAllocator allocator_;
-
   Mutex mu_;
   // The map key needs to be owned strings rather than unowned char*'s to
   // guarantee that it outlives calls on the core channel (which may outlast
   // the C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       registration_table_ ABSL_GUARDED_BY(mu_);
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
 };
 
 }  // namespace grpc_core

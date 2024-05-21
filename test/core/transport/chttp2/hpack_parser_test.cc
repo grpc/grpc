@@ -107,10 +107,6 @@ class ParseTest : public ::testing::TestWithParam<Test> {
                   absl::optional<size_t> max_metadata_size,
                   std::string hexstring, absl::StatusOr<std::string> expect,
                   uint32_t flags) {
-    MemoryAllocator memory_allocator = MemoryAllocator(
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-            "test"));
-    auto arena = MakeScopedArena(1024, &memory_allocator);
     ExecCtx exec_ctx;
     auto input = ParseHexstring(hexstring);
     grpc_slice* slices;
