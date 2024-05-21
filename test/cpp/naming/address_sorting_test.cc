@@ -120,8 +120,7 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
             .value();
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
-      gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map",
-              ip_addr_str.c_str());
+      VLOG(2) << "can't find |" << ip_addr_str << "| in dest to src map";
       return false;
     }
     grpc_resolved_address source_addr_as_resolved_addr =

@@ -28,6 +28,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -128,9 +129,8 @@ int main(int argc, char** argv) {
 // an indication whether the test is running on RBE or not. Find a better way of
 // doing this.
 #ifndef GRPC_PORT_ISOLATED_RUNTIME
-    gpr_log(GPR_ERROR,
-            "You are invoking the test locally with Bazel, you may need to "
-            "invoke Bazel with --enable_runfiles=yes.");
+    LOG(ERROR) << "You are invoking the test locally with Bazel, you may need "
+                  "to invoke Bazel with --enable_runfiles=yes.";
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
     result = grpc::testing::InvokeResolverComponentTestsRunner(
         grpc::testing::NormalizeFilePath(

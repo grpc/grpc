@@ -21,6 +21,7 @@
 #include <string>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpcpp/server.h>
@@ -46,7 +47,7 @@ class ServiceImpl final : public grpc::testing::EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
     }

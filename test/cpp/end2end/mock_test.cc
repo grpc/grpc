@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -253,7 +254,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     std::string resp;
     while (reader->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       resp.append(request.message());
     }
     response->set_message(resp);
@@ -277,7 +278,7 @@ class TestServiceImpl : public EchoTestService::Service {
     EchoRequest request;
     EchoResponse response;
     while (stream->Read(&request)) {
-      gpr_log(GPR_INFO, "recv msg %s", request.message().c_str());
+      LOG(INFO) << "recv msg " << request.message();
       response.set_message(request.message());
       stream->Write(response);
     }
