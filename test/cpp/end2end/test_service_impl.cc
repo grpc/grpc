@@ -25,7 +25,7 @@
 
 #include "absl/log/check.h"
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>

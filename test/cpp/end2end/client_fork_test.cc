@@ -27,7 +27,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>

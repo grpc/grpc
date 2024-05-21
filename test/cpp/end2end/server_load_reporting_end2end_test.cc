@@ -23,7 +23,7 @@
 
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/ext/server_load_reporting.h>

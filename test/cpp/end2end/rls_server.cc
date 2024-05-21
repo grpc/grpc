@@ -18,6 +18,8 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/log/log.h"
+
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "test/core/test_util/test_config.h"
