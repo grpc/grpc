@@ -282,7 +282,10 @@ const grpc_channel_filter kPromiseBasedTransportFilter = {
     set_pollset_or_pollset_set,
     nullptr,
     sizeof(channel_data),
-    connected_channel_init_channel_elem,
+    +[](grpc_channel_element*, grpc_channel_element_args*) {
+      return absl::InternalError(
+          "Cannot use filter based stack with promise based transports");
+    },
     +[](grpc_channel_stack*, grpc_channel_element*) {},
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
