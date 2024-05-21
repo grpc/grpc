@@ -40,7 +40,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 

@@ -27,7 +27,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 struct status_string_entry {
   const char* str;

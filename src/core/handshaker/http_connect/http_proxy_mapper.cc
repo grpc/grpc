@@ -26,6 +26,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -47,12 +48,12 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 namespace {
@@ -150,7 +151,7 @@ absl::optional<std::string> GetHttpProxyServer(
     // User cred found
     *user_cred = authority_strs[0];
     proxy_name = authority_strs[1];
-    gpr_log(GPR_DEBUG, "userinfo found in proxy URI");
+    VLOG(2) << "userinfo found in proxy URI";
   } else {
     // Bad authority
     proxy_name = absl::nullopt;

@@ -22,6 +22,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/numeric/int128.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -34,7 +35,6 @@
 #include "google/protobuf/text_format.h"
 
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/grpcpp.h>
@@ -360,22 +360,20 @@ void ObservabilityLoggingSink::FlushEntriesHelper(
       &(call->context), &(call->request), &(call->response),
       [this, call](Status status) {
         if (!status.ok()) {
-          gpr_log(
-              GPR_ERROR,
-              "GCP Observability Logging Error %d: %s. Dumping log entries.",
-              status.error_code(), status.error_message().c_str());
+          LOG(ERROR) << "GCP Observability Logging Error "
+                     << status.error_code() << ": " << status.error_message()
+                     << ". Dumping log entries.";
           for (auto& entry : call->request.entries()) {
             std::string output;
             ::google::protobuf::TextFormat::PrintToString(entry.json_payload(),
                                                           &output);
-            gpr_log(
-                GPR_INFO, "Log Entry recorded at time: %s : %s",
-                grpc_core::Timestamp::FromTimespecRoundUp(
-                    gpr_timespec{entry.timestamp().seconds(),
-                                 entry.timestamp().nanos(), GPR_CLOCK_REALTIME})
-                    .ToString()
-                    .c_str(),
-                output.c_str());
+            LOG(INFO) << "Log Entry recorded at time: "
+                      << grpc_core::Timestamp::FromTimespecRoundUp(
+                             gpr_timespec{entry.timestamp().seconds(),
+                                          entry.timestamp().nanos(),
+                                          GPR_CLOCK_REALTIME})
+                             .ToString()
+                      << " : " << output;
           }
         }
         delete call;
@@ -414,16 +412,16 @@ void ObservabilityLoggingSink::MaybeTriggerFlushLocked() {
   if (entries_.empty()) return;
   if (entries_.size() > kMaxEntriesBeforeDump ||
       entries_memory_footprint_ > kMaxMemoryFootprintBeforeDump) {
-    // Buffer limits have been reached. Dump entries with gpr_log
-    gpr_log(GPR_INFO, "Buffer limit reached. Dumping log entries.");
+    // Buffer limits have been reached. Dump entries with LOG
+    LOG(INFO) << "Buffer limit reached. Dumping log entries.";
     for (auto& entry : entries_) {
       google::protobuf::Struct proto;
       std::string timestamp = entry.timestamp.ToString();
       EntryToJsonStructProto(std::move(entry), &proto);
       std::string output;
       ::google::protobuf::TextFormat::PrintToString(proto, &output);
-      gpr_log(GPR_INFO, "Log Entry recorded at time: %s : %s",
-              timestamp.c_str(), output.c_str());
+      LOG(INFO) << "Log Entry recorded at time: " << timestamp << " : "
+                << output;
     }
     entries_.clear();
     entries_memory_footprint_ = 0;

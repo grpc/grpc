@@ -136,6 +136,7 @@ grpc_cc_library(
     hdrs = ["xds_transport_fake.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "absl/types:optional",
     ],
@@ -182,6 +183,7 @@ grpc_proto_fuzzer(
     name = "xds_client_fuzzer",
     srcs = ["xds_client_fuzzer.cc"],
     corpus = "xds_client_corpora",
+    external_deps = ["absl/log:log"],
     language = "C++",
     proto = "xds_client_fuzzer.proto",
     proto_deps = [

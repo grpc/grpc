@@ -19,6 +19,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -49,12 +50,12 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/util/string.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -70,7 +71,7 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
   grpc_error_handle error =
       grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "" << grpc_core::StatusToString(error);
     return false;
   }
   return true;
@@ -86,7 +87,7 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
   grpc_error_handle error =
       grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "" << grpc_core::StatusToString(error);
     return false;
   }
   return true;
@@ -170,7 +171,7 @@ bool grpc_parse_vsock(const grpc_core::URI& uri,
   grpc_error_handle error =
       grpc_core::VSockaddrPopulate(uri.path(), resolved_addr);
   if (!error.ok()) {
-    gpr_log(GPR_ERROR, "%s", grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "" << grpc_core::StatusToString(error);
     return false;
   }
   return true;
@@ -238,7 +239,7 @@ bool grpc_parse_ipv4_hostport(absl::string_view hostport,
   }
   // Parse port.
   if (port.empty()) {
-    if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv4 scheme");
+    if (log_errors) LOG(ERROR) << "no port given for ipv4 scheme";
     goto done;
   }
   int port_num;
@@ -333,7 +334,7 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
   }
   // Parse port.
   if (port.empty()) {
-    if (log_errors) gpr_log(GPR_ERROR, "no port given for ipv6 scheme");
+    if (log_errors) LOG(ERROR) << "no port given for ipv6 scheme";
     goto done;
   }
   int port_num;
