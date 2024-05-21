@@ -42,7 +42,7 @@ tmpl_dir_ = TemplateLookup(directories=["tools/codegen/core/templates/"])
 def render_source_file(tmpl_name, trace_flags):
     header_template = tmpl_dir_.get_template(tmpl_name)
     buf = StringIO()
-    ctx = Context(buf, trace_flags=trace_flags)
+    ctx = Context(buf, trace_flags=trace_flags, absl_prefix="")
     header_template.render_context(ctx)
     return buf.getvalue()
 
