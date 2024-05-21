@@ -14,8 +14,7 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
-#include "client_channel.h"
-
+#include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/call_tracer.h"
