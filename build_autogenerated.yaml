@@ -6380,6 +6380,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/if_list.h
@@ -6418,8 +6419,11 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6484,8 +6488,11 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
