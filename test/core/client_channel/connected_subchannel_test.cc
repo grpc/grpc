@@ -68,9 +68,9 @@ class ConnectedSubchannelTest : public YodelTest {
 
   CallInitiatorAndHandler MakeCall(
       ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(
-        std::move(client_initial_metadata), event_engine().get(),
-        call_arena_allocator_->MakeArena(), call_arena_allocator_, nullptr);
+    return MakeCallPair(std::move(client_initial_metadata),
+                        event_engine().get(),
+                        SimpleArenaAllocator()->MakeArena(), nullptr);
   }
 
   CallHandler TickUntilCallStarted() {
@@ -152,11 +152,6 @@ class ConnectedSubchannelTest : public YodelTest {
   }
 
   std::queue<CallHandler> handlers_;
-  RefCountedPtr<CallArenaAllocator> call_arena_allocator_ =
-      MakeRefCounted<CallArenaAllocator>(
-          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-              "test"),
-          1024);
 };
 
 #define CONNECTED_SUBCHANNEL_CHANNEL_TEST(name) \
