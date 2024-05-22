@@ -2356,7 +2356,9 @@ std::string MakeErrorString(const ServerMetadata* trailing_metadata) {
 ///////////////////////////////////////////////////////////////////////////////
 // CallSpine based Client Call
 
-class ClientCall final : public Call, public DualRefCounted<ClientCall> {
+class ClientCall final
+    : public Call,
+      public DualRefCounted<ClientCall, NonPolymorphicRefCount, UnrefCallDtor> {
  public:
   ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
              grpc_completion_queue* cq, Slice path,
