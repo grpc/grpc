@@ -85,10 +85,10 @@ TEST_P(WrrTest, Basic) {
   size_t num_picks = 0;
   SendRpcsUntil(DEBUG_LOCATION, [&](const RpcResult&) {
     if (++num_picks == 13) {
-      gpr_log(GPR_INFO, "request counts: %" PRIuPTR " %" PRIuPTR " %" PRIuPTR,
-              backends_[0]->backend_service()->request_count(),
-              backends_[1]->backend_service()->request_count(),
-              backends_[2]->backend_service()->request_count());
+      LOG(INFO) << "request counts: "
+                << backends_[0]->backend_service()->request_count() << " "
+                << backends_[1]->backend_service()->request_count() << " "
+                << backends_[2]->backend_service()->request_count();
       if (backends_[0]->backend_service()->request_count() == 6 &&
           backends_[1]->backend_service()->request_count() == 4 &&
           backends_[2]->backend_service()->request_count() == 3) {
