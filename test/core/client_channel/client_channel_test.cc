@@ -62,12 +62,11 @@ class ClientChannelTest : public YodelTest {
   }
 
   CallHandler TickUntilCallStarted() {
-    auto poll = [this]() -> Poll<CallHandler> {
+    return TickUntil<CallHandler>([this]() -> Poll<CallHandler> {
       auto handler = call_destination_->PopHandler();
       if (handler.has_value()) return std::move(*handler);
       return Pending();
-    };
-    return TickUntil(absl::FunctionRef<Poll<CallHandler>()>(poll));
+    });
   }
 
   void QueueNameResolutionResult(Resolver::Result result) {

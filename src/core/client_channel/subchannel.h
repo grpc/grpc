@@ -64,7 +64,7 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public UnstartedCallDestination {
+class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
@@ -77,13 +77,13 @@ class ConnectedSubchannel : public UnstartedCallDestination {
 
   // Methods for v3 stack.
   virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
+  virtual RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
+      const = 0;
 
   // Methods for legacy stack.
   virtual grpc_channel_stack* channel_stack() const = 0;
   virtual size_t GetInitialCallSizeEstimate() const = 0;
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
-
-  void Orphaned() override {}
 
  protected:
   ConnectedSubchannel(
