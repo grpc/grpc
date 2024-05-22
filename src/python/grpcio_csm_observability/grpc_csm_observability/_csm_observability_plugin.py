@@ -252,7 +252,6 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
 
     plugin_options: Iterable[OpenTelemetryPluginOption]
     meter_provider: Optional[MeterProvider]
-    target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
     _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
 
@@ -261,14 +260,12 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
         *,
         plugin_options: Iterable[OpenTelemetryPluginOption] = [],
         meter_provider: Optional[MeterProvider] = None,
-        target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
         super().__init__(
             plugin_options=list(plugin_options)
             + [CsmOpenTelemetryPluginOption()],
             meter_provider=meter_provider,
-            target_attribute_filter=target_attribute_filter,
             generic_method_attribute_filter=generic_method_attribute_filter,
         )
 
