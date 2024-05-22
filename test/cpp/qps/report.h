@@ -23,8 +23,6 @@
 #include <set>
 #include <vector>
 
-#include "absl/log/log.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/support/config.h>
 

@@ -135,8 +135,8 @@ class Server {
                                       channel_arg.int_value());
           break;
         case ChannelArg::VALUE_NOT_SET:
-          gpr_log(GPR_ERROR, "Channel arg '%s' does not have a value",
-                  channel_arg.name().c_str());
+          LOG(ERROR) << "Channel arg '" << channel_arg.name()
+                     << "' does not have a value";
           break;
       }
     }

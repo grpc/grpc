@@ -28,10 +28,11 @@
 #include <sys/wait.h>
 #endif
 
-#include <grpc/support/log.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/test_util/port.h"
@@ -71,9 +72,11 @@ static void register_sighandler() {
 
 static void LogStatus(int status, const char* label) {
   if (WIFEXITED(status)) {
-    LOG(INFO) << label << ": subprocess exited with status " << WEXITSTATUS(status);
+    LOG(INFO) << label << ": subprocess exited with status "
+              << WEXITSTATUS(status);
   } else if (WIFSIGNALED(status)) {
-    LOG(INFO) << label << ": subprocess terminated with signal " << WTERMSIG(status);
+    LOG(INFO) << label << ": subprocess terminated with signal "
+              << WTERMSIG(status);
   } else {
     LOG(INFO) << label << ": unknown subprocess status: " << status;
   }
