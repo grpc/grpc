@@ -727,7 +727,9 @@ grpc_call* ClientChannel::CreateCall(
     Slice path, absl::optional<Slice> authority, Timestamp deadline,
     bool registered_method) {
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
-                        std::move(authority), deadline, Ref());
+                        std::move(authority), false, deadline,
+                        compression_options(), event_engine_.get(),
+                        call_arena_allocator_->MakeArena(), Ref());
 }
 
 void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {

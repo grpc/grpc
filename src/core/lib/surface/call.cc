@@ -385,13 +385,9 @@ class ChannelBasedCall : public Call {
  protected:
   ChannelBasedCall(RefCountedPtr<Arena> arena, bool is_client,
                    Timestamp send_deadline, RefCountedPtr<Channel> channel)
-      : Call(is_client, send_deadline, channel->event_engine()),
-        arena_(arena),
-        channel_(std::move(channel)) {
-    DCHECK_NE(arena_.get(), nullptr);
-  }
-
-  Arena* arena() final { return arena_.get(); }
+      : Call(is_client, send_deadline, std::move(arena),
+             channel->event_engine()),
+        channel_(std::move(channel)) {}
 
   char* GetPeer() final {
     Slice peer_slice = GetPeerString();
@@ -412,19 +408,11 @@ class ChannelBasedCall : public Call {
     return channel_->compression_options();
   }
 
-  void DeleteThis() {
-    RefCountedPtr<Channel> channel = std::move(channel_);
-    RefCountedPtr<Arena> arena = arena_;
-    this->~ChannelBasedCall();
-  }
+  void DeleteThis() { this->~ChannelBasedCall(); }
 
   Channel* channel() const { return channel_.get(); }
 
-  // Non-virtual arena accessor -- needed by PipeBasedCall
-  Arena* GetArena() { return arena_.get(); }
-
  private:
-  const RefCountedPtr<Arena> arena_;
   RefCountedPtr<Channel> channel_;
 };
 
@@ -2350,29 +2338,38 @@ class MessageReceiver {
 
 class ClientCall final : public Call, public DualRefCounted<ClientCall> {
  public:
-  ClientCall(RefCountedPtr<UnstartedCallDestination> call_destination,
+  ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
+             grpc_completion_queue* cq, Slice path,
+             absl::optional<Slice> authority, bool registered_method,
+             Timestamp deadline, grpc_compression_options compression_options,
              grpc_event_engine::experimental::EventEngine* event_engine,
-             Timestamp deadline, grpc_completion_queue* cq)
-      : Call(false, deadline, event_engine), cq_(cq) {
+             RefCountedPtr<Arena> arena,
+             RefCountedPtr<UnstartedCallDestination> destination)
+      : Call(false, deadline, std::move(arena), event_engine),
+        cq_(cq),
+        call_destination_(std::move(destination)),
+        compression_options_(compression_options) {
     global_stats().IncrementClientCallsCreated();
+    Construct(&send_initial_metadata_, Arena::MakePooled<ClientMetadata>());
+    send_initial_metadata_->Set(HttpPathMetadata(), std::move(path));
+    if (authority.has_value()) {
+      send_initial_metadata_->Set(HttpAuthorityMetadata(),
+                                  std::move(*authority));
+    }
+    send_initial_metadata_->Set(
+        GrpcRegisteredMethod(),
+        reinterpret_cast<void*>(static_cast<uintptr_t>(registered_method)));
   }
 
-  void CancelWithError(grpc_error_handle error) override {
-    call_initiator_.SpawnInfallible(
-        "CancelWithError", [self = WeakRefAsSubclass<ClientCall>(),
-                            error = std::move(error)]() mutable {
-          self->call_initiator_.Cancel(std::move(error));
-          return Empty{};
-        });
-  }
+  ~ClientCall() override { Crash("unimplemented"); }
+
+  void CancelWithError(grpc_error_handle error) override;
   bool is_trailers_only() const override { return is_trailers_only_; }
   absl::string_view GetServerAuthority() const override {
     Crash("unimplemented");
   }
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
-
-  Arena* arena() override { return call_initiator_.arena(); }
 
   void ExternalRef() override { Ref().release(); }
   void ExternalUnref() override { Unref(); }
@@ -2398,7 +2395,7 @@ class ClientCall final : public Call, public DualRefCounted<ClientCall> {
   }
 
   grpc_compression_options compression_options() override {
-    Crash("unimplemented");
+    return compression_options_;
   }
 
   grpc_call_stack* call_stack() override { return nullptr; }
@@ -2448,22 +2445,30 @@ class ClientCall final : public Call, public DualRefCounted<ClientCall> {
 
   std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
 
-  // One of:
-  // - kUnstarted - call has not yet been started
-  // - pointer to an UnorderedStart - call has ops started, but no send initial
-  //   metadata yet
-  // - kStarted - call has been started and call_initiator_ is ready
-  // - kCancelled - call was cancelled
+  // call_state_ is one of:
+  // 1. kUnstarted - call has not yet been started
+  // 2. pointer to an UnorderedStart - call has ops started, but no send initial
+  //    metadata yet
+  // 3. kStarted - call has been started and call_initiator_ is ready
+  // 4. kCancelled - call was cancelled before starting
+  // In cases (1) and (2) send_initial_metadata_ is used to store the initial
+  // but unsent metadata.
+  // In case (3) started_call_initiator_ is used to store the call initiator.
+  // In case (4) no other state is used.
   enum CallState : uintptr_t {
     kUnstarted = 0,
     kStarted = 1,
     kCancelled = 2,
   };
   std::atomic<uintptr_t> call_state_{kUnstarted};
-  CallInitiator call_initiator_;
+  union {
+    ClientMetadataHandle send_initial_metadata_;
+    CallInitiator started_call_initiator_;
+  };
   MessageReceiver message_receiver_;
   grpc_completion_queue* const cq_;
-  RefCountedPtr<UnstartedCallDestination> channel_;
+  const RefCountedPtr<UnstartedCallDestination> call_destination_;
+  const grpc_compression_options compression_options_;
   ServerMetadataHandle received_initial_metadata_;
   bool is_trailers_only_;
   grpc_call_context_element legacy_context_[GRPC_CONTEXT_COUNT] = {};
@@ -2484,6 +2489,44 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
   return GRPC_CALL_OK;
 }
 
+void ClientCall::CancelWithError(grpc_error_handle error) {
+  auto cur_state = call_state_.load(std::memory_order_acquire);
+  while (true) {
+    switch (cur_state) {
+      case kCancelled:
+        return;
+      case kUnstarted:
+        if (call_state_.compare_exchange_strong(cur_state, kCancelled,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_acquire)) {
+          Destruct(&send_initial_metadata_);
+          return;
+        }
+        break;
+      case kStarted:
+        started_call_initiator_.SpawnInfallible(
+            "CancelWithError", [self = WeakRefAsSubclass<ClientCall>(),
+                                error = std::move(error)]() mutable {
+              self->started_call_initiator_.Cancel(std::move(error));
+              return Empty{};
+            });
+        break;
+      default:
+        if (call_state_.compare_exchange_strong(cur_state, kCancelled,
+                                                std::memory_order_acq_rel,
+                                                std::memory_order_acquire)) {
+          auto* unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
+          while (unordered_start != nullptr) {
+            auto next = unordered_start->next;
+            delete unordered_start;
+            unordered_start = next;
+          }
+          return;
+        }
+    }
+  }
+}
+
 template <typename Batch>
 void ClientCall::ScheduleCommittedBatch(Batch batch) {
   auto cur_state = call_state_.load(std::memory_order_acquire);
@@ -2494,14 +2537,14 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
         auto pending = std::make_unique<UnorderedStart>();
         pending->start_pending_batch = [this,
                                         batch = std::move(batch)]() mutable {
-          call_initiator_.SpawnInfallible("batch", std::move(batch));
+          started_call_initiator_.SpawnInfallible("batch", std::move(batch));
         };
         while (true) {
           pending->next = reinterpret_cast<UnorderedStart*>(cur_state);
           if (call_state_.compare_exchange_strong(
                   cur_state, reinterpret_cast<uintptr_t>(pending.get()),
                   std::memory_order_acq_rel, std::memory_order_acquire)) {
-            pending.release();
+            std::ignore = pending.release();
             return;
           }
           if (cur_state == kStarted) {
@@ -2514,7 +2557,7 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
         }
       }
       case kStarted:
-        call_initiator_.SpawnInfallible("batch", std::move(batch));
+        started_call_initiator_.SpawnInfallible("batch", std::move(batch));
         return;
       case kCancelled:
         return;
@@ -2524,10 +2567,13 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
 
 void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
   auto cur_state = call_state_.load(std::memory_order_acquire);
-  ClientMetadataHandle client_initial_metadata;
-  auto call = MakeCallPair(std::move(client_initial_metadata), event_engine(),
+  PrepareOutgoingInitialMetadata(send_initial_metadata_op,
+                                 *send_initial_metadata_);
+  auto call = MakeCallPair(std::move(send_initial_metadata_), event_engine(),
                            arena()->Ref(), nullptr);
-  call_initiator_ = std::move(call.initiator);
+  Destruct(&send_initial_metadata_);
+  Construct(&started_call_initiator_, std::move(call.initiator));
+  call_destination_->StartCall(std::move(call.handler));
   while (true) {
     switch (cur_state) {
       case kUnstarted:
@@ -2538,7 +2584,7 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
         }
         break;
       case kStarted:
-        Crash("StartCall called twice");
+        Crash("StartCall called twice");  // probably we crash earlier...
       case kCancelled:
         return;
       default: {  // UnorderedStart
@@ -2577,20 +2623,20 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
             send.c_slice_buffer());
         auto msg = arena()->MakePooled<Message>(std::move(send), op.flags);
         return [this, msg = std::move(msg)]() mutable {
-          return call_initiator_.PushMessage(std::move(msg));
+          return started_call_initiator_.PushMessage(std::move(msg));
         };
       });
   auto send_close_from_client =
       op_index.OpHandler<GRPC_OP_SEND_CLOSE_FROM_CLIENT>(
           [this](const grpc_op& op) {
             return [this]() {
-              call_initiator_.FinishSends();
+              started_call_initiator_.FinishSends();
               return Success{};
             };
           });
   auto recv_message =
       op_index.OpHandler<GRPC_OP_RECV_MESSAGE>([this](const grpc_op& op) {
-        return message_receiver_.MakeBatchOp(op, &call_initiator_);
+        return message_receiver_.MakeBatchOp(op, &started_call_initiator_);
       });
   auto recv_initial_metadata =
       op_index.OpHandler<GRPC_OP_RECV_INITIAL_METADATA>([this](
@@ -2598,7 +2644,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
         return [this,
                 array = op.data.recv_initial_metadata.recv_initial_metadata]() {
           return Map(
-              call_initiator_.PullServerInitialMetadata(),
+              started_call_initiator_.PullServerInitialMetadata(),
               [this,
                array](ValueOrFailure<absl::optional<ServerMetadataHandle>> md) {
                 ServerMetadataHandle metadata;
@@ -2636,11 +2682,19 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
   }
 }
 
-grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
-                          grpc_completion_queue* cq, Slice path,
-                          absl::optional<Slice> authority, Timestamp deadline,
-                          RefCountedPtr<UnstartedCallDestination> destination) {
-
+grpc_call* MakeClientCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
+    bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options,
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination) {
+  return arena
+      ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),
+                        std::move(authority), registered_method, deadline,
+                        compression_options, event_engine, arena, destination)
+      ->c_ptr();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -2654,7 +2708,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
       : Call(false,
              client_initial_metadata->get(GrpcTimeoutMetadata())
                  .value_or(Timestamp::InfFuture()),
-             call_handler.event_engine()),
+             call_handler.arena()->Ref(), call_handler.event_engine()),
         call_handler_(std::move(call_handler)),
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
@@ -2682,8 +2736,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   }
   grpc_call_error StartBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) override;
-
-  Arena* arena() override { return call_handler_.arena(); }
 
   void ExternalRef() override { Ref().release(); }
   void ExternalUnref() override { Unref(); }

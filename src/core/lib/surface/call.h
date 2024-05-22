@@ -82,7 +82,7 @@ class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
  public:
-  virtual Arena* arena() = 0;
+  Arena* arena() { return arena_.get(); }
   bool is_client() const { return is_client_; }
 
   virtual void ContextSet(grpc_context_index elem, void* value,
@@ -162,9 +162,10 @@ class Call : public CppImplOf<Call, grpc_call>,
     Call* sibling_prev = nullptr;
   };
 
-  Call(bool is_client, Timestamp send_deadline,
+  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
        grpc_event_engine::experimental::EventEngine* event_engine)
-      : send_deadline_(send_deadline),
+      : arena_(std::move(arena)),
+        send_deadline_(send_deadline),
         is_client_(is_client),
         event_engine_(event_engine) {}
   ~Call() override = default;
@@ -214,6 +215,7 @@ class Call : public CppImplOf<Call, grpc_call>,
       grpc_compression_algorithm algorithm) = 0;
 
  private:
+  const RefCountedPtr<Arena> arena_;
   std::atomic<ParentCall*> parent_call_{nullptr};
   ChildCall* child_ = nullptr;
   Timestamp send_deadline_;
@@ -245,10 +247,14 @@ grpc_call* MakeServerCall(CallHandler call_handler,
                           ServerInterface* server, grpc_completion_queue* cq,
                           grpc_metadata_array* publish_initial_metadata);
 
-grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
-                          grpc_completion_queue* cq, Slice path,
-                          absl::optional<Slice> authority, Timestamp deadline,
-                          RefCountedPtr<UnstartedCallDestination> destination);
+grpc_call* MakeClientCall(
+    grpc_call* parent_call, uint32_t propagation_mask,
+    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
+    bool registered_method, Timestamp deadline,
+    grpc_compression_options compression_options,
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    RefCountedPtr<Arena> arena,
+    RefCountedPtr<UnstartedCallDestination> destination);
 
 }  // namespace grpc_core
 
