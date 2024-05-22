@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
@@ -898,10 +899,10 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for the first 3 backends to be ready.
   WaitForAllBackends(DEBUG_LOCATION, 0, 3);
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   // Send kNumRpcs RPCs.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // The picking rates of the first 3 backends should be roughly equal to the
   // expectation.
   std::vector<double> locality_picked_rates;
@@ -931,10 +932,10 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   // Wait until the locality update has been processed, as signaled by backend
   // 3 receiving a request.
   WaitForAllBackends(DEBUG_LOCATION, 3, 4);
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   // Send kNumRpcs RPCs.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
   // Backend 0 no longer receives any request.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   // The picking rates of the last 3 backends should be roughly equal to the
@@ -1091,11 +1092,11 @@ TEST_P(EdsTest, DropConfigUpdate) {
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcsLbOnly RPCs and count the drops.
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
       DEBUG_LOCATION, kNumRpcsLbOnly, StatusCode::UNAVAILABLE,
       kStatusMessageDropPrefix);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
   gpr_log(GPR_INFO, "First batch drop rate %f", seen_drop_rate);
@@ -1128,11 +1129,11 @@ TEST_P(EdsTest, DropConfigUpdate) {
       },
       /*timeout_ms=*/40000);
   // Send kNumRpcsBoth RPCs and count the drops.
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
                                                   StatusCode::UNAVAILABLE,
                                                   kStatusMessageDropPrefix);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
   gpr_log(GPR_INFO, "Second batch drop rate %f", seen_drop_rate);
@@ -1268,9 +1269,9 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
   // Allow the connection attempt to complete.
   hold->Resume();
   // Now the RPC should complete successfully.
-  gpr_log(GPR_INFO, "=== WAITING FOR RPC TO FINISH ===");
+  LOG(INFO) << "=== WAITING FOR RPC TO FINISH ===";
   Status status = rpc.GetStatus();
-  gpr_log(GPR_INFO, "=== RPC FINISHED ===");
+  LOG(INFO) << "=== RPC FINISHED ===";
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
 }
