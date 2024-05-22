@@ -1097,8 +1097,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         }
         if (peer_identity != expected_server_identity) {
           LOG(ERROR) << "Expected server identity does not match. (actual) "
-                     << absl::StrJoin(peer_identity, ",") << " vs "
-                     << "(expected) "
+                     << absl::StrJoin(peer_identity, ",") << " vs (expected) "
                      << absl::StrJoin(expected_server_identity, ",")
                      << " Trying again.";
           continue;
@@ -1109,8 +1108,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
               << "Expected client identity does not match. (actual) "
               << absl::StrJoin(
                      backends_[0]->backend_service()->last_peer_identity(), ",")
-              << " vs "
-              << "(expected) " << absl::StrJoin(expected_client_identity, ",")
+              << " vs (expected) "
+              << absl::StrJoin(expected_client_identity, ",")
               << " Trying again.";
           continue;
         }
