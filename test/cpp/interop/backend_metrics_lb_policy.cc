@@ -19,6 +19,7 @@
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/port_platform.h>

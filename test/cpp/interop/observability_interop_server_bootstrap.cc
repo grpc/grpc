@@ -19,6 +19,7 @@
 #include <signal.h>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 #include <grpcpp/ext/gcp_observability.h>
 

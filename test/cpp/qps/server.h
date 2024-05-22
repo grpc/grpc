@@ -21,6 +21,8 @@
 
 #include <vector>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>

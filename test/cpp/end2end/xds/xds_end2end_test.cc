@@ -18,31 +18,7 @@
 // - mTLS functionality on both client and server
 // - RBAC
 
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <numeric>
-#include <set>
-#include <sstream>
-#include <string>
-#include <thread>
-#include <vector>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
-#include "absl/time/time.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -55,7 +31,29 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
+#include <gtest/gtest.h>
 
+#include <deque>
+#include <memory>
+#include <mutex>
+#include <numeric>
+#include <set>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -1077,15 +1075,16 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         }
         if (expected_status.has_value() &&
             *expected_status != status.error_code()) {
-          gpr_log(GPR_ERROR,
-                  "Expected status does not match Actual(%d) vs Expected(%d)",
-                  status.error_code(), *expected_status);
+          LOG(ERROR)
+              << "Expected status does not match Actual(" << status.error_code()
+              << ") vs Expected(" << *expected_status << ")";
           continue;
         }
       } else {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
-                  status.error_code(), status.error_message().c_str());
+          LOG(ERROR) << "RPC failed. code=" << status.error_code()
+                     << " message=" << status.error_message()
+                     << " Trying again.";
           continue;
         }
         EXPECT_EQ(response.message(), kRequestMessage);
@@ -1095,23 +1094,25 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
               std::string(entry.data(), entry.size()).c_str());
         }
         if (peer_identity != expected_server_identity) {
-          gpr_log(GPR_ERROR,
-                  "Expected server identity does not match. (actual) %s vs "
-                  "(expected) %s Trying again.",
-                  absl::StrJoin(peer_identity, ",").c_str(),
-                  absl::StrJoin(expected_server_identity, ",").c_str());
+          LOG(ERROR) << "Expected server identity does not match. (actual) "
+                     << absl::StrJoin(peer_identity, ",") << " vs "
+                     << "(expected) "
+                     << absl::StrJoin(expected_server_identity, ",")
+                     << " Trying again.";
           continue;
         }
         if (backends_[0]->backend_service()->last_peer_identity() !=
             expected_client_identity) {
-          gpr_log(
-              GPR_ERROR,
-              "Expected client identity does not match. (actual) %s vs "
-              "(expected) %s Trying again.",
-              absl::StrJoin(
-                  backends_[0]->backend_service()->last_peer_identity(), ",")
-                  .c_str(),
-              absl::StrJoin(expected_client_identity, ",").c_str());
+          LOG(ERROR) << "Expected client identity does not match. (actual) "
+                     << absl::StrJoin(
+                            backends_[0]
+                                ->backend_service()
+                                ->last_peer_identity(),
+                            ",")
+                     << " vs "
+                     << "(expected) "
+                     << absl::StrJoin(expected_client_identity, ",")
+                     << " Trying again.";
           continue;
         }
       }

@@ -15,6 +15,9 @@
 // limitations under the License.
 //
 //
+
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/server_credentials.h>

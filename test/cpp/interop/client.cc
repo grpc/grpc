@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>

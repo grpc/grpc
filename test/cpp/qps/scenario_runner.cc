@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"

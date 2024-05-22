@@ -29,6 +29,7 @@
 #endif
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 
