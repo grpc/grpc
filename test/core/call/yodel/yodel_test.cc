@@ -19,6 +19,7 @@
 #include "absl/random/random.h"
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 
@@ -153,7 +154,10 @@ void YodelTest::RunTest() {
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "test-allocator"),
       1024);
-  TestImpl();
+  {
+    ExecCtx exec_ctx;
+    TestImpl();
+  }
   EXPECT_EQ(pending_actions_.size(), 0)
       << "There are still pending actions: did you forget to call "
          "WaitForAllPendingWork()?";
@@ -165,6 +169,7 @@ void YodelTest::RunTest() {
 void YodelTest::TickUntilTrue(absl::FunctionRef<bool()> poll) {
   WatchDog watchdog(this);
   while (!poll()) {
+    ExecCtx exec_ctx;
     state_->event_engine->Tick();
   }
 }

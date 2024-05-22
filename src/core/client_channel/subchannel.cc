@@ -55,6 +55,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -68,6 +70,7 @@
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/useful.h"
@@ -101,7 +104,7 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 ConnectedSubchannel::ConnectedSubchannel(
     const ChannelArgs& args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
-    : UnstartedCallDestination(
+    : RefCounted<ConnectedSubchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount)
               ? "ConnectedSubchannel"
               : nullptr),
@@ -140,8 +143,9 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     Crash("call v3 ping method called in legacy impl");
   }
 
-  void StartCall(UnstartedCallHandler) override {
-    Crash("call v3 StartCall() method called in legacy impl");
+  RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
+      const override {
+    Crash("call v3 unstarted_call_destination method called in legacy impl");
   }
 
   grpc_channel_stack* channel_stack() const override {
@@ -163,8 +167,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     // handles the channelz updates.
     return OnCancel(
         Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
-            [self = RefAsSubclass<ConnectedSubchannel>()](
-                ServerMetadataHandle metadata) {
+            [self = Ref()](ServerMetadataHandle metadata) {
               channelz::SubchannelNode* channelz_subchannel =
                   self->channelz_subchannel();
               GPR_ASSERT(channelz_subchannel != nullptr);
@@ -176,7 +179,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
               }
               return metadata;
             }),
-        [self = RefAsSubclass<ConnectedSubchannel>()]() {
+        [self = Ref()]() {
           channelz::SubchannelNode* channelz_subchannel =
               self->channelz_subchannel();
           GPR_ASSERT(channelz_subchannel != nullptr);
@@ -203,12 +206,30 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
 
 class NewConnectedSubchannel : public ConnectedSubchannel {
  public:
+  class TransportCallDestination final : public CallDestination {
+   public:
+    explicit TransportCallDestination(OrphanablePtr<ClientTransport> transport)
+        : transport_(std::move(transport)) {}
+
+    ClientTransport* transport() { return transport_.get(); }
+
+    void HandleCall(CallHandler handler) override {
+      transport_->StartCall(std::move(handler));
+    }
+
+    void Orphaned() override { transport_.reset(); }
+
+   private:
+    OrphanablePtr<ClientTransport> transport_;
+  };
+
   NewConnectedSubchannel(
-      RefCountedPtr<CallFilters::Stack> filter_stack,
-      OrphanablePtr<Transport> transport, const ChannelArgs& args,
+      RefCountedPtr<UnstartedCallDestination> call_destination,
+      RefCountedPtr<TransportCallDestination> transport,
+      const ChannelArgs& args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
       : ConnectedSubchannel(args, std::move(channelz_subchannel)),
-        filter_stack_(std::move(filter_stack)),
+        call_destination_(std::move(call_destination)),
         transport_(std::move(transport)) {}
 
   void StartWatch(
@@ -221,9 +242,9 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
     // FIXME: add new transport API for this in v3 stack
   }
 
-  void StartCall(UnstartedCallHandler unstarted_handler) override {
-    auto handler = unstarted_handler.StartCall(filter_stack_);
-    transport_->client_transport()->StartCall(std::move(handler));
+  RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
+      const override {
+    return call_destination_;
   }
 
   grpc_channel_stack* channel_stack() const override { return nullptr; }
@@ -240,8 +261,8 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
   }
 
  private:
-  RefCountedPtr<CallFilters::Stack> filter_stack_;
-  OrphanablePtr<Transport> transport_;
+  RefCountedPtr<UnstartedCallDestination> call_destination_;
+  RefCountedPtr<TransportCallDestination> transport_;
 };
 
 //
@@ -849,7 +870,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = std::move(connecting_result_.socket_node);
-  if (!IsCallV3Enabled()) {
+  if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.
     ChannelStackBuilderImpl builder(
@@ -870,15 +891,28 @@ bool Subchannel::PublishTransportLocked() {
     connected_subchannel_ = MakeRefCounted<LegacyConnectedSubchannel>(
         std::move(*stack), args_, channelz_node_);
   } else {
-    // Call v3 stack.
-    CallFilters::StackBuilder builder;
-    // FIXME: add filters registered for CLIENT_SUBCHANNEL
-    auto filter_stack = builder.Build();
+    OrphanablePtr<ClientTransport> transport(
+        std::exchange(connecting_result_.transport, nullptr)
+            ->client_transport());
+    InterceptionChainBuilder builder(
+        connecting_result_.channel_args.SetObject(transport.get()));
+    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+        GRPC_CLIENT_SUBCHANNEL, builder);
+    auto transport_destination =
+        MakeRefCounted<NewConnectedSubchannel::TransportCallDestination>(
+            std::move(transport));
+    auto call_destination = builder.Build(transport_destination);
+    if (!call_destination.ok()) {
+      connecting_result_.Reset();
+      gpr_log(GPR_ERROR,
+              "subchannel %p %s: error initializing subchannel stack: %s", this,
+              key_.ToString().c_str(),
+              call_destination.status().ToString().c_str());
+      return false;
+    }
     connected_subchannel_ = MakeRefCounted<NewConnectedSubchannel>(
-        std::move(filter_stack),
-        OrphanablePtr<Transport>(
-            std::exchange(connecting_result_.transport, nullptr)),
-        args_, channelz_node_);
+        std::move(*call_destination), std::move(transport_destination), args_,
+        channelz_node_);
   }
   connecting_result_.Reset();
   // Publish.
