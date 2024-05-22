@@ -200,9 +200,9 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
                          header_value));
       }
       if (part != hostname) {
-        VLOG(2) <<
-            "RPC behavior for a different host: \"%s\", this one is: \"%s\"",
-            std::string(part).c_str(), std::string(hostname).c_str());
+        VLOG(2) << "RPC behavior for a different host: \"" << std::string(part)
+                << "\", this one is: \"" < < <
+            hostname < "\"";
         return absl::nullopt;
       }
     } else if (absl::ConsumePrefix(&part, kErrorCodeRpcBehavior)) {
