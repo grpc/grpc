@@ -16,6 +16,12 @@
 //
 //
 
+#include <memory>
+#include <unordered_map>
+
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -23,11 +29,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include <memory>
-#include <unordered_map>
-
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
@@ -350,7 +351,8 @@ int main(int argc, char** argv) {
       test_cases += action.first;
     }
     LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
-               << ". Valid options are\n" << test_cases;
+               << ". Valid options are\n"
+               << test_cases;
     ret = 1;
   }
 
