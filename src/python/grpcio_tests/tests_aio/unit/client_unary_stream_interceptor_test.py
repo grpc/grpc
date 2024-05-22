@@ -225,14 +225,18 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
     async def test_too_many_reads(self):
         for interceptor_class in (
-            _UnaryStreamInterceptorEmpty,
-            _UnaryStreamInterceptorWithResponseIterator,
+            [_UnaryStreamInterceptorEmpty],
+            [_UnaryStreamInterceptorWithResponseIterator],
+            [],
         ):
             with self.subTest(name=interceptor_class):
-                interceptor = interceptor_class()
-                channel = aio.insecure_channel(
-                    self._server_target, interceptors=[interceptor]
-                )
+                if interceptor_class:
+                    interceptor = interceptor_class[0]()
+                    channel = aio.insecure_channel(
+                        self._server_target, interceptors=[interceptor]
+                    )
+                else:
+                    channel = aio.insecure_channel(self._server_target)
                 stub = test_pb2_grpc.TestServiceStub(channel)
 
                 request = messages_pb2.StreamingOutputCallRequest()
