@@ -242,7 +242,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
     VLOG(2) << "done=" << args->done << ", time_left=" << time_left.tv_sec
-            << "." << time_left.tv_nsec;
+            << "." << abs::StrFormat("%09d", time_left.tv_nsec);
     CHECK_GE(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)), 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
