@@ -21,6 +21,7 @@ load(
     "//bazel:protobuf.bzl",
     "get_include_directory",
     "get_plugin_args",
+    "is_sibling_repository_layout",
     "proto_path_to_generated_filename",
 )
 load(":grpc_util.bzl", "to_upper_camel_with_extension")
@@ -60,7 +61,7 @@ def _generate_objc_impl(ctx):
     out_files = [ctx.actions.declare_file(out) for out in outs]
     dir_out = _join_directories([
         str(ctx.genfiles_dir.path),
-        target_package,
+        ctx.label.package if ctx.label.workspace_root.startswith("../") else target_package,
         _GENERATED_PROTOS_DIR,
     ])
 
@@ -78,7 +79,7 @@ def _generate_objc_impl(ctx):
 
     arguments.append("--proto_path=.")
     arguments += [
-        "--proto_path={}".format(get_include_directory(i))
+        "--proto_path={}".format(get_include_directory(i, is_sibling_repository_layout(ctx)))
         for i in protos
     ]
 
