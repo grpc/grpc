@@ -28,16 +28,16 @@ CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc absl_flags absl_flags_parse`
 CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)` \
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
-           -pthread\
-           -lgrpc++_reflection\
+           -pthread \
+           -lgrpc++_reflection -lopentelemetry_exporter_prometheus \
            -ldl
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)` \
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
-           -pthread\
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
+           -pthread \
+           -Wl,--no-as-needed -lgrpc++_reflection -lopentelemetry_exporter_prometheus -Wl,--as-needed \
            -ldl
 endif
 PROTOC = protoc
