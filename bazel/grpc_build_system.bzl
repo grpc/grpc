@@ -737,6 +737,13 @@ def grpc_package(name, visibility = "private", features = []):
             features = features,
         )
 
+def grpc_filegroup(name, srcs, **kwargs):
+    native.filegroup(
+        name = name,
+        srcs = srcs,
+        **kwargs
+    )
+
 def grpc_objc_library(
         name,
         srcs = [],
