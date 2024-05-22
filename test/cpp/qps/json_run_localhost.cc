@@ -31,8 +31,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/test_util/port.h"

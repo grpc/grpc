@@ -24,7 +24,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>

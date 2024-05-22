@@ -33,7 +33,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
