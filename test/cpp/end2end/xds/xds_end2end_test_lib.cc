@@ -136,7 +136,7 @@ class XdsEnd2endTest::ServerThread::XdsChannelArgsServerBuilderOption
 //
 
 void XdsEnd2endTest::ServerThread::Start() {
-  gpr_log(GPR_INFO, "starting %s server on port %d", Type(), port_);
+  LOG(INFO) << "starting " << Type() << " server on port " << port_;
   CHECK(!running_);
   running_ = true;
   StartAllServices();
@@ -148,38 +148,38 @@ void XdsEnd2endTest::ServerThread::Start() {
   thread_ = std::make_unique<std::thread>(
       std::bind(&ServerThread::Serve, this, &mu, &cond));
   cond.Wait(&mu);
-  gpr_log(GPR_INFO, "%s server startup complete", Type());
+  LOG(INFO) << Type() << " server startup complete";
 }
 
 void XdsEnd2endTest::ServerThread::Shutdown() {
   if (!running_) return;
-  gpr_log(GPR_INFO, "%s about to shutdown", Type());
+  LOG(INFO) << Type() << " about to shutdown";
   ShutdownAllServices();
   server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   thread_->join();
-  gpr_log(GPR_INFO, "%s shutdown completed", Type());
+  LOG(INFO) << Type() << " shutdown completed";
   running_ = false;
 }
 
 void XdsEnd2endTest::ServerThread::StopListeningAndSendGoaways() {
-  gpr_log(GPR_INFO, "%s sending GOAWAYs", Type());
+  LOG(INFO) << Type() << " sending GOAWAYs";
   {
     grpc_core::ExecCtx exec_ctx;
     auto* server = grpc_core::Server::FromC(server_->c_server());
     server->StopListening();
     server->SendGoaways();
   }
-  gpr_log(GPR_INFO, "%s done sending GOAWAYs", Type());
+  LOG(INFO) << Type() << " done sending GOAWAYs";
 }
 
 void XdsEnd2endTest::ServerThread::StopListening() {
-  gpr_log(GPR_INFO, "%s about to stop listening", Type());
+  LOG(INFO) << Type() << " about to stop listening";
   {
     grpc_core::ExecCtx exec_ctx;
     auto* server = grpc_core::Server::FromC(server_->c_server());
     server->StopListening();
   }
-  gpr_log(GPR_INFO, "%s stopped listening", Type());
+  LOG(INFO) << Type() << " stopped listening";
 }
 
 void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
@@ -759,10 +759,8 @@ size_t XdsEnd2endTest::WaitForAllBackends(
           << debug_location.file() << ":" << debug_location.line();
     };
   }
-  gpr_log(GPR_INFO,
-          "========= WAITING FOR BACKENDS [%" PRIuPTR ", %" PRIuPTR
-          ") ==========",
-          start_index, stop_index);
+  LOG(INFO) << "========= WAITING FOR BACKENDS [" << start_index << ", "
+            << stop_index << ") ==========";
   size_t num_rpcs = 0;
   SendRpcsUntil(
       debug_location,
@@ -773,8 +771,7 @@ size_t XdsEnd2endTest::WaitForAllBackends(
       },
       wait_options.timeout_ms, rpc_options);
   if (wait_options.reset_counters) ResetBackendCounters();
-  gpr_log(GPR_INFO, "Backends up; sent %" PRIuPTR " warm up requests",
-          num_rpcs);
+  LOG(INFO) << "Backends up; sent " << num_rpcs << " warm up requests";
   return num_rpcs;
 }
 

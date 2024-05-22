@@ -18,21 +18,6 @@
 // - mTLS functionality on both client and server
 // - RBAC
 
-#include <gmock/gmock.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/audit_logging.h>
-#include <grpcpp/security/tls_certificate_provider.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/xds_server_builder.h>
-#include <gtest/gtest.h>
-
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -42,6 +27,9 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
@@ -54,6 +42,20 @@
 #include "absl/strings/str_replace.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/audit_logging.h>
+#include <grpcpp/security/tls_certificate_provider.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/xds_server_builder.h>
+
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -1075,9 +1077,9 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         }
         if (expected_status.has_value() &&
             *expected_status != status.error_code()) {
-          LOG(ERROR)
-              << "Expected status does not match Actual(" << status.error_code()
-              << ") vs Expected(" << *expected_status << ")";
+          LOG(ERROR) << "Expected status does not match Actual("
+                     << status.error_code() << ") vs Expected("
+                     << *expected_status << ")";
           continue;
         }
       } else {
@@ -1103,16 +1105,13 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         }
         if (backends_[0]->backend_service()->last_peer_identity() !=
             expected_client_identity) {
-          LOG(ERROR) << "Expected client identity does not match. (actual) "
-                     << absl::StrJoin(
-                            backends_[0]
-                                ->backend_service()
-                                ->last_peer_identity(),
-                            ",")
-                     << " vs "
-                     << "(expected) "
-                     << absl::StrJoin(expected_client_identity, ",")
-                     << " Trying again.";
+          LOG(ERROR)
+              << "Expected client identity does not match. (actual) "
+              << absl::StrJoin(
+                     backends_[0]->backend_service()->last_peer_identity(), ",")
+              << " vs "
+              << "(expected) " << absl::StrJoin(expected_client_identity, ",")
+              << " Trying again.";
           continue;
         }
       }
