@@ -326,10 +326,8 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
     class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
-        set_request(
-            google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_));
-        set_response(
-            google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
+        set_request(google::protobuf::Arena::Create<EchoRequest>(&arena_));
+        set_response(google::protobuf::Arena::Create<EchoResponse>(&arena_));
       }
       void Release() override { delete this; }
       void FreeRequest() override { CHECK(0); }
