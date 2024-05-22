@@ -479,7 +479,6 @@ class Party : public Activity, private Wakeable {
       Construct(&factory_, std::move(promise_factory));
     }
     ~ParticipantImpl() {
-      gpr_log(GPR_ERROR, "Destroy:%p, started_=%d", this, started_);
       if (!started_) {
         Destruct(&factory_);
       } else {
@@ -648,8 +647,9 @@ template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
   if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
-            party_->DebugTag().c_str(), this, std::string(name).c_str());
+    gpr_log(GPR_INFO, "%s[bulk_spawn] On %p queue %s (%" PRIdPTR " bytes)",
+            party_->DebugTag().c_str(), this, std::string(name).c_str(),
+            sizeof(ParticipantImpl<Factory, OnComplete>));
   }
   participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete));
