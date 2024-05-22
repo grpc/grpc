@@ -23,6 +23,14 @@
 #include <string>
 #include <thread>
 
+// Include grpcpp/grpcpp.h before opentelemetry headers to avoid conflict
+// between different versions of Abseil. Refer
+// https://github.com/open-telemetry/opentelemetry-cpp/issues/1042 or
+// https://github.com/open-telemetry/opentelemetry-cpp/blob/main/examples/otlp/README.md#additional-notes-regarding-abseil-library.
+// clang-format off
+#include <grpcpp/grpcpp.h>
+// clang-format on
+
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
@@ -30,7 +38,6 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
