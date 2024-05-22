@@ -71,7 +71,7 @@ namespace experimental {
 
 using Events = absl::InlinedVector<PollEventHandle*, 5>;
 
-class PollEventHandle : public EventHandle {
+class PollEventHandle final : public EventHandle {
  public:
   PollEventHandle(int fd, std::shared_ptr<PollPoller> poller)
       : fd_(fd),
@@ -138,7 +138,8 @@ class PollEventHandle : public EventHandle {
     watch_mask_ = watch_mask;
   }
   void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
-                    absl::string_view reason) override;
+                    absl::string_view reason,
+                    std::unique_ptr<EventHandle> self_ref) override;
   void ShutdownHandle(absl::Status why) override;
   void NotifyOnRead(PosixEngineClosure* on_read) override;
   void NotifyOnWrite(PosixEngineClosure* on_write) override;
@@ -336,13 +337,13 @@ bool InitPollPollerPosix() {
 
 }  // namespace
 
-EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
-                                      bool track_err) {
+std::unique_ptr<EventHandle> PollPoller::CreateHandle(
+    int fd, absl::string_view /*name*/, bool track_err) {
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
   DCHECK(track_err == false);
-  PollEventHandle* handle = new PollEventHandle(fd, shared_from_this());
-  ForkFdListAddHandle(handle);
+  auto handle = std::make_unique<PollEventHandle>(fd, shared_from_this());
+  ForkFdListAddHandle(handle.get());
   // We need to send a kick to the thread executing Work(..) so that it can
   // add this new Fd into the list of Fds to poll.
   KickExternal(false);
@@ -350,7 +351,8 @@ EventHandle* PollPoller::CreateHandle(int fd, absl::string_view /*name*/,
 }
 
 void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
-                                   absl::string_view /*reason*/) {
+                                   absl::string_view /*reason*/,
+                                   std::unique_ptr<EventHandle> self_ref) {
   ForkFdListRemoveHandle(this);
   ForceRemoveHandleFromPoller();
   {

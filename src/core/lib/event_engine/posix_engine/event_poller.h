@@ -14,7 +14,11 @@
 
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_EVENT_POLLER_H
+#include <cstddef>
+#include <memory>
+#include <set>
 #include <string>
+#include <type_traits>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -26,6 +30,7 @@
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -49,7 +54,8 @@ class EventHandle {
   // should only be called after ShutdownHandle and after all existing NotifyXXX
   // closures have run and there is no waiting NotifyXXX closure.
   virtual void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
-                            absl::string_view reason) = 0;
+                            absl::string_view reason,
+                            std::unique_ptr<EventHandle> self_ref) = 0;
   // Shutdown a handle. If there is an attempt to call NotifyXXX operations
   // after Shutdown handle, those closures will be run immediately with the
   // absl::Status provided here being passed to the callbacks enclosed within
@@ -86,12 +92,17 @@ class EventHandle {
   virtual ~EventHandle() = default;
 };
 
+class EventHandleRef;
+
 class PosixEventPoller : public grpc_event_engine::experimental::Poller,
                          public Forkable {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
-  virtual EventHandle* CreateHandle(int fd, absl::string_view name,
-                                    bool track_err) = 0;
+  virtual std::unique_ptr<EventHandle> CreateHandle(int fd,
+                                                    absl::string_view name,
+                                                    bool track_err) = 0;
+  virtual void AddForkHandler(EventHandleRef* handler) = 0;
+  virtual void RemoveForkHandler(EventHandleRef* handler) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function
@@ -104,6 +115,29 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller,
   // 3. Call Shutdown() on the poller.
   virtual void Shutdown() = 0;
   ~PosixEventPoller() override = default;
+};
+
+// Contains a reference to an event handle with a special logic to support fork
+class EventHandleRef {
+ public:
+  EventHandleRef() {}
+
+  explicit EventHandleRef(std::unique_ptr<EventHandle> event);
+  ~EventHandleRef();
+  // Do not move so the fork handlers to make sure fork handlers use correct
+  // parent object.
+  EventHandleRef(EventHandleRef&& other) = delete;
+  EventHandleRef& operator=(std::unique_ptr<EventHandle> event);
+  EventHandle* operator->();
+  std::unique_ptr<EventHandle> release();
+  EventHandle* get();
+  bool operator==(std::nullptr_t /* nullptr */);
+  bool operator!=(std::nullptr_t /* nullptr */);
+  std::unique_ptr<EventHandle> GiveUpEventHandleOnFork();
+
+ private:
+  grpc_core::Mutex mu_;
+  std::unique_ptr<EventHandle> event_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace experimental

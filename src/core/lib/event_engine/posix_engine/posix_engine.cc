@@ -30,6 +30,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "event_poller.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -123,7 +124,7 @@ void AsyncConnect::OnTimeoutExpired(absl::Status status) {
   bool done = false;
   {
     grpc_core::MutexLock lock(&mu_);
-    if (fd_ != nullptr) {
+    if (fd_.get() != nullptr) {
       fd_->ShutdownHandle(std::move(status));
     }
     done = (--refs_ == 0);
@@ -140,12 +141,11 @@ void AsyncConnect::OnWritable(absl::Status status)
   int err;
   int done;
   int consumed_refs = 1;
-  EventHandle* fd;
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
   mu_.Lock();
-  CHECK_NE(fd_, nullptr);
-  fd = std::exchange(fd_, nullptr);
+  CHECK_NE(fd_.get(), nullptr);
+  std::unique_ptr<EventHandle> fd = fd_.release();
   bool connect_cancelled = connect_cancelled_;
   if (fd->IsHandleShutdown() && status.ok()) {
     if (!connect_cancelled) {
@@ -172,8 +172,10 @@ void AsyncConnect::OnWritable(absl::Status status)
           ->OnConnectFinishInternal(connection_handle_);
     }
     if (fd != nullptr) {
-      fd->OrphanHandle(nullptr, nullptr, "tcp_client_orphan");
-      fd = nullptr;
+      // Avoid relying on argument evaluation 2 lines below
+      auto pointer = fd.get();
+      pointer->OrphanHandle(nullptr, nullptr, "tcp_client_orphan",
+                            std::move(fd));
     }
     if (!status.ok()) {
       ep = absl::UnknownError(
@@ -213,9 +215,8 @@ void AsyncConnect::OnWritable(absl::Status status)
 
   switch (so_error) {
     case 0:
-      ep = CreatePosixEndpoint(fd, nullptr, engine_, std::move(allocator_),
-                               options_);
-      fd = nullptr;
+      ep = CreatePosixEndpoint(std::move(fd), nullptr, engine_,
+                               std::move(allocator_), options_);
       break;
     case ENOBUFS:
       // We will get one of these errors if we have run out of
@@ -273,15 +274,15 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
 
   std::string name = absl::StrCat("tcp-client:", addr_uri.value());
   PosixEventPoller* poller = poller_manager_->Poller();
-  EventHandle* handle =
-      poller->CreateHandle(sock.Fd(), name, poller->CanTrackErrors());
+  auto handle = poller->CreateHandle(sock.Fd(), name, poller->CanTrackErrors());
 
   if (connect_errno == 0) {
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
     Run([on_connect = std::move(on_connect),
-         ep = CreatePosixEndpoint(handle, nullptr, shared_from_this(),
-                                  std::move(allocator), options)]() mutable {
+         ep =
+             CreatePosixEndpoint(std::move(handle), nullptr, shared_from_this(),
+                                 std::move(allocator), options)]() mutable {
       on_connect(std::move(ep));
     });
     return EventEngine::ConnectionHandle::kInvalid;
@@ -289,7 +290,10 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   if (connect_errno != EWOULDBLOCK && connect_errno != EINPROGRESS) {
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
-    handle->OrphanHandle(nullptr, nullptr, "tcp_client_connect_error");
+    // Avoid relying on argument evaluation 2 lines below
+    auto pointer = handle.get();
+    pointer->OrphanHandle(nullptr, nullptr, "tcp_client_connect_error",
+                          std::move(handle));
     Run([on_connect = std::move(on_connect),
          ep = absl::FailedPreconditionError(absl::StrCat(
              "connect failed: ", "addr: ", addr_uri.value(),
@@ -301,9 +305,10 @@ EventEngine::ConnectionHandle PosixEventEngine::ConnectInternal(
   // Connection is still in progress.
   int64_t connection_id =
       last_connection_id_.fetch_add(1, std::memory_order_acq_rel);
-  AsyncConnect* ac = new AsyncConnect(
-      std::move(on_connect), shared_from_this(), executor_.get(), handle,
-      std::move(allocator), options, addr_uri.value(), connection_id);
+  AsyncConnect* ac =
+      new AsyncConnect(std::move(on_connect), shared_from_this(),
+                       executor_.get(), std::move(handle), std::move(allocator),
+                       options, addr_uri.value(), connection_id);
   int shard_number = connection_id % connection_shards_.size();
   struct ConnectionShard* shard = &connection_shards_[shard_number];
   {
@@ -666,9 +671,9 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
   DCHECK_GT(fd, 0);
   PosixEventPoller* poller = poller_manager_->Poller();
   DCHECK_NE(poller, nullptr);
-  EventHandle* handle =
+  auto handle =
       poller->CreateHandle(fd, "tcp-client", poller->CanTrackErrors());
-  return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
+  return CreatePosixEndpoint(std::move(handle), nullptr, shared_from_this(),
                              std::move(memory_allocator),
                              TcpOptionsFromEndpointConfig(config));
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING

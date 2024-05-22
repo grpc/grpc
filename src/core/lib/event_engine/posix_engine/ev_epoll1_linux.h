@@ -22,6 +22,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
+#include "event_poller.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
@@ -45,11 +46,11 @@ namespace experimental {
 class Epoll1EventHandle;
 
 // Definition of epoll1 based poller.
-class Epoll1Poller : public PosixEventPoller {
+class Epoll1Poller final : public PosixEventPoller {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
-                            bool track_err) override;
+  std::unique_ptr<EventHandle> CreateHandle(int fd, absl::string_view name,
+                                            bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
       absl::FunctionRef<void()> schedule_poll_again) override;
@@ -70,6 +71,9 @@ class Epoll1Poller : public PosixEventPoller {
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
+
+  void AddForkHandler(EventHandleRef* handler) override;
+  void RemoveForkHandler(EventHandleRef* handler) override;
 
   void Close();
 
@@ -122,7 +126,8 @@ class Epoll1Poller : public PosixEventPoller {
   // A singleton epoll set
   EpollSet g_epoll_set_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
-  std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
+  std::list<std::unique_ptr<Epoll1EventHandle>> free_epoll1_handles_list_
+      ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
 };

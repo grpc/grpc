@@ -58,7 +58,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-class Epoll1EventHandle : public EventHandle {
+class Epoll1EventHandle final : public EventHandle {
  public:
   Epoll1EventHandle(int fd, Epoll1Poller* poller)
       : fd_(fd),
@@ -68,6 +68,7 @@ class Epoll1EventHandle : public EventHandle {
         write_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
         error_closure_(
             std::make_unique<LockfreeEvent>(poller->GetScheduler())) {
+    gpr_log(GPR_INFO, "pid [%d] Created %p", getpid(), this);
     read_closure_->InitEvent();
     write_closure_->InitEvent();
     error_closure_->InitEvent();
@@ -111,7 +112,8 @@ class Epoll1EventHandle : public EventHandle {
   }
   int WrappedFd() override { return fd_; }
   void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
-                    absl::string_view reason) override;
+                    absl::string_view reason,
+                    std::unique_ptr<EventHandle> self_ref) override;
   void ShutdownHandle(absl::Status why) override;
   void NotifyOnRead(PosixEngineClosure* on_read) override;
   void NotifyOnWrite(PosixEngineClosure* on_write) override;
@@ -138,7 +140,9 @@ class Epoll1EventHandle : public EventHandle {
   LockfreeEvent* WriteClosure() { return write_closure_.get(); }
   LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
   Epoll1Poller::HandlesList& ForkFdListPos() { return list_; }
-  ~Epoll1EventHandle() override = default;
+  ~Epoll1EventHandle() override {
+    gpr_log(GPR_INFO, "pid [%d] Deleted %p", getpid(), this);
+  }
 
  private:
   void HandleShutdownInternal(absl::Status why, bool releasing_fd);
@@ -241,10 +245,11 @@ bool InitEpoll1PollerLinux();
 void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
+  auto pid = getpid();
   while (fork_fd_list_head != nullptr) {
+    gpr_log(GPR_INFO, "pid: [%d], Closing %p", pid, fork_fd_list_head);
     close(fork_fd_list_head->WrappedFd());
     Epoll1EventHandle* next = fork_fd_list_head->ForkFdListPos().next;
-    delete fork_fd_list_head;
     fork_fd_list_head = next;
   }
   // Delete all registered pollers. This also closes all open epoll_sets
@@ -280,8 +285,8 @@ bool InitEpoll1PollerLinux() {
 }  // namespace
 
 void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
-                                     int* release_fd,
-                                     absl::string_view reason) {
+                                     int* release_fd, absl::string_view reason,
+                                     std::unique_ptr<EventHandle> self_ref) {
   bool is_release_fd = (release_fd != nullptr);
   bool was_shutdown = false;
   if (!read_closure_->IsShutdown()) {
@@ -321,7 +326,8 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   pending_error_.store(false, std::memory_order_release);
   {
     grpc_core::MutexLock lock(&poller_->mu_);
-    poller_->free_epoll1_handles_list_.push_back(this);
+    poller_->free_epoll1_handles_list_.emplace_back(
+        static_cast<Epoll1EventHandle*>(self_ref.release()));
   }
   if (on_done != nullptr) {
     on_done->SetStatus(absl::OkStatus());
@@ -379,31 +385,27 @@ void Epoll1Poller::Close() {
   }
 
   while (!free_epoll1_handles_list_.empty()) {
-    Epoll1EventHandle* handle =
-        reinterpret_cast<Epoll1EventHandle*>(free_epoll1_handles_list_.front());
-    free_epoll1_handles_list_.pop_front();
-    delete handle;
+    free_epoll1_handles_list_.clear();
   }
   closed_ = true;
 }
 
 Epoll1Poller::~Epoll1Poller() { Close(); }
 
-EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
-                                        bool track_err) {
-  Epoll1EventHandle* new_handle = nullptr;
+std::unique_ptr<EventHandle> Epoll1Poller::CreateHandle(
+    int fd, absl::string_view /*name*/, bool track_err) {
+  std::unique_ptr<Epoll1EventHandle> new_handle = nullptr;
   {
     grpc_core::MutexLock lock(&mu_);
     if (free_epoll1_handles_list_.empty()) {
-      new_handle = new Epoll1EventHandle(fd, this);
+      new_handle = std::make_unique<Epoll1EventHandle>(fd, this);
     } else {
-      new_handle = reinterpret_cast<Epoll1EventHandle*>(
-          free_epoll1_handles_list_.front());
+      new_handle = std::move(free_epoll1_handles_list_.front());
       free_epoll1_handles_list_.pop_front();
       new_handle->ReInit(fd);
     }
   }
-  ForkFdListAddHandle(new_handle);
+  ForkFdListAddHandle(new_handle.get());
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
   // Use the least significant bit of ev.data.ptr to store track_err. We expect
@@ -411,8 +413,8 @@ EventHandle* Epoll1Poller::CreateHandle(int fd, absl::string_view /*name*/,
   // synchronization issues when accessing it after receiving an event.
   // Accessing fd would be a data race there because the fd might have been
   // returned to the free list at that point.
-  ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_handle) |
-                                        (track_err ? 1 : 0));
+  ev.data.ptr = reinterpret_cast<void*>(
+      reinterpret_cast<intptr_t>(new_handle.get()) | (track_err ? 1 : 0));
   if (epoll_ctl(g_epoll_set_.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
     gpr_log(GPR_ERROR, "epoll_ctl failed: %s",
             grpc_core::StrError(errno).c_str());

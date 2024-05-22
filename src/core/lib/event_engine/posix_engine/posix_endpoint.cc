@@ -1241,10 +1241,13 @@ void PosixEndpointImpl::MaybeShutdown(
   Unref();
 }
 
-PosixEndpointImpl ::~PosixEndpointImpl() {
+PosixEndpointImpl::~PosixEndpointImpl() {
   int release_fd = -1;
-  handle_->OrphanHandle(on_done_,
-                        on_release_fd_ == nullptr ? nullptr : &release_fd, "");
+  // Avoid relying on argument evaluation 2 lines below
+  auto pointer = handle_.get();
+  pointer->OrphanHandle(on_done_,
+                        on_release_fd_ == nullptr ? nullptr : &release_fd, "",
+                        handle_.release());
   if (on_release_fd_ != nullptr) {
     engine_->Run([on_release_fd = std::move(on_release_fd_),
                   release_fd]() mutable { on_release_fd(release_fd); });
@@ -1254,7 +1257,7 @@ PosixEndpointImpl ::~PosixEndpointImpl() {
   delete on_error_;
 }
 
-PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
+PosixEndpointImpl::PosixEndpointImpl(std::unique_ptr<EventHandle> handle,
                                      PosixEngineClosure* on_done,
                                      std::shared_ptr<EventEngine> engine,
                                      MemoryAllocator&& /*allocator*/,
@@ -1262,10 +1265,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     : sock_(PosixSocketWrapper(handle->WrappedFd())),
       on_done_(on_done),
       traced_buffers_(),
-      handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  PosixSocketWrapper sock(handle->WrappedFd());
+  // Make sure initializers above have access to the pointer
+  handle_ = std::move(handle);
+  PosixSocketWrapper sock(handle_->WrappedFd());
   fd_ = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
   auto peer_addr_string = sock.PeerAddressString();
@@ -1346,11 +1350,12 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
 }
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
-    EventHandle* handle, PosixEngineClosure* on_shutdown,
+    std::unique_ptr<EventHandle> handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<EventEngine> engine, MemoryAllocator&& allocator,
     const PosixTcpOptions& options) {
-  DCHECK_NE(handle, nullptr);
-  return std::make_unique<PosixEndpoint>(handle, on_shutdown, std::move(engine),
+  DCHECK_NE(handle.get(), nullptr);
+  return std::make_unique<PosixEndpoint>(std::move(handle), on_shutdown,
+                                         std::move(engine),
                                          std::move(allocator), options);
 }
 

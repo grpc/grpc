@@ -2000,7 +2000,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "posix_event_engine_event_poller",
-    srcs = [],
+    srcs = [
+        "lib/event_engine/posix_engine/event_poller.cc",
+    ],
     hdrs = [
         "lib/event_engine/posix_engine/event_poller.h",
     ],
@@ -2014,7 +2016,7 @@ grpc_cc_library(
         "forkable",
         "posix_event_engine_closure",
         "//:event_engine_base_hdrs",
-        "//:gpr_platform",
+        "//:gpr",
     ],
 )
 

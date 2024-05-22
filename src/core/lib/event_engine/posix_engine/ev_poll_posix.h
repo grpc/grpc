@@ -21,6 +21,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
+#include "event_poller.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
@@ -41,8 +42,8 @@ class PollPoller : public PosixEventPoller,
  public:
   explicit PollPoller(Scheduler* scheduler);
   PollPoller(Scheduler* scheduler, bool use_phony_poll);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
-                            bool track_err) override;
+  std::unique_ptr<EventHandle> CreateHandle(int fd, absl::string_view name,
+                                            bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
       absl::FunctionRef<void()> schedule_poll_again) override;
@@ -57,6 +58,8 @@ class PollPoller : public PosixEventPoller,
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
+  void AddForkHandler(EventHandleRef* handler) override;
+  void RemoveForkHandler(EventHandleRef* handler) override;
 
   void Close();
 
