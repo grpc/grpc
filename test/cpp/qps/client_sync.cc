@@ -183,8 +183,8 @@ class SynchronousStreamingClient : public SynchronousClient {
     if (!s.ok()) {
       std::lock_guard<std::mutex> l(stream_mu_[thread_idx]);
       if (!shutdown_[thread_idx].val) {
-        gpr_log(GPR_ERROR, "Stream %" PRIuPTR " received an error %s",
-                thread_idx, s.error_message().c_str());
+        LOG(ERROR) << "Stream " << thread_idx << " received an error "
+                   << s.error_message();
       }
     }
     // Lock the stream_mu_ now because the client context could change
