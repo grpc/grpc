@@ -93,7 +93,7 @@ class PosixEngineListenerImpl
                   ResolvedAddressToNormalizedString(socket_.addr),
               listener_->poller_->CanTrackErrors())),
           notify_on_accept_(PosixEngineClosure::ToPermanentClosure(
-              [this](absl::Status status) { NotifyOnAccept(status); })) {};
+              [this](absl::Status status) { NotifyOnAccept(status); })){};
     // Start listening for incoming connections on the socket.
     void Start();
     // Internal callback invoked when the socket has incoming connections to

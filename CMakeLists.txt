@@ -2259,6 +2259,7 @@ add_library(grpc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
@@ -3052,6 +3053,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
@@ -5170,6 +5172,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc
@@ -17799,6 +17802,7 @@ add_executable(interception_chain_test
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller.cc
   src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
   src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   src/core/lib/event_engine/posix_engine/lockfree_event.cc

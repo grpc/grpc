@@ -17,11 +17,10 @@
 
 #include <memory>
 
-#include "event_poller.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 

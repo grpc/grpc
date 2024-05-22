@@ -30,7 +30,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "event_poller.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -46,6 +45,7 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h"
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"

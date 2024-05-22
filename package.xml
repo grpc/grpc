@@ -1160,6 +1160,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/ev_poll_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/ev_poll_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.h" role="src" />
