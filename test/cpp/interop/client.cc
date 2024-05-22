@@ -16,12 +16,6 @@
 //
 //
 
-#include <memory>
-#include <unordered_map>
-
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -29,6 +23,11 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
 
+#include <memory>
+#include <unordered_map>
+
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
@@ -187,8 +186,8 @@ ParseAdditionalMetadataFlag(const std::string& flag) {
       }
     }
 
-    gpr_log(GPR_INFO, "Adding additional metadata with key %s and value %s",
-            key.c_str(), value.c_str());
+    LOG(INFO) << "Adding additional metadata with key " << key << " and value "
+              << value;
     additional_metadata.insert({key, value});
 
     if (semicolon_pos == std::string::npos) {
@@ -206,16 +205,14 @@ ParseAdditionalMetadataFlag(const std::string& flag) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  gpr_log(GPR_INFO, "Testing these cases: %s",
-          absl::GetFlag(FLAGS_test_case).c_str());
+  LOG(INFO) << "Testing these cases: " << absl::GetFlag(FLAGS_test_case);
   int ret = 0;
 
   std::string test_case = absl::GetFlag(FLAGS_test_case);
   auto additional_metadata =
       ParseAdditionalMetadataFlag(absl::GetFlag(FLAGS_additional_metadata));
   if (!additional_metadata.ok()) {
-    gpr_log(GPR_ERROR, "%s",
-            std::string(additional_metadata.status().message()).c_str());
+    LOG(ERROR) << additional_metadata.status().message();
     return 1;
   }
   grpc::testing::ChannelCreationFunc channel_creation_func =
@@ -352,8 +349,8 @@ int main(int argc, char** argv) {
       if (!test_cases.empty()) test_cases += "\n";
       test_cases += action.first;
     }
-    gpr_log(GPR_ERROR, "Unsupported test case %s. Valid options are\n%s",
-            absl::GetFlag(FLAGS_test_case).c_str(), test_cases.c_str());
+    LOG(ERROR) << "Unsupported test case " << absl::GetFlag(FLAGS_test_case)
+               << ". Valid options are\n" << test_cases;
     ret = 1;
   }
 

@@ -265,7 +265,7 @@ LoadReportTracker::LoadReportEntry LoadReportTracker::WaitForOobLoadReport(
     auto report = std::move(oob_load_reports_.front());
     oob_load_reports_.pop_front();
     if (predicate(report)) {
-      gpr_log(GPR_DEBUG, "Report #%" PRIuPTR " matched", i + 1);
+      VLOG(2) << "Report #" << (i + 1) << " matched";
       return report;
     }
   }
