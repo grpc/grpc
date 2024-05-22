@@ -56,6 +56,27 @@ grpc_yodel_test(
 )
 
 grpc_cc_library(
+    name = "connected_subchannel_test_lib",
+    testonly = True,
+    srcs = ["connected_subchannel_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/call/yodel:yodel_test",
+    ],
+    alwayslink = 1,
+)
+
+grpc_yodel_test(
+    name = "connected_subchannel",
+    deps = [
+        ":connected_subchannel_test_lib",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
     name = "load_balanced_call_destination_test_lib",
     testonly = True,
     srcs = ["load_balanced_call_destination_test.cc"],

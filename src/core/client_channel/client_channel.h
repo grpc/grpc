@@ -71,7 +71,7 @@ class ClientChannel : public Channel {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
 
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
-      return subchannel_->connected_subchannel();
+      return subchannel_->connected_subchannel()->unstarted_call_destination();
     }
 
     void RequestConnection() override { subchannel_->RequestConnection(); }

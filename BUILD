@@ -3798,6 +3798,7 @@ grpc_cc_library(
         "//src/core:grpc_service_config",
         "//src/core:idle_filter_state",
         "//src/core:init_internally",
+        "//src/core:interception_chain",
         "//src/core:iomgr_fwd",
         "//src/core:json",
         "//src/core:latch",
