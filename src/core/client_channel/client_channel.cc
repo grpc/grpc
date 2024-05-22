@@ -607,7 +607,7 @@ void ClientChannel::Orphaned() {
   // Weird capture then copy needed to satisfy thread safety analysis,
   // otherwise it seems to fail to recognize the correct lock is taken in the
   // lambda.
-  auto self = RefAsSubclass<ClientChannel>();
+  auto self = WeakRefAsSubclass<ClientChannel>();
   work_serializer_->Run(
       [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
         self->DestroyResolverAndLbPolicyLocked();

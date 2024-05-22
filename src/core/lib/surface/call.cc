@@ -2603,7 +2603,7 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
   PrepareOutgoingInitialMetadata(send_initial_metadata_op,
                                  *send_initial_metadata_);
   auto call = MakeCallPair(std::move(send_initial_metadata_), event_engine(),
-                           arena()->Ref(), nullptr);
+                           arena()->Ref(), legacy_context_);
   Destruct(&send_initial_metadata_);
   Construct(&started_call_initiator_, std::move(call.initiator));
   call_destination_->StartCall(std::move(call.handler));
