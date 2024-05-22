@@ -409,8 +409,8 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   CHECK(grpc_core::SplitHostPort(
       absl::GetFlag(FLAGS_local_dns_server_address).c_str(), &unused_host,
       &local_dns_server_port));
-  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:%d|. "
-             "Good server address:"
+  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
+          << g_fake_non_responsive_dns_server_port << "|. Good server address:"
           << absl::GetFlag(FLAGS_local_dns_server_address);
   // Put the non-responsive DNS server at the front of c-ares's nameserver list.
   dns_server_addrs[0].family = AF_INET6;
