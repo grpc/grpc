@@ -1280,7 +1280,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
     return MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector");
   }
   // Apply our own method params to the call.
-  auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
+  auto* method_params = DownCast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           service_config_parser_index_));
   if (method_params != nullptr) {
