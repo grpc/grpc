@@ -30,55 +30,55 @@ class Metric(
 CLIENT_ATTEMPT_STARTED = Metric(
     "grpc.client.attempt.started",
     MetricsName.CLIENT_STARTED_RPCS,
-    "{attempt}",
+    "",
     "Number of client call attempts started",
 )
 CLIENT_ATTEMPT_DURATION = Metric(
     "grpc.client.attempt.duration",
     MetricsName.CLIENT_ROUNDTRIP_LATENCY,
-    "s",
+    "seconds",
     "End-to-end time taken to complete a client call attempt",
 )
 CLIENT_RPC_DURATION = Metric(
     "grpc.client.call.duration",
     MetricsName.CLIENT_API_LATENCY,
-    "s",
+    "seconds",
     "End-to-end time taken to complete a call from client's perspective",
 )
 CLIENT_ATTEMPT_SEND_BYTES = Metric(
     "grpc.client.attempt.sent_total_compressed_message_size",
     MetricsName.CLIENT_SEND_BYTES_PER_RPC,
-    "By",
+    "bytes",
     "Compressed message bytes sent per client call attempt",
 )
 CLIENT_ATTEMPT_RECEIVED_BYTES = Metric(
     "grpc.client.attempt.rcvd_total_compressed_message_size",
     MetricsName.CLIENT_RECEIVED_BYTES_PER_RPC,
-    "By",
+    "bytes",
     "Compressed message bytes received per call attempt",
 )
 SERVER_STARTED_RPCS = Metric(
     "grpc.server.call.started",
     MetricsName.SERVER_STARTED_RPCS,
-    "{call}",
+    "",
     "Number of server calls started",
 )
 SERVER_RPC_DURATION = Metric(
     "grpc.server.call.duration",
     MetricsName.SERVER_SERVER_LATENCY,
-    "s",
+    "seconds",
     "End-to-end time taken to complete a call from server transport's perspective",
 )
 SERVER_RPC_SEND_BYTES = Metric(
     "grpc.server.call.sent_total_compressed_message_size",
     MetricsName.SERVER_SENT_BYTES_PER_RPC,
-    "By",
+    "bytes",
     "Compressed message bytes sent per server call",
 )
 SERVER_RPC_RECEIVED_BYTES = Metric(
     "grpc.server.call.rcvd_total_compressed_message_size",
     MetricsName.SERVER_RECEIVED_BYTES_PER_RPC,
-    "By",
+    "bytes",
     "Compressed message bytes received per server call",
 )
 
