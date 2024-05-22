@@ -267,19 +267,29 @@ struct grpc_pollset_set {
 //
 
 static void fork_fd_list_remove_node(grpc_fork_fd_list* node) {
+  gpr_mu_lock(&fork_fd_list_mu);
+  if (fork_fd_list_head == node) {
+    fork_fd_list_head = node->next;
+  }
+  if (node->prev != nullptr) {
+    node->prev->next = node->next;
+  }
+  if (node->next != nullptr) {
+    node->next->prev = node->prev;
+  }
+  gpr_free(node);
+  gpr_mu_unlock(&fork_fd_list_mu);
+}
+
+static void fork_fd_list_remove_grpc_fd(grpc_fd* fd) {
   if (track_fds_for_fork) {
-    gpr_mu_lock(&fork_fd_list_mu);
-    if (fork_fd_list_head == node) {
-      fork_fd_list_head = node->next;
-    }
-    if (node->prev != nullptr) {
-      node->prev->next = node->next;
-    }
-    if (node->next != nullptr) {
-      node->next->prev = node->prev;
-    }
-    gpr_free(node);
-    gpr_mu_unlock(&fork_fd_list_mu);
+    fork_fd_list_remove_node(fd->fork_fd_list);
+  }
+}
+
+static void fork_fd_list_remove_wakeup_fd(grpc_cached_wakeup_fd* fd) {
+  if (track_fds_for_fork) {
+    fork_fd_list_remove_node(fd->fork_fd_list);
   }
 }
 
@@ -361,7 +371,7 @@ static void unref_by(grpc_fd* fd, int n) {
   if (old == n) {
     gpr_mu_destroy(&fd->mu);
     grpc_iomgr_unregister_object(&fd->iomgr_object);
-    fork_fd_list_remove_node(fd->fork_fd_list);
+    fork_fd_list_remove_grpc_fd(fd);
     if (fd->shutdown) {
     }
     fd->shutdown_error.~Status();
@@ -860,7 +870,7 @@ static void pollset_destroy(grpc_pollset* pollset) {
   CHECK(!pollset_has_workers(pollset));
   while (pollset->local_wakeup_cache) {
     grpc_cached_wakeup_fd* next = pollset->local_wakeup_cache->next;
-    fork_fd_list_remove_node(pollset->local_wakeup_cache->fork_fd_list);
+    fork_fd_list_remove_wakeup_fd(pollset->local_wakeup_cache);
     grpc_wakeup_fd_destroy(&pollset->local_wakeup_cache->fd);
     gpr_free(pollset->local_wakeup_cache);
     pollset->local_wakeup_cache = next;
