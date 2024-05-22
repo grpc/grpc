@@ -65,13 +65,11 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     """
 
     _exchange_labels: Dict[str, AnyStr]
-    _additional_labels: Dict[str, str]
     _additional_exchange_labels: Dict[str, str]
 
     def __init__(self):
         fields = {}
         self._exchange_labels = {}
-        self._additional_labels = {}
         self._additional_exchange_labels = {}
 
         # Labels from environment
@@ -142,11 +140,9 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         self, include_exchange_labels: bool
     ) -> Dict[str, str]:
         if include_exchange_labels:
-            additional_labels = self._additional_labels
-            additional_labels.update(self._additional_exchange_labels)
-            return additional_labels
+            return self._additional_exchange_labels
         else:
-            return self._additional_labels
+            return {}
 
     @staticmethod
     def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:

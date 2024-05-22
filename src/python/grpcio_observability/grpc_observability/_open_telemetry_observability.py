@@ -111,7 +111,6 @@ class _OpenTelemetryPlugin:
             )
         else:
             deserialized_labels = stats_data.labels
-
         labels = self._maybe_add_labels(
             stats_data.include_exchange_labels,
             deserialized_labels,

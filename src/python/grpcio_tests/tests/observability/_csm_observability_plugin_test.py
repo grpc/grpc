@@ -417,26 +417,26 @@ class MetadataExchangeTest(unittest.TestCase):
 
         validate_metrics_exist(self, self.all_metrics)
         for name, label_list in self.all_metrics.items():
-            attributes = label_list[0]
-            # Verifies that the server records unknown when the client does not send metadata
-            if name in ["grpc.server.call.duration"]:
-                self.assertEqual(
-                    attributes["csm.workload_canonical_service"],
-                    "canonical_service",
-                )
-                self.assertEqual(
-                    attributes["csm.remote_workload_canonical_service"],
-                    "unknown",
-                )
-            # Client metric should not have CSM labels.
-            elif "grpc.client" in name:
-                self.assertTrue(
-                    "csm.workload_canonical_service" not in attributes.keys()
-                )
-                self.assertTrue(
-                    "csm.remote_workload_canonical_service"
-                    not in attributes.keys()
-                )
+            for labels in label_list:
+                # Verifies that the server records unknown when the client does not send metadata
+                if name in ["grpc.server.call.duration"]:
+                    self.assertEqual(
+                        labels["csm.workload_canonical_service"],
+                        "canonical_service",
+                    )
+                    self.assertEqual(
+                        labels["csm.remote_workload_canonical_service"],
+                        "unknown",
+                    )
+                # Client metric should not have CSM labels.
+                elif "grpc.client" in name:
+                    self.assertTrue(
+                        "csm.workload_canonical_service" not in labels.keys()
+                    )
+                    self.assertTrue(
+                        "csm.remote_workload_canonical_service"
+                        not in labels.keys()
+                    )
 
     @mock.patch(
         "opentelemetry.resourcedetector.gcp_resource_detector.GoogleCloudResourceDetector.detect"
@@ -463,6 +463,7 @@ class MetadataExchangeTest(unittest.TestCase):
         csm_plugin.register_global()
         self._server, port = _test_server.start_server()
         _test_server.unary_unary_call(port=port)
+        _test_server.unary_unary_call(port=port)
         csm_plugin.deregister_global()
 
         validate_metrics_exist(self, self.all_metrics)
@@ -472,13 +473,13 @@ class MetadataExchangeTest(unittest.TestCase):
                 "grpc.client.attempt.started",
                 "grpc.server.call.started",
             ]:
-                self._verify_no_service_mesh_attributes(label_list[0])
+                self._verify_no_service_mesh_attributes(label_list)
             # duration metrics should have all csm related labels.
             elif name in [
                 "grpc.client.attempt.duration",
                 "grpc.server.call.duration",
             ]:
-                self._verify_service_mesh_attributes(label_list[0], TYPE_GCE)
+                self._verify_service_mesh_attributes(label_list, TYPE_GCE)
 
     @mock.patch(
         "opentelemetry.resourcedetector.gcp_resource_detector.GoogleCloudResourceDetector.detect"
@@ -514,13 +515,13 @@ class MetadataExchangeTest(unittest.TestCase):
                 "grpc.client.attempt.started",
                 "grpc.server.call.started",
             ]:
-                self._verify_no_service_mesh_attributes(label_list[0])
+                self._verify_no_service_mesh_attributes(label_list)
             # duration metrics should have all csm related labels.
             elif name in [
                 "grpc.client.attempt.duration",
                 "grpc.server.call.duration",
             ]:
-                self._verify_service_mesh_attributes(label_list[0], TYPE_GKE)
+                self._verify_service_mesh_attributes(label_list, TYPE_GKE)
 
     @mock.patch(
         "opentelemetry.resourcedetector.gcp_resource_detector.GoogleCloudResourceDetector.detect"
@@ -556,63 +557,65 @@ class MetadataExchangeTest(unittest.TestCase):
                 "grpc.client.attempt.started",
                 "grpc.server.call.started",
             ]:
-                self._verify_no_service_mesh_attributes(label_list[0])
+                self._verify_no_service_mesh_attributes(label_list)
             # duration metrics should have all csm related labels.
             elif name in [
                 "grpc.client.attempt.duration",
                 "grpc.server.call.duration",
             ]:
-                self._verify_service_mesh_attributes(
-                    label_list[0], UNKNOWN_VALUE
-                )
+                self._verify_service_mesh_attributes(label_list, UNKNOWN_VALUE)
 
     def _verify_service_mesh_attributes(
-        self, attributes: Dict[str, str], resource_type: str
+        self, label_list: List[Dict[str, str]], resource_type: str
     ):
-        # Assuming attributes is a dictionary
-        self.assertEqual(
-            attributes["csm.workload_canonical_service"], "canonical_service"
-        )
-        self.assertEqual(
-            attributes["csm.remote_workload_canonical_service"],
-            "canonical_service",
-        )
+        for labels in label_list:
+            # Assuming attributes is a dictionary
+            self.assertEqual(
+                labels["csm.workload_canonical_service"], "canonical_service"
+            )
+            self.assertEqual(
+                labels["csm.remote_workload_canonical_service"],
+                "canonical_service",
+            )
 
-        if resource_type == TYPE_GKE:
-            self.assertEqual(
-                attributes["csm.remote_workload_type"], "gcp_kubernetes_engine"
-            )
-            self.assertEqual(attributes["csm.remote_workload_name"], "workload")
-            self.assertEqual(
-                attributes["csm.remote_workload_namespace_name"], "namespace"
-            )
-            self.assertEqual(
-                attributes["csm.remote_workload_cluster_name"], "cluster"
-            )
-            self.assertEqual(
-                attributes["csm.remote_workload_location"], "region"
-            )
-            self.assertEqual(attributes["csm.remote_workload_project_id"], "id")
-        elif resource_type == TYPE_GCE:
-            self.assertEqual(
-                attributes["csm.remote_workload_type"], "gcp_compute_engine"
-            )
-            self.assertEqual(attributes["csm.remote_workload_name"], "workload")
-            self.assertEqual(attributes["csm.remote_workload_location"], "zone")
-            self.assertEqual(attributes["csm.remote_workload_project_id"], "id")
-        elif resource_type == UNKNOWN_VALUE:
-            self.assertEqual(attributes["csm.remote_workload_type"], "random")
+            if resource_type == TYPE_GKE:
+                self.assertEqual(
+                    labels["csm.remote_workload_type"], "gcp_kubernetes_engine"
+                )
+                self.assertEqual(labels["csm.remote_workload_name"], "workload")
+                self.assertEqual(
+                    labels["csm.remote_workload_namespace_name"], "namespace"
+                )
+                self.assertEqual(
+                    labels["csm.remote_workload_cluster_name"], "cluster"
+                )
+                self.assertEqual(
+                    labels["csm.remote_workload_location"], "region"
+                )
+                self.assertEqual(labels["csm.remote_workload_project_id"], "id")
+            elif resource_type == TYPE_GCE:
+                self.assertEqual(
+                    labels["csm.remote_workload_type"], "gcp_compute_engine"
+                )
+                self.assertEqual(labels["csm.remote_workload_name"], "workload")
+                self.assertEqual(labels["csm.remote_workload_location"], "zone")
+                self.assertEqual(labels["csm.remote_workload_project_id"], "id")
+            elif resource_type == UNKNOWN_VALUE:
+                self.assertEqual(labels["csm.remote_workload_type"], "random")
 
-    def _verify_no_service_mesh_attributes(self, attributes: Dict[str, str]):
-        self.assertTrue(
-            "csm.remote_workload_canonical_service" not in attributes.keys()
-        )
-        self.assertTrue("csm.remote_workload_type" not in attributes.keys())
-        self.assertTrue(
-            "csm.workload_canonical_service" not in attributes.keys()
-        )
-        self.assertTrue("csm.workload_type" not in attributes.keys())
-        self.assertTrue("csm.mesh_id" not in attributes.keys())
+    def _verify_no_service_mesh_attributes(
+        self, label_list: List[Dict[str, str]]
+    ):
+        for labels in label_list:
+            self.assertTrue(
+                "csm.remote_workload_canonical_service" not in labels.keys()
+            )
+            self.assertTrue("csm.remote_workload_type" not in labels.keys())
+            self.assertTrue(
+                "csm.workload_canonical_service" not in labels.keys()
+            )
+            self.assertTrue("csm.workload_type" not in labels.keys())
+            self.assertTrue("csm.mesh_id" not in labels.keys())
 
 
 def validate_metrics_exist(
