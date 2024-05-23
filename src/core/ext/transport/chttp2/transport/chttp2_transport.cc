@@ -3168,8 +3168,6 @@ const char* grpc_chttp2_initiate_write_reason_string(
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-grpc_endpoint* grpc_chttp2_transport::GetEndpoint() { return ep; }
-
 size_t grpc_chttp2_transport::SizeOfStream() const {
   return sizeof(grpc_chttp2_stream);
 }
