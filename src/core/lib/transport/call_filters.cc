@@ -235,6 +235,7 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   }
   CHECK(md != nullptr);
   if (server_trailing_metadata_ != nullptr) return;
+  cancelled_.Set(md->get(GrpcCallWasCancelled()).value_or(false));
   server_trailing_metadata_ = std::move(md);
   client_initial_metadata_state_.CloseWithError();
   server_initial_metadata_state_.CloseSending();
