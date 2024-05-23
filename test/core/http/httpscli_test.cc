@@ -163,8 +163,8 @@ void OnFinish(void* arg, grpc_error_handle error) {
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   grpc_http_response response = request_state->response;
-  LOG(INFO) << "response status=" << response.status << " error="
-          grpc_core::StatusToString(error).c_str());
+  LOG(INFO) << "response status=" << response.status
+            << " error=" << grpc_core::StatusToString(error);
   CHECK(error.ok());
   CHECK_EQ(response.status, 200);
   CHECK(response.body_length == strlen(expect));
@@ -176,8 +176,8 @@ void OnFinish(void* arg, grpc_error_handle error) {
 void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
   grpc_http_response response = request_state->response;
-  LOG(INFO) << "response status=" << response.status << " error="
-          grpc_core::StatusToString(error).c_str());
+  LOG(INFO) << "response status=" << response.status
+            << " error=" << grpc_core::StatusToString(error);
   CHECK(!error.ok());
   request_state->test->RunAndKick(
       [request_state]() { request_state->done = true; });

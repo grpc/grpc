@@ -242,8 +242,8 @@ TEST_F(HttpRequestTest, Post) {
 int g_fake_non_responsive_dns_server_port;
 
 void InjectNonResponsiveDNSServer(ares_channel* channel) {
-  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:%d|."
-          << g_fake_non_responsive_dns_server_port;
+  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
+          << g_fake_non_responsive_dns_server_port << "|.";
   // Configure a non-responsive DNS server at the front of c-ares's nameserver
   // list.
   struct ares_addr_port_node dns_server_addrs[1];

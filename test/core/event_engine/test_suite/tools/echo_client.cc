@@ -122,7 +122,7 @@ void RunUntilInterrupted() {
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
-          LOG(ERROR) << "Error connecting: " << ep.status();
+          LOG(ERROR) << "Error connecting: " << ep.status().ToString();
           exit(1);
         }
         endpoint = std::move(*ep);
