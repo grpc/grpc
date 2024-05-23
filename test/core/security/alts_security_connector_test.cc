@@ -145,13 +145,13 @@ static bool test_identity(const grpc_auth_context* ctx,
   prop = grpc_auth_property_iterator_next(&it);
   EXPECT_NE(prop, nullptr);
   if (strcmp(prop->name, expected_property_name) != 0) {
-    gpr_log(GPR_ERROR, "Expected peer identity property name %s and got %s.",
-            expected_property_name, prop->name);
+    LOG(ERROR) << "Expected peer identity property name "
+               << expected_property_name << " and got " << prop->name;
     return false;
   }
   if (strncmp(prop->value, expected_identity, prop->value_length) != 0) {
-    gpr_log(GPR_ERROR, "Expected peer identity %s and got %s.",
-            expected_identity, prop->value);
+    LOG(ERROR) << "Expected peer identity " << expected_identity << " and got "
+               << prop->value;
     return false;
   }
   return true;

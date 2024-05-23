@@ -73,7 +73,7 @@ static void channel_idle_poll_for_timeout(grpc_channel* channel,
 // Test to make sure that "connectivity watcher" structs are free'd just
 // after, if their corresponding timeouts occur.
 static void run_timeouts_test(const test_fixture* fixture) {
-  gpr_log(GPR_INFO, "TEST: %s", fixture->name);
+  LOG(INFO) << "TEST: " << fixture->name;
 
   grpc_init();
   std::string addr =
@@ -122,7 +122,7 @@ static void run_timeouts_test(const test_fixture* fixture) {
 // of a polling call.
 static void run_channel_shutdown_before_timeout_test(
     const test_fixture* fixture) {
-  gpr_log(GPR_INFO, "TEST: %s", fixture->name);
+  LOG(INFO) << "TEST: " << fixture->name;
 
   grpc_init();
   std::string addr =

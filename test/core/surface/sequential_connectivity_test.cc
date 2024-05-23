@@ -94,8 +94,8 @@ static grpc_channel* create_test_channel(const char* addr,
 }
 
 static void run_test(const test_fixture* fixture, bool share_subchannel) {
-  gpr_log(GPR_INFO, "TEST: %s sharing subchannel: %d", fixture->name,
-          share_subchannel);
+  LOG(INFO) << "TEST: " << fixture->name
+            << " sharing subchannel: " << share_subchannel;
 
   std::string addr =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());

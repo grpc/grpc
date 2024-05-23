@@ -75,8 +75,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
       [&is_done, &done, &token, &initial_metadata](absl::Status result) {
         is_done = true;
         if (!result.ok()) {
-          gpr_log(GPR_ERROR, "Fetching token failed: %s",
-                  result.ToString().c_str());
+          LOG(ERROR) << "Fetching token failed: " << result;
         } else {
           std::string buffer;
           token = gpr_strdup(

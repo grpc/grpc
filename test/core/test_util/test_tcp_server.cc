@@ -91,7 +91,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   CHECK(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset);
-  gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
+  LOG(INFO) << "test tcp server listening on 0.0.0.0:" << port;
 }
 
 void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {

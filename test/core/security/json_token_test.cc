@@ -220,8 +220,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   EXPECT_FALSE(decoded.empty());
   auto json = grpc_core::JsonParse(decoded);
   if (!json.ok()) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            json.status().ToString().c_str());
+    LOG(ERROR) << "JSON parse error: " << json.status().ToString();
     return Json();
   }
   return std::move(*json);

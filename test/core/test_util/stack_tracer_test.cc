@@ -28,7 +28,7 @@
 
 TEST(StackTracerTest, Basic) {
   std::string stack_trace = grpc_core::testing::GetCurrentStackTrace();
-  gpr_log(GPR_INFO, "stack_trace=%s", stack_trace.c_str());
+  LOG(INFO) << "stack_trace=" << stack_trace;
 #if !defined(NDEBUG) && !defined(GPR_MUSL_LIBC_COMPAT)
   EXPECT_TRUE(absl::StrContains(stack_trace, "Basic"));
 #endif

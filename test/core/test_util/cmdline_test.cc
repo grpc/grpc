@@ -26,15 +26,13 @@
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "test at %s:%d", __FILE__, __LINE__)
-
 TEST(CmdlineTest, SimpleInt) {
   int x = 1;
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"),
                   const_cast<char*>("3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_int(cl, "foo", nullptr, &x);
@@ -49,7 +47,7 @@ TEST(CmdlineTest, EqInt) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo=3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_int(cl, "foo", nullptr, &x);
@@ -65,7 +63,7 @@ TEST(CmdlineTest, 2DashInt) {
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"),
                   const_cast<char*>("3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_int(cl, "foo", nullptr, &x);
@@ -80,7 +78,7 @@ TEST(CmdlineTest, 2DashEqInt) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_int(cl, "foo", nullptr, &x);
@@ -96,7 +94,7 @@ TEST(CmdlineTest, SimpleString) {
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo"),
                   const_cast<char*>("3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_string(cl, "foo", nullptr, &x);
@@ -111,7 +109,7 @@ TEST(CmdlineTest, EqString) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("-foo=3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_string(cl, "foo", nullptr, &x);
@@ -127,7 +125,7 @@ TEST(CmdlineTest, 2DashString) {
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo"),
                   const_cast<char*>("3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_string(cl, "foo", nullptr, &x);
@@ -142,7 +140,7 @@ TEST(CmdlineTest, 2DashEqString) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=3")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_string(cl, "foo", nullptr, &x);
@@ -157,7 +155,7 @@ TEST(CmdlineTest, FlagOn) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_flag(cl, "foo", nullptr, &x);
@@ -172,7 +170,7 @@ TEST(CmdlineTest, FlagNo) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--no-foo")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_flag(cl, "foo", nullptr, &x);
@@ -187,7 +185,7 @@ TEST(CmdlineTest, FlagVal1) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=1")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_flag(cl, "foo", nullptr, &x);
@@ -202,7 +200,7 @@ TEST(CmdlineTest, FlagVal0) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=0")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_flag(cl, "foo", nullptr, &x);
@@ -217,7 +215,7 @@ TEST(CmdlineTest, FlagValTrue) {
   gpr_cmdline* cl;
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("--foo=true")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_flag(cl, "foo", nullptr, &x);
@@ -233,7 +231,7 @@ TEST(CmdlineTest, FlagValFalse) {
   char* args[] = {const_cast<char*>(__FILE__),
                   const_cast<char*>("--foo=false")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_flag(cl, "foo", nullptr, &x);
@@ -253,7 +251,7 @@ TEST(CmdlineTest, Many) {
                   const_cast<char*>("hello"), const_cast<char*>("-x=4"),
                   const_cast<char*>("-no-flag")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
@@ -280,7 +278,7 @@ TEST(CmdlineTest, Extra) {
   char* args[] = {const_cast<char*>(__FILE__), const_cast<char*>("a"),
                   const_cast<char*>("b"), const_cast<char*>("c")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
@@ -297,7 +295,7 @@ TEST(CmdlineTest, ExtraDashdash) {
                   const_cast<char*>("a"), const_cast<char*>("b"),
                   const_cast<char*>("c")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_on_extra_arg(cl, "file", "filenames to process", extra_arg_cb,
@@ -314,7 +312,7 @@ TEST(CmdlineTest, Usage) {
   int x = 0;
   int flag = 2;
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_add_string(cl, "str", nullptr, &str);
@@ -345,7 +343,7 @@ TEST(CmdlineTest, Help) {
 
   char* help[] = {const_cast<char*>(__FILE__), const_cast<char*>("-h")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_set_survive_failure(cl);
@@ -370,7 +368,7 @@ TEST(CmdlineTest, Badargs1) {
   char* bad_arg_name[] = {const_cast<char*>(__FILE__),
                           const_cast<char*>("--y")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_set_survive_failure(cl);
@@ -397,7 +395,7 @@ TEST(CmdlineTest, Badargs2) {
                            const_cast<char*>("--x"),
                            const_cast<char*>("henry")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_set_survive_failure(cl);
@@ -423,7 +421,7 @@ TEST(CmdlineTest, Badargs3) {
   char* bad_bool_value[] = {const_cast<char*>(__FILE__),
                             const_cast<char*>("--flag=henry")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_set_survive_failure(cl);
@@ -449,7 +447,7 @@ TEST(CmdlineTest, Badargs4) {
   char* bad_bool_value[] = {const_cast<char*>(__FILE__),
                             const_cast<char*>("--no-str")};
 
-  LOG_TEST();
+  LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__;
 
   cl = gpr_cmdline_create(nullptr);
   gpr_cmdline_set_survive_failure(cl);

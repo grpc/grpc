@@ -154,12 +154,11 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
 
   if (!error.ok()) {
     failed = 1;
-    gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
-            grpc_core::StatusToString(error).c_str());
+    VLOG(2) << "failed port pick from server: retrying ["
+            << grpc_core::StatusToString(error) << "]";
   } else if (response->status != 200) {
     failed = 1;
-    gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",
-            response->status);
+    VLOG(2) << "failed port pick from server: status=" << response->status;
   }
 
   if (failed) {
