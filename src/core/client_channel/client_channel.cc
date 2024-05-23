@@ -754,7 +754,7 @@ CallInitiator ClientChannel::CreateCall(
       call_arena_allocator_->MakeArena(), call_arena_allocator_, nullptr);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
-  call.initiator.SpawnGuarded(
+  call.initiator.SpawnGuardedUntilCallCompletes(
       "wait-for-name-resolution",
       [self = RefAsSubclass<ClientChannel>(),
        unstarted_handler = std::move(call.handler)]() mutable {
@@ -808,7 +808,7 @@ CallInitiator ClientChannel::CreateCall(
             });
       });
   // Return the initiator.
-  return call.initiator;
+  return std::move(call.initiator);
 }
 
 void ClientChannel::CreateResolverLocked() {
@@ -1260,7 +1260,7 @@ void ClientChannel::StartIdleTimer() {
       [self = std::move(self)](absl::Status status) mutable {
         if (status.ok()) {
           self->work_serializer_->Run(
-              [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
+              [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
                 self->DestroyResolverAndLbPolicyLocked();
                 self->UpdateStateAndPickerLocked(
                     GRPC_CHANNEL_IDLE, absl::OkStatus(),
