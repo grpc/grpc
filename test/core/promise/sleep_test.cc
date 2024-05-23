@@ -156,7 +156,7 @@ TEST(Sleep, StressTest) {
   std::vector<std::shared_ptr<Notification>> notifications;
   std::vector<ActivityPtr> activities;
   auto engine = GetDefaultEventEngine();
-  gpr_log(GPR_INFO, "Starting %d sleeps for 1sec", kNumActivities);
+  LOG(INFO) << "Starting " << kNumActivities << " sleeps for 1sec";
   for (int i = 0; i < kNumActivities; i++) {
     auto notification = std::make_shared<Notification>();
     auto activity = MakeActivity(
@@ -167,9 +167,8 @@ TEST(Sleep, StressTest) {
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }
-  gpr_log(GPR_INFO,
-          "Waiting for the first %d sleeps, whilst cancelling the other half",
-          kNumActivities / 2);
+  LOG(INFO) << "Waiting for the first " << kNumActivities / 2
+            << " sleeps, whilst cancelling the other half";
   for (size_t i = 0; i < kNumActivities / 2; i++) {
     notifications[i]->WaitForNotification();
     activities[i].reset();
