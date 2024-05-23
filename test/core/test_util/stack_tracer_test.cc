@@ -20,10 +20,9 @@
 
 #include <string>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 #include "test/core/test_util/test_config.h"
 

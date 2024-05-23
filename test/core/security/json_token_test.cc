@@ -23,13 +23,13 @@
 #include <gtest/gtest.h>
 #include <openssl/evp.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/json/json.h"

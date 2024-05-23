@@ -24,9 +24,9 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"

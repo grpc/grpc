@@ -20,6 +20,7 @@
 #include <queue>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"

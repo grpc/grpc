@@ -25,10 +25,10 @@
 #include <gtest/gtest.h>
 #include <openssl/crypto.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/crash.h"

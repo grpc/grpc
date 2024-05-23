@@ -20,10 +20,10 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/util/string.h"
 

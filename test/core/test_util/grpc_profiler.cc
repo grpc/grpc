@@ -25,7 +25,7 @@ void grpc_profiler_start(const char* filename) { ProfilerStart(filename); }
 
 void grpc_profiler_stop() { ProfilerStop(); }
 #else
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 void grpc_profiler_start(const char* filename) {
   static int printed_warning = 0;

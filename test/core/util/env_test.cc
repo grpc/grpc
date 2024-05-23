@@ -18,9 +18,8 @@
 
 #include "src/core/lib/gprpp/env.h"
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 #include "test/core/test_util/test_config.h"
 

@@ -28,12 +28,12 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
