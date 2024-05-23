@@ -21,21 +21,23 @@ PROTOBUF_ABSL_DEPS = absl_absl_check absl_absl_log absl_algorithm absl_base absl
 # Hack: utf8_range (which is protobuf's dependency) currently doesn't have a pkgconfig file, so we need to explicitly
 # tweak the list of libraries to link against to fix the build.
 PROTOBUF_UTF8_RANGE_LINK_LIBS = -lutf8_validity
+OPENTELEMETRY_LINK_LIBS = -lopentelemetry_metrics -lopentelemetry_exporter_prometheus -lopentelemetry_common -lopentelemetry_resources -lprometheus-cpp-pull -lprometheus-cpp-core
 
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc absl_flags absl_flags_parse`
-CXXFLAGS += -std=c++14
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)` \
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
+	   $(OPENTELEMETRY_LINK_LIBS) \
            -pthread \
            -lgrpc++_reflection -lopentelemetry_exporter_prometheus \
            -ldl
 else
 LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpcpp_otel_plugin absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)` \
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
+	   $(OPENTELEMETRY_LINK_LIBS) \
            -pthread \
            -Wl,--no-as-needed -lgrpc++_reflection -lopentelemetry_exporter_prometheus -Wl,--as-needed \
            -ldl

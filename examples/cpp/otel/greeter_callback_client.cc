@@ -16,20 +16,19 @@
  *
  */
 
+// Explicitly define HAVE_ABSEIL to avoid conflict with OTel's Abseil
+// version. Refer
+// https://github.com/open-telemetry/opentelemetry-cpp/issues/1042.
+#ifndef HAVE_ABSEIL
+#define HAVE_ABSEIL
+#endif
+
 #include <condition_variable>
 #include <iostream>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
-
-// Include grpcpp/grpcpp.h before opentelemetry headers to avoid conflict
-// between different versions of Abseil. Refer
-// https://github.com/open-telemetry/opentelemetry-cpp/issues/1042 or
-// https://github.com/open-telemetry/opentelemetry-cpp/blob/main/examples/otlp/README.md#additional-notes-regarding-abseil-library.
-// clang-format off
-#include <grpcpp/grpcpp.h>
-// clang-format on
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -38,6 +37,7 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/otel_plugin.h>
+#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
