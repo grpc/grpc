@@ -163,7 +163,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   grpc_http_response response = request_state->response;
-  gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
+  LOG(INFO) << "response status=" << response.status << " error="
           grpc_core::StatusToString(error).c_str());
   CHECK(error.ok());
   CHECK_EQ(response.status, 200);
@@ -176,7 +176,7 @@ void OnFinish(void* arg, grpc_error_handle error) {
 void OnFinishExpectFailure(void* arg, grpc_error_handle error) {
   RequestState* request_state = static_cast<RequestState*>(arg);
   grpc_http_response response = request_state->response;
-  gpr_log(GPR_INFO, "response status=%d error=%s", response.status,
+  LOG(INFO) << "response status=" << response.status << " error="
           grpc_core::StatusToString(error).c_str());
   CHECK(!error.ok());
   request_state->test->RunAndKick(
@@ -188,7 +188,7 @@ TEST_F(HttpsCliTest, Get) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
-  gpr_log(GPR_INFO, "requesting from %s", host.c_str());
+  LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
   grpc_arg ssl_override_arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
@@ -214,7 +214,7 @@ TEST_F(HttpsCliTest, Post) {
   grpc_http_request req;
   grpc_core::ExecCtx exec_ctx;
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
-  gpr_log(GPR_INFO, "posting to %s", host.c_str());
+  LOG(INFO) << "posting to " << host;
   memset(&req, 0, sizeof(req));
   req.body = const_cast<char*>("hello");
   req.body_length = 5;

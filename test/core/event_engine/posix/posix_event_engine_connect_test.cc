@@ -121,7 +121,7 @@ std::vector<int> CreateConnectedSockets(
         pfd.revents = 0;
         int ret = poll(&pfd, 1, 1000);
         if (ret == -1) {
-          gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+          LOG(ERROR) << "poll() failed during connect; errno=" << errno;
           abort();
         } else if (ret == 0) {
           // current connection attempt timed out. It indicates that the

@@ -16,19 +16,24 @@
 //
 //
 
+#include "src/core/lib/iomgr/resolve_address.h"
+
+#include <string.h>
+
 #include <address_sorting/address_sorting.h>
 #include <gmock/gmock.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 #include <gtest/gtest.h>
-#include <string.h>
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -36,7 +41,6 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/cmdline.h"

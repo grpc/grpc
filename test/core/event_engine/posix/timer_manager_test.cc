@@ -66,8 +66,8 @@ TEST(TimerManagerTest, StressTest) {
                << called.load(std::memory_order_relaxed) << "/" << kTimerCount
                << " callbacks executed";
       }
-      gpr_log(GPR_DEBUG, "Processed %d/%d callbacks",
-              called.load(std::memory_order_relaxed), kTimerCount);
+      VLOG(2) << "Processed " << called.load(std::memory_order_relaxed) << "/"
+              << kTimerCount << " callbacks";
       absl::SleepFor(absl::Milliseconds(333));
     }
   }

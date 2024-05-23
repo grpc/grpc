@@ -204,7 +204,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
     if (poller_ != nullptr) {
-      gpr_log(GPR_INFO, "Using poller: %s", poller_->Name().c_str());
+      LOG(INFO) << "Using poller: " << poller_->Name();
     }
   }
 

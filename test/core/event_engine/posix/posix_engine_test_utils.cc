@@ -52,7 +52,7 @@ int ConnectToServerOrDie(const ResolvedAddress& server_address) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+        LOG(ERROR) << "poll() failed during connect; errno=" << errno;
         abort();
       }
     } else {
