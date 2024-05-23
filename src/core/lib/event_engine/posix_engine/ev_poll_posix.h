@@ -57,8 +57,8 @@ class PollPoller : public PosixEventPoller,
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
-  void AddForkHandler(EventHandleRef* handler) override;
-  void RemoveForkHandler(EventHandleRef* handler) override;
+  void RegisterEventHandleRef(EventHandleRef* ref) override;
+  void DeregisterEventHandleRef(EventHandleRef* ref) override;
 
   void Close();
 
@@ -85,6 +85,7 @@ class PollPoller : public PosixEventPoller,
   PollEventHandle* poll_handles_list_head_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_ ABSL_GUARDED_BY(mu_);
+  EventHandleRefList event_handles_for_fork_;
 };
 
 // Return an instance of a poll based poller tied to the specified scheduler.

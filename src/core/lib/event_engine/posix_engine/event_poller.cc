@@ -16,29 +16,32 @@
 namespace grpc_event_engine {
 namespace experimental {
 
+//
+// EventHandleRef
+//
 EventHandleRef::EventHandleRef(std::unique_ptr<EventHandle> event) {
   grpc_core::MutexLock lock(&mu_);
   if (event != nullptr) {
     event_ = std::move(event);
-    event_->Poller()->AddForkHandler(this);
+    event_->Poller()->RegisterEventHandleRef(this);
   }
 }
 
 EventHandleRef::~EventHandleRef() {
   grpc_core::MutexLock lock(&mu_);
   if (event_ != nullptr) {
-    event_->Poller()->RemoveForkHandler(this);
+    event_->Poller()->DeregisterEventHandleRef(this);
   }
 }
 
 EventHandleRef& EventHandleRef::operator=(std::unique_ptr<EventHandle> event) {
   grpc_core::MutexLock lock(&mu_);
   if (event_ != nullptr && event == nullptr) {
-    event_->Poller()->RemoveForkHandler(this);
+    event_->Poller()->DeregisterEventHandleRef(this);
   }
   std::swap(event_, event);
   if (event_ == nullptr && event != nullptr) {
-    event_->Poller()->AddForkHandler(this);
+    event_->Poller()->RegisterEventHandleRef(this);
   }
   return *this;
 }
@@ -51,7 +54,7 @@ EventHandle* EventHandleRef::operator->() {
 std::unique_ptr<EventHandle> EventHandleRef::release() {
   grpc_core::MutexLock lock(&mu_);
   if (event_ != nullptr) {
-    event_->Poller()->RemoveForkHandler(this);
+    event_->Poller()->DeregisterEventHandleRef(this);
   }
   return std::move(event_);
 }
@@ -74,6 +77,37 @@ bool EventHandleRef::operator!=(std::nullptr_t /* nullptr */) {
 std::unique_ptr<EventHandle> EventHandleRef::GiveUpEventHandleOnFork() {
   grpc_core::MutexLock lock(&mu_);
   return std::move(event_);
+}
+
+//
+// EventHandleRefList
+//
+void EventHandleRefList::RegisterEventHandleRef(EventHandleRef* ref) {
+  grpc_core::MutexLock lock(&mu_);
+  refs_.emplace(ref);
+}
+
+void EventHandleRefList::DeregisterEventHandleRef(EventHandleRef* ref) {
+  grpc_core::MutexLock lock(&mu_);
+  refs_.erase(ref);
+}
+
+std::vector<std::unique_ptr<EventHandle>>
+EventHandleRefList::ReleaseAllEvents() {
+  std::vector<std::unique_ptr<EventHandle>> events;
+  for (std::set<EventHandleRef*> refs = GetAllRefs(); !refs.empty();
+       refs = GetAllRefs()) {
+    events.reserve(events.size() + refs.size());
+    for (EventHandleRef* ref : refs) {
+      events.emplace_back(ref->GiveUpEventHandleOnFork());
+    }
+  }
+  return events;
+}
+
+std::set<EventHandleRef*> EventHandleRefList::GetAllRefs() {
+  grpc_core::MutexLock lock(&mu_);
+  return std::move(refs_);
 }
 
 }  // namespace experimental

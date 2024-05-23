@@ -850,6 +850,14 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
   return nullptr;
 }
 
+void PollPoller::RegisterEventHandleRef(EventHandleRef* ref) {
+  event_handles_for_fork_.RegisterEventHandleRef(ref);
+}
+
+void PollPoller::DeregisterEventHandleRef(EventHandleRef* ref) {
+  event_handles_for_fork_.DeregisterEventHandleRef(ref);
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

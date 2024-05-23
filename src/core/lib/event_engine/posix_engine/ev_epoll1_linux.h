@@ -71,8 +71,8 @@ class Epoll1Poller final : public PosixEventPoller {
   void PostforkParent() override;
   void PostforkChild() override;
 
-  void AddForkHandler(EventHandleRef* handler) override;
-  void RemoveForkHandler(EventHandleRef* handler) override;
+  void RegisterEventHandleRef(EventHandleRef* ref) override;
+  void DeregisterEventHandleRef(EventHandleRef* ref) override;
 
   void Close();
 
@@ -129,6 +129,7 @@ class Epoll1Poller final : public PosixEventPoller {
       ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
+  EventHandleRefList event_handles_for_fork_;
 };
 
 // Return an instance of a epoll1 based poller tied to the specified event

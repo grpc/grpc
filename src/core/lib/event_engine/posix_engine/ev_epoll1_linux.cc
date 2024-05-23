@@ -579,6 +579,14 @@ void Epoll1Poller::PostforkParent() {}
 // TODO(vigneshbabu): implement
 void Epoll1Poller::PostforkChild() {}
 
+void Epoll1Poller::RegisterEventHandleRef(EventHandleRef* ref) {
+  event_handles_for_fork_.RegisterEventHandleRef(ref);
+}
+
+void Epoll1Poller::DeregisterEventHandleRef(EventHandleRef* ref) {
+  event_handles_for_fork_.DeregisterEventHandleRef(ref);
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

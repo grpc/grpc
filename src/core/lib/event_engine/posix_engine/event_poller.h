@@ -19,6 +19,7 @@
 #include <set>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -101,8 +102,8 @@ class PosixEventPoller : public grpc_event_engine::experimental::Poller,
   virtual std::unique_ptr<EventHandle> CreateHandle(int fd,
                                                     absl::string_view name,
                                                     bool track_err) = 0;
-  virtual void AddForkHandler(EventHandleRef* handler) = 0;
-  virtual void RemoveForkHandler(EventHandleRef* handler) = 0;
+  virtual void RegisterEventHandleRef(EventHandleRef* handler) = 0;
+  virtual void DeregisterEventHandleRef(EventHandleRef* handler) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
   // Shuts down and deletes the poller. It is legal to call this function
@@ -138,6 +139,20 @@ class EventHandleRef {
  private:
   grpc_core::Mutex mu_;
   std::unique_ptr<EventHandle> event_ ABSL_GUARDED_BY(&mu_);
+};
+
+class EventHandleRefList {
+ public:
+  void RegisterEventHandleRef(EventHandleRef* ref);
+  void DeregisterEventHandleRef(EventHandleRef* ref);
+  std::vector<std::unique_ptr<EventHandle>> ReleaseAllEvents();
+
+ private:
+  // Minimize the duration of mutex hold
+  std::set<EventHandleRef*> GetAllRefs();
+
+  grpc_core::Mutex mu_;
+  std::set<EventHandleRef*> refs_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace experimental
