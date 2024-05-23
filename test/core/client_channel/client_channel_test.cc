@@ -246,7 +246,12 @@ CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 
 CLIENT_CHANNEL_TEST(CreateCall) {
   auto& channel = InitChannel(ChannelArgs());
-  channel.CreateCall(MakeClientInitialMetadata());
+  auto call_initiator = channel.CreateCall(MakeClientInitialMetadata());
+  SpawnTestSeq(call_initiator, "cancel", [call_initiator]() mutable {
+    call_initiator.Cancel();
+    return Empty{};
+  });
+  WaitForAllPendingWork();
 }
 
 CLIENT_CHANNEL_TEST(StartCall) {
@@ -255,6 +260,11 @@ CLIENT_CHANNEL_TEST(StartCall) {
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
   auto call_handler = TickUntilCallStarted();
+  SpawnTestSeq(call_initiator, "cancel", [call_initiator]() mutable {
+    call_initiator.Cancel();
+    return Empty{};
+  });
+  WaitForAllPendingWork();
 }
 
 }  // namespace grpc_core

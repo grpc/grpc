@@ -7622,15 +7622,11 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_spine.h",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         "1999",
         "call_arena_allocator",
         "call_filters",
-        "call_final_info",
         "dual_ref_counted",
         "for_each",
         "if",
@@ -7638,6 +7634,7 @@ grpc_cc_library(
         "message",
         "metadata",
         "pipe",
+        "prioritized_race",
         "promise_status",
         "status_flag",
         "try_seq",

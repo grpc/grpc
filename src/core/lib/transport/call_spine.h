@@ -27,6 +27,7 @@
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -135,6 +136,23 @@ class CallSpineInterface {
             PushServerTrailingMetadata(std::move(status));
           }
         });
+  }
+
+  // Wrap a promise so that if the call completes that promise is cancelled.
+  template <typename Promise>
+  auto UntilCallCompletes(Promise promise) {
+    using Result = PromiseResult<Promise>;
+    return PrioritizedRace(std::move(promise), Map(WasCancelled(), [](bool) {
+                             return FailureStatusCast<Result>(Failure{});
+                           }));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    SpawnGuarded(name, [this, promise_factory]() mutable {
+      return UntilCallCompletes(promise_factory());
+    });
   }
 
  private:
@@ -273,7 +291,7 @@ class CallSpine final : public CallSpineInterface, public Party {
     if (legacy_context_is_owned_) {
       for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
         grpc_call_context_element& elem = legacy_context_[i];
-        if (elem.destroy != nullptr) elem.destroy(&elem);
+        if (elem.destroy != nullptr) elem.destroy(elem.value);
       }
     }
   }
@@ -465,6 +483,12 @@ class CallInitiator {
   }
 
   template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
@@ -521,6 +545,12 @@ class CallHandler {
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
                     DebugLocation whence = {}) {
     spine_->SpawnGuarded(name, std::move(promise_factory), whence);
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
