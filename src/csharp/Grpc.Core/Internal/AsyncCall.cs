@@ -578,7 +578,8 @@ namespace Grpc.Core.Internal
 
                 if (deserializeException != null && receivedStatus.Status.StatusCode == StatusCode.OK)
                 {
-                    receivedStatus = new ClientSideStatus(DeserializeResponseFailureStatus, receivedStatus.Trailers);
+                    receivedStatus = new ClientSideStatus(CreateDeserializeResponseFailureStatus(deserializeException), 
+                        receivedStatus.Trailers);
                 }
                 finishedStatus = receivedStatus;
 
