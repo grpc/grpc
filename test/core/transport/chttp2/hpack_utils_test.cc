@@ -69,8 +69,8 @@ class MetadataTest : public ::testing::TestWithParam<Param> {
 TEST_P(MetadataTest, MetadataSize) {
   const bool intern_key = GetParam().intern_key;
   const bool intern_value = GetParam().intern_value;
-  gpr_log(GPR_INFO, "test_mdelem_size: intern_key=%d intern_value=%d",
-          intern_key, intern_value);
+  LOG(INFO) << "test_mdelem_size: intern_key=" << intern_key
+            << " intern_value=" << intern_value;
   grpc_init();
   ExecCtx exec_ctx;
 

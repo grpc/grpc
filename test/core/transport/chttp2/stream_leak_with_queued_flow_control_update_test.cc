@@ -199,19 +199,15 @@ class TransportCounter {
     grpc_core::MutexLock lock(&mu_);
     ++num_created_;
     ++num_live_;
-    gpr_log(GPR_INFO,
-            "TransportCounter num_created_=%ld num_live_=%" PRId64
-            " InitCallback",
-            num_created_, num_live_);
+    LOG(INFO) << "TransportCounter num_created_=" << num_created_
+              << " num_live_=" << num_live_ << " InitCallback";
   }
 
   void DestructCallback() {
     grpc_core::MutexLock lock(&mu_);
     --num_live_;
-    gpr_log(GPR_INFO,
-            "TransportCounter num_created_=%ld num_live_=%" PRId64
-            " DestructCallback",
-            num_created_, num_live_);
+    LOG(INFO) << "TransportCounter num_created_=" << num_created_
+              << " num_live_=" << num_live_ << " DestructCallback";
   }
 
   int64_t num_live() {
@@ -237,49 +233,49 @@ void CounterInitCallback() { g_transport_counter->InitCallback(); }
 void CounterDestructCallback() { g_transport_counter->DestructCallback(); }
 
 void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
-  gpr_log(
-      GPR_INFO,
-      "The channel has been destroyed, wait for it to shut down and close...");
-  // Do a quick initial poll to try to exit the test early if things have
-  // already cleaned up.
-  CHECK(grpc_completion_queue_next(
-            cq,
-            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_millis(1, GPR_TIMESPAN)),
-            nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
-  if (g_transport_counter->num_created() < 2) {
-    gpr_log(GPR_ERROR,
-            "g_transport_counter->num_created() == %ld. This means that "
-            "g_transport_counter isn't working and this test is broken. At "
-            "least a couple of transport objects should have been created.",
-            g_transport_counter->num_created());
-    CHECK(0);
-  }
-  gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
-  for (;;) {
-    // Note: the main goal of this test is to try to repro a chttp2 stream leak,
-    // which also holds on to transports objects.
-    int64_t live_transports = g_transport_counter->num_live();
-    if (live_transports == 0) return;
-    if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
-      gpr_log(GPR_INFO,
-              "g_transport_counter->num_live() never returned 0. "
-              "It's likely this test has triggered a connection leak.");
-      CHECK(0);
-    }
-    gpr_log(GPR_INFO,
-            "g_transport_counter->num_live() returned %" PRId64
-            ", keep waiting "
-            "until it reaches 0",
-            live_transports);
-    CHECK(grpc_completion_queue_next(
-              cq,
-              gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_time_from_seconds(1, GPR_TIMESPAN)),
-              nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
-  }
+  LOG(INFO) <<
+      "The channel has been destroyed, wait for it to shut down and close...";
+      // Do a quick initial poll to try to exit the test early if things have
+      // already cleaned up.
+      CHECK(grpc_completion_queue_next(
+                cq,
+                gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                             gpr_time_from_millis(1, GPR_TIMESPAN)),
+                nullptr)
+                .type == GRPC_QUEUE_TIMEOUT);
+      if (g_transport_counter->num_created() < 2) {
+        LOG(ERROR)
+            << "g_transport_counter->num_created() == "
+            << g_transport_counter->num_created()
+            << ". This means that "
+               "g_transport_counter isn't working and this test is broken. "
+               "At "
+               "least a couple of transport objects should have been "
+               "created.";
+        CHECK(0);
+      }
+      gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
+      for (;;) {
+        // Note: the main goal of this test is to try to repro a chttp2 stream
+        // leak, which also holds on to transports objects.
+        int64_t live_transports = g_transport_counter->num_live();
+        if (live_transports == 0) return;
+        if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), overall_deadline) > 0) {
+          LOG(INFO) << "g_transport_counter->num_live() never returned 0. "
+                       "It's likely this test has triggered a connection leak.";
+          CHECK(0);
+        }
+        LOG(INFO) << "g_transport_counter->num_live() returned "
+                  << live_transports
+                  << ", keep waiting "
+                     "until it reaches 0";
+        CHECK(grpc_completion_queue_next(
+                  cq,
+                  gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(1, GPR_TIMESPAN)),
+                  nullptr)
+                  .type == GRPC_QUEUE_TIMEOUT);
+      }
 }
 
 TEST(

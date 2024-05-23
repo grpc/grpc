@@ -63,8 +63,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   auto header = FrameHeader::Parse(header_bytes);
   if (!header.ok()) {
     if (!squelch) {
-      gpr_log(GPR_ERROR, "Failed to parse header: %s",
-              header.status().ToString().c_str());
+      LOG(ERROR) << "Failed to parse header: " << header.status();
     }
     Crash("Failed to parse header");
   }
@@ -89,7 +88,7 @@ void FinishParseAndChecks(const FrameHeader& header, BufferPair buffers) {
                                   absl::BitGenRef(bitgen), GetContext<Arena>(),
                                   std::move(buffers), FuzzerFrameLimits());
   if (!deser.ok()) return;
-  gpr_log(GPR_INFO, "Read frame: %s", parsed.ToString().c_str());
+  LOG(INFO) << "Read frame: " << parsed;
   AssertRoundTrips(parsed, header.type);
 }
 
@@ -101,7 +100,7 @@ void Run(const frame_fuzzer::Test& test) {
   auto r = FrameHeader::Parse(control_data);
   if (!r.ok()) return;
   if (test.data().size() != r->message_length) return;
-  gpr_log(GPR_INFO, "Read frame header: %s", r->ToString().c_str());
+  LOG(INFO) << "Read frame header: " << *r;
   control_data += 24;
   control_size -= 24;
   MemoryAllocator memory_allocator = MemoryAllocator(

@@ -89,11 +89,9 @@ class ActionState {
 
   State Get() const { return state_; }
   void Set(State state, SourceLocation whence = {}) {
-    gpr_log(GPR_INFO, "%s",
-            absl::StrCat(StateString(state), " ", name(), " [", step(), "] ",
-                         file(), ":", line(), " @ ", whence.file(), ":",
-                         whence.line())
-                .c_str());
+    LOG(INFO) << StateString(state) << " " << name() << " [" << step() << "] "
+              << file() << ":" << line() << " @ " << whence.file() << ":"
+              << whence.line();
     state_ = state;
   }
   const NameAndLocation& name_and_location() const {
