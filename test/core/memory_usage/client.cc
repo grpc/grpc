@@ -161,9 +161,9 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
                                               (void*)nullptr, nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
-  gpr_log(GPR_INFO, "Call %d status %d (%s)", call_idx, calls[call_idx].status,
-          std::string(grpc_core::StringViewFromSlice(calls[call_idx].details))
-              .c_str());
+  LOG(INFO) << "Call " << call_idx << " status " << calls[call_idx].status
+            << " (" << grpc_core::StringViewFromSlice(calls[call_idx].details)
+            << ")";
 
   CHECK_NE(response_payload_recv, nullptr);
   grpc_byte_buffer_reader reader;

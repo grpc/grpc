@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/json/json.h"
-
 #include <string.h>
 
 #include <map>
@@ -29,7 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
 #include "test/core/test_util/test_config.h"
@@ -78,7 +76,7 @@ void ValidateValue(const Json& actual, const Json& expected) {
 
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
-  gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
+  LOG(INFO) << "parsing string \"" << input << "\" - should succeed";
   auto json = JsonParse(input);
   ASSERT_TRUE(json.ok()) << json.status();
   ValidateValue(*json, expected);
@@ -199,7 +197,7 @@ TEST(Json, Keywords) {
 }
 
 void RunParseFailureTest(const char* input) {
-  gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
+  LOG(INFO) << "parsing string \"" << input << "\" - should fail";
   auto json = JsonParse(input);
   EXPECT_FALSE(json.ok()) << "input: \"" << input << "\"";
 }
