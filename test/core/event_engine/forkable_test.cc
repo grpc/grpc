@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/forkable.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GPR_POSIX_SUBPROCESS
 #include <errno.h>
@@ -28,6 +28,7 @@
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
+
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 
