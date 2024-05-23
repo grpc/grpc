@@ -20,10 +20,9 @@
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
+#include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 namespace {
 

@@ -25,10 +25,9 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/no_destruct.h"

@@ -43,8 +43,9 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/resolver/resolver_registry.h"

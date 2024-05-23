@@ -18,6 +18,7 @@
 #include <ws2tcpip.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include "src/core/lib/event_engine/windows/win_socket.h"

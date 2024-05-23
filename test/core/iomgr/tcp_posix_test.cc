@@ -37,10 +37,10 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"

@@ -52,10 +52,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/common_closures.h"

@@ -33,7 +33,7 @@
 
 #include <ifaddrs.h>
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
