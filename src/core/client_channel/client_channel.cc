@@ -306,27 +306,27 @@ ClientChannel::SubchannelWrapper::~SubchannelWrapper() {
 void ClientChannel::SubchannelWrapper::Orphaned() {
   // Make sure we clean up the channel's subchannel maps inside the
   // WorkSerializer.
-  WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "subchannel map cleanup")
-      .release();
+  auto self = WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION,
+                                                   "subchannel map cleanup");
   client_channel_->work_serializer_->Run(
-      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-          *client_channel_->work_serializer_) {
-        client_channel_->subchannel_wrappers_.erase(this);
-        if (client_channel_->channelz_node_ != nullptr) {
-          auto* subchannel_node = subchannel_->channelz_node();
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          *self->client_channel_->work_serializer_) {
+        self->client_channel_->subchannel_wrappers_.erase(self.get());
+        if (self->client_channel_->channelz_node_ != nullptr) {
+          auto* subchannel_node = self->subchannel_->channelz_node();
           if (subchannel_node != nullptr) {
-            auto it = client_channel_->subchannel_refcount_map_.find(
-                subchannel_.get());
-            GPR_ASSERT(it != client_channel_->subchannel_refcount_map_.end());
+            auto it = self->client_channel_->subchannel_refcount_map_.find(
+                self->subchannel_.get());
+            GPR_ASSERT(it !=
+                       self->client_channel_->subchannel_refcount_map_.end());
             --it->second;
             if (it->second == 0) {
-              client_channel_->channelz_node_->RemoveChildSubchannel(
+              self->client_channel_->channelz_node_->RemoveChildSubchannel(
                   subchannel_node->uuid());
-              client_channel_->subchannel_refcount_map_.erase(it);
+              self->client_channel_->subchannel_refcount_map_.erase(it);
             }
           }
         }
-        WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
       },
       DEBUG_LOCATION);
 }
@@ -642,11 +642,10 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
   grpc_connectivity_state state =
       ABSL_TS_UNCHECKED_READ(state_tracker_).state();
   if (state == GRPC_CHANNEL_IDLE && try_to_connect) {
-    RefAsSubclass<ClientChannel>().release();  // Held by callback.
+    auto self = RefAsSubclass<ClientChannel>();  // Held by callback.
     work_serializer_->Run(
-        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-          TryToConnectLocked();
-          Unref();
+        [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+          self->TryToConnectLocked();
         },
         DEBUG_LOCATION);
   }
@@ -675,11 +674,10 @@ void ClientChannel::AddConnectivityWatcher(
 
 void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
-  RefAsSubclass<ClientChannel>().release();  // Held by callback.
+  auto self = RefAsSubclass<ClientChannel>();  // Held by callback.
   work_serializer_->Run(
-      [this, watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-        state_tracker_.RemoveWatcher(watcher);
-        Unref();
+      [self, watcher]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+        self->state_tracker_.RemoveWatcher(watcher);
       },
       DEBUG_LOCATION);
 }
@@ -695,11 +693,10 @@ void ClientChannel::GetInfo(const grpc_channel_info* info) {
 }
 
 void ClientChannel::ResetConnectionBackoff() {
-  RefAsSubclass<ClientChannel>().release();  // Held by callback.
+  auto self = RefAsSubclass<ClientChannel>();
   work_serializer_->Run(
-      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-        if (lb_policy_ != nullptr) lb_policy_->ResetBackoffLocked();
-        Unref();
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+        if (self->lb_policy_ != nullptr) self->lb_policy_->ResetBackoffLocked();
       },
       DEBUG_LOCATION);
 }
@@ -757,7 +754,7 @@ CallInitiator ClientChannel::CreateCall(
                    call_arena_allocator_->MakeArena(), nullptr);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
-  call.initiator.SpawnGuarded(
+  call.initiator.SpawnGuardedUntilCallCompletes(
       "wait-for-name-resolution",
       [self = RefAsSubclass<ClientChannel>(),
        unstarted_handler = std::move(call.handler)]() mutable {
@@ -811,7 +808,7 @@ CallInitiator ClientChannel::CreateCall(
             });
       });
   // Return the initiator.
-  return call.initiator;
+  return std::move(call.initiator);
 }
 
 void ClientChannel::CreateResolverLocked() {
@@ -1250,7 +1247,7 @@ void ClientChannel::StartIdleTimer() {
   auto self = RefAsSubclass<ClientChannel>();
   auto promise = Loop([self]() {
     return TrySeq(Sleep(Timestamp::Now() + self->idle_timeout_),
-                  [&self]() -> Poll<LoopCtl<absl::Status>> {
+                  [self]() -> Poll<LoopCtl<absl::Status>> {
                     if (self->idle_state_.CheckTimer()) {
                       return Continue{};
                     } else {
@@ -1260,14 +1257,14 @@ void ClientChannel::StartIdleTimer() {
   });
   idle_activity_.Set(MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
-      [this, self = std::move(self)](absl::Status status) mutable {
+      [self = std::move(self)](absl::Status status) mutable {
         if (status.ok()) {
-          work_serializer_->Run(
-              [this, self = std::move(self)]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                  *work_serializer_) {
-                DestroyResolverAndLbPolicyLocked();
-                UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                                           "channel entering IDLE", nullptr);
+          self->work_serializer_->Run(
+              [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+                self->DestroyResolverAndLbPolicyLocked();
+                self->UpdateStateAndPickerLocked(
+                    GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                    "channel entering IDLE", nullptr);
                 // TODO(roth): In case there's a race condition, we
                 // might need to check for any calls that are queued
                 // waiting for a resolver result or an LB pick.
