@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 
 #include <grpcpp/channel.h>
@@ -81,7 +82,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  gpr_log(GPR_DEBUG, "%s", out.str().c_str());
+  VLOG(2) << out.str();
 }
 
 class ClientCallbackEnd2endTest
@@ -669,7 +670,7 @@ class WriteClient : public grpc::ClientWriteReactor<EchoRequest> {
     }
   }
   void OnDone(const Status& s) override {
-    gpr_log(GPR_INFO, "Sent %d messages", num_msgs_sent_);
+    LOG(INFO) << "Sent " << num_msgs_sent_ << " messages";
     int num_to_send =
         (client_cancel_.cancel)
             ? std::min(num_msgs_to_send_, client_cancel_.ops_before_cancel)
@@ -958,7 +959,7 @@ class ReadClient : public grpc::ClientReadReactor<EchoResponse> {
     }
   }
   void OnDone(const Status& s) override {
-    gpr_log(GPR_INFO, "Read %d messages", reads_complete_);
+    LOG(INFO) << "Read " << reads_complete_ << " messages";
     switch (server_try_cancel_) {
       case DO_NOT_CANCEL:
         if (!client_cancel_.cancel || client_cancel_.ops_before_cancel >
@@ -1119,8 +1120,8 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
     MaybeWrite();
   }
   void OnDone(const Status& s) override {
-    gpr_log(GPR_INFO, "Sent %d messages", writes_complete_);
-    gpr_log(GPR_INFO, "Read %d messages", reads_complete_);
+    LOG(INFO) << "Sent " << writes_complete_ << " messages";
+    LOG(INFO) << "Read " << reads_complete_ << " messages";
     switch (server_try_cancel_) {
       case DO_NOT_CANCEL:
         if (!client_cancel_.cancel ||
