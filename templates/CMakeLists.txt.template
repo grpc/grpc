@@ -119,7 +119,7 @@
       if lib_name == 'protobuf':
         # TODO(jtattermusch): add better way of excluding explicit protobuf dependency.
         continue
-      if lib_name == 'opentelemetry-cpp:api':
+      if lib_name == 'opentelemetry-cpp::api':
         requires.add('opentelemetry_api')
       else:
         requires.add(lib_name)
