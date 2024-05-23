@@ -192,8 +192,10 @@ CallFilters::~CallFilters() {
 void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
   CHECK_EQ(call_data_, nullptr);
   stack_ = std::move(stack);
-  call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
-                                  stack_->data_.call_data_alignment);
+  if (stack_->data_.call_data_size != 0) {
+    call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
+                                    stack_->data_.call_data_alignment);
+  }
   for (const auto& constructor : stack_->data_.filter_constructor) {
     constructor.call_init(Offset(call_data_, constructor.call_offset),
                           constructor.channel_data);

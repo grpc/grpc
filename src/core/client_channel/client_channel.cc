@@ -620,17 +620,17 @@ void ClientChannel::Orphan() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: shutting down", this);
   }
-  Ref().release();
+  auto self = RefAsSubclass<ClientChannel>();
   work_serializer_->Run(
-      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-        DestroyResolverAndLbPolicyLocked();
-        Unref();
+      [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+        self->DestroyResolverAndLbPolicyLocked();
       },
       DEBUG_LOCATION);
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
   idle_state_.IncreaseCallCount();
   idle_activity_.Reset();
+  Unref();
 }
 
 grpc_connectivity_state ClientChannel::CheckConnectivityState(
