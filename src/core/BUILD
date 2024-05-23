@@ -76,20 +76,27 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "event_engine_extensions",
+    srcs = ["lib/event_engine/extensions/tcp_trace.cc"],
     hdrs = [
         "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
+        "lib/event_engine/extensions/tcp_trace.h",
     ],
     external_deps = [
         "absl/status:statusor",
         "absl/functional:any_invocable",
         "absl/strings",
+        "absl/time",
+        "absl/types:optional",
     ],
     deps = [
         ":memory_quota",
+        ":metrics",
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
+        "//:tcp_tracer",
     ],
 )
 
