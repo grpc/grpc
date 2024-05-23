@@ -229,11 +229,12 @@ class StressTest {
 
 TEST(MemoryQuotaStressTest, MainTest) {
   if (sizeof(void*) != 8) {
-    gpr_log(
-        GPR_ERROR,
-        "This test assumes 64-bit processors in the values it uses for sizes. "
-        "Since this test is mostly aimed at TSAN coverage, and that's mostly "
-        "platform independent, we simply skip this test in 32-bit builds.");
+    LOG(ERROR)
+        << "This test assumes 64-bit processors in the values it uses for "
+           "sizes. "
+           "Since this test is mostly aimed at TSAN coverage, and that's "
+           "mostly "
+           "platform independent, we simply skip this test in 32-bit builds.";
     GTEST_SKIP();
   }
   grpc_core::StressTest(16, 20).Run(8);
