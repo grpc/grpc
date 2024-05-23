@@ -54,7 +54,7 @@ namespace grpc_core {
 // Forward declaration to avoid dependency loop.
 class Transport;
 
-class Channel : public RefCounted<Channel>,
+class Channel : public InternallyRefCounted<Channel>,
                 public CppImplOf<Channel, grpc_channel> {
  public:
   struct RegisteredCall {
@@ -68,7 +68,18 @@ class Channel : public RefCounted<Channel>,
     ~RegisteredCall();
   };
 
-  virtual void Orphan() = 0;
+  // Though internally ref counted transports expose their "Ref" method to
+  // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
+  // singleton decision maker on whether the transport should be destroyed or
+  // not.
+  // TODO(ctiller): consider moving to a DualRefCounted model (with the
+  // disadvantage that we would accidentally have many strong owners which is
+  // unnecessary for this type).
+  RefCountedPtr<Channel> Ref() { return InternallyRefCounted<Channel>::Ref(); }
+  template <typename T>
+  RefCountedPtr<T> RefAsSubclass() {
+    return InternallyRefCounted<Channel>::RefAsSubclass<T>();
+  }
 
   virtual bool IsLame() const = 0;
 
