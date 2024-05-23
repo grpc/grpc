@@ -274,7 +274,7 @@ class CallSpine final : public CallSpineInterface, public Party {
     if (legacy_context_is_owned_) {
       for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
         grpc_call_context_element& elem = legacy_context_[i];
-        if (elem.destroy != nullptr) elem.destroy(&elem);
+        if (elem.destroy != nullptr) elem.destroy(elem.value);
       }
     }
   }
