@@ -72,9 +72,8 @@ class Channel : public InternallyRefCounted<Channel>,
   // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
   // singleton decision maker on whether the transport should be destroyed or
   // not.
-  // TODO(ctiller): consider moving to a DualRefCounted model (with the
-  // disadvantage that we would accidentally have many strong owners which is
-  // unnecessary for this type).
+  // TODO(ctiller): in a future change (I have it written) these will be removed
+  // and substituted with DualRefCounted<Channel> as a base.
   RefCountedPtr<Channel> Ref() { return InternallyRefCounted<Channel>::Ref(); }
   template <typename T>
   RefCountedPtr<T> RefAsSubclass() {
