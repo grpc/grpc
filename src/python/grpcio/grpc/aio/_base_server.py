@@ -136,7 +136,6 @@ class Server(abc.ABC):
           A bool indicates if the operation times out.
         """
 
-    @abc.abstractmethod
     def add_registered_method_handlers(self, service_name, method_handlers):
         """Registers GenericRpcHandlers with this Server.
 
@@ -147,7 +146,6 @@ class Server(abc.ABC):
           method_handlers: A dictionary that maps method names to corresponding
             RpcMethodHandler.
         """
-        raise NotImplementedError()
 
 
 # pylint: disable=too-many-public-methods
