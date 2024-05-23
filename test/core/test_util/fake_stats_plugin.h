@@ -28,11 +28,11 @@
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 
-#include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_core {
 
