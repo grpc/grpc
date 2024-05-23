@@ -17,6 +17,7 @@
 //
 
 #include "absl/time/time.h"
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
@@ -27,18 +28,21 @@
 
 #include <errno.h>
 #include <fcntl.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-#include <gtest/gtest.h>
 #include <limits.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <gtest/gtest.h>
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -491,8 +495,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   GRPC_CLOSURE_INIT(&fd_released_cb, &on_fd_released, &rel_fd,
                     grpc_schedule_on_exec_ctx);
 
-  LOG(INFO) << "Release fd read_test of size " << num_bytes
-            << ", slice size " << slice_size;
+  LOG(INFO) << "Release fd read_test of size " << num_bytes << ", slice size "
+            << slice_size;
 
   create_sockets(sv);
 

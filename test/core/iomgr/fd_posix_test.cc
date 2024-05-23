@@ -27,6 +27,10 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdio.h>
@@ -38,12 +42,6 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -396,7 +394,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   ASSERT_EQ(sv.read_bytes_total, cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
+  LOG(INFO) << "Total read bytes " << sv.read_bytes_total;
 }
 
 typedef struct fd_change_data {
