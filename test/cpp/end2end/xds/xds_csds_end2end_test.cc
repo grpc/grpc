@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
@@ -343,7 +344,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
   // Fetches the client config
   auto csds_response = FetchCsdsResponse();
-  gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
+  LOG(INFO) << "xDS config dump: " << csds_response.DebugString();
   ASSERT_EQ(1, csds_response.config_size());
   const auto& client_config = csds_response.config(0);
   // Validate the Node information

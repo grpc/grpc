@@ -13,8 +13,7 @@
 // limitations under the License.
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/stats_data.h"
@@ -40,7 +39,7 @@ static void RunScenario() {
       grpc_core::testing::GetFileContents(absl::GetFlag(FLAGS_loadtest_config));
   Scenarios scenarios;
   ParseJson(json_str, "grpc.testing.Scenarios", &scenarios);
-  gpr_log(GPR_INFO, "Running %s", scenarios.scenarios(0).name().c_str());
+  LOG(INFO) << "Running " << scenarios.scenarios(0).name();
   const auto result =
       RunScenario(scenarios.scenarios(0).client_config(), 1,
                   scenarios.scenarios(0).server_config(), 1,
@@ -49,8 +48,8 @@ static void RunScenario() {
                   kInsecureCredentialsType, {}, false, 0);
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);
-  gpr_log(GPR_ERROR, "Global Stats:\n%s",
-          StatsAsJson(grpc_core::global_stats().Collect().get()).c_str());
+  LOG(ERROR) << "Global Stats:\n"
+             << StatsAsJson(grpc_core::global_stats().Collect().get());
 }
 
 }  // namespace testing

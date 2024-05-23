@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
 #define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
 
+#include <openssl/evp.h>
 #include <openssl/x509.h>
 
 #include "absl/status/status.h"
@@ -168,6 +169,16 @@ absl::StatusOr<std::string> AkidFromCertificate(X509* cert);
 // crl.
 // return: a std::string of the DER encoding of the AKID or a status on failure.
 absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl);
+
+// Returns a vector of X509 instances parsed from the given PEM-encoded
+// certificate chain. Caller takes ownership of the X509 pointers in the output
+// vector.
+absl::StatusOr<std::vector<X509*>> ParsePemCertificateChain(
+    absl::string_view cert_chain_pem);
+
+// Returns an EVP_PKEY instance parsed from the non-empty PEM private key block
+// in private_key_pem. Caller takes ownership of the EVP_PKEY pointer.
+absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(absl::string_view private_key_pem);
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
