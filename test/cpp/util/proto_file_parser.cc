@@ -18,6 +18,8 @@
 
 #include "test/cpp/util/proto_file_parser.h"
 
+#include <grpcpp/support/config.h>
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -25,8 +27,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_split.h"
-
-#include <grpcpp/support/config.h>
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
