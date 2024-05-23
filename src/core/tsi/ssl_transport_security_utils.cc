@@ -18,9 +18,15 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
+#include <openssl/bio.h>
 #include <openssl/crypto.h>
+#include <openssl/ec.h>
 #include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
+#include <openssl/rsa.h>
 #include <openssl/ssl.h>
+#include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
 #include "absl/log/check.h"
@@ -372,6 +378,57 @@ absl::StatusOr<std::string> AkidFromCrl(X509_CRL* crl) {
   std::string ret(reinterpret_cast<char const*>(buf), len);
   OPENSSL_free(buf);
   return ret;
+}
+
+absl::StatusOr<std::vector<X509*>> ParsePemCertificateChain(
+    absl::string_view cert_chain_pem) {
+  if (cert_chain_pem.empty()) {
+    return absl::InvalidArgumentError("Cert chain PEM is empty.");
+  }
+  BIO* in = BIO_new_mem_buf(cert_chain_pem.data(), cert_chain_pem.size());
+  if (in == nullptr) {
+    return absl::InternalError("BIO_new_mem_buf failed.");
+  }
+  std::vector<X509*> certs;
+  while (X509* cert = PEM_read_bio_X509(in, /*x=*/nullptr, /*cb=*/nullptr,
+                                        /*u=*/nullptr)) {
+    certs.push_back(cert);
+  }
+
+  // We always have errors at this point because in the above loop we read until
+  // we reach the end of |cert_chain_pem|, which generates a "no start line"
+  // error. Therefore, this error is OK if we have successfully parsed some
+  // certificate data previously.
+  const int last_error = ERR_peek_last_error();
+  if (ERR_GET_LIB(last_error) != ERR_LIB_PEM ||
+      ERR_GET_REASON(last_error) != PEM_R_NO_START_LINE) {
+    for (X509* cert : certs) {
+      X509_free(cert);
+    }
+    BIO_free(in);
+    return absl::FailedPreconditionError("Invalid PEM.");
+  }
+  ERR_clear_error();
+  BIO_free(in);
+  if (certs.empty()) {
+    return absl::NotFoundError("No certificates found.");
+  }
+  return certs;
+}
+
+absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(
+    absl::string_view private_key_pem) {
+  BIO* in = BIO_new_mem_buf(private_key_pem.data(), private_key_pem.size());
+  if (in == nullptr) {
+    return absl::InvalidArgumentError("Private key PEM is empty.");
+  }
+  EVP_PKEY* pkey =
+      PEM_read_bio_PrivateKey(in, /*x=*/nullptr, /*cb=*/nullptr, /*u=*/nullptr);
+  BIO_free(in);
+  if (pkey == nullptr) {
+    return absl::NotFoundError("No private key found.");
+  }
+  return pkey;
 }
 
 }  // namespace grpc_core

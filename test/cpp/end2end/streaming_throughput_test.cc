@@ -23,9 +23,10 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -177,7 +178,7 @@ TEST_F(End2endTest, StreamingThroughput) {
     request.set_message(kLargeString);
     ASSERT_TRUE(stream->Write(request));
     if (i % 1000 == 0) {
-      gpr_log(GPR_INFO, "Send count = %d", i);
+      LOG(INFO) << "Send count = " << i;
     }
   }
   stream->WritesDone();

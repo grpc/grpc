@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 
 #include <memory>
 #include <utility>
@@ -27,8 +27,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_core {
 

@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,40 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/debug")
+grpc_package(name = "test/core/telemetry")
 
 licenses(["notice"])
+
+grpc_cc_test(
+    name = "call_tracer_test",
+    srcs = ["call_tracer_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "metrics_test",
+    srcs = ["metrics_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:metrics",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "stats_test",

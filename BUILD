@@ -19,6 +19,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_filegroup",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
@@ -1741,10 +1742,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_tracer",
     srcs = [
-        "//src/core:lib/channel/call_tracer.cc",
+        "//src/core:telemetry/call_tracer.cc",
     ],
     hdrs = [
-        "//src/core:lib/channel/call_tracer.h",
+        "//src/core:telemetry/call_tracer.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -3037,6 +3038,11 @@ grpc_cc_library(
     ],
 )
 
+grpc_filegroup(
+    name = "trace_flag_files",
+    srcs = ["//src/core:lib/debug/trace_flags.yaml"],
+)
+
 grpc_cc_library(
     name = "load_config",
     srcs = [
@@ -3457,10 +3463,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "stats",
     srcs = [
-        "//src/core:lib/debug/stats.cc",
+        "//src/core:telemetry/stats.cc",
     ],
     hdrs = [
-        "//src/core:lib/debug/stats.h",
+        "//src/core:telemetry/stats.h",
     ],
     external_deps = [
         "absl/strings",
@@ -4745,7 +4751,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tcp_tracer",
     hdrs = [
-        "//src/core:lib/channel/tcp_tracer.h",
+        "//src/core:telemetry/tcp_tracer.h",
     ],
     external_deps = [
         "absl/time",

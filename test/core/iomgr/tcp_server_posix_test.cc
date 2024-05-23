@@ -39,6 +39,7 @@
 #include <sys/un.h>
 #endif
 
+#include <memory>
 #include <string>
 
 #include "absl/log/log.h"
@@ -330,8 +331,16 @@ static void test_connect(size_t num_connects,
                          const grpc_channel_args* channel_args,
                          test_addrs* dst_addrs, bool test_dst_addrs) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_resolved_address resolved_addr;
-  grpc_resolved_address resolved_addr1;
+  // Use aligned_stroage to allocate grpc_resolved_address objects on stack
+  // to meet the alignment requirement of sockaddr_storage type.
+  std::aligned_storage<sizeof(grpc_resolved_address),
+                       alignof(sockaddr_storage)>::type resolved_addr_buffer;
+  std::aligned_storage<sizeof(grpc_resolved_address),
+                       alignof(sockaddr_storage)>::type resolved_addr1_buffer;
+  grpc_resolved_address& resolved_addr =
+      *reinterpret_cast<grpc_resolved_address*>(&resolved_addr_buffer);
+  grpc_resolved_address& resolved_addr1 =
+      *reinterpret_cast<grpc_resolved_address*>(&resolved_addr1_buffer);
   struct sockaddr_storage* const addr =
       reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
   struct sockaddr_storage* const addr1 =
