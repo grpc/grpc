@@ -21,7 +21,6 @@
 #include <cstdint>
 
 #include "absl/log/check.h"
-#include "ref_counted.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -29,6 +28,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
