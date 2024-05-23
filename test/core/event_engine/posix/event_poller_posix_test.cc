@@ -132,7 +132,7 @@ void CreateTestSocket(int port, int* socket_fd, struct sockaddr_in6* sin) {
 
 // An upload server.
 typedef struct {
-  EventHandle* em_fd;        // listening fd
+  std::unique_ptr<EventHandle> em_fd;  // listening fd
   ssize_t read_bytes_total;  // total number of received bytes
   int done;                  // set to 1 when a server finishes serving
   PosixEngineClosure* listen_closure;
@@ -147,7 +147,7 @@ void ServerInit(server* sv) {
 // Created when a new upload request arrives in the server.
 typedef struct {
   server* sv;               // not owned by a single session
-  EventHandle* em_fd;       // fd to read upload bytes
+  std::unique_ptr<EventHandle> em_fd;  // fd to read upload bytes
   char read_buf[BUF_SIZE];  // buffer to store upload bytes
   PosixEngineClosure* session_read_closure;
 } session;
@@ -156,7 +156,8 @@ typedef struct {
 // Close session FD and start to shutdown listen FD.
 void SessionShutdownCb(session* se, bool /*success*/) {
   server* sv = se->sv;
-  se->em_fd->OrphanHandle(nullptr, nullptr, "a");
+  auto* fd = se->em_fd.get();
+  fd->OrphanHandle(nullptr, nullptr, "a", std::move(se->em_fd));
   gpr_free(se);
   // Start to shutdown listen fd.
   sv->em_fd->ShutdownHandle(
@@ -204,7 +205,8 @@ void SessionReadCb(session* se, absl::Status status) {
 // Called when the listen FD can be safely shutdown. Close listen FD and
 // signal that server can be shutdown.
 void ListenShutdownCb(server* sv) {
-  sv->em_fd->OrphanHandle(nullptr, nullptr, "b");
+  auto fd = sv->em_fd.get();
+  fd->OrphanHandle(nullptr, nullptr, "b", std::move(sv->em_fd));
   gpr_mu_lock(&g_mu);
   sv->done = 1;
   g_event_poller->Kick();
@@ -218,7 +220,7 @@ void ListenCb(server* sv, absl::Status status) {
   session* se;
   struct sockaddr_storage ss;
   socklen_t slen = sizeof(ss);
-  EventHandle* listen_em_fd = sv->em_fd;
+  EventHandle* listen_em_fd = sv->em_fd.get();
 
   if (!status.ok()) {
     ListenShutdownCb(sv);
@@ -281,7 +283,7 @@ int ServerStart(server* sv) {
 
 // An upload client.
 typedef struct {
-  EventHandle* em_fd;
+  std::unique_ptr<EventHandle> em_fd;
   char write_buf[CLIENT_WRITE_BUF_SIZE];
   ssize_t write_bytes_total;
   // Number of times that the client fills up the write buffer and calls
@@ -300,7 +302,8 @@ void ClientInit(client* cl) {
 
 // Called when a client upload session is ready to shutdown.
 void ClientSessionShutdownCb(client* cl) {
-  cl->em_fd->OrphanHandle(nullptr, nullptr, "c");
+  auto* fd = cl->em_fd.get();
+  fd->OrphanHandle(nullptr, nullptr, "c", std::move(cl->em_fd));
   gpr_mu_lock(&g_mu);
   cl->done = 1;
   g_event_poller->Kick();
@@ -453,7 +456,7 @@ void SecondReadCallback(FdChangeData* fdc, absl::Status /*status*/) {
 // point is to have two different function pointers and two different data
 // pointers and make sure that changing both really works.
 TEST_F(EventPollerTest, TestEventPollerHandleChange) {
-  EventHandle* em_fd;
+  std::unique_ptr<EventHandle> em_fd;
   FdChangeData a, b;
   int flags;
   int sv[2];
@@ -516,7 +519,8 @@ TEST_F(EventPollerTest, TestEventPollerHandleChange) {
   EXPECT_EQ(b.cb_that_ran, SecondReadCallback);
   gpr_mu_unlock(&g_mu);
 
-  em_fd->OrphanHandle(nullptr, nullptr, "d");
+  auto* fd = em_fd.get();
+  fd->OrphanHandle(nullptr, nullptr, "d", std::move(em_fd));
   DestroyChangeData(&a);
   DestroyChangeData(&b);
   close(sv[1]);
@@ -586,10 +590,11 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
   ~WakeupFdHandle() override { delete on_read_; }
 
   void Orphaned() override {
+    auto fd = handle_.get();
     // Once the handle has orphaned itself, decrement
     // kTotalActiveWakeupFdHandles. Once all handles have orphaned themselves,
     // send a Kick to the poller.
-    handle_->OrphanHandle(
+    fd->OrphanHandle(
         PosixEngineClosure::TestOnlyToClosure(
             [poller = poller_, wakeupfd_handle = this](absl::Status status) {
               EXPECT_TRUE(status.ok());
@@ -598,7 +603,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
               }
               wakeupfd_handle->WeakUnref();
             }),
-        nullptr, "");
+        nullptr, "", std::move(handle_));
   }
 
  private:
@@ -631,7 +636,7 @@ class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
   PosixEventPoller* poller_;
   PosixEngineClosure* on_read_;
   std::unique_ptr<WakeupFd> wakeup_fd_;
-  EventHandle* handle_;
+  std::unique_ptr<EventHandle> handle_;
 };
 
 // A helper class to create Fds and drive the polling for these Fds. It
