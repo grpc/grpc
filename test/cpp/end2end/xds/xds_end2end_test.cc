@@ -1077,15 +1077,16 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
         }
         if (expected_status.has_value() &&
             *expected_status != status.error_code()) {
-          gpr_log(GPR_ERROR,
-                  "Expected status does not match Actual(%d) vs Expected(%d)",
-                  status.error_code(), *expected_status);
+          LOG(ERROR) << "Expected status does not match Actual("
+                     << status.error_code() << ") vs Expected("
+                     << *expected_status << ")";
           continue;
         }
       } else {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
-                  status.error_code(), status.error_message().c_str());
+          LOG(ERROR) << "RPC failed. code=" << status.error_code()
+                     << " message=" << status.error_message()
+                     << " Trying again.";
           continue;
         }
         EXPECT_EQ(response.message(), kRequestMessage);
@@ -1095,23 +1096,21 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
               std::string(entry.data(), entry.size()).c_str());
         }
         if (peer_identity != expected_server_identity) {
-          gpr_log(GPR_ERROR,
-                  "Expected server identity does not match. (actual) %s vs "
-                  "(expected) %s Trying again.",
-                  absl::StrJoin(peer_identity, ",").c_str(),
-                  absl::StrJoin(expected_server_identity, ",").c_str());
+          LOG(ERROR) << "Expected server identity does not match. (actual) "
+                     << absl::StrJoin(peer_identity, ",") << " vs (expected) "
+                     << absl::StrJoin(expected_server_identity, ",")
+                     << " Trying again.";
           continue;
         }
         if (backends_[0]->backend_service()->last_peer_identity() !=
             expected_client_identity) {
-          gpr_log(
-              GPR_ERROR,
-              "Expected client identity does not match. (actual) %s vs "
-              "(expected) %s Trying again.",
-              absl::StrJoin(
-                  backends_[0]->backend_service()->last_peer_identity(), ",")
-                  .c_str(),
-              absl::StrJoin(expected_client_identity, ",").c_str());
+          LOG(ERROR)
+              << "Expected client identity does not match. (actual) "
+              << absl::StrJoin(
+                     backends_[0]->backend_service()->last_peer_identity(), ",")
+              << " vs (expected) "
+              << absl::StrJoin(expected_client_identity, ",")
+              << " Trying again.";
           continue;
         }
       }

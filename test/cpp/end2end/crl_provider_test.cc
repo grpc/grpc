@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -29,7 +30,6 @@
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -147,8 +147,8 @@ void DoRpc(const std::string& server_addr,
   if (expect_success) {
     EXPECT_TRUE(result.ok());
     if (!result.ok()) {
-      gpr_log(GPR_ERROR, "%s, %s", result.error_message().c_str(),
-              result.error_details().c_str());
+      LOG(ERROR) << result.error_message().c_str() << ", "
+                 << result.error_details().c_str();
     }
     EXPECT_EQ(response.message(), kMessage);
   } else {

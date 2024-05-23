@@ -22,6 +22,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
@@ -213,7 +214,7 @@ void HandleGenericCall(AsyncGenericService* service,
              "/grpc.testing.EchoTestService/RequestStream") {
     HandleGenericRequestStream(&stream, cq);
   } else {  // other methods not handled yet.
-    gpr_log(GPR_ERROR, "method: %s", srv_ctx.method().c_str());
+    LOG(ERROR) << "method: " << srv_ctx.method();
     CHECK(0);
   }
 }
@@ -572,7 +573,7 @@ class StreamedUnaryDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
     CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
     CHECK(stream->Write(resp));
@@ -610,7 +611,7 @@ class FullyStreamedUnaryDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
     CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
     CHECK(stream->Write(resp));
@@ -649,7 +650,7 @@ class SplitResponseStreamDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
     CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
@@ -689,7 +690,7 @@ class FullySplitStreamedDupPkg
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
     CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
@@ -728,7 +729,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Streamed Unary Next Message Size is %u", next_msg_sz);
+    LOG(INFO) << "Streamed Unary Next Message Size is " << next_msg_sz;
     CHECK(stream->Read(&req));
     resp.set_message(req.message() + "_dup");
     CHECK(stream->Write(resp));
@@ -741,7 +742,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     EchoResponse resp;
     uint32_t next_msg_sz;
     stream->NextMessageSize(&next_msg_sz);
-    gpr_log(GPR_INFO, "Split Streamed Next Message Size is %u", next_msg_sz);
+    LOG(INFO) << "Split Streamed Next Message Size is " << next_msg_sz;
     CHECK(stream->Read(&req));
     for (int i = 0; i < kServerDefaultResponseStreamsToSend; i++) {
       resp.set_message(req.message() + std::to_string(i) + "_dup");
@@ -812,8 +813,8 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
     ServerGenericBidiReactor* CreateReactor(
         GenericCallbackServerContext* context) override {
       EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
-      gpr_log(GPR_DEBUG, "Constructor of generic service %d",
-              static_cast<int>(context->deadline().time_since_epoch().count()));
+      VLOG(2) << "Constructor of generic service "
+              << context->deadline().time_since_epoch().count();
 
       class Reactor : public ServerGenericBidiReactor {
        public:

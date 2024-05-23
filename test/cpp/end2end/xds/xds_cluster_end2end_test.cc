@@ -913,8 +913,7 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   }
   const double kErrorTolerance = 0.2;
   for (size_t i = 0; i < 3; ++i) {
-    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
-            locality_picked_rates[i]);
+    LOG(INFO) << "Locality " << i << " rate " << locality_picked_rates[i];
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
@@ -947,8 +946,7 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
         kNumRpcs);
   }
   for (size_t i = 1; i < 4; ++i) {
-    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
-            locality_picked_rates[i]);
+    LOG(INFO) << "Locality " << i << " rate " << locality_picked_rates[i];
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
@@ -1099,7 +1097,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
   LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
-  gpr_log(GPR_INFO, "First batch drop rate %f", seen_drop_rate);
+  LOG(INFO) << "First batch drop rate " << seen_drop_rate;
   EXPECT_THAT(seen_drop_rate,
               ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
   // The second ADS response contains two drop categories, send an update EDS
@@ -1136,7 +1134,7 @@ TEST_P(EdsTest, DropConfigUpdate) {
   LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
-  gpr_log(GPR_INFO, "Second batch drop rate %f", seen_drop_rate);
+  LOG(INFO) << "Second batch drop rate " << seen_drop_rate;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
                                                     kErrorTolerance));
 }
