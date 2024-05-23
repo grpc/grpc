@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/call_tracer.h"
+#include "src/core/telemetry/call_tracer.h"
 
 #include <vector>
 

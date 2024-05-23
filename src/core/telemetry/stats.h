@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_DEBUG_STATS_H
-#define GRPC_SRC_CORE_LIB_DEBUG_STATS_H
+#ifndef GRPC_SRC_CORE_TELEMETRY_STATS_H
+#define GRPC_SRC_CORE_TELEMETRY_STATS_H
 
 #include <stdint.h>
 
@@ -29,9 +29,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/histogram_view.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/telemetry/histogram_view.h"
+#include "src/core/telemetry/stats_data.h"
 
 namespace grpc_core {
 
@@ -61,4 +61,4 @@ std::string StatsAsJson(T* data) {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_DEBUG_STATS_H
+#endif  // GRPC_SRC_CORE_TELEMETRY_STATS_H

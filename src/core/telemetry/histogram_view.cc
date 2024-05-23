@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/debug/histogram_view.h"
+#include "src/core/telemetry/histogram_view.h"
 
 #include <grpc/support/port_platform.h>
 

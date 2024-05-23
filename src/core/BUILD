@@ -2998,10 +2998,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "histogram_view",
     srcs = [
-        "lib/debug/histogram_view.cc",
+        "telemetry/histogram_view.cc",
     ],
     hdrs = [
-        "lib/debug/histogram_view.h",
+        "telemetry/histogram_view.h",
     ],
     deps = ["//:gpr"],
 )
@@ -3009,10 +3009,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "stats_data",
     srcs = [
-        "lib/debug/stats_data.cc",
+        "telemetry/stats_data.cc",
     ],
     hdrs = [
-        "lib/debug/stats_data.h",
+        "telemetry/stats_data.h",
     ],
     external_deps = ["absl/strings"],
     deps = [
@@ -7887,10 +7887,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "metrics",
     srcs = [
-        "lib/channel/metrics.cc",
+        "telemetry/metrics.cc",
     ],
     hdrs = [
-        "lib/channel/metrics.h",
+        "telemetry/metrics.h",
     ],
     external_deps = [
         "absl/container:flat_hash_map",

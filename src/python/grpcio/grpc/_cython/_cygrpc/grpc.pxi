@@ -59,7 +59,7 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
 
 # gRPC Core Declarations
 
-cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
+cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
     cdef cppclass ClientCallTracer:
         pass
 
