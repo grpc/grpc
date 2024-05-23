@@ -245,9 +245,7 @@ bool InitEpoll1PollerLinux();
 void ResetEventManagerOnFork() {
   // Delete all pending Epoll1EventHandles.
   gpr_mu_lock(&fork_fd_list_mu);
-  auto pid = getpid();
   while (fork_fd_list_head != nullptr) {
-    gpr_log(GPR_INFO, "pid: [%d], Closing %p", pid, fork_fd_list_head);
     close(fork_fd_list_head->WrappedFd());
     Epoll1EventHandle* next = fork_fd_list_head->ForkFdListPos().next;
     fork_fd_list_head = next;
@@ -259,6 +257,7 @@ void ResetEventManagerOnFork() {
     poller->Close();
   }
   gpr_mu_unlock(&fork_fd_list_mu);
+  gpr_log(GPR_INFO, "\n\n\n\nInit!\n\n\n");
   InitEpoll1PollerLinux();
 }
 
@@ -577,7 +576,7 @@ void Epoll1Poller::PrepareFork() { Kick(); }
 void Epoll1Poller::PostforkParent() {}
 
 // TODO(vigneshbabu): implement
-void Epoll1Poller::PostforkChild() {}
+void Epoll1Poller::PostforkChild() { gpr_log(GPR_INFO, "\n\n\nBooop\n\n"); }
 
 void Epoll1Poller::RegisterEventHandleRef(EventHandleRef* ref) {
   event_handles_for_fork_.RegisterEventHandleRef(ref);

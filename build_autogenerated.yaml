@@ -14429,6 +14429,22 @@ targets:
   - gtest
   - gpr
   uses_polling: false
+- name: poller_fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/posix/posix_engine_test_utils.h
+  src:
+  - test/core/event_engine/posix/poller_fork_test.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: port_sharing_end2end_test
   gtest: true
   build: test
