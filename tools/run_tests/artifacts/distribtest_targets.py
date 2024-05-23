@@ -446,24 +446,7 @@ def targets():
         PythonDistribTest('linux', 'x64', 'fedora34', source=True),
         PythonDistribTest('linux', 'x64', 'arch', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1804', source=True),
-        # Ruby
-        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_5'),
-        RubyDistribTest('linux', 'x64', 'stretch', ruby_version='ruby_2_6'),
-        RubyDistribTest('linux',
-                        'x64',
-                        'stretch',
-                        ruby_version='ruby_2_7',
-                        presubmit=True),
-        # TODO(apolcyn): add a ruby 3.0 test once protobuf adds support
-        RubyDistribTest('linux',
-                        'x64',
-                        'stretch',
-                        ruby_version='ruby_2_5',
-                        source=True,
-                        presubmit=True),
-        RubyDistribTest('linux', 'x64', 'centos7'),
-        RubyDistribTest('linux', 'x64', 'ubuntu1604'),
-        RubyDistribTest('linux', 'x64', 'ubuntu1804', presubmit=True),
+        # TODO(apolcyn): re-enable ruby if a ruby patch release is needed
         # PHP7
         PHP7DistribTest('linux', 'x64', 'stretch', presubmit=True),
         PHP7DistribTest('macos', 'x64', presubmit=True),
