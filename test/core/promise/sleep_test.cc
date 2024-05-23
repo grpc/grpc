@@ -167,7 +167,7 @@ TEST(Sleep, StressTest) {
     notifications.push_back(std::move(notification));
     activities.push_back(std::move(activity));
   }
-  LOG(INFO) << "Waiting for the first " << kNumActivities / 2
+  LOG(INFO) << "Waiting for the first " << (kNumActivities / 2)
             << " sleeps, whilst cancelling the other half";
   for (size_t i = 0; i < kNumActivities / 2; i++) {
     notifications[i]->WaitForNotification();
