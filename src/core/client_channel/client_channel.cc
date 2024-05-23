@@ -617,6 +617,7 @@ void ClientChannel::Orphaned() {
   // timer from being reset by other threads.
   idle_state_.IncreaseCallCount();
   idle_activity_.Reset();
+  Unref();
 }
 
 grpc_connectivity_state ClientChannel::CheckConnectivityState(
