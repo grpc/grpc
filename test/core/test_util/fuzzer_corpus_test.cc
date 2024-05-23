@@ -83,7 +83,8 @@ class ExampleGenerator
       if (!absl::GetFlag(FLAGS_directory).empty()) {
         auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
         VLOG(2) << "test_srcdir=\""
-                << (test_srcdir.has_value() ? test_srcdir->c_str() : "(null)");
+                << (test_srcdir.has_value() ? test_srcdir->c_str() : "(null)")
+                << "\"";
         std::string directory = absl::GetFlag(FLAGS_directory);
         if (test_srcdir.has_value()) {
           directory =

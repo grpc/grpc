@@ -246,11 +246,9 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
   if (g_transport_counter->num_created() < 2) {
     LOG(ERROR) << "g_transport_counter->num_created() == "
                << g_transport_counter->num_created()
-               << ". This means that "
-                  "g_transport_counter isn't working and this test is broken. "
-                  "At "
-                  "least a couple of transport objects should have been "
-                  "created.";
+               << ". This means that g_transport_counter isn't working and "
+                  "this test is broken. At least a couple of transport objects "
+                  "should have been created.";
     CHECK(0);
   }
   gpr_timespec overall_deadline = grpc_timeout_seconds_to_deadline(120);
@@ -265,8 +263,7 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
       CHECK(0);
     }
     LOG(INFO) << "g_transport_counter->num_live() returned " << live_transports
-              << ", keep waiting "
-                 "until it reaches 0";
+              << ", keep waiting until it reaches 0";
     CHECK(grpc_completion_queue_next(
               cq,
               gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),

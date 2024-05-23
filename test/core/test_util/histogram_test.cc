@@ -30,8 +30,8 @@ TEST(HistogramTest, NoOp) {
 static void expect_percentile(grpc_histogram* h, double percentile,
                               double min_expect, double max_expect) {
   double got = grpc_histogram_percentile(h, percentile);
-  LOG(INFO) << "@%f%%, expect %f <= %f <= %f" << percentile << min_expect << got
-            << max_expect;
+  LOG(INFO) << "@" << percentile << "%%, expect " << min_expect << " <= " << got
+            << " <= " << max_expect;
   ASSERT_LE(min_expect, got);
   ASSERT_LE(got, max_expect);
 }

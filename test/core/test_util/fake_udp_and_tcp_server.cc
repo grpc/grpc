@@ -91,7 +91,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   char val = 1;
   if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
       SOCKET_ERROR) {
-    LOG(ERROR) << "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]: "
+    LOG(ERROR) << "Failed to set SO_REUSEADDR on TCP ipv6 socket to [::1]:"
                << port_ << ", errno: " << ERRNO;
     CHECK(0);
   }
@@ -112,7 +112,7 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   int val = 1;
   if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) !=
       0) {
-    LOG(ERROR) << "Failed to set SO_REUSEADDR on socket [::1]: " << port_;
+    LOG(ERROR) << "Failed to set SO_REUSEADDR on socket [::1]:" << port_;
     CHECK(0);
   }
   if (fcntl(udp_socket_, F_SETFL, O_NONBLOCK) != 0) {
@@ -136,18 +136,18 @@ FakeUdpAndTcpServer::FakeUdpAndTcpServer(
   LOG(INFO) << "Fake UDP and TCP server listening on " << addr_str;
   if (bind(udp_socket_, reinterpret_cast<const sockaddr*>(&addr),
            sizeof(addr)) != 0) {
-    LOG(ERROR) << "Failed to bind UDP socket to [::1]: " << port_;
+    LOG(ERROR) << "Failed to bind UDP socket to [::1]:" << port_;
     CHECK(0);
   }
   if (bind(accept_socket_, reinterpret_cast<const sockaddr*>(&addr),
            sizeof(addr)) != 0) {
-    LOG(ERROR) << "Failed to bind TCP socket to [::1]: " << port_ << " : "
+    LOG(ERROR) << "Failed to bind TCP socket to [::1]:" << port_ << " : "
                << ERRNO;
     CHECK(0);
   }
   if (listen(accept_socket_, 100)) {
-    LOG(ERROR) << "Failed to listen on socket bound to [::1]: " << port_
-               << " : " << ERRNO;
+    LOG(ERROR) << "Failed to listen on socket bound to [::1]:" << port_ << " : "
+               << ERRNO;
     CHECK(0);
   }
   gpr_event_init(&stop_ev_);
