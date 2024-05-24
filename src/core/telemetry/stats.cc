@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/debug/stats.h"
+#include "src/core/telemetry/stats.h"
 
 #include <stddef.h>
 

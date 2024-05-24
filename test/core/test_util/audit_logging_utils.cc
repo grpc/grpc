@@ -28,7 +28,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 namespace testing {

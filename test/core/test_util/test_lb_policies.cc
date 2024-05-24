@@ -40,8 +40,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_util.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -49,6 +47,8 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_util.h"
 
 namespace grpc_core {
 

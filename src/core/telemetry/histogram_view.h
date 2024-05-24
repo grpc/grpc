@@ -1,4 +1,4 @@
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_ARGS_H
-#define GRPC_SRC_CORE_LIB_JSON_JSON_ARGS_H
+#ifndef GRPC_SRC_CORE_TELEMETRY_HISTOGRAM_VIEW_H
+#define GRPC_SRC_CORE_TELEMETRY_HISTOGRAM_VIEW_H
 
-#include "absl/strings/string_view.h"
+#include <stdint.h>
 
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
-class JsonArgs {
- public:
-  JsonArgs() = default;
-  virtual ~JsonArgs() = default;
+struct HistogramView {
+  int (*bucket_for)(int value);
+  const int* bucket_boundaries;
+  int num_buckets;
+  const uint64_t* buckets;
 
-  virtual bool IsEnabled(absl::string_view /*key*/) const { return true; }
+  double Percentile(double p) const;
+  double Count() const;
+  double ThresholdForCountBelow(double count_below) const;
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_ARGS_H
+#endif  // GRPC_SRC_CORE_TELEMETRY_HISTOGRAM_VIEW_H

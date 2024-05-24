@@ -27,10 +27,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 
 namespace grpc_core {
 
