@@ -411,7 +411,9 @@ for lang in languages:
             assert image.startswith(args.gcr_path) and image.find(":") != -1
             # Add a tag to exclude the image from the GCP Vulnerability Scanner.
             (image_name, tag_name) = image.rsplit(":", 1)
-            alternate_image = f"{image_name}:infrastructure-public-image-{tag_name}"
+            alternate_image = (
+                f"{image_name}:infrastructure-public-image-{tag_name}"
+            )
             subprocess.call(["docker", "image", "tag", image, alternate_image])
             subprocess.call(["gcloud", "docker", "--", "push", image])
             subprocess.call(["gcloud", "docker", "--", "push", alternate_image])
