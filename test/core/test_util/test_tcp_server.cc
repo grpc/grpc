@@ -24,10 +24,10 @@
 #include <algorithm>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -91,7 +91,7 @@ void test_tcp_server_start(test_tcp_server* server, int port) {
   CHECK(port_added == port);
 
   grpc_tcp_server_start(server->tcp_server, &server->pollset);
-  gpr_log(GPR_INFO, "test tcp server listening on 0.0.0.0:%d", port);
+  LOG(INFO) << "test tcp server listening on 0.0.0.0:" << port;
 }
 
 void test_tcp_server_poll(test_tcp_server* server, int milliseconds) {

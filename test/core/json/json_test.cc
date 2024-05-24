@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 
 #include <string.h>
 
@@ -30,8 +30,8 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

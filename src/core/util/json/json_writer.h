@@ -1,4 +1,5 @@
-// Copyright 2021 gRPC authors.
+//
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,27 +12,22 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
 
-#ifndef GRPC_SRC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H
-#define GRPC_SRC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H
-
-#include <stdint.h>
+#ifndef GRPC_SRC_CORE_UTIL_JSON_JSON_WRITER_H
+#define GRPC_SRC_CORE_UTIL_JSON_JSON_WRITER_H
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "src/core/util/json/json.h"
+
 namespace grpc_core {
 
-struct HistogramView {
-  int (*bucket_for)(int value);
-  const int* bucket_boundaries;
-  int num_buckets;
-  const uint64_t* buckets;
-
-  double Percentile(double p) const;
-  double Count() const;
-  double ThresholdForCountBelow(double count_below) const;
-};
+// Dumps JSON from value to string form.
+std::string JsonDump(const Json& json, int indent = 0);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_DEBUG_HISTOGRAM_VIEW_H
+#endif  // GRPC_SRC_CORE_UTIL_JSON_JSON_WRITER_H

@@ -42,8 +42,8 @@
 #include <grpcpp/ext/otel_plugin.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/telemetry/metrics.h"
 
 namespace grpc {
 namespace internal {
