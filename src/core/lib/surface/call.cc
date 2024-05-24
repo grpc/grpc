@@ -2729,9 +2729,13 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                     }
                     *out_status_details = message_slice.TakeCSlice();
                     if (out_error_string != nullptr) {
-                      *out_error_string = gpr_strdup(
-                          MakeErrorString(server_trailing_metadata.get())
-                              .c_str());
+                      if (status != GRPC_STATUS_OK) {
+                        *out_error_string = gpr_strdup(
+                            MakeErrorString(server_trailing_metadata.get())
+                                .c_str());
+                      } else {
+                        *out_error_string = nullptr;
+                      }
                     }
                     PublishMetadataArray(server_trailing_metadata.get(),
                                          out_trailing_metadata, true);
