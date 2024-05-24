@@ -26,7 +26,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
@@ -38,8 +38,8 @@ static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
-    gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno,
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "pipe creation failed (" << errno
+               << "): " << grpc_core::StrError(errno);
     return GRPC_OS_ERROR(errno, "pipe");
   }
   grpc_error_handle err;

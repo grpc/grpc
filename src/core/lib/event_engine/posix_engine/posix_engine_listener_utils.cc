@@ -121,10 +121,8 @@ int InitMaxAcceptQueueSize() {
   max_accept_queue_size = n;
 
   if (max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    gpr_log(GPR_INFO,
-            "Suspiciously small accept queue (%d) will probably lead to "
-            "connection drops",
-            max_accept_queue_size);
+    LOG(INFO) << "Suspiciously small accept queue (" << max_accept_queue_size
+              << ") will probably lead to connection drops";
   }
   return max_accept_queue_size;
 }
@@ -180,8 +178,8 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
   if (bind(fd, socket.addr.address(), socket.addr.size()) < 0) {
     auto sockaddr_str = ResolvedAddressToString(socket.addr);
     if (!sockaddr_str.ok()) {
-      gpr_log(GPR_ERROR, "Could not convert sockaddr to string: %s",
-              sockaddr_str.status().ToString().c_str());
+      LOG(ERROR) << "Could not convert sockaddr to string: "
+                 << sockaddr_str.status();
       sockaddr_str = "<unparsable>";
     }
     sockaddr_str = absl::StrReplaceAll(*sockaddr_str, {{"\0", "@"}});
@@ -277,14 +275,13 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     addr = EventEngine::ResolvedAddress(ifa_it->ifa_addr, len);
     ResolvedAddressSetPort(addr, requested_port);
     std::string addr_str = *ResolvedAddressToString(addr);
-    gpr_log(GPR_DEBUG,
-            "Adding local addr from interface %s flags 0x%x to server: %s",
-            ifa_name, ifa_it->ifa_flags, addr_str.c_str());
+    VLOG(2) << "Adding local addr from interface " << ifa_name << " flags 0x"
+            << std::hex << ifa_it->ifa_flags << " to server: " << addr_str;
     // We could have multiple interfaces with the same address (e.g.,
     // bonding), so look for duplicates.
     if (listener_sockets.Find(addr).ok()) {
-      gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
-              addr_str.c_str(), ifa_name);
+      VLOG(2) << "Skipping duplicate addr " << addr_str << " on interface "
+              << ifa_name;
       continue;
     }
     auto result = CreateAndPrepareListenerSocket(options, addr);
@@ -348,16 +345,14 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
   }
   if (assigned_port > 0) {
     if (!v6_sock.ok()) {
-      gpr_log(GPR_INFO,
-              "Failed to add :: listener, the environment may not support "
-              "IPv6: %s",
-              v6_sock.status().ToString().c_str());
+      LOG(INFO) << "Failed to add :: listener, the environment may not support "
+                   "IPv6: "
+                << v6_sock.status();
     }
     if (!v4_sock.ok()) {
-      gpr_log(GPR_INFO,
-              "Failed to add 0.0.0.0 listener, "
-              "the environment may not support IPv4: %s",
-              v4_sock.status().ToString().c_str());
+      LOG(INFO) << "Failed to add 0.0.0.0 listener, "
+                   "the environment may not support IPv4: "
+                << v4_sock.status();
     }
     return assigned_port;
   } else {

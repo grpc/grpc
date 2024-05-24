@@ -22,10 +22,10 @@
 
 #include <inttypes.h>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/config/config_vars.h"
@@ -66,10 +66,9 @@ void grpc_client_channel_global_init_backup_polling() {
   int32_t poll_interval_ms =
       grpc_core::ConfigVars::Get().ClientChannelBackupPollIntervalMs();
   if (poll_interval_ms < 0) {
-    gpr_log(GPR_ERROR,
-            "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: %d, "
-            "default value %" PRId64 " will be used.",
-            poll_interval_ms, g_poll_interval.millis());
+    LOG(ERROR) << "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: "
+               << poll_interval_ms << ", default value "
+               << g_poll_interval.millis() << " will be used.";
   } else {
     g_poll_interval = grpc_core::Duration::Milliseconds(poll_interval_ms);
   }

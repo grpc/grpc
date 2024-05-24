@@ -20,9 +20,9 @@
 
 #include <string>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {
@@ -35,10 +35,8 @@ void ServiceConfigParser::Builder::RegisterParser(
     std::unique_ptr<Parser> parser) {
   for (const auto& registered_parser : registered_parsers_) {
     if (registered_parser->name() == parser->name()) {
-      gpr_log(GPR_ERROR, "%s",
-              absl::StrCat("Parser with name '", parser->name(),
-                           "' already registered")
-                  .c_str());
+      LOG(ERROR) << absl::StrCat("Parser with name '", parser->name(),
+                                 "' already registered");
       // We'll otherwise crash later.
       abort();
     }

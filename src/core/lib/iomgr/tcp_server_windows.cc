@@ -392,8 +392,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
   // this is necessary in the read/write case, it's useless for the accept
   // case. We only need to adjust the pending callback count
   if (!error.ok()) {
-    gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(INFO) << "Skipping on_accept due to error: "
+              << grpc_core::StatusToString(error);
 
     gpr_mu_unlock(&sp->server->mu);
     return;
@@ -428,8 +428,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
         if (addr_uri.ok()) {
           peer_name_string = addr_uri.value();
         } else {
-          gpr_log(GPR_ERROR, "invalid peer name: %s",
-                  addr_uri.status().ToString().c_str());
+          LOG(ERROR) << "invalid peer name: " << addr_uri.status();
         }
       } else {
         char* utf8_message = gpr_format_message(WSAGetLastError());

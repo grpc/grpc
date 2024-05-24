@@ -73,10 +73,8 @@ static void init_max_accept_queue_size(void) {
   s_max_accept_queue_size = n;
 
   if (s_max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    gpr_log(GPR_INFO,
-            "Suspiciously small accept queue (%d) will probably lead to "
-            "connection drops",
-            s_max_accept_queue_size);
+    LOG(INFO) << "Suspiciously small accept queue (" << s_max_accept_queue_size
+              << ") will probably lead to connection drops";
   }
 }
 

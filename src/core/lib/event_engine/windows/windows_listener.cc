@@ -16,6 +16,7 @@
 #ifdef GPR_WINDOWS
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -197,11 +198,8 @@ void WindowsEventEngineListener::SinglePortSocketListener::
   const auto& overlapped_result =
       io_state_->listener_socket->read_info()->result();
   if (overlapped_result.wsa_error != 0) {
-    gpr_log(GPR_ERROR, "%s",
-            GRPC_WSA_ERROR(overlapped_result.wsa_error,
-                           "Skipping on_accept due to error")
-                .ToString()
-                .c_str());
+    LOG(ERROR) << GRPC_WSA_ERROR(overlapped_result.wsa_error,
+                                 "Skipping on_accept due to error");
     return close_socket_and_restart();
   }
   SOCKET tmp_listener_socket = io_state_->listener_socket->raw_socket();
@@ -210,8 +208,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
                  reinterpret_cast<char*>(&tmp_listener_socket),
                  sizeof(tmp_listener_socket));
   if (err != 0) {
-    gpr_log(GPR_ERROR, "%s",
-            GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt").ToString().c_str());
+    LOG(ERROR) << GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt");
     return close_socket_and_restart();
   }
   EventEngine::ResolvedAddress peer_address;
@@ -220,9 +217,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
                     const_cast<sockaddr*>(peer_address.address()),
                     &peer_name_len);
   if (err != 0) {
-    gpr_log(
-        GPR_ERROR, "%s",
-        GRPC_WSA_ERROR(WSAGetLastError(), "getpeername").ToString().c_str());
+    LOG(ERROR) << GRPC_WSA_ERROR(WSAGetLastError(), "getpeername");
     return close_socket_and_restart();
   }
   peer_address =
@@ -231,8 +226,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
   std::string peer_name = "unknown";
   if (!addr_uri.ok()) {
     // TODO(hork): test an early exit/restart here with end2end tests
-    gpr_log(GPR_ERROR, "invalid peer name: %s",
-            addr_uri.status().ToString().c_str());
+    LOG(ERROR) << "invalid peer name: " << addr_uri.status();
   } else {
     peer_name = *addr_uri;
   }
@@ -402,11 +396,11 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
   grpc_core::MutexLock lock(&port_listeners_mu_);
   port_listeners_.emplace_back(std::move(*single_port_listener));
   if (started_.load()) {
-    gpr_log(GPR_ERROR,
-            "WindowsEventEngineListener::%p Bind was called concurrently while "
-            "the Listener was starting. This is invalid usage, all ports must "
-            "be bound before the Listener is started.",
-            this);
+    LOG(ERROR) << "WindowsEventEngineListener::" << this
+               << " Bind was called concurrently while "
+                  "the Listener was starting. This is invalid usage, all ports "
+                  "must "
+                  "be bound before the Listener is started.";
     GRPC_RETURN_IF_ERROR(single_port_listener_ptr->Start());
   }
   return single_port_listener_ptr;

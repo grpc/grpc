@@ -17,13 +17,13 @@
 #include "src/core/resolver/resolver_registry.h"
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {
@@ -147,15 +147,13 @@ ResolverFactory* ResolverRegistry::FindResolverFactory(
     return factory;
   }
   if (!tmp_uri.ok() || !tmp_uri2.ok()) {
-    gpr_log(GPR_ERROR, "%s",
-            absl::StrFormat("Error parsing URI(s). '%s':%s; '%s':%s", target,
-                            tmp_uri.status().ToString(), *canonical_target,
-                            tmp_uri2.status().ToString())
-                .c_str());
+    LOG(ERROR) << "Error parsing URI(s). '" << target
+               << "':" << tmp_uri.status() << "; '" << *canonical_target
+               << "':" << tmp_uri2.status();
     return nullptr;
   }
-  gpr_log(GPR_ERROR, "Don't know how to resolve '%s' or '%s'.",
-          std::string(target).c_str(), canonical_target->c_str());
+  LOG(ERROR) << "Don't know how to resolve '" << target << "' or '"
+             << *canonical_target << "'.";
   return nullptr;
 }
 

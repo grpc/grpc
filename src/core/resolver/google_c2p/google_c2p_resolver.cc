@@ -306,9 +306,8 @@ class ExperimentalGoogleCloud2ProdResolverFactory final
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
-      gpr_log(
-          GPR_ERROR,
-          "google-c2p-experimental URI scheme does not support authorities");
+      LOG(ERROR) << "google-c2p-experimental URI scheme does not support "
+                    "authorities";
       return false;
     }
     return true;

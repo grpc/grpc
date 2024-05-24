@@ -24,9 +24,9 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -76,22 +76,22 @@ SubchannelStreamClient::SubchannelStreamClient(
                   SUBCHANNEL_STREAM_RECONNECT_MAX_BACKOFF_SECONDS))),
       event_engine_(connected_subchannel_->args().GetObject<EventEngine>()) {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    gpr_log(GPR_INFO, "%s %p: created SubchannelStreamClient", tracer_, this);
+    LOG(INFO) << tracer_ << " " << this << ": created SubchannelStreamClient";
   }
   StartCall();
 }
 
 SubchannelStreamClient::~SubchannelStreamClient() {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    gpr_log(GPR_INFO, "%s %p: destroying SubchannelStreamClient", tracer_,
-            this);
+    LOG(INFO) << tracer_ << " " << this
+              << ": destroying SubchannelStreamClient";
   }
 }
 
 void SubchannelStreamClient::Orphan() {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient shutting down", tracer_,
-            this);
+    LOG(INFO) << tracer_ << " " << this
+              << ": SubchannelStreamClient shutting down";
   }
   {
     MutexLock lock(&mu_);
@@ -118,8 +118,9 @@ void SubchannelStreamClient::StartCallLocked() {
   }
   call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient created CallState %p",
-            tracer_, this, call_state_.get());
+    LOG(INFO) << tracer_ << " " << this
+              << ": SubchannelStreamClient created CallState "
+              << call_state_.get();
   }
   call_state_->StartCallLocked();
 }
@@ -130,13 +131,13 @@ void SubchannelStreamClient::StartRetryTimerLocked() {
   }
   const Duration timeout = retry_backoff_.NextAttemptTime() - Timestamp::Now();
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
-    gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient health check call lost...",
-            tracer_, this);
+    LOG(INFO) << tracer_ << " " << this
+              << ": SubchannelStreamClient health check call lost...";
     if (timeout > Duration::Zero()) {
-      gpr_log(GPR_INFO, "%s %p: ... will retry in %" PRId64 "ms.", tracer_,
-              this, timeout.millis());
+      LOG(INFO) << tracer_ << " " << this << ": ... will retry in "
+                << timeout.millis() << "ms.";
     } else {
-      gpr_log(GPR_INFO, "%s %p: ... retrying immediately.", tracer_, this);
+      LOG(INFO) << tracer_ << " " << this << ": ... retrying immediately.";
     }
   }
   retry_timer_handle_ = event_engine_->RunAfter(
@@ -153,9 +154,8 @@ void SubchannelStreamClient::OnRetryTimer() {
   if (event_handler_ != nullptr && retry_timer_handle_.has_value() &&
       call_state_ == nullptr) {
     if (GPR_UNLIKELY(tracer_ != nullptr)) {
-      gpr_log(GPR_INFO,
-              "%s %p: SubchannelStreamClient restarting health check call",
-              tracer_, this);
+      LOG(INFO) << tracer_ << " " << this
+                << ": SubchannelStreamClient restarting health check call";
     }
     StartCallLocked();
   }
@@ -178,9 +178,9 @@ SubchannelStreamClient::CallState::CallState(
 
 SubchannelStreamClient::CallState::~CallState() {
   if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
-    gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient destroying CallState %p",
-            subchannel_stream_client_->tracer_, subchannel_stream_client_.get(),
-            this);
+    LOG(INFO) << subchannel_stream_client_->tracer_ << " "
+              << subchannel_stream_client_.get()
+              << ": SubchannelStreamClient destroying CallState " << this;
   }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
     if (context_[i].destroy != nullptr) {
@@ -218,11 +218,10 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   // Check if creation failed.
   if (!error.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
-    gpr_log(GPR_ERROR,
-            "SubchannelStreamClient %p CallState %p: error creating "
-            "stream on subchannel (%s); will retry",
-            subchannel_stream_client_.get(), this,
-            StatusToString(error).c_str());
+    LOG(ERROR) << "SubchannelStreamClient " << subchannel_stream_client_.get()
+               << " CallState " << this << ": error creating "
+               << "stream on subchannel (" << StatusToString(error)
+               << "); will retry";
     CallEndedLocked(/*retry=*/true);
     return;
   }
@@ -371,12 +370,10 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
               subchannel_stream_client_.get(), recv_message_->JoinIntoString());
       if (!status.ok()) {
         if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
-          gpr_log(GPR_INFO,
-                  "%s %p: SubchannelStreamClient CallState %p: failed to "
-                  "parse response message: %s",
-                  subchannel_stream_client_->tracer_,
-                  subchannel_stream_client_.get(), this,
-                  status.ToString().c_str());
+          LOG(INFO) << subchannel_stream_client_->tracer_ << " "
+                    << subchannel_stream_client_.get() << " " << this
+                    << ": SubchannelStreamClient CallState failed to "
+                    << "parse response message: " << status;
         }
         Cancel();
       }
@@ -419,11 +416,10 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
                           nullptr /* error_string */);
   }
   if (GPR_UNLIKELY(self->subchannel_stream_client_->tracer_ != nullptr)) {
-    gpr_log(GPR_INFO,
-            "%s %p: SubchannelStreamClient CallState %p: health watch failed "
-            "with status %d",
-            self->subchannel_stream_client_->tracer_,
-            self->subchannel_stream_client_.get(), self, status);
+    LOG(INFO) << self->subchannel_stream_client_->tracer_ << " "
+              << self->subchannel_stream_client_.get() << " " << self
+              << ": SubchannelStreamClient CallState health watch failed "
+              << "with status " << status;
   }
   // Clean up.
   self->recv_trailing_metadata_.Clear();

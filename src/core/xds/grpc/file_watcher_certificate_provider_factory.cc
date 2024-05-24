@@ -23,10 +23,10 @@
 #include <memory>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -115,8 +115,8 @@ RefCountedPtr<grpc_tls_certificate_provider>
 FileWatcherCertificateProviderFactory::CreateCertificateProvider(
     RefCountedPtr<CertificateProviderFactory::Config> config) {
   if (config->name() != name()) {
-    gpr_log(GPR_ERROR, "Wrong config type Actual:%s vs Expected:%s",
-            std::string(config->name()).c_str(), std::string(name()).c_str());
+    LOG(ERROR) << "Wrong config type Actual:" << config->name()
+               << " vs Expected:" << name();
     return nullptr;
   }
   auto* file_watcher_config =
