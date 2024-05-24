@@ -1225,7 +1225,7 @@ void ClientChannel::StartIdleTimer() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
     gpr_log(GPR_INFO, "client_channel=%p: idle timer started", this);
   }
-  auto self = RefAsSubclass<ClientChannel>();
+  auto self = WeakRefAsSubclass<ClientChannel>();
   auto promise = Loop([self]() {
     return TrySeq(Sleep(Timestamp::Now() + self->idle_timeout_),
                   [self]() -> Poll<LoopCtl<absl::Status>> {
