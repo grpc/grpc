@@ -1304,6 +1304,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/directory_reader.h )
   s.files += %w( src/core/lib/gprpp/down_cast.h )
   s.files += %w( src/core/lib/gprpp/dual_ref_counted.h )
+  s.files += %w( src/core/lib/gprpp/dump_args.cc )
+  s.files += %w( src/core/lib/gprpp/dump_args.h )
   s.files += %w( src/core/lib/gprpp/env.h )
   s.files += %w( src/core/lib/gprpp/examine_stack.cc )
   s.files += %w( src/core/lib/gprpp/examine_stack.h )

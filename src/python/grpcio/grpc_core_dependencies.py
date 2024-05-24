@@ -517,6 +517,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/gpr/windows/time.cc',
     'src/core/lib/gpr/windows/tmpfile.cc',
     'src/core/lib/gprpp/crash.cc',
+    'src/core/lib/gprpp/dump_args.cc',
     'src/core/lib/gprpp/examine_stack.cc',
     'src/core/lib/gprpp/fork.cc',
     'src/core/lib/gprpp/host_port.cc',

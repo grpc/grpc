@@ -1286,6 +1286,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/directory_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/down_cast.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/dump_args.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/dump_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.h" role="src" />
