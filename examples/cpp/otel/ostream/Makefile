@@ -21,7 +21,7 @@ PROTOBUF_ABSL_DEPS = absl_absl_check absl_absl_log absl_algorithm absl_base absl
 # Hack: utf8_range (which is protobuf's dependency) currently doesn't have a pkgconfig file, so we need to explicitly
 # tweak the list of libraries to link against to fix the build.
 PROTOBUF_UTF8_RANGE_LINK_LIBS = -lutf8_validity
-OPENTELEMETRY_LINK_LIBS = -lopentelemetry_metrics -lopentelemetry_exporter_prometheus -lopentelemetry_common -lopentelemetry_resources -lprometheus-cpp-pull -lprometheus-cpp-core
+OPENTELEMETRY_LINK_LIBS = -lopentelemetry_metrics -lopentelemetry_exporter_ostream_metrics -lopentelemetry_resources -lopentelemetry_common
 
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
@@ -46,7 +46,7 @@ PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
-PROTOS_PATH = ../../protos
+PROTOS_PATH = ../../../protos
 
 vpath %.proto $(PROTOS_PATH)
 
@@ -65,6 +65,9 @@ greeter_callback_server: util.o helloworld.pb.o helloworld.grpc.pb.o greeter_cal
 .PRECIOUS: %.pb.cc
 %.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
+
+util.o: ../util.cc
+	$(CXX) $^ -I . -c -o $@
 
 clean:
 	rm -f *.o *.pb.cc *.pb.h greeter_callback_client greeter_callback_server

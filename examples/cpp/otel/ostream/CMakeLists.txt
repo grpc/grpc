@@ -21,16 +21,13 @@ cmake_minimum_required(VERSION 3.13)
 
 project(grpc_opentelemetry_example C CXX)
 
-include(../cmake/common.cmake)
-
-# Find prometheus-cpp package
-find_package(prometheus-cpp CONFIG REQUIRED)
+include(../../cmake/common.cmake)
 
 # Find opentelemetry-cpp package
 find_package(opentelemetry-cpp CONFIG REQUIRED)
 
 # Proto file
-get_filename_component(hw_proto "../../protos/helloworld.proto" ABSOLUTE)
+get_filename_component(hw_proto "../../../protos/helloworld.proto" ABSOLUTE)
 get_filename_component(hw_proto_path "${hw_proto}" PATH)
 
 # Generated sources
@@ -65,7 +62,7 @@ target_link_libraries(hw_grpc_proto
 
 # util
 add_library(util
-  "util.cc")
+  "../util.cc")
 target_link_libraries(util
   hw_grpc_proto
   opentelemetry-cpp::metrics
@@ -81,7 +78,8 @@ foreach(_target
     absl::flags
     absl::flags_parse
     opentelemetry-cpp::metrics
-    opentelemetry-cpp::prometheus_exporter
+    opentelemetry-cpp::ostream_metrics_exporter
     gRPC::grpcpp_otel_plugin
-    util)
+    util
+    ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
