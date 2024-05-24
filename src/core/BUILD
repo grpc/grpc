@@ -7645,6 +7645,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "direct_channel",
+    srcs = [
+        "client_channel/direct_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/direct_channel.h",
+    ],
+    deps = [
+        "channel_stack_type",
+        "interception_chain",
+        "//:channel",
+        "//:config",
+        "//:grpc_base",
+        "//:orphanable",
+    ],
+)
+
+grpc_cc_library(
     name = "metadata_batch",
     srcs = [
         "lib/transport/metadata_batch.cc",

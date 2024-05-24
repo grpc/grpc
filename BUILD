@@ -1900,6 +1900,7 @@ grpc_cc_library(
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:stats_data",
+        "//src/core:direct_channel",
     ],
 )
 
