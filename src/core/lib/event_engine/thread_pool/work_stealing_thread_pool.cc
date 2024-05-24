@@ -268,7 +268,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
-  LOG(INFO) << "WorkStealingThreadPoolImpl::Quiesce";
   SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
