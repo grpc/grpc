@@ -156,9 +156,7 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
   if (!shutdown_) {
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
       LOG(INFO)
-          << "[polling resolver " << this
-          << "] returning result: "
-             "addresses="
+          << "[polling resolver " << this << "] returning result: addresses="
           << (result.addresses.ok()
                   ? absl::StrCat("<", result.addresses->size(), " addresses>")
                   : result.addresses.status().ToString())
@@ -241,10 +239,9 @@ void PollingResolver::MaybeStartResolvingLocked() {
         const Duration last_resolution_ago =
             Timestamp::Now() - *last_resolution_timestamp_;
         LOG(INFO) << "[polling resolver " << this
-                  << "] in cooldown from last resolution "
-                     "(from "
-                  << last_resolution_ago.millis() << " ms ago); "
-                  << "will resolve again in "
+                  << "] in cooldown from last resolution (from "
+                  << last_resolution_ago.millis()
+                  << " ms ago); will resolve again in "
                   << time_until_next_resolution.millis() << " ms";
       }
       ScheduleNextResolutionTimer(time_until_next_resolution);

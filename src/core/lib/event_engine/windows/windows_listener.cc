@@ -397,10 +397,9 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
   port_listeners_.emplace_back(std::move(*single_port_listener));
   if (started_.load()) {
     LOG(ERROR) << "WindowsEventEngineListener::" << this
-               << " Bind was called concurrently while "
-                  "the Listener was starting. This is invalid usage, all ports "
-                  "must "
-                  "be bound before the Listener is started.";
+               << " Bind was called concurrently while the Listener was "
+                  "starting. This is invalid usage, all ports must be bound "
+                  "before the Listener is started.";
     GRPC_RETURN_IF_ERROR(single_port_listener_ptr->Start());
   }
   return single_port_listener_ptr;
