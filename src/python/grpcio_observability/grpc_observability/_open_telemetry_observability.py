@@ -428,7 +428,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def create_server_call_tracer_factory(
         self,
         *,
-        xds: bool,
+        xds: bool = False,
     ) -> Optional[ServerCallTracerFactoryCapsule]:
         capsule = None
         self._maybe_activate_server_plugin_options(xds)

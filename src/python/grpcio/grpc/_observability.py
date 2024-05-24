@@ -142,7 +142,7 @@ class ObservabilityPlugin(
     def create_server_call_tracer_factory(
         self,
         *,
-        xds: bool,
+        xds: bool = False,
     ) -> Optional[ServerCallTracerFactoryCapsule]:
         """Creates a ServerCallTracerFactoryCapsule.
 
