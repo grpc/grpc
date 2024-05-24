@@ -17,8 +17,8 @@
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
