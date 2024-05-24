@@ -2230,6 +2230,9 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/posix_engine/internal_errqueue.h",
     ],
+    external_deps = [
+        "absl/log:log",
+    ],
     deps = [
         "iomgr_port",
         "strerror",
