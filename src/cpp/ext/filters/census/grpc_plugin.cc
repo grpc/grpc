@@ -30,9 +30,9 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/logging/logging_filter.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/server_call_tracer.h"

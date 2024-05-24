@@ -29,8 +29,7 @@
 #endif
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
@@ -71,13 +70,13 @@ static void register_sighandler() {
 
 static void LogStatus(int status, const char* label) {
   if (WIFEXITED(status)) {
-    gpr_log(GPR_INFO, "%s: subprocess exited with status %d", label,
-            WEXITSTATUS(status));
+    LOG(INFO) << label << ": subprocess exited with status "
+              << WEXITSTATUS(status);
   } else if (WIFSIGNALED(status)) {
-    gpr_log(GPR_INFO, "%s: subprocess terminated with signal %d", label,
-            WTERMSIG(status));
+    LOG(INFO) << label << ": subprocess terminated with signal "
+              << WTERMSIG(status);
   } else {
-    gpr_log(GPR_INFO, "%s: unknown subprocess status: %d", label, status);
+    LOG(INFO) << label << ": unknown subprocess status: " << status;
   }
 }
 

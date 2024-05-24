@@ -28,8 +28,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -70,7 +70,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  gpr_log(GPR_INFO, "%s", out.str().c_str());
+  LOG(INFO) << out.str();
 }
 
 class ContextAllocatorEnd2endTestBase

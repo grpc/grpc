@@ -14,12 +14,19 @@
 
 licenses(["notice"])
 
+package(
+    default_visibility = ["//examples/cpp/otel:__subpackages__"],
+)
+
 cc_library(
     name = "util",
     srcs = ["util.cc"],
     hdrs = ["util.h"],
+    defines = ["BAZEL_BUILD"],
     deps = [
         "//:grpc++",
+        "//:grpc++_reflection",
+        "//examples/protos:helloworld_cc_grpc",
         "@io_opentelemetry_cpp//sdk/src/metrics",
     ],
 )
@@ -32,7 +39,6 @@ cc_binary(
         "util",
         "//:grpc++",
         "//:grpcpp_otel_plugin",
-        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@io_opentelemetry_cpp//exporters/prometheus:prometheus_exporter",
@@ -47,9 +53,7 @@ cc_binary(
     deps = [
         "util",
         "//:grpc++",
-        "//:grpc++_reflection",
         "//:grpcpp_otel_plugin",
-        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/strings:str_format",

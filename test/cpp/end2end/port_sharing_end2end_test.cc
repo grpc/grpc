@@ -22,10 +22,10 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -85,7 +85,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  gpr_log(GPR_ERROR, "%s", out.str().c_str());
+  LOG(ERROR) << out.str();
 }
 
 // Set up a test tcp server which is in charge of accepting connections and
@@ -115,7 +115,7 @@ class TestTcpServer {
 
   void Start() {
     test_tcp_server_start(&tcp_server_, port_);
-    gpr_log(GPR_INFO, "Test TCP server started at %s", address_.c_str());
+    LOG(INFO) << "Test TCP server started at " << address_;
   }
 
   const std::string& address() { return address_; }
@@ -160,7 +160,7 @@ class TestTcpServer {
   void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
     std::string peer(grpc_endpoint_get_peer(tcp));
-    gpr_log(GPR_INFO, "Got incoming connection! from %s", peer.c_str());
+    LOG(INFO) << "Got incoming connection! from " << peer;
     EXPECT_FALSE(acceptor->external_connection);
     listener_fd_ = grpc_tcp_server_port_fd(
         acceptor->from_server, acceptor->port_index, acceptor->fd_index);
@@ -182,8 +182,9 @@ class TestTcpServer {
       Slice data(buf, read_bytes);
       p.read_buffer = ByteBuffer(&data, 1);
     }
-    gpr_log(GPR_INFO, "Handing off fd %d with data size %d from listener fd %d",
-            fd_, static_cast<int>(p.read_buffer.Length()), listener_fd_);
+    LOG(INFO) << "Handing off fd " << fd_ << " with data size "
+              << static_cast<int>(p.read_buffer.Length())
+              << " from listener fd " << listener_fd_;
     connection_acceptor_->HandleNewConnection(&p);
   }
 
@@ -224,8 +225,7 @@ class PortSharingEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       auto creds = GetCredentialsProvider()->GetServerCredentials(
           GetParam().credentials_type);
       builder.AddListeningPort(server_address_.str(), creds);
-      gpr_log(GPR_INFO, "gRPC server listening on %s",
-              server_address_.str().c_str());
+      LOG(INFO) << "gRPC server listening on " << server_address_.str();
     }
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
         GetParam().credentials_type);

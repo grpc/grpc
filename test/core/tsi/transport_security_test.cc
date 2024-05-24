@@ -25,10 +25,10 @@
 #include <gtest/gtest.h>
 #include <openssl/crypto.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -316,7 +316,7 @@ TEST(TransportSecurityTest, TestPeerMatchesName) {
     tsi_peer peer = peer_from_cert_name_test_entry(entry);
     int result = tsi_ssl_peer_matches_name(&peer, entry->host_name);
     if (result != entry->expected) {
-      gpr_log(GPR_ERROR, "%s", cert_name_test_entry_to_string(entry).c_str());
+      LOG(ERROR) << cert_name_test_entry_to_string(entry);
       ASSERT_TRUE(0);  // Unexpected result.
     }
     tsi_peer_destruct(&peer);

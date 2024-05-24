@@ -36,8 +36,8 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 namespace channelz {

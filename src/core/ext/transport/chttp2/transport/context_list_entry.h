@@ -28,7 +28,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/tcp_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_core {
 
