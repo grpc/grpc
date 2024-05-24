@@ -17562,15 +17562,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/fixture.cc
     test/core/transport/test_suite/inproc_fixture.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/test.cc
-    test/core/transport/test_suite/test_main.cc
+    test/core/transport/test_suite/transport_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -30294,15 +30294,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good/frame_header.cc
     src/core/ext/transport/chaotic_good/server_transport.cc
     src/core/lib/transport/promise_endpoint.cc
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
     test/core/transport/test_suite/chaotic_good_fixture.cc
-    test/core/transport/test_suite/fixture.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/test.cc
-    test/core/transport/test_suite/test_main.cc
+    test/core/transport/test_suite/transport_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)

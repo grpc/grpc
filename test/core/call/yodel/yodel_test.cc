@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,75 +12,159 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/test_suite/test.h"
-
-#include <initializer_list>
+#include "test/core/call/yodel/yodel_test.h"
 
 #include "absl/random/random.h"
 
+#include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+
 namespace grpc_core {
 
-///////////////////////////////////////////////////////////////////////////////
-// TransportTestRegistry
+namespace yodel_detail {
 
-TransportTestRegistry& TransportTestRegistry::Get() {
-  static TransportTestRegistry* registry = new TransportTestRegistry();
-  return *registry;
+TestRegistry* TestRegistry::root_ = nullptr;
+
+///////////////////////////////////////////////////////////////////////////////
+// ActionState
+
+ActionState::ActionState(NameAndLocation name_and_location, int step)
+    : name_and_location_(name_and_location), step_(step), state_(kNotCreated) {}
+
+absl::string_view ActionState::StateString(State state) {
+  // We use emoji here to make it easier to visually scan the logs.
+  switch (state) {
+    case kNotCreated:
+      return "🚦";
+    case kNotStarted:
+      return "⏰";
+    case kStarted:
+      return "🚗";
+    case kDone:
+      return "🏁";
+    case kCancelled:
+      return "💥";
+  }
 }
 
-void TransportTestRegistry::RegisterTest(
+void ActionState::Set(State state, SourceLocation whence) {
+  LOG(INFO) << StateString(state) << " " << name() << " [" << step() << "] "
+            << file() << ":" << line() << " @ " << whence.file() << ":"
+            << whence.line();
+  state_ = state;
+}
+
+bool ActionState::IsDone() {
+  switch (state_) {
+    case kNotCreated:
+    case kNotStarted:
+    case kStarted:
+      return false;
+    case kDone:
+    case kCancelled:
+      return true;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// TestRegistry
+
+std::vector<TestRegistry::Test> TestRegistry::AllTests() {
+  std::vector<Test> tests;
+  for (auto* r = root_; r; r = r->next_) {
+    r->ContributeTests(tests);
+  }
+  std::vector<Test> out;
+  for (auto& test : tests) {
+    if (absl::StartsWith(test.name, "DISABLED_")) continue;
+    out.emplace_back(std::move(test));
+  }
+  std::stable_sort(out.begin(), out.end(), [](const Test& a, const Test& b) {
+    return std::make_tuple(a.file, a.line) < std::make_tuple(b.file, b.line);
+  });
+  return out;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// SimpleTestRegistry
+
+void SimpleTestRegistry::RegisterTest(
+    absl::string_view file, int line, absl::string_view test_type,
     absl::string_view name,
-    absl::AnyInvocable<TransportTest*(std::unique_ptr<TransportFixture>,
-                                      const fuzzing_event_engine::Actions&,
-                                      absl::BitGenRef) const>
+    absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
+                                  absl::BitGenRef) const>
         create) {
-  if (absl::StartsWith(name, "DISABLED_")) return;
-  tests_.push_back({name, std::move(create)});
+  tests_.push_back({file, line, std::string(test_type), std::string(name),
+                    std::move(create)});
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// TransportTest
+void SimpleTestRegistry::ContributeTests(std::vector<Test>& tests) {
+  for (const auto& test : tests_) {
+    tests.push_back(
+        {test.file, test.line, test.test_type, test.name,
+         [test = &test](const fuzzing_event_engine::Actions& actions,
+                        absl::BitGenRef rng) {
+           return test->make(actions, rng);
+         }});
+  }
+}
 
-void TransportTest::RunTest() {
+}  // namespace yodel_detail
+
+///////////////////////////////////////////////////////////////////////////////
+// YodelTest::WatchDog
+
+class YodelTest::WatchDog {
+ public:
+  explicit WatchDog(YodelTest* test) : test_(test) {}
+  ~WatchDog() { test_->event_engine_->Cancel(timer_); }
+
+ private:
+  YodelTest* const test_;
+  grpc_event_engine::experimental::EventEngine::TaskHandle const timer_{
+      test_->event_engine_->RunAfter(Duration::Minutes(5),
+                                     [this]() { test_->Timeout(); })};
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// YodelTest
+
+YodelTest::YodelTest(const fuzzing_event_engine::Actions& actions,
+                     absl::BitGenRef rng)
+    : rng_(rng),
+      event_engine_{
+          std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
+              []() {
+                grpc_timer_manager_set_threading(false);
+                grpc_event_engine::experimental::FuzzingEventEngine::Options
+                    options;
+                return options;
+              }(),
+              actions)},
+      call_arena_allocator_{MakeRefCounted<CallArenaAllocator>(
+          MakeResourceQuota("test-quota")
+              ->memory_quota()
+              ->CreateMemoryAllocator("test-allocator"),
+          1024)} {}
+
+void YodelTest::RunTest() {
   TestImpl();
   EXPECT_EQ(pending_actions_.size(), 0)
       << "There are still pending actions: did you forget to call "
          "WaitForAllPendingWork()?";
-  transport_pair_.client.reset();
-  transport_pair_.server.reset();
+  Shutdown();
   event_engine_->TickUntilIdle();
   event_engine_->UnsetGlobalHooks();
 }
 
-void TransportTest::SetServerCallDestination() {
-  transport_pair_.server->server_transport()->SetCallDestination(
-      server_call_destination_);
-}
-
-CallInitiator TransportTest::CreateCall(
-    ClientMetadataHandle client_initial_metadata) {
-  auto call = MakeCall(std::move(client_initial_metadata));
-  call.handler.SpawnInfallible(
-      "start-call", [this, handler = call.handler]() mutable {
-        transport_pair_.client->client_transport()->StartCall(
-            handler.V2HackToStartCallWithoutACallFilterStack());
-        return Empty{};
-      });
-  return std::move(call.initiator);
-}
-
-CallHandler TransportTest::TickUntilServerCall() {
+void YodelTest::TickUntilTrue(absl::FunctionRef<bool()> poll) {
   WatchDog watchdog(this);
-  for (;;) {
-    auto handler = server_call_destination_->PopHandler();
-    if (handler.has_value()) {
-      return std::move(*handler);
-    }
+  while (!poll()) {
     event_engine_->Tick();
   }
 }
 
-void TransportTest::WaitForAllPendingWork() {
+void YodelTest::WaitForAllPendingWork() {
   WatchDog watchdog(this);
   while (!pending_actions_.empty()) {
     if (pending_actions_.front()->IsDone()) {
@@ -91,7 +175,7 @@ void TransportTest::WaitForAllPendingWork() {
   }
 }
 
-void TransportTest::Timeout() {
+void YodelTest::Timeout() {
   std::vector<std::string> lines;
   lines.emplace_back("Timeout waiting for pending actions to complete");
   while (!pending_actions_.empty()) {
@@ -99,7 +183,7 @@ void TransportTest::Timeout() {
     pending_actions_.pop();
     if (action->IsDone()) continue;
     absl::string_view state_name =
-        transport_test_detail::ActionState::StateString(action->Get());
+        yodel_detail::ActionState::StateString(action->Get());
     absl::string_view file_name = action->file();
     auto pos = file_name.find_last_of('/');
     if (pos != absl::string_view::npos) {
@@ -112,8 +196,8 @@ void TransportTest::Timeout() {
   Crash(absl::StrJoin(lines, "\n"));
 }
 
-std::string TransportTest::RandomString(int min_length, int max_length,
-                                        absl::string_view character_set) {
+std::string YodelTest::RandomString(int min_length, int max_length,
+                                    absl::string_view character_set) {
   std::string out;
   int length = absl::LogUniform<int>(rng_, min_length, max_length + 1);
   for (int i = 0; i < length; ++i) {
@@ -123,7 +207,7 @@ std::string TransportTest::RandomString(int min_length, int max_length,
   return out;
 }
 
-std::string TransportTest::RandomStringFrom(
+std::string YodelTest::RandomStringFrom(
     std::initializer_list<absl::string_view> choices) {
   size_t idx = absl::Uniform<size_t>(rng_, 0, choices.size());
   auto it = choices.begin();
@@ -131,7 +215,7 @@ std::string TransportTest::RandomStringFrom(
   return std::string(*it);
 }
 
-std::string TransportTest::RandomMetadataKey() {
+std::string YodelTest::RandomMetadataKey() {
   if (absl::Bernoulli(rng_, 0.1)) {
     return RandomStringFrom({
         ":path",
@@ -148,7 +232,7 @@ std::string TransportTest::RandomMetadataKey() {
   return out;
 }
 
-std::string TransportTest::RandomMetadataValue(absl::string_view key) {
+std::string YodelTest::RandomMetadataValue(absl::string_view key) {
   if (key == ":method") {
     return RandomStringFrom({"GET", "POST", "PUT"});
   }
@@ -169,11 +253,11 @@ std::string TransportTest::RandomMetadataValue(absl::string_view key) {
   return RandomString(0, 128, *kChars);
 }
 
-std::string TransportTest::RandomMetadataBinaryKey() {
+std::string YodelTest::RandomMetadataBinaryKey() {
   return RandomString(1, 128, "abcdefghijklmnopqrstuvwxyz-_") + "-bin";
 }
 
-std::string TransportTest::RandomMetadataBinaryValue() {
+std::string YodelTest::RandomMetadataBinaryValue() {
   static const NoDestruct<std::string> kChars{[]() {
     std::string out;
     for (int c = 0; c < 256; c++) {
@@ -184,8 +268,7 @@ std::string TransportTest::RandomMetadataBinaryValue() {
   return RandomString(0, 4096, *kChars);
 }
 
-std::vector<std::pair<std::string, std::string>>
-TransportTest::RandomMetadata() {
+std::vector<std::pair<std::string, std::string>> YodelTest::RandomMetadata() {
   size_t size = 0;
   const size_t max_size = absl::LogUniform<size_t>(rng_, 64, 8000);
   std::vector<std::pair<std::string, std::string>> out;
@@ -218,7 +301,7 @@ TransportTest::RandomMetadata() {
   return out;
 }
 
-std::string TransportTest::RandomMessage() {
+std::string YodelTest::RandomMessage() {
   static const NoDestruct<std::string> kChars{[]() {
     std::string out;
     for (int c = 0; c < 256; c++) {
@@ -228,44 +311,5 @@ std::string TransportTest::RandomMessage() {
   }()};
   return RandomString(0, 1024 * 1024, *kChars);
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// TransportTest::ServerCallDestination
-
-void TransportTest::ServerCallDestination::StartCall(
-    UnstartedCallHandler handler) {
-  handlers_.push(handler.V2HackToStartCallWithoutACallFilterStack());
-}
-
-absl::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {
-  if (!handlers_.empty()) {
-    auto handler = std::move(handlers_.front());
-    handlers_.pop();
-    return handler;
-  }
-  return absl::nullopt;
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// ActionState
-
-namespace transport_test_detail {
-
-ActionState::ActionState(NameAndLocation name_and_location)
-    : name_and_location_(name_and_location), state_(kNotCreated) {}
-
-bool ActionState::IsDone() {
-  switch (state_) {
-    case kNotCreated:
-    case kNotStarted:
-    case kStarted:
-      return false;
-    case kDone:
-    case kCancelled:
-      return true;
-  }
-}
-
-}  // namespace transport_test_detail
 
 }  // namespace grpc_core

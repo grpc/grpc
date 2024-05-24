@@ -12,37 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdio.h>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
+#include <stdio.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/call/yodel/fuzzer.pb.h"
+#include "test/core/call/yodel/yodel_test.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
-#include "test/core/transport/test_suite/fixture.h"
-#include "test/core/transport/test_suite/fuzzer.pb.h"
-#include "test/core/transport/test_suite/test.h"
+#include "absl/log/check.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
-  const auto& tests = grpc_core::TransportTestRegistry::Get().tests();
-  const auto& fixtures = grpc_core::TransportFixtureRegistry::Get().fixtures();
-  CHECK(!tests.empty());
-  CHECK(!fixtures.empty());
-  const int test_id = msg.test_id() % tests.size();
-  const int fixture_id = msg.fixture_id() % fixtures.size();
+  static const grpc_core::NoDestruct<
+      std::vector<grpc_core::yodel_detail::TestRegistry::Test>>
+      tests{grpc_core::yodel_detail::TestRegistry::AllTests()};
+  CHECK(!tests->empty());
+  const int test_id = msg.test_id() % tests->size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
     gpr_set_log_function(dont_log);
@@ -53,15 +48,10 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   if (!squelch) {
-    fprintf(stderr, "RUN TEST '%s' with fixture '%s'\n",
-            std::string(tests[test_id].name).c_str(),
-            std::string(fixtures[fixture_id].name).c_str());
+    LOG(INFO) << "RUN TEST '" << (*tests)[test_id].name << "'";
   }
   grpc_core::ProtoBitGen bitgen(msg.rng());
-  auto test =
-      tests[test_id].create(std::unique_ptr<grpc_core::TransportFixture>(
-                                fixtures[fixture_id].create()),
-                            msg.event_engine_actions(), bitgen);
+  auto test = (*tests)[test_id].make(msg.event_engine_actions(), bitgen);
   test->RunTest();
   delete test;
   CHECK(!::testing::Test::HasFailure());

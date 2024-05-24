@@ -16,45 +16,7 @@
 Generate one transport test & associated fuzzer
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_test")
 
 def grpc_transport_test(name, deps):
-    grpc_cc_test(
-        name = name + "_test",
-        srcs = [],
-        tags = ["no_windows", "no_mac"],
-        deps = [
-            ":test_main",
-        ] + deps,
-        uses_polling = False,
-    )
-
-    grpc_proto_fuzzer(
-        name = name + "_fuzzer",
-        srcs = ["fuzzer_main.cc"],
-        tags = ["no_windows", "no_mac"],
-        external_deps = [
-            "absl/log:check",
-            "gtest",
-        ],
-        deps = [
-            ":test",
-            ":fixture",
-            ":fuzzer_proto",
-            "//:event_engine_base_hdrs",
-            "//:config_vars",
-            "//:exec_ctx",
-            "//:gpr",
-            "//:grpc_unsecure",
-            "//:iomgr_timer",
-            "//src/core:default_event_engine",
-            "//src/core:env",
-            "//src/core:experiments",
-            "//test/core/event_engine/fuzzing_event_engine",
-            "//test/core/test_util:fuzz_config_vars",
-            "//test/core/test_util:proto_bit_gen",
-        ] + deps,
-        corpus = "corpus/%s" % name,
-        proto = None,
-    )
+    grpc_yodel_test(name, deps)
