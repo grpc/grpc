@@ -455,6 +455,12 @@ class UnstartedCallHandler {
   }
 
   template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }

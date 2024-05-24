@@ -253,10 +253,11 @@ CLIENT_CHANNEL_TEST(StartCall) {
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
   auto call_handler = TickUntilCallStarted();
-  SpawnTestSeq(call_initiator, "cancel", [call_initiator]() mutable {
-    call_initiator.Cancel();
-    return Empty{};
-  });
+  SpawnTestSeq(call.initiator, "cancel",
+               [call_initiator = call.initiator]() mutable {
+                 call_initiator.Cancel();
+                 return Empty{};
+               });
   WaitForAllPendingWork();
 }
 
