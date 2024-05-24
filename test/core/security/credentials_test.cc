@@ -1025,7 +1025,7 @@ void validate_sts_token_http_request(const grpc_http_request* request,
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
   absl::StatusOr<URI> url = URI::Parse(get_url_equivalent);
   if (!url.ok()) {
-    LOG(ERROR) << url.status().ToString();
+    LOG(ERROR) << url.status();
     CHECK_OK(url);
   }
   assert_query_parameters(*url, "resource", "resource");
