@@ -23,15 +23,14 @@
 #define HAVE_ABSEIL
 #endif
 
-#include <iostream>
-#include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/strings/str_format.h"
-#include "opentelemetry/exporters/prometheus/exporter_factory.h"
-#include "opentelemetry/exporters/prometheus/exporter_options.h"
+#include "opentelemetry/exporters/ostream/metric_exporter.h"
+#include "opentelemetry/exporters/ostream/metric_exporter_factory.h"
+#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader.h"
+#include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_factory.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/otel_plugin.h>
@@ -39,28 +38,31 @@
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
 #else
-#include "util.h"
+#include "../util.h"
 #endif
 
-ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
-ABSL_FLAG(std::string, prometheus_endpoint, "localhost:9464",
-          "Prometheus exporter endpoint");
+ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
-  // Register a global gRPC OpenTelemetry plugin configured with a prometheus
+  // Register a global gRPC OpenTelemetry plugin configured with an ostream
   // exporter.
-  opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
-  opts.url = absl::GetFlag(FLAGS_prometheus_endpoint);
-  auto prometheus_exporter =
-      opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
+  auto ostream_exporter =
+      opentelemetry::exporter::metrics::OStreamMetricExporterFactory::Create();
+  opentelemetry::sdk::metrics::PeriodicExportingMetricReaderOptions
+      reader_options;
+  reader_options.export_interval_millis = std::chrono::milliseconds(1000);
+  reader_options.export_timeout_millis = std::chrono::milliseconds(500);
+  auto reader =
+      opentelemetry::sdk::metrics::PeriodicExportingMetricReaderFactory::Create(
+          std::move(ostream_exporter), reader_options);
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   // The default histogram boundaries are not granular enough for RPCs. Override
-  // the "grpc.server.call.duration" view as recommended by
+  // the "grpc.client.attempt.duration" view as recommended by
   // https://github.com/grpc/proposal/blob/master/A66-otel-stats.md.
-  AddLatencyView(meter_provider.get(), "grpc.server.call.duration", "s");
-  meter_provider->AddMetricReader(std::move(prometheus_exporter));
+  AddLatencyView(meter_provider.get(), "grpc.client.attempt.duration", "s");
+  meter_provider->AddMetricReader(std::move(reader));
   auto status = grpc::OpenTelemetryPluginBuilder()
                     .SetMeterProvider(std::move(meter_provider))
                     .BuildAndRegisterGlobal();
@@ -69,6 +71,9 @@ int main(int argc, char** argv) {
               << status.ToString() << std::endl;
     return static_cast<int>(status.code());
   }
-  RunServer(absl::GetFlag(FLAGS_port));
+
+  // Continuously send RPCs every second.
+  RunClient(absl::GetFlag(FLAGS_target));
+
   return 0;
 }
