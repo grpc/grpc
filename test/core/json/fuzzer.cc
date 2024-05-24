@@ -26,8 +26,8 @@
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
 bool squelch = true;
 bool leak_check = true;

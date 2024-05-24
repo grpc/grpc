@@ -58,7 +58,7 @@ class ClientChannel : public Channel {
   // control plane work_serializer.
   class SubchannelWrapper : public SubchannelInterfaceWithCallDestination {
    public:
-    SubchannelWrapper(RefCountedPtr<ClientChannel> client_channel,
+    SubchannelWrapper(WeakRefCountedPtr<ClientChannel> client_channel,
                       RefCountedPtr<Subchannel> subchannel);
     ~SubchannelWrapper() override;
 
@@ -105,7 +105,7 @@ class ClientChannel : public Channel {
       }
     };
 
-    RefCountedPtr<ClientChannel> client_channel_;
+    WeakRefCountedPtr<ClientChannel> client_channel_;
     RefCountedPtr<Subchannel> subchannel_;
     // Maps from the address of the watcher passed to us by the LB policy
     // to the address of the WrapperWatcher that we passed to the underlying

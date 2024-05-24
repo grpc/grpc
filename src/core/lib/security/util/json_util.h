@@ -22,7 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 
 // Constants.
 #define GRPC_AUTH_JSON_TYPE_INVALID "invalid"

@@ -31,10 +31,10 @@
 #include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 
 namespace grpc_core {
 

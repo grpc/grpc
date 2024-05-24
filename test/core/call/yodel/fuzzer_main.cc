@@ -36,7 +36,7 @@ bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
-  static grpc_core::NoDestruct<
+  static const grpc_core::NoDestruct<
       std::vector<grpc_core::yodel_detail::TestRegistry::Test>>
       tests{grpc_core::yodel_detail::TestRegistry::AllTests()};
   CHECK(!tests->empty());

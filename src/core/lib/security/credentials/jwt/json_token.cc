@@ -45,9 +45,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
 using grpc_core::Json;
 

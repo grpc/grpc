@@ -37,10 +37,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

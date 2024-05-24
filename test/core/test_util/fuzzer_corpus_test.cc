@@ -28,12 +28,12 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/error.h"
@@ -82,14 +82,15 @@ class ExampleGenerator
       }
       if (!absl::GetFlag(FLAGS_directory).empty()) {
         auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
-        gpr_log(GPR_DEBUG, "test_srcdir=\"%s\"",
-                test_srcdir.has_value() ? test_srcdir->c_str() : "(null)");
+        VLOG(2) << "test_srcdir=\""
+                << (test_srcdir.has_value() ? test_srcdir->c_str() : "(null)")
+                << "\"";
         std::string directory = absl::GetFlag(FLAGS_directory);
         if (test_srcdir.has_value()) {
           directory =
               *test_srcdir + std::string("/com_github_grpc_grpc/") + directory;
         }
-        gpr_log(GPR_DEBUG, "Using corpus directory: %s", directory.c_str());
+        VLOG(2) << "Using corpus directory: " << directory;
         DIR* dp;
         struct dirent* ep;
         dp = opendir(directory.c_str());

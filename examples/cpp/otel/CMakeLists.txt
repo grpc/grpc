@@ -67,22 +67,21 @@ target_link_libraries(hw_grpc_proto
 add_library(util
   "util.cc")
 target_link_libraries(util
+  hw_grpc_proto
   opentelemetry-cpp::metrics
-  ${_GRPC_GRPCPP})
+  ${_GRPC_GRPCPP}
+  ${_REFLECTION}
+  ${_PROTOBUF_LIBPROTOBUF})
 
 # Targets greeter_callback_(client|server)
 foreach(_target
   greeter_callback_client greeter_callback_server)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
-    hw_grpc_proto
     absl::flags
     absl::flags_parse
     opentelemetry-cpp::metrics
     opentelemetry-cpp::prometheus_exporter
-    ${_REFLECTION}
-    ${_GRPC_GRPCPP}
     gRPC::grpcpp_otel_plugin
-    util
-    ${_PROTOBUF_LIBPROTOBUF})
+    util)
 endforeach()

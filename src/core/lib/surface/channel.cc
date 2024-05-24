@@ -29,11 +29,11 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/compression_internal.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 namespace grpc_core {
 
@@ -63,7 +63,8 @@ Channel::RegisteredCall::~RegisteredCall() {}
 //
 
 Channel::Channel(std::string target, const ChannelArgs& channel_args)
-    : target_(std::move(target)),
+    : UnstartedCallDestination("channel"),
+      target_(std::move(target)),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       compression_options_(CompressionOptionsFromChannelArgs(channel_args)),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
