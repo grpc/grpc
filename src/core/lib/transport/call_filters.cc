@@ -221,8 +221,8 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
             "Cancelling due to failed pipe operation: %s",
             DebugString().c_str());
   }
-  server_trailing_metadata_ =
-      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
+  PushServerTrailingMetadata(
+      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation")));
   server_trailing_metadata_waiter_.Wake();
 }
 
@@ -234,7 +234,7 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
             md->DebugString().c_str(), DebugString().c_str());
   }
   CHECK(md != nullptr);
-  if (server_trailing_metadata_ != nullptr) return;
+  if (cancelled_.is_set()) return;
   cancelled_.Set(md->get(GrpcCallWasCancelled()).value_or(false));
   server_trailing_metadata_ = std::move(md);
   client_initial_metadata_state_.CloseWithError();
