@@ -39,7 +39,7 @@ void test_unknown_scheme_target(void) {
       grpc_core::Channel::FromC(chan)->channel_stack(), 0);
   ASSERT_STREQ(elem->filter->name, "lame-client");
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Channel::FromC(chan)->Unref();
+  grpc_core::Channel::FromC(chan)->Orphan();
   creds->Unref();
 }
 
@@ -53,7 +53,7 @@ void test_security_connector_already_in_arg(void) {
       grpc_core::Channel::FromC(chan)->channel_stack(), 0);
   ASSERT_STREQ(elem->filter->name, "lame-client");
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Channel::FromC(chan)->Unref();
+  grpc_core::Channel::FromC(chan)->Orphan();
 }
 
 void test_null_creds(void) {
@@ -62,7 +62,7 @@ void test_null_creds(void) {
       grpc_core::Channel::FromC(chan)->channel_stack(), 0);
   ASSERT_STREQ(elem->filter->name, "lame-client");
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::Channel::FromC(chan)->Unref();
+  grpc_core::Channel::FromC(chan)->Orphan();
 }
 
 TEST(SecureChannelCreateTest, MainTest) {
