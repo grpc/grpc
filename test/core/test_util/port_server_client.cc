@@ -28,6 +28,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 
@@ -35,7 +36,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -154,12 +154,11 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
 
   if (!error.ok()) {
     failed = 1;
-    gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
-            grpc_core::StatusToString(error).c_str());
+    VLOG(2) << "failed port pick from server: retrying ["
+            << grpc_core::StatusToString(error) << "]";
   } else if (response->status != 200) {
     failed = 1;
-    gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",
-            response->status);
+    VLOG(2) << "failed port pick from server: status=" << response->status;
   }
 
   if (failed) {

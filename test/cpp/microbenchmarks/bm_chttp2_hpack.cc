@@ -26,11 +26,11 @@
 #include <benchmark/benchmark.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/random.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -135,7 +135,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
         char* s = grpc_dump_slice(outbuf.slices[i], GPR_DUMP_HEX);
-        gpr_log(GPR_DEBUG, "%" PRIdPTR ": %s", i, s);
+        VLOG(2) << i << ": " << s;
         gpr_free(s);
       }
     }

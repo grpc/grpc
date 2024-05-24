@@ -65,6 +65,13 @@ cmake -DCMAKE_BUILD_TYPE=Release ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
+# Install OpenTelemetry
+mkdir -p "third_party/opentelemetry-cpp/cmake/build"
+pushd "third_party/opentelemetry-cpp/cmake/build"
+cmake -DCMAKE_BUILD_TYPE=Release -DWITH_ABSEIL=ON -DBUILD_TESTING=OFF -DWITH_BENCHMARK=OFF ../..
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
+popd
+
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
 # a standalone build from an archive.
 # Get list of submodules from the .gitmodules file since for "git submodule foreach"
@@ -88,6 +95,7 @@ cmake \
   -DgRPC_RE2_PROVIDER=package \
   -DgRPC_SSL_PROVIDER=package \
   -DgRPC_ZLIB_PROVIDER=package \
+  -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON \
   ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
@@ -109,5 +117,10 @@ popd
 
 # Build route_guide example using Makefile and pkg-config
 pushd examples/cpp/route_guide
+make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
+popd
+
+# Build otel example using Makefile and pkg-config
+pushd examples/cpp/otel/ostream
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd

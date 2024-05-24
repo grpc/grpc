@@ -19,6 +19,8 @@
 #include <atomic>
 #include <thread>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/server_credentials.h>
@@ -171,9 +173,9 @@ class SynchronousServer final : public grpc::testing::Server {
 
     impl_ = builder->BuildAndStart();
     if (impl_ == nullptr) {
-      gpr_log(GPR_ERROR, "Server: Fail to BuildAndStart(port=%d)", port_num);
+      LOG(ERROR) << "Server: Fail to BuildAndStart(port=" << port_num << ")";
     } else {
-      gpr_log(GPR_INFO, "Server: BuildAndStart(port=%d)", port_num);
+      LOG(INFO) << "Server: BuildAndStart(port=" << port_num << ")";
     }
   }
 

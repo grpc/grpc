@@ -44,12 +44,12 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/endpoint_list.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 
