@@ -2484,6 +2484,7 @@ grpc_cc_library(
         "ares_resolver",
         "channel_args_endpoint_config",
         "common_event_engine_closures",
+        "dump_args",
         "error",
         "event_engine_common",
         "event_engine_tcp_socket_utils",

@@ -21,6 +21,7 @@
 #ifdef GPR_WINDOWS
 
 #include <memory>
+#include <ostream>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -108,25 +109,104 @@ class WindowsEventEngine : public EventEngine,
   // State of an active connection.
   // Managed by a shared_ptr, owned exclusively by the timeout callback and the
   // OnConnectCompleted callback herein.
-  struct ConnectionState {
-    // everything is guarded by mu;
-    grpc_core::Mutex mu
+  class ConnectionState : public std::enable_shared_from_this<ConnectionState> {
+   public:
+    ConnectionState(std::shared_ptr<WindowsEventEngine> engine,
+                    std::unique_ptr<WinSocket> socket,
+                    EventEngine::ResolvedAddress address,
+                    MemoryAllocator allocator,
+                    EventEngine::OnConnectCallback on_connect_user_callback);
+
+    // Starts the deadline timer, and sets up the socket to notify on writes.
+    void Start(Duration timeout);
+
+    // Runs the user callback and resets it to nullptr to ensure it only runs
+    // once.
+    void RunUserCallback(absl::StatusOr<std::unique_ptr<Endpoint>> error)
+        ABSL_LOCKS_EXCLUDED(mu_);
+
+    std::unique_ptr<WindowsEndpoint> MakeEndpoint(ThreadPool* thread_pool);
+
+    WinSocket* socket() { return socket_.get(); }
+
+    const EventEngine::ConnectionHandle& connection_handle() {
+      return connection_handle_;
+    }
+    const EventEngine::TaskHandle& timer_handle() { return timer_handle_; }
+
+    grpc_core::Mutex& mu() { return mu_; }
+
+   private:
+    friend std::ostream& operator<<(std::ostream& out,
+                                    const ConnectionState& connection_state);
+
+    // Creates the notify on write callback.
+    // Holds refs to the ConnectionState and WindowsEventEngine
+    EventEngine::Closure* MakeOnConnectedCallback()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+    // Creates the deadline timer callback.
+    // Holds refs to the ConnectionState and WindowsEventEngine
+    EventEngine::Closure* MakeDeadlineTimerCallback()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+    class OnConnectedCallback : public EventEngine::Closure {
+     public:
+      OnConnectedCallback(std::shared_ptr<WindowsEventEngine> engine,
+                          std::shared_ptr<ConnectionState> connection_state)
+          : engine_(std::move(engine)),
+            connection_state_(std::move(connection_state)) {}
+
+      // Runs the WindowsEngine's OnConnectCompleted if the deadline timer
+      // hasn't fired first.
+      void Run();
+
+     private:
+      std::shared_ptr<WindowsEventEngine> engine_;
+      std::shared_ptr<ConnectionState> connection_state_;
+    };
+
+    class DeadlineTimerCallback : public EventEngine::Closure {
+     public:
+      DeadlineTimerCallback(std::shared_ptr<WindowsEventEngine> engine,
+                            std::shared_ptr<ConnectionState> connection_state)
+          : engine_(std::move(engine)),
+            connection_state_(std::move(connection_state)) {}
+
+      // Runs the WindowsEngine's OnDeadlineTimerFired if the deadline timer
+      // hasn't fired first.
+      void Run();
+
+     private:
+      std::shared_ptr<WindowsEventEngine> engine_;
+      std::shared_ptr<ConnectionState> connection_state_;
+    };
+
+    // everything is guarded by mu_;
+    grpc_core::Mutex mu_
         ABSL_ACQUIRED_BEFORE(WindowsEventEngine::connection_mu_);
-    EventEngine::ConnectionHandle connection_handle ABSL_GUARDED_BY(mu);
-    EventEngine::TaskHandle timer_handle ABSL_GUARDED_BY(mu) =
+    std::unique_ptr<WinSocket> socket_ ABSL_GUARDED_BY(mu_);
+    EventEngine::ResolvedAddress address_ ABSL_GUARDED_BY(mu_);
+    MemoryAllocator allocator_ ABSL_GUARDED_BY(mu_);
+    std::shared_ptr<WindowsEventEngine> engine_ ABSL_GUARDED_BY(mu_);
+    EventEngine::OnConnectCallback on_connect_user_callback_
+        ABSL_GUARDED_BY(mu_);
+    EventEngine::ConnectionHandle connection_handle_ ABSL_GUARDED_BY(mu_);
+    EventEngine::TaskHandle timer_handle_ ABSL_GUARDED_BY(mu_) =
         EventEngine::TaskHandle::kInvalid;
-    EventEngine::OnConnectCallback on_connected_user_callback
-        ABSL_GUARDED_BY(mu);
-    EventEngine::Closure* on_connected ABSL_GUARDED_BY(mu);
-    std::unique_ptr<WinSocket> socket ABSL_GUARDED_BY(mu);
-    EventEngine::ResolvedAddress address ABSL_GUARDED_BY(mu);
-    MemoryAllocator allocator ABSL_GUARDED_BY(mu);
+    std::unique_ptr<OnConnectedCallback> on_connected_cb_ ABSL_GUARDED_BY(mu_);
+    std::unique_ptr<DeadlineTimerCallback> deadline_timer_cb_
+        ABSL_GUARDED_BY(mu_);
+    bool has_run_ ABSL_GUARDED_BY(mu_) = false;
   };
+  friend std::ostream& operator<<(std::ostream& out,
+                                  const ConnectionState& connection_state);
 
   // A poll worker which schedules itself unless kicked
   class IOCPWorkClosure : public EventEngine::Closure {
    public:
     explicit IOCPWorkClosure(ThreadPool* thread_pool, IOCP* iocp);
+
     void Run() override;
     void WaitForShutdown();
 
@@ -139,23 +219,25 @@ class WindowsEventEngine : public EventEngine,
 
   void OnConnectCompleted(std::shared_ptr<ConnectionState> state);
 
+  void OnDeadlineTimerFired(std::shared_ptr<ConnectionState> state);
+
   // CancelConnect called from within the deadline timer.
-  // In this case, the connection_state->mu is already locked, and timer
+  // In this case, the connection_state->mu_ is already locked, and timer
   // cancellation is not possible.
   bool CancelConnectFromDeadlineTimer(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu_);
 
-  // Completes the connection cancellation logic after checking handle validity
-  // and optionally cancelling deadline timers.
+  // Completes the connection cancellation logic after checking handle
+  // validity and optionally cancelling deadline timers.
   bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu_);
 
   struct TimerClosure;
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
-  grpc_core::Mutex connection_mu_ ABSL_ACQUIRED_AFTER(ConnectionState::mu);
+  grpc_core::Mutex connection_mu_ ABSL_ACQUIRED_AFTER(ConnectionState::mu_);
   grpc_core::CondVar connection_cv_;
   ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
   std::atomic<intptr_t> aba_token_{0};
