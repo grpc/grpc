@@ -68,9 +68,7 @@ popd
 # Install OpenTelemetry
 mkdir -p "third_party/opentelemetry-cpp/cmake/build"
 pushd "third_party/opentelemetry-cpp/cmake/build"
-# TODO(yashykt): See if this can be gotten from archives like everything else
-git submodule update --init --recursive
-cmake -DCMAKE_BUILD_TYPE=Release -DWITH_ABSEIL=ON -DWITH_PROMETHEUS=ON -DBUILD_TESTING=OFF -DWITH_BENCHMARK=OFF ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DWITH_ABSEIL=ON -DBUILD_TESTING=OFF -DWITH_BENCHMARK=OFF ../..
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}" install
 popd
 
@@ -123,6 +121,6 @@ make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd
 
 # Build otel example using Makefile and pkg-config
-pushd examples/cpp/otel
+pushd examples/cpp/otel/ostream
 make "-j${GRPC_CPP_DISTRIBTEST_BUILD_COMPILER_JOBS}"
 popd
