@@ -50,6 +50,7 @@ add_custom_command(
 
 # Include generated *.pb.h files
 include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+include_directories("${CMAKE_SOURCE_DIR}")
 
 # hw_grpc_proto
 add_library(hw_grpc_proto
@@ -61,6 +62,13 @@ target_link_libraries(hw_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
+
+# util
+add_library(util
+  "util.cc")
+target_link_libraries(util
+  opentelemetry-cpp::metrics
+  ${_GRPC_GRPCPP})
 
 # Targets greeter_callback_(client|server)
 foreach(_target
@@ -75,5 +83,6 @@ foreach(_target
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     gRPC::grpcpp_otel_plugin
+    util
     ${_PROTOBUF_LIBPROTOBUF})
 endforeach()
