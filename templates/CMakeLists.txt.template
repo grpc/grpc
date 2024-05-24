@@ -119,7 +119,10 @@
       if lib_name == 'protobuf':
         # TODO(jtattermusch): add better way of excluding explicit protobuf dependency.
         continue
-      requires.add(lib_name)
+      if lib_name == 'opentelemetry-cpp::api':
+        requires.add('opentelemetry_api')
+      else:
+        requires.add(lib_name)
     return list(sorted(requires))
 
   def get_pkgconfig_requires_private(lib):
@@ -1142,3 +1145,14 @@
     "${" ".join(get_pkgconfig_libs("grpc++_unsecure"))}"
     "${" ".join(get_pkgconfig_libs_private("grpc++_unsecure"))}"
     "grpc++_unsecure.pc")
+
+  # grpcpp_otel_plugin .pc file
+  generate_pkgconfig(
+    "gRPC++ OpenTelemetry Plugin"
+    "OpenTelemetry Plugin for gRPC C++"
+    "<%text>${gRPC_CPP_VERSION}</%text>"
+    "${" ".join(get_pkgconfig_requires("grpcpp_otel_plugin"))}"
+    "${" ".join(get_pkgconfig_requires_private("grpcpp_otel_plugin"))}"
+    "${" ".join(get_pkgconfig_libs("grpcpp_otel_plugin"))}"
+    "${" ".join(get_pkgconfig_libs_private("grpcpp_otel_plugin"))}"
+    "grpcpp_otel_plugin.pc")

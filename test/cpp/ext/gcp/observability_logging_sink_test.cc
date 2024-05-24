@@ -22,7 +22,7 @@
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/json/json_reader.h"
+#include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {
