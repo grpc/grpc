@@ -371,9 +371,9 @@ void SubchannelStreamClient::CallState::RecvMessageReady() {
       if (!status.ok()) {
         if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
           LOG(INFO) << subchannel_stream_client_->tracer_ << " "
-                    << subchannel_stream_client_.get() << " " << this
-                    << ": SubchannelStreamClient CallState failed to "
-                    << "parse response message: " << status;
+                    << subchannel_stream_client_.get()
+                    << ": SubchannelStreamClient CallState " << this
+                    << ": failed to parse response message: " << status;
         }
         Cancel();
       }
@@ -417,9 +417,9 @@ void SubchannelStreamClient::CallState::RecvTrailingMetadataReady(
   }
   if (GPR_UNLIKELY(self->subchannel_stream_client_->tracer_ != nullptr)) {
     LOG(INFO) << self->subchannel_stream_client_->tracer_ << " "
-              << self->subchannel_stream_client_.get() << " " << self
-              << ": SubchannelStreamClient CallState health watch failed "
-              << "with status " << status;
+              << self->subchannel_stream_client_.get()
+              << ": SubchannelStreamClient CallState " << self
+              << ": health watch failed with status " << status;
   }
   // Clean up.
   self->recv_trailing_metadata_.Clear();
