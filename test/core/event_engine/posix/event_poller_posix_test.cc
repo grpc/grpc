@@ -52,10 +52,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
@@ -235,8 +235,8 @@ void ListenCb(server* sv, absl::Status status) {
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
   } else if (fd < 0) {
-    gpr_log(GPR_ERROR, "Failed to acceot a connection, returned error: %s",
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "Failed to acceot a connection, returned error: "
+               << grpc_core::StrError(errno);
   }
   EXPECT_GE(fd, 0);
   EXPECT_LT(fd, FD_SETSIZE);
@@ -349,7 +349,7 @@ void ClientStart(client* cl, int port) {
       pfd.events = POLLOUT;
       pfd.revents = 0;
       if (poll(&pfd, 1, -1) == -1) {
-        gpr_log(GPR_ERROR, "poll() failed during connect; errno=%d", errno);
+        LOG(ERROR) << "poll() failed during connect; errno=" << errno;
         abort();
       }
     } else {
@@ -389,7 +389,7 @@ class EventPollerTest : public ::testing::Test {
     EXPECT_NE(engine_, nullptr);
     scheduler_->ChangeCurrentEventEngine(engine_.get());
     if (g_event_poller != nullptr) {
-      gpr_log(GPR_INFO, "Using poller: %s", g_event_poller->Name().c_str());
+      LOG(INFO) << "Using poller: " << g_event_poller->Name();
     }
   }
 
