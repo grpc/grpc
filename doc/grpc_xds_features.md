@@ -77,5 +77,5 @@ Aggregate Cluster Behavior Fixes | [A75](https://github.com/grpc/proposal/blob/m
 Pick First | [A62](https://github.com/grpc/proposal/blob/master/A62-pick-first.md) | v1.58.0 | v1.58.1 | v1.56.0 | |
 [StringMatcher for Header Matching](https://github.com/envoyproxy/envoy/blob/3fe4b8d335fa339ef6f17325c8d31f87ade7bb1a/api/envoy/config/route/v3/route_components.proto#L2280) | [A63](https://github.com/grpc/proposal/blob/master/A63-xds-string-matcher-in-header-matching.md) | v1.56.0 | v1.53.0 | v1.56.0 | v1.9.0 |
 LRS Custom Metrics Support | [A64](https://github.com/grpc/proposal/blob/master/A64-lrs-custom-metrics.md) | v1.54.0 | | | |
-mTLS Credentials in xDS Bootstrap File | [A65](https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md) | v1.57.0 | | v1.61.0 | |
+mTLS Credentials in xDS Bootstrap File | [A65](https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md) | v1.65.0 | | v1.61.0 | |
 Stateful Session Affinity | [A55](https://github.com/grpc/proposal/blob/master/A55-xds-stateful-session-affinity.md), [A60](https://github.com/grpc/proposal/blob/master/A60-xds-stateful-session-affinity-weighted-clusters.md), [A75](https://github.com/grpc/proposal/blob/master/A75-xds-aggregate-cluster-behavior-fixes.md) | v1.61.0 | | | |
