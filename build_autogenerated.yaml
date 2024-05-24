@@ -972,13 +972,6 @@ libs:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/json/json.h
-  - src/core/lib/json/json_args.h
-  - src/core/lib/json/json_channel_args.h
-  - src/core/lib/json/json_object_loader.h
-  - src/core/lib/json/json_reader.h
-  - src/core/lib/json/json_util.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
@@ -1213,6 +1206,13 @@ libs:
   - src/core/util/http_client/httpcli.h
   - src/core/util/http_client/httpcli_ssl_credentials.h
   - src/core/util/http_client/parser.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_args.h
+  - src/core/util/json/json_channel_args.h
+  - src/core/util/json/json_object_loader.h
+  - src/core/util/json/json_reader.h
+  - src/core/util/json/json_util.h
+  - src/core/util/json/json_writer.h
   - src/core/util/spinlock.h
   - src/core/xds/grpc/certificate_provider_store.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
@@ -1801,10 +1801,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/json/json_object_loader.cc
-  - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_util.cc
-  - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
@@ -2021,6 +2017,10 @@ libs:
   - src/core/util/http_client/httpcli.cc
   - src/core/util/http_client/httpcli_security_connector.cc
   - src/core/util/http_client/parser.cc
+  - src/core/util/json/json_object_loader.cc
+  - src/core/util/json/json_reader.cc
+  - src/core/util/json/json_util.cc
+  - src/core/util/json/json_writer.cc
   - src/core/xds/grpc/certificate_provider_store.cc
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   - src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -2508,12 +2508,6 @@ libs:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/json/json.h
-  - src/core/lib/json/json_args.h
-  - src/core/lib/json/json_channel_args.h
-  - src/core/lib/json/json_object_loader.h
-  - src/core/lib/json/json_reader.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
@@ -2683,6 +2677,12 @@ libs:
   - src/core/util/http_client/format_request.h
   - src/core/util/http_client/httpcli.h
   - src/core/util/http_client/parser.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_args.h
+  - src/core/util/json/json_channel_args.h
+  - src/core/util/json/json_object_loader.h
+  - src/core/util/json/json_reader.h
+  - src/core/util/json/json_writer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -2952,9 +2952,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/json/json_object_loader.cc
-  - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
@@ -3098,6 +3095,9 @@ libs:
   - src/core/util/http_client/format_request.cc
   - src/core/util/http_client/httpcli.cc
   - src/core/util/http_client/parser.cc
+  - src/core/util/json/json_object_loader.cc
+  - src/core/util/json/json_reader.cc
+  - src/core/util/json/json_writer.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -4596,10 +4596,6 @@ libs:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/json/json.h
-  - src/core/lib/json/json_args.h
-  - src/core/lib/json/json_reader.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/matchers/matchers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
@@ -4730,6 +4726,10 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_args.h
+  - src/core/util/json/json_reader.h
+  - src/core/util/json/json_writer.h
   - src/core/util/spinlock.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
@@ -4918,8 +4918,6 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/json/json_reader.cc
-  - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
@@ -5017,6 +5015,8 @@ libs:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/json/json_reader.cc
+  - src/core/util/json/json_writer.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -11755,9 +11755,6 @@ targets:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/json/json.h
-  - src/core/lib/json/json_args.h
-  - src/core/lib/json/json_writer.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
@@ -11862,6 +11859,9 @@ targets:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_args.h
+  - src/core/util/json/json_writer.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
@@ -12046,7 +12046,6 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/json/json_writer.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc
@@ -12118,6 +12117,7 @@ targets:
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/json/json_writer.cc
   - test/core/transport/interception_chain_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c

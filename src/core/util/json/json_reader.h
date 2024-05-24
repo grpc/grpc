@@ -14,16 +14,21 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_H
-#define GRPC_SRC_CORE_LIB_JSON_JSON_H
+#ifndef GRPC_SRC_CORE_UTIL_JSON_JSON_READER_H
+#define GRPC_SRC_CORE_UTIL_JSON_JSON_READER_H
 
-#include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 
-using Json = experimental::Json;
+// Parses JSON string from json_str.
+absl::StatusOr<Json> JsonParse(absl::string_view json_str);
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_H
+#endif  // GRPC_SRC_CORE_UTIL_JSON_JSON_READER_H

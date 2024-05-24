@@ -53,8 +53,6 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -64,6 +62,8 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 
 using grpc_core::Json;
 

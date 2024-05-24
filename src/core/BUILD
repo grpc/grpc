@@ -4524,7 +4524,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "json",
     hdrs = [
-        "lib/json/json.h",
+        "util/json/json.h",
     ],
     deps = ["//:gpr"],
 )
@@ -4532,10 +4532,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "json_reader",
     srcs = [
-        "lib/json/json_reader.cc",
+        "util/json/json_reader.cc",
     ],
     hdrs = [
-        "lib/json/json_reader.h",
+        "util/json/json_reader.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4557,10 +4557,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "json_writer",
     srcs = [
-        "lib/json/json_writer.cc",
+        "util/json/json_writer.cc",
     ],
     hdrs = [
-        "lib/json/json_writer.h",
+        "util/json/json_writer.h",
     ],
     external_deps = ["absl/strings"],
     deps = [
@@ -4571,8 +4571,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "json_util",
-    srcs = ["lib/json/json_util.cc"],
-    hdrs = ["lib/json/json_util.h"],
+    srcs = ["util/json/json_util.cc"],
+    hdrs = ["util/json/json_util.h"],
     external_deps = ["absl/strings"],
     deps = [
         "error",
@@ -4588,15 +4588,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "json_args",
-    hdrs = ["lib/json/json_args.h"],
+    hdrs = ["util/json/json_args.h"],
     external_deps = ["absl/strings"],
     deps = ["//:gpr"],
 )
 
 grpc_cc_library(
     name = "json_object_loader",
-    srcs = ["lib/json/json_object_loader.cc"],
-    hdrs = ["lib/json/json_object_loader.h"],
+    srcs = ["util/json/json_object_loader.cc"],
+    hdrs = ["util/json/json_object_loader.h"],
     external_deps = [
         "absl/meta:type_traits",
         "absl/status",
@@ -4617,7 +4617,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "json_channel_args",
-    hdrs = ["lib/json/json_channel_args.h"],
+    hdrs = ["util/json/json_channel_args.h"],
     external_deps = [
         "absl/strings",
         "absl/types:optional",
