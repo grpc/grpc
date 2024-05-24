@@ -76,7 +76,7 @@ Pod::Spec.new do |s|
 
   s.source = {
     :git => 'https://github.com/google/boringssl.git',
-    :commit => "5a2bca2124800f2861263959b72bc35cdf18949b",
+    :commit => "b8a2bffc598f230484ff48a247526a9820facfc2",
   }
 
   s.ios.deployment_target = '10.0'
