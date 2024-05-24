@@ -18,7 +18,6 @@
 #include <limits.h>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -50,9 +49,8 @@
 #include <cstring>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/status_helper.h"

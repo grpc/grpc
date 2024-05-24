@@ -29,7 +29,6 @@
 #include "absl/strings/str_replace.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"

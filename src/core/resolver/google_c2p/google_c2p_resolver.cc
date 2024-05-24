@@ -30,7 +30,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/gcp/metadata_query.h"

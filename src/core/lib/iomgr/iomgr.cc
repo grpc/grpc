@@ -102,9 +102,11 @@ void grpc_iomgr_shutdown() {
       if (gpr_time_cmp(
               gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME), last_warning_time),
               gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
+        if (g_root_object.next != &g_root_object) {
+          VLOG(2) << "Waiting for " << count_objects()
+                  << " iomgr objects to be destroyed";
+        }
         last_warning_time = gpr_now(GPR_CLOCK_REALTIME);
-        VLOG(2) << "Waiting for " << count_objects()
-                << " iomgr objects to be destroyed";
       }
       grpc_core::ExecCtx::Get()->SetNowIomgrShutdown();
       if (grpc_timer_check(nullptr) == GRPC_TIMERS_FIRED) {
