@@ -19,8 +19,8 @@ cc_binary(
     srcs = ["greeter_callback_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        "//examples/cpp/otel:util",
         "//:grpcpp_otel_plugin",
+        "//examples/cpp/otel:util",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@io_opentelemetry_cpp//exporters/ostream:ostream_metric_exporter",
@@ -33,8 +33,8 @@ cc_binary(
     srcs = ["greeter_callback_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        "//examples/cpp/otel:util",
         "//:grpcpp_otel_plugin",
+        "//examples/cpp/otel:util",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/strings:str_format",
