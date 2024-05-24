@@ -66,30 +66,6 @@ bool_flag(
     build_setting_default = False,
 )
 
-platform(
-    name = "android_x86_64",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:x86_64",
-    ],
-)
-
-platform(
-    name = "android_arm64",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:arm64",
-    ],
-)
-
-platform(
-    name = "android_armv7",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:armv7",
-    ],
-)
-
 config_setting(
     name = "grpc_no_rls_flag",
     flag_values = {":disable_grpc_rls": "true"},
