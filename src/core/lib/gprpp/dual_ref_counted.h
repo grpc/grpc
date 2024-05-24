@@ -335,6 +335,7 @@ class DualRefCounted : public Impl {
       gpr_log(GPR_INFO, "%s:%p weak_ref %d -> %d; (refs=%d)", trace_, this,
               weak_refs, weak_refs + 1, strong_refs);
     }
+    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
 #else
     refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
 #endif
@@ -351,6 +352,7 @@ class DualRefCounted : public Impl {
               this, location.file(), location.line(), weak_refs, weak_refs + 1,
               strong_refs, reason);
     }
+    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
 #else
     // Use conditionally-important parameters
     (void)location;

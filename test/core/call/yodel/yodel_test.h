@@ -380,7 +380,6 @@ class YodelTest : public ::testing::Test {
  private:
   class WatchDog;
   struct State {
-    grpc::testing::TestGrpcScope grpc_scope;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine;
     RefCountedPtr<CallArenaAllocator> call_arena_allocator;

@@ -22,6 +22,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
+#include "test/core/test_util/build.h"
 
 namespace grpc_core {
 
@@ -150,6 +152,7 @@ void YodelTest::RunTest() {
             return options;
           }(),
           actions_);
+  grpc_init();
   state_->call_arena_allocator = MakeRefCounted<CallArenaAllocator>(
       ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
           "test-allocator"),
@@ -164,6 +167,14 @@ void YodelTest::RunTest() {
   Shutdown();
   state_->event_engine->TickUntilIdle();
   state_->event_engine->UnsetGlobalHooks();
+  grpc_event_engine::experimental::WaitForSingleOwner(
+      std::move(state_->event_engine));
+  grpc_shutdown_blocking();
+  if (!grpc_wait_until_shutdown(10)) {
+    LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
+  }
+  state_.reset();
+  AsanAssertNoLeaks();
 }
 
 void YodelTest::TickUntilTrue(absl::FunctionRef<bool()> poll) {

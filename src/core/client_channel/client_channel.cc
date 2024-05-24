@@ -112,7 +112,8 @@ extern TraceFlag grpc_client_channel_lb_call_trace;
 
 class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
  public:
-  explicit ResolverResultHandler(RefCountedPtr<ClientChannel> client_channel)
+  explicit ResolverResultHandler(
+      WeakRefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
   ~ResolverResultHandler() override {
@@ -128,7 +129,7 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
   }
 
  private:
-  RefCountedPtr<ClientChannel> client_channel_;
+  WeakRefCountedPtr<ClientChannel> client_channel_;
 };
 
 //
@@ -245,7 +246,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
 };
 
 ClientChannel::SubchannelWrapper::SubchannelWrapper(
-    RefCountedPtr<ClientChannel> client_channel,
+    WeakRefCountedPtr<ClientChannel> client_channel,
     RefCountedPtr<Subchannel> subchannel)
     : SubchannelInterfaceWithCallDestination(
           GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)
@@ -361,7 +362,7 @@ class ClientChannel::ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
   explicit ClientChannelControlHelper(
-      RefCountedPtr<ClientChannel> client_channel)
+      WeakRefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
   ~ClientChannelControlHelper() override {
@@ -463,7 +464,7 @@ class ClientChannel::ClientChannelControlHelper
     return channelz::ChannelTrace::Error;
   }
 
-  RefCountedPtr<ClientChannel> client_channel_;
+  WeakRefCountedPtr<ClientChannel> client_channel_;
 };
 
 //
@@ -628,7 +629,7 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
   grpc_connectivity_state state =
       ABSL_TS_UNCHECKED_READ(state_tracker_).state();
   if (state == GRPC_CHANNEL_IDLE && try_to_connect) {
-    auto self = RefAsSubclass<ClientChannel>();  // Held by callback.
+    auto self = WeakRefAsSubclass<ClientChannel>();  // Held by callback.
     work_serializer_->Run(
         [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
           self->TryToConnectLocked();
@@ -797,7 +798,8 @@ void ClientChannel::CreateResolverLocked() {
   }
   resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
       uri_to_resolve_, channel_args_, nullptr, work_serializer_,
-      std::make_unique<ResolverResultHandler>(RefAsSubclass<ClientChannel>()));
+      std::make_unique<ResolverResultHandler>(
+          WeakRefAsSubclass<ClientChannel>()));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
@@ -1108,7 +1110,7 @@ OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
   lb_policy_args.work_serializer = work_serializer_;
   lb_policy_args.channel_control_helper =
       std::make_unique<ClientChannelControlHelper>(
-          RefAsSubclass<ClientChannel>());
+          WeakRefAsSubclass<ClientChannel>());
   lb_policy_args.args = args;
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args),

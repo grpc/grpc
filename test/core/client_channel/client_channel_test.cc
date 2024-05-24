@@ -211,6 +211,7 @@ class ClientChannelTest : public YodelTest {
         .SetObject(&client_channel_factory_)
         .SetObject(ResourceQuota::Default())
         .SetObject(std::static_pointer_cast<EventEngine>(event_engine()))
+        .SetIfUnset(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true)
         // TODO(ctiller): remove once v3 supports retries?
         .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, 0);
   }
@@ -226,6 +227,7 @@ class ClientChannelTest : public YodelTest {
   void Shutdown() override {
     channel_.reset();
     picker_.reset();
+    call_destination_.reset();
   }
 
   RefCountedPtr<ClientChannel> channel_;
