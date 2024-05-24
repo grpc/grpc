@@ -111,9 +111,8 @@ std::string LoadRecordKey::GetClientIpBytes() const {
   } else if (client_ip_hex_.size() == kIpv4AddressLength) {
     uint32_t ip_bytes;
     if (sscanf(client_ip_hex_.c_str(), "%x", &ip_bytes) != 1) {
-      gpr_log(GPR_ERROR,
-              "Can't parse client IP (%s) from a hex string to an integer.",
-              client_ip_hex_.c_str());
+      LOG(ERROR) << "Can't parse client IP (" << client_ip_hex_
+                 << ") from a hex string to an integer.";
       return "";
     }
     ip_bytes = grpc_htonl(ip_bytes);
@@ -124,10 +123,9 @@ std::string LoadRecordKey::GetClientIpBytes() const {
     for (size_t i = 0; i < 4; ++i) {
       if (sscanf(client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str(), "%x",
                  ip_bytes + i) != 1) {
-        gpr_log(
-            GPR_ERROR,
-            "Can't parse client IP part (%s) from a hex string to an integer.",
-            client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str());
+        LOG(ERROR) << "Can't parse client IP part ("
+                   << client_ip_hex_.substr(i * 8, (i + 1) * 8)
+                   << ") from a hex string to an integer.";
         return "";
       }
       ip_bytes[i] = grpc_htonl(ip_bytes[i]);
