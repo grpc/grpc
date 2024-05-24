@@ -96,6 +96,8 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
     }
     options->set_watch_root_cert(!config->ca_certificate_file().empty());
     options->set_watch_identity_pair(!config->certificate_file().empty());
+    options->set_certificate_verifier(
+        MakeRefCounted<HostNameCertificateVerifier>());
     return MakeRefCounted<TlsCredentials>(std::move(options));
   }
 

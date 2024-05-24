@@ -318,6 +318,26 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
           },
           debug_label)) {}
 
+std::shared_ptr<ServerCredentials>
+XdsEnd2endTest::BalancerServerThread::Credentials() {
+  if (GetParam().xds_server_uses_tls_creds()) {
+    std::string identity_cert =
+        grpc_core::testing::GetFileContents(kServerCertPath);
+    std::string private_key =
+        grpc_core::testing::GetFileContents(kServerKeyPath);
+    std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
+        {private_key, identity_cert}};
+    auto certificate_provider =
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            identity_key_cert_pairs);
+    grpc::experimental::TlsServerCredentialsOptions options(
+        certificate_provider);
+    options.watch_identity_key_cert_pairs();
+    return grpc::experimental::TlsServerCredentials(options);
+  }
+  return ServerThread::Credentials();
+}
+
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
   builder->RegisterService(ads_service_.get());
@@ -490,7 +510,8 @@ std::vector<int> XdsEnd2endTest::GetBackendPorts(size_t start_index,
 
 void XdsEnd2endTest::InitClient(absl::optional<XdsBootstrapBuilder> builder,
                                 std::string lb_expected_authority,
-                                int xds_resource_does_not_exist_timeout_ms) {
+                                int xds_resource_does_not_exist_timeout_ms,
+                                std::string balancer_authority_override) {
   if (!builder.has_value()) {
     builder = MakeBootstrapBuilder();
   }
@@ -508,6 +529,11 @@ void XdsEnd2endTest::InitClient(absl::optional<XdsBootstrapBuilder> builder,
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
         const_cast<char*>(lb_expected_authority.c_str())));
+  }
+  if (!balancer_authority_override.empty()) {
+    xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+        const_cast<char*>(balancer_authority_override.c_str())));
   }
   xds_channel_args_.num_args = xds_channel_args_to_add_.size();
   xds_channel_args_.args = xds_channel_args_to_add_.data();
