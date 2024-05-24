@@ -226,9 +226,8 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
   return absl::nullopt;
 }
 
-void RunServer(bool secure_mode, bool enable_csm_observability, int port,
-               const int maintenance_port, absl::string_view hostname,
-               absl::string_view server_id,
+void RunServer(bool secure_mode, int port, const int maintenance_port,
+               absl::string_view hostname, absl::string_view server_id,
                const std::function<void(Server*)>& server_callback) {
   std::unique_ptr<Server> xds_enabled_server;
   std::unique_ptr<Server> server;
@@ -252,14 +251,11 @@ void RunServer(bool secure_mode, bool enable_csm_observability, int port,
                  .BuildAndStart();
     LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
   } else {
-    // CSM Observability requires an xDS enabled server.
-    auto builder = enable_csm_observability
-                       ? std::make_unique<XdsServerBuilder>()
-                       : std::make_unique<ServerBuilder>();
-    maintenance_services.AddToServerBuilder(builder.get());
+    ServerBuilder builder;
+    maintenance_services.AddToServerBuilder(&builder);
     server = builder
-                 ->AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                                    grpc::InsecureServerCredentials())
+                 .AddListeningPort(absl::StrCat("0.0.0.0:", port),
+                                   grpc::InsecureServerCredentials())
                  .RegisterService(&service)
                  .BuildAndStart();
     LOG(INFO) << "Server listening on 0.0.0.0:" << port;

@@ -30,9 +30,8 @@ namespace testing {
 absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
     absl::string_view header_value, absl::string_view hostname);
 
-void RunServer(bool secure_mode, bool enable_csm_observability, int port,
-               const int maintenance_port, absl::string_view hostname,
-               absl::string_view server_id,
+void RunServer(bool secure_mode, int port, const int maintenance_port,
+               absl::string_view hostname, absl::string_view server_id,
                const std::function<void(Server*)>& server_callback);
 
 }  // namespace testing
