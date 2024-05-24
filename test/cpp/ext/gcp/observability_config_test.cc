@@ -23,7 +23,7 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/json/json_reader.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 

@@ -131,7 +131,6 @@ struct grpc_cronet_transport final : public grpc_core::FilterStackTransport {
   void SetPollsetSet(grpc_stream* /*stream*/,
                      grpc_pollset_set* /*pollset_set*/) override {}
   void PerformOp(grpc_transport_op* op) override;
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
   size_t SizeOfStream() const override;
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
