@@ -811,6 +811,24 @@ def _impl(ctx):
         ],
     )
 
+    is_linux = ctx.attr.target_libc != "macosx"
+    if is_linux:
+        versioned_library_flag_group = flag_group(
+            flags = ["-l:%{libraries_to_link.name}"],
+            expand_if_equal = variable_with_value(
+                name = "libraries_to_link.type",
+                value = "versioned_dynamic_library",
+            ),
+        )
+    else:
+        versioned_library_flag_group = flag_group(
+            flags = ["%{libraries_to_link.path}"],
+            expand_if_equal = variable_with_value(
+                name = "libraries_to_link.type",
+                value = "versioned_dynamic_library",
+            ),
+        )
+
     libraries_to_link_feature = feature(
         name = "libraries_to_link",
         flag_sets = [
@@ -868,13 +886,7 @@ def _impl(ctx):
                                     value = "dynamic_library",
                                 ),
                             ),
-                            flag_group(
-                                flags = ["-l:%{libraries_to_link.name}"],
-                                expand_if_equal = variable_with_value(
-                                    name = "libraries_to_link.type",
-                                    value = "versioned_dynamic_library",
-                                ),
-                            ),
+                            versioned_library_flag_group,
                             flag_group(
                                 flags = ["-Wl,-no-whole-archive"],
                                 expand_if_true = "libraries_to_link.is_whole_archive",
@@ -1283,7 +1295,6 @@ def _impl(ctx):
         ],
     )
 
-    is_linux = ctx.attr.target_libc != "macosx"
     libtool_feature = feature(
         name = "libtool",
         enabled = not is_linux,
