@@ -22,13 +22,13 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -411,8 +411,8 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
 
   absl::Status UpdateLocked(UpdateArgs args) override {
     auto* config = static_cast<FixedAddressConfig*>(args.config.get());
-    gpr_log(GPR_INFO, "%s: update URI: %s", kFixedAddressLbPolicyName,
-            config->address().c_str());
+    LOG(INFO) << kFixedAddressLbPolicyName
+              << ": update URI: " << config->address();
     auto uri = URI::Parse(config->address());
     args.config.reset();
     EndpointAddressesList addresses;
@@ -421,9 +421,8 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
       CHECK(grpc_parse_uri(*uri, &address));
       addresses.emplace_back(address, ChannelArgs());
     } else {
-      gpr_log(GPR_ERROR,
-              "%s: could not parse URI (%s), using empty address list",
-              kFixedAddressLbPolicyName, uri.status().ToString().c_str());
+      LOG(ERROR) << kFixedAddressLbPolicyName << ": could not parse URI ("
+                 << uri.status().ToString() << "), using empty address list";
       args.resolution_note = "no address in fixed_address_lb policy";
     }
     args.addresses =
