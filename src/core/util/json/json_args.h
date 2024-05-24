@@ -1,4 +1,4 @@
-// Copyright 2022 gRPC authors.
+// Copyright 2020 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,31 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_CHANNEL_ARGS_H
-#define GRPC_SRC_CORE_LIB_JSON_JSON_CHANNEL_ARGS_H
-
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
+#ifndef GRPC_SRC_CORE_UTIL_JSON_JSON_ARGS_H
+#define GRPC_SRC_CORE_UTIL_JSON_JSON_ARGS_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/json/json_args.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
-class JsonChannelArgs : public JsonArgs {
+class JsonArgs {
  public:
-  explicit JsonChannelArgs(const ChannelArgs& args) : args_(args) {}
+  JsonArgs() = default;
+  virtual ~JsonArgs() = default;
 
-  bool IsEnabled(absl::string_view key) const override {
-    return args_.GetBool(key).value_or(false);
-  }
-
- private:
-  ChannelArgs args_;
+  virtual bool IsEnabled(absl::string_view /*key*/) const { return true; }
 };
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_CHANNEL_ARGS_H
+#endif  // GRPC_SRC_CORE_UTIL_JSON_JSON_ARGS_H

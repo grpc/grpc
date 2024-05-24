@@ -16,8 +16,10 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_JSON_JSON_UTIL_H
-#define GRPC_SRC_CORE_LIB_JSON_JSON_UTIL_H
+#ifndef GRPC_SRC_CORE_UTIL_JSON_JSON_UTIL_H
+#define GRPC_SRC_CORE_UTIL_JSON_JSON_UTIL_H
+
+#include <grpc/support/port_platform.h>
 
 #include <algorithm>
 #include <map>
@@ -30,11 +32,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 
@@ -161,4 +161,4 @@ bool ParseJsonObjectFieldAsDuration(const Json::Object& object,
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_JSON_JSON_UTIL_H
+#endif  // GRPC_SRC_CORE_UTIL_JSON_JSON_UTIL_H
