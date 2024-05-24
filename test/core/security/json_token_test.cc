@@ -23,19 +23,19 @@
 #include <gtest/gtest.h>
 #include <openssl/evp.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/test_config.h"
 
 using grpc_core::Json;
@@ -220,8 +220,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   EXPECT_FALSE(decoded.empty());
   auto json = grpc_core::JsonParse(decoded);
   if (!json.ok()) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            json.status().ToString().c_str());
+    LOG(ERROR) << "JSON parse error: " << json.status().ToString();
     return Json();
   }
   return std::move(*json);

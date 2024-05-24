@@ -36,11 +36,11 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -396,7 +396,7 @@ static void test_grpc_fd(void) {
   client_wait_and_shutdown(&cl);
   server_wait_and_shutdown(&sv);
   ASSERT_EQ(sv.read_bytes_total, cl.write_bytes_total);
-  gpr_log(GPR_INFO, "Total read bytes %" PRIdPTR, sv.read_bytes_total);
+  LOG(INFO) << "Total read bytes " << sv.read_bytes_total;
 }
 
 typedef struct fd_change_data {

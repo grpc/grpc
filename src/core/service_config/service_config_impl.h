@@ -35,10 +35,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/json/json.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:

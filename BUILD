@@ -1742,10 +1742,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_tracer",
     srcs = [
-        "//src/core:lib/channel/call_tracer.cc",
+        "//src/core:telemetry/call_tracer.cc",
     ],
     hdrs = [
-        "//src/core:lib/channel/call_tracer.h",
+        "//src/core:telemetry/call_tracer.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -3466,10 +3466,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "stats",
     srcs = [
-        "//src/core:lib/debug/stats.cc",
+        "//src/core:telemetry/stats.cc",
     ],
     hdrs = [
-        "//src/core:lib/debug/stats.h",
+        "//src/core:telemetry/stats.h",
     ],
     external_deps = [
         "absl/strings",
@@ -4750,7 +4750,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tcp_tracer",
     hdrs = [
-        "//src/core:lib/channel/tcp_tracer.h",
+        "//src/core:telemetry/tcp_tracer.h",
     ],
     external_deps = [
         "absl/time",

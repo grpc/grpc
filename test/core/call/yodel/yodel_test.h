@@ -243,6 +243,11 @@ class SimpleTestRegistry final : public TestRegistry {
                                     absl::BitGenRef) const>
           create);
 
+  static SimpleTestRegistry& Get() {
+    static SimpleTestRegistry* const p = new SimpleTestRegistry;
+    return *p;
+  }
+
  private:
   void ContributeTests(std::vector<Test>& tests) override;
 
@@ -266,6 +271,11 @@ class ParameterizedTestRegistry final : public TestRegistry {
 
   void RegisterParameter(absl::string_view name, T value) {
     parameters_.push_back({name, std::move(value)});
+  }
+
+  static ParameterizedTestRegistry& Get() {
+    static ParameterizedTestRegistry* const p = new ParameterizedTestRegistry;
+    return *p;
   }
 
  private:
@@ -420,9 +430,8 @@ class YodelTest : public ::testing::Test {
     static int registered_;                                                  \
   };                                                                         \
   int YodelTest_##name::registered_ =                                        \
-      (grpc_core::NoDestructSingleton<                                       \
-           grpc_core::yodel_detail::SimpleTestRegistry>::Get()               \
-           ->RegisterTest(__FILE__, __LINE__, #test_type, #name, &Create),   \
+      (grpc_core::yodel_detail::SimpleTestRegistry::Get().RegisterTest(      \
+           __FILE__, __LINE__, #test_type, #name, &Create),                  \
        0);                                                                   \
   void YodelTest_##name::TestImpl()
 
@@ -443,19 +452,17 @@ class YodelTest : public ::testing::Test {
     static int registered_;                                                  \
   };                                                                         \
   int YodelTest_##name::registered_ =                                        \
-      (grpc_core::NoDestructSingleton<                                       \
-           grpc_core::yodel_detail::ParameterizedTestRegistry<               \
-               grpc_core::test_type, parameter_type>>::Get()                 \
-           ->RegisterTest(__FILE__, __LINE__, #test_type, #name, &Create),   \
+      (grpc_core::yodel_detail::ParameterizedTestRegistry<                   \
+           grpc_core::test_type, parameter_type>::Get()                      \
+           .RegisterTest(__FILE__, __LINE__, #test_type, #name, &Create),    \
        0);                                                                   \
   void YodelTest_##name::TestImpl()
 
 #define YODEL_TEST_PARAM(test_type, parameter_type, name, value) \
   int YodelTestParam_##name =                                    \
-      (grpc_core::NoDestructSingleton<                           \
-           grpc_core::yodel_detail::ParameterizedTestRegistry<   \
-               grpc_core::test_type, parameter_type>>::Get()     \
-           ->RegisterParameter(#name, value),                    \
+      (grpc_core::yodel_detail::ParameterizedTestRegistry<       \
+           grpc_core::test_type, parameter_type>::Get()          \
+           .RegisterParameter(#name, value),                     \
        0)
 // NOLINTEND(bugprone-macro-parentheses)
 
