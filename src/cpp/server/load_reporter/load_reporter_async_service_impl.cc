@@ -23,6 +23,7 @@
 #include <google/protobuf/repeated_ptr_field.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -83,15 +84,15 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
     next_fetch_and_sample_alarm_->Set(cq_.get(), next_fetch_and_sample_time,
                                       this);
   }
-  gpr_log(GPR_DEBUG, "[LRS %p] Next fetch-and-sample scheduled.", this);
+  VLOG(2) << "[LRS " << this << "] Next fetch-and-sample scheduled.";
 }
 
 void LoadReporterAsyncServiceImpl::FetchAndSample(bool ok) {
   if (!ok) {
-    gpr_log(GPR_INFO, "[LRS %p] Fetch-and-sample is stopped.", this);
+    LOG(INFO) << "[LRS " << this << "] Fetch-and-sample is stopped.";
     return;
   }
-  gpr_log(GPR_DEBUG, "[LRS %p] Starting a fetch-and-sample...", this);
+  VLOG(2) << "[LRS " << this << "] Starting a fetch-and-sample...";
   load_reporter_->FetchAndSample();
   ScheduleNextFetchAndSample();
 }
@@ -191,10 +192,10 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   }
   // LB ID is unique for each load reporting stream.
   lb_id_ = load_reporter_->GenerateLbId();
-  gpr_log(GPR_INFO,
-          "[LRS %p] Call request delivered (lb_id_: %s, handler: %p). "
-          "Start reading the initial request...",
-          service_, lb_id_.c_str(), this);
+  LOG(INFO) << "[LRS " << service_
+            << "] Call request delivered (lb_id_: " << lb_id_
+            << ", handler: " << this
+            << "). Start reading the initial request...";
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
@@ -202,11 +203,12 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
   if (!ok || shutdown_) {
     if (!ok && call_status_ < INITIAL_REQUEST_RECEIVED) {
       // The client may have half-closed the stream or the stream is broken.
-      gpr_log(GPR_INFO,
-              "[LRS %p] Failed reading the initial request from the stream "
-              "(lb_id_: %s, handler: %p, done_notified: %d, is_cancelled: %d).",
-              service_, lb_id_.c_str(), this, static_cast<int>(done_notified_),
-              static_cast<int>(is_cancelled_));
+      LOG(INFO) << "[LRS " << service_
+                << "] Failed reading the initial request from the stream "
+                   "(lb_id_: "
+                << lb_id_ << ", handler: " << this
+                << ", done_notified: " << done_notified_
+                << ", is_cancelled: " << is_cancelled_ << ").";
     }
     Shutdown(std::move(self), "OnReadDone");
     return;
@@ -226,12 +228,12 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       load_report_interval_ms_ =
           static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
                                      load_report_interval.nanos() / 1000);
-      gpr_log(GPR_INFO,
-              "[LRS %p] Initial request received. Start load reporting (load "
-              "balanced host: %s, interval: %" PRIu64
-              " ms, lb_id_: %s, handler: %p)...",
-              service_, load_balanced_hostname_.c_str(),
-              load_report_interval_ms_, lb_id_.c_str(), this);
+      LOG(INFO) << "[LRS " << service_
+                << "] Initial request received. Start load reporting (load "
+                   "balanced host: "
+                << load_balanced_hostname_
+                << ", interval: " << load_report_interval_ms_
+                << " ms, lb_id_: " << lb_id_ << ", handler: " << this << ")...";
       SendReport(self, true /* ok */);
       // Expect this read to fail.
       {
@@ -250,9 +252,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
     }
   } else {
     // Another request received! This violates the spec.
-    gpr_log(GPR_ERROR,
-            "[LRS %p] Another request received (lb_id_: %s, handler: %p).",
-            service_, lb_id_.c_str(), this);
+    LOG(ERROR) << "[LRS " << service_
+               << "] Another request received (lb_id_: " << lb_id_
+               << ", handler: " << this << ").";
     Shutdown(std::move(self), "OnReadDone+second_request");
   }
 }
@@ -282,9 +284,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
     next_report_alarm_ = std::make_unique<Alarm>();
     next_report_alarm_->Set(cq_, next_report_time, &next_outbound_);
   }
-  gpr_log(GPR_DEBUG,
-          "[LRS %p] Next load report scheduled (lb_id_: %s, handler: %p).",
-          service_, lb_id_.c_str(), this);
+  VLOG(2) << "[LRS " << service_
+          << "] Next load report scheduled (lb_id_: " << lb_id_
+          << ", handler: " << this << ").";
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
@@ -318,10 +320,10 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
                               std::placeholders::_1, std::placeholders::_2),
                     std::move(self));
     stream_.Write(response, &next_outbound_);
-    gpr_log(GPR_INFO,
-            "[LRS %p] Sending load report (lb_id_: %s, handler: %p, loads "
-            "count: %d)...",
-            service_, lb_id_.c_str(), this, response.load().size());
+    LOG(INFO) << "[LRS " << service_
+              << "] Sending load report (lb_id_: " << lb_id_
+              << ", handler: " << this
+              << ", loads count: " << response.load().size() << ")...";
   }
 }
 
@@ -332,20 +334,18 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
   if (ctx_.IsCancelled()) {
     is_cancelled_ = true;
   }
-  gpr_log(GPR_INFO,
-          "[LRS %p] Load reporting call is notified done (handler: %p, "
-          "is_cancelled: %d).",
-          service_, this, static_cast<int>(is_cancelled_));
+  LOG(INFO) << "[LRS " << service_
+            << "] Load reporting call is notified done (handler: " << this
+            << ", is_cancelled: " << is_cancelled_ << ").";
   Shutdown(std::move(self), "OnDoneNotified");
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
     std::shared_ptr<ReportLoadHandler> self, const char* reason) {
   if (!shutdown_) {
-    gpr_log(GPR_INFO,
-            "[LRS %p] Shutting down the handler (lb_id_: %s, handler: %p, "
-            "reason: %s).",
-            service_, lb_id_.c_str(), this, reason);
+    LOG(INFO) << "[LRS " << service_
+              << "] Shutting down the handler (lb_id_: " << lb_id_
+              << ", handler: " << this << ", reason: " << reason << ").";
     shutdown_ = true;
     if (call_status_ >= INITIAL_REQUEST_RECEIVED) {
       load_reporter_->ReportStreamClosed(load_balanced_hostname_, lb_id_);
@@ -374,9 +374,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
     std::shared_ptr<ReportLoadHandler> /*self*/, bool ok) {
   if (ok) {
-    gpr_log(GPR_INFO,
-            "[LRS %p] Load reporting finished (lb_id_: %s, handler: %p).",
-            service_, lb_id_.c_str(), this);
+    LOG(INFO) << "[LRS " << service_
+              << "] Load reporting finished (lb_id_: " << lb_id_
+              << ", handler: " << this << ").";
   }
 }
 

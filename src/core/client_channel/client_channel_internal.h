@@ -26,12 +26,12 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/telemetry/call_tracer.h"
 
 //
 // This file contains internal interfaces used to allow various plugins

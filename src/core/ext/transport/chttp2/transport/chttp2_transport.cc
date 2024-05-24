@@ -73,12 +73,8 @@
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/tcp_tracer.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -108,6 +104,10 @@
 #include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 
@@ -1325,11 +1325,11 @@ static bool contains_non_ok_status(grpc_metadata_batch* batch) {
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  LOG(INFO) << "--metadata--";
+  VLOG(2) << "--metadata--";
   const std::string prefix = absl::StrCat(
       "HTTP:", id, is_initial ? ":HDR" : ":TRL", is_client ? ":CLI:" : ":SVR:");
   md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
-    LOG(INFO) << absl::StrCat(prefix, key, ": ", value);
+    VLOG(2) << absl::StrCat(prefix, key, ": ", value);
   });
 }
 
@@ -3167,8 +3167,6 @@ const char* grpc_chttp2_initiate_write_reason_string(
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
-
-grpc_endpoint* grpc_chttp2_transport::GetEndpoint() { return ep; }
 
 size_t grpc_chttp2_transport::SizeOfStream() const {
   return sizeof(grpc_chttp2_stream);

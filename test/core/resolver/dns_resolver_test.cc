@@ -20,12 +20,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
@@ -50,8 +49,8 @@ class TestResultHandler : public grpc_core::Resolver::ResultHandler {
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,
                           const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          std::string(factory->scheme()).c_str());
+  VLOG(2) << "test: '" << string << "' should be valid for '"
+          << factory->scheme() << "'";
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
@@ -69,8 +68,8 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
 
 static void test_fails(grpc_core::ResolverFactory* factory,
                        const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          std::string(factory->scheme()).c_str());
+  VLOG(2) << "test: '" << string << "' should be invalid for '"
+          << factory->scheme() << "'";
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
