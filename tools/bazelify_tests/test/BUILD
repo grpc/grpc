@@ -190,7 +190,7 @@ grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_pkgconfig_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian12_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
 )
 
 grpc_run_cpp_distribtest_test(
