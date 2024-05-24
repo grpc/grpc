@@ -60,7 +60,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -68,6 +67,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/pick_first/pick_first.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 
