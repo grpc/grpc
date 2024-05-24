@@ -502,10 +502,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gprpp\\windows\\stat.cc " +
     "src\\core\\lib\\gprpp\\windows\\thd.cc " +
     "src\\core\\lib\\gprpp\\work_serializer.cc " +
-    "src\\core\\lib\\http\\format_request.cc " +
-    "src\\core\\lib\\http\\httpcli.cc " +
-    "src\\core\\lib\\http\\httpcli_security_connector.cc " +
-    "src\\core\\lib\\http\\parser.cc " +
     "src\\core\\lib\\iomgr\\buffer_list.cc " +
     "src\\core\\lib\\iomgr\\call_combiner.cc " +
     "src\\core\\lib\\iomgr\\cfstream_handle.cc " +
@@ -802,6 +798,10 @@ if (PHP_GRPC != "no") {
     "src\\core\\util\\alloc.cc " +
     "src\\core\\util\\android\\log.cc " +
     "src\\core\\util\\atm.cc " +
+    "src\\core\\util\\http_client\\format_request.cc " +
+    "src\\core\\util\\http_client\\httpcli.cc " +
+    "src\\core\\util\\http_client\\httpcli_security_connector.cc " +
+    "src\\core\\util\\http_client\\parser.cc " +
     "src\\core\\util\\iphone\\cpu.cc " +
     "src\\core\\util\\linux\\cpu.cc " +
     "src\\core\\util\\linux\\log.cc " +
@@ -1667,7 +1667,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp\\linux");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp\\posix");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp\\windows");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\event_engine_shims");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
@@ -1742,6 +1741,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl\\session_cache");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\android");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\http_client");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\iphone");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\linux");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\util\\msys");

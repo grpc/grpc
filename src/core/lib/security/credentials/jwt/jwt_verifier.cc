@@ -58,9 +58,6 @@
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -72,6 +69,9 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/ssl_types.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/http_client/httpcli_ssl_credentials.h"
+#include "src/core/util/http_client/parser.h"
 #include "src/core/util/string.h"
 
 using grpc_core::Json;

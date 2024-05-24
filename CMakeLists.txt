@@ -2303,10 +2303,6 @@ add_library(grpc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/windows/directory_reader.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/http/format_request.cc
-  src/core/lib/http/httpcli.cc
-  src/core/lib/http/httpcli_security_connector.cc
-  src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -2600,6 +2596,10 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/http_client/format_request.cc
+  src/core/util/http_client/httpcli.cc
+  src/core/util/http_client/httpcli_security_connector.cc
+  src/core/util/http_client/parser.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3094,9 +3094,6 @@ add_library(grpc_unsecure
   src/core/lib/gprpp/uuid_v4.cc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/http/format_request.cc
-  src/core/lib/http/httpcli.cc
-  src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -3317,6 +3314,9 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/http_client/format_request.cc
+  src/core/util/http_client/httpcli.cc
+  src/core/util/http_client/parser.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c

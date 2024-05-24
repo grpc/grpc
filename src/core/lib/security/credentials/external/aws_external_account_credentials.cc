@@ -39,13 +39,13 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/http_client/httpcli_ssl_credentials.h"
 
 namespace grpc_core {
 

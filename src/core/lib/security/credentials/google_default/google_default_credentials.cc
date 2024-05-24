@@ -49,8 +49,6 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -72,6 +70,8 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/http_client/parser.h"
 
 using grpc_core::Json;
 

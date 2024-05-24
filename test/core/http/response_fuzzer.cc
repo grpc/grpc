@@ -22,7 +22,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
-#include "src/core/lib/http/parser.h"
+#include "src/core/util/http_client/parser.h"
 
 bool squelch = true;
 bool leak_check = true;

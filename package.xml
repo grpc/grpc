@@ -1305,14 +1305,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/work_serializer.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/xxhash_inline.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/format_request.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/format_request.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/httpcli.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/httpcli_security_connector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/httpcli_ssl_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/buffer_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/buffer_list.h" role="src" />
@@ -1912,6 +1904,14 @@
     <file baseinstalldir="/" name="src/core/util/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/android/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/atm.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/format_request.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/format_request.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/httpcli.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/httpcli.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/httpcli_security_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/httpcli_ssl_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/http_client/parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/iphone/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/linux/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/linux/log.cc" role="src" />

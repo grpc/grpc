@@ -1162,10 +1162,6 @@ LIBGRPC_SRC = \
     src/core/lib/gprpp/windows/stat.cc \
     src/core/lib/gprpp/windows/thd.cc \
     src/core/lib/gprpp/work_serializer.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/httpcli_security_connector.cc \
-    src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
@@ -1462,6 +1458,10 @@ LIBGRPC_SRC = \
     src/core/util/alloc.cc \
     src/core/util/android/log.cc \
     src/core/util/atm.cc \
+    src/core/util/http_client/format_request.cc \
+    src/core/util/http_client/httpcli.cc \
+    src/core/util/http_client/httpcli_security_connector.cc \
+    src/core/util/http_client/parser.cc \
     src/core/util/iphone/cpu.cc \
     src/core/util/linux/cpu.cc \
     src/core/util/linux/log.cc \
