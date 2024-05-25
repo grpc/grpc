@@ -159,6 +159,10 @@ void YodelTest::RunTest() {
       1024);
   {
     ExecCtx exec_ctx;
+    InitTest();
+  }
+  {
+    ExecCtx exec_ctx;
     TestImpl();
   }
   EXPECT_EQ(pending_actions_.size(), 0)
