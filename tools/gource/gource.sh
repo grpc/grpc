@@ -15,11 +15,11 @@
 
 gource                          \
   --multi-sampling              \
-  -s 0.1                        \
-  --max-file-lag 0.05           \
+  -s 1                        \
   --max-files 0                 \
-  -e 0.01                       \
-  --hide filenames,dirnames,mouse,progress     \
-  --disable-auto-rotate         \
+  --hide filenames     \
   --file-filter '/grpc/doc/ref' \
+  -c 4 \
+  --key \
+  -f \
   $*
