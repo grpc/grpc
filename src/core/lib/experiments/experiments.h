@@ -87,9 +87,6 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
@@ -125,9 +122,6 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-inline bool IsWorkSerializerDispatchEnabled() { return false; }
 
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
@@ -162,10 +156,6 @@ inline bool IsTcpRcvLowatEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TRACE_RECORD_CALLOPS
 inline bool IsTraceRecordCallopsEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
-inline bool IsWorkSerializerDispatchEnabled() { return true; }
 #endif
 
 #else
@@ -195,8 +185,6 @@ enum ExperimentIds {
   kExperimentIdTcpRcvLowat,
   kExperimentIdTraceRecordCallops,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
-  kExperimentIdWorkSerializerClearsTimeCache,
-  kExperimentIdWorkSerializerDispatch,
   kNumExperiments
 };
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
@@ -298,14 +286,6 @@ inline bool IsTraceRecordCallopsEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_UNCONSTRAINED_MAX_QUOTA_BUFFER_SIZE
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() {
   return IsExperimentEnabled(kExperimentIdUnconstrainedMaxQuotaBufferSize);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_CLEARS_TIME_CACHE
-inline bool IsWorkSerializerClearsTimeCacheEnabled() {
-  return IsExperimentEnabled(kExperimentIdWorkSerializerClearsTimeCache);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_WORK_SERIALIZER_DISPATCH
-inline bool IsWorkSerializerDispatchEnabled() {
-  return IsExperimentEnabled(kExperimentIdWorkSerializerDispatch);
 }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];

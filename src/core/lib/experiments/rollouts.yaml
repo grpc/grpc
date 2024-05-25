@@ -83,8 +83,6 @@
   default: true
 - name: peer_state_based_framing
   default: false
-- name: pending_queue_cap
-  default: true
 - name: pick_first_new
   default: true
 - name: promise_based_client_call
@@ -106,13 +104,3 @@
   default: true
 - name: unconstrained_max_quota_buffer_size
   default: false
-- name: work_serializer_clears_time_cache
-  default: true
-- name: work_serializer_dispatch
-  requires: ["event_engine_client"]
-  default:
-    # TODO(ysseung): Not fully tested.
-    ios: broken
-    posix: true
-    # TODO(ysseung): Test flakes not fully resolved.
-    windows: broken

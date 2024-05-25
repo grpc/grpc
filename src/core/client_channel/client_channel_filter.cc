@@ -668,52 +668,10 @@ class ClientChannelFilter::SubchannelWrapper final
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_.get());
     }
-    if (!IsWorkSerializerDispatchEnabled()) {
-      chand_->subchannel_wrappers_.erase(this);
-      if (chand_->channelz_node_ != nullptr) {
-        auto* subchannel_node = subchannel_->channelz_node();
-        if (subchannel_node != nullptr) {
-          auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-          CHECK(it != chand_->subchannel_refcount_map_.end());
-          --it->second;
-          if (it->second == 0) {
-            chand_->channelz_node_->RemoveChildSubchannel(
-                subchannel_node->uuid());
-            chand_->subchannel_refcount_map_.erase(it);
-          }
-        }
-      }
-    }
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  void Orphaned() override {
-    if (!IsWorkSerializerDispatchEnabled()) return;
-    // Make sure we clean up the channel's subchannel maps inside the
-    // WorkSerializer.
-    // Ref held by callback.
-    WeakRef(DEBUG_LOCATION, "subchannel map cleanup").release();
-    chand_->work_serializer_->Run(
-        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
-          chand_->subchannel_wrappers_.erase(this);
-          if (chand_->channelz_node_ != nullptr) {
-            auto* subchannel_node = subchannel_->channelz_node();
-            if (subchannel_node != nullptr) {
-              auto it =
-                  chand_->subchannel_refcount_map_.find(subchannel_.get());
-              CHECK(it != chand_->subchannel_refcount_map_.end());
-              --it->second;
-              if (it->second == 0) {
-                chand_->channelz_node_->RemoveChildSubchannel(
-                    subchannel_node->uuid());
-                chand_->subchannel_refcount_map_.erase(it);
-              }
-            }
-          }
-          WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
-        },
-        DEBUG_LOCATION);
-  }
+  void Orphaned() override {}
 
   void WatchConnectivityState(
       std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
@@ -784,16 +742,6 @@ class ClientChannelFilter::SubchannelWrapper final
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
-      if (!IsWorkSerializerDispatchEnabled()) {
-        auto* parent = parent_.release();  // ref owned by lambda
-        parent->chand_->work_serializer_->Run(
-            [parent]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                *parent_->chand_->work_serializer_) {
-              parent->Unref(DEBUG_LOCATION, "WatcherWrapper");
-            },
-            DEBUG_LOCATION);
-        return;
-      }
       parent_.reset(DEBUG_LOCATION, "WatcherWrapper");
     }
 
@@ -2139,14 +2087,6 @@ absl::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
   }
   // We have a result.  Apply service config to call.
   grpc_error_handle error = ApplyServiceConfigToCallLocked(config_selector);
-  // ConfigSelector must be unreffed inside the WorkSerializer.
-  if (!IsWorkSerializerDispatchEnabled() && config_selector.ok()) {
-    chand()->work_serializer_->Run(
-        [config_selector = std::move(*config_selector)]() mutable {
-          config_selector.reset();
-        },
-        DEBUG_LOCATION);
-  }
   // Handle errors.
   if (!error.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2855,30 +2795,13 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
   // updated before we queue it.
   // We need to unref pickers in the WorkSerializer.
   std::vector<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>> pickers;
-  auto cleanup = absl::MakeCleanup([&]() {
-    if (IsWorkSerializerDispatchEnabled()) return;
-    chand_->work_serializer_->Run(
-        [pickers = std::move(pickers)]() mutable {
-          for (auto& picker : pickers) {
-            picker.reset(DEBUG_LOCATION, "PickSubchannel");
-          }
-        },
-        DEBUG_LOCATION);
-  });
   absl::AnyInvocable<void(RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>)>
       set_picker;
-  if (!IsWorkSerializerDispatchEnabled()) {
-    set_picker =
-        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-          pickers.emplace_back(std::move(picker));
-        };
-  } else {
-    pickers.emplace_back();
-    set_picker =
-        [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
-          pickers[0] = std::move(picker);
-        };
-  }
+  pickers.emplace_back();
+  set_picker =
+      [&](RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+        pickers[0] = std::move(picker);
+      };
   // Grab mutex and take a ref to the picker.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: grabbing LB mutex to get picker",
@@ -2916,10 +2839,8 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
                   "chand=%p lb_call=%p: pick not complete, but picker changed",
                   chand_, this);
         }
-        if (IsWorkSerializerDispatchEnabled()) {
-          // Don't unref until after we release the mutex.
-          old_picker = std::move(pickers.back());
-        }
+        // Don't unref until after we release the mutex.
+        old_picker = std::move(pickers.back());
         set_picker(chand_->picker_);
         continue;
       }
