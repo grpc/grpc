@@ -92,7 +92,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     std::queue<CallHandler> handlers_;
   };
 
-  class TestSubchannel : public SubchannelInterface {
+  class TestSubchannel : public SubchannelInterfaceWithCallDestination {
    public:
     explicit TestSubchannel(
         RefCountedPtr<UnstartedCallDestination> call_destination)
@@ -115,7 +115,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     void CancelDataWatcher(DataWatcherInterface* watcher) override {
       Crash("not implemented");
     }
-    RefCountedPtr<UnstartedCallDestination> call_destination() {
+    RefCountedPtr<UnstartedCallDestination> call_destination() override {
       return call_destination_;
     }
 
