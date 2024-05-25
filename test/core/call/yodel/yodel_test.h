@@ -406,6 +406,8 @@ class YodelTest : public ::testing::Test {
   // and before the event engine is started.
   // This is a good time to register any custom core configuration builders.
   virtual void InitCoreConfiguration() {}
+  // Called after the event engine has been started, but before the test runs.
+  virtual void InitTest() {}
   // Called after the test has run, but before the event engine is shut down.
   virtual void Shutdown() {}
 

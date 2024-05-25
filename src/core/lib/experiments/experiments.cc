@@ -203,7 +203,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, true},
+     required_experiments_call_v3, 3, false, false},
 };
 
 }  // namespace grpc_core
@@ -389,7 +389,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, true},
+     required_experiments_call_v3, 3, false, false},
 };
 
 }  // namespace grpc_core
@@ -575,7 +575,7 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, true, true},
     {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, true},
+     required_experiments_call_v3, 3, false, false},
 };
 
 }  // namespace grpc_core
