@@ -15,27 +15,24 @@
 #include "absl/random/random.h"
 
 #include "src/core/lib/debug/trace.h"
+#include "test/core/call/yodel/yodel_test.h"
 #include "test/core/test_util/test_config.h"
-#include "test/core/transport/test_suite/fixture.h"
-#include "test/core/transport/test_suite/test.h"
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   absl::BitGen bitgen;
   ::testing::InitGoogleTest(&argc, argv);
-  for (const auto& test : grpc_core::TransportTestRegistry::Get().tests()) {
-    for (const auto& fixture :
-         grpc_core::TransportFixtureRegistry::Get().fixtures()) {
-      ::testing::RegisterTest(
-          "TransportTest", absl::StrCat(test.name, "/", fixture.name).c_str(),
-          nullptr, nullptr, __FILE__, __LINE__,
-          [test = &test, fixture = &fixture,
-           &bitgen]() -> grpc_core::TransportTest* {
-            return test->create(
-                std::unique_ptr<grpc_core::TransportFixture>(fixture->create()),
-                fuzzing_event_engine::Actions(), bitgen);
-          });
-    }
+  static grpc_core::NoDestruct<
+      std::vector<grpc_core::yodel_detail::TestRegistry::Test>>
+      tests{grpc_core::yodel_detail::TestRegistry::AllTests()};
+  CHECK(!tests->empty());
+  for (const auto& test : *tests) {
+    CHECK(test.make != nullptr) << "test:" << test.name;
+    ::testing::RegisterTest(
+        test.test_type.c_str(), test.name.c_str(), nullptr, nullptr, __FILE__,
+        __LINE__, [test = &test, &bitgen]() -> grpc_core::YodelTest* {
+          return test->make(fuzzing_event_engine::Actions(), bitgen);
+        });
   }
   grpc_tracer_init();
   return RUN_ALL_TESTS();

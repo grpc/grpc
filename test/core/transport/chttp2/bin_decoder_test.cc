@@ -22,10 +22,10 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -40,8 +40,8 @@ static void expect_slice_eq(grpc_slice expected, grpc_slice slice,
   if (!grpc_slice_eq(slice, expected)) {
     char* hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
-            he);
+    LOG(ERROR) << "FAILED:" << line << ": " << debug << "\ngot:  " << hs
+               << "\nwant: " << he;
     gpr_free(hs);
     gpr_free(he);
     all_ok = 0;

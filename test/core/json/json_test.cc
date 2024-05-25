@@ -22,14 +22,13 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
@@ -79,7 +78,7 @@ void ValidateValue(const Json& actual, const Json& expected) {
 
 void RunSuccessTest(const char* input, const Json& expected,
                     const char* expected_output) {
-  gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
+  LOG(INFO) << "parsing string \"" << input << "\" - should succeed";
   auto json = JsonParse(input);
   ASSERT_TRUE(json.ok()) << json.status();
   ValidateValue(*json, expected);
@@ -200,7 +199,7 @@ TEST(Json, Keywords) {
 }
 
 void RunParseFailureTest(const char* input) {
-  gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
+  LOG(INFO) << "parsing string \"" << input << "\" - should fail";
   auto json = JsonParse(input);
   EXPECT_FALSE(json.ok()) << "input: \"" << input << "\"";
 }

@@ -26,13 +26,13 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -197,8 +197,8 @@ TEST_F(EventEngineTimerTest, StressTestTimersNotCalledBeforeScheduled) {
     cv_.Wait(&mu_);
   }
   if (failed_call_count.load() != 0) {
-    gpr_log(GPR_DEBUG, "failed timer count: %d of %d", failed_call_count.load(),
-            thread_count * call_count);
+    VLOG(2) << "failed timer count: " << failed_call_count.load() << " of "
+            << (thread_count * call_count);
   }
   ASSERT_EQ(0, failed_call_count.load());
 }

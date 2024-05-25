@@ -16,12 +16,14 @@
  *
  */
 
-#include <condition_variable>
-#include <iostream>
-#include <memory>
-#include <mutex>
+// Explicitly define HAVE_ABSEIL to avoid conflict with OTel's Abseil
+// version. Refer
+// https://github.com/open-telemetry/opentelemetry-cpp/issues/1042.
+#ifndef HAVE_ABSEIL
+#define HAVE_ABSEIL
+#endif
+
 #include <string>
-#include <thread>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -30,77 +32,16 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 
 #include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
-#include "examples/protos/helloworld.grpc.pb.h"
 #else
-#include "helloworld.grpc.pb.h"
 #include "util.h"
 #endif
 
 ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 ABSL_FLAG(std::string, prometheus_endpoint, "localhost:9465",
           "Prometheus exporter endpoint");
-
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
-
-class GreeterClient {
- public:
-  GreeterClient(std::shared_ptr<Channel> channel)
-      : stub_(Greeter::NewStub(channel)) {}
-
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  std::string SayHello(const std::string& user) {
-    // Data we are sending to the server.
-    HelloRequest request;
-    request.set_name(user);
-
-    // Container for the data we expect from the server.
-    HelloReply reply;
-
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
-    ClientContext context;
-
-    // The actual RPC.
-    std::mutex mu;
-    std::condition_variable cv;
-    bool done = false;
-    Status status;
-    stub_->async()->SayHello(&context, &request, &reply,
-                             [&mu, &cv, &done, &status](Status s) {
-                               status = std::move(s);
-                               std::lock_guard<std::mutex> lock(mu);
-                               done = true;
-                               cv.notify_one();
-                             });
-
-    std::unique_lock<std::mutex> lock(mu);
-    while (!done) {
-      cv.wait(lock);
-    }
-
-    // Act upon its status.
-    if (status.ok()) {
-      return reply.message();
-    } else {
-      std::cout << status.error_code() << ": " << status.error_message()
-                << std::endl;
-      return "RPC failed";
-    }
-  }
-
- private:
-  std::unique_ptr<Greeter::Stub> stub_;
-};
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -125,20 +66,9 @@ int main(int argc, char** argv) {
               << status.ToString() << std::endl;
     return static_cast<int>(status.code());
   }
-  // Instantiate the client. It requires a channel, out of which the actual RPCs
-  // are created. This channel models a connection to an endpoint specified by
-  // the argument "--target=" which is the only expected argument.
-  std::string target_str = absl::GetFlag(FLAGS_target);
-  grpc::ChannelArguments args;
+
   // Continuously send RPCs every second.
-  while (true) {
-    GreeterClient greeter(grpc::CreateCustomChannel(
-        target_str, grpc::InsecureChannelCredentials(), args));
-    std::string user("world");
-    std::string reply = greeter.SayHello(user);
-    std::cout << "Greeter received: " << reply << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  }
+  RunClient(absl::GetFlag(FLAGS_target));
 
   return 0;
 }

@@ -22,4 +22,4 @@ set -eu
 
 
 # Call the C++ compiler
-/usr/local/bin/clang-15 "$@"
+/usr/local/bin/clang-19 "$@"

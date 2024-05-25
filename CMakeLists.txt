@@ -17562,15 +17562,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/fixture.cc
     test/core/transport/test_suite/inproc_fixture.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/test.cc
-    test/core/transport/test_suite/test_main.cc
+    test/core/transport/test_suite/transport_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -30294,15 +30294,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good/frame_header.cc
     src/core/ext/transport/chaotic_good/server_transport.cc
     src/core/lib/transport/promise_endpoint.cc
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
     test/core/transport/test_suite/chaotic_good_fixture.cc
-    test/core/transport/test_suite/fixture.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/test.cc
-    test/core/transport/test_suite/test_main.cc
+    test/core/transport/test_suite/transport_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -37015,3 +37015,14 @@ generate_pkgconfig(
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
   "grpc++_unsecure.pc")
+
+# grpcpp_otel_plugin .pc file
+generate_pkgconfig(
+  "gRPC++ OpenTelemetry Plugin"
+  "OpenTelemetry Plugin for gRPC C++"
+  "${gRPC_CPP_VERSION}"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc++ opentelemetry_api"
+  "libcares openssl re2 zlib"
+  "-lgrpcpp_otel_plugin"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "grpcpp_otel_plugin.pc")
