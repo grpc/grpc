@@ -164,7 +164,7 @@ class ClientChannelTest : public YodelTest {
       test_->resolver_ = this;
     }
 
-    ~TestResolver() {
+    ~TestResolver() override {
       CHECK(test_->resolver_ == this);
       test_->resolver_ = nullptr;
     }
