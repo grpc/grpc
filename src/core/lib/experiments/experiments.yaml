@@ -53,6 +53,7 @@
   owner: ctiller@google.com
   test_tags: []
   requires: ["work_serializer_dispatch", "event_engine_listener", "event_engine_client"]
+  allow_in_fuzzing_config: false
 - name: canary_client_privacy
   description:
     If set, canary client privacy
