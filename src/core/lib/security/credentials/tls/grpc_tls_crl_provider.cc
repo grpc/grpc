@@ -35,13 +35,12 @@
 #include <openssl/x509.h>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/directory_reader.h"
@@ -130,9 +129,8 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
     }
     bool inserted = crl_map.emplace((*crl)->Issuer(), std::move(*crl)).second;
     if (!inserted) {
-      gpr_log(GPR_ERROR,
-              "StaticCrlProvider received multiple CRLs with the same issuer. "
-              "The first one in the span will be used.");
+      LOG(ERROR) << "StaticCrlProvider received multiple CRLs with the same "
+                    "issuer. The first one in the span will be used.";
     }
   }
   StaticCrlProvider provider = StaticCrlProvider(std::move(crl_map));

@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -34,7 +35,6 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -165,28 +165,29 @@ class grpc_fake_channel_security_connector final
     gpr_string_split(expected_targets_->c_str(), ";", &lbs_and_backends,
                      &lbs_and_backends_size);
     if (lbs_and_backends_size > 2 || lbs_and_backends_size == 0) {
-      gpr_log(GPR_ERROR, "Invalid expected targets arg value: '%s'",
-              expected_targets_->c_str());
+      LOG(ERROR) << "Invalid expected targets arg value: "
+                 << expected_targets_->c_str();
       goto done;
     }
     if (is_lb_channel_) {
       if (lbs_and_backends_size != 2) {
-        gpr_log(GPR_ERROR,
-                "Invalid expected targets arg value: '%s'. Expectations for LB "
-                "channels must be of the form 'be1,be2,be3,...;lb1,lb2,...",
-                expected_targets_->c_str());
+        LOG(ERROR) << "Invalid expected targets arg value: "
+                   << expected_targets_->c_str()
+                   << ". Expectations for LB "
+                      "channels must be of the form "
+                      "'be1,be2,be3,...;lb1,lb2,...";
         goto done;
       }
       if (!fake_check_target(target_, lbs_and_backends[1])) {
-        gpr_log(GPR_ERROR, "LB target '%s' not found in expected set '%s'",
-                target_, lbs_and_backends[1]);
+        LOG(ERROR) << "LB target " << target_ << " not found in expected set "
+                   << lbs_and_backends[1];
         goto done;
       }
       success = true;
     } else {
       if (!fake_check_target(target_, lbs_and_backends[0])) {
-        gpr_log(GPR_ERROR, "Backend target '%s' not found in expected set '%s'",
-                target_, lbs_and_backends[0]);
+        LOG(ERROR) << "Backend target " << target_
+                   << " not found in expected set " << lbs_and_backends[0];
         goto done;
       }
       success = true;

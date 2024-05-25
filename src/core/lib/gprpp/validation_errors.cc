@@ -18,12 +18,12 @@
 
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {
@@ -39,9 +39,8 @@ void ValidationErrors::PopField() { fields_.pop_back(); }
 void ValidationErrors::AddError(absl::string_view error) {
   auto key = absl::StrJoin(fields_, "");
   if (field_errors_[key].size() >= max_error_count_) {
-    gpr_log(GPR_DEBUG,
-            "Ignoring validation error: too many errors found (%" PRIuPTR ")",
-            max_error_count_);
+    VLOG(2) << "Ignoring validation error: too many errors found ("
+            << max_error_count_ << ")";
     return;
   }
   field_errors_[key].emplace_back(error);

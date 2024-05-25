@@ -36,7 +36,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
@@ -411,8 +410,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
         creds.get(), call_creds.get(), nullptr);
     CHECK_NE(result, nullptr);
   } else {
-    gpr_log(GPR_ERROR, "Could not create google default credentials: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "Could not create google default credentials: "
+               << grpc_core::StatusToString(error);
   }
   return result;
 }

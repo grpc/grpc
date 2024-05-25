@@ -23,12 +23,12 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_internal.h"
@@ -109,7 +109,6 @@ static std::string grpc_op_string(const grpc_op* op) {
 void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
                          const grpc_op* ops, size_t nops) {
   for (size_t i = 0; i < nops; i++) {
-    gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i,
-            grpc_op_string(&ops[i]).c_str());
+    LOG(INFO) << "ops[" << i << "]: " << grpc_op_string(&ops[i]);
   }
 }

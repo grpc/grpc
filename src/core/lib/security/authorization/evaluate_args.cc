@@ -23,7 +23,6 @@
 #include "absl/strings/numbers.h"
 
 #include <grpc/grpc_security_constants.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
@@ -48,19 +47,18 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   absl::string_view host_view;
   absl::string_view port_view;
   if (!SplitHostPort(uri->path(), &host_view, &port_view)) {
-    gpr_log(GPR_DEBUG, "Failed to split %s into host and port.",
-            uri->path().c_str());
+    VLOG(2) "Failed to split " << uri->path() << " into host and port.";
     return address;
   }
   if (!absl::SimpleAtoi(port_view, &address.port)) {
-    gpr_log(GPR_DEBUG, "Port %s is out of range or null.",
-            std::string(port_view).c_str());
+    VLOG(2) "Port " << port_view << " is out of range or null.";
   }
   address.address_str = std::string(host_view);
   auto resolved_address = StringToSockaddr(uri->path());
   if (!resolved_address.ok()) {
-    gpr_log(GPR_DEBUG, "Address \"%s\" is not IPv4/IPv6. Error: %s",
-            uri->path().c_str(), resolved_address.status().ToString().c_str());
+    VLOG(2)
+        "Address \"" << uri->path() << "\" is not IPv4/IPv6. Error: "
+                     << resolved_address.status();
     memset(&address.address, 0, sizeof(address.address));
   } else {
     address.address = *resolved_address;

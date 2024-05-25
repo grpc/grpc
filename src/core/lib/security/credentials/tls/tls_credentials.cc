@@ -28,7 +28,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -63,9 +62,8 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     return false;
   }
   if (!options->crl_directory().empty() && options->crl_provider() != nullptr) {
-    gpr_log(GPR_ERROR,
-            "Setting crl_directory and crl_provider not supported. Using the "
-            "crl_provider.");
+    LOG(ERROR) << "Setting crl_directory and crl_provider not supported. Using "
+                  "the crl_provider.";
     // TODO(gtcooke94) - Maybe return false here. Right now object lifetime of
     // this options struct is leaky if false is returned and represents a more
     // complex fix to handle in another PR.
@@ -74,21 +72,20 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   // indicate callers are doing something wrong with the API.
   if (is_client && options->cert_request_type() !=
                        GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
-    gpr_log(GPR_ERROR,
-            "Client's credentials options should not set cert_request_type.");
+    LOG(ERROR)
+        << "Client's credentials options should not set cert_request_type.";
   }
   if (!is_client && !options->verify_server_cert()) {
-    gpr_log(GPR_ERROR,
-            "Server's credentials options should not set verify_server_cert.");
+    LOG(ERROR)
+        << "Server's credentials options should not set verify_server_cert.";
   }
   // In the following conditions, there could be severe security issues.
   if (is_client && options->certificate_verifier() == nullptr) {
     // If no verifier is specified on the client side, use the hostname verifier
     // as default. Users who want to bypass all the verifier check should
     // implement an external verifier instead.
-    gpr_log(GPR_INFO,
-            "No verifier specified on the client side. Using default hostname "
-            "verifier");
+    LOG(INFO) << "No verifier specified on the client side. Using default "
+                 "hostname verifier";
     options->set_certificate_verifier(
         grpc_core::MakeRefCounted<grpc_core::HostNameCertificateVerifier>());
   }

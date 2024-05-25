@@ -416,13 +416,13 @@ class Arena {
     (void)size;
     (void)ptr;
 #ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
-    gpr_log(GPR_ERROR, "ARENA %p ALLOC %" PRIdPTR " @ %p", this, size, ptr);
+    LOG(ERROR) << "ARENA " << this << " ALLOC " << size << " @ " << ptr;
 #endif
   }
   static void TracePoolFree(void* ptr) {
     (void)ptr;
 #ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
-    gpr_log(GPR_ERROR, "FREE %p", ptr);
+    LOG(ERROR) << "FREE " << ptr;
 #endif
   }
 

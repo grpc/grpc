@@ -54,7 +54,7 @@ Arena::~Arena() {
     z = prev_z;
   }
 #ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
-  gpr_log(GPR_ERROR, "DESTRUCT_ARENA %p", this);
+  LOG(ERROR) << "DESTRUCT_ARENA " << this;
 #endif
 }
 

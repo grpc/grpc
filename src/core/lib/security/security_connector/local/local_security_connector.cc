@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -33,7 +34,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -99,8 +99,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
   absl::string_view local_addr = grpc_endpoint_get_local_address(ep);
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(local_addr);
   if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
-    gpr_log(GPR_ERROR, "Could not parse endpoint address: %s",
-            std::string(local_addr.data(), local_addr.size()).c_str());
+    LOG(ERROR) << "Could not parse endpoint address: " << local_addr;
   } else {
     grpc_resolved_address addr_normalized;
     grpc_resolved_address* addr =
@@ -269,9 +268,8 @@ grpc_local_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_core::ChannelArgs& args, const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid arguments to grpc_local_channel_security_connector_create()");
+    LOG(ERROR)
+        << "Invalid arguments to grpc_local_channel_security_connector_create";
     return nullptr;
   }
   // Perform sanity check on UDS address. For TCP local connection, the check
@@ -283,9 +281,8 @@ grpc_local_channel_security_connector_create(
   if (creds->connect_type() == UDS &&
       !absl::StartsWith(server_uri_str, GRPC_UDS_URI_PATTERN) &&
       !absl::StartsWith(server_uri_str, GRPC_ABSTRACT_UDS_URI_PATTERN)) {
-    gpr_log(GPR_ERROR,
-            "Invalid UDS target name to "
-            "grpc_local_channel_security_connector_create()");
+    LOG(ERROR) << "Invalid UDS target name to "
+                  "grpc_local_channel_security_connector_create";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_local_channel_security_connector>(
@@ -296,9 +293,8 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_local_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid arguments to grpc_local_server_security_connector_create()");
+    LOG(ERROR)
+        << "Invalid arguments to grpc_local_server_security_connector_create";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_local_server_security_connector>(

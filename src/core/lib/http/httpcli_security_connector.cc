@@ -31,7 +31,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -95,8 +94,8 @@ class grpc_httpcli_ssl_channel_security_connector final
           handshaker_factory_, secure_peer_name_, /*network_bio_buf_size=*/0,
           /*ssl_bio_buf_size=*/0, &handshaker);
       if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
-                tsi_result_to_string(result));
+        LOG(ERROR) << "Handshaker creation failed with error "
+                   << tsi_result_to_string(result);
       }
     }
     handshake_mgr->Add(SecurityHandshakerCreate(handshaker, this, args));
@@ -149,8 +148,7 @@ httpcli_ssl_channel_security_connector_create(
     const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
     const char* secure_peer_name) {
   if (secure_peer_name != nullptr && pem_root_certs == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Cannot assert a secure peer name without a trust root.");
+    LOG(ERROR) << "Cannot assert a secure peer name without a trust root.";
     return nullptr;
   }
   RefCountedPtr<grpc_httpcli_ssl_channel_security_connector> c =
@@ -158,8 +156,8 @@ httpcli_ssl_channel_security_connector_create(
           secure_peer_name == nullptr ? nullptr : gpr_strdup(secure_peer_name));
   tsi_result result = c->InitHandshakerFactory(pem_root_certs, root_store);
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-            tsi_result_to_string(result));
+    LOG(ERROR) << "Handshaker factory creation failed with "
+               << tsi_result_to_string(result);
     return nullptr;
   }
   return c;

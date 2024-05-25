@@ -35,7 +35,6 @@
 #include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/load_file.h"
@@ -81,8 +80,7 @@ void GetAbsoluteFilePath(const char* valid_file_dir,
     int path_len = snprintf(path_buffer, MAXPATHLEN, "%s/%s", valid_file_dir,
                             file_entry_name);
     if (path_len == 0) {
-      gpr_log(GPR_ERROR, "failed to get absolute path for file: %s",
-              file_entry_name);
+      LOG(ERROR) << "failed to get absolute path for file: " << file_entry_name;
     }
   }
 }
