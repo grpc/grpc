@@ -89,6 +89,7 @@ class ConnectedSubchannelTest : public YodelTest {
     void Orphan() override {
       state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN, absl::OkStatus(),
                               "transport-orphaned");
+      Unref();
     }
 
     FilterStackTransport* filter_stack_transport() override { return nullptr; }
