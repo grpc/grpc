@@ -2988,6 +2988,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":grpc++",
         "//src/cpp/ext/otel:otel_plugin",
     ],
 )

@@ -240,6 +240,19 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   return absl::OkStatus();
 }
 
+absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
+OpenTelemetryPluginBuilderImpl::Build() {
+  if (meter_provider_ == nullptr) {
+    return absl::InvalidArgumentError(
+        "Need to configure a valid meter provider.");
+  }
+  return std::make_shared<OpenTelemetryPlugin>(
+      metrics_, meter_provider_, std::move(target_attribute_filter_),
+      std::move(generic_method_attribute_filter_), std::move(server_selector_),
+      std::move(plugin_options_), std::move(optional_label_keys_),
+      std::move(channel_scope_filter_));
+}
+
 OpenTelemetryPlugin::CallbackMetricReporter::CallbackMetricReporter(
     OpenTelemetryPlugin* ot_plugin, grpc_core::RegisteredMetricCallback* key)
     : ot_plugin_(ot_plugin), key_(key) {
@@ -913,6 +926,31 @@ grpc_core::ServerCallTracer* OpenTelemetryPlugin::GetServerCallTracer(
               scope_config));
 }
 
+void OpenTelemetryPlugin::MaybeAddToChannelArguments(
+    const grpc_core::experimental::StatsPluginChannelScope& scope,
+    grpc::ChannelArguments* args) {
+  bool is_enabled = false;
+  std::shared_ptr<StatsPlugin::ScopeConfig> config;
+  std::tie(is_enabled, config) = IsEnabledForChannel(scope);
+  if (!is_enabled) {
+    return;
+  }
+  const grpc_channel_args c_args = args->c_channel_args();
+  auto* stats_plugin_group = grpc_channel_args_find_pointer<
+      std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>>(
+      &c_args, GRPC_ARG_STATS_PLUGINS);
+  if (stats_plugin_group != nullptr) {
+    (*stats_plugin_group)->AddStatsPlugin(shared_from_this(), config);
+  } else {
+    auto stats_plugin_group = std::make_shared<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>();
+    args->SetPointerWithVtable(GRPC_ARG_STATS_PLUGINS, &stats_plugin_group,
+                               grpc_core::ChannelArgTypeTraits<
+                                   decltype(stats_plugin_group)>::VTable());
+    stats_plugin_group->AddStatsPlugin(shared_from_this(), config);
+  }
+}
+
 }  // namespace internal
 
 constexpr absl::string_view
@@ -1005,6 +1043,11 @@ OpenTelemetryPluginBuilder& OpenTelemetryPluginBuilder::SetChannelScopeFilter(
 
 absl::Status OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   return impl_->BuildAndRegisterGlobal();
+}
+
+absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
+OpenTelemetryPluginBuilder::Build() {
+  return impl_->Build();
 }
 
 }  // namespace grpc

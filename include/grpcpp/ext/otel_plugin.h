@@ -26,22 +26,32 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
 
 #include <grpc/support/metrics.h>
 #include <grpc/support/port_platform.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 
 namespace internal {
 class OpenTelemetryPluginBuilderImpl;
-class OpenTelemetryPlugin;
 }  // namespace internal
 
 class OpenTelemetryPluginOption {
  public:
   virtual ~OpenTelemetryPluginOption() = default;
+};
+
+class OpenTelemetryPlugin {
+ public:
+  // Maybe adds this OpenTelemetryPlugin to the channel args \a args depending
+  // on the \a scope. The channel arg shares the ownership of this plugin.
+  virtual void MaybeAddToChannelArguments(
+      const grpc_core::experimental::StatsPluginChannelScope& scope,
+      grpc::ChannelArguments* args) = 0;
 };
 
 /// The most common way to use this API is -
@@ -142,6 +152,9 @@ class OpenTelemetryPluginBuilder {
   /// Registers a global plugin that acts on all channels and servers running on
   /// the process.
   absl::Status BuildAndRegisterGlobal();
+  /// Builds an open telemetry plugin, returns the plugin object when succeeded
+  /// or an error status when failed.
+  absl::StatusOr<std::shared_ptr<OpenTelemetryPlugin>> Build();
 
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;

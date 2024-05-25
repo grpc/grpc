@@ -396,6 +396,8 @@
  * If unspecified, it is unlimited */
 #define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \
   "grpc.max_allowed_incoming_connections"
+/** Configure per-channel stats plugins. */
+#define GRPC_ARG_STATS_PLUGINS "grpc.experimental.stats_plugins"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */
