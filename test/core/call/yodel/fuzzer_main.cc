@@ -12,10 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdio.h>
+
+#include <gtest/gtest.h>
+
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
-#include <gtest/gtest.h>
-#include <stdio.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -27,7 +31,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
-#include "absl/log/check.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}
