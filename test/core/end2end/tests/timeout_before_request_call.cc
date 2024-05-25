@@ -12,17 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-
-#include <memory>
-
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
+#include <memory>
+#include <string.h>
 
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"

@@ -14,6 +14,7 @@
 
 #include "src/core/lib/matchers/matchers.h"
 
+#include <grpc/support/port_platform.h>
 #include <utility>
 
 #include "absl/status/status.h"
@@ -22,8 +23,6 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

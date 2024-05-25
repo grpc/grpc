@@ -16,15 +16,6 @@
 //
 //
 
-#include <sys/time.h>
-
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -34,7 +25,12 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
+#include <sys/time.h>
+#include <thread>
 
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

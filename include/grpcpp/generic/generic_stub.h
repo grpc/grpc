@@ -20,7 +20,6 @@
 #define GRPCPP_GENERIC_GENERIC_STUB_H
 
 #include <functional>
-
 #include <grpcpp/client_context.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/async_stream.h>

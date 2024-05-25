@@ -15,18 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_TIME_H
 #define GRPC_SRC_CORE_LIB_GPRPP_TIME_H
 
-#include <stdint.h>
-
-#include <limits>
-#include <ostream>
-#include <string>
-
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <limits>
+#include <ostream>
+#include <stdint.h>
+#include <string>
 
+#include "absl/types/optional.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 

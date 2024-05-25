@@ -20,9 +20,6 @@
 #define GRPCPP_SUPPORT_CALLBACK_COMMON_H
 
 #include <functional>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
@@ -31,6 +28,8 @@
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 namespace internal {

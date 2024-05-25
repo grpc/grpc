@@ -14,13 +14,17 @@
 // limitations under the License.
 //
 
-#include <stdint.h>
-#include <string.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <stdint.h>
+#include <string.h>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -41,13 +45,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "re2/re2.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/lib/channel/channel_args.h"

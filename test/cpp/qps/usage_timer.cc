@@ -19,13 +19,11 @@
 #include "test/cpp/qps/usage_timer.h"
 
 #include <fstream>
+#include <grpc/support/time.h>
 #include <sstream>
 #include <string>
 
 #include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #ifdef __linux__
 #include <sys/resource.h>

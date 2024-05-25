@@ -17,6 +17,9 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 
 #include <algorithm>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <string>
 #include <utility>
@@ -28,11 +31,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/lb_policy.h"
 
 namespace grpc_core {

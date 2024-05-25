@@ -18,15 +18,13 @@
 
 #include "src/core/channelz/channel_trace.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"

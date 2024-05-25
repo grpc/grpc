@@ -16,6 +16,7 @@
 
 #include <chrono>
 #include <cstdlib>
+#include <grpc/support/log.h>
 #include <map>
 #include <string>
 
@@ -26,8 +27,6 @@
 #include "constants.h"
 #include "python_observability_context.h"
 #include "server_call_tracer.h"
-
-#include <grpc/support/log.h>
 
 namespace grpc_observability {
 

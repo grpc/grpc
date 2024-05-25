@@ -21,7 +21,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"

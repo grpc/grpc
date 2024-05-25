@@ -15,12 +15,10 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"

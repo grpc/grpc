@@ -23,20 +23,17 @@
 #ifdef GRPC_HAVE_IFADDRS
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <ifaddrs.h>
 #include <stddef.h>
 #include <string.h>
-#include <sys/socket.h>
-
 #include <string>
+#include <sys/socket.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"

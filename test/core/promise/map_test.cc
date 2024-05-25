@@ -18,7 +18,6 @@
 
 #include "absl/functional/any_invocable.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {

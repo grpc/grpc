@@ -16,12 +16,10 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_ENDPOINT_BINDER_POOL_H
 
 #include <functional>
+#include <grpc/support/port_platform.h>
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/lib/gprpp/sync.h"
 

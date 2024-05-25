@@ -13,13 +13,12 @@
 // limitations under the License.
 
 #include <android/log.h>
+#include <grpcpp/create_channel_binder.h>
+#include <grpcpp/security/binder_security_policy.h>
 #include <jni.h>
 
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "examples/protos/helloworld.pb.h"
-
-#include <grpcpp/create_channel_binder.h>
-#include <grpcpp/security/binder_security_policy.h>
 
 extern "C" JNIEXPORT jstring JNICALL
 Java_io_grpc_binder_cpp_exampleclient_ButtonPressHandler_native_1entry(

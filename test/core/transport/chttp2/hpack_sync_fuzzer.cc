@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <grpc/support/log.h>
 #include <inttypes.h>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <algorithm>
-#include <memory>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -26,9 +26,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"

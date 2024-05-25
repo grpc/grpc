@@ -16,12 +16,14 @@
 
 #include "src/core/xds/xds_client/xds_client.h"
 
-#include <inttypes.h>
-#include <string.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <memory>
+#include <string.h>
 #include <string>
 #include <type_traits>
 #include <vector>
@@ -39,13 +41,6 @@
 #include "envoy/service/status/v3/csds.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/timestamp.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -57,6 +52,8 @@
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client_stats.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6

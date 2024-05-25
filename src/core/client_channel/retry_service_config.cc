@@ -14,10 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/retry_service_config.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <string>
 #include <utility>
@@ -26,12 +29,6 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"

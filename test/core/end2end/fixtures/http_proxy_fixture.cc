@@ -18,11 +18,15 @@
 
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
 
-#include <limits.h>
-#include <string.h>
-
 #include <atomic>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <limits.h>
 #include <memory>
+#include <string.h>
 #include <string>
 #include <vector>
 
@@ -33,13 +37,6 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"

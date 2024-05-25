@@ -18,15 +18,13 @@
 
 #ifndef GRPC_NO_BINDER
 
+#include <grpc/support/log.h>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/types/variant.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 

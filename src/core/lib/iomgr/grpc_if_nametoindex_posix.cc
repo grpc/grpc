@@ -23,9 +23,8 @@
 #if GRPC_IF_NAMETOINDEX == 1 && defined(GRPC_POSIX_SOCKET_IF_NAMETOINDEX)
 
 #include <errno.h>
-#include <net/if.h>
-
 #include <grpc/support/log.h>
+#include <net/if.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"

@@ -18,17 +18,14 @@
 
 #include "src/core/lib/slice/slice.h"
 
-#include <string.h>
-
-#include <new>
-
-#include "absl/log/check.h"
-
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <new>
+#include <string.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"

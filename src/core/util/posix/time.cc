@@ -28,12 +28,11 @@
 #ifdef __linux__
 #include <sys/syscall.h>
 #endif
-#include "absl/log/check.h"
-
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 
 static struct timespec timespec_from_gpr(gpr_timespec gts) {

@@ -20,13 +20,10 @@
 #define GRPC_SRC_CORE_UTIL_STRING_H
 
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdint.h>
-
 #include <string>
-
-#include <grpc/support/time.h>
 
 // String utility functions
 

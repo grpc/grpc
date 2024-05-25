@@ -17,11 +17,11 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_H
 
-#include <stdint.h>
-
 #include <algorithm>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -31,10 +31,6 @@
 #include "envoy/config/route/v3/route.upb.h"
 #include "envoy/config/route/v3/route.upbdefs.h"
 #include "re2/re2.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -45,6 +41,7 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 

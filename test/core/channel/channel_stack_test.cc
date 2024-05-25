@@ -18,12 +18,11 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 
+#include <grpc/support/alloc.h>
+
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"

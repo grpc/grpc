@@ -16,6 +16,9 @@
 
 #include <algorithm>
 #include <chrono>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <list>
 #include <memory>
 #include <string>
@@ -30,11 +33,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"

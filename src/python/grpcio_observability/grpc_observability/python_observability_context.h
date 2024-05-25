@@ -15,11 +15,11 @@
 #ifndef GRPC_PYTHON_OBSERVABILITY_H
 #define GRPC_PYTHON_OBSERVABILITY_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
 #include <atomic>
+#include <grpc/slice.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -29,9 +29,6 @@
 #include "absl/time/time.h"
 #include "constants.h"
 #include "sampler.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 
 namespace grpc_observability {

@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_IOMGR_H
 #define GRPC_SRC_CORE_LIB_IOMGR_IOMGR_H
 
-#include <stdlib.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdlib.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/port.h"

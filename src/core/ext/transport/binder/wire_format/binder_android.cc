@@ -18,15 +18,13 @@
 
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
+#include <grpc/support/log.h>
 #include <map>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"

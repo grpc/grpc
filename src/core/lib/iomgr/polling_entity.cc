@@ -18,13 +18,12 @@
 
 #include "src/core/lib/iomgr/polling_entity.h"
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/gprpp/crash.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(

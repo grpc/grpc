@@ -18,23 +18,20 @@
 
 #include "src/cpp/server/health/default_health_check_service.h"
 
-#include <stdint.h>
-
-#include <memory>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/slice.h>
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/server_callback_handlers.h>
 #include <grpcpp/support/slice.h>
+#include <memory>
+#include <stdint.h>
+#include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 

@@ -18,23 +18,8 @@
 
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
 #include <atomic>
-#include <map>
-#include <memory>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -45,7 +30,19 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <map>
+#include <memory>
+#include <stdlib.h>
+#include <string.h>
+#include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/memory.h"

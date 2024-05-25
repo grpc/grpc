@@ -21,11 +21,9 @@
 
 // manually construct a region of memory with some type
 
-#include <stddef.h>
-
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
+#include <utility>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "gmock/gmock.h"
-
 #include "test/core/transport/test_suite/transport_test.h"
 
 using testing::UnorderedElementsAreArray;

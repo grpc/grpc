@@ -19,13 +19,11 @@
 #ifdef GPR_WINDOWS_STAT
 
 #include <errno.h>
+#include <grpc/support/log.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/gprpp/strerror.h"

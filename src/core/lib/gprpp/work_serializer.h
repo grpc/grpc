@@ -18,13 +18,11 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_WORK_SERIALIZER_H
 
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 

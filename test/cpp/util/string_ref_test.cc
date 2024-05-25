@@ -16,11 +16,9 @@
 //
 //
 
-#include <string.h>
-
-#include <gtest/gtest.h>
-
 #include <grpcpp/support/string_ref.h>
+#include <gtest/gtest.h>
+#include <string.h>
 
 #include "test/core/test_util/test_config.h"
 

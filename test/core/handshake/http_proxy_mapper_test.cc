@@ -18,15 +18,14 @@
 
 #include "src/core/handshaker/http_connect/http_proxy_mapper.h"
 
+#include <grpc/impl/channel_arg_names.h>
+
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

@@ -18,15 +18,12 @@
 
 #include "src/core/lib/transport/bdp_estimator.h"
 
-#include <stdlib.h>
-
 #include <algorithm>
 #include <atomic>
+#include <grpc/grpc.h>
+#include <stdlib.h>
 
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/test_util/test_config.h"

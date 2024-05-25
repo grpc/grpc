@@ -14,11 +14,14 @@
 
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,12 +34,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"

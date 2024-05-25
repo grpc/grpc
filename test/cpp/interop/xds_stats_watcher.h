@@ -23,6 +23,7 @@
 #include <chrono>
 #include <condition_variable>
 #include <deque>
+#include <grpcpp/grpcpp.h>
 #include <map>
 #include <mutex>
 #include <set>
@@ -34,9 +35,6 @@
 
 #include "absl/status/status.h"
 #include "absl/types/span.h"
-
-#include <grpcpp/grpcpp.h>
-
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 

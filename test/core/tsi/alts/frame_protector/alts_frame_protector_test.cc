@@ -18,12 +18,10 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
-#include <stdbool.h>
-
-#include <gtest/gtest.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
+#include <stdbool.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/alts/crypt/gsec.h"

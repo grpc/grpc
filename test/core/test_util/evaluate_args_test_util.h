@@ -15,16 +15,13 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_EVALUATE_ARGS_TEST_UTIL_H
 #define GRPC_TEST_CORE_TEST_UTIL_EVALUATE_ARGS_TEST_UTIL_H
 
-#include <stdlib.h>
-
-#include <memory>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
+#include <memory>
+#include <stdlib.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

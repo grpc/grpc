@@ -19,8 +19,6 @@
 #ifndef GRPCPP_SERVER_INTERFACE_H
 #define GRPCPP_SERVER_INTERFACE_H
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
@@ -33,6 +31,8 @@
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/byte_buffer.h>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 

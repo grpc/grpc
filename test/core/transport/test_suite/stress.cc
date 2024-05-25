@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "absl/random/random.h"
-
 #include "test/core/transport/test_suite/transport_test.h"
 
 namespace grpc_core {

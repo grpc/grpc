@@ -17,17 +17,15 @@
 #include "test/core/test_util/audit_logging_utils.h"
 
 #include <algorithm>
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {

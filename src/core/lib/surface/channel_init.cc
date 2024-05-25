@@ -18,11 +18,12 @@
 
 #include "src/core/lib/surface/channel_init.h"
 
-#include <string.h>
-
 #include <algorithm>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <set>
+#include <string.h>
 #include <string>
 #include <type_traits>
 
@@ -32,10 +33,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"

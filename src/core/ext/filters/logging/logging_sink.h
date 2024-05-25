@@ -20,16 +20,13 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_SINK_H
 
 #include <grpc/support/port_platform.h>
-
-#include <stdint.h>
-
 #include <map>
+#include <stdint.h>
 #include <string>
 
 #include "absl/numeric/int128.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
 #include "src/core/lib/gprpp/time.h"
 
 namespace grpc_core {

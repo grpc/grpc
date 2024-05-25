@@ -12,15 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
 #include <signal.h>
 #include <string.h>
-
-#include <grpc/support/port_platform.h>
 
 #ifndef GPR_WINDOWS
 #include <unistd.h>
 #endif  // GPR_WINDOWS
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <memory>
 #include <string>
 #include <thread>
@@ -30,11 +32,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gprpp/crash.h"
 
 #ifdef __FreeBSD__

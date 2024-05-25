@@ -18,14 +18,12 @@
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
+#include <grpc/support/log.h>
 #include <memory>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/log/check.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "test/core/test_util/test_config.h"

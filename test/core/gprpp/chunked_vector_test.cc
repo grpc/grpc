@@ -15,12 +15,10 @@
 #include "src/core/lib/gprpp/chunked_vector.h"
 
 #include <algorithm>
+#include <grpc/event_engine/memory_allocator.h>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

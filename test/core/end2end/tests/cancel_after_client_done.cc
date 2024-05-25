@@ -16,13 +16,11 @@
 //
 //
 
+#include <grpc/status.h>
 #include <memory>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/gprpp/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"

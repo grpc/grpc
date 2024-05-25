@@ -12,21 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
+#include <cstdint>
+#include <grpc/slice.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <algorithm>
-#include <cstdint>
 #include <string>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 

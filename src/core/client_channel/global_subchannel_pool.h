@@ -20,11 +20,9 @@
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_GLOBAL_SUBCHANNEL_POOL_H
 
 #include <grpc/support/port_platform.h>
-
 #include <map>
 
 #include "absl/base/thread_annotations.h"
-
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"

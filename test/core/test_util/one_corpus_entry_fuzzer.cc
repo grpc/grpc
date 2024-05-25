@@ -16,13 +16,11 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <stdbool.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/tls_utils.h"

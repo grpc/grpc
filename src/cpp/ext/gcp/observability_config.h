@@ -17,18 +17,15 @@
 #ifndef GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_CONFIG_H
 #define GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_CONFIG_H
 
-#include <stdint.h>
-
+#include <grpc/support/port_platform.h>
 #include <map>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"

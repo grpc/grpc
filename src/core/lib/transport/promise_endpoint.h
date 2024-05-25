@@ -15,13 +15,18 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <atomic>
 #include <cstring>
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stddef.h>
+#include <stdint.h>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -29,14 +34,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/gprpp/sync.h"

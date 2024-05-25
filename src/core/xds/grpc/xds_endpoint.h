@@ -17,10 +17,10 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ENDPOINT_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ENDPOINT_H
 
-#include <stdint.h>
-
 #include <algorithm>
+#include <grpc/support/port_platform.h>
 #include <map>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,10 +29,6 @@
 #include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/endpoint/v3/endpoint.upbdefs.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -41,6 +37,7 @@
 #include "src/core/xds/xds_client/xds_client_stats.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 

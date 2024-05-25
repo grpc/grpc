@@ -18,6 +18,12 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -30,14 +36,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"

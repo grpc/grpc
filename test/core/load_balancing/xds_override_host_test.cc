@@ -14,11 +14,12 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -33,10 +34,6 @@
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"

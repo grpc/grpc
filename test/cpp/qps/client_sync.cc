@@ -17,6 +17,13 @@
 //
 
 #include <chrono>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -26,15 +33,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"

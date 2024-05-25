@@ -17,6 +17,9 @@
 //
 
 #include <chrono>
+#include <grpc++/grpc++.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/support/status.h>
 #include <thread>  // NOLINT
 
 #include "absl/strings/escaping.h"
@@ -25,11 +28,6 @@
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
 #include "opencensus/stats/testing/test_utils.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/support/status.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/sync.h"

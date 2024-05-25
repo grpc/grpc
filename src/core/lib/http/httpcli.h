@@ -19,21 +19,18 @@
 #ifndef GRPC_SRC_CORE_LIB_HTTP_HTTPCLI_H
 #define GRPC_SRC_CORE_LIB_HTTP_HTTPCLI_H
 
-#include <stddef.h>
-
 #include <functional>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stddef.h>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"

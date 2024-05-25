@@ -14,9 +14,9 @@
 
 #include "client_call_tracer.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <grpc/slice.h>
+#include <stddef.h>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -24,9 +24,6 @@
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_observability {

@@ -15,9 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_BATCH_BUILDER_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_BATCH_BUILDER_H
 
-#include <stdint.h>
-
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 
@@ -26,11 +28,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

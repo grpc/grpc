@@ -15,14 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_ENGINE_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_GRPC_AUTHORIZATION_ENGINE_H
 
-#include <stddef.h>
-
-#include <memory>
-#include <string>
-#include <vector>
-
 #include <grpc/grpc_audit_logging.h>
 #include <grpc/support/port_platform.h>
+#include <memory>
+#include <stddef.h>
+#include <string>
+#include <vector>
 
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"

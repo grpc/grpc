@@ -19,11 +19,9 @@
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
 #include <CoreFoundation/CoreFoundation.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/cpu.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"

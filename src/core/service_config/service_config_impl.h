@@ -17,9 +17,11 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_IMPL_H
 
-#include <stddef.h>
-
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -27,11 +29,6 @@
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/validation_errors.h"

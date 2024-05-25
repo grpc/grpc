@@ -18,14 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 
+#include <grpc/grpc.h>
 #include <string>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/test_util/test_config.h"

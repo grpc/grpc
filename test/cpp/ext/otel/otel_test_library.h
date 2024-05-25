@@ -20,6 +20,9 @@
 #define GRPC_TEST_CPP_EXT_OTEL_OTEL_TEST_LIBRARY_H
 
 #include <atomic>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/generic/generic_stub.h>
+#include <grpcpp/grpcpp.h>
 #include <thread>
 
 #include "absl/functional/any_invocable.h"
@@ -28,11 +31,6 @@
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/generic/generic_stub.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"

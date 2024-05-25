@@ -16,13 +16,12 @@
 
 #include "src/core/xds/grpc/xds_health_status.h"
 
+#include <grpc/support/port_platform.h>
 #include <string>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/health_check.upb.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

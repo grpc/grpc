@@ -18,14 +18,12 @@
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_TRANSPORT_H
 
 #include <functional>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 

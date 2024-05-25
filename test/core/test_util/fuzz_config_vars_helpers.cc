@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <algorithm>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <algorithm>
 #include <string>
 #include <vector>
 
 #include "absl/strings/str_join.h"
-
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
 

@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <string>
 #include <utility>
@@ -28,9 +29,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

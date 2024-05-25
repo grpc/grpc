@@ -13,9 +13,8 @@
 // limitations under the License.
 
 #include <atomic>
-#include <string>
-
 #include <grpc/support/port_platform.h>
+#include <string>
 
 #include "src/core/lib/config/config_vars.h"
 

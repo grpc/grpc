@@ -20,6 +20,9 @@
 
 #include "rb_grpc.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <math.h>
 #include <ruby/vm.h>
 #include <stdbool.h>
@@ -38,10 +41,6 @@
 #include "rb_server_credentials.h"
 #include "rb_xds_channel_credentials.h"
 #include "rb_xds_server_credentials.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #ifdef GPR_LINUX
 #include <sys/syscall.h>

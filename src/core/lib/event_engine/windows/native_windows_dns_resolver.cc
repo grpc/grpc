@@ -14,17 +14,14 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
+#include <grpc/event_engine/event_engine.h>
 #include <inttypes.h>
 #include <string.h>
-#include <sys/types.h>
-
 #include <string>
+#include <sys/types.h>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"

@@ -13,11 +13,9 @@
 // limitations under the License.
 
 #include <algorithm>
-
-#include "absl/status/status.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
@@ -34,6 +32,7 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 
+#include <grpc/support/log.h>
 #include <memory>
 #include <utility>
 
@@ -42,9 +41,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"

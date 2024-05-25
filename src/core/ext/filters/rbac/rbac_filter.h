@@ -18,11 +18,9 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_RBAC_RBAC_FILTER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"

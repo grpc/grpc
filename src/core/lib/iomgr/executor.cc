@@ -18,16 +18,14 @@
 
 #include "src/core/lib/iomgr/executor.h"
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <string.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

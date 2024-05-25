@@ -18,11 +18,17 @@
 
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <new>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <new>
 #include <string>
 #include <utility>
 
@@ -33,16 +39,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
@@ -61,6 +57,7 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 // IWYU pragma: no_include <type_traits>
 

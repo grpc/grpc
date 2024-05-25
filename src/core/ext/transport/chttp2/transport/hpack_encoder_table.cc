@@ -15,11 +15,10 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
 
 #include <algorithm>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

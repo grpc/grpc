@@ -18,18 +18,15 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
+#include <algorithm>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <memory>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <algorithm>
-#include <memory>
-
 #include "absl/log/log.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"

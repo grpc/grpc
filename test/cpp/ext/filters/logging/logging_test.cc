@@ -17,6 +17,8 @@
 //
 
 #include <chrono>
+#include <grpc++/grpc++.h>
+#include <grpcpp/support/status.h>
 #include <thread>  // NOLINT
 
 #include "absl/strings/escaping.h"
@@ -24,10 +26,6 @@
 #include "gmock/gmock.h"
 #include "google/protobuf/text_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc++/grpc++.h>
-#include <grpcpp/support/status.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/sync.h"

@@ -24,13 +24,12 @@
 #ifdef GRPC_CFSTREAM_CLIENT
 
 #include <CoreFoundation/CoreFoundation.h>
-#include <netinet/in.h>
-#include <string.h>
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <netinet/in.h>
+#include <string.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/shim.h"

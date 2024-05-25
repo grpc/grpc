@@ -33,14 +33,12 @@
 #ifdef __linux__
 #include <sys/epoll.h>
 #endif
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <sys/socket.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"

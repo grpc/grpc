@@ -30,11 +30,9 @@
 #ifdef GRPC_APPLE_EV
 
 #include <CoreFoundation/CoreFoundation.h>
-
 #include <list>
 
 #include "absl/time/time.h"
-
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/ev_apple.h"

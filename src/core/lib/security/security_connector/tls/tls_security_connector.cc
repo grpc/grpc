@@ -18,9 +18,14 @@
 
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 
-#include <string.h>
-
+#include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <memory>
+#include <string.h>
 #include <utility>
 #include <vector>
 
@@ -29,14 +34,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"

@@ -11,18 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <errno.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <algorithm>
 #include <chrono>
 #include <cstring>
+#include <errno.h>
+#include <fcntl.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <memory>
+#include <poll.h>
+#include <stdlib.h>
 #include <string>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 
@@ -34,11 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"

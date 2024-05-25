@@ -19,10 +19,11 @@
 #ifndef GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_LOGGING_SINK_H
 #define GRPC_SRC_CPP_EXT_GCP_OBSERVABILITY_LOGGING_SINK_H
 
-#include <stdint.h>
-
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -30,10 +31,6 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/cpp/ext/gcp/environment_autodetect.h"

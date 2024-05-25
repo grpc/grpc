@@ -18,6 +18,12 @@
 
 #include <forward_list>
 #include <functional>
+#include <grpc/grpc.h>
+#include <grpc/support/cpu.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/generic/generic_stub.h>
 #include <list>
 #include <memory>
 #include <mutex>
@@ -30,14 +36,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/cpu.h>
-#include <grpcpp/alarm.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/generic/generic_stub.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"

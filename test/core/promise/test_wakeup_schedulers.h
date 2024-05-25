@@ -15,9 +15,8 @@
 #ifndef GRPC_TEST_CORE_PROMISE_TEST_WAKEUP_SCHEDULERS_H
 #define GRPC_TEST_CORE_PROMISE_TEST_WAKEUP_SCHEDULERS_H
 
-#include <stdlib.h>
-
 #include <functional>
+#include <stdlib.h>
 
 #include "gmock/gmock.h"
 

@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_TIMER_H
 
 #include <cstdint>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>

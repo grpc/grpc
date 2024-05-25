@@ -14,15 +14,13 @@
 
 #include "test/core/memory_usage/memstats.h"
 
-#include <unistd.h>
-
 #include <fstream>
+#include <grpc/support/log.h>
 #include <string>
+#include <unistd.h>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/log.h>
 
 long GetMemUsage(absl::optional<int> pid) {
   // Default is getting memory usage for self (calling process)

@@ -22,12 +22,10 @@
 #include <atomic>
 #include <cassert>
 #include <cinttypes>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/down_cast.h"

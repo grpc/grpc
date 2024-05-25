@@ -19,13 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 

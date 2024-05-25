@@ -21,9 +21,6 @@
 
 #include <atomic>
 #include <functional>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpc/support/log.h>
@@ -33,6 +30,8 @@
 #include <grpcpp/support/callback_common.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 class Channel;

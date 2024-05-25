@@ -18,17 +18,15 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <memory>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 
 static thread_local bool g_timer_thread;

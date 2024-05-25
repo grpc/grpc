@@ -18,24 +18,21 @@
 
 #include "src/core/lib/slice/slice.h"
 
-#include <inttypes.h>
-#include <string.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <memory>
 #include <random>
+#include <string.h>
 #include <string>
 #include <vector>
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice_internal.h"

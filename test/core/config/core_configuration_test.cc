@@ -16,10 +16,9 @@
 
 #include <chrono>
 #include <functional>
+#include <gtest/gtest.h>
 #include <thread>
 #include <vector>
-
-#include <gtest/gtest.h>
 
 namespace grpc_core {
 

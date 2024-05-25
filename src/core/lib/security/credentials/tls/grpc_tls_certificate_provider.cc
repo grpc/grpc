@@ -16,22 +16,19 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
-#include <stdint.h>
-#include <time.h>
-
 #include <algorithm>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-
 #include <grpc/credentials.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stdint.h>
+#include <time.h>
+#include <utility>
+#include <vector>
 
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/gprpp/stat.h"

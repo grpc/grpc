@@ -20,17 +20,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <functional>
-#include <memory>
-#include <mutex>
-#include <sstream>
-#include <thread>
-
 #include <google/protobuf/arena.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -39,7 +29,14 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 #include <grpcpp/support/message_allocator.h>
+#include <gtest/gtest.h>
+#include <memory>
+#include <mutex>
+#include <sstream>
+#include <thread>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

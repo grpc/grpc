@@ -21,12 +21,10 @@
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
 
 #include <dlfcn.h>
+#include <grpc/support/log.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 

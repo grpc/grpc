@@ -18,11 +18,14 @@
 
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 
-#include <stdint.h>
-
 #include <array>
 #include <functional>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 
@@ -38,12 +41,6 @@
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
-
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"

@@ -20,18 +20,17 @@
 
 #include "rb_call_credentials.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <ruby/thread.h>
 
 #include "rb_call.h"
 #include "rb_event_thread.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 /* grpc_rb_cCallCredentials is the ruby class that proxies
  * grpc_call_credentials */

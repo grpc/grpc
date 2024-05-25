@@ -15,7 +15,6 @@
 #include "src/core/lib/surface/wait_for_cq_end_op.h"
 
 #include <atomic>
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/match.h"

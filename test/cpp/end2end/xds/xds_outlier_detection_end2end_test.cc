@@ -13,15 +13,13 @@
 // limitations under the License.
 
 #include <chrono>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <string>
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"

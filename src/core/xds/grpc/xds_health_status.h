@@ -17,14 +17,12 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_HEALTH_STATUS_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_HEALTH_STATUS_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/endpoint_addresses.h"
 
 // Channel arg key for xDS health status.

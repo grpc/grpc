@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 #include <stdio.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
@@ -27,7 +28,6 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
-#include "absl/log/check.h"
 
 bool squelch = true;
 static void dont_log(gpr_log_func_args* /*args*/) {}

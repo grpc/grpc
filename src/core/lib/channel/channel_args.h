@@ -19,12 +19,14 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>  // IWYU pragma: keep
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <iosfwd>
 #include <memory>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -32,11 +34,6 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"

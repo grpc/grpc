@@ -20,14 +20,16 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
-#include <errno.h>       // IWYU pragma: keep
-#include <sys/socket.h>  // IWYU pragma: keep
-#include <unistd.h>      // IWYU pragma: keep
-
 #include <atomic>
+#include <errno.h>  // IWYU pragma: keep
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/support/log.h>
 #include <string>
+#include <sys/socket.h>  // IWYU pragma: keep
 #include <tuple>
 #include <type_traits>
+#include <unistd.h>  // IWYU pragma: keep
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -35,11 +37,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"

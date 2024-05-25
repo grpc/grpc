@@ -22,14 +22,12 @@
 // runs in a separate container) the framework takes a round-robin pick of a
 // port within certain range. There is no need to recycle ports.
 //
-#include <stdlib.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <stdlib.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/test_util/port.h"

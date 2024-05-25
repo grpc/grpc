@@ -16,11 +16,6 @@
 //
 //
 
-#include <memory>
-#include <string>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
@@ -30,6 +25,10 @@
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
+#include <memory>
+#include <string>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 namespace experimental {

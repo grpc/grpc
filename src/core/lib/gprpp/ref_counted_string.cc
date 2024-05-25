@@ -16,12 +16,10 @@
 
 #include "src/core/lib/gprpp/ref_counted_string.h"
 
-#include <string.h>
-
-#include <new>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <new>
+#include <string.h>
 
 namespace grpc_core {
 

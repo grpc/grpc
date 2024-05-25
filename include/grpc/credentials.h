@@ -19,11 +19,10 @@
 #ifndef GRPC_CREDENTIALS_H
 #define GRPC_CREDENTIALS_H
 
-#include <stdbool.h>
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -17,12 +17,12 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 #define GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 
-#include <stddef.h>
-
 #include <deque>
 #include <functional>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <utility>
 
@@ -31,9 +31,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

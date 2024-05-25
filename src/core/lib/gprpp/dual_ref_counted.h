@@ -19,12 +19,10 @@
 
 #include <atomic>
 #include <cstdint>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"

@@ -19,7 +19,6 @@
 #include <memory>
 
 #include "gtest/gtest.h"
-
 #include "test/core/handshake/server_ssl_common.h"
 #include "test/core/test_util/test_config.h"
 

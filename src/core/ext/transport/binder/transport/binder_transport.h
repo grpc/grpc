@@ -16,6 +16,9 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_TRANSPORT_BINDER_TRANSPORT_H
 
 #include <atomic>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/security/binder_security_policy.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -23,11 +26,6 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/security/binder_security_policy.h>
-
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"

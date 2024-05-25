@@ -63,12 +63,10 @@
 
 #include <fstream>
 #include <functional>
+#include <grpcpp/support/config.h>
 #include <iostream>
 
 #include "absl/flags/flag.h"
-
-#include <grpcpp/support/config.h>
-
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/grpc_tool.h"
 #include "test/cpp/util/test_config.h"

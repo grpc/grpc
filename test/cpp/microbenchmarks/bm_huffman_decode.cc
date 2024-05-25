@@ -12,13 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <benchmark/benchmark.h>
 #include <cstdint>
 #include <random>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/strings/escaping.h"
-
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
 #include "src/core/lib/gprpp/no_destruct.h"

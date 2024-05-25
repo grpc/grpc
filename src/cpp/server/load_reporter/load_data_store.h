@@ -19,17 +19,15 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_DATA_STORE_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_DATA_STORE_H
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <grpc/support/port_platform.h>
+#include <grpcpp/support/config.h>
 #include <memory>
 #include <set>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace load_reporter {

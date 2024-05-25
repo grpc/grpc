@@ -19,7 +19,6 @@
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 

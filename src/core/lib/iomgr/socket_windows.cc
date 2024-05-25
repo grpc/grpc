@@ -25,16 +25,14 @@
 #include <winsock2.h>
 
 // must be included after winsock2.h
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/log_windows.h>
 #include <mswsock.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/log_windows.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"

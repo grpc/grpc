@@ -18,18 +18,15 @@
 
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
 
-#include <string.h>
-
-#include <gtest/gtest.h>
-
-#include "absl/strings/escaping.h"
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
+#include <string.h>
 
+#include "absl/strings/escaping.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"

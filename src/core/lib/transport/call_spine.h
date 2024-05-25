@@ -15,11 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_SPINE_H
 
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"

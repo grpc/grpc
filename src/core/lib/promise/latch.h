@@ -15,18 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
 
-#include <stdint.h>
-
 #include <atomic>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <stdint.h>
 #include <string>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"

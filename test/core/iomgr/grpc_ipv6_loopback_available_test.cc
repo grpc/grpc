@@ -16,10 +16,9 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/port.h"

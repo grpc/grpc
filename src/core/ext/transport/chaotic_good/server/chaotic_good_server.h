@@ -17,6 +17,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -25,10 +27,6 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"

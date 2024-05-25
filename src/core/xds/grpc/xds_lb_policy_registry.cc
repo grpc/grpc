@@ -16,9 +16,10 @@
 
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
-
 #include <string>
 #include <utility>
 
@@ -31,10 +32,6 @@
 #include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.upb.h"
 #include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"

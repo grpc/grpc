@@ -22,7 +22,6 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
 #include "src/core/lib/gprpp/crash.h"
 
 namespace grpc_event_engine {

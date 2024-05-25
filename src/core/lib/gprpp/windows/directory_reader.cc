@@ -20,18 +20,15 @@
 
 #if defined(GPR_WINDOWS)
 
-#include <sys/stat.h>
-#include <windows.h>
-
+#include <grpc/support/log.h>
 #include <string>
+#include <sys/stat.h>
 #include <vector>
+#include <windows.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/directory_reader.h"
 namespace grpc_core {
 

@@ -18,12 +18,10 @@
 
 #include "src/core/lib/http/format_request.h"
 
+#include <memory>
 #include <string.h>
 
-#include <memory>
-
 #include "gtest/gtest.h"
-
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/test_util/test_config.h"

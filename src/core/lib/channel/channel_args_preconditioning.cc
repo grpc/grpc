@@ -14,9 +14,8 @@
 
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+#include <utility>
 
 namespace grpc_core {
 

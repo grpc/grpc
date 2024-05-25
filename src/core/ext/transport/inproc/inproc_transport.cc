@@ -15,13 +15,11 @@
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 
 #include <atomic>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"

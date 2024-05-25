@@ -14,9 +14,9 @@
 // limitations under the License.
 //
 
-#include <stdlib.h>
-
+#include <grpc/event_engine/memory_allocator.h>
 #include <memory>
+#include <stdlib.h>
 #include <string>
 #include <vector>
 
@@ -25,9 +25,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/arena.h"

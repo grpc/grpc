@@ -16,16 +16,6 @@
 //
 //
 
-#include <mutex>
-#include <thread>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -41,7 +31,15 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/test/channel_test_peer.h>
+#include <mutex>
+#include <thread>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"

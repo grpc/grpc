@@ -12,26 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <gmock/gmock.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
+#include <memory>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <memory>
 #include <utility>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"

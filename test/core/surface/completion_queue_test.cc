@@ -18,18 +18,15 @@
 
 #include "src/core/lib/surface/completion_queue.h"
 
-#include <stddef.h>
-
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <memory>
+#include <stddef.h>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"

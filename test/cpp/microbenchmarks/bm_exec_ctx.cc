@@ -13,11 +13,9 @@
 // limitations under the License.
 
 #include <atomic>
-#include <memory>
-
 #include <benchmark/benchmark.h>
-
 #include <grpcpp/impl/grpc_library.h>
+#include <memory>
 
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

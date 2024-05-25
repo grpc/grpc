@@ -17,15 +17,13 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
 #include <numeric>
 #include <utility>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-
-#include <grpc/support/cpu.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/util/useful.h"

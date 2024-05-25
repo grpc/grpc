@@ -17,12 +17,11 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_UPB_UTILS_H
 #define GRPC_SRC_CORE_XDS_GRPC_UPB_UTILS_H
 
+#include <grpc/support/port_platform.h>
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "upb/base/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

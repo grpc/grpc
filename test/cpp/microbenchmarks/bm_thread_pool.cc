@@ -13,18 +13,15 @@
 // limitations under the License.
 
 #include <atomic>
+#include <benchmark/benchmark.h>
 #include <cmath>
+#include <grpc/support/cpu.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <memory>
 #include <vector>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/cpu.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/gprpp/crash.h"

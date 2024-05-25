@@ -17,10 +17,9 @@
 //
 
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/server_builder.h>
+#include <gtest/gtest.h>
 
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

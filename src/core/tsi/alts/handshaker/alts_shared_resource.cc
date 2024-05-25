@@ -18,11 +18,10 @@
 
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"

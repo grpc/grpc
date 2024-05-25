@@ -14,20 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/subchannel_stream_client.h"
-
-#include <inttypes.h>
-#include <stdio.h>
-
-#include <utility>
-
-#include "absl/log/check.h"
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <utility>
 
+#include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"

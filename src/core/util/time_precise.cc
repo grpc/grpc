@@ -24,7 +24,6 @@
 #endif
 
 #include <algorithm>
-
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 

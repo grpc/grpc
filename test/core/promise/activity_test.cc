@@ -14,15 +14,13 @@
 
 #include "src/core/lib/promise/activity.h"
 
-#include <stdlib.h>
-
 #include <functional>
+#include <stdlib.h>
 #include <tuple>
 #include <variant>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"

@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_LOCAL_SUBCHANNEL_POOL_H
 
 #include <grpc/support/port_platform.h>
-
 #include <map>
 
 #include "src/core/client_channel/subchannel_pool_interface.h"

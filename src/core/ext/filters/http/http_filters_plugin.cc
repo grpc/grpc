@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/match.h"
-
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"

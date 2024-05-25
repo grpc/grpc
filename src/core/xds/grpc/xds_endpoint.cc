@@ -16,13 +16,14 @@
 
 #include "src/core/xds/grpc/xds_endpoint.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <limits>
 #include <memory>
 #include <set>
+#include <stdlib.h>
+#include <string.h>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -38,11 +39,6 @@
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/text/encode.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -54,6 +50,7 @@
 #include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/text/encode.h"
 
 // IWYU pragma: no_include "absl/meta/type_traits.h"
 

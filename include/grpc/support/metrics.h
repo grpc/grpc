@@ -15,9 +15,9 @@
 #ifndef GRPC_SUPPORT_METRICS_H
 #define GRPC_SUPPORT_METRICS_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace experimental {

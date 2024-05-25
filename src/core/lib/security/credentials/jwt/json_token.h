@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
-#include <openssl/crypto.h>
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <openssl/crypto.h>
 
 #include "src/core/util/json/json.h"
 

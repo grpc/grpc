@@ -14,10 +14,9 @@
 
 #include "test/core/test_util/osa_distance.h"
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <limits>
+#include <stdint.h>
 #include <utility>
 #include <vector>
 

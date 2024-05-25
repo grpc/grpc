@@ -18,13 +18,12 @@
 
 #include "test/core/test_util/parse_hexstring.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
 
 namespace grpc_core {
 Slice ParseHexstring(absl::string_view hexstring) {

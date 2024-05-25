@@ -21,13 +21,11 @@
 
 // Parser for GRPC streams embedded in DATA frames
 
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include "absl/status/status.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/poll.h"

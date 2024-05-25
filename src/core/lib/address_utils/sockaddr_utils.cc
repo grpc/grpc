@@ -19,25 +19,21 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
 #endif
+#include <grpc/support/log.h>
 #include <string.h>
-
 #include <string>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/port.h"

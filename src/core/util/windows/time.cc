@@ -22,15 +22,13 @@
 
 #ifdef GPR_WINDOWS_TIME
 
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <limits.h>
 #include <process.h>
 #include <sys/timeb.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/time_precise.h"
 

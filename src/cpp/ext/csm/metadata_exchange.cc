@@ -18,11 +18,12 @@
 
 #include "src/cpp/ext/csm/metadata_exchange.h"
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
 #include <unordered_map>
 
 #include "absl/log/check.h"
@@ -34,11 +35,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
 #include "opentelemetry/sdk/resource/semantic_conventions.h"
-#include "upb/base/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
@@ -48,6 +44,7 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
+#include "upb/base/string_view.h"
 
 namespace grpc {
 namespace internal {

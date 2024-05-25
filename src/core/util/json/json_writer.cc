@@ -17,17 +17,14 @@
 //
 
 #include <grpc/support/port_platform.h>
-
+#include <map>
 #include <stdint.h>
 #include <stdlib.h>
-
-#include <map>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-
 #include "src/core/util/json/json.h"
 
 namespace grpc_core {

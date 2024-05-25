@@ -18,15 +18,13 @@
 
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 
-#include <limits.h>
-#include <stdint.h>
-#include <string.h>
-
 #include <algorithm>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <limits.h>
+#include <stdint.h>
+#include <string.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"

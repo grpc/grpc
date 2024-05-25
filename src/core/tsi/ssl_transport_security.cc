@@ -18,10 +18,9 @@
 
 #include "src/core/tsi/ssl_transport_security.h"
 
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <string.h>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -35,9 +34,13 @@
 #include <sys/socket.h>
 #endif
 
+#include <grpc/grpc_crl_provider.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd_id.h>
 #include <memory>
-#include <string>
-
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // For OPENSSL_free
 #include <openssl/engine.h>
@@ -46,20 +49,13 @@
 #include <openssl/tls1.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
+#include <string>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_crl_provider.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"

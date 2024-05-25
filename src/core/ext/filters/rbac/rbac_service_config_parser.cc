@@ -14,11 +14,11 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 
 #include <cstdint>
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -27,9 +27,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc_audit_logging.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/authorization/audit_logging.h"

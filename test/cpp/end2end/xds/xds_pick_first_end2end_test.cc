@@ -13,22 +13,18 @@
 // limitations under the License.
 //
 
-#include <unistd.h>
-
 #include <cstddef>
+#include <gmock/gmock.h>
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
 #include <optional>
 #include <string>
+#include <unistd.h>
 #include <utility>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpcpp/support/status.h>
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"

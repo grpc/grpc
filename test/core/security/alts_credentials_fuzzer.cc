@@ -16,17 +16,15 @@
 //
 //
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"

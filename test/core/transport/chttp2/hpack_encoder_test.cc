@@ -18,19 +18,16 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice_buffer.h>
+#include <memory>
 #include <stdlib.h>
 #include <string.h>
-
-#include <memory>
 #include <string>
 
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice_buffer.h>
-
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

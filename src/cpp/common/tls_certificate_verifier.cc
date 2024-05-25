@@ -14,16 +14,8 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <functional>
-#include <map>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
@@ -34,6 +26,12 @@
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <map>
+#include <stddef.h>
+#include <utility>
+#include <vector>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 namespace experimental {

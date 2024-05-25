@@ -16,16 +16,13 @@
 //
 //
 
-#include <string.h>
-
 #include <cstdint>
+#include <grpc/grpc.h>
 #include <limits>
+#include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"

@@ -20,11 +20,6 @@
 #define GRPCPP_IMPL_CALL_OP_SET_H
 
 #include <cstring>
-#include <map>
-#include <memory>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>
@@ -44,6 +39,10 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/string_ref.h>
+#include <map>
+#include <memory>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 

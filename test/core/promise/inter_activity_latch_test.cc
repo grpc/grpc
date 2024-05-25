@@ -14,11 +14,10 @@
 
 #include "src/core/lib/promise/inter_activity_latch.h"
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"

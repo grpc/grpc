@@ -18,10 +18,13 @@
 
 #include "src/core/handshaker/http_connect/http_proxy_mapper.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <memory>
 #include <stdint.h>
 #include <string.h>
-
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -38,12 +41,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"

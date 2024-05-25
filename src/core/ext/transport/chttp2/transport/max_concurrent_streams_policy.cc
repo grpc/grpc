@@ -14,12 +14,11 @@
 
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

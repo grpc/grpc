@@ -19,14 +19,14 @@
 #ifndef GRPCPP_IMPL_SERVICE_TYPE_H
 #define GRPCPP_IMPL_SERVICE_TYPE_H
 
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/server_interface.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 

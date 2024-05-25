@@ -15,6 +15,9 @@
 //
 
 #include <algorithm>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -27,11 +30,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

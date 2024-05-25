@@ -18,12 +18,11 @@
 
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 
-#include <stdlib.h>
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"

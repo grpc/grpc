@@ -19,24 +19,21 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 
-#include <stddef.h>
-
 #include <atomic>
 #include <cstdint>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <set>
+#include <stddef.h>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/ref_counted.h"

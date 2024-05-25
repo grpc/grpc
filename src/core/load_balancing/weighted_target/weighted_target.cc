@@ -16,12 +16,15 @@
 
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 
-#include <string.h>
-
 #include <algorithm>
 #include <cstdint>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <string.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,12 +39,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"

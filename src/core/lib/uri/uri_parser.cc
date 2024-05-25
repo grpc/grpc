@@ -16,12 +16,13 @@
 
 #include "src/core/lib/uri/uri_parser.h"
 
-#include <ctype.h>
-#include <stddef.h>
-
 #include <algorithm>
+#include <ctype.h>
 #include <functional>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
+#include <stddef.h>
 #include <string>
 #include <utility>
 
@@ -35,9 +36,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

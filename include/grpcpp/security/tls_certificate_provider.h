@@ -17,15 +17,14 @@
 #ifndef GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 #define GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 
-#include <memory>
-#include <vector>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpcpp/support/config.h>
+#include <memory>
+#include <vector>
 
 namespace grpc {
 namespace experimental {

@@ -20,6 +20,13 @@
 
 #include <cinttypes>
 #include <fstream>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/security/credentials.h>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -32,15 +39,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/security/credentials.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/crash.h"

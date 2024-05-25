@@ -14,11 +14,17 @@
 // limitations under the License.
 //
 
-#include <stdint.h>
-
 #include <algorithm>
+#include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/ext/gcp_observability.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <map>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -37,15 +43,6 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/sampler.h"
 #include "opencensus/trace/trace_config.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/ext/gcp_observability.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
-
 #include "src/core/ext/filters/logging/logging_filter.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"

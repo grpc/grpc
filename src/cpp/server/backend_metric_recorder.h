@@ -19,19 +19,16 @@
 #ifndef GRPC_SRC_CPP_SERVER_BACKEND_METRIC_RECORDER_H
 #define GRPC_SRC_CPP_SERVER_BACKEND_METRIC_RECORDER_H
 
-#include <stdint.h>
-
 #include <atomic>
-#include <map>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
-
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/support/string_ref.h>
+#include <map>
+#include <stdint.h>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 #include "src/core/ext/filters/backend_metrics/backend_metric_provider.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 

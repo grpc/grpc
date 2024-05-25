@@ -58,13 +58,21 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
-#include <inttypes.h>
-#include <string.h>
-
 #include <algorithm>
 #include <atomic>
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <inttypes.h>
 #include <map>
 #include <memory>
+#include <string.h>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -81,18 +89,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/variant.h"
-#include "upb/mem/arena.hpp"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -143,6 +139,7 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "upb/mem/arena.hpp"
 
 #define GRPC_GRPCLB_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_GRPCLB_RECONNECT_BACKOFF_MULTIPLIER 1.6

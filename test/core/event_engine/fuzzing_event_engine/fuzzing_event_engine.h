@@ -15,14 +15,18 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_FUZZING_EVENT_ENGINE_FUZZING_EVENT_ENGINE_H
 
-#include <stddef.h>
-
 #include <chrono>
 #include <cstdint>
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/time.h>
 #include <map>
 #include <memory>
 #include <queue>
 #include <set>
+#include <stddef.h>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -33,13 +37,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"

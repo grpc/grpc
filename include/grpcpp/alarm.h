@@ -22,7 +22,6 @@
 #define GRPCPP_ALARM_H
 
 #include <functional>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpcpp/completion_queue.h>

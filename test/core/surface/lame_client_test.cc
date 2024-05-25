@@ -16,19 +16,16 @@
 //
 //
 
-#include <string.h>
-
-#include <memory>
-
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
+#include <memory>
+#include <string.h>
 
+#include "absl/status/status.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"

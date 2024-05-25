@@ -23,10 +23,9 @@
 
 #ifdef GRPC_POSIX_HOST_NAME_MAX
 
+#include <grpc/support/alloc.h>
 #include <limits.h>
 #include <unistd.h>
-
-#include <grpc/support/alloc.h>
 
 char* grpc_gethostname() {
   char* hostname = static_cast<char*>(gpr_malloc(HOST_NAME_MAX));

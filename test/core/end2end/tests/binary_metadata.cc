@@ -16,13 +16,11 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"

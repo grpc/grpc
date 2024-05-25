@@ -16,13 +16,11 @@
 
 #include "src/core/resolver/xds/xds_dependency_manager.h"
 
+#include <grpc/support/port_platform.h>
 #include <set>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"

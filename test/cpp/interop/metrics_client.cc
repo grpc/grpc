@@ -16,14 +16,12 @@
 // is % allowed in string
 //
 
+#include <grpc/support/log.h>
+#include <grpcpp/grpcpp.h>
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
-
-#include <grpc/support/log.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"

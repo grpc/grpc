@@ -18,18 +18,15 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 
+#include <algorithm>
+#include <grpc/support/log.h>
 #include <stdint.h>
 #include <stdlib.h>
-
-#include <algorithm>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/gprpp/bitset.h"
 

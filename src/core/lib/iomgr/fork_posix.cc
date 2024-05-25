@@ -26,11 +26,10 @@
 #include <pthread.h>
 #endif
 
-#include <string.h>
-
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <string.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"

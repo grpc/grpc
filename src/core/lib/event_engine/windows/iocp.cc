@@ -16,13 +16,11 @@
 #ifdef GPR_WINDOWS
 
 #include <chrono>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "absl/log/check.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/event_engine/trace.h"

@@ -13,22 +13,19 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h"
 
-#include <stdint.h>
-
 #include <atomic>
-#include <memory>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <memory>
+#include <stdint.h>
 
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/gprpp/crash.h"

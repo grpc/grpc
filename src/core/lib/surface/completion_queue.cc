@@ -17,12 +17,18 @@
 //
 #include "src/core/lib/surface/completion_queue.h"
 
-#include <inttypes.h>
-#include <stdio.h>
-
 #include <algorithm>
 #include <atomic>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+#include <inttypes.h>
 #include <new>
+#include <stdio.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,15 +38,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"

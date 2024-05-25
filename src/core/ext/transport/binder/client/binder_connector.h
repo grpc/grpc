@@ -15,17 +15,15 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_BINDER_CONNECTOR_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_CLIENT_BINDER_CONNECTOR_H
 
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/impl/grpc_types.h>
-#include <grpc/support/port_platform.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/support/channel_arguments.h>
-
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/client_channel_filter.h"
 

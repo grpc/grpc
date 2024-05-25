@@ -15,11 +15,10 @@
 #ifndef GRPC_TEST_CORE_RESOURCE_QUOTA_CALL_CHECKER_H
 #define GRPC_TEST_CORE_RESOURCE_QUOTA_CALL_CHECKER_H
 
+#include <grpc/support/log.h>
 #include <memory>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
 
 namespace grpc_core {
 namespace testing {

@@ -14,7 +14,6 @@
 #include "src/core/lib/event_engine/time_util.h"
 
 #include <chrono>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 

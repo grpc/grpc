@@ -12,19 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <grpc/event_engine/memory_allocator.h>
 #include <limits>
 #include <memory>
+#include <stddef.h>
+#include <stdint.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"

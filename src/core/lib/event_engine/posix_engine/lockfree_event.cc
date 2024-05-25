@@ -15,14 +15,12 @@
 
 #include <atomic>
 #include <cstdint>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/crash.h"

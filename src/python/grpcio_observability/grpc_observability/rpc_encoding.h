@@ -15,13 +15,12 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_RPC_ENCODING_H
 #define GRPC_PYTHON_OPENCENSUS_RPC_ENCODING_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
 #include "absl/base/internal/endian.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_observability {
 

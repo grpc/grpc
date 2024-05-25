@@ -22,17 +22,28 @@
 
 #include "src/core/load_balancing/rls/rls.h"
 
-#include <inttypes.h>
-#include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
 #include <deque>
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <list>
 #include <map>
 #include <memory>
 #include <random>
 #include <set>
+#include <stdlib.h>
+#include <string.h>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
@@ -50,22 +61,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/backoff/backoff.h"
@@ -108,6 +103,8 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 
 using ::grpc_event_engine::experimental::EventEngine;
 

@@ -19,11 +19,12 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
 
+#include <bitset>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/ext/otel_plugin.h>
+#include <memory>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <bitset>
-#include <memory>
 #include <string>
 #include <utility>
 
@@ -37,10 +38,6 @@
 #include "opentelemetry/metrics/observer_result.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/nostd/shared_ptr.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/ext/otel_plugin.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/metrics.h"

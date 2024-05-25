@@ -20,9 +20,8 @@
 #define GRPC_SRC_CPP_SERVER_DYNAMIC_THREAD_POOL_H
 
 #include <functional>
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
+#include <memory>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/cpp/server/thread_pool_interface.h"

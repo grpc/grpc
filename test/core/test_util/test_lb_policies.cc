@@ -16,9 +16,10 @@
 
 #include "test/core/test_util/test_lb_policies.h"
 
-#include <stdint.h>
-
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 
 #include "absl/log/check.h"
@@ -26,10 +27,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/variant.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"

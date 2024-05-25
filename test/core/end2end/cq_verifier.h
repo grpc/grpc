@@ -19,21 +19,18 @@
 #ifndef GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 #define GRPC_TEST_CORE_END2END_CQ_VERIFIER_H
 
-#include <stdint.h>
-
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/time.h>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/time.h"
 

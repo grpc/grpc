@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_INTEGRITY_ONLY_RECORD_PROTOCOL_H
 #define GRPC_SRC_CORE_TSI_ALTS_ZERO_COPY_FRAME_PROTECTOR_ALTS_GRPC_INTEGRITY_ONLY_RECORD_PROTOCOL_H
 
-#include <stdbool.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdbool.h>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h"

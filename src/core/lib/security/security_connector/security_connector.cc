@@ -18,15 +18,12 @@
 
 #include "src/core/lib/security/security_connector/security_connector.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
-
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/security/credentials/credentials.h"

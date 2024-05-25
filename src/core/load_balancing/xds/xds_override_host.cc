@@ -16,13 +16,16 @@
 
 #include "src/core/load_balancing/xds/xds_override_host.h"
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
 #include <set>
+#include <stddef.h>
 #include <string>
 #include <tuple>
 #include <type_traits>
@@ -42,12 +45,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/address_utils/parse_address.h"

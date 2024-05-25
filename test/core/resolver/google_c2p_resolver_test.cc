@@ -14,24 +14,21 @@
 // limitations under the License.
 //
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/grpc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <thread>
 #include <vector>
 
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/channel_arguments.h>
-
 #include "src/core/lib/gprpp/env.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"

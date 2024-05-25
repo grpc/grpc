@@ -16,17 +16,15 @@
 
 #include <atomic>
 #include <chrono>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <limits>
 #include <string>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/no_destruct.h"
 
 // IWYU pragma: no_include <ratio>

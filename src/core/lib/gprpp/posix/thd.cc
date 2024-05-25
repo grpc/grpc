@@ -18,15 +18,17 @@
 
 // Posix implementation for gpr threads.
 
-#include <inttypes.h>
-
 #include <csignal>
-#include <string>
-
 #include <grpc/support/port_platform.h>
+#include <inttypes.h>
+#include <string>
 
 #ifdef GPR_POSIX_SYNC
 
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/thd_id.h>
+#include <grpc/support/time.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,12 +36,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"  // IWYU pragma: keep
-
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/thd_id.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/strerror.h"

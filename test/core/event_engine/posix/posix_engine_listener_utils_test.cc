@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/event_engine.h>
+#include <list>
 #include <string.h>
+#include <string>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include <list>
-#include <string>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
@@ -34,7 +31,6 @@
 #include <ifaddrs.h>
 
 #include "absl/log/log.h"
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"

@@ -31,12 +31,10 @@
 #endif
 
 #include <functional>
+#include <grpcpp/security/binder_security_policy.h>
 #include <map>
 
 #include "absl/log/check.h"
-
-#include <grpcpp/security/binder_security_policy.h>
-
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/transport/binder/client/endpoint_binder_pool.h"

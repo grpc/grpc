@@ -19,21 +19,18 @@
 #ifndef GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
 #define GRPC_TEST_CORE_END2END_FUZZERS_FUZZING_COMMON_H
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <memory>
+#include <stddef.h>
+#include <stdint.h>
 #include <utility>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/types/span.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/resource_quota.h"

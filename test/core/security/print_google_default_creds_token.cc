@@ -16,11 +16,6 @@
 //
 //
 
-#include <stdio.h>
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -28,7 +23,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <stdio.h>
+#include <string.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"

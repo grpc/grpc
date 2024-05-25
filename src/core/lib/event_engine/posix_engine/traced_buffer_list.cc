@@ -14,20 +14,17 @@
 
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
 

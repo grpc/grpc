@@ -16,13 +16,11 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_UTILS_TRANSPORT_STREAM_RECEIVER_H
 
 #include <functional>
+#include <grpc/support/port_platform.h>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/binder/wire_format/transaction.h"
 
 namespace grpc_binder {
