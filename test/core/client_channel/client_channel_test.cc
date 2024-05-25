@@ -159,7 +159,15 @@ class ClientChannelTest : public YodelTest {
         : test_(test),
           args_(std::move(args)),
           result_handler_(std::move(result_handler)),
-          work_serializer_(std::move(work_serializer)) {}
+          work_serializer_(std::move(work_serializer)) {
+      CHECK(test_->resolver_ == nullptr);
+      test_->resolver_ = this;
+    }
+
+    ~TestResolver() {
+      CHECK(test_->resolver_ == this);
+      test_->resolver_ = nullptr;
+    }
 
     void StartLocked() override {
       while (!test_->early_resolver_results_.empty()) {
@@ -224,6 +232,7 @@ class ClientChannelTest : public YodelTest {
   }
 
   void Shutdown() override {
+    ExecCtx exec_ctx;
     channel_.reset();
     picker_.reset();
   }

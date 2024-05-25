@@ -870,7 +870,8 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = std::move(connecting_result_.socket_node);
-  if (connecting_result_.transport->filter_stack_transport() != nullptr) {
+  if (connecting_result_.transport->filter_stack_transport() != nullptr ||
+      IsChaoticGoodEnabled()) {
     // Construct channel stack.
     // Builder takes ownership of transport.
     ChannelStackBuilderImpl builder(
