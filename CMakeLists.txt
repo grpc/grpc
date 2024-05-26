@@ -10549,6 +10549,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
     test/core/client_channel/client_channel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )
   if(WIN32 AND MSVC)
@@ -11375,6 +11376,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
     test/core/client_channel/connected_subchannel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )
   if(WIN32 AND MSVC)
@@ -17639,6 +17641,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
@@ -19071,6 +19074,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
     test/core/client_channel/load_balanced_call_destination_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )
   if(WIN32 AND MSVC)
@@ -30464,6 +30468,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/lib/transport/promise_endpoint.cc
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
