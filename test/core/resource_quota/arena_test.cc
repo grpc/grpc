@@ -175,26 +175,6 @@ bool IsScribbled(Int* ints, int n, int offset) {
   return true;
 }
 
-#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
-TEST(ArenaTest, PooledObjectsArePooled) {
-  struct TestObj {
-    char a[100];
-  };
-
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  auto obj = arena->MakePooled<TestObj>();
-  Scribble(obj->a, 100, 1);
-  EXPECT_TRUE(IsScribbled(obj->a, 100, 1));
-  void* p = obj.get();
-  obj.reset();
-  obj = arena->MakePooled<TestObj>();
-  EXPECT_FALSE(IsScribbled(obj->a, 100, 1));
-  EXPECT_EQ(p, obj.get());
-  Scribble(obj->a, 100, 2);
-  EXPECT_TRUE(IsScribbled(obj->a, 100, 2));
-}
-#endif
-
 TEST(ArenaTest, CreateManyObjects) {
   struct TestObj {
     char a[100];
@@ -224,11 +204,7 @@ TEST(ArenaTest, CreateManyObjectsWithDestructors) {
 TEST(ArenaTest, CreatePoolArray) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   auto p = arena->MakePooledArray<int>(1024);
-#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
-  EXPECT_FALSE(p.get_deleter().has_freelist());
-#else
   EXPECT_TRUE(p.get_deleter().has_freelist());
-#endif
   p = arena->MakePooledArray<int>(5);
   EXPECT_TRUE(p.get_deleter().has_freelist());
   Scribble(p.get(), 5, 1);
