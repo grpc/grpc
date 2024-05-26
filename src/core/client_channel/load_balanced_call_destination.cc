@@ -152,7 +152,7 @@ T HandlePickResult(
   }
   auto* drop_pick =
       absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
-  GPR_ASSERT(drop_pick != nullptr);
+  CHECK(drop_pick != nullptr);
   return drop_func(drop_pick);
 }
 
@@ -171,7 +171,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
       unstarted_handler.UnprocessedClientInitialMetadata();
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = client_initial_metadata.get_pointer(HttpPathMetadata());
-  GPR_ASSERT(path != nullptr);
+  CHECK(path != nullptr);
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state;
   pick_args.call_state = &lb_call_state;
@@ -191,7 +191,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                   GetContext<Activity>()->DebugTag().c_str(),
                   complete_pick->subchannel.get());
         }
-        GPR_ASSERT(complete_pick->subchannel != nullptr);
+        CHECK(complete_pick->subchannel != nullptr);
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.
         auto call_destination =

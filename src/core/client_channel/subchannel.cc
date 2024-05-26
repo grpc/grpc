@@ -170,7 +170,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
             [self = Ref()](ServerMetadataHandle metadata) {
               channelz::SubchannelNode* channelz_subchannel =
                   self->channelz_subchannel();
-              GPR_ASSERT(channelz_subchannel != nullptr);
+              CHECK(channelz_subchannel != nullptr);
               if (metadata->get(GrpcStatusMetadata())
                       .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
                 channelz_subchannel->RecordCallFailed();
@@ -182,7 +182,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
         [self = Ref()]() {
           channelz::SubchannelNode* channelz_subchannel =
               self->channelz_subchannel();
-          GPR_ASSERT(channelz_subchannel != nullptr);
+          CHECK(channelz_subchannel != nullptr);
           channelz_subchannel->RecordCallFailed();
         });
   }
