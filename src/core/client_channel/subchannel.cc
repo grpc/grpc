@@ -139,7 +139,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     elem->filter->start_transport_op(elem, op);
   }
 
-  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) override {
+  void Ping(absl::AnyInvocable<void(absl::Status)>) override {
     Crash("call v3 ping method called in legacy impl");
   }
 
@@ -170,7 +170,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
             [self = Ref()](ServerMetadataHandle metadata) {
               channelz::SubchannelNode* channelz_subchannel =
                   self->channelz_subchannel();
-              GPR_ASSERT(channelz_subchannel != nullptr);
+              CHECK(channelz_subchannel != nullptr);
               if (metadata->get(GrpcStatusMetadata())
                       .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
                 channelz_subchannel->RecordCallFailed();
@@ -182,7 +182,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
         [self = Ref()]() {
           channelz::SubchannelNode* channelz_subchannel =
               self->channelz_subchannel();
-          GPR_ASSERT(channelz_subchannel != nullptr);
+          CHECK(channelz_subchannel != nullptr);
           channelz_subchannel->RecordCallFailed();
         });
   }
@@ -233,13 +233,14 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
         transport_(std::move(transport)) {}
 
   void StartWatch(
-      grpc_pollset_set* interested_parties,
+      grpc_pollset_set*,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher) override {
-    // FIXME: add new transport API for this in v3 stack
+    transport_->transport()->StartConnectivityWatch(std::move(watcher));
   }
 
-  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) override {
+  void Ping(absl::AnyInvocable<void(absl::Status)>) override {
     // FIXME: add new transport API for this in v3 stack
+    Crash("not implemented");
   }
 
   RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
@@ -251,12 +252,11 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
 
   size_t GetInitialCallSizeEstimate() const override { return 0; }
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) override {
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs) override {
     Crash("legacy MakeCallPromise() method called in call v3 impl");
   }
 
-  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
+  void Ping(grpc_closure*, grpc_closure*) override {
     Crash("legacy ping method called in call v3 impl");
   }
 
