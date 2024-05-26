@@ -307,8 +307,7 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
           if (subchannel_node != nullptr) {
             auto it = self->client_channel_->subchannel_refcount_map_.find(
                 self->subchannel_.get());
-            GPR_ASSERT(it !=
-                       self->client_channel_->subchannel_refcount_map_.end());
+            CHECK(it != self->client_channel_->subchannel_refcount_map_.end());
             --it->second;
             if (it->second == 0) {
               self->client_channel_->channelz_node_->RemoveChildSubchannel(
@@ -324,7 +323,7 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
 void ClientChannel::SubchannelWrapper::WatchConnectivityState(
     std::unique_ptr<ConnectivityStateWatcherInterface> watcher) {
   auto& watcher_wrapper = watcher_map_[watcher.get()];
-  GPR_ASSERT(watcher_wrapper == nullptr);
+  CHECK(watcher_wrapper == nullptr);
   watcher_wrapper = new WatcherWrapper(
       std::move(watcher),
       RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
@@ -336,7 +335,7 @@ void ClientChannel::SubchannelWrapper::WatchConnectivityState(
 void ClientChannel::SubchannelWrapper::CancelConnectivityStateWatch(
     ConnectivityStateWatcherInterface* watcher) {
   auto it = watcher_map_.find(watcher);
-  GPR_ASSERT(it != watcher_map_.end());
+  CHECK(it != watcher_map_.end());
   subchannel_->CancelConnectivityStateWatch(it->second);
   watcher_map_.erase(it);
 }
@@ -345,7 +344,7 @@ void ClientChannel::SubchannelWrapper::AddDataWatcher(
     std::unique_ptr<DataWatcherInterface> watcher) {
   static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get())
       ->SetSubchannel(subchannel_.get());
-  GPR_ASSERT(data_watchers_.insert(std::move(watcher)).second);
+  CHECK(data_watchers_.insert(std::move(watcher)).second);
 }
 
 void ClientChannel::SubchannelWrapper::CancelDataWatcher(
@@ -644,15 +643,16 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
   return state;
 }
 
-void ClientChannel::WatchConnectivityState(
-    grpc_connectivity_state last_observed_state, Timestamp deadline,
-    grpc_completion_queue* cq, void* tag) {
+void ClientChannel::WatchConnectivityState(grpc_connectivity_state, Timestamp,
+                                           grpc_completion_queue*, void*) {
   // FIXME: implement
+  Crash("not implemented");
 }
 
 void ClientChannel::AddConnectivityWatcher(
-    grpc_connectivity_state initial_state,
-    OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
+    grpc_connectivity_state,
+    OrphanablePtr<AsyncConnectivityStateWatcherInterface>) {
+  Crash("not implemented");
   // FIXME: to make this work, need to change WorkSerializer to use
   // absl::AnyInvocable<> instead of std::function<>
   //  work_serializer_->Run(
@@ -720,7 +720,7 @@ class PingRequest {
 
 }  // namespace
 
-void ClientChannel::Ping(grpc_completion_queue* cq, void* tag) {
+void ClientChannel::Ping(grpc_completion_queue*, void*) {
   Crash("not implemented");
 }
 
@@ -807,7 +807,7 @@ void ClientChannel::CreateResolverLocked() {
           WeakRefAsSubclass<ClientChannel>()));
   // Since the validity of the args was checked when the channel was created,
   // CreateResolver() must return a non-null result.
-  GPR_ASSERT(resolver_ != nullptr);
+  CHECK(resolver_ != nullptr);
   UpdateStateLocked(GRPC_CHANNEL_CONNECTING, absl::Status(),
                     "started resolving");
   resolver_->StartLocked();
@@ -904,7 +904,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   // - A channel arg, in which case we check that the specified policy exists
   //   and accepts an empty config. If not, we revert to using pick_first
   //   lb_policy
-  GPR_ASSERT(lb_policy_config.ok());
+  CHECK_OK(lb_policy_config);
   return std::move(*lb_policy_config);
 }
 
@@ -1180,7 +1180,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
       channel_args_.SetObject(this).SetObject(service_config);
   RefCountedPtr<DynamicFilters> dynamic_filters =
       DynamicFilters::Create(new_args, std::move(filters));
-  GPR_ASSERT(dynamic_filters != nullptr);
+  CHECK(dynamic_filters != nullptr);
 #endif
   // Create call destination.
   const bool enable_retries =

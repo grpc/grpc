@@ -139,7 +139,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     elem->filter->start_transport_op(elem, op);
   }
 
-  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) override {
+  void Ping(absl::AnyInvocable<void(absl::Status)>) override {
     Crash("call v3 ping method called in legacy impl");
   }
 
@@ -203,13 +203,14 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
         transport_(std::move(transport)) {}
 
   void StartWatch(
-      grpc_pollset_set* interested_parties,
+      grpc_pollset_set*,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher) override {
-    // FIXME: add new transport API for this in v3 stack
+    transport_->transport()->StartConnectivityWatch(std::move(watcher));
   }
 
-  void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) override {
+  void Ping(absl::AnyInvocable<void(absl::Status)>) override {
     // FIXME: add new transport API for this in v3 stack
+    Crash("not implemented");
   }
 
   RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
@@ -221,7 +222,7 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
 
   size_t GetInitialCallSizeEstimate() const override { return 0; }
 
-  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
+  void Ping(grpc_closure*, grpc_closure*) override {
     Crash("legacy ping method called in call v3 impl");
   }
 
