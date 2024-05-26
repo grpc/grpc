@@ -63,8 +63,7 @@ Channel::RegisteredCall::~RegisteredCall() {}
 //
 
 Channel::Channel(std::string target, const ChannelArgs& channel_args)
-    : UnstartedCallDestination("channel"),
-      target_(std::move(target)),
+    : target_(std::move(target)),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
       compression_options_(CompressionOptionsFromChannelArgs(channel_args)),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(

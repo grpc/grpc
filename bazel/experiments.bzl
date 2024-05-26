@@ -19,7 +19,6 @@
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
     "canary_client_privacy": "canary_client_privacy",
-    "chaotic_good": "chaotic_good",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
@@ -136,7 +135,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "chaotic_good",
                 "event_engine_client",
             ],
             "endpoint_test": [

@@ -913,7 +913,7 @@ class CoreEnd2endTestRegistry {
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
 
 #define SKIP_IF_CHAOTIC_GOOD()                                   \
-  if (IsChaoticGoodEnabled()) {                                  \
+  if (absl::StrContains(GetParam()->name, "ChaoticGood")) {      \
     GTEST_SKIP() << "Disabled for initial chaotic good testing"; \
   }
 

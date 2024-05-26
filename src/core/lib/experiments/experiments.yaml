@@ -54,12 +54,6 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: chaotic_good
-  description:
-    If set, enable the chaotic good load transport (this is mostly here for testing)
-  expiry: 2024/09/09
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
 - name: client_privacy
   description:
     If set, client privacy

@@ -32,10 +32,6 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -126,8 +122,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -195,10 +189,6 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -289,8 +279,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -358,10 +346,6 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -452,8 +436,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
