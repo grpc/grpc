@@ -170,7 +170,14 @@ Poll<T> InfallibleOperationExecutor<T>::ContinueStep(void* call_data) {
 template class OperationExecutor<ClientMetadataHandle>;
 template class OperationExecutor<MessageHandle>;
 template class InfallibleOperationExecutor<ServerMetadataHandle>;
+
 }  // namespace filters_detail
+
+namespace {
+// Call data for those calls that don't have any call data
+// (we form pointers to this that aren't allowed to be nullptr)
+char g_empty_call_data;
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters
@@ -181,7 +188,7 @@ CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
       client_initial_metadata_(std::move(client_initial_metadata)) {}
 
 CallFilters::~CallFilters() {
-  if (call_data_ != nullptr) {
+  if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
     for (const auto& destructor : stack_->data_.filter_destructor) {
       destructor.call_destroy(Offset(call_data_, destructor.call_offset));
     }
@@ -195,6 +202,8 @@ void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
   if (stack_->data_.call_data_size != 0) {
     call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
                                     stack_->data_.call_data_alignment);
+  } else {
+    call_data_ = &g_empty_call_data;
   }
   for (const auto& constructor : stack_->data_.filter_constructor) {
     constructor.call_init(Offset(call_data_, constructor.call_offset),
