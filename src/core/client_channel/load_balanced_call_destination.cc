@@ -277,57 +277,58 @@ void LoadBalancedCallDestination::StartCall(
   MaybeCreateCallAttemptTracer(is_transparent_retry);
   // Spawn a promise to do the LB pick.
   // This will eventually start the call.
-  unstarted_handler.SpawnGuarded("lb_pick", [unstarted_handler,
-                                             picker = picker_]() mutable {
-    return Map(
-        // Wait for the LB picker.
-        CheckDelayed(
-            Loop([last_picker =
-                      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>(),
-                  unstarted_handler, picker]() mutable {
-              return Map(
-                  picker.Next(last_picker),
-                  [unstarted_handler, &last_picker](
-                      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-                          picker) mutable {
-                    last_picker = std::move(picker);
-                    // Returns 3 possible things:
-                    // - Continue to queue the pick
-                    // - non-OK status to fail the pick
-                    // - a connected subchannel to complete the pick
-                    return PickSubchannel(*last_picker, unstarted_handler);
-                  });
-            })),
-        // Create call stack on the connected subchannel.
-        [unstarted_handler = std::move(unstarted_handler)](
-            std::tuple<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>,
-                       bool>
-                pick_result) {
-          auto& connected_subchannel = std::get<0>(pick_result);
-          const bool was_queued = std::get<1>(pick_result);
-          if (!connected_subchannel.ok()) {
-            return connected_subchannel.status();
-          }
-          // LB pick is done, so indicate that we've committed.
-          auto* on_commit = MaybeGetContext<LbOnCommit>();
-          if (on_commit != nullptr && *on_commit != nullptr) {
-            (*on_commit)();
-          }
-          // If it was queued, add a trace annotation.
-          if (was_queued) {
-            auto* tracer =
-                MaybeGetContext<ClientCallTracer::CallAttemptTracer>();
-            if (tracer != nullptr) {
-              tracer->RecordAnnotation("Delayed LB pick complete.");
-            }
-          }
-          // Delegate to connected subchannel.
-          // FIXME: need to insert LbCallTracingFilter at the top of the
-          // stack
-          (*connected_subchannel)->StartCall(unstarted_handler);
-          return absl::OkStatus();
-        });
-  });
+  unstarted_handler.SpawnGuardedUntilCallCompletes(
+      "lb_pick", [unstarted_handler, picker = picker_]() mutable {
+        return Map(
+            // Wait for the LB picker.
+            CheckDelayed(Loop(
+                [last_picker =
+                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>(),
+                 unstarted_handler, picker]() mutable {
+                  return Map(
+                      picker.Next(last_picker),
+                      [unstarted_handler, &last_picker](
+                          RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+                              picker) mutable {
+                        last_picker = std::move(picker);
+                        // Returns 3 possible things:
+                        // - Continue to queue the pick
+                        // - non-OK status to fail the pick
+                        // - a connected subchannel to complete the pick
+                        return PickSubchannel(*last_picker, unstarted_handler);
+                      });
+                })),
+            // Create call stack on the connected subchannel.
+            [unstarted_handler = std::move(unstarted_handler)](
+                std::tuple<
+                    absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>,
+                    bool>
+                    pick_result) {
+              auto& connected_subchannel = std::get<0>(pick_result);
+              const bool was_queued = std::get<1>(pick_result);
+              if (!connected_subchannel.ok()) {
+                return connected_subchannel.status();
+              }
+              // LB pick is done, so indicate that we've committed.
+              auto* on_commit = MaybeGetContext<LbOnCommit>();
+              if (on_commit != nullptr && *on_commit != nullptr) {
+                (*on_commit)();
+              }
+              // If it was queued, add a trace annotation.
+              if (was_queued) {
+                auto* tracer =
+                    MaybeGetContext<ClientCallTracer::CallAttemptTracer>();
+                if (tracer != nullptr) {
+                  tracer->RecordAnnotation("Delayed LB pick complete.");
+                }
+              }
+              // Delegate to connected subchannel.
+              // FIXME: need to insert LbCallTracingFilter at the top of the
+              // stack
+              (*connected_subchannel)->StartCall(unstarted_handler);
+              return absl::OkStatus();
+            });
+      });
 }
 
 }  // namespace grpc_core
