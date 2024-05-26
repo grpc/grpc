@@ -7511,12 +7511,10 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_filters.h",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         "call_final_info",
+        "dump_args",
         "latch",
         "map",
         "message",
