@@ -123,14 +123,14 @@ TEST_F(TransportTest, AddOneStream) {
   transport->StartCall(call.handler.V2HackToStartCallWithoutACallFilterStack());
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
+  // With batching enabled, the control endpoint is expected to write
+  // the headers and message length frame in one go.
   control_endpoint.ExpectWrite(
       {SerializedFrameHeader(FrameType::kFragment, 1, 1,
                              sizeof(kPathDemoServiceStep), 0, 0, 0),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep))},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
+                                          sizeof(kPathDemoServiceStep)),
+       SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
       nullptr);
   data_endpoint.ExpectWrite(
       {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
@@ -213,20 +213,19 @@ TEST_F(TransportTest, AddOneStreamMultipleMessages) {
       {SerializedFrameHeader(FrameType::kFragment, 1, 1,
                              sizeof(kPathDemoServiceStep), 0, 0, 0),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
-                                          sizeof(kPathDemoServiceStep))},
-      nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
+                                          sizeof(kPathDemoServiceStep)),
+       SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
       nullptr);
   data_endpoint.ExpectWrite(
       {EventEngineSlice::FromCopiedString("0"), Zeros(63)}, nullptr);
+  // With batching enabled, the control endpoint is expected to write
+  // the message length frame of the second message and trailers in one go.
   control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0)},
+      {SerializedFrameHeader(FrameType::kFragment, 2, 1, 0, 1, 63, 0),
+       SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)},
       nullptr);
   data_endpoint.ExpectWrite(
       {EventEngineSlice::FromCopiedString("1"), Zeros(63)}, nullptr);
-  control_endpoint.ExpectWrite(
-      {SerializedFrameHeader(FrameType::kFragment, 4, 1, 0, 0, 0, 0)}, nullptr);
   call.initiator.SpawnGuarded("test-send",
                               [initiator = call.initiator]() mutable {
                                 return SendClientToServerMessages(initiator, 2);
