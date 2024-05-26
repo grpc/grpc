@@ -104,6 +104,7 @@ class ConnectedSubchannelTest : public YodelTest {
         state_tracker_.AddWatcher(op->start_connectivity_watch_state,
                                   std::move(op->start_connectivity_watch));
       }
+      ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
     }
 
     void StartCall(CallHandler call_handler) override {

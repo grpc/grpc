@@ -232,10 +232,10 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
         call_destination_(std::move(call_destination)),
         transport_(std::move(transport)) {}
 
-  void StartWatch(grpc_pollset_set*,
-                  OrphanablePtr<ConnectivityStateWatcherInterface>) override {
-    // FIXME: add new transport API for this in v3 stack
-    Crash("not implemented");
+  void StartWatch(
+      grpc_pollset_set*,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) override {
+    transport_->transport()->StartConnectivityWatch(std::move(watcher));
   }
 
   void Ping(absl::AnyInvocable<void(absl::Status)>) override {
