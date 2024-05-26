@@ -57,7 +57,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 # * for sanitizers to work, we need MSAN and TSAN enabled versions of libc++
 # Check https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/latest.txt
 # for the value of LLVM_LATEST.
-ARG LLVM_LATEST="f2b94bd7eaa83d853dc7568fac87b1f8bf4ddec6"
+ARG LLVM_LATEST="3b5e7c83a6e226d5bd7ed2e9b67449b64812074c"
 RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/clang_r${LLVM_LATEST}.tar.gz -O /tmp/clang.tar.gz \
   && tar -xzf /tmp/clang.tar.gz -C /usr/local && rm /tmp/clang.tar.gz
 RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04/libcxx_r${LLVM_LATEST}.tar.gz -O /tmp/libcxx.tar.gz \
@@ -72,7 +72,8 @@ RUN wget -q https://storage.googleapis.com/clang-builds-stable/clang-ubuntu20_04
 ENV ASAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV CC=/usr/local/bin/clang
 ENV GCOV=/dev/null
-ENV LD_LIBRARY_PATH=/usr/local/lib/x86_64-unknown-linux-gnu
+ENV LIBRARY_PATH=/usr/local/lib
+ENV LD_LIBRARY_PATH=/usr/local/lib
 ENV MSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV TSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
 ENV UBSAN_SYMBOLIZER_PATH=/usr/local/bin/llvm-symbolizer
