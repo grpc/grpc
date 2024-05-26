@@ -653,15 +653,16 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
   return state;
 }
 
-void ClientChannel::WatchConnectivityState(
-    grpc_connectivity_state last_observed_state, Timestamp deadline,
-    grpc_completion_queue* cq, void* tag) {
+void ClientChannel::WatchConnectivityState(grpc_connectivity_state, Timestamp,
+                                           grpc_completion_queue*, void*) {
   // FIXME: implement
+  Crash("not implemented");
 }
 
 void ClientChannel::AddConnectivityWatcher(
-    grpc_connectivity_state initial_state,
-    OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
+    grpc_connectivity_state,
+    OrphanablePtr<AsyncConnectivityStateWatcherInterface>) {
+  Crash("not implemented");
   // FIXME: to make this work, need to change WorkSerializer to use
   // absl::AnyInvocable<> instead of std::function<>
   //  work_serializer_->Run(
@@ -728,15 +729,15 @@ class PingRequest {
 
 }  // namespace
 
-void ClientChannel::Ping(grpc_completion_queue* cq, void* tag) {
+void ClientChannel::Ping(grpc_completion_queue*, void*) {
   Crash("not implemented");
 }
 
-grpc_call* ClientChannel::CreateCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
-    Slice path, absl::optional<Slice> authority, Timestamp deadline,
-    bool registered_method) {
+grpc_call* ClientChannel::CreateCall(grpc_call*, uint32_t,
+                                     grpc_completion_queue*, grpc_pollset_set*,
+                                     Slice, absl::optional<Slice>, Timestamp,
+                                     bool) {
+  Crash("not implemented");
   // FIXME: code to convert from C-core batch API to v3 call, then invoke
   // CreateCall(client_initial_metadata, arena)
   // FIXME: make sure call holds a ref to ClientChannel for its entire lifetime

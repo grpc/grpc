@@ -89,8 +89,7 @@ class ClientChannelTest : public YodelTest {
  private:
   class TestConnector final : public SubchannelConnector {
    public:
-    void Connect(const Args& args, Result* result,
-                 grpc_closure* notify) override {
+    void Connect(const Args&, Result*, grpc_closure* notify) override {
       CHECK_EQ(notify_, nullptr);
       notify_ = notify;
     }
@@ -208,7 +207,7 @@ class ClientChannelTest : public YodelTest {
     }
 
     absl::string_view scheme() const override { return "test"; }
-    bool IsValidUri(const URI& uri) const override { return true; }
+    bool IsValidUri(const URI&) const override { return true; }
 
    private:
     ClientChannelTest* const test_;

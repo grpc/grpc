@@ -520,7 +520,7 @@ class CallHandler {
       : spine_(std::move(spine)) {}
 
   template <typename ContextType>
-  void SetContext(ContextType context) {
+  void SetContext(ContextType) {
     // FIXME: implement
   }
 

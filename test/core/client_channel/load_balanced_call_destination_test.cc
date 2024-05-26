@@ -99,20 +99,19 @@ class LoadBalancedCallDestinationTest : public YodelTest {
         : call_destination_(std::move(call_destination)) {}
 
     void WatchConnectivityState(
-        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
+        std::unique_ptr<ConnectivityStateWatcherInterface>) override {
       Crash("not implemented");
     }
     void CancelConnectivityStateWatch(
-        ConnectivityStateWatcherInterface* watcher) override {
+        ConnectivityStateWatcherInterface*) override {
       Crash("not implemented");
     }
     void RequestConnection() override { Crash("not implemented"); }
     void ResetBackoff() override { Crash("not implemented"); }
-    void AddDataWatcher(
-        std::unique_ptr<DataWatcherInterface> watcher) override {
+    void AddDataWatcher(std::unique_ptr<DataWatcherInterface>) override {
       Crash("not implemented");
     }
-    void CancelDataWatcher(DataWatcherInterface* watcher) override {
+    void CancelDataWatcher(DataWatcherInterface*) override {
       Crash("not implemented");
     }
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
@@ -184,7 +183,7 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
                });
   auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
   EXPECT_CALL(*mock_picker, Pick)
-      .WillOnce([this](LoadBalancingPolicy::PickArgs args) {
+      .WillOnce([this](LoadBalancingPolicy::PickArgs) {
         return LoadBalancingPolicy::PickResult::Complete{subchannel()};
       });
   picker().Set(mock_picker);

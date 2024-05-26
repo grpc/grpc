@@ -131,6 +131,9 @@ class ClientChannel : public Channel {
 
     virtual RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
         PickerObservable) = 0;
+
+   protected:
+    ~CallDestinationFactory() = default;
   };
 
   static absl::StatusOr<OrphanablePtr<Channel>> Create(
