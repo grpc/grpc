@@ -125,7 +125,14 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   void InitCoreConfiguration() override {}
 
-  void Shutdown() override {}
+  void Shutdown() override {
+    channel_.reset();
+    picker_ = ClientChannel::PickerObservable(nullptr);
+    call_destination_.reset();
+    destination_under_test_.reset();
+    call_arena_allocator_.reset();
+    subchannel_.reset();
+  }
 
   RefCountedPtr<ClientChannel> channel_;
   ClientChannel::PickerObservable picker_{nullptr};
@@ -155,11 +162,16 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(NoOp) {}
 
 LOAD_BALANCED_CALL_DESTINATION_TEST(CreateCall) {
   auto call = MakeCall(MakeClientInitialMetadata());
-  SpawnTestSeq(call.initiator, "initiator",
-               [this, handler = std::move(call.handler)]() {
-                 destination_under_test().StartCall(handler);
-                 return Empty{};
-               });
+  SpawnTestSeq(
+      call.initiator, "initiator",
+      [this, handler = std::move(call.handler)]() {
+        destination_under_test().StartCall(handler);
+        return Empty{};
+      },
+      [call_initiator = call.initiator]() mutable {
+        call_initiator.Cancel();
+        return Empty{};
+      });
   WaitForAllPendingWork();
 }
 
@@ -177,6 +189,11 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
       });
   picker().Set(mock_picker);
   auto handler = TickUntilCallStarted();
+  SpawnTestSeq(call.initiator, "cancel",
+               [call_initiator = call.initiator]() mutable {
+                 call_initiator.Cancel();
+                 return Empty{};
+               });
   WaitForAllPendingWork();
 }
 
