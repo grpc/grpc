@@ -299,7 +299,7 @@ void LoadBalancedCallDestination::StartCall(
                       });
                 })),
             // Create call stack on the connected subchannel.
-            [unstarted_handler = std::move(unstarted_handler)](
+            [unstarted_handler](
                 std::tuple<
                     absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>,
                     bool>
