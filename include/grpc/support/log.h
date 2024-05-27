@@ -79,6 +79,9 @@ struct gpr_log_func_args {
   const char* message;
 };
 
+inline void SomeNewFunctionForWhatever() {
+   gpr_log(GPR_ERROR, "%s", "SomeNewFunctionForWhatever");
+ };
 typedef struct gpr_log_func_args gpr_log_func_args;
 
 typedef void (*gpr_log_func)(gpr_log_func_args* args);
