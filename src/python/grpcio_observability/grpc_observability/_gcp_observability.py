@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import Any
+from typing import Any, Set
 
 import grpc
 
@@ -69,6 +69,7 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
 
     config: _observability_config.GcpObservabilityConfig
     exporter: "grpc_observability.Exporter"
+    _registered_method: Set[bytes]
 
     def __init__(self, exporter: "grpc_observability.Exporter" = None):
         self.exporter = None
@@ -118,11 +119,14 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         grpc._observability.observability_deinit()
 
     def create_client_call_tracer(
-        self, method_name: bytes
+        self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
         trace_id = b"TRACE_ID"
         capsule = _cyobservability.create_client_call_tracer(
-            method_name, trace_id
+            method_name,
+            target,
+            trace_id,
+            method_name in self._registered_methods,
         )
         return capsule
 
@@ -143,9 +147,21 @@ class GCPOpenCensusObservability(grpc._observability.ObservabilityPlugin):
         pass
 
     def record_rpc_latency(
-        self, method: str, rpc_latency: float, status_code: grpc.StatusCode
+        self,
+        method: str,
+        target: str,
+        rpc_latency: float,
+        status_code: grpc.StatusCode,
     ) -> None:
         status_code = GRPC_STATUS_CODE_TO_STRING.get(status_code, "UNKNOWN")
         _cyobservability._record_rpc_latency(
-            self.exporter, method, rpc_latency, status_code
+            self.exporter,
+            method,
+            target,
+            rpc_latency,
+            status_code,
+            method in self._registered_methods,
         )
+
+    def save_registered_method(self, method_name: bytes) -> None:
+        self._registered_methods.add(method_name)

@@ -19,9 +19,11 @@
 #ifndef GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
 #define GRPC_SRC_CPP_EXT_CSM_CSM_OBSERVABILITY_H
 
+#include "absl/strings/string_view.h"
+
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
+#include "src/core/lib/channel/channel_args.h"
 
 namespace grpc {
 namespace internal {
@@ -29,6 +31,10 @@ namespace internal {
 // EXPOSED FOR TESTING PURPOSES ONLY
 // Returns true if the channel is a CSM channel.
 bool CsmChannelTargetSelector(absl::string_view target);
+
+// EXPOSED FOR TESTING PURPOSES ONLY
+// Returns true if the server is a CSM server.
+bool CsmServerSelector(const grpc_core::ChannelArgs& args);
 
 }  // namespace internal
 }  // namespace grpc

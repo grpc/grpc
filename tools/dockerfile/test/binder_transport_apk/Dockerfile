@@ -15,8 +15,8 @@
 # Pinned version of the base image is used to avoid regressions caused
 # by rebuilding of this docker image. To see available versions, you can run
 # "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
-# Image(fd89316ac4c5) is built on Aug 17, 2023
-FROM gcr.io/oss-fuzz-base/base-builder@sha256:fd89316ac4c5f3e25802ca95a00062cece14f0602c5512d71ffeedc22734c0b9
+# This base image is built on Mar 12, 2024
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:c3581153788bc49f3634fec3cd36a5d6dfd26632c4afc157fb6faf8ce3af732e
 
 # -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing
@@ -38,7 +38,7 @@ RUN apt-get update && apt-get -y install \
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 6.4.0
+ENV BAZEL_VERSION 7.1.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
@@ -60,19 +60,28 @@ RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
 
 #========================
 # Java
-RUN apt-get install -y openjdk-8-jdk
+RUN apt-get install -y openjdk-21-jdk
 
 #========================
 # Android SDK/NDK installation
-ENV SDK_ROOT=/opt/android-sdk
+ENV ANDROID_SDK_VERSION 11076708
+ENV ANDROID_NDK_VERSION 26.2.11394342
+
+ENV SDK_ROOT /opt/android-sdk
+
 RUN mkdir -p $SDK_ROOT
-RUN wget -O cmd.zip dl.google.com/android/repository/commandlinetools-linux-7302050_latest.zip &&     unzip cmd.zip && rm cmd.zip &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'tools' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'platform-tools' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'build-tools;30.0.3' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'platforms;android-29' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'ndk-bundle' &&     yes | ./cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT 'ndk;21.4.7075529'
+RUN cd $SDK_ROOT &&     wget -O cmd.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_VERSION}_latest.zip &&     unzip -q cmd.zip &&     rm cmd.zip
+
+RUN yes | $SDK_ROOT/cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT --licenses  # accept all licenses
+
+# This is not required but desirable to reduce the time to download and the chance of download failure.
+RUN mkdir -p ~/.android && touch ~/.android/repositories.cfg
+
+RUN $SDK_ROOT/cmdline-tools/bin/sdkmanager --sdk_root=$SDK_ROOT "ndk;$ANDROID_NDK_VERSION" "platforms;android-33" "build-tools;34.0.0"
 
 # Set environment variables for Bazel rules
-ENV ANDROID_HOME=/opt/android-sdk
-ENV ANDROID_NDK_HOME=/opt/android-sdk/ndk/21.4.7075529
-
-RUN mkdir -p /var/local/jenkins
+ENV ANDROID_HOME $SDK_ROOT
+ENV ANDROID_NDK_HOME $SDK_ROOT/ndk/$ANDROID_NDK_VERSION
 
 # Define the default command.
 CMD ["bash"]

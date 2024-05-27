@@ -27,10 +27,11 @@ from tests.unit.framework.common import test_constants
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 
 class _TestTrigger(object):
@@ -113,21 +114,13 @@ class _MethodHandler(grpc.RpcMethodHandler):
             self.unary_unary = lambda x, y: handle_unary_unary(trigger, x, y)
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def __init__(self, trigger):
-        self._trigger = trigger
-
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(self._trigger, False, False)
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(self._trigger, False, True)
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(self._trigger, True, False)
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(self._trigger, True, True)
-        else:
-            return None
+def get_method_handlers(trigger):
+    return {
+        _UNARY_UNARY: _MethodHandler(trigger, False, False),
+        _UNARY_STREAM: _MethodHandler(trigger, False, True),
+        _STREAM_UNARY: _MethodHandler(trigger, True, False),
+        _STREAM_STREAM: _MethodHandler(trigger, True, True),
+    }
 
 
 class ResourceExhaustedTest(unittest.TestCase):
@@ -136,9 +129,11 @@ class ResourceExhaustedTest(unittest.TestCase):
         self._trigger = _TestTrigger(test_constants.THREAD_CONCURRENCY)
         self._server = grpc.server(
             self._server_pool,
-            handlers=(_GenericHandler(self._trigger),),
             options=(("grpc.so_reuseport", 0),),
             maximum_concurrent_rpcs=test_constants.THREAD_CONCURRENCY,
+        )
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(self._trigger)
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
@@ -149,7 +144,10 @@ class ResourceExhaustedTest(unittest.TestCase):
         self._channel.close()
 
     def testUnaryUnary(self):
-        multi_callable = self._channel.unary_unary(_UNARY_UNARY)
+        multi_callable = self._channel.unary_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+            _registered_method=True,
+        )
         futures = []
         for _ in range(test_constants.THREAD_CONCURRENCY):
             futures.append(multi_callable.future(_REQUEST))
@@ -178,7 +176,10 @@ class ResourceExhaustedTest(unittest.TestCase):
         self.assertEqual(_RESPONSE, multi_callable(_REQUEST))
 
     def testUnaryStream(self):
-        multi_callable = self._channel.unary_stream(_UNARY_STREAM)
+        multi_callable = self._channel.unary_stream(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
+            _registered_method=True,
+        )
         calls = []
         for _ in range(test_constants.THREAD_CONCURRENCY):
             calls.append(multi_callable(_REQUEST))
@@ -205,7 +206,10 @@ class ResourceExhaustedTest(unittest.TestCase):
             self.assertEqual(_RESPONSE, response)
 
     def testStreamUnary(self):
-        multi_callable = self._channel.stream_unary(_STREAM_UNARY)
+        multi_callable = self._channel.stream_unary(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
+            _registered_method=True,
+        )
         futures = []
         request = iter([_REQUEST] * test_constants.STREAM_LENGTH)
         for _ in range(test_constants.THREAD_CONCURRENCY):
@@ -236,7 +240,10 @@ class ResourceExhaustedTest(unittest.TestCase):
         self.assertEqual(_RESPONSE, multi_callable(request))
 
     def testStreamStream(self):
-        multi_callable = self._channel.stream_stream(_STREAM_STREAM)
+        multi_callable = self._channel.stream_stream(
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+            _registered_method=True,
+        )
         calls = []
         request = iter([_REQUEST] * test_constants.STREAM_LENGTH)
         for _ in range(test_constants.THREAD_CONCURRENCY):

@@ -9,6 +9,7 @@
     <TargetFrameworks Condition="'$(SKIP_NETCOREAPP21_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(SKIP_NETCOREAPP31_DISTRIBTEST)' == ''">$(TargetFrameworks);netcoreapp3.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(SKIP_NET50_DISTRIBTEST)' == ''">$(TargetFrameworks);net5.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(SKIP_NET70_DISTRIBTEST)' == ''">$(TargetFrameworks);net7.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>

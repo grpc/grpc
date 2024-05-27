@@ -19,22 +19,23 @@
 #include "src/cpp/ext/csm/metadata_exchange.h"
 
 #include "absl/functional/any_invocable.h"
-#include "api/include/opentelemetry/metrics/provider.h"
 #include "gmock/gmock.h"
 #include "google/cloud/opentelemetry/resource_detector.h"
 #include "gtest/gtest.h"
+#include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
 
+#include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/tmpfile.h"
 #include "src/cpp/ext/csm/csm_observability.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
 
@@ -42,9 +43,40 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using OptionalLabelKey =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
+using ::testing::ElementsAre;
+using ::testing::Pair;
+
+opentelemetry::sdk::resource::Resource TestGkeResource() {
+  opentelemetry::sdk::common::AttributeMap attributes;
+  attributes.SetAttribute("cloud.platform", "gcp_kubernetes_engine");
+  attributes.SetAttribute("k8s.pod.name", "pod");
+  attributes.SetAttribute("k8s.container.name", "container");
+  attributes.SetAttribute("k8s.namespace.name", "namespace");
+  attributes.SetAttribute("k8s.cluster.name", "cluster");
+  attributes.SetAttribute("cloud.region", "region");
+  attributes.SetAttribute("cloud.account.id", "id");
+  return opentelemetry::sdk::resource::Resource::Create(attributes);
+}
+
+opentelemetry::sdk::resource::Resource TestGceResource() {
+  opentelemetry::sdk::common::AttributeMap attributes;
+  attributes.SetAttribute("cloud.platform", "gcp_compute_engine");
+  attributes.SetAttribute("cloud.availability_zone", "zone");
+  attributes.SetAttribute("cloud.account.id", "id");
+  return opentelemetry::sdk::resource::Resource::Create(attributes);
+}
+
+opentelemetry::sdk::resource::Resource TestUnknownResource() {
+  opentelemetry::sdk::common::AttributeMap attributes;
+  attributes.SetAttribute("cloud.platform", "random");
+  return opentelemetry::sdk::resource::Resource::Create(attributes);
+}
+
 class TestScenario {
  public:
-  enum class ResourceType : std::uint8_t { kGke, kUnknown };
+  enum class ResourceType : std::uint8_t { kGke, kGce, kUnknown };
   enum class XdsBootstrapSource : std::uint8_t { kFromFile, kFromConfig };
 
   explicit TestScenario(ResourceType type, XdsBootstrapSource bootstrap_source)
@@ -54,6 +86,8 @@ class TestScenario {
     switch (type_) {
       case ResourceType::kGke:
         return TestGkeResource();
+      case ResourceType::kGce:
+        return TestGceResource();
       case ResourceType::kUnknown:
         return TestUnknownResource();
     }
@@ -64,6 +98,9 @@ class TestScenario {
     switch (info.param.type_) {
       case ResourceType::kGke:
         ret_val += "Gke";
+        break;
+      case ResourceType::kGce:
+        ret_val += "Gce";
         break;
       case ResourceType::kUnknown:
         ret_val += "Unknown";
@@ -85,34 +122,42 @@ class TestScenario {
   XdsBootstrapSource bootstrap_source() const { return bootstrap_source_; }
 
  private:
-  static opentelemetry::sdk::resource::Resource TestGkeResource() {
-    opentelemetry::sdk::common::AttributeMap attributes;
-    attributes.SetAttribute("cloud.platform", "gcp_kubernetes_engine");
-    attributes.SetAttribute("k8s.pod.name", "pod");
-    attributes.SetAttribute("k8s.container.name", "container");
-    attributes.SetAttribute("k8s.namespace.name", "namespace");
-    attributes.SetAttribute("k8s.cluster.name", "cluster");
-    attributes.SetAttribute("cloud.region", "region");
-    attributes.SetAttribute("cloud.account.id", "id");
-    return opentelemetry::sdk::resource::Resource::Create(attributes);
-  }
-
-  static opentelemetry::sdk::resource::Resource TestUnknownResource() {
-    opentelemetry::sdk::common::AttributeMap attributes;
-    attributes.SetAttribute("cloud.platform", "random");
-    return opentelemetry::sdk::resource::Resource::Create(attributes);
-  }
-
   ResourceType type_;
   XdsBootstrapSource bootstrap_source_;
 };
 
+// A PluginOption that injects `ServiceMeshLabelsInjector`. (This is different
+// from CsmOpenTelemetryPluginOption since it does not restrict itself to just
+// CSM channels and servers.)
+class MeshLabelsPluginOption
+    : public grpc::internal::InternalOpenTelemetryPluginOption {
+ public:
+  explicit MeshLabelsPluginOption(
+      const opentelemetry::sdk::common::AttributeMap& map)
+      : labels_injector_(
+            std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(map)) {}
+
+  bool IsActiveOnClientChannel(absl::string_view /*target*/) const override {
+    return true;
+  }
+
+  bool IsActiveOnServer(const grpc_core::ChannelArgs& /*args*/) const override {
+    return true;
+  }
+
+  const grpc::internal::LabelsInjector* labels_injector() const override {
+    return labels_injector_.get();
+  }
+
+ private:
+  std::unique_ptr<grpc::internal::ServiceMeshLabelsInjector> labels_injector_;
+};
+
 class MetadataExchangeTest
-    : public OTelPluginEnd2EndTest,
+    : public OpenTelemetryPluginEnd2EndTest,
       public ::testing::WithParamInterface<TestScenario> {
  protected:
-  void Init(const absl::flat_hash_set<absl::string_view>& metric_names,
-            bool enable_client_side_injector = true) {
+  void Init(Options options, bool enable_client_side_injector = true) {
     const char* kBootstrap =
         "{\"node\": {\"id\": "
         "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
@@ -121,7 +166,7 @@ class MetadataExchangeTest
       case TestScenario::XdsBootstrapSource::kFromFile: {
         ASSERT_EQ(bootstrap_file_name_, nullptr);
         FILE* bootstrap_file =
-            gpr_tmpfile("gcp_observability_config", &bootstrap_file_name_);
+            gpr_tmpfile("xds_bootstrap", &bootstrap_file_name_);
         fputs(kBootstrap, bootstrap_file);
         fclose(bootstrap_file);
         grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP", bootstrap_file_name_);
@@ -131,20 +176,19 @@ class MetadataExchangeTest
         grpc_core::SetEnv("GRPC_XDS_BOOTSTRAP_CONFIG", kBootstrap);
         break;
     }
-    OTelPluginEnd2EndTest::Init(
-        metric_names, /*resource=*/GetParam().GetTestResource(),
-        /*labels_injector=*/
-        std::make_unique<grpc::internal::ServiceMeshLabelsInjector>(
-            GetParam().GetTestResource().GetAttributes()),
-        /*test_no_meter_provider=*/false,
-        /*target_selector=*/
-        [enable_client_side_injector](absl::string_view /*target*/) {
-          return enable_client_side_injector;
-        });
+    OpenTelemetryPluginEnd2EndTest::Init(std::move(
+        options
+            .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
+                GetParam().GetTestResource().GetAttributes()))
+            .set_channel_scope_filter(
+                [enable_client_side_injector](
+                    const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) {
+                  return enable_client_side_injector;
+                })));
   }
 
   ~MetadataExchangeTest() override {
-    grpc_core::UnsetEnv("GRPC_GCP_OBSERVABILITY_CONFIG");
+    grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
     grpc_core::UnsetEnv("GRPC_XDS_BOOTSTRAP");
     if (bootstrap_file_name_ != nullptr) {
       remove(bootstrap_file_name_);
@@ -155,11 +199,28 @@ class MetadataExchangeTest
   void VerifyServiceMeshAttributes(
       const std::map<std::string,
                      opentelemetry::sdk::common::OwnedAttributeValue>&
-          attributes) {
+          attributes,
+      bool is_client) {
     EXPECT_EQ(
         absl::get<std::string>(attributes.at("csm.workload_canonical_service")),
         "canonical_service");
     EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
+    EXPECT_EQ(absl::get<std::string>(
+                  attributes.at("csm.remote_workload_canonical_service")),
+              "canonical_service");
+    if (is_client) {
+      EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
+                "unknown");
+      EXPECT_EQ(
+          absl::get<std::string>(attributes.at("csm.service_namespace_name")),
+          "unknown");
+    } else {
+      // The CSM optional labels should not be present in server metrics.
+      EXPECT_THAT(attributes, ::testing::Not(::testing::Contains(
+                                  ::testing::Key("csm.service_name"))));
+      EXPECT_THAT(attributes, ::testing::Not(::testing::Contains(::testing::Key(
+                                  "csm.service_namespace_name"))));
+    }
     switch (GetParam().type()) {
       case TestScenario::ResourceType::kGke:
         EXPECT_EQ(
@@ -180,9 +241,20 @@ class MetadataExchangeTest
         EXPECT_EQ(absl::get<std::string>(
                       attributes.at("csm.remote_workload_project_id")),
                   "id");
+        break;
+      case TestScenario::ResourceType::kGce:
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("csm.remote_workload_type")),
+            "gcp_compute_engine");
+        EXPECT_EQ(
+            absl::get<std::string>(attributes.at("csm.remote_workload_name")),
+            "workload");
         EXPECT_EQ(absl::get<std::string>(
-                      attributes.at("csm.remote_workload_canonical_service")),
-                  "canonical_service");
+                      attributes.at("csm.remote_workload_location")),
+                  "zone");
+        EXPECT_EQ(absl::get<std::string>(
+                      attributes.at("csm.remote_workload_project_id")),
+                  "id");
         break;
       case TestScenario::ResourceType::kUnknown:
         EXPECT_EQ(
@@ -205,8 +277,9 @@ class MetadataExchangeTest
 
 // Verify that grpc.client.attempt.started does not get service mesh attributes
 TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
-  Init(/*metric_names=*/{
-      grpc::internal::OTelClientAttemptStartedInstrumentName()});
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -229,8 +302,9 @@ TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
 }
 
 TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
-  Init(/*metric_names=*/{
-      grpc::internal::OTelClientAttemptDurationInstrumentName()});
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -249,13 +323,13 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.target")),
             canonical_server_address_);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  VerifyServiceMeshAttributes(attributes);
+  VerifyServiceMeshAttributes(attributes, /*is_client=*/true);
 }
 
 // Verify that grpc.server.call.started does not get service mesh attributes
 TEST_P(MetadataExchangeTest, ServerCallStarted) {
-  Init(
-      /*metric_names=*/{grpc::internal::OTelServerCallStartedInstrumentName()});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.started";
   auto data = ReadCurrentMetricsData(
@@ -274,8 +348,8 @@ TEST_P(MetadataExchangeTest, ServerCallStarted) {
 }
 
 TEST_P(MetadataExchangeTest, ServerCallDuration) {
-  Init(/*metric_names=*/{
-      grpc::internal::OTelServerCallDurationInstrumentName()});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -292,14 +366,15 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
   const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.method")), kMethodName);
   EXPECT_EQ(absl::get<std::string>(attributes.at("grpc.status")), "OK");
-  VerifyServiceMeshAttributes(attributes);
+  VerifyServiceMeshAttributes(attributes, /*is_client=*/false);
 }
 
 // Test that the server records unknown when the client does not send metadata
 TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
-  Init(
-      /*metric_names=*/{grpc::internal::OTelServerCallDurationInstrumentName()},
-      /*enable_client_side_injector=*/false);
+  Init(std::move(
+           Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kServerCallDurationInstrumentName})),
+       /*enable_client_side_injector=*/false);
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -322,6 +397,209 @@ TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.remote_workload_type")),
             "unknown");
+  EXPECT_EQ(absl::get<std::string>(
+                attributes.at("csm.remote_workload_canonical_service")),
+            "unknown");
+}
+
+TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .set_labels_to_inject(
+              {{OptionalLabelKey::kXdsServiceName,
+                grpc_core::RefCountedStringValue("myservice")},
+               {OptionalLabelKey::kXdsServiceNamespace,
+                grpc_core::RefCountedStringValue("mynamespace")}})));
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
+  const auto& attributes = data[kMetricName][0].attributes.GetAttributes();
+  EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_name")),
+            "myservice");
+  EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_namespace_name")),
+            "mynamespace");
+}
+
+// Test that metadata exchange works and corresponding service mesh labels are
+// received and recorded even if the server sends a trailers-only response.
+TEST_P(MetadataExchangeTest, Retries) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .set_service_config(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"grpc.testing.EchoTestService\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 3,\n"
+              "      \"initialBackoff\": \"0.1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}")));
+  EchoRequest request;
+  request.mutable_param()->mutable_expected_error()->set_code(
+      StatusCode::ABORTED);
+  EchoResponse response;
+  grpc::ClientContext context;
+  grpc::Status status = stub_->Echo(&context, request, &response);
+  const char* kMetricName = "grpc.client.attempt.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(kMetricName) ||
+               absl::get<opentelemetry::sdk::metrics::HistogramPointData>(
+                   data.at(kMetricName)[0].point_data)
+                       .count_ != 3;
+      });
+  ASSERT_EQ(absl::get<opentelemetry::sdk::metrics::HistogramPointData>(
+                data.at(kMetricName)[0].point_data)
+                .count_,
+            3);
+  VerifyServiceMeshAttributes(data.at(kMetricName)[0].attributes,
+                              /*is_client=*/true);
+}
+
+// Creates a serialized slice with labels for metadata exchange based on \a
+// resource.
+grpc_core::Slice RemoteMetadataSliceFromResource(
+    const opentelemetry::sdk::resource::Resource& resource) {
+  return grpc::internal::ServiceMeshLabelsInjector(resource.GetAttributes())
+      .TestOnlySerializedLabels()
+      .Ref();
+}
+
+std::vector<std::pair<absl::string_view, absl::string_view>> LabelsFromIterable(
+    grpc::internal::MeshLabelsIterable* iterable) {
+  std::vector<std::pair<absl::string_view, absl::string_view>> labels;
+  while (true) {
+    auto label = iterable->Next();
+    if (!label.has_value()) break;
+    labels.push_back(*std::move(label));
+  }
+  EXPECT_EQ(labels.size(), iterable->Size());
+  return labels;
+}
+
+std::string PrettyPrintLabels(
+    const std::vector<std::pair<absl::string_view, absl::string_view>>&
+        labels) {
+  std::vector<std::string> strings;
+  strings.reserve(labels.size());
+  for (const auto& pair : labels) {
+    strings.push_back(
+        absl::StrFormat("{\"%s\" : \"%s\"}", pair.first, pair.second));
+  }
+  return absl::StrJoin(strings, ", ");
+}
+
+TEST(MeshLabelsIterableTest, NoRemoteMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
+  grpc::internal::MeshLabelsIterable iterable(local_labels, grpc_core::Slice());
+  auto labels = LabelsFromIterable(&iterable);
+  EXPECT_FALSE(iterable.GotRemoteLabels());
+  EXPECT_THAT(
+      labels,
+      ElementsAre(Pair("csm.workload_canonical_service", "canonical_service"),
+                  Pair("csm.mesh_id", "mesh"),
+                  Pair("csm.remote_workload_type", "unknown"),
+                  Pair("csm.remote_workload_canonical_service", "unknown")))
+      << PrettyPrintLabels(labels);
+}
+
+TEST(MeshLabelsIterableTest, RemoteGceTypeMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
+  grpc::internal::MeshLabelsIterable iterable(
+      local_labels, RemoteMetadataSliceFromResource(TestGceResource()));
+  auto labels = LabelsFromIterable(&iterable);
+  EXPECT_TRUE(iterable.GotRemoteLabels());
+  EXPECT_THAT(
+      labels,
+      ElementsAre(
+          Pair("csm.workload_canonical_service", "canonical_service"),
+          Pair("csm.mesh_id", "mesh"),
+          Pair("csm.remote_workload_type", "gcp_compute_engine"),
+          Pair("csm.remote_workload_canonical_service", "canonical_service"),
+          Pair("csm.remote_workload_name", "workload"),
+          Pair("csm.remote_workload_location", "zone"),
+          Pair("csm.remote_workload_project_id", "id")))
+      << PrettyPrintLabels(labels);
+}
+
+TEST(MeshLabelsIterableTest, RemoteGkeTypeMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
+  grpc::internal::MeshLabelsIterable iterable(
+      local_labels, RemoteMetadataSliceFromResource(TestGkeResource()));
+  auto labels = LabelsFromIterable(&iterable);
+  EXPECT_TRUE(iterable.GotRemoteLabels());
+  EXPECT_THAT(
+      labels,
+      ElementsAre(
+          Pair("csm.workload_canonical_service", "canonical_service"),
+          Pair("csm.mesh_id", "mesh"),
+          Pair("csm.remote_workload_type", "gcp_kubernetes_engine"),
+          Pair("csm.remote_workload_canonical_service", "canonical_service"),
+          Pair("csm.remote_workload_name", "workload"),
+          Pair("csm.remote_workload_namespace_name", "namespace"),
+          Pair("csm.remote_workload_cluster_name", "cluster"),
+          Pair("csm.remote_workload_location", "region"),
+          Pair("csm.remote_workload_project_id", "id")))
+      << PrettyPrintLabels(labels);
+}
+
+TEST(MeshLabelsIterableTest, RemoteUnknownTypeMetadata) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
+  grpc::internal::MeshLabelsIterable iterable(
+      local_labels, RemoteMetadataSliceFromResource(TestUnknownResource()));
+  auto labels = LabelsFromIterable(&iterable);
+  EXPECT_TRUE(iterable.GotRemoteLabels());
+  EXPECT_THAT(
+      labels,
+      ElementsAre(
+          Pair("csm.workload_canonical_service", "canonical_service"),
+          Pair("csm.mesh_id", "mesh"),
+          Pair("csm.remote_workload_type", "random"),
+          Pair("csm.remote_workload_canonical_service", "canonical_service")))
+      << PrettyPrintLabels(labels);
+}
+
+TEST(MeshLabelsIterableTest, TestResetIteratorPosition) {
+  std::vector<std::pair<absl::string_view, std::string>> local_labels = {
+      {"csm.workload_canonical_service", "canonical_service"},
+      {"csm.mesh_id", "mesh"}};
+  grpc::internal::MeshLabelsIterable iterable(local_labels, grpc_core::Slice());
+  auto labels = LabelsFromIterable(&iterable);
+  auto expected_labels_matcher = ElementsAre(
+      Pair("csm.workload_canonical_service", "canonical_service"),
+      Pair("csm.mesh_id", "mesh"), Pair("csm.remote_workload_type", "unknown"),
+      Pair("csm.remote_workload_canonical_service", "unknown"));
+  EXPECT_THAT(labels, expected_labels_matcher) << PrettyPrintLabels(labels);
+  // Resetting the iterable should return the entire list again.
+  iterable.ResetIteratorPosition();
+  labels = LabelsFromIterable(&iterable);
+  EXPECT_THAT(labels, expected_labels_matcher) << PrettyPrintLabels(labels);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -330,6 +608,10 @@ INSTANTIATE_TEST_SUITE_P(
         TestScenario(TestScenario::ResourceType::kGke,
                      TestScenario::XdsBootstrapSource::kFromConfig),
         TestScenario(TestScenario::ResourceType::kGke,
+                     TestScenario::XdsBootstrapSource::kFromFile),
+        TestScenario(TestScenario::ResourceType::kGce,
+                     TestScenario::XdsBootstrapSource::kFromConfig),
+        TestScenario(TestScenario::ResourceType::kGce,
                      TestScenario::XdsBootstrapSource::kFromFile),
         TestScenario(TestScenario::ResourceType::kUnknown,
                      TestScenario::XdsBootstrapSource::kFromConfig),

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/validation_errors.h"
+
+#include <inttypes.h>
 
 #include <utility>
 
@@ -22,6 +22,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/strip.h"
+
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -34,7 +37,14 @@ void ValidationErrors::PushField(absl::string_view ext) {
 void ValidationErrors::PopField() { fields_.pop_back(); }
 
 void ValidationErrors::AddError(absl::string_view error) {
-  field_errors_[absl::StrJoin(fields_, "")].emplace_back(error);
+  auto key = absl::StrJoin(fields_, "");
+  if (field_errors_[key].size() >= max_error_count_) {
+    gpr_log(GPR_DEBUG,
+            "Ignoring validation error: too many errors found (%" PRIuPTR ")",
+            max_error_count_);
+    return;
+  }
+  field_errors_[key].emplace_back(error);
 }
 
 bool ValidationErrors::FieldHasErrors() const {

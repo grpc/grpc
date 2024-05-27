@@ -124,9 +124,9 @@ if [[ "$(inside_venv)" ]]; then
 else
   # Instantiate the virtualenv from the Python version passed in.
   $PYTHON -m pip install --user virtualenv==20.25.0
-  # Use --no-seed to prevent virtualenv from installing seed packages.
-  # Otherwise it might not find cython module while building grpcio.
-  $PYTHON -m virtualenv --no-seed "$VENV"
+  # Skip wheel and setuptools and manually install later. Otherwise we might
+  # not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
@@ -134,7 +134,7 @@ pip_install() {
   $VENV_PYTHON -m pip install "$@"
 }
 
-$VENV_PYTHON -m ensurepip --upgrade
+pip_install --upgrade pip
 pip_install --upgrade wheel
 pip_install --upgrade setuptools==66.1.0
 
@@ -202,7 +202,7 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
 # Build/install status proto mapping
-$VENV_PYTHON "$ROOT/tools/distrib/python/xds_protos/build.py"
+# build.py is invoked as part of generate_projects.sh
 pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
 
 # Build/install csds
@@ -217,7 +217,8 @@ pip_install_dir "$ROOT/src/python/grpcio_testing"
 # Build/install tests
 pip_install coverage==7.2.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
-            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0
+            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0 \
+            opentelemetry-sdk==1.21.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

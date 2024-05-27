@@ -37,8 +37,8 @@ pass() {
 }
 
 bazel build --define=use_systemd=true //examples/cpp/systemd_socket_activation:all || fail "Failed to build sd_sock_act"
-cp ../../../../bazel-bin/examples/cpp/systemd_socket_activation/server /tmp/greeter_server
-cp ../../../../bazel-bin/examples/cpp/systemd_socket_activation/client /tmp/greeter_client
+cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/server /tmp/greeter_server
+cp ../../../bazel-bin/examples/cpp/systemd_socket_activation/client /tmp/greeter_client
 
 cat << EOF > /etc/systemd/system/sdsockact.service
 [Service]

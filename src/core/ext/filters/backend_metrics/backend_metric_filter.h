@@ -31,20 +31,23 @@
 
 namespace grpc_core {
 
-class BackendMetricFilter : public ChannelFilter {
+class BackendMetricFilter : public ImplementChannelFilter<BackendMetricFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<BackendMetricFilter> Create(const ChannelArgs& args,
-                                                    ChannelFilter::Args);
+  static absl::StatusOr<std::unique_ptr<BackendMetricFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
- private:
-  absl::optional<std::string> MaybeSerializeBackendMetrics(
-      BackendMetricProvider* provider) const;
+  class Call {
+   public:
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    void OnServerTrailingMetadata(ServerMetadata& md);
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
 };
 
 }  // namespace grpc_core

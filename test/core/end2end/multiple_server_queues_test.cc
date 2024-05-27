@@ -16,11 +16,12 @@
 //
 //
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/time.h>
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 int main(int argc, char** argv) {
   grpc_completion_queue* cq1;
@@ -36,6 +37,7 @@ int main(int argc, char** argv) {
   attr.version = 1;
   attr.cq_completion_type = GRPC_CQ_NEXT;
   attr.cq_polling_type = GRPC_CQ_DEFAULT_POLLING;
+  attr.cq_shutdown_cb = nullptr;
   cq1 = grpc_completion_queue_create(
       grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
 

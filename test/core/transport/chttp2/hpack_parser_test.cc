@@ -45,9 +45,9 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "test/core/util/parse_hexstring.h"
-#include "test/core/util/slice_splitter.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/parse_hexstring.h"
+#include "test/core/test_util/slice_splitter.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -118,7 +118,7 @@ class ParseTest : public ::testing::TestWithParam<Test> {
     size_t i;
     absl::BitGen bitgen;
 
-    grpc_metadata_batch b(arena.get());
+    grpc_metadata_batch b;
 
     parser_->BeginFrame(
         &b, max_metadata_size.value_or(4096), max_metadata_size.value_or(4096),

@@ -31,23 +31,42 @@ class TestingChannel(grpc_testing.Channel):
     def unsubscribe(self, callback):
         raise NotImplementedError()
 
+    def _get_registered_call_handle(self, method: str) -> int:
+        pass
+
     def unary_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         return _multi_callable.UnaryUnary(method, self._state)
 
     def unary_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         return _multi_callable.UnaryStream(method, self._state)
 
     def stream_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         return _multi_callable.StreamUnary(method, self._state)
 
     def stream_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         return _multi_callable.StreamStream(method, self._state)
 

@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <string>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)
@@ -32,15 +32,17 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
 #include "src/core/lib/security/security_connector/load_system_roots_supported.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace {
@@ -63,14 +65,10 @@ const char* kCertDirectories[] = {""};
 #endif                      // GPR_APPLE
 
 grpc_slice GetSystemRootCerts() {
-  grpc_slice valid_bundle_slice = grpc_empty_slice();
   size_t num_cert_files_ = GPR_ARRAY_SIZE(kCertFiles);
   for (size_t i = 0; i < num_cert_files_; i++) {
-    grpc_error_handle error =
-        grpc_load_file(kCertFiles[i], 1, &valid_bundle_slice);
-    if (error.ok()) {
-      return valid_bundle_slice;
-    }
+    auto slice = LoadFile(kCertFiles[i], /*add_null_terminator=*/true);
+    if (slice.ok()) return slice->TakeCSlice();
   }
   return grpc_empty_slice();
 }
@@ -114,7 +112,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
     if (stat_return == -1 || !S_ISREG(dir_entry_stat.st_mode)) {
       // no subdirectories.
       if (stat_return == -1) {
-        gpr_log(GPR_ERROR, "failed to get status for file: %s", file_data.path);
+        LOG(ERROR) << "failed to get status for file: " << file_data.path;
       }
       continue;
     }
@@ -135,7 +133,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       if (read_ret != -1) {
         bytes_read += read_ret;
       } else {
-        gpr_log(GPR_ERROR, "failed to read file: %s", roots_filenames[i].path);
+        LOG(ERROR) << "failed to read file: " << roots_filenames[i].path;
       }
     }
   }

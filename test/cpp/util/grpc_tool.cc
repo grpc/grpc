@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "test/cpp/util/grpc_tool.h"
 
 #include <cstdio>
@@ -27,11 +25,15 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
 
 #include "absl/flags/flag.h"
-#include "absl/memory/memory.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/grpcpp.h>
@@ -83,6 +85,9 @@ ABSL_FLAG(
     int, max_recv_msg_size, 0,
     "Specify the max receive message size in bytes for all RPCs. -1 indicates "
     "unlimited. The default value of 0 means to use the gRPC default.");
+ABSL_FLAG(std::string, channel_args, "",
+          "Comma-separated list of key=value gRPC ChannelArgs to apply "
+          "(a=b,c=d,...). Values may be integers or strings.");
 
 namespace grpc {
 namespace testing {
@@ -245,6 +250,20 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   // See |GRPC_ARG_MAX_METADATA_SIZE| in |grpc_types.h|.
   // Set to large enough size (10M) that should work for most use cases.
   args.SetInt(GRPC_ARG_MAX_METADATA_SIZE, 10 * 1024 * 1024);
+
+  // Extend channel args according to flag --channel_args.
+  const auto flag = absl::GetFlag(FLAGS_channel_args);
+  for (absl::string_view arg :
+       absl::StrSplit(flag, ',', absl::SkipWhitespace())) {
+    std::pair<std::string, std::string> kv =
+        absl::StrSplit(arg, absl::MaxSplits('=', 1), absl::SkipWhitespace());
+    int ival;
+    if (absl::SimpleAtoi(kv.second, &ival)) {
+      args.SetInt(kv.first, ival);
+    } else if (!kv.second.empty()) {
+      args.SetString(kv.first, kv.second);
+    }
+  }
   return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
 }
 

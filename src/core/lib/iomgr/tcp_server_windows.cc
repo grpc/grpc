@@ -27,6 +27,8 @@
 
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/endpoint_config.h>
@@ -78,13 +80,21 @@ using ::grpc_event_engine::experimental::WindowsEventEngineListener;
 // one listening port
 typedef struct grpc_tcp_listener grpc_tcp_listener;
 struct grpc_tcp_listener {
+  // Buffer to hold the local and remote address.
   // This seemingly magic number comes from AcceptEx's documentation. each
   // address buffer needs to have at least 16 more bytes at their end.
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  // unix addr is larger than ip addr.
+  uint8_t addresses[(sizeof(sockaddr_un) + 16) * 2] = {};
+#else
   uint8_t addresses[(sizeof(grpc_sockaddr_in6) + 16) * 2];
+#endif  // GRPC_HAVE_UNIX_SOCKET
   // This will hold the socket for the next accept.
   SOCKET new_socket;
   // The listener winsocket.
   grpc_winsocket* socket;
+  // address of listener
+  grpc_resolved_address resolved_addr;
   // The actual TCP port number.
   int port;
   unsigned port_index;
@@ -125,6 +135,35 @@ struct grpc_tcp_server {
   WindowsEventEngineListener* ee_listener;
 };
 
+// TODO(hork): This may be refactored to share with posix engine and event
+// engine.
+void unlink_if_unix_domain_socket(const grpc_resolved_address* resolved_addr) {
+#ifdef GRPC_HAVE_UNIX_SOCKET
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (addr->sa_family != AF_UNIX) {
+    return;
+  }
+  struct sockaddr_un* un =
+      reinterpret_cast<struct sockaddr_un*>(const_cast<sockaddr*>(addr));
+  // There is nothing to unlink for an abstract unix socket.
+  if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
+    return;
+  }
+  // For windows we need to remove the file instead of unlink.
+  DWORD attr = ::GetFileAttributesA(un->sun_path);
+  if (attr == INVALID_FILE_ATTRIBUTES) {
+    return;
+  }
+  if (attr & FILE_ATTRIBUTE_DIRECTORY || attr & FILE_ATTRIBUTE_READONLY) {
+    return;
+  }
+  ::DeleteFileA(un->sun_path);
+#else
+  (void)resolved_addr;
+#endif
+}
+
 // Public function. Allocates the proper data structures to hold a
 // grpc_tcp_server.
 static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
@@ -158,6 +197,7 @@ static void destroy_server(void* arg, grpc_error_handle /* error */) {
     s->head = sp->next;
     sp->next = NULL;
     grpc_winsocket_destroy(sp->socket);
+    unlink_if_unix_domain_socket(&sp->resolved_addr);
     gpr_free(sp);
   }
   gpr_mu_destroy(&s->mu);
@@ -222,12 +262,15 @@ static grpc_error_handle prepare_socket(SOCKET sock,
   grpc_resolved_address sockname_temp;
   grpc_error_handle error;
   int sockname_temp_len;
-
-  error = grpc_tcp_prepare_socket(sock);
+  if (grpc_sockaddr_get_family(addr) == AF_UNIX) {
+    error = grpc_tcp_set_non_block(sock);
+  } else {
+    error = grpc_tcp_prepare_socket(sock);
+  }
   if (!error.ok()) {
     goto failure;
   }
-
+  unlink_if_unix_domain_socket(addr);
   if (bind(sock, (const grpc_sockaddr*)addr->addr, (int)addr->len) ==
       SOCKET_ERROR) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
@@ -251,7 +294,7 @@ static grpc_error_handle prepare_socket(SOCKET sock,
   return absl::OkStatus();
 
 failure:
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   auto addr_uri = grpc_sockaddr_to_uri(addr);
   error = grpc_error_set_int(
       grpc_error_set_str(
@@ -266,7 +309,7 @@ failure:
 
 static void decrement_active_ports_and_notify_locked(grpc_tcp_listener* sp) {
   sp->shutting_down = 0;
-  GPR_ASSERT(sp->server->active_ports > 0);
+  CHECK_GT(sp->server->active_ports, 0u);
   if (0 == --sp->server->active_ports) {
     finish_shutdown_locked(sp->server);
   }
@@ -277,22 +320,28 @@ static void decrement_active_ports_and_notify_locked(grpc_tcp_listener* sp) {
 static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
-  DWORD addrlen = sizeof(grpc_sockaddr_in6) + 16;
+  const DWORD addrlen = sizeof(port->addresses) / 2;
   DWORD bytes_received = 0;
   grpc_error_handle error;
 
   if (port->shutting_down) {
     return absl::OkStatus();
   }
-
-  sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+  const int addr_family =
+      grpc_sockaddr_get_family(&port->resolved_addr) == AF_UNIX ? AF_UNIX
+                                                                : AF_INET6;
+  const int protocol = addr_family == AF_UNIX ? 0 : IPPROTO_TCP;
+  sock = WSASocket(addr_family, SOCK_STREAM, protocol, NULL, 0,
                    grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
   }
-
-  error = grpc_tcp_prepare_socket(sock);
+  if (addr_family == AF_UNIX) {
+    error = grpc_tcp_set_non_block(sock);
+  } else {
+    error = grpc_tcp_prepare_socket(sock);
+  }
   if (!error.ok()) goto failure;
 
   // Start the "accept" asynchronously.
@@ -318,7 +367,7 @@ static grpc_error_handle start_accept_locked(grpc_tcp_listener* port) {
   return error;
 
 failure:
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }
@@ -357,7 +406,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   if (!wsa_success) {
     if (!sp->shutting_down) {
       char* utf8_message = gpr_format_message(WSAGetLastError());
-      gpr_log(GPR_ERROR, "on_accept error: %s", utf8_message);
+      LOG(ERROR) << "on_accept error: " << utf8_message;
       gpr_free(utf8_message);
     }
     closesocket(sock);
@@ -367,7 +416,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
                        (char*)&sp->socket->socket, sizeof(sp->socket->socket));
       if (err) {
         char* utf8_message = gpr_format_message(WSAGetLastError());
-        gpr_log(GPR_ERROR, "setsockopt error: %s", utf8_message);
+        LOG(ERROR) << "setsockopt error: " << utf8_message;
         gpr_free(utf8_message);
       }
       int peer_name_len = (int)peer_name.len;
@@ -384,7 +433,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
         }
       } else {
         char* utf8_message = gpr_format_message(WSAGetLastError());
-        gpr_log(GPR_ERROR, "getpeername error: %s", utf8_message);
+        LOG(ERROR) << "getpeername error: " << utf8_message;
         gpr_free(utf8_message);
       }
       std::string fd_name = absl::StrCat("tcp_server:", peer_name_string);
@@ -411,7 +460,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   // the former socked we created has now either been destroy or assigned
   // to the new connection. We need to create a new one for the next
   // connection.
-  GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
+  CHECK(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
   if (0 == --sp->outstanding_calls) {
     decrement_active_ports_and_notify_locked(sp);
   }
@@ -447,7 +496,7 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
     return error;
   }
 
-  GPR_ASSERT(port >= 0);
+  CHECK_GE(port, 0);
   gpr_mu_lock(&s->mu);
   sp = (grpc_tcp_listener*)gpr_malloc(sizeof(grpc_tcp_listener));
   sp->next = NULL;
@@ -463,10 +512,11 @@ static grpc_error_handle add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   sp->outstanding_calls = 0;
   sp->AcceptEx = AcceptEx;
   sp->new_socket = INVALID_SOCKET;
+  sp->resolved_addr = *addr;
   sp->port = port;
   sp->port_index = port_index;
   GRPC_CLOSURE_INIT(&sp->on_accept, on_accept, sp, grpc_schedule_on_exec_ctx);
-  GPR_ASSERT(sp->socket);
+  CHECK(sp->socket);
   gpr_mu_unlock(&s->mu);
   *listener = sp;
 
@@ -522,7 +572,10 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     addr = &wildcard;
   }
 
-  sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+  const int addr_family =
+      grpc_sockaddr_get_family(addr) == AF_UNIX ? AF_UNIX : AF_INET6;
+  const int protocol = addr_family == AF_UNIX ? 0 : IPPROTO_TCP;
+  sock = WSASocket(addr_family, SOCK_STREAM, protocol, NULL, 0,
                    grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
@@ -540,7 +593,7 @@ done:
     error = error_out;
     *port = -1;
   } else {
-    GPR_ASSERT(sp != NULL);
+    CHECK(sp != NULL);
     *port = sp->port;
   }
   return error;
@@ -550,9 +603,9 @@ static void tcp_server_start(grpc_tcp_server* s,
                              const std::vector<grpc_pollset*>* /*pollsets*/) {
   grpc_tcp_listener* sp;
   gpr_mu_lock(&s->mu);
-  GPR_ASSERT(s->active_ports == 0);
+  CHECK_EQ(s->active_ports, 0u);
   for (sp = s->head; sp; sp = sp->next) {
-    GPR_ASSERT(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
+    CHECK(GRPC_LOG_IF_ERROR("start_accept", start_accept_locked(sp)));
     s->active_ports++;
   }
   gpr_mu_unlock(&s->mu);
@@ -602,7 +655,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
   WindowsEventEngine* engine_ptr = reinterpret_cast<WindowsEventEngine*>(
       config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  GPR_ASSERT(on_accept_cb != nullptr);
+  CHECK_NE(on_accept_cb, nullptr);
   auto accept_cb = [s, on_accept_cb, on_accept_cb_arg](
                        std::unique_ptr<EventEngine::Endpoint> endpoint,
                        MemoryAllocator memory_allocator) {
@@ -624,7 +677,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
   grpc_core::RefCountedPtr<grpc_core::ResourceQuota> resource_quota;
   {
     void* tmp_quota = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
-    GPR_ASSERT(tmp_quota != nullptr);
+    CHECK_NE(tmp_quota, nullptr);
     resource_quota =
         reinterpret_cast<grpc_core::ResourceQuota*>(tmp_quota)->Ref();
   }
@@ -655,13 +708,13 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
 
 static void event_engine_start(grpc_tcp_server* s,
                                const std::vector<grpc_pollset*>* /*pollsets*/) {
-  GPR_ASSERT(s->ee_listener->Start().ok());
+  CHECK(s->ee_listener->Start().ok());
 }
 
 static grpc_error_handle event_engine_add_port(
     grpc_tcp_server* s, const grpc_resolved_address* addr, int* port) {
-  GPR_ASSERT(addr != nullptr);
-  GPR_ASSERT(port != nullptr);
+  CHECK_NE(addr, nullptr);
+  CHECK_NE(port, nullptr);
   auto ee_addr = CreateResolvedAddress(*addr);
   auto out_port = s->ee_listener->Bind(ee_addr);
   *port = out_port.ok() ? *out_port : -1;

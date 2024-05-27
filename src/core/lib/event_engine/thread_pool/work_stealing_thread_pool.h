@@ -18,8 +18,6 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_WORK_STEALING_THREAD_POOL_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_WORK_STEALING_THREAD_POOL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,6 +29,8 @@
 #include "absl/functional/any_invocable.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/thd_id.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
@@ -132,6 +132,9 @@ class WorkStealingThreadPool final : public ThreadPool {
     // Postfork parent and child have the same behavior.
     void PrepareFork();
     void Postfork();
+    // Thread ID tracking
+    void TrackThread(gpr_thd_id tid);
+    void UntrackThread(gpr_thd_id tid);
     // Accessor methods
     bool IsShutdown();
     bool IsForking();
@@ -152,11 +155,7 @@ class WorkStealingThreadPool final : public ThreadPool {
     class Lifeguard {
      public:
       explicit Lifeguard(WorkStealingThreadPoolImpl* pool);
-      // Start the lifeguard thread.
-      void Start();
-      // Block until the lifeguard thread is shut down.
-      // Afterwards, reset the lifeguard state so it can start again cleanly.
-      void BlockUntilShutdownAndReset();
+      ~Lifeguard();
 
      private:
       // The main body of the lifeguard thread.
@@ -171,6 +170,8 @@ class WorkStealingThreadPool final : public ThreadPool {
       std::unique_ptr<grpc_core::Notification> lifeguard_is_shut_down_;
       std::atomic<bool> lifeguard_running_{false};
     };
+
+    void DumpStacksAndCrash();
 
     const size_t reserve_threads_;
     BusyThreadCount busy_thread_count_;
@@ -189,7 +190,11 @@ class WorkStealingThreadPool final : public ThreadPool {
     // at a time.
     std::atomic<bool> throttled_{false};
     WorkSignal work_signal_;
-    Lifeguard lifeguard_;
+    grpc_core::Mutex lifeguard_ptr_mu_;
+    std::unique_ptr<Lifeguard> lifeguard_ ABSL_GUARDED_BY(lifeguard_ptr_mu_);
+    // Set of threads for verbose failure debugging
+    grpc_core::Mutex thd_set_mu_;
+    absl::flat_hash_set<gpr_thd_id> thds_ ABSL_GUARDED_BY(thd_set_mu_);
   };
 
   class ThreadState {

@@ -16,8 +16,8 @@ syntax = "proto3";
 
 package event_engine_client_channel_resolver;
 
-import "test/core/util/fuzzing_channel_args.proto";
-import "test/core/util/fuzz_config_vars.proto";
+import "test/core/test_util/fuzzing_channel_args.proto";
+import "test/core/test_util/fuzz_config_vars.proto";
 
 message Error {
     uint32 code = 1;

@@ -32,6 +32,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -44,7 +46,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -55,35 +56,34 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
-#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
-#include "src/core/ext/xds/xds_api.h"
-#include "src/core/ext/xds/xds_channel_args.h"
-#include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_listener.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/resolver/endpoint_addresses.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/fake/fake_resolver.h"
+#include "src/core/util/string.h"
+#include "src/core/util/time_precise.h"
+#include "src/core/util/tmpfile.h"
+#include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/xds_client/xds_api.h"
+#include "src/core/xds/xds_client/xds_channel_args.h"
+#include "src/core/xds/xds_client/xds_client.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -102,11 +102,12 @@
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
-#include "test/core/util/audit_logging_utils.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/scoped_env_var.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/audit_logging_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
@@ -245,7 +246,7 @@ class FakeCertificateProviderFactory
       absl::string_view name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
-    GPR_ASSERT(cert_data_map != nullptr);
+    CHECK_NE(cert_data_map, nullptr);
   }
 
   absl::string_view name() const override { return name_; }
@@ -262,7 +263,7 @@ class FakeCertificateProviderFactory
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
       /*config*/) override {
-    GPR_ASSERT(cert_data_map_ != nullptr);
+    CHECK_NE(cert_data_map_, nullptr);
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         cert_data_map_->Get());
   }
@@ -279,7 +280,7 @@ FakeCertificateProvider::CertDataMapWrapper* g_fake2_cert_data_map = nullptr;
 class XdsSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    XdsBootstrapBuilder builder;
+    XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;
@@ -293,8 +294,8 @@ class XdsSecurityTest : public XdsEnd2endTest {
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder);
     CreateAndStartBackends(2);
-    root_cert_ = ReadFile(kCaCertPath);
-    bad_root_cert_ = ReadFile(kBadClientCertPath);
+    root_cert_ = grpc_core::testing::GetFileContents(kCaCertPath);
+    bad_root_cert_ = grpc_core::testing::GetFileContents(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
     // TODO(yashykt): Use different client certs here instead of reusing
     // server certs after https://github.com/grpc/grpc/pull/24876 is merged
@@ -397,8 +398,7 @@ class XdsSecurityTest : public XdsEnd2endTest {
           DEBUG_LOCATION,
           [&](const RpcResult& result) {
             if (result.status.ok()) {
-              gpr_log(GPR_ERROR,
-                      "RPC succeeded. Failure expected. Trying again.");
+              LOG(ERROR) << "RPC succeeded. Failure expected. Trying again.";
               return true;
             }
             EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
@@ -799,7 +799,8 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {}  // No-op -- individual tests do this themselves.
 
-  void DoSetUp(XdsBootstrapBuilder builder = XdsBootstrapBuilder()) {
+  void DoSetUp(
+      const absl::optional<XdsBootstrapBuilder>& builder = absl::nullopt) {
     InitClient(builder);
     CreateBackends(1, /*xds_enabled=*/true);
     EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -814,7 +815,7 @@ TEST_P(XdsEnabledServerTest, Basic) {
 }
 
 TEST_P(XdsEnabledServerTest, ListenerDeletionIgnored) {
-  DoSetUp(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
+  DoSetUp(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   backends_[0]->Start();
   WaitForBackend(DEBUG_LOCATION, 0);
   // Check that we ACKed.
@@ -908,7 +909,7 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
 class XdsServerSecurityTest : public XdsEnd2endTest {
  protected:
   void SetUp() override {
-    XdsBootstrapBuilder builder;
+    XdsBootstrapBuilder builder = MakeBootstrapBuilder();
     builder.AddCertificateProviderPlugin("fake_plugin1", "fake1");
     builder.AddCertificateProviderPlugin("fake_plugin2", "fake2");
     std::vector<std::string> fields;
@@ -922,8 +923,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                                          absl::StrJoin(fields, ",\n"));
     InitClient(builder);
     CreateBackends(1, /*xds_enabled=*/true);
-    root_cert_ = ReadFile(kCaCertPath);
-    bad_root_cert_ = ReadFile(kBadClientCertPath);
+    root_cert_ = grpc_core::testing::GetFileContents(kCaCertPath);
+    bad_root_cert_ = grpc_core::testing::GetFileContents(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
     bad_identity_pair_ =
         ReadTlsIdentityPair(kBadClientKeyPath, kBadClientCertPath);
@@ -986,12 +987,15 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = grpc_core::LocalIpUri(backends_[0]->port());
     IdentityKeyCertPair key_cert_pair;
-    key_cert_pair.private_key = ReadFile(kServerKeyPath);
-    key_cert_pair.certificate_chain = ReadFile(kServerCertPath);
+    key_cert_pair.private_key =
+        grpc_core::testing::GetFileContents(kServerKeyPath);
+    key_cert_pair.certificate_chain =
+        grpc_core::testing::GetFileContents(kServerCertPath);
     std::vector<IdentityKeyCertPair> identity_key_cert_pairs;
     identity_key_cert_pairs.emplace_back(key_cert_pair);
     auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
-        ReadFile(kCaCertPath), identity_key_cert_pairs);
+        grpc_core::testing::GetFileContents(kCaCertPath),
+        identity_key_cert_pairs);
     grpc::experimental::TlsChannelCredentialsOptions options;
     options.set_certificate_provider(std::move(certificate_provider));
     options.watch_root_certs();
@@ -1001,7 +1005,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    GPR_ASSERT(channel_creds.get() != nullptr);
+    CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -1012,8 +1016,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                    std::string(grpc_core::LocalIp()));
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
     std::string uri = grpc_core::LocalIpUri(backends_[0]->port());
-    auto certificate_provider =
-        std::make_shared<StaticDataCertificateProvider>(ReadFile(kCaCertPath));
+    auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+        grpc_core::testing::GetFileContents(kCaCertPath));
     grpc::experimental::TlsChannelCredentialsOptions options;
     options.set_certificate_provider(std::move(certificate_provider));
     options.watch_root_certs();
@@ -1022,7 +1026,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    GPR_ASSERT(channel_creds.get() != nullptr);
+    CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -1046,7 +1050,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       std::vector<std::string> expected_client_identity,
       bool test_expects_failure = false,
       absl::optional<grpc::StatusCode> expected_status = absl::nullopt) {
-    gpr_log(GPR_INFO, "Sending RPC");
+    LOG(INFO) << "Sending RPC";
     int num_tries = 0;
     constexpr int kRetryCount = 100;
     auto overall_deadline = absl::Now() + absl::Seconds(5);
@@ -1068,20 +1072,21 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       Status status = stub->Echo(&context, request, &response);
       if (test_expects_failure) {
         if (status.ok()) {
-          gpr_log(GPR_ERROR, "RPC succeeded. Failure expected. Trying again.");
+          LOG(ERROR) << "RPC succeeded. Failure expected. Trying again.";
           continue;
         }
         if (expected_status.has_value() &&
             *expected_status != status.error_code()) {
-          gpr_log(GPR_ERROR,
-                  "Expected status does not match Actual(%d) vs Expected(%d)",
-                  status.error_code(), *expected_status);
+          LOG(ERROR) << "Expected status does not match Actual("
+                     << status.error_code() << ") vs Expected("
+                     << *expected_status << ")";
           continue;
         }
       } else {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "RPC failed. code=%d message=%s Trying again.",
-                  status.error_code(), status.error_message().c_str());
+          LOG(ERROR) << "RPC failed. code=" << status.error_code()
+                     << " message=" << status.error_message()
+                     << " Trying again.";
           continue;
         }
         EXPECT_EQ(response.message(), kRequestMessage);
@@ -1091,23 +1096,21 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
               std::string(entry.data(), entry.size()).c_str());
         }
         if (peer_identity != expected_server_identity) {
-          gpr_log(GPR_ERROR,
-                  "Expected server identity does not match. (actual) %s vs "
-                  "(expected) %s Trying again.",
-                  absl::StrJoin(peer_identity, ",").c_str(),
-                  absl::StrJoin(expected_server_identity, ",").c_str());
+          LOG(ERROR) << "Expected server identity does not match. (actual) "
+                     << absl::StrJoin(peer_identity, ",") << " vs (expected) "
+                     << absl::StrJoin(expected_server_identity, ",")
+                     << " Trying again.";
           continue;
         }
         if (backends_[0]->backend_service()->last_peer_identity() !=
             expected_client_identity) {
-          gpr_log(
-              GPR_ERROR,
-              "Expected client identity does not match. (actual) %s vs "
-              "(expected) %s Trying again.",
-              absl::StrJoin(
-                  backends_[0]->backend_service()->last_peer_identity(), ",")
-                  .c_str(),
-              absl::StrJoin(expected_client_identity, ",").c_str());
+          LOG(ERROR)
+              << "Expected client identity does not match. (actual) "
+              << absl::StrJoin(
+                     backends_[0]->backend_service()->last_peer_identity(), ",")
+              << " vs (expected) "
+              << absl::StrJoin(expected_client_identity, ",")
+              << " Trying again.";
           continue;
         }
       }

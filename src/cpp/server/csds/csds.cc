@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/server/csds/csds.h"
 
 #include <string>
@@ -27,6 +25,7 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/slice.h>
 
@@ -34,21 +33,20 @@ namespace grpc {
 namespace xds {
 namespace experimental {
 
-using envoy::service::status::v3::ClientConfig;
 using envoy::service::status::v3::ClientStatusRequest;
 using envoy::service::status::v3::ClientStatusResponse;
 
 namespace {
 
-absl::StatusOr<ClientConfig> DumpClientConfig() {
-  ClientConfig client_config;
+absl::StatusOr<ClientStatusResponse> DumpClientStatusResponse() {
+  ClientStatusResponse response;
   grpc_slice serialized_client_config = grpc_dump_xds_configs();
   std::string bytes = StringFromCopiedSlice(serialized_client_config);
   grpc_slice_unref(serialized_client_config);
-  if (!client_config.ParseFromString(bytes)) {
-    return absl::InternalError("Failed to parse ClientConfig.");
+  if (!response.ParseFromString(bytes)) {
+    return absl::InternalError("Failed to parse ClientStatusResponse.");
   }
-  return client_config;
+  return response;
 }
 
 }  // namespace
@@ -58,19 +56,17 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
     ServerReaderWriter<ClientStatusResponse, ClientStatusRequest>* stream) {
   ClientStatusRequest request;
   while (stream->Read(&request)) {
-    ClientStatusResponse response;
-    absl::StatusOr<ClientConfig> s = DumpClientConfig();
-    if (!s.ok()) {
-      if (s.status().code() == absl::StatusCode::kUnavailable) {
+    absl::StatusOr<ClientStatusResponse> response = DumpClientStatusResponse();
+    if (!response.ok()) {
+      if (response.status().code() == absl::StatusCode::kUnavailable) {
         // If the xDS client is not initialized, return empty response
-        stream->Write(response);
+        stream->Write(ClientStatusResponse());
         continue;
       }
-      return Status(static_cast<StatusCode>(s.status().raw_code()),
-                    s.status().ToString());
+      return Status(static_cast<StatusCode>(response.status().raw_code()),
+                    response.status().ToString());
     }
-    *response.add_config() = std::move(s.value());
-    stream->Write(response);
+    stream->Write(*response);
   }
   return Status::OK;
 }
@@ -78,7 +74,7 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
 Status ClientStatusDiscoveryService::FetchClientStatus(
     ServerContext* /*context*/, const ClientStatusRequest* /*request*/,
     ClientStatusResponse* response) {
-  absl::StatusOr<ClientConfig> s = DumpClientConfig();
+  absl::StatusOr<ClientStatusResponse> s = DumpClientStatusResponse();
   if (!s.ok()) {
     if (s.status().code() == absl::StatusCode::kUnavailable) {
       // If the xDS client is not initialized, return empty response
@@ -87,7 +83,7 @@ Status ClientStatusDiscoveryService::FetchClientStatus(
     return Status(static_cast<StatusCode>(s.status().raw_code()),
                   s.status().ToString());
   }
-  *response->add_config() = std::move(s.value());
+  *response = std::move(*s);
   return Status::OK;
 }
 

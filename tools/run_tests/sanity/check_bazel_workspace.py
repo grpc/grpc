@@ -79,7 +79,7 @@ _GRPC_DEP_NAMES = [
     "com_envoyproxy_protoc_gen_validate",
     "com_google_googleapis",
     "com_google_libprotobuf_mutator",
-    "com_github_cncf_udpa",
+    "com_github_cncf_xds",
     "google_cloud_cpp",
 ]
 
@@ -89,7 +89,6 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "com_google_absl",
     "com_google_fuzztest",
     "io_opencensus_cpp",
-    "io_opentelemetry_cpp",
     # TODO(stanleycheung): remove when prometheus-cpp has new release
     "com_github_jupp0r_prometheus_cpp",
     _BAZEL_SKYLIB_DEP_NAME,

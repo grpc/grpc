@@ -29,6 +29,6 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:grpc_rbac_filter",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

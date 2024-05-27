@@ -55,6 +55,8 @@ class ObservabilityPlugin(
     Attributes:
       _stats_enabled: A bool indicates whether tracing is enabled.
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
+      _registered_methods: A set which stores the registered method names in
+        bytes.
     """
 
     _tracing_enabled: bool = False
@@ -62,7 +64,7 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def create_client_call_tracer(
-        self, method_name: bytes
+        self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
         """Creates a ClientCallTracerCapsule.
 
@@ -74,10 +76,12 @@ class ObservabilityPlugin(
         interface and wrapped in a PyCapsule using `client_call_tracer` as name.
 
         Args:
-        method_name: The method name of the call in byte format.
+          method_name: The method name of the call in byte format.
+          target: The channel target of the call in byte format.
+          registered_method: Wether this method is pre-registered.
 
         Returns:
-        A PyCapsule which stores a ClientCallTracer object.
+          A PyCapsule which stores a ClientCallTracer object.
         """
         raise NotImplementedError()
 
@@ -94,7 +98,7 @@ class ObservabilityPlugin(
         interface and wrapped in a PyCapsule using `client_call_tracer` as name.
 
         Args:
-        client_call_tracer: A PyCapsule which stores a ClientCallTracer object.
+          client_call_tracer: A PyCapsule which stores a ClientCallTracer object.
         """
         raise NotImplementedError()
 
@@ -110,12 +114,12 @@ class ObservabilityPlugin(
         This method can be used to propagate census context.
 
         Args:
-        trace_id: The identifier for the trace associated with the span as a
-         32-character hexadecimal encoded string,
-         e.g. 26ed0036f2eff2b7317bccce3e28d01f
-        span_id: The identifier for the span as a 16-character hexadecimal encoded
-         string. e.g. 113ec879e62583bc
-        is_sampled: A bool indicates whether the span is sampled.
+          trace_id: The identifier for the trace associated with the span as a
+            32-character hexadecimal encoded string,
+            e.g. 26ed0036f2eff2b7317bccce3e28d01f
+          span_id: The identifier for the span as a 16-character hexadecimal encoded
+            string. e.g. 113ec879e62583bc
+          is_sampled: A bool indicates whether the span is sampled.
         """
         raise NotImplementedError()
 
@@ -134,13 +138,13 @@ class ObservabilityPlugin(
         using `server_call_tracer_factory` as name.
 
         Returns:
-        A PyCapsule which stores a ServerCallTracerFactory object.
+          A PyCapsule which stores a ServerCallTracerFactory object.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
     def record_rpc_latency(
-        self, method: str, rpc_latency: float, status_code: Any
+        self, method: str, target: str, rpc_latency: float, status_code: Any
     ) -> None:
         """Record the latency of the RPC.
 
@@ -148,11 +152,12 @@ class ObservabilityPlugin(
         called at the end of each RPC.
 
         Args:
-        method: The fully-qualified name of the RPC method being invoked.
-        rpc_latency: The latency for the RPC, equals to the time between
-         when the client invokes the RPC and when the client receives the status.
-        status_code: An element of grpc.StatusCode in string format representing the
-         final status for the RPC.
+          method: The fully-qualified name of the RPC method being invoked.
+          target: The target name of the RPC method being invoked.
+          rpc_latency: The latency for the RPC in seconds, equals to the time between
+            when the client invokes the RPC and when the client receives the status.
+          status_code: An element of grpc.StatusCode in string format representing the
+            final status for the RPC.
         """
         raise NotImplementedError()
 
@@ -160,7 +165,7 @@ class ObservabilityPlugin(
         """Enable or disable tracing.
 
         Args:
-        enable: A bool indicates whether tracing should be enabled.
+          enable: A bool indicates whether tracing should be enabled.
         """
         self._tracing_enabled = enable
 
@@ -168,9 +173,20 @@ class ObservabilityPlugin(
         """Enable or disable stats(metrics).
 
         Args:
-        enable: A bool indicates whether stats should be enabled.
+          enable: A bool indicates whether stats should be enabled.
         """
         self._stats_enabled = enable
+
+    def save_registered_method(self, method_name: bytes) -> None:
+        """Saves the method name to registered_method list.
+
+        When exporting metrics, method name for unregistered methods will be replaced
+        with 'other' by default.
+
+        Args:
+          method_name: The method name in bytes.
+        """
+        raise NotImplementedError()
 
     @property
     def tracing_enabled(self) -> bool:
@@ -190,7 +206,7 @@ def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
     """Get the ObservabilityPlugin in _observability module.
 
     Returns:
-    The ObservabilityPlugin currently registered with the _observability
+      The ObservabilityPlugin currently registered with the _observability
     module. Or None if no plugin exists at the time of calling this method.
     """
     with _plugin_lock:
@@ -201,11 +217,11 @@ def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
     """Save ObservabilityPlugin to _observability module.
 
     Args:
-    observability_plugin: The ObservabilityPlugin to save.
+      observability_plugin: The ObservabilityPlugin to save.
 
     Raises:
       ValueError: If an ObservabilityPlugin was already registered at the
-      time of calling this method.
+        time of calling this method.
     """
     global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement
     with _plugin_lock:
@@ -221,11 +237,11 @@ def observability_init(observability_plugin: ObservabilityPlugin) -> None:
     channels/servers are built.
 
     Args:
-    observability_plugin: The ObservabilityPlugin to use.
+      observability_plugin: The ObservabilityPlugin to use.
 
     Raises:
       ValueError: If an ObservabilityPlugin was already registered at the
-      time of calling this method.
+        time of calling this method.
     """
     set_plugin(observability_plugin)
     try:
@@ -254,12 +270,11 @@ def delete_call_tracer(client_call_tracer_capsule: Any) -> None:
     interface and wrapped in a PyCapsule using `client_call_tracer` as the name.
 
     Args:
-    client_call_tracer_capsule: A PyCapsule which stores a ClientCallTracer object.
+      client_call_tracer_capsule: A PyCapsule which stores a ClientCallTracer object.
     """
     with get_plugin() as plugin:
-        if not (plugin and plugin.observability_enabled):
-            return
-        plugin.delete_client_call_tracer(client_call_tracer_capsule)
+        if plugin and plugin.observability_enabled:
+            plugin.delete_client_call_tracer(client_call_tracer_capsule)
 
 
 def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
@@ -268,8 +283,8 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
     This method will be called at the end of each RPC.
 
     Args:
-    state: a grpc._channel._RPCState object which contains the stats related to the
-    RPC.
+      state: a grpc._channel._RPCState object which contains the stats related to the
+        RPC.
     """
     # TODO(xuanwn): use channel args to exclude those metrics.
     for exclude_prefix in _SERVICES_TO_EXCLUDE:
@@ -280,4 +295,6 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
             return
         rpc_latency_s = state.rpc_end_time - state.rpc_start_time
         rpc_latency_ms = rpc_latency_s * 1000
-        plugin.record_rpc_latency(state.method, rpc_latency_ms, state.code)
+        plugin.record_rpc_latency(
+            state.method, state.target, rpc_latency_ms, state.code
+        )

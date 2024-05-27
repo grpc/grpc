@@ -161,6 +161,7 @@ class CqVerifier {
   absl::flat_hash_map<void*, std::vector<SuccessfulStateString*>>
       successful_state_strings_;
   bool log_verifications_ = true;
+  bool added_expectations_ = false;
 };
 
 }  // namespace grpc_core

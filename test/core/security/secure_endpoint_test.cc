@@ -16,25 +16,26 @@
 //
 //
 
-#include "src/core/lib/security/transport/secure_endpoint.h"
+#include "src/core/handshaker/security/secure_endpoint.h"
 
 #include <fcntl.h>
 #include <sys/types.h>
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/fake_transport_security.h"
+#include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;
@@ -281,7 +282,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_core::ExecCtx exec_ctx;
   int n = 0;
   grpc_closure done_closure;
-  gpr_log(GPR_INFO, "Start test left over");
+  LOG(INFO) << "Start test left over";
 
   grpc_slice_buffer_init(&incoming);
   GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);

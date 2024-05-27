@@ -18,19 +18,15 @@ set -ex
 echo $ANDROID_HOME
 echo $ANDROID_NDK_HOME
 
-# Build all targets using the strict warning option which leverages the
-# clang compiler to check if sources can pass a set of warning options.
-# CPU are specified because gRPC does not build with 32bit NDK (which has socklen_t
-# defined as int due to an accident).
-# The python option is for disabling python2 enforcement when packing APK
+# Android platforms only works with Bazel >= 7.0
+export OVERRIDE_BAZEL_VERSION=7.1.0
+
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_binder_example_app
 bazel_binder_example_app/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   build \
-  --define=use_strict_warning=true \
-  --copt=-Wno-unknown-warning-option \
-  --fat_apk_cpu=x86_64,arm64-v8a \
-  --extra_toolchains=@rules_python//python:autodetecting_toolchain_nonstrict \
+  --extra_toolchains=@androidndk//:all \
+  --android_platforms=//:android_x86_64,//:android_armv7,//:android_arm64 \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleserver:app
 

@@ -31,16 +31,16 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/useful.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/resource_quota/memory_quota_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars.h"
 
 bool squelch = true;
 bool leak_check = true;

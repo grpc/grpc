@@ -27,7 +27,7 @@
 
 #include "absl/strings/string_view.h"
 #include "constants.h"
-#include "python_census_context.h"
+#include "python_observability_context.h"
 
 #include <grpc/status.h>
 
@@ -50,8 +50,9 @@ extern std::queue<CensusData>* g_census_data_buffer;
 extern std::mutex g_census_data_buffer_mutex;
 extern std::condition_variable g_census_data_buffer_cv;
 
-void* CreateClientCallTracer(const char* method, const char* trace_id,
-                             const char* parent_span_id);
+void* CreateClientCallTracer(const char* method, const char* target,
+                             const char* trace_id, const char* parent_span_id,
+                             bool registered_method);
 
 void* CreateServerCallTracerFactory();
 
@@ -62,9 +63,11 @@ void AwaitNextBatchLocked(std::unique_lock<std::mutex>& lock, int timeout_ms);
 void AddCensusDataToBuffer(const CensusData& buffer);
 
 void RecordIntMetric(MetricsName name, int64_t value,
+                     const bool registered_method,
                      const std::vector<Label>& labels);
 
 void RecordDoubleMetric(MetricsName name, double value,
+                        const bool registered_method,
                         const std::vector<Label>& labels);
 
 void RecordSpan(const SpanCensusData& span_census_data);

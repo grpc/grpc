@@ -15,12 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_SINGLE_SET_PTR_H
 #define GRPC_SRC_CORE_LIB_GPRPP_SINGLE_SET_PTR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <memory>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -68,7 +69,7 @@ class SingleSetPtr {
 
   T* operator->() const {
     T* p = p_.load(std::memory_order_acquire);
-    GPR_DEBUG_ASSERT(p != nullptr);
+    DCHECK_NE(p, nullptr);
     return p;
   }
 

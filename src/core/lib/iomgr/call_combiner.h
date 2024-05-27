@@ -19,13 +19,12 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_CALL_COMBINER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include "absl/container/inlined_vector.h"
 
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/ref_counted.h"

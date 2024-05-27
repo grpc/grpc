@@ -28,6 +28,7 @@ cc_library(
     includes = ["."],
     deps = [
         "//src/compiler:grpc_plugin_support",
+        "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protoc_lib",
     ],
 )
@@ -49,6 +50,7 @@ py_library(
     name = "grpc_tools",
     srcs = [
         "grpc_tools/__init__.py",
+        "grpc_tools/grpc_version.py",
         "grpc_tools/protoc.py",
     ],
     data = [":well_known_protos"],

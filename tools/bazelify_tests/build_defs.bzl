@@ -63,7 +63,7 @@ def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", 
         **test_args
     )
 
-def _dockerized_genrule(name, cmd, outs, srcs = [], timeout = None, tags = [], exec_compatible_with = [], flaky = None, docker_image_version = None, docker_run_as_root = False):
+def _dockerized_genrule(name, cmd, outs, srcs = [], tags = [], exec_compatible_with = [], docker_image_version = None, docker_run_as_root = False):
     """Runs genrule under docker either via RBE or via docker sandbox."""
     if docker_image_version:
         image_spec = DOCKERIMAGE_CURRENT_VERSIONS.get(docker_image_version, None)
@@ -94,8 +94,6 @@ def _dockerized_genrule(name, cmd, outs, srcs = [], timeout = None, tags = [], e
         "cmd": cmd,
         "srcs": srcs,
         "tags": tags,
-        "flaky": flaky,
-        "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
         "exec_properties": exec_properties,
         "outs": outs,
@@ -292,7 +290,7 @@ def grpc_build_artifact_task(name, timeout = None, artifact_deps = [], tags = []
         cmd = cmd + " $(location " + dep_archive_name + ")"
         genrule_srcs.append(dep_archive_name)
 
-    _dockerized_genrule(name = name, cmd = cmd, outs = genrule_outs, srcs = genrule_srcs, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, docker_run_as_root = False)
+    _dockerized_genrule(name = name, cmd = cmd, outs = genrule_outs, srcs = genrule_srcs, tags = tags, exec_compatible_with = exec_compatible_with, docker_image_version = docker_image_version, docker_run_as_root = False)
 
     # The genrule above always succeeds (even if the underlying build fails), so that we can create rules that depend
     # on multiple artifact builds (of which some can fail). The actual build status (exitcode) and the log of the build

@@ -25,6 +25,7 @@
 
 #include "absl/container/inlined_vector.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"

@@ -40,28 +40,38 @@ namespace grpc_core {
 // of the ordinary channel stack. The fault injection filter fetches fault
 // injection policy from the method config of service config returned by the
 // resolver, and enforces the fault injection policy.
-class FaultInjectionFilter : public ChannelFilter {
+class FaultInjectionFilter
+    : public ImplementChannelFilter<FaultInjectionFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<FaultInjectionFilter> Create(
+  static absl::StatusOr<std::unique_ptr<FaultInjectionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
- private:
   explicit FaultInjectionFilter(ChannelFilter::Args filter_args);
 
+  // Construct a promise for one call.
+  class Call {
+   public:
+    ArenaPromise<absl::Status> OnClientInitialMetadata(
+        ClientMetadata& md, FaultInjectionFilter* filter);
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
+
+ private:
   class InjectionDecision;
   InjectionDecision MakeInjectionDecision(
-      const ClientMetadataHandle& initial_metadata);
+      const ClientMetadata& initial_metadata);
 
   // The relative index of instances of the same filter.
   size_t index_;
   const size_t service_config_parser_index_;
-  std::unique_ptr<Mutex> mu_;
+  Mutex mu_;
   absl::InsecureBitGen abort_rand_generator_ ABSL_GUARDED_BY(mu_);
   absl::InsecureBitGen delay_rand_generator_ ABSL_GUARDED_BY(mu_);
 };

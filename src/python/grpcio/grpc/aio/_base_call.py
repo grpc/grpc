@@ -169,6 +169,9 @@ class UnaryStreamCall(
         Read operations must be serialized when called from multiple
         coroutines.
 
+        Note that the iterator and read/write APIs may not be mixed on
+        a single RPC.
+
         Returns:
           A response message, or an `grpc.aio.EOF` to indicate the end of the
           stream.
@@ -181,6 +184,9 @@ class StreamUnaryCall(
     @abstractmethod
     async def write(self, request: RequestType) -> None:
         """Writes one message to the stream.
+
+        Note that the iterator and read/write APIs may not be mixed on
+        a single RPC.
 
         Raises:
           An RpcError exception if the write failed.
@@ -223,6 +229,9 @@ class StreamStreamCall(
         Read operations must be serialized when called from multiple
         coroutines.
 
+        Note that the iterator and read/write APIs may not be mixed on
+        a single RPC.
+
         Returns:
           A response message, or an `grpc.aio.EOF` to indicate the end of the
           stream.
@@ -231,6 +240,9 @@ class StreamStreamCall(
     @abstractmethod
     async def write(self, request: RequestType) -> None:
         """Writes one message to the stream.
+
+        Note that the iterator and read/write APIs may not be mixed on
+        a single RPC.
 
         Raises:
           An RpcError exception if the write failed.

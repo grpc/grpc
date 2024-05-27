@@ -23,6 +23,8 @@
 #include <type_traits>
 #include <vector>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -50,7 +52,7 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -80,7 +82,7 @@ std::list<Connection> CreateConnectedEndpoints(
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  GPR_ASSERT(resolved_addr.ok());
+  CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification* server_signal = new grpc_core::Notification();
 
@@ -104,7 +106,7 @@ std::list<Connection> CreateConnectedEndpoints(
       std::move(accept_cb),
       [](absl::Status status) { ASSERT_TRUE(status.ok()); }, config,
       std::make_unique<grpc_core::MemoryQuota>("foo"));
-  GPR_ASSERT(listener.ok());
+  CHECK_OK(listener);
 
   EXPECT_TRUE((*listener)->Bind(*resolved_addr).ok());
   EXPECT_TRUE((*listener)->Start().ok());
@@ -156,7 +158,7 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
       : engine_(std::move(engine)), poller_(poller) {
     WeakRef().release();
   }
-  void Orphan() override { signal.Notify(); }
+  void Orphaned() override { signal.Notify(); }
   void Start() {
     // Start executing Work(..).
     engine_->Run([this]() { Work(); });
@@ -202,7 +204,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
     EXPECT_NE(posix_ee_, nullptr);
     scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
     if (poller_ != nullptr) {
-      gpr_log(GPR_INFO, "Using poller: %s", poller_->Name().c_str());
+      LOG(INFO) << "Using poller: " << poller_->Name();
     }
   }
 

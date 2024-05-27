@@ -26,6 +26,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -34,6 +35,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
@@ -44,6 +46,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
+#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/env.h"
@@ -52,7 +56,6 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/end2end/end2end_tests.h"
@@ -66,8 +69,9 @@
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 // IWYU pragma: no_include <unistd.h>
 
@@ -106,7 +110,7 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
                         grpc_process_auth_metadata_done_cb cb,
                         void* user_data) {
-  GPR_ASSERT(state == nullptr);
+  CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -131,8 +135,7 @@ class CensusFixture : public CoreTestFixture {
     auto* server = grpc_server_create(
         args.Set(GRPC_ARG_ENABLE_CENSUS, true).ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(
-        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -165,8 +168,7 @@ class CompressionFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(
-        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -278,13 +280,11 @@ class FdFixture : public CoreTestFixture {
     int flags;
     grpc_create_socketpair_if_unix(sv);
     flags = fcntl(sv[0], F_GETFL, 0);
-    GPR_ASSERT(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK) == 0);
+    CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
     flags = fcntl(sv[1], F_GETFL, 0);
-    GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
-    GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[0]) ==
-               absl::OkStatus());
-    GPR_ASSERT(grpc_set_socket_no_sigpipe_if_possible(sv[1]) ==
-               absl::OkStatus());
+    CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
   }
 
   int fd_pair_[2];
@@ -312,7 +312,7 @@ class HttpProxyFilter : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(
+    CHECK(
         grpc_server_add_http2_port(server, server_addr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
@@ -339,7 +339,7 @@ class HttpProxyFilter : public CoreTestFixture {
         server_addr_.c_str(), creds,
         args.Set(GRPC_ARG_HTTP_PROXY, proxy_uri).ToC().get());
     grpc_channel_credentials_release(creds);
-    GPR_ASSERT(client);
+    CHECK(client);
     return client;
   }
 
@@ -361,7 +361,7 @@ class ProxyFixture : public CoreTestFixture {
     grpc_server* s = grpc_server_create(server_args, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(grpc_server_add_http2_port(s, port, server_creds));
+    CHECK(grpc_server_add_http2_port(s, port, server_creds));
     grpc_server_credentials_release(server_creds);
     return s;
   }
@@ -381,7 +381,7 @@ class ProxyFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GPR_ASSERT(grpc_server_add_http2_port(
+    CHECK(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
@@ -395,7 +395,7 @@ class ProxyFixture : public CoreTestFixture {
     auto* client = grpc_channel_create(
         grpc_end2end_proxy_get_client_target(proxy_), creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
-    GPR_ASSERT(client);
+    CHECK(client);
     return client;
   }
   const grpc_end2end_proxy_def proxy_def_ = {CreateProxyServer,
@@ -415,21 +415,13 @@ class SslProxyFixture : public CoreTestFixture {
   static grpc_server* CreateProxyServer(const char* port,
                                         const grpc_channel_args* server_args) {
     grpc_server* s = grpc_server_create(server_args, nullptr);
-    grpc_slice cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+    std::string server_cert = testing::GetFileContents(SERVER_CERT_PATH);
+    std::string server_key = testing::GetFileContents(SERVER_KEY_PATH);
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                    server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
-    GPR_ASSERT(grpc_server_add_http2_port(s, port, ssl_creds));
+    CHECK(grpc_server_add_http2_port(s, port, ssl_creds));
     grpc_server_credentials_release(ssl_creds);
     return s;
   }
@@ -457,20 +449,12 @@ class SslProxyFixture : public CoreTestFixture {
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    grpc_slice cert_slice, key_slice;
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_CERT_PATH, 1, &cert_slice)));
-    GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "load_file", grpc_load_file(SERVER_KEY_PATH, 1, &key_slice)));
-    const char* server_cert =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-    const char* server_key =
-        reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
-    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key, server_cert};
+    std::string server_cert = testing::GetFileContents(SERVER_CERT_PATH);
+    std::string server_key = testing::GetFileContents(SERVER_KEY_PATH);
+    grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {server_key.c_str(),
+                                                    server_cert.c_str()};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
         nullptr, &pem_key_cert_pair, 1, 0, nullptr);
-    grpc_slice_unref(cert_slice);
-    grpc_slice_unref(key_slice);
     if (args.Contains(FAIL_AUTH_CHECK_SERVER_ARG_NAME)) {
       grpc_auth_metadata_processor processor = {ProcessAuthFailure, nullptr,
                                                 nullptr};
@@ -479,7 +463,7 @@ class SslProxyFixture : public CoreTestFixture {
 
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GPR_ASSERT(grpc_server_add_http2_port(
+    CHECK(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), ssl_creds));
     grpc_server_credentials_release(ssl_creds);
     pre_server_start(server);
@@ -496,7 +480,7 @@ class SslProxyFixture : public CoreTestFixture {
         args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr")
             .ToC()
             .get());
-    GPR_ASSERT(client != nullptr);
+    CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(ssl_creds);
     return client;
   }
@@ -535,6 +519,38 @@ class FixtureWithTracing final : public CoreTestFixture {
   std::unique_ptr<CoreTestFixture> fixture_;
 };
 
+class ChaoticGoodFixture final : public CoreTestFixture {
+ public:
+  explicit ChaoticGoodFixture(std::string localaddr = JoinHostPort(
+                                  "localhost", grpc_pick_unused_port_or_die()))
+      : localaddr_(std::move(localaddr)) {}
+
+ protected:
+  const std::string& localaddr() const { return localaddr_; }
+
+ private:
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+    auto* server = grpc_server_create(args.ToC().get(), nullptr);
+    grpc_server_register_completion_queue(server, cq, nullptr);
+    CHECK(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
+    pre_server_start(server);
+    grpc_server_start(server);
+    return server;
+  }
+
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue*) override {
+    auto* client = grpc_chaotic_good_channel_create(
+        localaddr_.c_str(),
+        args.Set(GRPC_ARG_ENABLE_RETRIES, false).ToC().get());
+    return client;
+  }
+
+  std::string localaddr_;
+};
+
 #ifdef GRPC_POSIX_WAKEUP_FD
 class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
  public:
@@ -550,8 +566,27 @@ class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
 };
 #endif
 
-std::vector<CoreTestConfiguration> AllConfigs() {
-  std::vector<CoreTestConfiguration> configs {
+// Returns the temp directory to create uds in this test.
+std::string GetTempDir() {
+#ifdef GPR_WINDOWS
+  // Windows temp dir usually exceeds uds max paht length,
+  // so we create a short dir for this test.
+  // TODO: find a better solution.
+  std::string temp_dir = "C:/tmp/";
+  if (CreateDirectoryA(temp_dir.c_str(), NULL) == 0 &&
+      ERROR_ALREADY_EXISTS != GetLastError()) {
+    Crash(absl::StrCat("Could not create temp dir: ", temp_dir));
+  }
+  return temp_dir;
+#else
+  return "/tmp/";
+#endif  // GPR_WINDOWS
+}
+
+const std::string temp_dir = GetTempDir();
+
+std::vector<CoreTestConfiguration> DefaultConfigs() {
+  return std::vector<CoreTestConfiguration> {
 #ifdef GRPC_POSIX_SOCKET
     CoreTestConfiguration{"Chttp2Fd",
                           FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
@@ -644,9 +679,10 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
-                      "unix:/tmp/grpc_fullstack_test.%%25.%d.%" PRId64
-                      ".%" PRId32 ".%" PRId64 ".%" PRId64,
-                      getpid(), now.tv_sec, now.tv_nsec,
+                      "unix:%s"
+                      "grpc_fullstack_test.%%25.%d.%" PRId64 ".%" PRId32
+                      ".%" PRId64 ".%" PRId64,
+                      temp_dir, getpid(), now.tv_sec, now.tv_nsec,
                       unique.fetch_add(1, std::memory_order_relaxed), Rand()),
                   UDS);
             }},
@@ -662,9 +698,10 @@ std::vector<CoreTestConfiguration> AllConfigs() {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
               return std::make_unique<LocalTestFixture>(
                   absl::StrFormat(
-                      "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                      ".%" PRId64 ".%" PRId64,
-                      getpid(), now.tv_sec, now.tv_nsec,
+                      "unix:%s"
+                      "grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%" PRId64
+                      ".%" PRId64,
+                      temp_dir, getpid(), now.tv_sec, now.tv_nsec,
                       unique.fetch_add(1, std::memory_order_relaxed), Rand()),
                   UDS);
             }},
@@ -906,9 +943,10 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             [](const ChannelArgs&, const ChannelArgs&) {
               gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
               return std::make_unique<InsecureFixture>(absl::StrFormat(
-                  "unix:/tmp/grpc_fullstack_test.%d.%" PRId64 ".%" PRId32
-                  ".%" PRId64 ".%" PRId64,
-                  getpid(), now.tv_sec, now.tv_nsec,
+                  "unix:%s"
+                  "grpc_fullstack_test.%d.%" PRId64 ".%" PRId32 ".%" PRId64
+                  ".%" PRId64,
+                  temp_dir, getpid(), now.tv_sec, now.tv_nsec,
                   unique.fetch_add(1, std::memory_order_relaxed), Rand()));
             }},
 #endif
@@ -949,6 +987,28 @@ std::vector<CoreTestConfiguration> AllConfigs() {
             }},
 #endif
   };
+}
+
+std::vector<CoreTestConfiguration> ChaoticGoodFixtures() {
+  return std::vector<CoreTestConfiguration>{
+      CoreTestConfiguration{"ChaoticGoodFullStack",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
+                            nullptr,
+                            [](const ChannelArgs& /*client_args*/,
+                               const ChannelArgs& /*server_args*/) {
+                              return std::make_unique<ChaoticGoodFixture>();
+                            }}};
+}
+
+std::vector<CoreTestConfiguration> AllConfigs() {
+  std::vector<CoreTestConfiguration> configs;
+  if (IsExperimentEnabledInConfiguration(kExperimentIdChaoticGood)) {
+    configs = ChaoticGoodFixtures();
+  } else {
+    configs = DefaultConfigs();
+  }
   std::sort(configs.begin(), configs.end(),
             [](const CoreTestConfiguration& a, const CoreTestConfiguration& b) {
               return strcmp(a.name, b.name) < 0;

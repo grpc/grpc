@@ -106,17 +106,22 @@ static void* grpc_rb_wait_for_event_no_gil(void* param) {
   return NULL;
 }
 
-static void grpc_rb_event_unblocking_func(void* arg) {
+static void* grpc_rb_event_unblocking_func_wrapper(void* arg) {
   (void)arg;
   gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
   gpr_cv_signal(&event_queue.cv);
   gpr_mu_unlock(&event_queue.mu);
+  return NULL;
+}
+
+static void grpc_rb_event_unblocking_func(void* arg) {
+  grpc_rb_event_unblocking_func_wrapper(arg);
 }
 
 /* This is the implementation of the thread that handles auth metadata plugin
  * events */
-static VALUE grpc_rb_event_thread(VALUE arg) {
+static VALUE grpc_rb_event_thread(void* arg) {
   grpc_rb_event* event;
   (void)arg;
   while (true) {
@@ -155,7 +160,8 @@ void grpc_rb_event_queue_thread_stop() {
             "GRPC_RUBY: call credentials thread stop: thread not running");
     return;
   }
-  rb_thread_call_without_gvl(grpc_rb_event_unblocking_func, NULL, NULL, NULL);
+  rb_thread_call_without_gvl(grpc_rb_event_unblocking_func_wrapper, NULL, NULL,
+                             NULL);
   rb_funcall(g_event_thread, rb_intern("join"), 0);
   g_event_thread = Qnil;
 }

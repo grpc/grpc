@@ -20,7 +20,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "absl/log/log.h"
+
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
@@ -115,7 +117,7 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
 
 // Tests that we ignore Listener deletions if configured to do so.
 TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
-  InitClient(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
+  InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -470,6 +472,8 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 }
 
 TEST_P(LdsRdsTest, NoMatchingRoute) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   route_config.mutable_virtual_hosts(0)
       ->mutable_routes(0)
@@ -527,6 +531,8 @@ TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
 // Tests that LDS client should fail RPCs with UNAVAILABLE status code if the
 // matching route has an action other than RouteAction.
 TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   // Set a route with an inappropriate route action
   auto* vhost = route_config.mutable_virtual_hosts(0);
@@ -975,8 +981,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
+  LOG(INFO) << "target_75 received " << weight_75_request_count
+            << " rpcs and target_25 received " << weight_25_request_count
+            << " rpcs";
   EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs,
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs,
@@ -1057,8 +1064,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterNoIntegerOverflow) {
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight2_request_count =
       backends_[2]->backend_service1()->request_count();
-  gpr_log(GPR_INFO, "target1 received %d rpcs and target2 received %d rpcs",
-          weight1_request_count, weight2_request_count);
+  LOG(INFO) << "target1 received " << weight1_request_count
+            << " rpcs and target2 received " << weight2_request_count
+            << " rpcs";
   EXPECT_THAT(static_cast<double>(weight1_request_count) / kNumEcho1Rpcs,
               ::testing::DoubleNear(kWeight1Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight2_request_count) / kNumEcho1Rpcs,
@@ -1125,8 +1133,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
       backends_[1]->backend_service()->request_count();
   const int weight_25_request_count =
       backends_[2]->backend_service()->request_count();
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
+  LOG(INFO) << "target_75 received " << weight_75_request_count
+            << " rpcs and target_25 received " << weight_25_request_count
+            << " rpcs";
   EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEchoRpcs,
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEchoRpcs,
@@ -1228,8 +1237,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
+  LOG(INFO) << "target_75 received " << weight_75_request_count
+            << " rpcs and target_25 received " << weight_25_request_count
+            << " rpcs";
   EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
@@ -1359,8 +1369,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
+  LOG(INFO) << "target_75 received " << weight_75_request_count
+            << " rpcs and target_25 received " << weight_25_request_count
+            << " rpcs";
   EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
@@ -1415,8 +1426,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   weight_25_request_count = backends_[3]->backend_service1()->request_count();
-  gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
-          weight_75_request_count, weight_25_request_count);
+  LOG(INFO) << "target_75 received " << weight_75_request_count
+            << " rpcs and target_25 received " << weight_25_request_count
+            << " rpcs";
   EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
               ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,

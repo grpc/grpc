@@ -16,16 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 const size_t kBiosDataBufferSize = 256;
 
@@ -57,7 +58,7 @@ namespace internal {
 char* read_bios_file(const char* bios_file) {
   FILE* fp = fopen(bios_file, "r");
   if (!fp) {
-    gpr_log(GPR_INFO, "BIOS data file does not exist or cannot be opened.");
+    LOG(INFO) << "BIOS data file does not exist or cannot be opened.";
     return nullptr;
   }
   char buf[kBiosDataBufferSize + 1];

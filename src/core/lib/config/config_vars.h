@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H
 #define GRPC_SRC_CORE_LIB_CONFIG_CONFIG_VARS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <atomic>
@@ -28,6 +26,8 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -38,6 +38,7 @@ class GPR_DLL ConfigVars {
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
     absl::optional<bool> not_use_system_ssl_roots;
+    absl::optional<bool> absl_logging;
     absl::optional<std::string> dns_resolver;
     absl::optional<std::string> verbosity;
     absl::optional<std::string> stacktrace_minloglevel;
@@ -102,6 +103,8 @@ class GPR_DLL ConfigVars {
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
+  // Use absl logging from within gpr_log.
+  bool AbslLogging() const { return absl_logging_; }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
@@ -111,6 +114,7 @@ class GPR_DLL ConfigVars {
   bool enable_fork_support_;
   bool abort_on_leaks_;
   bool not_use_system_ssl_roots_;
+  bool absl_logging_;
   std::string dns_resolver_;
   std::string verbosity_;
   std::string stacktrace_minloglevel_;

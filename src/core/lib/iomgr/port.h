@@ -30,6 +30,9 @@
 #endif
 #if defined(GPR_WINDOWS)
 #define GRPC_WINSOCK_SOCKET 1
+#ifndef __MINGW32__
+#define GRPC_HAVE_UNIX_SOCKET 1
+#endif  // __MINGW32__
 #define GRPC_WINDOWS_SOCKETUTILS 1
 #define GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER 1
 #elif defined(GPR_ANDROID)

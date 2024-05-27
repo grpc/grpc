@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 
 #include <stdint.h>
@@ -21,9 +19,12 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/event_engine/slice.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
@@ -49,7 +50,7 @@ Slice CopyConstructors<Slice>::FromCopiedString(std::string s) {
 
 MutableSlice::MutableSlice(const grpc_slice& slice)
     : slice_detail::BaseSlice(slice) {
-  GPR_DEBUG_ASSERT(slice.refcount == nullptr || slice.refcount->IsUnique());
+  DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
 }
 
 MutableSlice::~MutableSlice() { grpc_core::CSliceUnref(c_slice()); }

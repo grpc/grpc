@@ -33,7 +33,7 @@
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/ext/filters/backend_metrics/backend_metric_provider.h"
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 
 namespace grpc {
 namespace experimental {

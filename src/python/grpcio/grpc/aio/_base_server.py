@@ -93,11 +93,12 @@ class Server(abc.ABC):
         This method immediately stops the server from servicing new RPCs in
         all cases.
 
-        If a grace period is specified, this method returns immediately and all
-        RPCs active at the end of the grace period are aborted. If a grace
-        period is not specified (by passing None for grace), all existing RPCs
-        are aborted immediately and this method blocks until the last RPC
-        handler terminates.
+        If a grace period is specified, this method waits until all active
+        RPCs are finished or until the grace period is reached. RPCs that haven't
+        been terminated within the grace period are aborted.
+        If a grace period is not specified (by passing None for grace), all
+        existing RPCs are aborted immediately and this method blocks until
+        the last RPC handler terminates.
 
         This method is idempotent and may be called at any time. Passing a
         smaller grace value in a subsequent call will have the effect of
@@ -133,6 +134,17 @@ class Server(abc.ABC):
 
         Returns:
           A bool indicates if the operation times out.
+        """
+
+    def add_registered_method_handlers(self, service_name, method_handlers):
+        """Registers GenericRpcHandlers with this Server.
+
+        This method is only safe to call before the server is started.
+
+        Args:
+          service_name: The service name.
+          method_handlers: A dictionary that maps method names to corresponding
+            RpcMethodHandler.
         """
 
 

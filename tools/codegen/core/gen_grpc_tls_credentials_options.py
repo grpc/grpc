@@ -101,7 +101,7 @@ _DATA_MEMBERS = [
         ),
         test_name="DifferentCertificateVerifier",
         test_value_1="MakeRefCounted<HostNameCertificateVerifier>()",
-        test_value_2='MakeRefCounted<XdsCertificateVerifier>(nullptr, "")',
+        test_value_2="MakeRefCounted<XdsCertificateVerifier>(nullptr)",
     ),
     DataMember(
         name="check_call_host",
@@ -305,6 +305,7 @@ print(
 
 #include "absl/container/inlined_vector.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -469,9 +470,11 @@ print(
 
 #include <gmock/gmock.h>
 
+#include <grpc/credentials.h>
+
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {

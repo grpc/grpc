@@ -15,12 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_DETAIL_STATUS_H
 #define GRPC_SRC_CORE_LIB_PROMISE_DETAIL_STATUS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 // Helpers for dealing with absl::Status/StatusOr generically
 
@@ -45,6 +46,11 @@ inline absl::Status IntoStatus(absl::Status* status) {
 // can participate in TrySeq as result types that affect control flow.
 inline bool IsStatusOk(const absl::Status& status) { return status.ok(); }
 
+template <typename T>
+inline bool IsStatusOk(const absl::StatusOr<T>& status) {
+  return status.ok();
+}
+
 template <typename To, typename From, typename SfinaeVoid = void>
 struct StatusCastImpl;
 
@@ -59,18 +65,50 @@ struct StatusCastImpl<To, const To&> {
 };
 
 template <typename T>
-struct StatusCastImpl<absl::StatusOr<T>, absl::Status> {
+struct StatusCastImpl<absl::Status, absl::StatusOr<T>> {
+  static absl::Status Cast(absl::StatusOr<T>&& t) {
+    return std::move(t.status());
+  }
+};
+
+template <typename T>
+struct StatusCastImpl<absl::Status, absl::StatusOr<T>&> {
+  static absl::Status Cast(const absl::StatusOr<T>& t) { return t.status(); }
+};
+
+template <typename T>
+struct StatusCastImpl<absl::Status, const absl::StatusOr<T>&> {
+  static absl::Status Cast(const absl::StatusOr<T>& t) { return t.status(); }
+};
+
+// StatusCast<> allows casting from one status-bearing type to another,
+// regardless of whether the status indicates success or failure.
+// This means that we can go from StatusOr to Status safely, but not in the
+// opposite direction.
+// For cases where the status is guaranteed to be a failure (and hence not
+// needing to preserve values) see FailureStatusCast<> below.
+template <typename To, typename From>
+To StatusCast(From&& from) {
+  return StatusCastImpl<To, From>::Cast(std::forward<From>(from));
+}
+
+template <typename To, typename From, typename SfinaeVoid = void>
+struct FailureStatusCastImpl : public StatusCastImpl<To, From> {};
+
+template <typename T>
+struct FailureStatusCastImpl<absl::StatusOr<T>, absl::Status> {
   static absl::StatusOr<T> Cast(absl::Status&& t) { return std::move(t); }
 };
 
 template <typename T>
-struct StatusCastImpl<absl::StatusOr<T>, const absl::Status&> {
+struct FailureStatusCastImpl<absl::StatusOr<T>, const absl::Status&> {
   static absl::StatusOr<T> Cast(const absl::Status& t) { return t; }
 };
 
 template <typename To, typename From>
-To StatusCast(From&& from) {
-  return StatusCastImpl<To, From>::Cast(std::forward<From>(from));
+To FailureStatusCast(From&& from) {
+  DCHECK(!IsStatusOk(from));
+  return FailureStatusCastImpl<To, From>::Cast(std::forward<From>(from));
 }
 
 }  // namespace grpc_core

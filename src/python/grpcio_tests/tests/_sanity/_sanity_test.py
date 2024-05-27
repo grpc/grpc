@@ -42,6 +42,7 @@ class SanityTest(unittest.TestCase):
 
         tests_json_string = pkgutil.get_data(self.TEST_PKG_PATH, "tests.json")
         tests_json = json.loads(tests_json_string.decode())
+        final_tests = []
 
         # Observability is not supported in Windows and MacOS and Asyncio.
         if (
@@ -50,10 +51,12 @@ class SanityTest(unittest.TestCase):
             or self.TEST_PKG_PATH == "tests_aio"
         ):
             for test_case in tests_json:
-                if "_observability_test" in test_case:
-                    tests_json.remove(test_case)
+                if "observability" not in test_case:
+                    final_tests.append(test_case)
+        else:
+            final_tests = tests_json
 
-        self.assertSequenceEqual(tests_json, test_suite_names)
+        self.assertSequenceEqual(final_tests, test_suite_names)
         self.assertGreater(len(test_suite_names), 0)
 
 

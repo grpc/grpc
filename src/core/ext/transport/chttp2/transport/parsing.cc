@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <string.h>
 
@@ -30,6 +28,8 @@
 
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -41,7 +41,9 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -58,8 +60,6 @@
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/backoff/random_early_detection.h"
-#include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -75,6 +75,7 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 using grpc_core::HPackParser;
 
@@ -268,7 +269,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_0:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_frame_size = (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_1;
@@ -276,7 +277,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_1:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_frame_size |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_2;
@@ -284,7 +285,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_2:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_frame_size |= *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_3;
@@ -292,7 +293,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_3:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_frame_type = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_4;
@@ -300,7 +301,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_4:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_frame_flags = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_5;
@@ -308,7 +309,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_5:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_stream_id = ((static_cast<uint32_t>(*cur)) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_6;
@@ -316,7 +317,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_6:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_7;
@@ -324,7 +325,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_7:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_8;
@@ -332,7 +333,7 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FH_8:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
       if (grpc_http_trace.enabled()) {
         gpr_log(GPR_INFO, "INCOMING[%p]: %s len:%d id:0x%08x", t,
@@ -357,20 +358,17 @@ absl::variant<size_t, absl::Status> grpc_chttp2_perform_read(
         }
         goto dts_fh_0;  // loop
       } else if (t->incoming_frame_size >
-                 t->settings[GRPC_ACKED_SETTINGS]
-                            [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]) {
-        return GRPC_ERROR_CREATE(
-            absl::StrFormat("Frame size %d is larger than max frame size %d",
-                            t->incoming_frame_size,
-                            t->settings[GRPC_ACKED_SETTINGS]
-                                       [GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE]));
+                 t->settings.acked().max_frame_size()) {
+        return GRPC_ERROR_CREATE(absl::StrFormat(
+            "Frame size %d is larger than max frame size %d",
+            t->incoming_frame_size, t->settings.acked().max_frame_size()));
       }
       if (++cur == end) {
         return absl::OkStatus();
       }
       ABSL_FALLTHROUGH_INTENDED;
     case GRPC_DTS_FRAME:
-      GPR_DEBUG_ASSERT(cur < end);
+      DCHECK_LT(cur, end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {
         err = parse_frame_slice(
             t,
@@ -505,8 +503,7 @@ static grpc_error_handle init_header_skip_frame_parser(
       /*metadata_size_soft_limit=*/
       t->max_header_list_size_soft_limit,
       /*metadata_size_hard_limit=*/
-      t->settings[GRPC_ACKED_SETTINGS]
-                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
+      t->settings.acked().max_header_list_size(),
       hpack_boundary_type(t, is_eoh), priority_type,
       hpack_parser_log_info(t, HPackParser::LogInfo::kDontKnow));
   return absl::OkStatus();
@@ -646,21 +643,14 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
           "ignoring grpc_chttp2_stream with non-client generated index %d",
           t->incoming_stream_id));
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (GPR_UNLIKELY(
-                   t->stream_map.size() + t->extra_streams >=
-                   t->settings[GRPC_ACKED_SETTINGS]
-                              [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
-      if (grpc_core::IsRfcMaxConcurrentStreamsEnabled()) {
-        ++t->num_pending_induced_frames;
-        grpc_slice_buffer_add(
-            &t->qbuf,
-            grpc_chttp2_rst_stream_create(t->incoming_stream_id,
+    } else if (GPR_UNLIKELY(t->stream_map.size() + t->extra_streams >=
+                            t->settings.acked().max_concurrent_streams())) {
+      ++t->num_pending_induced_frames;
+      grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_rst_stream_create(
+                                          t->incoming_stream_id,
                                           GRPC_HTTP2_REFUSED_STREAM, nullptr));
-        grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
-        return init_header_skip_frame_parser(t, priority_type, is_eoh);
-      } else {
-        return GRPC_ERROR_CREATE("Max stream count exceeded");
-      }
+      grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
                    t->max_concurrent_streams_overload_protection &&
                    t->streams_allocated.load(std::memory_order_relaxed) >
@@ -674,13 +664,11 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     } else if (GPR_UNLIKELY(
-                   grpc_core::IsRedMaxConcurrentStreamsEnabled() &&
                    t->stream_map.size() >=
                        t->max_concurrent_streams_policy.AdvertiseValue() &&
                    grpc_core::RandomEarlyDetection(
                        t->max_concurrent_streams_policy.AdvertiseValue(),
-                       t->settings[GRPC_ACKED_SETTINGS]
-                                  [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])
+                       t->settings.acked().max_concurrent_streams())
                        .Reject(t->stream_map.size(), t->bitgen))) {
       // We are under the limit of max concurrent streams for the current
       // setting, but are over the next value that will be advertised.
@@ -743,7 +731,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
   } else {
     t->incoming_stream = s;
   }
-  GPR_DEBUG_ASSERT(s != nullptr);
+  DCHECK_NE(s, nullptr);
   s->stats.incoming.framing_bytes += 9;
   if (GPR_UNLIKELY(s->read_closed)) {
     GRPC_CHTTP2_IF_TRACING(gpr_log(
@@ -782,22 +770,20 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       frame_type = HPackParser::LogInfo::kTrailers;
       break;
     case 2:
-      gpr_log(GPR_ERROR, "too many header frames received");
+      LOG(ERROR) << "too many header frames received";
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
   }
   if (frame_type == HPackParser::LogInfo::kTrailers && !t->header_eof) {
     return GRPC_ERROR_CREATE(
         "Trailing metadata frame received without an end-o-stream");
   }
-  t->hpack_parser.BeginFrame(
-      incoming_metadata_buffer,
-      /*metadata_size_soft_limit=*/
-      t->max_header_list_size_soft_limit,
-      /*metadata_size_hard_limit=*/
-      t->settings[GRPC_ACKED_SETTINGS]
-                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE],
-      hpack_boundary_type(t, is_eoh), priority_type,
-      hpack_parser_log_info(t, frame_type));
+  t->hpack_parser.BeginFrame(incoming_metadata_buffer,
+                             /*metadata_size_soft_limit=*/
+                             t->max_header_list_size_soft_limit,
+                             /*metadata_size_hard_limit=*/
+                             t->settings.acked().max_header_list_size(),
+                             hpack_boundary_type(t, is_eoh), priority_type,
+                             hpack_parser_log_info(t, frame_type));
   return absl::OkStatus();
 }
 
@@ -868,21 +854,20 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
 
   grpc_error_handle err = grpc_chttp2_settings_parser_begin_frame(
       &t->simple.settings, t->incoming_frame_size, t->incoming_frame_flags,
-      t->settings[GRPC_PEER_SETTINGS]);
+      t->settings.mutable_peer());
   if (!err.ok()) {
     return err;
   }
   if (t->incoming_frame_flags & GRPC_CHTTP2_FLAG_ACK) {
     t->max_concurrent_streams_policy.AckLastSend();
-    memcpy(t->settings[GRPC_ACKED_SETTINGS], t->settings[GRPC_SENT_SETTINGS],
-           GRPC_CHTTP2_NUM_SETTINGS * sizeof(uint32_t));
+    if (!t->settings.AckLastSend()) {
+      return GRPC_ERROR_CREATE("Received unexpected settings ack");
+    }
     t->hpack_parser.hpack_table()->SetMaxBytes(
-        t->settings[GRPC_ACKED_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_HEADER_TABLE_SIZE]);
+        t->settings.acked().header_table_size());
     grpc_chttp2_act_on_flowctl_action(
         t->flow_control.SetAckedInitialWindow(
-            t->settings[GRPC_ACKED_SETTINGS]
-                       [GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE]),
+            t->settings.acked().initial_window_size()),
         t, nullptr);
     if (t->settings_ack_watchdog !=
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid) {
@@ -890,7 +875,6 @@ static grpc_error_handle init_settings_frame_parser(grpc_chttp2_transport* t) {
           t->settings_ack_watchdog,
           grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid));
     }
-    t->sent_local_settings = false;
     // This is more streams than can be started in http2, so setting this
     // effictively removes the limit for the rest of the connection.
     t->num_incoming_streams_before_settings_ack =
@@ -906,10 +890,9 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                                            int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
   if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
-            "INCOMING[%p;%p]: Parse %" PRIdPTR "b %sframe fragment with %s", t,
-            s, GRPC_SLICE_LENGTH(slice), is_last ? "last " : "",
-            t->parser.name);
+    VLOG(2) << "INCOMING[" << t << ";" << s << "]: Parse "
+            << GRPC_SLICE_LENGTH(slice) << "b " << (is_last ? "last " : "")
+            << "frame fragment with " << t->parser.name;
   }
   grpc_error_handle err =
       t->parser.parser(t->parser.user_data, t, s, slice, is_last);

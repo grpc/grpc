@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CALL_FINALIZATION_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_final_info.h"
 
 namespace grpc_core {
 

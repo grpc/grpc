@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/local/local_security_connector.h"
 
 #include <string.h>
@@ -25,6 +23,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -35,9 +34,12 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -57,8 +59,6 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/tsi/local_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -78,12 +78,12 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_LOCAL_TRANSPORT_SECURITY_TYPE);
-  GPR_ASSERT(grpc_auth_context_set_peer_identity_property_name(
-                 ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1);
-  GPR_ASSERT(peer->property_count == 1);
+  CHECK(grpc_auth_context_set_peer_identity_property_name(
+            ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1);
+  CHECK_EQ(peer->property_count, 1u);
   const tsi_peer_property* prop = &peer->properties[0];
-  GPR_ASSERT(prop != nullptr);
-  GPR_ASSERT(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0);
+  CHECK_NE(prop, nullptr);
+  CHECK_EQ(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY), 0);
   grpc_auth_context_add_property(ctx.get(),
                                  GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
                                  prop->value.data, prop->value.length);
@@ -183,7 +183,7 @@ class grpc_local_channel_security_connector final
       grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    GPR_ASSERT(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+    CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -238,7 +238,7 @@ class grpc_local_server_security_connector final
       grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    GPR_ASSERT(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+    CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }

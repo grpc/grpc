@@ -12,14 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 
 #include <errno.h>
 #include <limits.h>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -27,11 +26,12 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
@@ -49,6 +49,7 @@
 #include <atomic>
 #include <cstring>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/log.h>
@@ -58,8 +59,15 @@
 #include "src/core/lib/gprpp/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <ws2def.h>
+#include <afunix.h>
+// clang-format on
+#else
 #include <sys/stat.h>  // IWYU pragma: keep
 #include <sys/un.h>
+#endif  // GPR_WINDOWS
 #endif
 
 namespace grpc_event_engine {
@@ -646,7 +654,7 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
       }
       if (newval != timeout) {
         // Do not fail on failing to set TCP_USER_TIMEOUT
-        gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+        LOG(ERROR) << "Failed to set TCP_USER_TIMEOUT";
         return;
       }
     }
@@ -656,7 +664,7 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
 // Set a socket using a grpc_socket_mutator
 absl::Status PosixSocketWrapper::SetSocketMutator(
     grpc_fd_usage usage, grpc_socket_mutator* mutator) {
-  GPR_ASSERT(mutator);
+  CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd_, usage)) {
     return absl::Status(absl::StatusCode::kInternal,
                         "grpc_socket_mutator failed.");
@@ -677,7 +685,7 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
     bool loopback_available = false;
     if (fd < 0) {
-      gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+      LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
     } else {
       sockaddr_in6 addr;
       memset(&addr, 0, sizeof(addr));

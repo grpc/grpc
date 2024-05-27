@@ -19,6 +19,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -157,6 +158,70 @@ class NotifyOnDelete {
 
  private:
   grpc_core::Notification* signal_;
+};
+
+// An endpoint implementation that supports Read and Write via std::threads.
+// Passing a grpc_core::Notification will allow owners to know when all
+// in-flight callbacks have been run, and all endpoint state has been destroyed.
+class ThreadedNoopEndpoint : public EventEngine::Endpoint {
+ public:
+  explicit ThreadedNoopEndpoint(grpc_core::Notification* destroyed)
+      : state_(std::make_shared<EndpointState>(destroyed)) {}
+  ~ThreadedNoopEndpoint() override {
+    std::thread deleter([state = state_]() {
+      CleanupThread(state->read);
+      CleanupThread(state->write);
+    });
+    deleter.detach();
+  }
+
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            const ReadArgs* /* args */) override {
+    buffer->Clear();
+    CleanupThread(state_->read);
+    state_->read = new std::thread([cb = std::move(on_read)]() mutable {
+      cb(absl::UnknownError("test"));
+    });
+    return false;
+  }
+
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, const WriteArgs* /* args */) override {
+    data->Clear();
+    CleanupThread(state_->write);
+    state_->write = new std::thread([cb = std::move(on_writable)]() mutable {
+      cb(absl::UnknownError("test"));
+    });
+    return false;
+  }
+
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    return peer_;
+  }
+
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    return local_;
+  }
+
+ private:
+  struct EndpointState {
+    explicit EndpointState(grpc_core::Notification* deleter)
+        : delete_notifier_(deleter) {}
+    std::thread* read = nullptr;
+    std::thread* write = nullptr;
+    NotifyOnDelete delete_notifier_;
+  };
+
+  static void CleanupThread(std::thread* thd) {
+    if (thd != nullptr) {
+      thd->join();
+      delete thd;
+    }
+  }
+
+  std::shared_ptr<EndpointState> state_;
+  EventEngine::ResolvedAddress peer_;
+  EventEngine::ResolvedAddress local_;
 };
 
 }  // namespace experimental

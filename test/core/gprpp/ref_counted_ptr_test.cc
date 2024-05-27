@@ -21,13 +21,14 @@
 #include <memory>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -274,9 +275,9 @@ class Bar : public DualRefCounted<Bar> {
 
   explicit Bar(int value) : value_(value) {}
 
-  ~Bar() override { GPR_ASSERT(shutting_down_); }
+  ~Bar() override { CHECK(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
   int value() const { return value_; }
 
@@ -430,9 +431,9 @@ class BarWithTracing : public DualRefCounted<BarWithTracing> {
  public:
   BarWithTracing() : DualRefCounted("BarWithTracing") {}
 
-  ~BarWithTracing() override { GPR_ASSERT(shutting_down_); }
+  ~BarWithTracing() override { CHECK(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
  private:
   bool shutting_down_ = false;
@@ -453,9 +454,9 @@ class WeakBaseClass : public DualRefCounted<WeakBaseClass> {
  public:
   WeakBaseClass() {}
 
-  ~WeakBaseClass() override { GPR_ASSERT(shutting_down_); }
+  ~WeakBaseClass() override { CHECK(shutting_down_); }
 
-  void Orphan() override { shutting_down_ = true; }
+  void Orphaned() override { shutting_down_ = true; }
 
  private:
   bool shutting_down_ = false;

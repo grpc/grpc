@@ -15,14 +15,14 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 #define GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include "src/core/lib/channel/call_tracer.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {
 
@@ -30,7 +30,8 @@ class PythonOpenCensusServerCallTracerFactory
     : public grpc_core::ServerCallTracerFactory {
  public:
   grpc_core::ServerCallTracer* CreateNewServerCallTracer(
-      grpc_core::Arena* arena) override;
+      grpc_core::Arena* arena,
+      const grpc_core::ChannelArgs& channel_args) override;
 };
 
 inline absl::string_view GetMethod(const grpc_core::Slice& path) {

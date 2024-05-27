@@ -36,7 +36,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #include <chrono>
 #include <future>
@@ -111,7 +111,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   std::promise<grpc_error_handle> connected_promise;
   grpc_closure done;
 
-  gpr_log(GPR_DEBUG, "test_succeeds");
+  VLOG(2) << "test_succeeds";
 
   auto resolved_addr = grpc_core::StringToSockaddr("127.0.0.1:0");
   struct sockaddr_in *addr = reinterpret_cast<struct sockaddr_in *>(resolved_addr->addr);

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 
 #include <inttypes.h>
@@ -30,17 +28,19 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
-#include "test/core/util/build.h"
+#include "test/core/test_util/build.h"
 
 TEST(GrpcSliceTest, MallocReturnsSomethingSensible) {
   // Calls grpc_slice_create for various lengths and verifies the internals for
@@ -183,7 +183,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitHeadWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.
@@ -212,7 +212,7 @@ TEST_P(GrpcSliceSizedTest, SliceSplitTailWorks) {
   grpc_slice head, tail;
   size_t i;
 
-  gpr_log(GPR_INFO, "length=%" PRIuPTR, length);
+  LOG(INFO) << "length=" << length;
 
   // Create a slice in which each byte is equal to the distance from it to the
   // beginning of the slice.

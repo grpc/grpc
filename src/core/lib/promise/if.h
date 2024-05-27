@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_IF_H
 #define GRPC_SRC_CORE_LIB_PROMISE_IF_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -192,6 +192,10 @@ class If<bool, T, F> {
 // If it returns failure, returns failure for the entire combinator.
 // If it returns true, evaluates the second promise.
 // If it returns false, evaluates the third promise.
+// If C is a constant, it's guaranteed that one of the promise factories
+// if_true or if_false will be evaluated before returning from this function.
+// This makes it safe to capture lambda arguments in the promise factory by
+// reference.
 template <typename C, typename T, typename F>
 promise_detail::If<C, T, F> If(C condition, T if_true, F if_false) {
   return promise_detail::If<C, T, F>(std::move(condition), std::move(if_true),

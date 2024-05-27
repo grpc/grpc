@@ -21,12 +21,13 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "google/protobuf/duration.upb.h"
 #include "upb/base/string_view.h"
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
 #include "xds/service/orca/v3/orca.upb.h"
 
@@ -44,13 +45,13 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/backend_metric_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/load_balancing/backend_metric_data.h"
 #include "src/cpp/server/backend_metric_recorder.h"
 
 namespace grpc {
@@ -71,7 +72,7 @@ class OrcaService::Reactor : public ServerWriteReactor<ByteBuffer>,
         engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {
     // Get slice from request.
     Slice slice;
-    GPR_ASSERT(request_buffer->DumpToSingleSlice(&slice).ok());
+    CHECK(request_buffer->DumpToSingleSlice(&slice).ok());
     // Parse request proto.
     upb::Arena arena;
     xds_service_orca_v3_OrcaLoadReportRequest* request =
@@ -173,7 +174,7 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
                          Options options)
     : server_metric_recorder_(server_metric_recorder),
       min_report_duration_(options.min_report_duration) {
-  GPR_ASSERT(server_metric_recorder_ != nullptr);
+  CHECK_NE(server_metric_recorder_, nullptr);
   AddMethod(new internal::RpcServiceMethod(
       "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
       internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));

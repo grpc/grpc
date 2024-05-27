@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 
 #include <atomic>
@@ -20,6 +18,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -29,13 +29,15 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/event_engine/posix.h"
+#include "src/core/lib/event_engine/extensions/can_track_errors.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -47,6 +49,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/string.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -126,7 +129,7 @@ class EventEngineEndpointWrapper {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
+          VLOG(2) << "READ DATA: " << dump;
           gpr_free(dump);
         }
       }
@@ -157,7 +160,7 @@ class EventEngineEndpointWrapper {
         for (i = 0; i < slices->count; i++) {
           char* dump =
               grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          gpr_log(GPR_DEBUG, "WRITE DATA: %s", dump);
+          VLOG(2) << "WRITE DATA: " << dump;
           gpr_free(dump);
         }
       }
@@ -217,9 +220,10 @@ class EventEngineEndpointWrapper {
   void ShutdownUnref() {
     if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
         kShutdownBit + 1) {
-      if (EventEngineSupportsFd() && fd_ > 0 && on_release_fd_) {
-        reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-            ->Shutdown(std::move(on_release_fd_));
+      auto* supports_fd =
+          QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
+      if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+        supports_fd->Shutdown(std::move(on_release_fd_));
       }
       OnShutdownInternal();
     }
@@ -231,7 +235,9 @@ class EventEngineEndpointWrapper {
   // invocation would simply return.
   void TriggerShutdown(
       absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd) {
-    if (EventEngineSupportsFd()) {
+    auto* supports_fd =
+        QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
+    if (supports_fd != nullptr) {
       on_release_fd_ = std::move(on_release_fd);
     }
     int64_t curr = shutdown_ref_.load(std::memory_order_acquire);
@@ -245,9 +251,8 @@ class EventEngineEndpointWrapper {
         Ref();
         if (shutdown_ref_.fetch_sub(1, std::memory_order_acq_rel) ==
             kShutdownBit + 1) {
-          if (EventEngineSupportsFd() && fd_ > 0 && on_release_fd_) {
-            reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-                ->Shutdown(std::move(on_release_fd_));
+          if (supports_fd != nullptr && fd_ > 0 && on_release_fd_) {
+            supports_fd->Shutdown(std::move(on_release_fd_));
           }
           OnShutdownInternal();
         }
@@ -257,9 +262,10 @@ class EventEngineEndpointWrapper {
   }
 
   bool CanTrackErrors() {
-    if (EventEngineSupportsFd()) {
-      return reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-          ->CanTrackErrors();
+    auto* can_track_errors =
+        QueryExtension<EndpointCanTrackErrorsExtension>(endpoint_.get());
+    if (can_track_errors != nullptr) {
+      return can_track_errors->CanTrackErrors();
     } else {
       return false;
     }
@@ -413,9 +419,10 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
       eeep_(std::make_unique<grpc_event_engine_endpoint>()) {
   eeep_->base.vtable = &grpc_event_engine_endpoint_vtable;
   eeep_->wrapper = this;
-  if (EventEngineSupportsFd()) {
-    fd_ = reinterpret_cast<PosixEndpointWithFdSupport*>(endpoint_.get())
-              ->GetWrappedFd();
+  auto* supports_fd =
+      QueryExtension<EndpointSupportsFdExtension>(endpoint_.get());
+  if (supports_fd != nullptr) {
+    fd_ = supports_fd->GetWrappedFd();
   } else {
     fd_ = -1;
   }
@@ -426,7 +433,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
-  GPR_DEBUG_ASSERT(ee_endpoint != nullptr);
+  DCHECK(ee_endpoint != nullptr);
   auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
   return wrapper->GetGrpcEndpoint();
 }

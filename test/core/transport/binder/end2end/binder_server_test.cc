@@ -27,8 +27,8 @@
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/client/channel_create_impl.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/end2end/fake_binder.h"
-#include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
@@ -38,6 +38,8 @@ namespace {
 
 class BinderServerCredentialsImpl final : public ServerCredentials {
  public:
+  BinderServerCredentialsImpl() : ServerCredentials(nullptr) {}
+
   int AddPortToServer(const std::string& addr, grpc_server* server) override {
     return grpc_core::AddBinderPort(
         addr, server,
@@ -49,14 +51,6 @@ class BinderServerCredentialsImpl final : public ServerCredentials {
         std::make_shared<
             grpc::experimental::binder::UntrustedSecurityPolicy>());
   }
-
-  void SetAuthMetadataProcessor(
-      const std::shared_ptr<AuthMetadataProcessor>& /*processor*/) override {
-    grpc_core::Crash("unreachable");
-  }
-
- private:
-  bool IsInsecure() const override { return true; }
 };
 
 }  // namespace

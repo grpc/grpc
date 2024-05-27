@@ -22,7 +22,7 @@
 
 #include "src/proto/grpc/status/status.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace {

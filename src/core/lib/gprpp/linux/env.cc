@@ -21,17 +21,13 @@
 #define _GNU_SOURCE
 #endif
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 
 #include "absl/types/optional.h"
 
-#ifdef GPR_LINUX_ENV
+#include <grpc/support/port_platform.h>
 
-#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
-#include <dlfcn.h>
-#endif
+#ifdef GPR_LINUX_ENV
 
 #include <features.h>
 #include <stdlib.h>
@@ -42,21 +38,7 @@ namespace grpc_core {
 
 absl::optional<std::string> GetEnv(const char* name) {
   char* result = nullptr;
-#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
-  typedef char* (*getenv_type)(const char*);
-  static getenv_type getenv_func = nullptr;
-  // Check to see which getenv variant is supported (go from most
-  // to least secure)
-  if (getenv_func == nullptr) {
-    for (auto name : {"secure_getenv", "__secure_getenv", "getenv"}) {
-      getenv_func = reinterpret_cast<getenv_type>(dlsym(RTLD_DEFAULT, name));
-      if (getenv_func != nullptr) {
-        break;
-      }
-    }
-  }
-  result = getenv_func(name);
-#elif __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)
+#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)
   result = secure_getenv(name);
 #else
   result = getenv(name);

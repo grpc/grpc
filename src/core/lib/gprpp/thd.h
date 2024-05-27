@@ -21,16 +21,17 @@
 
 /// Internal thread interface.
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/thd_id.h>
 
 namespace grpc_core {
 namespace internal {
@@ -47,6 +48,13 @@ class ThreadInternalsInterface {
 
 class Thread {
  public:
+  // Send a signal to the thread.
+  // This is not supported on all platforms
+  static void Signal(gpr_thd_id tid, int sig);
+  // Kill the running thread. Likely not a clean operation.
+  // This is not supported on all platforms.
+  static void Kill(gpr_thd_id tid);
+
   class Options {
    public:
     Options() : joinable_(true), tracked_(true), stack_size_(0) {}
@@ -117,7 +125,7 @@ class Thread {
   Thread& operator=(Thread&& other) noexcept {
     if (this != &other) {
       // TODO(vjpai): if we can be sure that all Thread's are actually
-      // constructed, then we should assert GPR_ASSERT(impl_ == nullptr) here.
+      // constructed, then we should assert CHECK(impl_ == nullptr) here.
       // However, as long as threads come in structures that are
       // allocated via gpr_malloc, this will not be the case, so we cannot
       // assert it for the time being.
@@ -136,11 +144,11 @@ class Thread {
   /// the Join function kills it, or it was detached (non-joinable) and it has
   /// run to completion and is now killing itself. The destructor shouldn't have
   /// to do anything.
-  ~Thread() { GPR_ASSERT(!options_.joinable() || impl_ == nullptr); }
+  ~Thread() { CHECK(!options_.joinable() || impl_ == nullptr); }
 
   void Start() {
     if (impl_ != nullptr) {
-      GPR_ASSERT(state_ == ALIVE);
+      CHECK(state_ == ALIVE);
       state_ = STARTED;
       impl_->Start();
       // If the Thread is not joinable, then the impl_ will cause the deletion
@@ -149,7 +157,7 @@ class Thread {
       // no need to change the value of the impl_ or state_ . The next operation
       // on this object will be the deletion, which will trigger the destructor.
     } else {
-      GPR_ASSERT(state_ == FAILED);
+      CHECK(state_ == FAILED);
     }
   }
 
@@ -161,7 +169,7 @@ class Thread {
       state_ = DONE;
       impl_ = nullptr;
     } else {
-      GPR_ASSERT(state_ == FAILED);
+      CHECK(state_ == FAILED);
     }
   }
 

@@ -194,7 +194,7 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
         $stub = new \Grpc\BaseStub('localhost:50051',
           ['credentials' => \Grpc\ChannelCredentials::createInsecure(),
             'grpc_call_invoker' => $call_invoker]);
-        $this->assertEquals($call_invoker->getChannel()->getTarget(), 'localhost:50050');
+        $this->assertEquals($call_invoker->getChannel()->getTarget(), 'dns:///localhost:50050');
         $call_invoker->getChannel()->close();
     }
 

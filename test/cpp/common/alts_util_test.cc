@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
@@ -27,7 +27,7 @@
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
 
 namespace grpc {

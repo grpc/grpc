@@ -19,9 +19,8 @@
 #ifndef GRPCPP_EXT_SERVER_LOAD_REPORTING_H
 #define GRPCPP_EXT_SERVER_LOAD_REPORTING_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/load_reporting.h>
+#include <grpc/support/port_platform.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>

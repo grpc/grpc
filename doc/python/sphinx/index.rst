@@ -18,6 +18,7 @@ API Reference
    grpc_reflection
    grpc_status
    grpc_testing
+   grpc_observability
    glossary
 
 

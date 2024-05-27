@@ -467,7 +467,7 @@ bool PrivateGenerator::PrintStub(
           out->Print(
               method_dict,
               "response_deserializer=$ResponseModuleAndClass$.FromString,\n");
-          out->Print(")\n");
+          out->Print("_registered_method=True)\n");
         }
       }
     }
@@ -574,6 +574,9 @@ bool PrivateGenerator::PrintAddServicerToServer(
                  "'$PackageQualifiedServiceName$', rpc_method_handlers)\n");
     }
     out->Print("server.add_generic_rpc_handlers((generic_handler,))\n");
+    out->Print(method_dict,
+               "server.add_registered_method_handlers('$"
+               "PackageQualifiedServiceName$', rpc_method_handlers)\n");
   }
   return true;
 }
@@ -642,22 +645,27 @@ bool PrivateGenerator::PrintServiceClass(
         args_dict["ArityMethodName"] = arity_method_name;
         args_dict["PackageQualifiedService"] = package_qualified_service_name;
         args_dict["Method"] = method->name();
-        out->Print(args_dict,
-                   "return "
-                   "grpc.experimental.$ArityMethodName$($RequestParameter$, "
-                   "target, '/$PackageQualifiedService$/$Method$',\n");
+        out->Print(args_dict, "return grpc.experimental.$ArityMethodName$(\n");
         {
           IndentScope continuation_indent(out);
           StringMap serializer_dict;
+          out->Print(args_dict, "$RequestParameter$,\n");
+          out->Print("target,\n");
+          out->Print(args_dict, "'/$PackageQualifiedService$/$Method$',\n");
           serializer_dict["RequestModuleAndClass"] = request_module_and_class;
           serializer_dict["ResponseModuleAndClass"] = response_module_and_class;
           out->Print(serializer_dict,
                      "$RequestModuleAndClass$.SerializeToString,\n");
           out->Print(serializer_dict, "$ResponseModuleAndClass$.FromString,\n");
-          out->Print("options, channel_credentials,\n");
-          out->Print(
-              "insecure, call_credentials, compression, wait_for_ready, "
-              "timeout, metadata)\n");
+          out->Print("options,\n");
+          out->Print("channel_credentials,\n");
+          out->Print("insecure,\n");
+          out->Print("call_credentials,\n");
+          out->Print("compression,\n");
+          out->Print("wait_for_ready,\n");
+          out->Print("timeout,\n");
+          out->Print("metadata,\n");
+          out->Print("_registered_method=True)\n");
         }
       }
     }
@@ -683,6 +691,9 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
   StringMap var;
   var["Package"] = config.grpc_package_root;
   out->Print(var, "import $Package$\n");
+  if (config.grpc_tools_version.size() > 0) {
+    out->Print(var, "import warnings\n");
+  }
   if (generate_in_pb2_grpc) {
     out->Print("\n");
     StringPairSet imports_set;
@@ -726,6 +737,56 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
                                  module_name.substr(last_dot_pos + 1);
       }
       out->Print(var, "$ImportStatement$ as $ModuleAlias$\n");
+    }
+
+    // Checks if generate code is used with a supported grpcio version.
+    if (config.grpc_tools_version.size() > 0) {
+      var["ToolsVersion"] = config.grpc_tools_version;
+      out->Print(var, "\nGRPC_GENERATED_VERSION = '$ToolsVersion$'\n");
+      out->Print("GRPC_VERSION = grpc.__version__\n");
+      out->Print("EXPECTED_ERROR_RELEASE = '1.65.0'\n");
+      out->Print("SCHEDULED_RELEASE_DATE = 'June 25, 2024'\n");
+      out->Print("_version_not_supported = False\n\n");
+      out->Print("try:\n");
+      {
+        IndentScope raii_import_indent(out);
+        out->Print(
+            "from grpc._utilities import first_version_is_lower\n"
+            "_version_not_supported = first_version_is_lower(GRPC_VERSION, "
+            "GRPC_GENERATED_VERSION)\n");
+      }
+      out->Print("except ImportError:\n");
+      {
+        IndentScope raii_import_error_indent(out);
+        out->Print("_version_not_supported = True\n");
+      }
+      out->Print("\nif _version_not_supported:\n");
+      {
+        IndentScope raii_warning_indent(out);
+        out->Print("warnings.warn(\n");
+        {
+          IndentScope raii_warning_string_indent(out);
+          std::string filename_without_ext = file->filename_without_ext();
+          std::replace(filename_without_ext.begin(), filename_without_ext.end(),
+                       '-', '_');
+          var["Pb2GrpcFileName"] = filename_without_ext;
+          out->Print(
+              var,
+              "f'The grpc package installed is at version {GRPC_VERSION},'\n"
+              "+ f' but the generated code in $Pb2GrpcFileName$_pb2_grpc.py "
+              "depends on'\n"
+              "+ f' grpcio>={GRPC_GENERATED_VERSION}.'\n"
+              "+ f' Please upgrade your grpc module to "
+              "grpcio>={GRPC_GENERATED_VERSION}'\n"
+              "+ f' or downgrade your generated code using "
+              "grpcio-tools<={GRPC_VERSION}.'\n"
+              "+ f' This warning will become an error in "
+              "{EXPECTED_ERROR_RELEASE},'\n"
+              "+ f' scheduled for release on {SCHEDULED_RELEASE_DATE}.',\n"
+              "RuntimeWarning\n");
+        }
+        out->Print(")\n");
+      }
     }
   }
   return true;
@@ -823,7 +884,14 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
 GeneratorConfiguration::GeneratorConfiguration()
     : grpc_package_root("grpc"),
       beta_package_root("grpc.beta"),
-      import_prefix("") {}
+      import_prefix(""),
+      grpc_tools_version("") {}
+
+GeneratorConfiguration::GeneratorConfiguration(std::string version)
+    : grpc_package_root("grpc"),
+      beta_package_root("grpc.beta"),
+      import_prefix(""),
+      grpc_tools_version(version) {}
 
 PythonGrpcGenerator::PythonGrpcGenerator(const GeneratorConfiguration& config)
     : config_(config) {}
@@ -877,10 +945,6 @@ static bool ParseParameters(const std::string& parameter,
     return false;
   }
   return true;
-}
-
-uint64_t PythonGrpcGenerator::GetSupportedFeatures() const {
-  return FEATURE_PROTO3_OPTIONAL;
 }
 
 bool PythonGrpcGenerator::Generate(const FileDescriptor* file,

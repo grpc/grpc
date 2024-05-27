@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -25,6 +23,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "absl/types/variant.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -102,6 +102,8 @@ struct Http2RstStreamFrame {
 // SETTINGS frame
 struct Http2SettingsFrame {
   struct Setting {
+    Setting(uint16_t id, uint32_t value) : id(id), value(value) {}
+
     uint16_t id;
     uint32_t value;
 

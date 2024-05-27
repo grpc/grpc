@@ -84,6 +84,10 @@ ARTIFACTS += compression/helloworld_pb2.py
 ARTIFACTS += compression/helloworld_pb2_grpc.py
 ARTIFACTS += compression/helloworld_pb2.pyi
 
+ARTIFACTS += observability/helloworld_pb2.py
+ARTIFACTS += observability/helloworld_pb2_grpc.py
+ARTIFACTS += observability/helloworld_pb2.pyi
+
 .PHONY: all
 all: ${ARTIFACTS}
 

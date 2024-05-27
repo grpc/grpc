@@ -17,6 +17,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
@@ -80,12 +81,12 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", endpoint);
   if (socket->IsShutdown()) {
     socket->read_info()->SetErrorStatus(
-        absl::UnavailableError("Socket is shutting down."));
+        absl::InternalError("Socket is shutting down."));
     thread_pool->Run(&handle_read_event);
     return;
   }
   // Prepare the WSABUF struct
-  GPR_ASSERT(buffer->Count() <= kMaxWSABUFCount);
+  CHECK(buffer->Count() <= kMaxWSABUFCount);
   WSABUF wsa_buffers[kMaxWSABUFCount];
   for (size_t i = 0; i < buffer->Count(); i++) {
     auto& slice = buffer->MutableSliceAt(i);
@@ -130,7 +131,7 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                            SliceBuffer* buffer, const ReadArgs* /* args */) {
   if (io_state_->socket->IsShutdown()) {
     io_state_->thread_pool->Run([on_read = std::move(on_read)]() mutable {
-      on_read(absl::UnavailableError("Socket is shutting down."));
+      on_read(absl::InternalError("Socket is shutting down."));
     });
     return false;
   }
@@ -153,7 +154,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
   if (io_state_->socket->IsShutdown()) {
     io_state_->thread_pool->Run(
         [on_writable = std::move(on_writable)]() mutable {
-          on_writable(absl::UnavailableError("Socket is shutting down."));
+          on_writable(absl::InternalError("Socket is shutting down."));
         });
     return false;
   }
@@ -164,11 +165,11 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
               peer_address_string_.c_str(), str.length(), str.data());
     }
   }
-  GPR_ASSERT(data->Count() <= UINT_MAX);
+  CHECK(data->Count() <= UINT_MAX);
   absl::InlinedVector<WSABUF, kMaxWSABUFCount> buffers(data->Count());
   for (size_t i = 0; i < data->Count(); i++) {
     auto& slice = data->MutableSliceAt(i);
-    GPR_ASSERT(slice.size() <= ULONG_MAX);
+    CHECK(slice.size() <= ULONG_MAX);
     buffers[i].len = slice.size();
     buffers[i].buf = (char*)slice.begin();
   }
@@ -299,14 +300,14 @@ void WindowsEndpoint::HandleReadClosure::Run() {
       DumpSliceBuffer(buffer_, absl::StrFormat("WindowsEndpoint::%p READ",
                                                io_state->endpoint));
     }
-    status = absl::UnavailableError("End of TCP stream");
+    status = absl::InternalError("End of TCP stream");
     grpc_core::StatusSetInt(&status, grpc_core::StatusIntProperty::kRpcStatus,
                             GRPC_STATUS_UNAVAILABLE);
     buffer_->Swap(last_read_buffer_);
     return ResetAndReturnCallback()(status);
   }
-  GPR_DEBUG_ASSERT(result.bytes_transferred > 0);
-  GPR_DEBUG_ASSERT(result.bytes_transferred <= buffer_->Length());
+  DCHECK_GT(result.bytes_transferred, 0);
+  DCHECK(result.bytes_transferred <= buffer_->Length());
   buffer_->MoveFirstNBytesIntoSliceBuffer(result.bytes_transferred,
                                           last_read_buffer_);
   if (buffer_->Length() == 0) {
@@ -332,9 +333,9 @@ bool WindowsEndpoint::HandleReadClosure::MaybeFinishIfDataHasAlreadyBeenRead() {
 void WindowsEndpoint::HandleReadClosure::DonateSpareSlices(
     SliceBuffer* buffer) {
   // Donee buffer must be empty.
-  GPR_ASSERT(buffer->Length() == 0);
+  CHECK_EQ(buffer->Length(), 0);
   // HandleReadClosure must be in the reset state.
-  GPR_ASSERT(buffer_ == nullptr);
+  CHECK_EQ(buffer_, nullptr);
   buffer->Swap(last_read_buffer_);
 }
 
@@ -352,7 +353,7 @@ void WindowsEndpoint::HandleWriteClosure::Run() {
   if (result.wsa_error != 0) {
     status = GRPC_WSA_ERROR(result.wsa_error, "WSASend");
   } else {
-    GPR_ASSERT(result.bytes_transferred == buffer_->Length());
+    CHECK(result.bytes_transferred == buffer_->Length());
   }
   return ResetAndReturnCallback()(status);
 }

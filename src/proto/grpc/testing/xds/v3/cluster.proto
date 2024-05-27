@@ -251,6 +251,15 @@ message Cluster {
   // maybe by allowing LRS to go on the ADS stream, or maybe by moving some of the negotiation
   // from the LRS stream here.]
   core.v3.ConfigSource lrs_server = 42;
+
+  // The Metadata field can be used to provide additional information about the
+  // cluster. It can be used for stats, logging, and varying filter behavior.
+  // Fields should use reverse DNS notation to denote which entity within Envoy
+  // will need the information. For instance, if the metadata is intended for
+  // the Router filter, the filter name should be specified as ``envoy.filters.http.router``.
+  core.v3.Metadata metadata = 25;
+  
+  core.v3.TypedExtensionConfig upstream_config = 48;
 }
 
 // Extensible load balancing policy configuration.

@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/memory_quota.h"
 
 #include <inttypes.h>
@@ -27,14 +25,15 @@
 #include <tuple>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/internal/memory_allocator_impl.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/loop.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -232,10 +232,10 @@ Poll<RefCountedPtr<ReclaimerQueue::Handle>> ReclaimerQueue::PollNext() {
   if (!empty) {
     // If we don't, but the queue is probably not empty, schedule an immediate
     // repoll.
-    Activity::current()->ForceImmediateRepoll();
+    GetContext<Activity>()->ForceImmediateRepoll();
   } else {
     // Otherwise, schedule a wakeup for whenever something is pushed.
-    state_->waker = Activity::current()->MakeNonOwningWaker();
+    state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
   }
   return Pending{};
 }
@@ -253,10 +253,10 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
-  GPR_ASSERT(free_bytes_.load(std::memory_order_acquire) +
-                 sizeof(GrpcMemoryAllocatorImpl) ==
-             taken_bytes_.load(std::memory_order_relaxed));
-  memory_quota_->Return(taken_bytes_);
+  CHECK(free_bytes_.load(std::memory_order_acquire) +
+            sizeof(GrpcMemoryAllocatorImpl) ==
+        taken_bytes_.load(std::memory_order_relaxed));
+  memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
 void GrpcMemoryAllocatorImpl::Shutdown() {
@@ -266,7 +266,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
       reclamation_handles[kNumReclamationPasses];
   {
     MutexLock lock(&reclaimer_mu_);
-    GPR_ASSERT(!shutdown_);
+    CHECK(!shutdown_);
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
@@ -278,8 +278,8 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
 size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   // Validate request - performed here so we don't bloat the generated code with
   // inlined asserts.
-  GPR_ASSERT(request.min() <= request.max());
-  GPR_ASSERT(request.max() <= MemoryRequest::max_allowed_size());
+  CHECK(request.min() <= request.max());
+  CHECK(request.max() <= MemoryRequest::max_allowed_size());
   size_t old_free = free_bytes_.load(std::memory_order_relaxed);
 
   while (true) {
@@ -358,7 +358,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
         gpr_log(GPR_INFO, "[%p] Early return %" PRIdPTR " bytes", this, ret);
       }
-      GPR_ASSERT(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
+      CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
       return;
     }
@@ -465,7 +465,7 @@ void BasicMemoryQuota::Start() {
             self->reclamation_counter_.fetch_add(1, std::memory_order_relaxed) +
             1;
         reclaimer->Run(ReclamationSweep(
-            self, token, Activity::current()->MakeNonOwningWaker()));
+            self, token, GetContext<Activity>()->MakeNonOwningWaker()));
         // Return a promise that will wait for our barrier. This will be
         // awoken by the token above being destroyed. So, once that token is
         // destroyed, we'll be able to proceed.
@@ -479,7 +479,7 @@ void BasicMemoryQuota::Start() {
   reclaimer_activity_ =
       MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),
                    [](absl::Status status) {
-                     GPR_ASSERT(status.code() == absl::StatusCode::kCancelled);
+                     CHECK(status.code() == absl::StatusCode::kCancelled);
                    });
 }
 
@@ -499,7 +499,7 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
-  GPR_DEBUG_ASSERT(amount <= std::numeric_limits<intptr_t>::max());
+  DCHECK(amount <= std::numeric_limits<intptr_t>::max());
   // Grab memory from the quota.
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.
@@ -658,14 +658,9 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
   if (size < 1) return PressureInfo{1, 1, 1};
   PressureInfo pressure_info;
   pressure_info.instantaneous_pressure = std::max(0.0, (size - free) / size);
-  if (IsMemoryPressureControllerEnabled()) {
-    pressure_info.pressure_control_value =
-        pressure_tracker_.AddSampleAndGetControlValue(
-            pressure_info.instantaneous_pressure);
-  } else {
-    pressure_info.pressure_control_value =
-        std::min(pressure_info.instantaneous_pressure, 1.0);
-  }
+  pressure_info.pressure_control_value =
+      pressure_tracker_.AddSampleAndGetControlValue(
+          pressure_info.instantaneous_pressure);
   pressure_info.max_recommended_allocation_size = quota_size / 16;
   return pressure_info;
 }

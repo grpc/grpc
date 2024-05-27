@@ -19,13 +19,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -107,6 +107,9 @@ INSTANTIATE_TEST_SUITE_P(
 // Test to ensure the most basic fault injection config works.
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   const uint32_t kAbortPercentagePerHundred = 100;
+  // Create an EDS resource
+  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Construct the fault injection filter config
   HTTPFault http_fault;
   auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();

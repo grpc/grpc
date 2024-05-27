@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H
 #define GRPC_SRC_CORE_LIB_GPRPP_VALIDATION_ERRORS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <map>
@@ -26,6 +24,8 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -63,6 +63,9 @@ namespace grpc_core {
 // }
 class ValidationErrors {
  public:
+  // Default maximum number of errors to track per scope.
+  static constexpr size_t kMaxErrorCount = 20;
+
   // Pushes a field name onto the stack at construction and pops it off
   // of the stack at destruction.
   class ScopedField {
@@ -92,6 +95,12 @@ class ValidationErrors {
    private:
     ValidationErrors* errors_;
   };
+
+  ValidationErrors() : ValidationErrors(kMaxErrorCount) {}
+
+  // Creates a tracker that collects at most `max_error_count` errors per field.
+  explicit ValidationErrors(size_t max_error_count)
+      : max_error_count_(max_error_count) {}
 
   // Records that we've encountered an error associated with the current
   // field.
@@ -127,6 +136,8 @@ class ValidationErrors {
   // Stack of field names indicating the field that we are currently
   // validating.
   std::vector<std::string> fields_;
+
+  size_t max_error_count_;
 };
 
 }  // namespace grpc_core

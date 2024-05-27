@@ -126,3 +126,8 @@
     ECDHE-ECDSA-AES256-GCM-SHA384:\
     ECDHE-RSA-AES128-GCM-SHA256:\
     ECDHE-RSA-AES256-GCM-SHA384"
+- name: absl_logging
+  type: bool
+  default: true
+  description:
+    Use absl logging from within gpr_log.

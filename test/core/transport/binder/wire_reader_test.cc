@@ -32,8 +32,8 @@
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/wire_format/wire_reader_impl.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/mock_objects.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_binder {
 

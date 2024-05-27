@@ -57,7 +57,11 @@ build:msan --linkopt=--stdlib=libc++
 # use MSAN-instrumented version of libc++
 # TODO(jtattermusch): include the modified LD_LIBRARY_PATH in an msan-specific
 # toolchain configuration, instead of needing to explicitly set it here.
-build:msan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib/x86_64-unknown-linux-gnu
+build:msan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib
+# TODO(veblush): Remove the following after upgrading cloud-cpp-cloud to
+# the version having https://github.com/googleapis/google-cloud-cpp/pull/14151
+build:msan --cxxopt='-std=c++17'
+build:msan --host_cxxopt='-std=c++17'
 
 # thread sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -84,4 +88,8 @@ build:ubsan --action_env=MSAN_OPTIONS=halt_on_error=0
 build:ubsan --test_tag_filters=-no_linux,-noubsan
 # use MSAN-instrumented version of libc++
 # TODO(jtattermusch): run UBSAN without enabling MSAN too.
-build:ubsan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib/x86_64-unknown-linux-gnu
+build:ubsan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib
+# TODO(veblush): Remove the following after upgrading cloud-cpp-cloud to
+# the version having https://github.com/googleapis/google-cloud-cpp/pull/14151
+build:ubsan --cxxopt='-std=c++17'
+build:ubsan --host_cxxopt='-std=c++17'

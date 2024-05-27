@@ -19,18 +19,19 @@ import unittest
 
 import grpc
 
-
-class _GenericHandler(grpc.GenericRpcHandler):
-    def service(self, handler_call_details):
-        return grpc.unary_unary_rpc_method_handler(
-            lambda request, unused_context: request
-        )
+_SERVICE_NAME = "test"
+_METHOD = "method"
+_METHOD_HANDLERS = {
+    _METHOD: grpc.unary_unary_rpc_method_handler(
+        lambda request, unused_context: request,
+    )
+}
 
 
 class LocalCredentialsTest(unittest.TestCase):
     def _create_server(self):
         server = grpc.server(ThreadPoolExecutor())
-        server.add_generic_rpc_handlers((_GenericHandler(),))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         return server
 
     @unittest.skipIf(
@@ -53,9 +54,10 @@ class LocalCredentialsTest(unittest.TestCase):
         ) as channel:
             self.assertEqual(
                 b"abc",
-                channel.unary_unary("/test/method")(
-                    b"abc", wait_for_ready=True
-                ),
+                channel.unary_unary(
+                    grpc._common.fully_qualified_method(_SERVICE_NAME, _METHOD),
+                    _registered_method=True,
+                )(b"abc", wait_for_ready=True),
             )
         server.stop(None)
 
@@ -77,9 +79,10 @@ class LocalCredentialsTest(unittest.TestCase):
         with grpc.secure_channel(server_addr, channel_creds) as channel:
             self.assertEqual(
                 b"abc",
-                channel.unary_unary("/test/method")(
-                    b"abc", wait_for_ready=True
-                ),
+                channel.unary_unary(
+                    grpc._common.fully_qualified_method(_SERVICE_NAME, _METHOD),
+                    _registered_method=True,
+                )(b"abc", wait_for_ready=True),
             )
         server.stop(None)
 

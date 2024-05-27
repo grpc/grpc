@@ -15,8 +15,6 @@
 // IWYU pragma: no_include <ratio>
 // IWYU pragma: no_include <arpa/inet.h>
 
-#include <grpc/support/port_platform.h>
-
 #include <cstdlib>
 #include <cstring>
 #include <memory>
@@ -24,6 +22,7 @@
 #include <tuple>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -34,6 +33,7 @@
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -41,8 +41,8 @@
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 #include "test/cpp/util/subprocess.h"
 
@@ -129,9 +129,8 @@ class EventEngineDNSTest : public EventEngineTest {
 // an indication whether the test is running on RBE or not. Find a better way of
 // doing this.
 #ifndef GRPC_PORT_ISOLATED_RUNTIME
-      gpr_log(GPR_ERROR,
-              "You are invoking the test locally with Bazel, you may need to "
-              "invoke Bazel with --enable_runfiles=yes.");
+      LOG(ERROR) << "You are invoking the test locally with Bazel, you may "
+                    "need to invoke Bazel with --enable_runfiles=yes.";
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
       test_records_path = grpc::testing::NormalizeFilePath(test_records_path);
       dns_server_path =
@@ -435,7 +434,15 @@ TEST_F(EventEngineDNSTest, LocalHost) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
   dns_resolver->LookupHostname(
       [this](auto result) {
+#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
         EXPECT_SUCCESS();
+#else
+        EXPECT_TRUE(result.ok());
+        EXPECT_THAT(*result,
+                    Pointwise(ResolvedAddressEq(),
+                              {*URIToResolvedAddress("ipv6:[::1]:1"),
+                               *URIToResolvedAddress("ipv4:127.0.0.1:1")}));
+#endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
         dns_resolver_signal_.Notify();
       },
       "localhost:1", "");

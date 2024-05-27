@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 
 #include <stddef.h>
@@ -29,6 +27,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -41,11 +41,12 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -61,11 +62,12 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/server/server.h"
 
 #define INPROC_LOG(...)                               \
   do {                                                \
@@ -101,8 +103,7 @@ struct shared_mu {
   gpr_refcount refs;
 };
 
-struct inproc_transport final : public grpc_core::Transport,
-                                public grpc_core::FilterStackTransport {
+struct inproc_transport final : public grpc_core::FilterStackTransport {
   inproc_transport(shared_mu* mu, bool is_client)
       : mu(mu),
         is_client(is_client),
@@ -134,7 +135,6 @@ struct inproc_transport final : public grpc_core::Transport,
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
-  grpc_endpoint* GetEndpoint() override;
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
@@ -267,18 +267,18 @@ struct inproc_stream {
   grpc_stream_refcount* refs;
   grpc_core::Arena* arena;
 
-  grpc_metadata_batch to_read_initial_md{arena};
+  grpc_metadata_batch to_read_initial_md;
   bool to_read_initial_md_filled = false;
-  grpc_metadata_batch to_read_trailing_md{arena};
+  grpc_metadata_batch to_read_trailing_md;
   bool to_read_trailing_md_filled = false;
   bool ops_needed = false;
   // Write buffer used only during gap at init time when client-side
   // stream is set up but server side stream is not yet set up
-  grpc_metadata_batch write_buffer_initial_md{arena};
+  grpc_metadata_batch write_buffer_initial_md;
   bool write_buffer_initial_md_filled = false;
   grpc_core::Timestamp write_buffer_deadline =
       grpc_core::Timestamp::InfFuture();
-  grpc_metadata_batch write_buffer_trailing_md{arena};
+  grpc_metadata_batch write_buffer_trailing_md;
   bool write_buffer_trailing_md_filled = false;
   grpc_error_handle write_buffer_cancel_error;
 
@@ -319,7 +319,7 @@ void log_metadata(const grpc_metadata_batch* md_batch, bool is_client,
   std::string prefix = absl::StrCat(
       "INPROC:", is_initial ? "HDR:" : "TRL:", is_client ? "CLI:" : "SVR:");
   md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
-    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
+    LOG(INFO) << absl::StrCat(prefix, key, ": ", value);
   });
 }
 
@@ -456,7 +456,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     // Send trailing md to the other side indicating cancellation
     s->trailing_md_sent = true;
 
-    grpc_metadata_batch fake_md(s->arena);
+    grpc_metadata_batch fake_md;
     inproc_stream* other = s->other_side;
     grpc_metadata_batch* dest = (other == nullptr)
                                     ? &s->write_buffer_trailing_md
@@ -479,7 +479,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
     if (!s->t->is_client) {
       // If this is a server, provide initial metadata with a path and
       // authority since it expects that as well as no error yet
-      grpc_metadata_batch fake_md(s->arena);
+      grpc_metadata_batch fake_md;
       fake_md.Set(grpc_core::HttpPathMetadata(),
                   grpc_core::Slice::FromStaticString("/"));
       fake_md.Set(grpc_core::HttpAuthorityMetadata(),
@@ -902,7 +902,7 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
     // already have
     s->trailing_md_sent = true;
 
-    grpc_metadata_batch cancel_md(s->arena);
+    grpc_metadata_batch cancel_md;
 
     grpc_metadata_batch* dest = (other == nullptr)
                                     ? &s->write_buffer_trailing_md
@@ -1213,8 +1213,6 @@ void inproc_transport::SetPollsetSet(grpc_stream* /*gs*/,
   // Nothing to do here
 }
 
-grpc_endpoint* inproc_transport::GetEndpoint() { return nullptr; }
-
 //******************************************************************************
 // Main inproc transport functions
 //
@@ -1264,12 +1262,12 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       server_transport, nullptr, server_args, nullptr);
   grpc_channel* channel = nullptr;
   if (error.ok()) {
-    auto new_channel = grpc_core::Channel::Create(
+    auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
-      GPR_ASSERT(!channel);
-      gpr_log(GPR_ERROR, "Failed to create client channel: %s",
-              grpc_core::StatusToString(error).c_str());
+      CHECK(!channel);
+      LOG(ERROR) << "Failed to create client channel: "
+                 << grpc_core::StatusToString(error);
       intptr_t integer;
       grpc_status_code status = GRPC_STATUS_INTERNAL;
       if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
@@ -1285,9 +1283,9 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       channel = new_channel->release()->c_ptr();
     }
   } else {
-    GPR_ASSERT(!channel);
-    gpr_log(GPR_ERROR, "Failed to create server channel: %s",
-            grpc_core::StatusToString(error).c_str());
+    CHECK(!channel);
+    LOG(ERROR) << "Failed to create server channel: "
+               << grpc_core::StatusToString(error);
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
     if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,

@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <initializer_list>
@@ -29,14 +27,18 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_filters.h"
+#include "src/core/lib/transport/interception_chain.h"
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.
@@ -67,6 +69,8 @@ class ChannelInit {
   using InclusionPredicate = absl::AnyInvocable<bool(const ChannelArgs&) const>;
   // Post processor for the channel stack - applied in PostProcessorSlot order
   using PostProcessor = absl::AnyInvocable<void(ChannelStackBuilder&) const>;
+  // Function that can be called to add a filter to a stack builder
+  using FilterAdder = void (*)(InterceptionChainBuilder&);
   // Post processing slots - up to one PostProcessor per slot can be registered
   // They run after filters registered are added to the channel stack builder,
   // but before Build is called - allowing ad-hoc mutation to the channel stack.
@@ -78,20 +82,44 @@ class ChannelInit {
 
   class FilterRegistration {
    public:
+    // TODO(ctiller): Remove grpc_channel_filter* arg when that can be
+    // deprecated (once filter stack is removed).
     explicit FilterRegistration(const grpc_channel_filter* filter,
+                                FilterAdder filter_adder,
                                 SourceLocation registration_source)
-        : filter_(filter), registration_source_(registration_source) {}
+        : filter_(filter),
+          filter_adder_(filter_adder),
+          registration_source_(registration_source) {}
     FilterRegistration(const FilterRegistration&) = delete;
     FilterRegistration& operator=(const FilterRegistration&) = delete;
 
     // Ensure that this filter is placed *after* the filters listed here.
     // By Build() time all filters listed here must also be registered against
     // the same channel stack type as this registration.
+    template <typename Filter>
+    FilterRegistration& After() {
+      return After({&Filter::kFilter});
+    }
+    // Ensure that this filter is placed *before* the filters listed here.
+    // By Build() time all filters listed here must also be registered against
+    // the same channel stack type as this registration.
+    template <typename Filter>
+    FilterRegistration& Before() {
+      return Before({&Filter::kFilter});
+    }
+
+    // Ensure that this filter is placed *after* the filters listed here.
+    // By Build() time all filters listed here must also be registered against
+    // the same channel stack type as this registration.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
     FilterRegistration& After(
         std::initializer_list<const grpc_channel_filter*> filters);
     // Ensure that this filter is placed *before* the filters listed here.
     // By Build() time all filters listed here must also be registered against
     // the same channel stack type as this registration.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
     FilterRegistration& Before(
         std::initializer_list<const grpc_channel_filter*> filters);
     // Add a predicate for this filters inclusion.
@@ -127,15 +155,21 @@ class ChannelInit {
     // Add a predicate that ensures this filter does not appear in the minimal
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
+    FilterRegistration& SkipV3() {
+      skip_v3_ = true;
+      return *this;
+    }
 
    private:
     friend class ChannelInit;
     const grpc_channel_filter* const filter_;
+    const FilterAdder filter_adder_;
     std::vector<const grpc_channel_filter*> after_;
     std::vector<const grpc_channel_filter*> before_;
     std::vector<InclusionPredicate> predicates_;
     bool terminal_ = false;
     bool before_all_ = false;
+    bool skip_v3_ = false;
     SourceLocation registration_source_;
   };
 
@@ -145,9 +179,29 @@ class ChannelInit {
     // This occurs first during channel build time.
     // The FilterRegistration methods can be called to declaratively define
     // properties of the filter being registered.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
     FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
                                        const grpc_channel_filter* filter,
+                                       FilterAdder filter_adder = nullptr,
                                        SourceLocation registration_source = {});
+    template <typename Filter>
+    FilterRegistration& RegisterFilter(
+        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
+      return RegisterFilter(
+          type, &Filter::kFilter,
+          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
+          registration_source);
+    }
+
+    // Filter does not participate in v3
+    template <typename Filter>
+    FilterRegistration& RegisterV2Filter(
+        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
+      return RegisterFilter(type, &Filter::kFilter, nullptr,
+                            registration_source)
+          .SkipV3();
+    }
 
     // Register a post processor for the builder.
     // These run after the main graph has been placed into the builder.
@@ -158,7 +212,7 @@ class ChannelInit {
                                PostProcessorSlot slot,
                                PostProcessor post_processor) {
       auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      GPR_ASSERT(slot_value == nullptr);
+      CHECK(slot_value == nullptr);
       slot_value = std::move(post_processor);
     }
 
@@ -177,17 +231,29 @@ class ChannelInit {
   GRPC_MUST_USE_RESULT
   bool CreateStack(ChannelStackBuilder* builder) const;
 
+  void AddToInterceptionChainBuilder(grpc_channel_stack_type type,
+                                     InterceptionChainBuilder& builder) const;
+
  private:
+  // The type of object returned by a filter's Create method.
+  template <typename T>
+  using CreatedType =
+      typename decltype(T::Create(ChannelArgs(), {}))::value_type;
+
   struct Filter {
-    Filter(const grpc_channel_filter* filter,
-           std::vector<InclusionPredicate> predicates,
+    Filter(const grpc_channel_filter* filter, FilterAdder filter_adder,
+           std::vector<InclusionPredicate> predicates, bool skip_v3,
            SourceLocation registration_source)
         : filter(filter),
+          filter_adder(filter_adder),
           predicates(std::move(predicates)),
-          registration_source(registration_source) {}
+          registration_source(registration_source),
+          skip_v3(skip_v3) {}
     const grpc_channel_filter* filter;
+    const FilterAdder filter_adder;
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
+    bool skip_v3 = false;
     bool CheckPredicates(const ChannelArgs& args) const;
   };
   struct StackConfig {
@@ -195,6 +261,7 @@ class ChannelInit {
     std::vector<Filter> terminators;
     std::vector<PostProcessor> post_processors;
   };
+
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
   static StackConfig BuildStackConfig(

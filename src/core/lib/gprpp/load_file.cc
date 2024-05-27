@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/load_file.h"
 
 #include <errno.h>
@@ -27,12 +25,17 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
 // Loads the content of a file into a slice. add_null_terminator will add a NULL
 // terminator if true.
-absl::StatusOr<Slice> LoadFile(std::string filename, bool add_null_terminator) {
+// This API is NOT thread-safe and requires proper synchronization when used by
+// multiple threads, especially when they can happen to be reading from the same
+// file.
+absl::StatusOr<Slice> LoadFile(const std::string& filename,
+                               bool add_null_terminator) {
   unsigned char* contents = nullptr;
   size_t contents_size = 0;
   FILE* file;
@@ -60,7 +63,6 @@ absl::StatusOr<Slice> LoadFile(std::string filename, bool add_null_terminator) {
   bytes_read = fread(contents, 1, contents_size, file);
   if (bytes_read < contents_size) {
     gpr_free(contents);
-    GPR_ASSERT(ferror(file));
     error = absl::InternalError(
         absl::StrCat("Failed to load file: ", filename,
                      " due to error(fread): ", strerror(errno)));

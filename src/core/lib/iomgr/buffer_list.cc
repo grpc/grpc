@@ -16,11 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/buffer_list.h"
 
+#include "absl/log/log.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -43,7 +44,7 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
 
 void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
                                absl::Status /*shudown_err*/) {
-  gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
+  VLOG(2) << "Timestamps callback has not been registered";
 }
 
 // The saved callback function that will be invoked when we get all the
@@ -322,7 +323,7 @@ void grpc_tcp_set_write_timestamps_callback(
   // Can't comment out the name because some compilers and formatters don't
   // like the sequence */* , which would arise from */*fn*/.
   (void)fn;
-  gpr_log(GPR_DEBUG, "Timestamps callback is not enabled for this platform");
+  VLOG(2) << "Timestamps callback is not enabled for this platform";
 }
 }  // namespace grpc_core
 

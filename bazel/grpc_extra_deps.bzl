@@ -22,6 +22,7 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 load("@google_cloud_cpp//bazel:google_cloud_cpp_deps.bzl", "google_cloud_cpp_deps")
 load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+load("@rules_python//python:repositories.bzl", "py_repositories")
 
 def grpc_extra_deps(ignore_version_differences = False):
     """Loads the extra dependencies.
@@ -71,3 +72,5 @@ def grpc_extra_deps(ignore_version_differences = False):
     )
 
     google_cloud_cpp_deps()
+
+    py_repositories()

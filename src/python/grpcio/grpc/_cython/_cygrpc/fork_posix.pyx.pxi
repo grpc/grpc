@@ -35,7 +35,7 @@ _GRPC_ENABLE_FORK_SUPPORT = (
 
 _fork_handler_failed = False
 
-cdef void __prefork() nogil:
+cdef void __prefork() noexcept nogil:
     with gil:
         global _fork_handler_failed
         _fork_handler_failed = False
@@ -49,14 +49,14 @@ cdef void __prefork() nogil:
             _fork_handler_failed = True
 
 
-cdef void __postfork_parent() nogil:
+cdef void __postfork_parent() noexcept nogil:
     with gil:
         with _fork_state.fork_in_progress_condition:
             _fork_state.fork_in_progress = False
             _fork_state.fork_in_progress_condition.notify_all()
 
 
-cdef void __postfork_child() nogil:
+cdef void __postfork_child() noexcept nogil:
     with gil:
         try:
             if _fork_handler_failed:

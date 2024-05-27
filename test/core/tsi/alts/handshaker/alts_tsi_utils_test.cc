@@ -20,10 +20,10 @@
 
 #include <gtest/gtest.h>
 
-#include "upb/upb.hpp"
+#include "upb/mem/arena.hpp"
 
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
-#include "test/core/util/test_config.h"
 
 #define ALTS_TSI_UTILS_TEST_OUT_FRAME "Hello Google"
 

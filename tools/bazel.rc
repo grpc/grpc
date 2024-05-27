@@ -36,7 +36,6 @@ build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
 
 build:dbg --compilation_mode=dbg
-build:dbg --copt=-Werror=return-stack-address
 
 # Dynamic link cause issues like: `dyld: malformed mach-o: load commands size (59272) > 32768`
 # https://github.com/bazelbuild/bazel/issues/9190
@@ -54,7 +53,7 @@ build:asan --copt=-DGRPC_ASAN
 build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
-build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
 
 build:fuzzer_asan --strip=never
 build:fuzzer_asan --define=grpc_build_fuzzers=true
@@ -68,7 +67,7 @@ build:fuzzer_asan --copt=-DGRPC_ASAN
 build:fuzzer_asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
 build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
-build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
 
 build:coverage --copt=-fprofile-instr-generate
 build:coverage --copt=-fcoverage-mapping
@@ -115,7 +114,7 @@ build:tsan --copt=-fno-omit-frame-pointer
 build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
 build:tsan --linkopt=-fsanitize=thread
-build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
 # a TSAN build that tries to create new threads whenever possible
 build:thready_tsan --strip=never
@@ -125,7 +124,7 @@ build:thready_tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:thready_tsan --copt=-DGRPC_TSAN
 build:thready_tsan --copt=-DGRPC_MAXIMIZE_THREADYNESS
 build:thready_tsan --linkopt=-fsanitize=thread
-build:thready_tsan --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+build:thready_tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
 build:tsan_macos --strip=never
 build:tsan_macos --copt=-fsanitize=thread
@@ -133,7 +132,7 @@ build:tsan_macos --copt=-fno-omit-frame-pointer
 build:tsan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan_macos --copt=-DGRPC_TSAN
 build:tsan_macos --linkopt=-fsanitize=thread
-build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 build:tsan_macos --dynamic_mode=off
 
 build:ubsan --strip=never
@@ -150,7 +149,7 @@ build:ubsan --linkopt=-fsanitize-link-c++-runtime
 build:ubsan --linkopt=-lc++
 build:ubsan --linkopt=-lc++abi
 build:ubsan --linkopt=-lm
-build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
+build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=test/core/test_util/ubsan_suppressions.txt
 # if you want to run ubsan locally, uncomment following three lines
 # build:ubsan --linkopt=-lgcc_s
 # build:ubsan --linkopt=-lubsan

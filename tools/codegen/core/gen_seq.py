@@ -110,7 +110,7 @@ tail${i}:
 % endfor
   }
   SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    GPR_ASSERT(state == State::kState0);
+    CHECK(state == State::kState0);
     Construct(&${"prior."*(n-1-i)}current_promise,
             other.${"prior."*(n-1-i)}current_promise);
 % for i in range(0,n-1):
@@ -143,16 +143,18 @@ tail${i}:
 % for i in range(0,n-1):
       case State::kState${i}: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: begin poll step ${i+1}/${n}", this);
+          VLOG(2).AtLocation(whence.file(), whence.line()) 
+                << "seq[" << this << "]: begin poll step ${i+1}/${n}";
         }
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: poll step ${i+1}/${n} gets %s", this, 
-                  p != nullptr
+          VLOG(2).AtLocation(whence.file(), whence.line())
+                << "seq[" << this << "]: poll step ${i+1}/${n} gets "
+                << (p != nullptr
                     ? (PromiseResultTraits${i}::IsOk(*p)
-                      ? "ready" 
-                      : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str()) 
+                      ? "ready"
+                      : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str())
                     : "pending");
         }
         if (p == nullptr) return Pending{};
@@ -170,11 +172,14 @@ tail${i}:
       default:
       case State::kState${n-1}: {
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: begin poll step ${n}/${n}", this);
+          VLOG(2).AtLocation(whence.file(), whence.line()) 
+                << "seq[" << this << "]: begin poll step ${n}/${n}";
         }
         auto result = current_promise();
         if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(whence.file(), whence.line(), GPR_LOG_SEVERITY_DEBUG, "seq[%p]: poll step ${n}/${n} gets %s", this, result.ready()? "ready" : "pending");
+          VLOG(2).AtLocation(whence.file(), whence.line()) 
+                << "seq[" << this << "]: poll step ${n}/${n} gets " 
+                << (result.ready()? "ready" : "pending");
         }
         auto* p = result.value_if_ready();
         if (p == nullptr) return Pending{};
@@ -197,10 +202,10 @@ front_matter = """
 
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -215,8 +220,8 @@ front_matter = """
 // previous step and yield a promise. Note that most of the machinery in
 // PromiseFactory exists to make it possible for those promise-factory-like
 // objects to be anything that's convenient.
-// Traits defines how we move from one step to the next. Traits sets up the 
-// wrapping and escape handling for the sequence. 
+// Traits defines how we move from one step to the next. Traits sets up the
+// wrapping and escape handling for the sequence.
 // Promises return wrapped values that the trait can inspect and unwrap before
 // passing them to the next element of the sequence. The trait can
 // also interpret a wrapped value as an escape value, which terminates
@@ -289,6 +294,6 @@ copyright = [line[2:].rstrip() for line in copyright]
 with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
-    for n in range(2, 10):
+    for n in range(2, 14):
         print(seq_state.render(n=n), file=f)
     print(end_matter, file=f)

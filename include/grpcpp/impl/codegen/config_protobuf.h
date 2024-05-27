@@ -40,8 +40,14 @@
 #ifndef GRPC_CUSTOM_DESCRIPTOR
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
+#if GOOGLE_PROTOBUF_VERSION >= 4025000
+#define GRPC_PROTOBUF_EDITION_SUPPORT
+#endif
 #define GRPC_CUSTOM_DESCRIPTOR ::google::protobuf::Descriptor
 #define GRPC_CUSTOM_DESCRIPTORPOOL ::google::protobuf::DescriptorPool
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+#define GRPC_CUSTOM_EDITION ::google::protobuf::Edition
+#endif
 #define GRPC_CUSTOM_FIELDDESCRIPTOR ::google::protobuf::FieldDescriptor
 #define GRPC_CUSTOM_FILEDESCRIPTOR ::google::protobuf::FileDescriptor
 #define GRPC_CUSTOM_FILEDESCRIPTORPROTO ::google::protobuf::FileDescriptorProto
@@ -85,6 +91,9 @@ typedef GRPC_CUSTOM_MESSAGELITE MessageLite;
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
 typedef GRPC_CUSTOM_DESCRIPTORPOOL DescriptorPool;
 typedef GRPC_CUSTOM_DESCRIPTORDATABASE DescriptorDatabase;
+#ifdef GRPC_PROTOBUF_EDITION_SUPPORT
+typedef GRPC_CUSTOM_EDITION Edition;
+#endif
 typedef GRPC_CUSTOM_FIELDDESCRIPTOR FieldDescriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTOR FileDescriptor;
 typedef GRPC_CUSTOM_FILEDESCRIPTORPROTO FileDescriptorProto;

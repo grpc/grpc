@@ -67,9 +67,6 @@
    application will see the compressed message in the byte buffer. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_DECOMPRESSION \
   "grpc.per_message_decompression"
-/** Enable/disable support for deadline checking. Defaults to 1, unless
-    GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 */
-#define GRPC_ARG_ENABLE_DEADLINE_CHECKS "grpc.enable_deadline_checking"
 /** Initial stream ID for http2 transports. Int valued. */
 #define GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER \
   "grpc.http2.initial_sequence_number"
@@ -106,6 +103,12 @@
  */
 #define GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS \
   "grpc.http2.min_ping_interval_without_data_ms"
+/** Maximum time to allow a request to be:
+    (1) received by the server, but
+    (2) not requested by a RequestCall (in the completion queue based API)
+    before the request is cancelled */
+#define GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS \
+  "grpc.server_max_unrequested_time_in_server"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can the client send before needing to send a
@@ -389,6 +392,10 @@
  * factory. */
 #define GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY \
   "grpc.event_engine_use_memory_allocator_factory"
+/** Configure the max number of allowed incoming connections to the server.
+ * If unspecified, it is unlimited */
+#define GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS \
+  "grpc.max_allowed_incoming_connections"
 /** \} */
 
 #endif /* GRPC_IMPL_CHANNEL_ARG_NAMES_H */

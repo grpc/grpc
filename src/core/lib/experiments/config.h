@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
 #define GRPC_SRC_CORE_LIB_EXPERIMENTS_CONFIG_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 // #define GRPC_EXPERIMENTS_ARE_FINAL
 
@@ -47,6 +47,12 @@ bool IsExperimentEnabled(size_t experiment_id);
 // Test experiments can be loaded using the LoadTestOnlyExperimentsFromMetadata
 // method.
 bool IsTestExperimentEnabled(size_t experiment_id);
+
+// Slow check for if a named experiment is enabled.
+// Parses the configuration and looks up the experiment in that, so it does not
+// affect any global state, but it does require parsing the configuration every
+// call!
+bool IsExperimentEnabledInConfiguration(size_t experiment_id);
 
 // Reload experiment state from config variables.
 // Does not change ForceEnableExperiment state.

@@ -14,12 +14,10 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc.h>
-
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/surface/builtins.h"
 
 namespace grpc_core {
 #ifndef GRPC_NO_XDS
@@ -34,8 +32,6 @@ extern void RegisterXdsClusterManagerLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterXdsClusterImplLbPolicy(CoreConfiguration::Builder* builder);
 extern void RegisterCdsLbPolicy(CoreConfiguration::Builder* builder);
-extern void RegisterXdsClusterResolverLbPolicy(
-    CoreConfiguration::Builder* builder);
 extern void RegisterXdsOverrideHostLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterXdsWrrLocalityLbPolicy(CoreConfiguration::Builder* builder);
@@ -58,7 +54,6 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   RegisterXdsClusterManagerLbPolicy(builder);
   RegisterXdsClusterImplLbPolicy(builder);
   RegisterCdsLbPolicy(builder);
-  RegisterXdsClusterResolverLbPolicy(builder);
   RegisterXdsOverrideHostLbPolicy(builder);
   RegisterXdsWrrLocalityLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);

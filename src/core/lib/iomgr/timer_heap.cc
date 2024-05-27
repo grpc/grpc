@@ -16,16 +16,15 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/useful.h"
 
 // Adjusts a heap so as to move a hole at position i closer to the root,
 // until a suitable position is found for element t. Then, copies t into that

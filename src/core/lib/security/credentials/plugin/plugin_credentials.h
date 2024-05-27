@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <atomic>
@@ -30,13 +28,14 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -47,6 +46,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/useful.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;
 
@@ -103,7 +103,7 @@ struct grpc_plugin_credentials final : public grpc_call_credentials {
    private:
     std::atomic<bool> ready_{false};
     grpc_core::Waker waker_{
-        grpc_core::Activity::current()->MakeNonOwningWaker()};
+        grpc_core::GetContext<grpc_core::Activity>()->MakeNonOwningWaker()};
     grpc_core::RefCountedPtr<grpc_plugin_credentials> call_creds_;
     grpc_auth_metadata_context context_;
     grpc_core::ClientMetadataHandle md_;

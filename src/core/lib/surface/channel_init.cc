@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/channel_init.h"
 
 #include <string.h>
@@ -28,12 +26,15 @@
 #include <string>
 #include <type_traits>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"
@@ -104,9 +105,9 @@ ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, const grpc_channel_filter* filter,
-    SourceLocation registration_source) {
-  filters_[type].emplace_back(
-      std::make_unique<FilterRegistration>(filter, registration_source));
+    FilterAdder filter_adder, SourceLocation registration_source) {
+  filters_[type].emplace_back(std::make_unique<FilterRegistration>(
+      filter, filter_adder, registration_source));
   return *filters_[type].back();
 }
 
@@ -138,19 +139,19 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     }
     filter_to_registration[registration->filter_] = registration.get();
     if (registration->terminal_) {
-      GPR_ASSERT(registration->after_.empty());
-      GPR_ASSERT(registration->before_.empty());
-      GPR_ASSERT(!registration->before_all_);
-      terminal_filters.emplace_back(registration->filter_,
-                                    std::move(registration->predicates_),
-                                    registration->registration_source_);
+      CHECK(registration->after_.empty());
+      CHECK(registration->before_.empty());
+      CHECK(!registration->before_all_);
+      terminal_filters.emplace_back(
+          registration->filter_, nullptr, std::move(registration->predicates_),
+          registration->skip_v3_, registration->registration_source_);
     } else {
       dependencies[registration->filter_];  // Ensure it's in the map.
     }
   }
   for (const auto& registration : registrations) {
     if (registration->terminal_) continue;
-    GPR_ASSERT(filter_to_registration.count(registration->filter_) > 0);
+    CHECK_GT(filter_to_registration.count(registration->filter_), 0u);
     for (F after : registration->after_) {
       if (filter_to_registration.count(after) == 0) {
         gpr_log(
@@ -222,9 +223,11 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> filters;
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
-    filters.emplace_back(filter,
-                         std::move(filter_to_registration[filter]->predicates_),
-                         filter_to_registration[filter]->registration_source_);
+    auto* registration = filter_to_registration[filter];
+    filters.emplace_back(filter, registration->filter_adder_,
+                         std::move(registration->predicates_),
+                         registration->skip_v3_,
+                         registration->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
     }
@@ -311,7 +314,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       const auto filter_str =
           absl::StrCat("  ", loc_strs[filter.filter],
                        NameFromChannelFilter(filter.filter), after_str);
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+      LOG(INFO) << filter_str;
     }
     // Finally list out the terminal filters and where they were registered
     // from.
@@ -323,7 +326,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                           strlen(NameFromChannelFilter(terminal.filter)),
                       ' '),
           "[terminal]");
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+      LOG(INFO) << filter_str;
     }
   }
   // Check if there are no terminal filters: this would be an error.
@@ -396,13 +399,30 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
             "\n");
       }
     }
-    gpr_log(GPR_ERROR, "%s", error.c_str());
+    LOG(ERROR) << error;
     return false;
   }
   for (const auto& post_processor : stack_config.post_processors) {
     post_processor(*builder);
   }
   return true;
+}
+
+void ChannelInit::AddToInterceptionChainBuilder(
+    grpc_channel_stack_type type, InterceptionChainBuilder& builder) const {
+  const auto& stack_config = stack_configs_[type];
+  // Based on predicates build a list of filters to include in this segment.
+  for (const auto& filter : stack_config.filters) {
+    if (filter.skip_v3) continue;
+    if (!filter.CheckPredicates(builder.channel_args())) continue;
+    if (filter.filter_adder == nullptr) {
+      builder.Fail(absl::InvalidArgumentError(
+          absl::StrCat("Filter ", NameFromChannelFilter(filter.filter),
+                       " has no v3-callstack vtable")));
+      return;
+    }
+    filter.filter_adder(builder);
+  }
 }
 
 }  // namespace grpc_core

@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -53,6 +54,7 @@ namespace grpc_core {
 
 const NoInterceptor HttpClientFilter::Call::OnServerToClientMessage;
 const NoInterceptor HttpClientFilter::Call::OnClientToServerMessage;
+const NoInterceptor HttpClientFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor HttpClientFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpClientFilter::kFilter =
@@ -136,16 +138,16 @@ HttpClientFilter::HttpClientFilter(HttpSchemeMetadata::ValueType scheme,
                                    Slice user_agent,
                                    bool test_only_use_put_requests)
     : scheme_(scheme),
-      user_agent_(std::move(user_agent)),
-      test_only_use_put_requests_(test_only_use_put_requests) {}
+      test_only_use_put_requests_(test_only_use_put_requests),
+      user_agent_(std::move(user_agent)) {}
 
-absl::StatusOr<HttpClientFilter> HttpClientFilter::Create(
+absl::StatusOr<std::unique_ptr<HttpClientFilter>> HttpClientFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto* transport = args.GetObject<Transport>();
   if (transport == nullptr) {
     return absl::InvalidArgumentError("HttpClientFilter needs a transport");
   }
-  return HttpClientFilter(
+  return std::make_unique<HttpClientFilter>(
       SchemeFromArgs(args),
       UserAgentFromArgs(args, transport->GetTransportName()),
       args.GetInt(GRPC_ARG_TEST_ONLY_USE_PUT_REQUESTS).value_or(false));

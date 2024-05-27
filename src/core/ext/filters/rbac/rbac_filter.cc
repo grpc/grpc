@@ -37,14 +37,21 @@
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "src/core/lib/security/context/security_context.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
-ArenaPromise<ServerMetadataHandle> RbacFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+const NoInterceptor RbacFilter::Call::OnServerInitialMetadata;
+const NoInterceptor RbacFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor RbacFilter::Call::OnClientToServerMessage;
+const NoInterceptor RbacFilter::Call::OnClientToServerHalfClose;
+const NoInterceptor RbacFilter::Call::OnServerToClientMessage;
+const NoInterceptor RbacFilter::Call::OnFinalize;
+
+absl::Status RbacFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
+                                                       RbacFilter* filter) {
   // Fetch and apply the rbac policy from the service config.
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       GetContext<
@@ -52,21 +59,19 @@ ArenaPromise<ServerMetadataHandle> RbacFilter::MakeCallPromise(
           .value);
   auto* method_params = static_cast<RbacMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
-          service_config_parser_index_));
+          filter->service_config_parser_index_));
   if (method_params == nullptr) {
-    return Immediate(ServerMetadataFromStatus(
-        absl::PermissionDeniedError("No RBAC policy found.")));
+    return absl::PermissionDeniedError("No RBAC policy found.");
   } else {
-    auto* authorization_engine = method_params->authorization_engine(index_);
+    auto* authorization_engine =
+        method_params->authorization_engine(filter->index_);
     if (authorization_engine
-            ->Evaluate(EvaluateArgs(call_args.client_initial_metadata.get(),
-                                    &per_channel_evaluate_args_))
+            ->Evaluate(EvaluateArgs(&md, &filter->per_channel_evaluate_args_))
             .type == AuthorizationEngine::Decision::Type::kDeny) {
-      return Immediate(ServerMetadataFromStatus(
-          absl::PermissionDeniedError("Unauthorized RPC rejected")));
+      return absl::PermissionDeniedError("Unauthorized RPC rejected");
     }
   }
-  return next_promise_factory(std::move(call_args));
+  return absl::OkStatus();
 }
 
 const grpc_channel_filter RbacFilter::kFilterVtable =
@@ -78,8 +83,8 @@ RbacFilter::RbacFilter(size_t index,
       service_config_parser_index_(RbacServiceConfigParser::ParserIndex()),
       per_channel_evaluate_args_(std::move(per_channel_evaluate_args)) {}
 
-absl::StatusOr<RbacFilter> RbacFilter::Create(const ChannelArgs& args,
-                                              ChannelFilter::Args filter_args) {
+absl::StatusOr<std::unique_ptr<RbacFilter>> RbacFilter::Create(
+    const ChannelArgs& args, ChannelFilter::Args filter_args) {
   auto* auth_context = args.GetObject<grpc_auth_context>();
   if (auth_context == nullptr) {
     return GRPC_ERROR_CREATE("No auth context found");
@@ -90,11 +95,9 @@ absl::StatusOr<RbacFilter> RbacFilter::Create(const ChannelArgs& args,
     // side.
     return GRPC_ERROR_CREATE("No transport configured");
   }
-  return RbacFilter(
-      grpc_channel_stack_filter_instance_number(
-          filter_args.channel_stack(),
-          filter_args.uninitialized_channel_element()),
-      EvaluateArgs::PerChannelArgs(auth_context, transport->GetEndpoint()));
+  return std::make_unique<RbacFilter>(
+      filter_args.instance_id(),
+      EvaluateArgs::PerChannelArgs(auth_context, args));
 }
 
 void RbacFilterRegister(CoreConfiguration::Builder* builder) {

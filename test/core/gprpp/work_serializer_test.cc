@@ -35,16 +35,16 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/debug/histogram_view.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/telemetry/histogram_view.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 using grpc_event_engine::experimental::WaitForSingleOwner;
@@ -74,9 +74,11 @@ TEST(WorkSerializerTest, ExecuteOneScheduleAndDrain) {
   gpr_event done;
   gpr_event_init(&done);
   lock->Schedule(
-      [&done]() { gpr_event_set(&done, reinterpret_cast<void*>(1)); },
+      [&done]() {
+        EXPECT_EQ(gpr_event_get(&done), nullptr);
+        gpr_event_set(&done, reinterpret_cast<void*>(1));
+      },
       DEBUG_LOCATION);
-  EXPECT_EQ(gpr_event_get(&done), nullptr);
   lock->DrainQueue();
   EXPECT_TRUE(gpr_event_wait(&done, grpc_timeout_seconds_to_deadline(5)) !=
               nullptr);
@@ -288,6 +290,9 @@ TEST(WorkSerializerTest, MetricsWork) {
   auto before = global_stats().Collect();
   auto stats_diff_from = [&before](absl::AnyInvocable<void()> f) {
     f();
+    // Insert a pause for the work serialier to update the stats. Reading stats
+    // here can still race with the work serializer's update attempt.
+    gpr_sleep_until(grpc_timeout_seconds_to_deadline(1));
     auto after = global_stats().Collect();
     auto diff = after->Diff(*before);
     before = std::move(after);

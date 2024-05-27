@@ -11,12 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/ares_resolver.h"
 
 #include <string>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -32,6 +32,7 @@
 
 #if GRPC_ARES == 1
 
+#include <address_sorting/address_sorting.h>
 #include <ares.h>
 
 #if ARES_VERSION >= 0x011200
@@ -51,6 +52,8 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
@@ -144,6 +147,28 @@ absl::Status SetRequestDNSServer(absl::string_view dns_server,
   return absl::OkStatus();
 }
 
+std::vector<EventEngine::ResolvedAddress> SortAddresses(
+    const std::vector<EventEngine::ResolvedAddress>& addresses) {
+  address_sorting_sortable* sortables = static_cast<address_sorting_sortable*>(
+      gpr_zalloc(sizeof(address_sorting_sortable) * addresses.size()));
+  for (size_t i = 0; i < addresses.size(); i++) {
+    sortables[i].user_data =
+        const_cast<EventEngine::ResolvedAddress*>(&addresses[i]);
+    memcpy(&sortables[i].dest_addr.addr, addresses[i].address(),
+           addresses[i].size());
+    sortables[i].dest_addr.len = addresses[i].size();
+  }
+  address_sorting_rfc_6724_sort(sortables, addresses.size());
+  std::vector<EventEngine::ResolvedAddress> sorted_addresses;
+  sorted_addresses.reserve(addresses.size());
+  for (size_t i = 0; i < addresses.size(); ++i) {
+    sorted_addresses.emplace_back(
+        *static_cast<EventEngine::ResolvedAddress*>(sortables[i].user_data));
+  }
+  gpr_free(sortables);
+  return sorted_addresses;
+}
+
 struct QueryArg {
   QueryArg(AresResolver* ar, int id, absl::string_view name)
       : ares_resolver(ar), callback_map_id(id), query_name(name) {}
@@ -156,6 +181,9 @@ struct HostnameQueryArg : public QueryArg {
   HostnameQueryArg(AresResolver* ar, int id, absl::string_view name, int p)
       : QueryArg(ar, id, name), port(p) {}
   int port;
+  int pending_requests;
+  absl::Status error_status;
+  std::vector<EventEngine::ResolvedAddress> result;
 };
 
 }  // namespace
@@ -173,7 +201,7 @@ AresResolver::CreateAresResolver(
   ares_channel channel;
   int status = ares_init_options(&channel, &opts, ARES_OPT_FLAGS);
   if (status != ARES_SUCCESS) {
-    gpr_log(GPR_ERROR, "ares_init_options failed, status: %d", status);
+    LOG(ERROR) << "ares_init_options failed, status: " << status;
     return AresStatusToAbslStatus(
         status,
         absl::StrCat("Failed to init c-ares channel: ", ares_strerror(status)));
@@ -203,8 +231,8 @@ AresResolver::AresResolver(
 }
 
 AresResolver::~AresResolver() {
-  GPR_ASSERT(fd_node_list_.empty());
-  GPR_ASSERT(callback_map_.empty());
+  CHECK(fd_node_list_.empty());
+  CHECK(callback_map_.empty());
   ares_destroy(channel_);
 }
 
@@ -220,7 +248,7 @@ void AresResolver::Orphan() {
       if (!fd_node->already_shutdown) {
         GRPC_ARES_RESOLVER_TRACE_LOG("resolver: %p shutdown fd: %s", this,
                                      fd_node->polled_fd->GetName());
-        GPR_ASSERT(fd_node->polled_fd->ShutdownLocked(
+        CHECK(fd_node->polled_fd->ShutdownLocked(
             absl::CancelledError("AresResolver::Orphan")));
         fd_node->already_shutdown = true;
       }
@@ -291,9 +319,16 @@ void AresResolver::LookupHostname(
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
   if (IsIpv6LoopbackAvailable()) {
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_UNSPEC,
+    // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
+    // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
+    // ::1).
+    resolver_arg->pending_requests = 2;
+    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
+                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
+    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET6,
                        &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   } else {
+    resolver_arg->pending_requests = 1;
     ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
                        &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   }
@@ -480,7 +515,7 @@ void AresResolver::MaybeStartTimerLocked() {
 
 void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  GPR_ASSERT(fd_node->readable_registered);
+  CHECK(fd_node->readable_registered);
   fd_node->readable_registered = false;
   GRPC_ARES_RESOLVER_TRACE_LOG("OnReadable: fd: %d; request: %p; status: %s",
                                fd_node->as, this, status.ToString().c_str());
@@ -499,7 +534,7 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
 
 void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  GPR_ASSERT(fd_node->writable_registered);
+  CHECK(fd_node->writable_registered);
   fd_node->writable_registered = false;
   GRPC_ARES_RESOLVER_TRACE_LOG("OnWritable: fd: %d; request:%p; status: %s",
                                fd_node->as, this, status.ToString().c_str());
@@ -548,74 +583,88 @@ void AresResolver::OnAresBackupPollAlarm() {
 void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
                                           struct hostent* hostent) {
-  std::unique_ptr<HostnameQueryArg> hostname_qa(
-      static_cast<HostnameQueryArg*>(arg));
+  auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
+  CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
-  auto nh = ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
-  GPR_ASSERT(!nh.empty());
-  GPR_ASSERT(
-      absl::holds_alternative<EventEngine::DNSResolver::LookupHostnameCallback>(
-          nh.mapped()));
-  auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
-      std::move(nh.mapped()));
   if (status != ARES_SUCCESS) {
     std::string error_msg =
         absl::StrFormat("address lookup failed for %s: %s",
                         hostname_qa->query_name, ares_strerror(status));
     GRPC_ARES_RESOLVER_TRACE_LOG("resolver:%p OnHostbynameDoneLocked: %s",
                                  ares_resolver, error_msg.c_str());
-    ares_resolver->event_engine_->Run(
-        [callback = std::move(callback),
-         status = AresStatusToAbslStatus(status, error_msg)]() mutable {
-          callback(status);
-        });
-    return;
-  }
-  GRPC_ARES_RESOLVER_TRACE_LOG(
-      "resolver:%p OnHostbynameDoneLocked name=%s ARES_SUCCESS", ares_resolver,
-      hostname_qa->query_name.c_str());
-  std::vector<EventEngine::ResolvedAddress> result;
-  for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
-    switch (hostent->h_addrtype) {
-      case AF_INET6: {
-        size_t addr_len = sizeof(struct sockaddr_in6);
-        struct sockaddr_in6 addr;
-        memset(&addr, 0, addr_len);
-        memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
-               sizeof(struct in6_addr));
-        addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-        addr.sin6_port = htons(hostname_qa->port);
-        result.emplace_back(reinterpret_cast<const sockaddr*>(&addr), addr_len);
-        char output[INET6_ADDRSTRLEN];
-        ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
-        GRPC_ARES_RESOLVER_TRACE_LOG(
-            "resolver:%p c-ares resolver gets a AF_INET6 result: \n"
-            "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
-            ares_resolver, output, hostname_qa->port, addr.sin6_scope_id);
-        break;
-      }
-      case AF_INET: {
-        size_t addr_len = sizeof(struct sockaddr_in);
-        struct sockaddr_in addr;
-        memset(&addr, 0, addr_len);
-        memcpy(&addr.sin_addr, hostent->h_addr_list[i], sizeof(struct in_addr));
-        addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-        addr.sin_port = htons(hostname_qa->port);
-        result.emplace_back(reinterpret_cast<const sockaddr*>(&addr), addr_len);
-        char output[INET_ADDRSTRLEN];
-        ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
-        GRPC_ARES_RESOLVER_TRACE_LOG(
-            "resolver:%p c-ares resolver gets a AF_INET result: \n"
-            "  addr: %s\n  port: %d\n",
-            ares_resolver, output, hostname_qa->port);
-        break;
+    hostname_qa->error_status = AresStatusToAbslStatus(status, error_msg);
+  } else {
+    GRPC_ARES_RESOLVER_TRACE_LOG(
+        "resolver:%p OnHostbynameDoneLocked name=%s ARES_SUCCESS",
+        ares_resolver, hostname_qa->query_name.c_str());
+    for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
+      switch (hostent->h_addrtype) {
+        case AF_INET6: {
+          size_t addr_len = sizeof(struct sockaddr_in6);
+          struct sockaddr_in6 addr;
+          memset(&addr, 0, addr_len);
+          memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
+                 sizeof(struct in6_addr));
+          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
+          addr.sin6_port = htons(hostname_qa->port);
+          hostname_qa->result.emplace_back(
+              reinterpret_cast<const sockaddr*>(&addr), addr_len);
+          char output[INET6_ADDRSTRLEN];
+          ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
+          GRPC_ARES_RESOLVER_TRACE_LOG(
+              "resolver:%p c-ares resolver gets a AF_INET6 result: \n"
+              "  addr: %s\n  port: %d\n  sin6_scope_id: %d\n",
+              ares_resolver, output, hostname_qa->port, addr.sin6_scope_id);
+          break;
+        }
+        case AF_INET: {
+          size_t addr_len = sizeof(struct sockaddr_in);
+          struct sockaddr_in addr;
+          memset(&addr, 0, addr_len);
+          memcpy(&addr.sin_addr, hostent->h_addr_list[i],
+                 sizeof(struct in_addr));
+          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
+          addr.sin_port = htons(hostname_qa->port);
+          hostname_qa->result.emplace_back(
+              reinterpret_cast<const sockaddr*>(&addr), addr_len);
+          char output[INET_ADDRSTRLEN];
+          ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
+          GRPC_ARES_RESOLVER_TRACE_LOG(
+              "resolver:%p c-ares resolver gets a AF_INET result: \n"
+              "  addr: %s\n  port: %d\n",
+              ares_resolver, output, hostname_qa->port);
+          break;
+        }
+        default:
+          grpc_core::Crash(
+              absl::StrFormat("resolver:%p Received invalid type of address %d",
+                              ares_resolver, hostent->h_addrtype));
       }
     }
   }
-  ares_resolver->event_engine_->Run(
-      [callback = std::move(callback), result = std::move(result)]() mutable {
-        callback(std::move(result));
-      });
+  if (hostname_qa->pending_requests == 0) {
+    auto nh =
+        ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
+    CHECK(!nh.empty());
+    CHECK(absl::holds_alternative<
+          EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
+    auto callback = absl::get<EventEngine::DNSResolver::LookupHostnameCallback>(
+        std::move(nh.mapped()));
+    if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
+      ares_resolver->event_engine_->Run(
+          [callback = std::move(callback),
+           result = SortAddresses(hostname_qa->result)]() mutable {
+            callback(std::move(result));
+          });
+    } else {
+      ares_resolver->event_engine_->Run(
+          [callback = std::move(callback),
+           result = std::move(hostname_qa->error_status)]() mutable {
+            callback(std::move(result));
+          });
+    }
+    delete hostname_qa;
+  }
 }
 
 void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
@@ -623,10 +672,9 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  GPR_ASSERT(!nh.empty());
-  GPR_ASSERT(
-      absl::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
-          nh.mapped()));
+  CHECK(!nh.empty());
+  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+      nh.mapped()));
   auto callback = absl::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
@@ -679,10 +727,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  GPR_ASSERT(!nh.empty());
-  GPR_ASSERT(
-      absl::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
-          nh.mapped()));
+  CHECK(!nh.empty());
+  CHECK(absl::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+      nh.mapped()));
   auto callback = absl::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
@@ -723,7 +770,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
                                result.size());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_ares_resolver)) {
     for (const auto& record : result) {
-      gpr_log(GPR_INFO, "%s", record.c_str());
+      LOG(INFO) << record;
     }
   }
   // Clean up.

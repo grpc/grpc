@@ -30,8 +30,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -44,6 +42,8 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace {

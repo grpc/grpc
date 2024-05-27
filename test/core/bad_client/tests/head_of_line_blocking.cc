@@ -21,6 +21,8 @@
 
 #include <algorithm>
 
+#include "absl/log/check.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -29,7 +31,7 @@
 
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static const char prefix[] =
     "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
@@ -85,11 +87,11 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_registered_call(
       server, registered_method, &s, &deadline, &request_metadata_recv,
       &payload, cq, cq, grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  GPR_ASSERT(payload != nullptr);
+  CHECK_NE(payload, nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);

@@ -1,0 +1,13 @@
+network_input {
+  single_read_bytes: ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+}
+api_actions {
+  request_call {
+  }
+}
+api_actions {
+  cancel_all_calls_if_shutdown {
+  }
+}
+channel_args {
+}

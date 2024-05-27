@@ -35,8 +35,8 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -27,6 +27,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -38,7 +39,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -50,14 +50,19 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/service_config/service_config_call_data.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/resolver/xds/xds_resolver_attributes.h"
+#include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {
 
 TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
+const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
+const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
+const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
+const NoInterceptor StatefulSessionFilter::Call::OnFinalize;
 
 UniqueTypeName XdsOverrideHostAttribute::TypeName() {
   static UniqueTypeName::Factory kFactory("xds_override_host");
@@ -69,15 +74,14 @@ const grpc_channel_filter StatefulSessionFilter::kFilter =
                            kFilterExaminesServerInitialMetadata>(
         "stateful_session_filter");
 
-absl::StatusOr<StatefulSessionFilter> StatefulSessionFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args filter_args) {
-  return StatefulSessionFilter(filter_args);
+absl::StatusOr<std::unique_ptr<StatefulSessionFilter>>
+StatefulSessionFilter::Create(const ChannelArgs&,
+                              ChannelFilter::Args filter_args) {
+  return std::make_unique<StatefulSessionFilter>(filter_args);
 }
 
 StatefulSessionFilter::StatefulSessionFilter(ChannelFilter::Args filter_args)
-    : index_(grpc_channel_stack_filter_instance_number(
-          filter_args.channel_stack(),
-          filter_args.uninitialized_channel_element())),
+    : index_(filter_args.instance_id()),
       service_config_parser_index_(
           StatefulSessionServiceConfigParser::ParserIndex()) {}
 
@@ -103,7 +107,7 @@ void MaybeUpdateServerInitialMetadata(
     bool cluster_changed, absl::string_view actual_cluster,
     absl::string_view cookie_address_list,
     XdsOverrideHostAttribute* override_host_attribute,
-    ServerMetadata* server_initial_metadata) {
+    ServerMetadata& server_initial_metadata) {
   // If cookie doesn't need to change, do nothing.
   if (cookie_address_list == override_host_attribute->actual_address_list() &&
       !cluster_changed) {
@@ -121,7 +125,7 @@ void MaybeUpdateServerInitialMetadata(
     parts.emplace_back(
         absl::StrCat("Max-Age=", cookie_config->ttl.as_timespec().tv_sec));
   }
-  server_initial_metadata->Append(
+  server_initial_metadata.Append(
       "set-cookie", Slice::FromCopiedString(absl::StrJoin(parts, "; ")),
       [](absl::string_view error, const Slice&) {
         Crash(absl::StrCat("ERROR ADDING set-cookie METADATA: ", error));
@@ -141,7 +145,7 @@ absl::string_view GetClusterToUse(
   // Get cluster assigned by the XdsConfigSelector.
   auto cluster_attribute =
       service_config_call_data->GetCallAttribute<XdsClusterAttribute>();
-  GPR_ASSERT(cluster_attribute != nullptr);
+  CHECK_NE(cluster_attribute, nullptr);
   auto current_cluster = cluster_attribute->cluster();
   static constexpr absl::string_view kClusterPrefix = "cluster:";
   // If prefix is not "cluster:", then we can't use cluster override.
@@ -155,7 +159,7 @@ absl::string_view GetClusterToUse(
   // Use cluster from the cookie if it is configured for the route.
   auto route_data =
       service_config_call_data->GetCallAttribute<XdsRouteStateAttribute>();
-  GPR_ASSERT(route_data != nullptr);
+  CHECK_NE(route_data, nullptr);
   // Cookie cluster was not configured for route - use the one from the
   // attribute
   if (!route_data->HasClusterForRoute(cluster_from_cookie)) {
@@ -168,12 +172,11 @@ absl::string_view GetClusterToUse(
   return absl::StripPrefix(arena_allocated_cluster, kClusterPrefix);
 }
 
-std::string GetCookieValue(const ClientMetadataHandle& client_initial_metadata,
+std::string GetCookieValue(const ClientMetadata& client_initial_metadata,
                            absl::string_view cookie_name) {
   // Check to see if the cookie header is present.
   std::string buffer;
-  auto header_value =
-      client_initial_metadata->GetStringValue("cookie", &buffer);
+  auto header_value = client_initial_metadata.GetStringValue("cookie", &buffer);
   if (!header_value.has_value()) return "";
   // Parse cookie header.
   std::vector<absl::string_view> values;
@@ -193,14 +196,15 @@ std::string GetCookieValue(const ClientMetadataHandle& client_initial_metadata,
 }
 
 bool IsConfiguredPath(absl::string_view configured_path,
-                      const ClientMetadataHandle& client_initial_metadata) {
+                      const ClientMetadata& client_initial_metadata) {
   // No path configured meaning all paths match
   if (configured_path.empty()) {
     return true;
   }
   // Check to see if the configured path matches the request path.
-  Slice* path_slice = client_initial_metadata->get_pointer(HttpPathMetadata());
-  GPR_ASSERT(path_slice != nullptr);
+  const Slice* path_slice =
+      client_initial_metadata.get_pointer(HttpPathMetadata());
+  CHECK_NE(path_slice, nullptr);
   absl::string_view path = path_slice->as_string_view();
   // Matching criteria from
   // https://www.rfc-editor.org/rfc/rfc6265#section-5.1.4.
@@ -218,73 +222,67 @@ bool IsConfiguredPath(absl::string_view configured_path,
 }
 }  // namespace
 
-// Construct a promise for one call.
-ArenaPromise<ServerMetadataHandle> StatefulSessionFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
+void StatefulSessionFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& md, StatefulSessionFilter* filter) {
   // Get config.
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       GetContext<
           grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
           .value);
-  GPR_ASSERT(service_config_call_data != nullptr);
+  CHECK_NE(service_config_call_data, nullptr);
   auto* method_params = static_cast<StatefulSessionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
-          service_config_parser_index_));
-  GPR_ASSERT(method_params != nullptr);
-  auto* cookie_config = method_params->GetConfig(index_);
-  GPR_ASSERT(cookie_config != nullptr);
-  if (!cookie_config->name.has_value() ||
-      !IsConfiguredPath(cookie_config->path,
-                        call_args.client_initial_metadata)) {
-    return next_promise_factory(std::move(call_args));
+          filter->service_config_parser_index_));
+  CHECK_NE(method_params, nullptr);
+  cookie_config_ = method_params->GetConfig(filter->index_);
+  CHECK_NE(cookie_config_, nullptr);
+  if (!cookie_config_->name.has_value() ||
+      !IsConfiguredPath(cookie_config_->path, md)) {
+    return;
   }
   // Base64-decode cookie value.
-  std::string cookie_value =
-      GetCookieValue(call_args.client_initial_metadata, *cookie_config->name);
+  std::string cookie_value = GetCookieValue(md, *cookie_config_->name);
   // Cookie format is "host;cluster"
   std::pair<absl::string_view, absl::string_view> host_cluster =
       absl::StrSplit(cookie_value, absl::MaxSplits(';', 1));
-  absl::string_view cookie_address_list;
   // Allocate the string on the arena, so that it has the right lifetime.
   if (!host_cluster.first.empty()) {
-    cookie_address_list = AllocateStringOnArena(host_cluster.first);
+    cookie_address_list_ = AllocateStringOnArena(host_cluster.first);
   }
   // Set override host attribute.
-  auto* override_host_attribute =
+  override_host_attribute_ =
       GetContext<Arena>()->ManagedNew<XdsOverrideHostAttribute>(
-          cookie_address_list);
-  service_config_call_data->SetCallAttribute(override_host_attribute);
+          cookie_address_list_);
+  service_config_call_data->SetCallAttribute(override_host_attribute_);
   // Check if the cluster override is valid, and apply it if necessary.
   // Note that cluster_name will point to an arena-allocated string
   // that will still be alive when we see the server initial metadata.
   // If the cluster name is empty, that means we cannot use a
   // cluster override (i.e., the route uses a cluster specifier plugin).
-  absl::string_view cluster_name =
+  cluster_name_ =
       GetClusterToUse(host_cluster.second, service_config_call_data);
-  bool cluster_changed = cluster_name != host_cluster.second;
-  // Intercept server initial metadata.
-  call_args.server_initial_metadata->InterceptAndMap(
-      [cookie_config, cluster_changed, cluster_name, cookie_address_list,
-       override_host_attribute](ServerMetadataHandle md) {
-        // Add cookie to server initial metadata if needed.
-        MaybeUpdateServerInitialMetadata(cookie_config, cluster_changed,
-                                         cluster_name, cookie_address_list,
-                                         override_host_attribute, md.get());
-        return md;
-      });
-  return Map(next_promise_factory(std::move(call_args)),
-             [cookie_config, cluster_changed, cluster_name, cookie_address_list,
-              override_host_attribute](ServerMetadataHandle md) {
-               // If we got a Trailers-Only response, then add the
-               // cookie to the trailing metadata instead of the
-               // initial metadata.
-               if (md->get(GrpcTrailersOnly()).value_or(false)) {
-                 MaybeUpdateServerInitialMetadata(
-                     cookie_config, cluster_changed, cluster_name,
-                     cookie_address_list, override_host_attribute, md.get());
-               }
-               return md;
-             });
+  cluster_changed_ = cluster_name_ != host_cluster.second;
+  perform_filtering_ = true;
+}
+
+void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
+  if (!perform_filtering_) return;
+  // Add cookie to server initial metadata if needed.
+  MaybeUpdateServerInitialMetadata(cookie_config_, cluster_changed_,
+                                   cluster_name_, cookie_address_list_,
+                                   override_host_attribute_, md);
+}
+
+void StatefulSessionFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  if (!perform_filtering_) return;
+  // If we got a Trailers-Only response, then add the
+  // cookie to the trailing metadata instead of the
+  // initial metadata.
+  if (md.get(GrpcTrailersOnly()).value_or(false)) {
+    MaybeUpdateServerInitialMetadata(cookie_config_, cluster_changed_,
+                                     cluster_name_, cookie_address_list_,
+                                     override_host_attribute_, md);
+  }
 }
 
 void StatefulSessionFilterRegister(CoreConfiguration::Builder* builder) {

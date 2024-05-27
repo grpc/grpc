@@ -14,8 +14,6 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_COUNT_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREAD_POOL_THREAD_COUNT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -26,10 +24,11 @@
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/support/cpu.h>
+#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -151,7 +150,12 @@ class LivingThreadCount {
     --living_count_;
     cv_.SignalAll();
   }
-  void BlockUntilThreadCount(size_t desired_threads, const char* why)
+  // Blocks the calling thread until the desired number of threads is reached.
+  // If the thread count does not change for some given `stuck_timeout`
+  // duration, this method returns error. If the thread count does change, the
+  // timeout clock is reset.
+  absl::Status BlockUntilThreadCount(size_t desired_threads, const char* why,
+                                     grpc_core::Duration stuck_timeout)
       ABSL_LOCKS_EXCLUDED(mu_);
   size_t count() ABSL_LOCKS_EXCLUDED(mu_) {
     grpc_core::MutexLock lock(&mu_);

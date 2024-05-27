@@ -284,11 +284,11 @@ class BuildExt(build_ext.build_ext):
             def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
                 if src.endswith(".c"):
                     extra_postargs = [
-                        arg for arg in extra_postargs if not "-std=c++" in arg
+                        arg for arg in extra_postargs if "-std=c++" not in arg
                     ]
                 elif src.endswith(".cc") or src.endswith(".cpp"):
                     extra_postargs = [
-                        arg for arg in extra_postargs if not "-std=gnu99" in arg
+                        arg for arg in extra_postargs if "-std=gnu99" not in arg
                     ]
                 return old_compile(
                     obj, src, ext, cc_args, extra_postargs, pp_opts

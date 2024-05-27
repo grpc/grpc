@@ -15,6 +15,7 @@
 #include "src/core/lib/surface/channel_init.h"
 
 #include <map>
+#include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
@@ -22,8 +23,11 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "test/core/util/test_config.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -174,7 +178,8 @@ TEST(ChannelInitTest, CanAddBeforeAllOnce) {
             std::vector<std::string>({"foo", "bar", "baz", "aaa"}));
 }
 
-TEST(ChannelInitTest, CanAddBeforeAllTwice) {
+TEST(ChannelInitDeathTest, CanAddBeforeAllTwice) {
+  GTEST_FLAG_SET(death_test_style, "threadsafe");
   ChannelInit::Builder b;
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("foo")).BeforeAll();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("bar")).BeforeAll();
@@ -199,6 +204,74 @@ TEST(ChannelInitTest, CanPostProcessFilters) {
   EXPECT_EQ(called_post_processor, 0);
   EXPECT_EQ(GetFilterNames(init, GRPC_CLIENT_CHANNEL, ChannelArgs()),
             std::vector<std::string>({"foo", "aaa", "bar"}));
+}
+
+class TestFilter1 {
+ public:
+  explicit TestFilter1(int* p) : p_(p) {}
+
+  static absl::StatusOr<std::unique_ptr<TestFilter1>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    EXPECT_EQ(args.GetInt("foo"), 1);
+    return std::make_unique<TestFilter1>(args.GetPointer<int>("p"));
+  }
+
+  static const grpc_channel_filter kFilter;
+
+  class Call {
+   public:
+    explicit Call(TestFilter1* filter) {
+      EXPECT_EQ(*filter->x_, 0);
+      *filter->x_ = 1;
+      ++*filter->p_;
+    }
+    static const NoInterceptor OnClientInitialMetadata;
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnFinalize;
+  };
+
+ private:
+  std::unique_ptr<int> x_ = std::make_unique<int>(0);
+  int* const p_;
+};
+
+const grpc_channel_filter TestFilter1::kFilter = {
+    nullptr, nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
+    nullptr, 0,       nullptr, nullptr, nullptr, nullptr, "test_filter1"};
+const NoInterceptor TestFilter1::Call::OnClientInitialMetadata;
+const NoInterceptor TestFilter1::Call::OnServerInitialMetadata;
+const NoInterceptor TestFilter1::Call::OnServerTrailingMetadata;
+const NoInterceptor TestFilter1::Call::OnClientToServerMessage;
+const NoInterceptor TestFilter1::Call::OnClientToServerHalfClose;
+const NoInterceptor TestFilter1::Call::OnServerToClientMessage;
+const NoInterceptor TestFilter1::Call::OnFinalize;
+
+TEST(ChannelInitTest, CanCreateFilterWithCall) {
+  ChannelInit::Builder b;
+  b.RegisterFilter<TestFilter1>(GRPC_CLIENT_CHANNEL);
+  auto init = b.Build();
+  int p = 0;
+  InterceptionChainBuilder chain_builder{
+      ChannelArgs().Set("foo", 1).Set("p", ChannelArgs::UnownedPointer(&p))};
+  init.AddToInterceptionChainBuilder(GRPC_CLIENT_CHANNEL, chain_builder);
+  int handled = 0;
+  auto stack = chain_builder.Build(MakeCallDestinationFromHandlerFunction(
+      [&handled](CallHandler) { ++handled; }));
+  ASSERT_TRUE(stack.ok()) << stack.status();
+  RefCountedPtr<CallArenaAllocator> allocator =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test"),
+          1024);
+  auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
+                           allocator->MakeArena(), allocator, nullptr);
+  (*stack)->StartCall(std::move(call.handler));
+  EXPECT_EQ(p, 1);
+  EXPECT_EQ(handled, 1);
 }
 
 }  // namespace

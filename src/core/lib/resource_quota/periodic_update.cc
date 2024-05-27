@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/periodic_update.h"
 
 #include <atomic>
 
-#include "src/core/lib/gpr/useful.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 

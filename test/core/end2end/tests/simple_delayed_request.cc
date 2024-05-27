@@ -18,12 +18,12 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -37,17 +37,17 @@ CORE_END2END_TEST(Http2SingleHopTest, SimpleDelayedRequestShort) {
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, 5000));
-  gpr_log(GPR_ERROR, "Create client side call");
+  LOG(ERROR) << "Create client side call";
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
-  gpr_log(GPR_ERROR, "Start initial batch");
+  LOG(ERROR) << "Start initial batch";
   c.NewBatch(1)
       .SendInitialMetadata({}, GRPC_INITIAL_METADATA_WAIT_FOR_READY)
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  gpr_log(GPR_ERROR, "Start server");
+  LOG(ERROR) << "Start server";
   InitServer(ChannelArgs());
   auto s = RequestCall(101);
   Expect(101, true);

@@ -22,12 +22,13 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(ErrorTest, SetGetInt) {
   grpc_error_handle error = GRPC_ERROR_CREATE("Test");
@@ -148,7 +149,7 @@ TEST(ErrorTest, PrintErrorString) {
   error = grpc_error_set_int(error, grpc_core::StatusIntProperty::kSize, 666);
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "message");
-  // gpr_log(GPR_DEBUG, "%s", grpc_core::StatusToString(error).c_str());
+  //  VLOG(2) << grpc_core::StatusToString(error);
 }
 
 TEST(ErrorTest, PrintErrorStringReference) {

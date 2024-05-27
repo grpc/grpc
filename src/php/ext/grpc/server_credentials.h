@@ -21,6 +21,7 @@
 
 #include "php_grpc.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 
 /* Class entry for the Server_Credentials PHP class */

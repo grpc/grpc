@@ -28,13 +28,20 @@ set -e
 BASEDIR=$(dirname "$0")
 BASEDIR=$(realpath "$BASEDIR")/../..
 
-PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing  grpcio_tests"
+PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_tests"
 
 (cd "$BASEDIR";
-  pip install --upgrade cython;
+  pip install --upgrade "cython<3.0.0rc1";
   python setup.py install;
   pushd tools/distrib/python/grpcio_tools;
     ../make_grpcio_tools.py
+    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+  popd;
+  pushd src/python/grpcio_observability;
+    ./make_grpcio_observability.py
+    GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
+  popd;
+  pushd tools/distrib/python/xds_protos;
     GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
   popd;
   pushd src/python;
@@ -43,7 +50,7 @@ PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grp
         python setup.py clean;
         maybe_run_command preprocess
         maybe_run_command build_package_protos
-        python setup.py install;
+        python -m pip install .;
       popd;
     done
   popd;

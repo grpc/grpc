@@ -23,9 +23,10 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -39,8 +40,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -177,7 +178,7 @@ TEST_F(End2endTest, StreamingThroughput) {
     request.set_message(kLargeString);
     ASSERT_TRUE(stream->Write(request));
     if (i % 1000 == 0) {
-      gpr_log(GPR_INFO, "Send count = %d", i);
+      LOG(INFO) << "Send count = " << i;
     }
   }
   stream->WritesDone();

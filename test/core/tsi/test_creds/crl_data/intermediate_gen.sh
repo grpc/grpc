@@ -62,11 +62,9 @@ cp "./intermediate_ca/intermediate.crl" ./crls
 cp current.crl ./crls/
 openssl rehash ./crls/
 
-mkdir crls_missing_intermediate
 cp current.crl ./crls_missing_intermediate/
 openssl rehash ./crls_missing_intermediate/
 
-mkdir crls_missing_root
 cp intermediate.crl ./crls_missing_root/
 openssl rehash ./crls_missing_root/
 

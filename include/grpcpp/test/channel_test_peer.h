@@ -32,7 +32,6 @@ class ChannelTestPeer {
   /// Provide the gRPC Core channel
   grpc_channel* channel() const { return channel_->c_channel_; }
   int registered_calls() const;
-  int registration_attempts() const;
 
  private:
   Channel* channel_;  // not owned

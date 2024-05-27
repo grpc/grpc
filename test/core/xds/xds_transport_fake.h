@@ -17,7 +17,7 @@
 #ifndef GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 #define GRPC_TEST_CORE_XDS_XDS_TRANSPORT_FAKE_H
 
-#include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #include <deque>
 #include <functional>
@@ -32,12 +32,14 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include "src/core/ext/xds/xds_bootstrap.h"
-#include "src/core/ext/xds/xds_transport.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "src/core/xds/xds_client/xds_transport.h"
 
 namespace grpc_core {
 
@@ -66,6 +68,8 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void Orphan() override;
 
+    void StartRecvMessage() override;
+
     using StreamingCall::Ref;  // Make it public.
 
     bool HaveMessageFromClient();
@@ -83,6 +87,17 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
     void MaybeSendStatusToClient(absl::Status status);
 
     bool Orphaned();
+
+    bool WaitForReadsStarted(size_t expected, absl::Duration timeout) {
+      MutexLock lock(&mu_);
+      const absl::Time deadline = absl::Now() + timeout;
+      do {
+        if (reads_started_ == expected) {
+          return true;
+        }
+      } while (!cv_reads_started_.WaitWithDeadline(&mu_, deadline));
+      return false;
+    }
 
    private:
     class RefCountedEventHandler : public RefCounted<RefCountedEventHandler> {
@@ -107,19 +122,27 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void CompleteSendMessageFromClientLocked(bool ok)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
+    void MaybeDeliverMessageToClient();
 
     RefCountedPtr<FakeXdsTransport> transport_;
     const char* method_;
 
     Mutex mu_;
-    CondVar cv_;
+    CondVar cv_reads_started_;
+    CondVar cv_client_msg_;
     RefCountedPtr<RefCountedEventHandler> event_handler_ ABSL_GUARDED_BY(&mu_);
     std::deque<std::string> from_client_messages_ ABSL_GUARDED_BY(&mu_);
     bool status_sent_ ABSL_GUARDED_BY(&mu_) = false;
     bool orphaned_ ABSL_GUARDED_BY(&mu_) = false;
+    size_t reads_started_ ABSL_GUARDED_BY(&mu_) = 0;
+    size_t num_pending_reads_ ABSL_GUARDED_BY(&mu_) = 0;
+    std::deque<std::string> to_client_messages_ ABSL_GUARDED_BY(&mu_);
   };
 
-  FakeXdsTransportFactory() = default;
+  explicit FakeXdsTransportFactory(
+      std::function<void()> too_many_pending_reads_callback)
+      : too_many_pending_reads_callback_(
+            std::move(too_many_pending_reads_callback)) {}
 
   using XdsTransportFactory::Ref;  // Make it public.
 
@@ -130,7 +153,7 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
   // EventHandler::OnRequestSent() upon reading a request from the client.
   // If this is set to false, that behavior will be inhibited, and
   // EventHandler::OnRequestSent() will not be called until the test
-  // expicitly calls FakeStreamingCall::CompleteSendMessageFromClient().
+  // explicitly calls FakeStreamingCall::CompleteSendMessageFromClient().
   //
   // This value affects all transports created after this call is
   // complete.  Any transport that already exists prior to this call
@@ -189,6 +212,10 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
 
     void RemoveStream(const char* method, FakeStreamingCall* call);
 
+    FakeXdsTransportFactory* factory() const { return factory_.get(); }
+
+    const XdsBootstrap::XdsServer* server() const { return &server_; }
+
    private:
     class RefCountedOnConnectivityFailure
         : public RefCounted<RefCountedOnConnectivityFailure> {
@@ -233,10 +260,11 @@ class FakeXdsTransportFactory : public XdsTransportFactory {
       const XdsBootstrap::XdsServer& server);
 
   Mutex mu_;
-  std::map<const XdsBootstrap::XdsServer*, RefCountedPtr<FakeXdsTransport>>
+  std::map<std::string /*XdsServer key*/, RefCountedPtr<FakeXdsTransport>>
       transport_map_ ABSL_GUARDED_BY(&mu_);
   bool auto_complete_messages_from_client_ ABSL_GUARDED_BY(&mu_) = true;
   bool abort_on_undrained_messages_ ABSL_GUARDED_BY(&mu_) = true;
+  std::function<void()> too_many_pending_reads_callback_;
 };
 
 }  // namespace grpc_core

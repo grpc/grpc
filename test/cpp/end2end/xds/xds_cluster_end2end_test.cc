@@ -20,15 +20,18 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 
-#include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
-#include "test/core/util/scoped_env_var.h"
+#include "test/core/test_util/fake_stats_plugin.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -42,6 +45,8 @@ using ::envoy::config::core::v3::HealthStatus;
 using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
+using OptionalLabelKey =
+    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
@@ -304,6 +309,55 @@ TEST_P(CdsTest, ClusterChangeAfterAdsCallFails) {
   WaitForBackend(DEBUG_LOCATION, 1);
 }
 
+TEST_P(CdsTest, MetricLabels) {
+  // Injects a fake client call tracer factory. Try keep this at top.
+  grpc_core::FakeClientCallTracerFactory fake_client_call_tracer_factory;
+  CreateAndStartBackends(2);
+  // Populates EDS resources.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)},
+                        {"locality1", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // Populates service labels to CDS resources.
+  auto cluster = default_cluster_;
+  auto& filter_map = *cluster.mutable_metadata()->mutable_filter_metadata();
+  auto& label_map =
+      *filter_map["com.google.csm.telemetry_labels"].mutable_fields();
+  *label_map["service_name"].mutable_string_value() = "myservice";
+  *label_map["service_namespace"].mutable_string_value() = "mynamespace";
+  balancer_->ads_service()->SetCdsResource(cluster);
+  ChannelArguments channel_args;
+  channel_args.SetPointer(GRPC_ARG_INJECT_FAKE_CLIENT_CALL_TRACER_FACTORY,
+                          &fake_client_call_tracer_factory);
+  ResetStub(/*failover_timeout_ms=*/0, &channel_args);
+  // Send an RPC to backend 0.
+  WaitForBackend(DEBUG_LOCATION, 0);
+  // Verify that the optional labels are recorded in the call tracer.
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(OptionalLabelKey::kXdsServiceName, "myservice"),
+          ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
+                          "mynamespace"),
+          ::testing::Pair(OptionalLabelKey::kLocality,
+                          LocalityNameString("locality0"))));
+  // Send an RPC to backend 1.
+  WaitForBackend(DEBUG_LOCATION, 1);
+  // Verify that the optional labels are recorded in the call
+  // tracer.
+  EXPECT_THAT(
+      fake_client_call_tracer_factory.GetLastFakeClientCallTracer()
+          ->GetLastCallAttemptTracer()
+          ->GetOptionalLabels(),
+      ::testing::ElementsAre(
+          ::testing::Pair(OptionalLabelKey::kXdsServiceName, "myservice"),
+          ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
+                          "mynamespace"),
+          ::testing::Pair(OptionalLabelKey::kLocality,
+                          LocalityNameString("locality1"))));
+}
+
 //
 // CDS deletion tests
 //
@@ -330,9 +384,9 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
   SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
     if (result.status.ok()) return true;  // Keep going.
     EXPECT_EQ(StatusCode::UNAVAILABLE, result.status.error_code());
-    EXPECT_EQ(absl::StrCat("CDS resource \"", kDefaultClusterName,
-                           "\" does not exist"),
-              result.status.error_message());
+    EXPECT_EQ(
+        absl::StrCat("CDS resource ", kDefaultClusterName, " does not exist"),
+        result.status.error_message());
     return false;
   });
   // Make sure we ACK'ed the update.
@@ -343,7 +397,7 @@ TEST_P(CdsDeletionTest, ClusterDeleted) {
 
 // Tests that we ignore Cluster deletions if configured to do so.
 TEST_P(CdsDeletionTest, ClusterDeletionIgnored) {
-  InitClient(XdsBootstrapBuilder().SetIgnoreResourceDeletion());
+  InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
   // Bring up client pointing to backend 0 and wait for it to connect.
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
@@ -414,7 +468,6 @@ TEST_P(EdsTest, Vanilla) {
 }
 
 TEST_P(EdsTest, MultipleAddressesPerEndpoint) {
-  if (!grpc_core::IsRoundRobinDelegateToPickFirstEnabled()) return;
   grpc_core::testing::ScopedExperimentalEnvVar env(
       "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   const size_t kNumRpcsPerAddress = 10;
@@ -846,10 +899,10 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for the first 3 backends to be ready.
   WaitForAllBackends(DEBUG_LOCATION, 0, 3);
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   // Send kNumRpcs RPCs.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // The picking rates of the first 3 backends should be roughly equal to the
   // expectation.
   std::vector<double> locality_picked_rates;
@@ -860,8 +913,7 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   }
   const double kErrorTolerance = 0.2;
   for (size_t i = 0; i < 3; ++i) {
-    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
-            locality_picked_rates[i]);
+    LOG(INFO) << "Locality " << i << " rate " << locality_picked_rates[i];
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
@@ -879,10 +931,10 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
   // Wait until the locality update has been processed, as signaled by backend
   // 3 receiving a request.
   WaitForAllBackends(DEBUG_LOCATION, 3, 4);
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   // Send kNumRpcs RPCs.
   CheckRpcSendOk(DEBUG_LOCATION, kNumRpcs);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
   // Backend 0 no longer receives any request.
   EXPECT_EQ(0U, backends_[0]->backend_service()->request_count());
   // The picking rates of the last 3 backends should be roughly equal to the
@@ -894,8 +946,7 @@ TEST_P(EdsTest, LocalityMapUpdateChurn) {
         kNumRpcs);
   }
   for (size_t i = 1; i < 4; ++i) {
-    gpr_log(GPR_INFO, "Locality %" PRIuPTR " rate %f", i,
-            locality_picked_rates[i]);
+    LOG(INFO) << "Locality " << i << " rate " << locality_picked_rates[i];
     EXPECT_THAT(
         locality_picked_rates[i],
         ::testing::AllOf(
@@ -1039,14 +1090,14 @@ TEST_P(EdsTest, DropConfigUpdate) {
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Send kNumRpcsLbOnly RPCs and count the drops.
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  LOG(INFO) << "========= BEFORE FIRST BATCH ==========";
   size_t num_drops = SendRpcsAndCountFailuresWithMessage(
       DEBUG_LOCATION, kNumRpcsLbOnly, StatusCode::UNAVAILABLE,
       kStatusMessageDropPrefix);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  LOG(INFO) << "========= DONE WITH FIRST BATCH ==========";
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
-  gpr_log(GPR_INFO, "First batch drop rate %f", seen_drop_rate);
+  LOG(INFO) << "First batch drop rate " << seen_drop_rate;
   EXPECT_THAT(seen_drop_rate,
               ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
   // The second ADS response contains two drop categories, send an update EDS
@@ -1076,14 +1127,14 @@ TEST_P(EdsTest, DropConfigUpdate) {
       },
       /*timeout_ms=*/40000);
   // Send kNumRpcsBoth RPCs and count the drops.
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  LOG(INFO) << "========= BEFORE SECOND BATCH ==========";
   num_drops = SendRpcsAndCountFailuresWithMessage(DEBUG_LOCATION, kNumRpcsBoth,
                                                   StatusCode::UNAVAILABLE,
                                                   kStatusMessageDropPrefix);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  LOG(INFO) << "========= DONE WITH SECOND BATCH ==========";
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
-  gpr_log(GPR_INFO, "Second batch drop rate %f", seen_drop_rate);
+  LOG(INFO) << "Second batch drop rate " << seen_drop_rate;
   EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
                                                     kErrorTolerance));
 }
@@ -1216,9 +1267,9 @@ TEST_P(FailoverTest, ReportsConnectingDuringFailover) {
   // Allow the connection attempt to complete.
   hold->Resume();
   // Now the RPC should complete successfully.
-  gpr_log(GPR_INFO, "=== WAITING FOR RPC TO FINISH ===");
+  LOG(INFO) << "=== WAITING FOR RPC TO FINISH ===";
   Status status = rpc.GetStatus();
-  gpr_log(GPR_INFO, "=== RPC FINISHED ===");
+  LOG(INFO) << "=== RPC FINISHED ===";
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
 }
@@ -1874,6 +1925,7 @@ int main(int argc, char** argv) {
   // Workaround Apple CFStream bug
   grpc_core::SetEnv("grpc_cfstream", "0");
 #endif
+  grpc_core::RegisterFakeStatsPlugin();
   grpc_init();
   grpc::testing::ConnectionAttemptInjector::Init();
   const auto result = RUN_ALL_TESTS();

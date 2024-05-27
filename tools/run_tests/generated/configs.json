@@ -3,7 +3,7 @@
     "config": "asan",
     "environ": {
       "ASAN_OPTIONS": "detect_leaks=1:color=always",
-      "LSAN_OPTIONS": "suppressions=test/core/util/lsan_suppressions.txt:report_objects=1"
+      "LSAN_OPTIONS": "suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1"
     }
   },
   {
@@ -16,7 +16,7 @@
     "config": "asan-trace-cmp",
     "environ": {
       "ASAN_OPTIONS": "detect_leaks=1:color=always",
-      "LSAN_OPTIONS": "suppressions=test/core/util/lsan_suppressions.txt:report_objects=1"
+      "LSAN_OPTIONS": "suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1"
     }
   },
   {
@@ -61,13 +61,13 @@
   {
     "config": "tsan",
     "environ": {
-      "TSAN_OPTIONS": "suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
+      "TSAN_OPTIONS": "suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1"
     }
   },
   {
     "config": "ubsan",
     "environ": {
-      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt"
+      "UBSAN_OPTIONS": "halt_on_error=1:print_stacktrace=1:suppressions=test/core/test_util/ubsan_suppressions.txt"
     }
   }
 ]

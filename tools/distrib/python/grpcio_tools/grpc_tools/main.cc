@@ -29,6 +29,8 @@
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 
+#include "absl/strings/string_view.h"
+
 #include "src/compiler/python_generator.h"
 
 using ::google::protobuf::FileDescriptor;
@@ -41,7 +43,7 @@ using ::google::protobuf::io::StringOutputStream;
 using ::google::protobuf::io::ZeroCopyOutputStream;
 
 namespace grpc_tools {
-int protoc_main(int argc, char* argv[]) {
+int protoc_main(int argc, char* argv[], char* version) {
   google::protobuf::compiler::CommandLineInterface cli;
   cli.AllowPlugins("protoc-");
 
@@ -55,8 +57,12 @@ int protoc_main(int argc, char* argv[]) {
   cli.RegisterGenerator("--pyi_out", &pyi_generator,
                         "Generate Python pyi stub.");
 
+  // Get grpc_tools version
+  std::string grpc_tools_version = version;
+
   // gRPC Python
-  grpc_python_generator::GeneratorConfiguration grpc_py_config;
+  grpc_python_generator::GeneratorConfiguration grpc_py_config(
+      grpc_tools_version);
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   cli.RegisterGenerator("--grpc_python_out", &grpc_py_generator,
                         "Generate Python source file.");
@@ -105,14 +111,16 @@ class ErrorCollectorImpl : public MultiFileErrorCollector {
                      std::vector<::grpc_tools::ProtocWarning>* warnings)
       : errors_(errors), warnings_(warnings) {}
 
-  void AddError(const std::string& filename, int line, int column,
-                const std::string& message) {
-    errors_->emplace_back(filename, line, column, message);
+  void RecordError(absl::string_view filename, int line, int column,
+                   absl::string_view message) override {
+    errors_->emplace_back(std::string(filename), line, column,
+                          std::string(message));
   }
 
-  void AddWarning(const std::string& filename, int line, int column,
-                  const std::string& message) {
-    warnings_->emplace_back(filename, line, column, message);
+  void RecordWarning(absl::string_view filename, int line, int column,
+                     absl::string_view message) override {
+    warnings_->emplace_back(std::string(filename), line, column,
+                            std::string(message));
   }
 
  private:
@@ -177,11 +185,14 @@ int protoc_get_protos(
 }
 
 int protoc_get_services(
-    char* protobuf_path, const std::vector<std::string>* include_paths,
+    char* protobuf_path, char* version,
+    const std::vector<std::string>* include_paths,
     std::vector<std::pair<std::string, std::string>>* files_out,
     std::vector<::grpc_tools::ProtocError>* errors,
     std::vector<::grpc_tools::ProtocWarning>* warnings) {
-  grpc_python_generator::GeneratorConfiguration grpc_py_config;
+  std::string grpc_tools_version = version;
+  grpc_python_generator::GeneratorConfiguration grpc_py_config(
+      grpc_tools_version);
   grpc_python_generator::PythonGrpcGenerator grpc_py_generator(grpc_py_config);
   return generate_code(&grpc_py_generator, protobuf_path, include_paths,
                        files_out, errors, warnings);

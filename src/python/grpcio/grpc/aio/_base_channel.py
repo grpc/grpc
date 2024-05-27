@@ -209,10 +209,11 @@ class Channel(abc.ABC):
         This method immediately stops the channel from executing new RPCs in
         all cases.
 
-        If a grace period is specified, this method wait until all active
-        RPCs are finshed, once the grace period is reached the ones that haven't
-        been terminated are cancelled. If a grace period is not specified
-        (by passing None for grace), all existing RPCs are cancelled immediately.
+        If a grace period is specified, this method waits until all active
+        RPCs are finished or until the grace period is reached. RPCs that haven't
+        been terminated within the grace period are aborted.
+        If a grace period is not specified (by passing None for grace),
+        all existing RPCs are cancelled immediately.
 
         This method is idempotent.
         """
@@ -272,6 +273,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> UnaryUnaryMultiCallable:
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -282,6 +284,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. Optional: A bool representing
+            whether the method is registered.
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -293,6 +297,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> UnaryStreamMultiCallable:
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -303,6 +308,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. Optional: A bool representing
+            whether the method is registered.
 
         Returns:
           A UnarySteramMultiCallable value for the named unary-stream method.
@@ -314,6 +321,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> StreamUnaryMultiCallable:
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -324,6 +332,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. Optional: A bool representing
+            whether the method is registered.
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -335,6 +345,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
+        _registered_method: Optional[bool] = False,
     ) -> StreamStreamMultiCallable:
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
@@ -345,6 +356,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. Optional: A bool representing
+            whether the method is registered.
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.

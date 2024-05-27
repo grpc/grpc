@@ -25,7 +25,7 @@
 
   WORKDIR /tmp
 
-  <%include file="../download_phpunit.include" />
+  <%include file="../download_phpunit9.include" />
 
   <%include file="../pecl_ext_build_src.include" />
 

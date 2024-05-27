@@ -26,7 +26,7 @@
 
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(FormatRequestTest, FormatGetRequest) {
   grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};

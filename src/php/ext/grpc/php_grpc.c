@@ -28,6 +28,7 @@
 #include "server_credentials.h"
 #include "completion_queue.h"
 #include <inttypes.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

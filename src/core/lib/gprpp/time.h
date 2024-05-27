@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_TIME_H
 #define GRPC_SRC_CORE_LIB_GPRPP_TIME_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <limits>
@@ -26,10 +24,11 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/time_precise.h"
+#include "src/core/util/useful.h"
 
 #define GRPC_LOG_EVERY_N_SEC(n, severity, format, ...)          \
   do {                                                          \
@@ -37,7 +36,7 @@
     uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
                        gpr_now(GPR_CLOCK_MONOTONIC))            \
                        .milliseconds_after_process_epoch();     \
-    if (prev == 0 || now - prev > (n)*1000) {                   \
+    if (prev == 0 || now - prev > (n) * 1000) {                 \
       prev = now;                                               \
       gpr_log(severity, format, __VA_ARGS__);                   \
     }                                                           \
@@ -49,8 +48,9 @@
     uint64_t now = grpc_core::Timestamp::FromTimespecRoundDown( \
                        gpr_now(GPR_CLOCK_MONOTONIC))            \
                        .milliseconds_after_process_epoch();     \
-    uint64_t prev_tsamp = prev.exchange(now);                   \
-    if (now - prev_tsamp > (n)*1000) {                          \
+    if (prev == 0) prev = now;                                  \
+    if (now - prev > (n) * 1000) {                              \
+      prev = now;                                               \
       gpr_log(severity, format, __VA_ARGS__);                   \
     }                                                           \
   } while (0)
@@ -321,6 +321,12 @@ inline Timestamp operator-(Timestamp lhs, Duration rhs) {
 inline Timestamp operator+(Duration lhs, Timestamp rhs) { return rhs + lhs; }
 
 inline Duration operator-(Timestamp lhs, Timestamp rhs) {
+  if (rhs == Timestamp::InfPast() && lhs != Timestamp::InfPast()) {
+    return Duration::Infinity();
+  }
+  if (rhs == Timestamp::InfFuture() && lhs != Timestamp::InfFuture()) {
+    return Duration::NegativeInfinity();
+  }
   return Duration::Milliseconds(
       time_detail::MillisAdd(lhs.milliseconds_after_process_epoch(),
                              -rhs.milliseconds_after_process_epoch()));

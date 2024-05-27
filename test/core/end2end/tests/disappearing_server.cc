@@ -18,10 +18,10 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -31,13 +31,13 @@
 namespace grpc_core {
 
 static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
-  gpr_log(GPR_ERROR, "Create client side call");
+  LOG(ERROR) << "Create client side call";
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(30))
                .Create();
   CoreEnd2endTest::IncomingMetadata server_initial_md;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
-  gpr_log(GPR_ERROR, "Start initial batch");
+  LOG(ERROR) << "Start initial batch";
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -62,7 +62,6 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
   // correctly handles GOAWAY frames. Internal Reference b/135458602. If this
   // test remains flaky even after this, an alternative fix would be to send a
   // request when the server is in the shut down state.
-  //
   test.Step();
 
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
@@ -72,6 +71,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
+  SKIP_IF_CHAOTIC_GOOD();
   OneRequestAndShutdownServer(*this);
   InitServer(ChannelArgs());
   OneRequestAndShutdownServer(*this);

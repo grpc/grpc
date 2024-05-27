@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,8 +37,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -57,10 +57,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -80,6 +77,8 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 
 // Flag that this closure barrier may be covering a write in a pollset, and so
 //   we should not complete this closure until we can prove that the write got
@@ -203,18 +202,6 @@ struct grpc_chttp2_stream_link {
   grpc_chttp2_stream* next;
   grpc_chttp2_stream* prev;
 };
-// We keep several sets of connection wide parameters
-typedef enum {
-  // The settings our peer has asked for (and we have acked)
-  GRPC_PEER_SETTINGS = 0,
-  // The settings we'd like to have
-  GRPC_LOCAL_SETTINGS,
-  // The settings we've published to our peer
-  GRPC_SENT_SETTINGS,
-  // The settings the peer has acked
-  GRPC_ACKED_SETTINGS,
-  GRPC_NUM_SETTING_SETS
-} grpc_chttp2_setting_set;
 
 typedef enum {
   GRPC_CHTTP2_NO_GOAWAY_SEND,
@@ -236,17 +223,18 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport final
-    : public grpc_core::Transport,
-      public grpc_core::FilterStackTransport,
-      public grpc_core::RefCounted<grpc_chttp2_transport,
-                                   grpc_core::NonPolymorphicRefCount>,
-      public grpc_core::KeepsGrpcInitialized {
+struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
+                                     public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport() override;
 
   void Orphan() override;
+
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> Ref() {
+    return grpc_core::FilterStackTransport::RefAsSubclass<
+        grpc_chttp2_transport>();
+  }
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;
@@ -268,7 +256,6 @@ struct grpc_chttp2_transport final
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
-  grpc_endpoint* GetEndpoint() override;
 
   grpc_endpoint* ep;
   grpc_core::Slice peer_string;
@@ -359,12 +346,8 @@ struct grpc_chttp2_transport final
 
   grpc_chttp2_sent_goaway_state sent_goaway_state = GRPC_CHTTP2_NO_GOAWAY_SEND;
 
-  /// bitmask of setting indexes to send out
-  /// Hack: it's common for implementations to assume 65536 bytes initial send
-  /// window -- this should by rights be 0
-  uint32_t force_send_settings = 1 << GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE;
   /// settings values
-  uint32_t settings[GRPC_NUM_SETTING_SETS][GRPC_CHTTP2_NUM_SETTINGS];
+  grpc_core::Http2SettingsManager settings;
 
   grpc_event_engine::experimental::EventEngine::TaskHandle
       settings_ack_watchdog =
@@ -538,11 +521,6 @@ struct grpc_chttp2_transport final
   /// is this a client?
   bool is_client;
 
-  /// are the local settings dirty and need to be sent?
-  bool dirtied_local_settings = true;
-  /// have local settings been sent?
-  bool sent_local_settings = false;
-
   /// If start_bdp_ping_locked has been called
   bool bdp_ping_started = false;
   // True if pings should be acked
@@ -567,7 +545,7 @@ typedef enum {
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
-                     const void* server_data, grpc_core::Arena* arena);
+                     const void* server_data);
   ~grpc_chttp2_stream();
 
   void* context = nullptr;
@@ -660,6 +638,9 @@ struct grpc_chttp2_stream {
 
   /// Byte counter for number of bytes written
   size_t byte_counter = 0;
+
+  /// Number of times written
+  int64_t write_counter = 0;
 
   /// Only set when enabled.
   grpc_core::CallTracerInterface* call_tracer = nullptr;
@@ -796,7 +777,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
-                                       grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
                                        grpc_error_handle error,
                                        const char* desc,

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -25,14 +23,17 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -67,6 +68,7 @@ const grpc_channel_filter ServerAuthFilter::kFilter =
         "server-auth");
 
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerAuthFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServerAuthFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerAuthFilter::Call::OnServerTrailingMetadata;
@@ -123,7 +125,7 @@ grpc_metadata_array MetadataBatchToMetadataArray(
 struct ServerAuthFilter::RunApplicationCode::State {
   explicit State(ClientMetadata& client_metadata)
       : client_metadata(&client_metadata) {}
-  Waker waker{Activity::current()->MakeOwningWaker()};
+  Waker waker{GetContext<Activity>()->MakeOwningWaker()};
   absl::StatusOr<ClientMetadata*> client_metadata;
   grpc_metadata_array md = MetadataBatchToMetadataArray(*client_metadata);
   std::atomic<bool> done{false};
@@ -136,7 +138,7 @@ ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     gpr_log(GPR_ERROR,
             "%s[server-auth]: Delegate to application: filter=%p this=%p "
             "auth_ctx=%p",
-            Activity::current()->DebugTag().c_str(), filter, this,
+            GetContext<Activity>()->DebugTag().c_str(), filter, this,
             filter->auth_context_.get());
   }
   filter->server_credentials_->auth_metadata_processor().process(
@@ -213,12 +215,13 @@ ServerAuthFilter::ServerAuthFilter(
     RefCountedPtr<grpc_auth_context> auth_context)
     : server_credentials_(server_credentials), auth_context_(auth_context) {}
 
-absl::StatusOr<ServerAuthFilter> ServerAuthFilter::Create(
+absl::StatusOr<std::unique_ptr<ServerAuthFilter>> ServerAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
-  GPR_ASSERT(auth_context != nullptr);
+  CHECK(auth_context != nullptr);
   auto creds = args.GetObjectRef<grpc_server_credentials>();
-  return ServerAuthFilter(std::move(creds), std::move(auth_context));
+  return std::make_unique<ServerAuthFilter>(std::move(creds),
+                                            std::move(auth_context));
 }
 
 }  // namespace grpc_core

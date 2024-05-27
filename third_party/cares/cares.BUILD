@@ -29,9 +29,9 @@ config_setting(
 # This just helps with the build for now.
 config_setting(
     name = "android",
-    values = {
-        "crosstool_top": "//external:android/crosstool",
-    },
+    values = {"crosstool_top": "//external:android/crosstool"},
+    # TODO: Use constraint_values to detect android after Bazel 7.0 platforms migration is finished
+    # constraint_values = [ "@platforms//os:android" ],
 )
 
 # iOS is not officially supported through C++.

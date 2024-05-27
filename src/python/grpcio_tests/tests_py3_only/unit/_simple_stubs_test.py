@@ -193,6 +193,7 @@ class SimpleStubsTest(unittest.TestCase):
                 _UNARY_UNARY,
                 channel_credentials=grpc.experimental.insecure_channel_credentials(),
                 timeout=None,
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -205,6 +206,7 @@ class SimpleStubsTest(unittest.TestCase):
                 _UNARY_UNARY,
                 channel_credentials=grpc.local_channel_credentials(),
                 timeout=None,
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -213,7 +215,10 @@ class SimpleStubsTest(unittest.TestCase):
             target = f"localhost:{port}"
             test_name = inspect.stack()[0][3]
             args = (_REQUEST, target, _UNARY_UNARY)
-            kwargs = {"channel_credentials": grpc.local_channel_credentials()}
+            kwargs = {
+                "channel_credentials": grpc.local_channel_credentials(),
+                "_registered_method": True,
+            }
 
             def _invoke(seed: str):
                 run_kwargs = dict(kwargs)
@@ -230,6 +235,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _UNARY_UNARY,
                 channel_credentials=grpc.local_channel_credentials(),
+                _registered_method=0,
             )
             self.assert_eventually(
                 lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
@@ -250,6 +256,7 @@ class SimpleStubsTest(unittest.TestCase):
                     _UNARY_UNARY,
                     options=options,
                     channel_credentials=grpc.local_channel_credentials(),
+                    _registered_method=0,
                 )
                 self.assert_eventually(
                     lambda: grpc._simple_stubs.ChannelCache.get()._test_only_channel_count()
@@ -265,6 +272,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _UNARY_STREAM,
                 channel_credentials=grpc.local_channel_credentials(),
+                _registered_method=0,
             ):
                 self.assertEqual(_REQUEST, response)
 
@@ -280,6 +288,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _STREAM_UNARY,
                 channel_credentials=grpc.local_channel_credentials(),
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -295,6 +304,7 @@ class SimpleStubsTest(unittest.TestCase):
                 target,
                 _STREAM_STREAM,
                 channel_credentials=grpc.local_channel_credentials(),
+                _registered_method=0,
             ):
                 self.assertEqual(_REQUEST, response)
 
@@ -319,14 +329,22 @@ class SimpleStubsTest(unittest.TestCase):
             with _server(server_creds) as port:
                 target = f"localhost:{port}"
                 response = grpc.experimental.unary_unary(
-                    _REQUEST, target, _UNARY_UNARY, options=_property_options
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    options=_property_options,
+                    _registered_method=0,
                 )
 
     def test_insecure_sugar(self):
         with _server(None) as port:
             target = f"localhost:{port}"
             response = grpc.experimental.unary_unary(
-                _REQUEST, target, _UNARY_UNARY, insecure=True
+                _REQUEST,
+                target,
+                _UNARY_UNARY,
+                insecure=True,
+                _registered_method=0,
             )
             self.assertEqual(_REQUEST, response)
 
@@ -340,14 +358,24 @@ class SimpleStubsTest(unittest.TestCase):
                     _UNARY_UNARY,
                     insecure=True,
                     channel_credentials=grpc.local_channel_credentials(),
+                    _registered_method=0,
                 )
 
     def test_default_wait_for_ready(self):
         addr, port, sock = get_socket()
         sock.close()
         target = f"{addr}:{port}"
-        channel = grpc._simple_stubs.ChannelCache.get().get_channel(
-            target, (), None, True, None
+        (
+            channel,
+            unused_method_handle,
+        ) = grpc._simple_stubs.ChannelCache.get().get_channel(
+            target=target,
+            options=(),
+            channel_credentials=None,
+            insecure=True,
+            compression=None,
+            method=_UNARY_UNARY,
+            _registered_method=True,
         )
         rpc_finished_event = threading.Event()
         rpc_failed_event = threading.Event()
@@ -376,7 +404,12 @@ class SimpleStubsTest(unittest.TestCase):
         def _send_rpc():
             try:
                 response = grpc.experimental.unary_unary(
-                    _REQUEST, target, _UNARY_UNARY, timeout=None, insecure=True
+                    _REQUEST,
+                    target,
+                    _UNARY_UNARY,
+                    timeout=None,
+                    insecure=True,
+                    _registered_method=0,
                 )
                 rpc_finished_event.set()
             except Exception as e:
@@ -399,6 +432,7 @@ class SimpleStubsTest(unittest.TestCase):
                     target,
                     _BLACK_HOLE,
                     insecure=True,
+                    _registered_method=0,
                     **invocation_args,
                 )
             self.assertEqual(

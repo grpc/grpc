@@ -17,9 +17,8 @@
 #ifndef GRPC_SRC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H
 #define GRPC_SRC_CORE_LIB_HTTP_HTTPCLI_SSL_CREDENTIALS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 

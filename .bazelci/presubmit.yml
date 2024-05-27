@@ -12,7 +12,7 @@
 ---
 # TODO(yannic): Ideally, we should also enable buildifier and all platforms should test `//...`.
 tasks:
-  ubuntu1804:
+  ubuntu2004:
     build_targets:
       - //:all
       - //src/proto/...

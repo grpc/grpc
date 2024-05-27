@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -25,7 +24,9 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
@@ -41,7 +42,7 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   EvaluateArgs::PerChannelArgs::Address address;
   absl::StatusOr<URI> uri = URI::Parse(uri_text);
   if (!uri.ok()) {
-    gpr_log(GPR_DEBUG, "Failed to parse uri.");
+    VLOG(2) << "Failed to parse uri.";
     return address;
   }
   absl::string_view host_view;
@@ -70,7 +71,7 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
 }  // namespace
 
 EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
-                                             grpc_endpoint* endpoint) {
+                                             const ChannelArgs& args) {
   if (auth_context != nullptr) {
     transport_security_type = GetAuthPropertyValue(
         auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
@@ -83,10 +84,10 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
     subject =
         GetAuthPropertyValue(auth_context, GRPC_X509_SUBJECT_PROPERTY_NAME);
   }
-  if (endpoint != nullptr) {
-    local_address = ParseEndpointUri(grpc_endpoint_get_local_address(endpoint));
-    peer_address = ParseEndpointUri(grpc_endpoint_get_peer(endpoint));
-  }
+  local_address = ParseEndpointUri(
+      args.GetString(GRPC_ARG_ENDPOINT_LOCAL_ADDRESS).value_or(""));
+  peer_address = ParseEndpointUri(
+      args.GetString(GRPC_ARG_ENDPOINT_PEER_ADDRESS).value_or(""));
 }
 
 absl::string_view EvaluateArgs::GetPath() const {

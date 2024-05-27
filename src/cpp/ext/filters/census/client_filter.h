@@ -19,10 +19,9 @@
 #ifndef GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
 #define GRPC_SRC_CPP_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/statusor.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/interceptor.h>
 
@@ -39,16 +38,17 @@ class OpenCensusClientFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<OpenCensusClientFilter> Create(
+  static absl::StatusOr<std::unique_ptr<OpenCensusClientFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
+
+  explicit OpenCensusClientFilter(bool tracing_enabled)
+      : tracing_enabled_(tracing_enabled) {}
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override;
 
  private:
-  explicit OpenCensusClientFilter(bool tracing_enabled)
-      : tracing_enabled_(tracing_enabled) {}
   bool tracing_enabled_ = true;
 };
 

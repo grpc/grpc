@@ -25,6 +25,8 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/log/check.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
@@ -46,7 +48,7 @@ inline void SendCallbackUnaryPingPong(
   stub_->async()->Echo(
       cli_ctx, request, response,
       [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
-        GPR_ASSERT(s.ok());
+        CHECK(s.ok());
         if (state->KeepRunning()) {
           cli_ctx->~ClientContext();
           new (cli_ctx) ClientContext();

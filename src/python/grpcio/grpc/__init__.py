@@ -1000,7 +1000,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -1011,6 +1015,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
@@ -1019,7 +1025,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def unary_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -1030,6 +1040,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A UnaryStreamMultiCallable value for the name unary-stream method.
@@ -1038,7 +1050,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_unary(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -1049,6 +1065,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None is
             passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
@@ -1057,7 +1075,11 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def stream_stream(
-        self, method, request_serializer=None, response_deserializer=None
+        self,
+        method,
+        request_serializer=None,
+        response_deserializer=None,
+        _registered_method=False,
     ):
         """Creates a StreamStreamMultiCallable for a stream-stream method.
 
@@ -1068,6 +1090,8 @@ class Channel(abc.ABC):
           response_deserializer: Optional :term:`deserializer` for deserializing the
             response message. Response goes undeserialized in case None
             is passed.
+          _registered_method: Implementation Private. A bool representing whether the method
+            is registered.
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
@@ -1430,6 +1454,20 @@ class Server(abc.ABC):
         """
         raise NotImplementedError()
 
+    def add_registered_method_handlers(self, service_name, method_handlers):
+        """Registers GenericRpcHandlers with this Server.
+
+        This method is only safe to call before the server is started.
+
+        If the same method have both generic and registered handler,
+        registered handler will take precedence.
+
+        Args:
+          service_name: The service name.
+          method_handlers: A dictionary that maps method names to corresponding
+            RpcMethodHandler.
+        """
+
     @abc.abstractmethod
     def add_insecure_port(self, address):
         """Opens an insecure port for accepting RPCs.
@@ -1476,8 +1514,9 @@ class Server(abc.ABC):
 
         This method immediately stop service of new RPCs in all cases.
 
-        If a grace period is specified, this method returns immediately
-        and all RPCs active at the end of the grace period are aborted.
+        If a grace period is specified, this method waits until all active
+        RPCs are finished or until the grace period is reached. RPCs that haven't
+        been terminated within the grace period are aborted.
         If a grace period is not specified (by passing None for `grace`),
         all existing RPCs are aborted immediately and this method
         blocks until the last RPC handler terminates.
