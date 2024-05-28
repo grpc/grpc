@@ -52,6 +52,8 @@ class StatsData:
         value.
       value_int: The actual metric value if measure_double is False.
       value_float: The actual metric value if measure_double is True.
+      registered_method: Whether the method in this data is a registered method
+        in stubs.
       labels: A dictionary that maps label tags associated with this metric to
        corresponding label value.
     """
@@ -60,6 +62,7 @@ class StatsData:
     measure_double: bool
     value_int: int = 0
     value_float: float = 0.0
+    registered_method: bool = False
     labels: Mapping[str, str] = field(default_factory=dict)
 
 

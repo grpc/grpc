@@ -37,10 +37,10 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 
 namespace grpc {
 namespace internal {

@@ -20,6 +20,7 @@
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/status.h>
@@ -35,9 +36,9 @@
 #endif
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/useful.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
@@ -227,7 +228,7 @@ grpc_error_handle grpc_error_add_child(grpc_error_handle src,
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line) {
-  GPR_DEBUG_ASSERT(!error.ok());
+  DCHECK(!error.ok());
   gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,
           grpc_core::StatusToString(error).c_str());
   return false;

@@ -22,7 +22,7 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/matchers.h"
-#include "test/core/util/evaluate_args_test_util.h"
+#include "test/core/test_util/evaluate_args_test_util.h"
 
 namespace grpc_core {
 

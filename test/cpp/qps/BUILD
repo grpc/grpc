@@ -61,7 +61,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:payloads_proto",
         "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -77,7 +77,10 @@ grpc_cc_library(
         "driver.h",
         "report.h",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     deps = [
         ":histogram",
         ":parse_json",
@@ -87,7 +90,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:report_qps_scenario_service_proto",
         "//src/proto/grpc/testing:worker_service_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -120,7 +123,7 @@ grpc_cc_library(
     ],
     deps = [
         "//src/proto/grpc/testing:stats_proto",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -170,7 +173,7 @@ grpc_cc_test(
     deps = [
         ":histogram",
         ":interarrival",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )
@@ -217,7 +220,7 @@ grpc_cc_binary(
     deps = [
         ":qps_worker_impl",
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -241,7 +244,7 @@ grpc_cc_binary(
         ":benchmark_config",
         ":driver_impl",
         "//:grpc++",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],

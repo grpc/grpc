@@ -26,6 +26,8 @@
 #include <string>
 #include <type_traits>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -103,9 +105,9 @@ ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
 
 ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, const grpc_channel_filter* filter,
-    const ChannelFilterVtable* vtable, SourceLocation registration_source) {
+    FilterAdder filter_adder, SourceLocation registration_source) {
   filters_[type].emplace_back(std::make_unique<FilterRegistration>(
-      filter, vtable, registration_source));
+      filter, filter_adder, registration_source));
   return *filters_[type].back();
 }
 
@@ -137,9 +139,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     }
     filter_to_registration[registration->filter_] = registration.get();
     if (registration->terminal_) {
-      GPR_ASSERT(registration->after_.empty());
-      GPR_ASSERT(registration->before_.empty());
-      GPR_ASSERT(!registration->before_all_);
+      CHECK(registration->after_.empty());
+      CHECK(registration->before_.empty());
+      CHECK(!registration->before_all_);
       terminal_filters.emplace_back(
           registration->filter_, nullptr, std::move(registration->predicates_),
           registration->skip_v3_, registration->registration_source_);
@@ -149,7 +151,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   }
   for (const auto& registration : registrations) {
     if (registration->terminal_) continue;
-    GPR_ASSERT(filter_to_registration.count(registration->filter_) > 0);
+    CHECK_GT(filter_to_registration.count(registration->filter_), 0u);
     for (F after : registration->after_) {
       if (filter_to_registration.count(after) == 0) {
         gpr_log(
@@ -222,9 +224,10 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   while (!dependencies.empty()) {
     auto filter = take_ready_dependency();
     auto* registration = filter_to_registration[filter];
-    filters.emplace_back(
-        filter, registration->vtable_, std::move(registration->predicates_),
-        registration->skip_v3_, registration->registration_source_);
+    filters.emplace_back(filter, registration->filter_adder_,
+                         std::move(registration->predicates_),
+                         registration->skip_v3_,
+                         registration->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
     }
@@ -311,7 +314,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       const auto filter_str =
           absl::StrCat("  ", loc_strs[filter.filter],
                        NameFromChannelFilter(filter.filter), after_str);
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+      LOG(INFO) << filter_str;
     }
     // Finally list out the terminal filters and where they were registered
     // from.
@@ -323,7 +326,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                           strlen(NameFromChannelFilter(terminal.filter)),
                       ' '),
           "[terminal]");
-      gpr_log(GPR_INFO, "%s", filter_str.c_str());
+      LOG(INFO) << filter_str;
     }
   }
   // Check if there are no terminal filters: this would be an error.
@@ -396,7 +399,7 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
             "\n");
       }
     }
-    gpr_log(GPR_ERROR, "%s", error.c_str());
+    LOG(ERROR) << error;
     return false;
   }
   for (const auto& post_processor : stack_config.post_processors) {
@@ -405,78 +408,21 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   return true;
 }
 
-absl::StatusOr<ChannelInit::StackSegment> ChannelInit::CreateStackSegment(
-    grpc_channel_stack_type type, const ChannelArgs& args) const {
+void ChannelInit::AddToInterceptionChainBuilder(
+    grpc_channel_stack_type type, InterceptionChainBuilder& builder) const {
   const auto& stack_config = stack_configs_[type];
-  std::vector<StackSegment::ChannelFilter> filters;
-  size_t channel_data_size = 0;
-  size_t channel_data_alignment = 0;
   // Based on predicates build a list of filters to include in this segment.
   for (const auto& filter : stack_config.filters) {
     if (filter.skip_v3) continue;
-    if (!filter.CheckPredicates(args)) continue;
-    if (filter.vtable == nullptr) {
-      return absl::InvalidArgumentError(
+    if (!filter.CheckPredicates(builder.channel_args())) continue;
+    if (filter.filter_adder == nullptr) {
+      builder.Fail(absl::InvalidArgumentError(
           absl::StrCat("Filter ", NameFromChannelFilter(filter.filter),
-                       " has no v3-callstack vtable"));
+                       " has no v3-callstack vtable")));
+      return;
     }
-    channel_data_alignment =
-        std::max(channel_data_alignment, filter.vtable->alignment);
-    if (channel_data_size % filter.vtable->alignment != 0) {
-      channel_data_size += filter.vtable->alignment -
-                           (channel_data_size % filter.vtable->alignment);
-    }
-    filters.push_back({channel_data_size, filter.vtable});
-    channel_data_size += filter.vtable->size;
+    filter.filter_adder(builder);
   }
-  // Shortcut for empty segments.
-  if (filters.empty()) return StackSegment();
-  // Allocate memory for the channel data, initialize channel filters into it.
-  uint8_t* p = static_cast<uint8_t*>(
-      gpr_malloc_aligned(channel_data_size, channel_data_alignment));
-  for (size_t i = 0; i < filters.size(); i++) {
-    auto r = filters[i].vtable->init(p + filters[i].offset, args);
-    if (!r.ok()) {
-      for (size_t j = 0; j < i; j++) {
-        filters[j].vtable->destroy(p + filters[j].offset);
-      }
-      gpr_free_aligned(p);
-      return r;
-    }
-  }
-  return StackSegment(std::move(filters), p);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// ChannelInit::StackSegment
-
-ChannelInit::StackSegment::StackSegment(std::vector<ChannelFilter> filters,
-                                        uint8_t* channel_data)
-    : data_(MakeRefCounted<ChannelData>(std::move(filters), channel_data)) {}
-
-void ChannelInit::StackSegment::AddToCallFilterStack(
-    CallFilters::StackBuilder& builder) {
-  if (data_ == nullptr) return;
-  data_->AddToCallFilterStack(builder);
-  builder.AddOwnedObject(data_);
-};
-
-ChannelInit::StackSegment::ChannelData::ChannelData(
-    std::vector<ChannelFilter> filters, uint8_t* channel_data)
-    : filters_(std::move(filters)), channel_data_(channel_data) {}
-
-void ChannelInit::StackSegment::ChannelData::AddToCallFilterStack(
-    CallFilters::StackBuilder& builder) {
-  for (const auto& filter : filters_) {
-    filter.vtable->add_to_stack_builder(channel_data_ + filter.offset, builder);
-  }
-}
-
-ChannelInit::StackSegment::ChannelData::~ChannelData() {
-  for (const auto& filter : filters_) {
-    filter.vtable->destroy(channel_data_ + filter.offset);
-  }
-  gpr_free_aligned(channel_data_);
 }
 
 }  // namespace grpc_core

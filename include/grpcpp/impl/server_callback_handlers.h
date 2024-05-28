@@ -18,6 +18,8 @@
 #ifndef GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 #define GRPCPP_IMPL_SERVER_CALLBACK_HANDLERS_H
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpc/support/log.h>
@@ -147,7 +149,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
     }
 
     void SendInitialMetadata() override {
-      GPR_ASSERT(!ctx_->sent_initial_metadata_);
+      CHECK(!ctx_->sent_initial_metadata_);
       this->Ref();
       // The callback for this function should not be marked inline because it
       // is directly invoking a user-controlled reaction
@@ -335,7 +337,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
     }
 
     void SendInitialMetadata() override {
-      GPR_ASSERT(!ctx_->sent_initial_metadata_);
+      CHECK(!ctx_->sent_initial_metadata_);
       this->Ref();
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
@@ -539,7 +541,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
     }
 
     void SendInitialMetadata() override {
-      GPR_ASSERT(!ctx_->sent_initial_metadata_);
+      CHECK(!ctx_->sent_initial_metadata_);
       this->Ref();
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
@@ -577,7 +579,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_ASSERT(write_ops_.SendMessagePtr(resp, options).ok());
+      CHECK(write_ops_.SendMessagePtr(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -585,7 +587,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
                         grpc::Status s) override {
       // This combines the write into the finish callback
       // TODO(vjpai): don't assert
-      GPR_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
+      CHECK(finish_ops_.SendMessagePtr(resp, options).ok());
       Finish(std::move(s));
     }
 
@@ -751,7 +753,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
     }
 
     void SendInitialMetadata() override {
-      GPR_ASSERT(!ctx_->sent_initial_metadata_);
+      CHECK(!ctx_->sent_initial_metadata_);
       this->Ref();
       // The callback for this function should not be inlined because it invokes
       // a user-controlled reaction, but any resulting OnDone can be inlined in
@@ -789,14 +791,14 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
         ctx_->sent_initial_metadata_ = true;
       }
       // TODO(vjpai): don't assert
-      GPR_ASSERT(write_ops_.SendMessagePtr(resp, options).ok());
+      CHECK(write_ops_.SendMessagePtr(resp, options).ok());
       call_.PerformOps(&write_ops_);
     }
 
     void WriteAndFinish(const ResponseType* resp, grpc::WriteOptions options,
                         grpc::Status s) override {
       // TODO(vjpai): don't assert
-      GPR_ASSERT(finish_ops_.SendMessagePtr(resp, options).ok());
+      CHECK(finish_ops_.SendMessagePtr(resp, options).ok());
       Finish(std::move(s));
     }
 

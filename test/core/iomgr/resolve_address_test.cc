@@ -25,16 +25,16 @@
 #include <gtest/gtest.h>
 
 #include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -42,9 +42,10 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/string.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 namespace {
@@ -101,8 +102,7 @@ class ResolveAddressTest : public ::testing::Test {
           break;
         }
         grpc_core::Duration time_left = deadline - grpc_core::Timestamp::Now();
-        gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done_,
-                time_left.millis());
+        VLOG(2) << "done=" << done_ << ", time_left=" << time_left.millis();
         ASSERT_GE(time_left, grpc_core::Duration::Zero());
         grpc_pollset_worker* worker = nullptr;
         GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(pollset_, &worker,
@@ -391,9 +391,8 @@ namespace {
 int g_fake_non_responsive_dns_server_port;
 
 void InjectNonResponsiveDNSServer(ares_channel* channel) {
-  gpr_log(GPR_DEBUG,
-          "Injecting broken nameserver list. Bad server address:|[::1]:%d|.",
-          g_fake_non_responsive_dns_server_port);
+  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
+          << g_fake_non_responsive_dns_server_port << "|.";
   // Configure a non-responsive DNS server at the front of c-ares's nameserver
   // list.
   struct ares_addr_port_node dns_server_addrs[1];
@@ -449,7 +448,7 @@ class PollsetSetWrapper {
     grpc_core::ExecCtx::Get()->Flush();
     grpc_pollset_destroy(ps_);
     gpr_free(ps_);
-    gpr_log(GPR_DEBUG, "PollsetSetWrapper:%p deleted", this);
+    VLOG(2) << "PollsetSetWrapper:" << this << " deleted";
   }
 
   grpc_pollset_set* pollset_set() { return pss_; }
@@ -460,7 +459,7 @@ class PollsetSetWrapper {
     grpc_pollset_init(ps_, &mu_);
     pss_ = grpc_pollset_set_create();
     grpc_pollset_set_add_pollset(pss_, ps_);
-    gpr_log(GPR_DEBUG, "PollsetSetWrapper:%p created", this);
+    VLOG(2) << "PollsetSetWrapper:" << this << " created";
   }
 
   gpr_mu* mu_;
@@ -546,7 +545,7 @@ int main(int argc, char** argv) {
   } else if (absl::StrContains(std::string(argv[0]), "using_ares_resolver")) {
     g_resolver_type = "ares";
   } else {
-    GPR_ASSERT(0);
+    CHECK(0);
   }
   grpc_core::ConfigVars::Overrides overrides;
   overrides.dns_resolver = g_resolver_type;

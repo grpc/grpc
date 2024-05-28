@@ -36,7 +36,7 @@
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_lb_policies.h"
+#include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 namespace opencensus {

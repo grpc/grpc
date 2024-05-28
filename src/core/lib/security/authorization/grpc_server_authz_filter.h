@@ -37,8 +37,12 @@ class GrpcServerAuthzFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<GrpcServerAuthzFilter> Create(const ChannelArgs& args,
-                                                      ChannelFilter::Args);
+  static absl::StatusOr<std::unique_ptr<GrpcServerAuthzFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args);
+
+  GrpcServerAuthzFilter(
+      RefCountedPtr<grpc_auth_context> auth_context, const ChannelArgs& args,
+      RefCountedPtr<grpc_authorization_policy_provider> provider);
 
   class Call {
    public:
@@ -47,15 +51,12 @@ class GrpcServerAuthzFilter final
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
 
  private:
-  GrpcServerAuthzFilter(
-      RefCountedPtr<grpc_auth_context> auth_context, const ChannelArgs& args,
-      RefCountedPtr<grpc_authorization_policy_provider> provider);
-
   bool IsAuthorized(ClientMetadata& initial_metadata);
 
   RefCountedPtr<grpc_auth_context> auth_context_;

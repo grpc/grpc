@@ -23,8 +23,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {

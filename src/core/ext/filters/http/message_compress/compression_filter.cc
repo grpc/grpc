@@ -22,6 +22,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -34,7 +35,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
@@ -53,11 +53,14 @@
 #include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
+const NoInterceptor ServerCompressionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerCompressionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor ServerCompressionFilter::Call::OnFinalize;
+const NoInterceptor ClientCompressionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ClientCompressionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor ClientCompressionFilter::Call::OnFinalize;
 
@@ -72,14 +75,14 @@ const grpc_channel_filter ServerCompressionFilter::kFilter =
                                kFilterExaminesInboundMessages |
                                kFilterExaminesOutboundMessages>("compression");
 
-absl::StatusOr<ClientCompressionFilter> ClientCompressionFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ClientCompressionFilter(args);
+absl::StatusOr<std::unique_ptr<ClientCompressionFilter>>
+ClientCompressionFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ClientCompressionFilter>(args);
 }
 
-absl::StatusOr<ServerCompressionFilter> ServerCompressionFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
-  return ServerCompressionFilter(args);
+absl::StatusOr<std::unique_ptr<ServerCompressionFilter>>
+ServerCompressionFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
+  return std::make_unique<ServerCompressionFilter>(args);
 }
 
 ChannelCompression::ChannelCompression(const ChannelArgs& args)
@@ -144,7 +147,7 @@ MessageHandle ChannelCompression::CompressMessage(
       const size_t after_size = tmp.Length();
       const float savings_ratio = 1.0f - static_cast<float>(after_size) /
                                              static_cast<float>(before_size);
-      GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name));
+      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       gpr_log(GPR_INFO,
               "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
               " bytes (%.2f%% savings)",
@@ -158,7 +161,7 @@ MessageHandle ChannelCompression::CompressMessage(
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
       const char* algo_name;
-      GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name));
+      CHECK(grpc_compression_algorithm_name(algorithm, &algo_name));
       gpr_log(GPR_INFO,
               "Algorithm '%s' enabled but decided not to compress. Input size: "
               "%" PRIuPTR,

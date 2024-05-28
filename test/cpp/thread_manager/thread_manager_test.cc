@@ -26,12 +26,13 @@
 
 #include <gtest/gtest.h>
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
+
 #include <grpc/support/port_platform.h>
 #include <grpcpp/grpcpp.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace {
@@ -163,7 +164,7 @@ TEST_P(ThreadManagerTest, TestPollAndWork) {
   for (auto& tm : thread_manager_) {
     // Verify that The number of times DoWork() was called is equal to the
     // number of times WORK_FOUND was returned
-    gpr_log(GPR_DEBUG, "DoWork() called %d times", tm->num_do_work());
+    VLOG(2) << "DoWork() called " << tm->num_do_work() << " times";
     EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
     EXPECT_EQ(tm->num_do_work(), tm->num_work_found());
   }

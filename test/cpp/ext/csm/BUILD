@@ -40,7 +40,7 @@ grpc_cc_test(
         "//:grpcpp_otel_plugin",
         "//src/cpp/ext/csm:csm_observability",
         "//src/cpp/ext/otel:otel_plugin",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -60,7 +60,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/cpp/ext/csm:csm_observability",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/ext/otel:otel_test_library",
     ],
 )
@@ -77,6 +77,6 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/cpp/ext/csm:csm_observability",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

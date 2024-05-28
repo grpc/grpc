@@ -27,11 +27,12 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -41,8 +42,8 @@
 #endif
 
 #include "src/core/lib/gprpp/env.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 #ifdef GPR_WINDOWS
@@ -99,12 +100,12 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
-  GPR_ASSERT(!absl::GetFlag(FLAGS_test_bin_name).empty());
+  CHECK(!absl::GetFlag(FLAGS_test_bin_name).empty());
   std::string my_bin = argv[0];
   int result = 0;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
-    GPR_ASSERT(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
-                    .empty());
+    CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
+               .empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
     auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
@@ -127,9 +128,8 @@ int main(int argc, char** argv) {
 // an indication whether the test is running on RBE or not. Find a better way of
 // doing this.
 #ifndef GRPC_PORT_ISOLATED_RUNTIME
-    gpr_log(GPR_ERROR,
-            "You are invoking the test locally with Bazel, you may need to "
-            "invoke Bazel with --enable_runfiles=yes.");
+    LOG(ERROR) << "You are invoking the test locally with Bazel, you may need "
+                  "to invoke Bazel with --enable_runfiles=yes.";
 #endif  // GRPC_PORT_ISOLATED_RUNTIME
     result = grpc::testing::InvokeResolverComponentTestsRunner(
         grpc::testing::NormalizeFilePath(

@@ -33,6 +33,8 @@
 #include <functional>
 #include <map>
 
+#include "absl/log/check.h"
+
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/client_channel/connector.h"
@@ -60,21 +62,21 @@ class BinderConnector : public grpc_core::SubchannelConnector {
       size_t id_length = args.address->len - sizeof(un->sun_family);
       // The c-style string at least will have a null terminator, and the
       // connection id itself should not be empty
-      GPR_ASSERT(id_length >= 2);
+      CHECK_GE(id_length, 2u);
       // Make sure there is null terminator at the expected location before
       // reading from it
-      GPR_ASSERT(un->sun_path[id_length - 1] == '\0');
+      CHECK_EQ(un->sun_path[id_length - 1], '\0');
       conn_id_ = un->sun_path;
     }
 #else
-    GPR_ASSERT(0);
+    CHECK(0);
 #endif
     gpr_log(GPR_INFO, "BinderConnector %p conn_id_ = %s", this,
             conn_id_.c_str());
 
     args_ = args;
-    GPR_ASSERT(notify_ == nullptr);
-    GPR_ASSERT(notify != nullptr);
+    CHECK_EQ(notify_, nullptr);
+    CHECK_NE(notify, nullptr);
     notify_ = notify;
     result_ = result;
 
@@ -86,15 +88,15 @@ class BinderConnector : public grpc_core::SubchannelConnector {
   }
 
   void OnConnected(std::unique_ptr<grpc_binder::Binder> endpoint_binder) {
-    GPR_ASSERT(endpoint_binder != nullptr);
+    CHECK(endpoint_binder != nullptr);
     grpc_core::Transport* transport = grpc_create_binder_transport_client(
         std::move(endpoint_binder),
         grpc_binder::GetSecurityPolicySetting()->Get(conn_id_));
-    GPR_ASSERT(transport != nullptr);
+    CHECK_NE(transport, nullptr);
     result_->channel_args = args_.channel_args;
     result_->transport = transport;
 
-    GPR_ASSERT(notify_ != nullptr);
+    CHECK_NE(notify_, nullptr);
     // ExecCtx is required here for running grpc_closure because this callback
     // might be invoked from non-gRPC code
     if (grpc_core::ExecCtx::Get() == nullptr) {

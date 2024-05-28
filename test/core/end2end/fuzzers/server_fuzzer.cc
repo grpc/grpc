@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -29,7 +30,7 @@
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/end2end/fuzzers/fuzzing_common.h"
 #include "test/core/end2end/fuzzers/network_input.h"
-#include "test/core/util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -62,11 +63,11 @@ class ServerFuzzer final : public BasicFuzzer {
     grpc_server_start(server_);
     for (const auto& input : msg.network_input()) {
       UpdateMinimumRunTime(ScheduleConnection(
-          input, engine(), FuzzingEnvironment{resource_quota()}, 1234));
+          input, engine().get(), FuzzingEnvironment{resource_quota()}, 1234));
     }
   }
 
-  ~ServerFuzzer() { GPR_ASSERT(server_ == nullptr); }
+  ~ServerFuzzer() { CHECK_EQ(server_, nullptr); }
 
  private:
   Result CreateChannel(
@@ -103,7 +104,7 @@ void RunServerFuzzer(
     ForceEnableExperiment("event_engine_listener", true);
     return 42;
   }();
-  GPR_ASSERT(once == 42);  // avoid unused variable warning
+  CHECK_EQ(once, 42);  // avoid unused variable warning
   ApplyFuzzConfigVars(msg.config_vars());
   TestOnlyReloadExperimentsFromConfigVariables();
   testing::ServerFuzzer(msg, server_setup).Run(msg.api_actions());

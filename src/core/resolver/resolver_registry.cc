@@ -14,10 +14,9 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/resolver_registry.h"
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -25,6 +24,7 @@
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -51,9 +51,9 @@ bool IsLowerCase(absl::string_view str) {
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  GPR_ASSERT(IsLowerCase(factory->scheme()));
+  CHECK(IsLowerCase(factory->scheme()));
   auto p = state_.factories.emplace(factory->scheme(), std::move(factory));
-  GPR_ASSERT(p.second);
+  CHECK(p.second);
 }
 
 bool ResolverRegistry::Builder::HasResolverFactory(
@@ -131,7 +131,7 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(
 // point to the parsed URI.
 ResolverFactory* ResolverRegistry::FindResolverFactory(
     absl::string_view target, URI* uri, std::string* canonical_target) const {
-  GPR_ASSERT(uri != nullptr);
+  CHECK_NE(uri, nullptr);
   absl::StatusOr<URI> tmp_uri = URI::Parse(target);
   ResolverFactory* factory =
       tmp_uri.ok() ? LookupResolverFactory(tmp_uri->scheme()) : nullptr;

@@ -21,9 +21,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/ext/server_load_reporting.h>
@@ -34,8 +35,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -138,11 +139,11 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
       ->mutable_load_report_interval()
       ->set_seconds(5);
   stream->Write(request);
-  gpr_log(GPR_INFO, "Initial request sent.");
+  LOG(INFO) << "Initial request sent.";
   grpc::lb::v1::LoadReportResponse response;
   stream->Read(&response);
   const std::string& lb_id = response.initial_response().load_balancer_id();
-  gpr_log(GPR_INFO, "Initial response received (lb_id: %s).", lb_id.c_str());
+  LOG(INFO) << "Initial response received (lb_id: " << lb_id << ").";
   ClientMakeEchoCalls(lb_id, "LB_TAG", kOkMessage, 1);
 
   unsigned load_count = 0;

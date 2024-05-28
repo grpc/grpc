@@ -18,6 +18,7 @@
 #include <AvailabilityMacros.h>
 #ifdef AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -153,7 +154,7 @@ void DNSServiceResolverImpl::ResolveCallback(
 
   grpc_core::ReleasableMutexLock lock(&that->request_mu_);
   auto request_it = that->requests_.find(sdRef);
-  GPR_ASSERT(request_it != that->requests_.end());
+  CHECK(request_it != that->requests_.end());
 
   if (errorCode != kDNSServiceErr_NoError &&
       errorCode != kDNSServiceErr_NoSuchRecord) {

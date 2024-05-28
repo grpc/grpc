@@ -33,6 +33,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_split.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
@@ -51,7 +52,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
 #include "test/cpp/interop/xds_stats_watcher.h"
 #include "test/cpp/util/test_config.h"
@@ -342,8 +343,8 @@ class XdsUpdateClientConfigureServiceImpl
     std::vector<RpcConfig> configs;
     int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
     int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-    CHECK(request_payload_size >= 0);
-    CHECK(response_payload_size >= 0);
+    CHECK_GE(request_payload_size, 0);
+    CHECK_GE(response_payload_size, 0);
     for (const auto& rpc : request->types()) {
       RpcConfig config;
       config.timeout_sec = request->timeout_sec();
@@ -354,15 +355,11 @@ class XdsUpdateClientConfigureServiceImpl
       }
       if (request_payload_size > 0 &&
           config.type == ClientConfigureRequest::EMPTY_CALL) {
-        gpr_log(GPR_ERROR,
-                "request_payload_size should not be set "
-                "for EMPTY_CALL");
+        LOG(ERROR) << "request_payload_size should not be set for EMPTY_CALL";
       }
       if (response_payload_size > 0 &&
           config.type == ClientConfigureRequest::EMPTY_CALL) {
-        gpr_log(GPR_ERROR,
-                "response_payload_size should not be set "
-                "for EMPTY_CALL");
+        LOG(ERROR) << "response_payload_size should not be set for EMPTY_CALL";
       }
       config.request_payload_size = request_payload_size;
       std::string payload(config.request_payload_size, '0');
@@ -429,7 +426,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
 }
 
 grpc::CsmObservability EnableCsmObservability() {
-  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+  VLOG(2) << "Registering Prometheus exporter";
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE
   // pods
@@ -448,7 +445,7 @@ grpc::CsmObservability EnableCsmObservability() {
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
                RpcConfigurationsQueue* rpc_configs_queue) {
-  CHECK(port != 0);
+  CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
 
@@ -463,7 +460,7 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_DEBUG, "Server listening on %s", server_address.str().c_str());
+  VLOG(2) << "Server listening on " << server_address.str();
 
   server->Wait();
 }
@@ -480,7 +477,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   for (auto& data : rpc_metadata) {
     std::vector<std::string> metadata =
         absl::StrSplit(data, ':', absl::SkipEmpty());
-    CHECK(metadata.size() == 3);
+    CHECK_EQ(metadata.size(), 3u);
     if (metadata[0] == "EmptyCall") {
       metadata_map[ClientConfigureRequest::EMPTY_CALL].push_back(
           {metadata[1], metadata[2]});
@@ -496,8 +493,8 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
   int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-  CHECK(request_payload_size >= 0);
-  CHECK(response_payload_size >= 0);
+  CHECK_GE(request_payload_size, 0);
+  CHECK_GE(response_payload_size, 0);
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {
@@ -513,15 +510,11 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     }
     if (request_payload_size > 0 &&
         config.type == ClientConfigureRequest::EMPTY_CALL) {
-      gpr_log(GPR_ERROR,
-              "request_payload_size should not be set "
-              "for EMPTY_CALL");
+      LOG(ERROR) << "request_payload_size should not be set for EMPTY_CALL";
     }
     if (response_payload_size > 0 &&
         config.type == ClientConfigureRequest::EMPTY_CALL) {
-      gpr_log(GPR_ERROR,
-              "response_payload_size should not be set "
-              "for EMPTY_CALL");
+      LOG(ERROR) << "response_payload_size should not be set for EMPTY_CALL";
     }
     config.request_payload_size = request_payload_size;
     std::string payload(config.request_payload_size, '0');

@@ -25,10 +25,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/useful.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 

@@ -22,6 +22,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpcpp/ext/admin_services.h>
@@ -79,21 +80,20 @@ void RunServer() {
         absl::StrCat("0.0.0.0:", port),
         grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
+    LOG(INFO) << "Server starting on 0.0.0.0:" << port;
     grpc::AddAdminServices(&builder);
     // For the maintenance server, do not use any authentication mechanism.
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Maintenance server listening on 0.0.0.0:%d",
-            maintenance_port);
+    LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
   } else {
     grpc::AddAdminServices(&xds_builder);
     // Listen on the given address without any authentication mechanism.
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
                              grpc::InsecureServerCredentials());
     server = xds_builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Server listening on 0.0.0.0:%d", port);
+    LOG(INFO) << "Server listening on 0.0.0.0:" << port;
   }
 
   // Wait for the server to shutdown. Note that some other thread must be

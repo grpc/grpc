@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -47,7 +48,7 @@
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
@@ -243,7 +244,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     virtual ~ServerThread() {
       // Shutdown should be called manually. Shutdown calls virtual methods and
       // can't be called from the base class destructor.
-      GPR_ASSERT(!running_);
+      CHECK(!running_);
     }
 
     void Start();
@@ -946,10 +947,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
     num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.
-    gpr_log(GPR_INFO,
-            "Sending %" PRIuPTR
-            " RPCs for percentage=%.3f error_tolerance=%.3f",
-            num_rpcs, p, error_tolerance);
+    LOG(INFO) << "Sending " << num_rpcs << " RPCs for percentage=" << p
+              << " error_tolerance=" << error_tolerance;
     return num_rpcs;
   }
 

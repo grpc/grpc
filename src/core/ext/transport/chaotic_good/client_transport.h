@@ -65,8 +65,7 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-class ChaoticGoodClientTransport final : public Transport,
-                                         public ClientTransport {
+class ChaoticGoodClientTransport final : public ClientTransport {
  public:
   ChaoticGoodClientTransport(
       PromiseEndpoint control_endpoint, PromiseEndpoint data_endpoint,
@@ -83,10 +82,9 @@ class ChaoticGoodClientTransport final : public Transport,
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override {
     AbortWithError();
-    delete this;
+    Unref();
   }
 
   void StartCall(CallHandler call_handler) override;

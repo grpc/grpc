@@ -102,20 +102,25 @@ def _update_visibility(visibility):
         "chaotic_good": PRIVATE,
         "client_channel": PRIVATE,
         "cli": PRIVATE,
+        "core_credentials": PRIVATE,
         "debug_location": PRIVATE,
         "endpoint_tests": PRIVATE,
         "exec_ctx": PRIVATE,
+        "gpr_public_hdrs": PRIVATE,
         "grpclb": PRIVATE,
         "grpc_experiments": PRIVATE,
         "grpc_opencensus_plugin": PUBLIC,
+        "grpc_public_hdrs": PRIVATE,
         "grpcpp_gcp_observability": PUBLIC,
         "grpc_resolver_fake": PRIVATE,
+        "grpc++_public_hdrs": PUBLIC,
         "grpc++_test": PRIVATE,
         "http": PRIVATE,
         "httpcli": PRIVATE,
         "iomgr_internal_errqueue": PRIVATE,
         "iomgr_buffer_list": PRIVATE,
         "json_reader_legacy": PRIVATE,
+        "otel_plugin": PRIVATE,
         "public": PUBLIC,
         "ref_counted_ptr": PRIVATE,
         "tcp_tracer": PRIVATE,
@@ -230,6 +235,7 @@ def grpc_proto_library(
         name,
         srcs = [],
         deps = [],
+        visibility = None,
         well_known_protos = False,
         has_services = True,
         use_external = False,
@@ -238,6 +244,7 @@ def grpc_proto_library(
         name = name,
         srcs = srcs,
         deps = deps,
+        visibility = visibility,
         well_known_protos = well_known_protos,
         proto_only = not has_services,
         use_external = use_external,
@@ -534,7 +541,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c11"])
 
-    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"]
+    core_deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"]
 
     # Test args for all tests
     test_args = {
@@ -612,7 +619,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         data = data,
         testonly = testonly,
         linkshared = linkshared,
-        deps = deps + _get_external_deps(external_deps) + ["//test/core/util:grpc_suppressions"],
+        deps = deps + _get_external_deps(external_deps) + ["//test/core/test_util:grpc_suppressions"],
         copts = GRPC_DEFAULT_COPTS + copts,
         linkopts = if_not_windows(["-pthread"]) + linkopts,
         tags = tags,
@@ -729,6 +736,13 @@ def grpc_package(name, visibility = "private", features = []):
             default_visibility = visibility,
             features = features,
         )
+
+def grpc_filegroup(name, srcs, **kwargs):
+    native.filegroup(
+        name = name,
+        srcs = srcs,
+        **kwargs
+    )
 
 def grpc_objc_library(
         name,

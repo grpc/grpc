@@ -28,18 +28,20 @@
 #include <TargetConditionals.h>
 #endif
 
+#include "absl/log/check.h"
+
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/util/time_precise.h"
 
 #if !defined(_WIN32) || !defined(_DLL)
 #define EXEC_CTX exec_ctx_
@@ -314,8 +316,8 @@ class GRPC_DLL ApplicationCallbackExecCtx {
         Fork::DecExecCtxCount();
       }
     } else {
-      GPR_DEBUG_ASSERT(head_ == nullptr);
-      GPR_DEBUG_ASSERT(tail_ == nullptr);
+      DCHECK_EQ(head_, nullptr);
+      DCHECK_EQ(tail_, nullptr);
     }
   }
 

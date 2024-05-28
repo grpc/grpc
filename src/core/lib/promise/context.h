@@ -17,6 +17,7 @@
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 
 #include <grpc/support/log.h>
@@ -114,8 +115,14 @@ bool HasContext() {
 template <typename T>
 T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  GPR_ASSERT(p != nullptr);
+  CHECK_NE(p, nullptr);
   return p;
+}
+
+// Retrieve the current value of a context, or nullptr if the value is unset.
+template <typename T>
+T* MaybeGetContext() {
+  return promise_detail::Context<T>::get();
 }
 
 // Given a promise and a context, return a promise that has that context set.

@@ -34,6 +34,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -51,6 +52,7 @@ TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
+const NoInterceptor BackendMetricFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor BackendMetricFilter::Call::OnServerToClientMessage;
 const NoInterceptor BackendMetricFilter::Call::OnFinalize;
 
@@ -121,12 +123,13 @@ const grpc_channel_filter BackendMetricFilter::kFilter =
     MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>(
         "backend_metric");
 
-absl::StatusOr<BackendMetricFilter> BackendMetricFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args) {
-  return BackendMetricFilter();
+absl::StatusOr<std::unique_ptr<BackendMetricFilter>>
+BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
+  return std::make_unique<BackendMetricFilter>();
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = &GetContext<
       grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
   if (ctx == nullptr) {

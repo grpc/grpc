@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_RESOLVER_H
 #define GRPC_SRC_CORE_RESOLVER_RESOLVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"

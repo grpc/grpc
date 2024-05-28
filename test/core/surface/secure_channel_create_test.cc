@@ -29,7 +29,7 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/channel.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 void test_unknown_scheme_target(void) {
   grpc_channel_credentials* creds =

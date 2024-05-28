@@ -42,8 +42,11 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
   // and enforces the RBAC policy.
   static const grpc_channel_filter kFilterVtable;
 
-  static absl::StatusOr<RbacFilter> Create(const ChannelArgs& args,
-                                           ChannelFilter::Args filter_args);
+  static absl::StatusOr<std::unique_ptr<RbacFilter>> Create(
+      const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  RbacFilter(size_t index,
+             EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
 
   class Call {
    public:
@@ -52,14 +55,12 @@ class RbacFilter : public ImplementChannelFilter<RbacFilter> {
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
 
  private:
-  RbacFilter(size_t index,
-             EvaluateArgs::PerChannelArgs per_channel_evaluate_args);
-
   // The index of this filter instance among instances of the same filter.
   size_t index_;
   // Assigned index for service config data from the parser.

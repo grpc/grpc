@@ -25,6 +25,7 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
@@ -34,12 +35,12 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
+#include "src/core/util/useful.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
     false, "polling");  // Disabled by default
@@ -109,7 +110,7 @@ static void try_engine(absl::string_view engine) {
     if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
         g_vtables[i]->check_engine_available(engine == g_vtables[i]->name)) {
       g_event_engine = g_vtables[i];
-      gpr_log(GPR_DEBUG, "Using polling engine: %s", g_event_engine->name);
+      VLOG(2) << "Using polling engine: " << g_event_engine->name;
       return;
     }
   }

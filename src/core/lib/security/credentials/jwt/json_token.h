@@ -24,7 +24,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 
 // --- Constants. ---
 

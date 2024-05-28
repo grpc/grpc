@@ -21,8 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc {
 namespace internal {

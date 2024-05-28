@@ -23,7 +23,7 @@
 #include "src/core/lib/config/config_vars.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/h2_tls_common.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 extern void EnsureSuitesLinked();

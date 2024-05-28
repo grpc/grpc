@@ -20,8 +20,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "test/core/util/evaluate_args_test_util.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/evaluate_args_test_util.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 

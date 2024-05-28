@@ -14,16 +14,16 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 
 #include <stddef.h>
 
 #include <utility>
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 // Channel arg key for the list of balancer addresses.
 #define GRPC_ARG_GRPCLB_BALANCER_ADDRESSES \

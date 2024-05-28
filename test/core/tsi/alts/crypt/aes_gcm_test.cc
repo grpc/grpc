@@ -26,8 +26,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/tsi/alts/crypt/gsec.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
-#include "test/core/util/test_config.h"
 
 const size_t kTestMinTagLengthForCorruption = 8;
 const size_t kTestNumCrypters = 3;

@@ -40,11 +40,12 @@ namespace grpc_core {
 const NoInterceptor ClientAuthorityFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ClientAuthorityFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerMessage;
+const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ClientAuthorityFilter::Call::OnServerToClientMessage;
 const NoInterceptor ClientAuthorityFilter::Call::OnFinalize;
 
-absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
+absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>>
+ClientAuthorityFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
   absl::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
@@ -52,7 +53,8 @@ absl::StatusOr<ClientAuthorityFilter> ClientAuthorityFilter::Create(
         "GRPC_ARG_DEFAULT_AUTHORITY string channel arg. not found. Note that "
         "direct channels must explicitly specify a value for this argument.");
   }
-  return ClientAuthorityFilter(Slice::FromCopiedString(*default_authority));
+  return std::make_unique<ClientAuthorityFilter>(
+      Slice::FromCopiedString(*default_authority));
 }
 
 void ClientAuthorityFilter::Call::OnClientInitialMetadata(

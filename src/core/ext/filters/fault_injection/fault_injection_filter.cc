@@ -29,6 +29,7 @@
 
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -57,6 +58,7 @@ TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
 const NoInterceptor FaultInjectionFilter::Call::OnServerInitialMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor FaultInjectionFilter::Call::OnClientToServerMessage;
+const NoInterceptor FaultInjectionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor FaultInjectionFilter::Call::OnServerToClientMessage;
 const NoInterceptor FaultInjectionFilter::Call::OnFinalize;
 
@@ -135,16 +137,16 @@ class FaultInjectionFilter::InjectionDecision {
   FaultHandle active_fault_{false};
 };
 
-absl::StatusOr<FaultInjectionFilter> FaultInjectionFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args filter_args) {
-  return FaultInjectionFilter(filter_args);
+absl::StatusOr<std::unique_ptr<FaultInjectionFilter>>
+FaultInjectionFilter::Create(const ChannelArgs&,
+                             ChannelFilter::Args filter_args) {
+  return std::make_unique<FaultInjectionFilter>(filter_args);
 }
 
 FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
     : index_(filter_args.instance_id()),
       service_config_parser_index_(
-          FaultInjectionServiceConfigParser::ParserIndex()),
-      mu_(new Mutex) {}
+          FaultInjectionServiceConfigParser::ParserIndex()) {}
 
 // Construct a promise for one call.
 ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
@@ -226,7 +228,7 @@ FaultInjectionFilter::MakeInjectionDecision(
   bool delay_request = delay != Duration::Zero();
   bool abort_request = abort_code != GRPC_STATUS_OK;
   if (delay_request || abort_request) {
-    MutexLock lock(mu_.get());
+    MutexLock lock(&mu_);
     if (delay_request) {
       delay_request =
           UnderFraction(&delay_rand_generator_, delay_percentage_numerator,

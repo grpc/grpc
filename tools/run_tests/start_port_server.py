@@ -18,7 +18,7 @@ Wrapper around port server starting code.
 Used by developers who wish to run individual C/C++ tests outside of the
 run_tests.py infrastructure.
 
-The path to this file is called out in test/core/util/port.c, and printed as
+The path to this file is called out in test/core/test_util/port.c, and printed as
 an error message to users.
 """
 

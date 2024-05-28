@@ -32,14 +32,14 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_size_estimator.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 

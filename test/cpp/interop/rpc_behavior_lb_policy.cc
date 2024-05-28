@@ -24,9 +24,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 
 namespace grpc {
 namespace testing {
@@ -93,7 +93,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
             grpc_core::Json::FromArray({grpc_core::Json::FromObject(
                 {{std::string(delegate_->name()),
                   grpc_core::Json::FromObject({})}})}));
-    CHECK(delegate_config.ok());
+    CHECK_OK(delegate_config);
     args.config = std::move(*delegate_config);
     return delegate_->UpdateLocked(std::move(args));
   }

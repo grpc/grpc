@@ -27,9 +27,9 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
@@ -38,7 +38,7 @@
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "test/core/util/reconnect_server.h"
+#include "test/core/test_util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
 
 ABSL_FLAG(int32_t, control_port, 0, "Server port for controlling the server.");
@@ -167,7 +167,7 @@ void RunServer() {
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
+  LOG(INFO) << "Server listening on " << server_address.str();
   while (!got_sigint) {
     service.Poll(5);
   }
@@ -180,8 +180,8 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
-  CHECK(absl::GetFlag(FLAGS_control_port) != 0);
-  CHECK(absl::GetFlag(FLAGS_retry_port) != 0);
+  CHECK_NE(absl::GetFlag(FLAGS_control_port), 0);
+  CHECK_NE(absl::GetFlag(FLAGS_retry_port), 0);
   RunServer();
 
   return 0;

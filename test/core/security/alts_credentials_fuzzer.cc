@@ -18,6 +18,9 @@
 
 #include <string.h>
 
+#include "absl/log/check.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -29,7 +32,7 @@
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
-#include "test/core/util/fuzzer_util.h"
+#include "test/core/test_util/fuzzer_util.h"
 
 using grpc_core::testing::grpc_fuzzer_get_next_byte;
 using grpc_core::testing::grpc_fuzzer_get_next_string;
@@ -81,9 +84,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       grpc_channel_credentials* cred = grpc_alts_credentials_create_customized(
           options, handshaker_service_url, enable_untrusted_alts);
       if (!enable_untrusted_alts && !is_on_gcp) {
-        GPR_ASSERT(cred == nullptr);
+        CHECK_EQ(cred, nullptr);
       } else {
-        GPR_ASSERT(cred != nullptr);
+        CHECK_NE(cred, nullptr);
       }
       grpc_channel_credentials_release(cred);
       grpc_alts_credentials_options_destroy(options);
@@ -95,9 +98,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           grpc_alts_server_credentials_create_customized(
               options, handshaker_service_url, enable_untrusted_alts);
       if (!enable_untrusted_alts && !is_on_gcp) {
-        GPR_ASSERT(cred == nullptr);
+        CHECK_EQ(cred, nullptr);
       } else {
-        GPR_ASSERT(cred != nullptr);
+        CHECK_NE(cred, nullptr);
       }
       grpc_server_credentials_release(cred);
       grpc_alts_credentials_options_destroy(options);

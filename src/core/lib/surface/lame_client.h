@@ -47,7 +47,9 @@ class LameClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<LameClientFilter> Create(
+  explicit LameClientFilter(absl::Status error);
+
+  static absl::StatusOr<std::unique_ptr<LameClientFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) override;
@@ -55,15 +57,9 @@ class LameClientFilter : public ChannelFilter {
   bool GetChannelInfo(const grpc_channel_info*) override;
 
  private:
-  explicit LameClientFilter(absl::Status error);
-
   absl::Status error_;
-  struct State {
-    State();
-    Mutex mu;
-    ConnectivityStateTracker state_tracker ABSL_GUARDED_BY(mu);
-  };
-  std::unique_ptr<State> state_;
+  Mutex mu_;
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_);
 };
 
 extern const grpc_arg_pointer_vtable kLameFilterErrorArgVtable;

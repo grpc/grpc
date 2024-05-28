@@ -40,7 +40,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
  public:

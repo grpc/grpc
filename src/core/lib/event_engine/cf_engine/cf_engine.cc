@@ -20,6 +20,8 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/cpu.h>
 
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
@@ -68,7 +70,7 @@ CFEventEngine::~CFEventEngine() {
                 HandleToString(handle).c_str());
       }
     }
-    GPR_ASSERT(GPR_LIKELY(known_handles_.empty()));
+    CHECK(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
   thread_pool_->Quiesce();

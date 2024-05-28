@@ -18,6 +18,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -36,7 +38,6 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -48,6 +49,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/string.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -127,7 +129,7 @@ class EventEngineEndpointWrapper {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          gpr_log(GPR_DEBUG, "READ DATA: %s", dump);
+          VLOG(2) << "READ DATA: " << dump;
           gpr_free(dump);
         }
       }
@@ -158,7 +160,7 @@ class EventEngineEndpointWrapper {
         for (i = 0; i < slices->count; i++) {
           char* dump =
               grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-          gpr_log(GPR_DEBUG, "WRITE DATA: %s", dump);
+          VLOG(2) << "WRITE DATA: " << dump;
           gpr_free(dump);
         }
       }
@@ -431,7 +433,7 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
     std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
-  GPR_DEBUG_ASSERT(ee_endpoint != nullptr);
+  DCHECK(ee_endpoint != nullptr);
   auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
   return wrapper->GetGrpcEndpoint();
 }

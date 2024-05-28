@@ -16,6 +16,7 @@
 #include <atomic>
 #include <cstdint>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 
 #include <grpc/support/atm.h>
@@ -78,7 +79,7 @@ void LockfreeEvent::DestroyEvent() {
     if (curr & kShutdownBit) {
       grpc_core::internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
-      GPR_ASSERT(curr == kClosureNotReady || curr == kClosureReady);
+      CHECK(curr == kClosureNotReady || curr == kClosureReady);
     }
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit

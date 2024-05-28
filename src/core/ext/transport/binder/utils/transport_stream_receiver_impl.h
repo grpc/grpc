@@ -15,14 +15,14 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_UTILS_TRANSPORT_STREAM_RECEIVER_IMPL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_UTILS_TRANSPORT_STREAM_RECEIVER_IMPL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <map>
 #include <queue>
 #include <set>
 #include <string>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/utils/transport_stream_receiver.h"
 #include "src/core/lib/gprpp/sync.h"

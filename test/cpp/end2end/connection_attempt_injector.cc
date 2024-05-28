@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/utility/utility.h"
 
@@ -119,14 +120,14 @@ void ConnectionAttemptInjector::HandleConnection(
     grpc_pollset_set* interested_parties, const EndpointConfig& config,
     const grpc_resolved_address* addr, grpc_core::Timestamp deadline) {
   const int port = grpc_sockaddr_get_port(addr);
-  gpr_log(GPR_INFO, "==> HandleConnection(): port=%d", port);
+  LOG(INFO) << "==> HandleConnection(): port=" << port;
   {
     grpc_core::MutexLock lock(&mu_);
     // First, check if there's a hold request for this port.
     for (auto it = holds_.begin(); it != holds_.end(); ++it) {
       Hold* hold = *it;
       if (port == hold->port_) {
-        gpr_log(GPR_INFO, "*** INTERCEPTING CONNECTION ATTEMPT");
+        LOG(INFO) << "*** INTERCEPTING CONNECTION ATTEMPT";
         if (hold->intercept_completion_) {
           hold->original_on_complete_ = closure;
           closure = GRPC_CLOSURE_INIT(&hold->on_complete_, Hold::OnComplete,
@@ -220,16 +221,16 @@ ConnectionAttemptInjector::Hold::Hold(ConnectionAttemptInjector* injector,
       intercept_completion_(intercept_completion) {}
 
 void ConnectionAttemptInjector::Hold::Wait() {
-  gpr_log(GPR_INFO, "=== WAITING FOR CONNECTION ATTEMPT ON PORT %d ===", port_);
+  LOG(INFO) << "=== WAITING FOR CONNECTION ATTEMPT ON PORT " << port_ << " ===";
   grpc_core::MutexLock lock(&injector_->mu_);
   while (queued_attempt_ == nullptr) {
     start_cv_.Wait(&injector_->mu_);
   }
-  gpr_log(GPR_INFO, "=== CONNECTION ATTEMPT STARTED ON PORT %d ===", port_);
+  LOG(INFO) << "=== CONNECTION ATTEMPT STARTED ON PORT " << port_ << " ===";
 }
 
 void ConnectionAttemptInjector::Hold::Resume() {
-  gpr_log(GPR_INFO, "=== RESUMING CONNECTION ATTEMPT ON PORT %d ===", port_);
+  LOG(INFO) << "=== RESUMING CONNECTION ATTEMPT ON PORT " << port_ << " ===";
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
   {
@@ -240,7 +241,7 @@ void ConnectionAttemptInjector::Hold::Resume() {
 }
 
 void ConnectionAttemptInjector::Hold::Fail(grpc_error_handle error) {
-  gpr_log(GPR_INFO, "=== FAILING CONNECTION ATTEMPT ON PORT %d ===", port_);
+  LOG(INFO) << "=== FAILING CONNECTION ATTEMPT ON PORT " << port_ << " ===";
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<QueuedAttempt> attempt;
   {
@@ -251,13 +252,13 @@ void ConnectionAttemptInjector::Hold::Fail(grpc_error_handle error) {
 }
 
 void ConnectionAttemptInjector::Hold::WaitForCompletion() {
-  gpr_log(GPR_INFO,
-          "=== WAITING FOR CONNECTION COMPLETION ON PORT %d ===", port_);
+  LOG(INFO) << "=== WAITING FOR CONNECTION COMPLETION ON PORT " << port_
+            << " ===";
   grpc_core::MutexLock lock(&injector_->mu_);
   while (original_on_complete_ != nullptr) {
     complete_cv_.Wait(&injector_->mu_);
   }
-  gpr_log(GPR_INFO, "=== CONNECTION COMPLETED ON PORT %d ===", port_);
+  LOG(INFO) << "=== CONNECTION COMPLETED ON PORT " << port_ << " ===";
 }
 
 bool ConnectionAttemptInjector::Hold::IsStarted() {

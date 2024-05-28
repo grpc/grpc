@@ -41,6 +41,7 @@ TraceFlag grpc_authz_trace(false, "grpc_authz_api");
 const NoInterceptor GrpcServerAuthzFilter::Call::OnServerInitialMetadata;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerMessage;
+const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnServerToClientMessage;
 const NoInterceptor GrpcServerAuthzFilter::Call::OnFinalize;
 
@@ -51,14 +52,14 @@ GrpcServerAuthzFilter::GrpcServerAuthzFilter(
       per_channel_evaluate_args_(auth_context_.get(), args),
       provider_(std::move(provider)) {}
 
-absl::StatusOr<GrpcServerAuthzFilter> GrpcServerAuthzFilter::Create(
-    const ChannelArgs& args, ChannelFilter::Args) {
+absl::StatusOr<std::unique_ptr<GrpcServerAuthzFilter>>
+GrpcServerAuthzFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
   auto* auth_context = args.GetObject<grpc_auth_context>();
   auto* provider = args.GetObject<grpc_authorization_policy_provider>();
   if (provider == nullptr) {
     return absl::InvalidArgumentError("Failed to get authorization provider.");
   }
-  return GrpcServerAuthzFilter(
+  return std::make_unique<GrpcServerAuthzFilter>(
       auth_context != nullptr ? auth_context->Ref() : nullptr, args,
       provider->Ref());
 }

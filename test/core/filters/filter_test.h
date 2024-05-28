@@ -231,7 +231,7 @@ class FilterTest : public FilterTestBase {
   absl::StatusOr<Channel> MakeChannel(const ChannelArgs& args) {
     auto filter = Filter::Create(args, ChannelFilter::Args());
     if (!filter.ok()) return filter.status();
-    return Channel(std::make_unique<Filter>(std::move(*filter)), this);
+    return Channel(std::move(*filter), this);
   }
 };
 

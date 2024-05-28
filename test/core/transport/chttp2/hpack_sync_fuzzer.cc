@@ -45,9 +45,9 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
-#include "test/core/util/proto_bit_gen.h"
 
 bool squelch = true;
 bool leak_check = true;

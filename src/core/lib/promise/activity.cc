@@ -18,6 +18,7 @@
 
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -54,7 +55,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
-    GPR_ASSERT(activity_ != nullptr);
+    CHECK_NE(activity_, nullptr);
     activity_ = nullptr;
     mu_.Unlock();
     Unref();

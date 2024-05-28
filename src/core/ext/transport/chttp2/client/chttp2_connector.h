@@ -26,12 +26,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/connector.h"
+#include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/handshaker.h"
 
 namespace grpc_core {
 

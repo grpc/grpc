@@ -22,16 +22,17 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "src/core/util/tmpfile.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 namespace grpc_core {
 
@@ -107,7 +108,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
   EXPECT_FALSE(core_external_verifier.Verify(
       &request_,
       [&callback_completed_event](absl::Status async_status) {
-        gpr_log(GPR_INFO, "Callback is invoked.");
+        LOG(INFO) << "Callback is invoked.";
         EXPECT_EQ(async_status.code(), absl::StatusCode::kUnauthenticated);
         EXPECT_EQ(async_status.ToString(),
                   "UNAUTHENTICATED: AsyncExternalVerifier failed");

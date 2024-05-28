@@ -29,13 +29,13 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/tmpfile.h"
 #include "src/cpp/ext/csm/csm_observability.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
 
@@ -157,12 +157,7 @@ class MetadataExchangeTest
     : public OpenTelemetryPluginEnd2EndTest,
       public ::testing::WithParamInterface<TestScenario> {
  protected:
-  void Init(
-      const std::vector<absl::string_view>& metric_names,
-      bool enable_client_side_injector = true,
-      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-               grpc_core::RefCountedStringValue>
-          labels_to_inject = {}) {
+  void Init(Options options, bool enable_client_side_injector = true) {
     const char* kBootstrap =
         "{\"node\": {\"id\": "
         "\"projects/1234567890/networks/mesh:mesh-id/nodes/"
@@ -182,11 +177,9 @@ class MetadataExchangeTest
         break;
     }
     OpenTelemetryPluginEnd2EndTest::Init(std::move(
-        Options()
-            .set_metric_names(metric_names)
+        options
             .add_plugin_option(std::make_unique<MeshLabelsPluginOption>(
                 GetParam().GetTestResource().GetAttributes()))
-            .set_labels_to_inject(std::move(labels_to_inject))
             .set_channel_scope_filter(
                 [enable_client_side_injector](
                     const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) {
@@ -284,8 +277,9 @@ class MetadataExchangeTest
 
 // Verify that grpc.client.attempt.started does not get service mesh attributes
 TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
-  Init(/*metric_names=*/{
-      grpc::OpenTelemetryPluginBuilder::kClientAttemptStartedInstrumentName});
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.started";
   auto data = ReadCurrentMetricsData(
@@ -308,8 +302,9 @@ TEST_P(MetadataExchangeTest, ClientAttemptStarted) {
 }
 
 TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
-  Init(/*metric_names=*/{
-      grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName});
+  Init(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -333,9 +328,8 @@ TEST_P(MetadataExchangeTest, ClientAttemptDuration) {
 
 // Verify that grpc.server.call.started does not get service mesh attributes
 TEST_P(MetadataExchangeTest, ServerCallStarted) {
-  Init(
-      /*metric_names=*/{
-          grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerCallStartedInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.started";
   auto data = ReadCurrentMetricsData(
@@ -354,9 +348,8 @@ TEST_P(MetadataExchangeTest, ServerCallStarted) {
 }
 
 TEST_P(MetadataExchangeTest, ServerCallDuration) {
-  Init(
-      /*metric_names=*/{
-          grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName});
+  Init(std::move(Options().set_metric_names(
+      {grpc::OpenTelemetryPluginBuilder::kServerCallDurationInstrumentName})));
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -378,10 +371,10 @@ TEST_P(MetadataExchangeTest, ServerCallDuration) {
 
 // Test that the server records unknown when the client does not send metadata
 TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
-  Init(
-      /*metric_names=*/{grpc::OpenTelemetryPluginBuilder::
-                            kServerCallDurationInstrumentName},
-      /*enable_client_side_injector=*/false);
+  Init(std::move(
+           Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                           kServerCallDurationInstrumentName})),
+       /*enable_client_side_injector=*/false);
   SendRPC();
   const char* kMetricName = "grpc.server.call.duration";
   auto data = ReadCurrentMetricsData(
@@ -404,17 +397,21 @@ TEST_P(MetadataExchangeTest, ClientDoesNotSendMetadata) {
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.mesh_id")), "mesh-id");
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.remote_workload_type")),
             "unknown");
+  EXPECT_EQ(absl::get<std::string>(
+                attributes.at("csm.remote_workload_canonical_service")),
+            "unknown");
 }
 
 TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
-  Init(/*metric_names=*/{grpc::OpenTelemetryPluginBuilder::
-                             kClientAttemptDurationInstrumentName},
-       /*enable_client_side_injector=*/true,
-       // Injects CSM service labels to be recorded in the call.
-       {{OptionalLabelKey::kXdsServiceName,
-         grpc_core::RefCountedStringValue("myservice")},
-        {OptionalLabelKey::kXdsServiceNamespace,
-         grpc_core::RefCountedStringValue("mynamespace")}});
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .set_labels_to_inject(
+              {{OptionalLabelKey::kXdsServiceName,
+                grpc_core::RefCountedStringValue("myservice")},
+               {OptionalLabelKey::kXdsServiceNamespace,
+                grpc_core::RefCountedStringValue("mynamespace")}})));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto data = ReadCurrentMetricsData(
@@ -428,6 +425,53 @@ TEST_P(MetadataExchangeTest, VerifyCsmServiceLabels) {
             "myservice");
   EXPECT_EQ(absl::get<std::string>(attributes.at("csm.service_namespace_name")),
             "mynamespace");
+}
+
+// Test that metadata exchange works and corresponding service mesh labels are
+// received and recorded even if the server sends a trailers-only response.
+TEST_P(MetadataExchangeTest, Retries) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .set_service_config(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"grpc.testing.EchoTestService\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 3,\n"
+              "      \"initialBackoff\": \"0.1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}")));
+  EchoRequest request;
+  request.mutable_param()->mutable_expected_error()->set_code(
+      StatusCode::ABORTED);
+  EchoResponse response;
+  grpc::ClientContext context;
+  grpc::Status status = stub_->Echo(&context, request, &response);
+  const char* kMetricName = "grpc.client.attempt.duration";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        return !data.contains(kMetricName) ||
+               absl::get<opentelemetry::sdk::metrics::HistogramPointData>(
+                   data.at(kMetricName)[0].point_data)
+                       .count_ != 3;
+      });
+  ASSERT_EQ(absl::get<opentelemetry::sdk::metrics::HistogramPointData>(
+                data.at(kMetricName)[0].point_data)
+                .count_,
+            3);
+  VerifyServiceMeshAttributes(data.at(kMetricName)[0].attributes,
+                              /*is_client=*/true);
 }
 
 // Creates a serialized slice with labels for metadata exchange based on \a

@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -34,13 +35,13 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "test/core/test_util/build.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -77,7 +78,10 @@ std::string GetNextSendMessage() {
 }
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
+  int n = 0;
   while (engine.use_count() > 1) {
+    ++n;
+    if (n % 100 == 0) AsanAssertNoLeaks();
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));
@@ -155,8 +159,8 @@ absl::Status SendValidatePayload(absl::string_view data,
   // Check if data written == data read
   std::string data_read = ExtractSliceBufferIntoString(&read_store_buf);
   if (data != data_read) {
-    gpr_log(GPR_INFO, "Data written = %s", data.data());
-    gpr_log(GPR_INFO, "Data read = %s", data_read.c_str());
+    LOG(INFO) << "Data written = " << data;
+    LOG(INFO) << "Data read = " << data_read;
     return absl::CancelledError("Data read != Data written");
   }
   return absl::OkStatus();
@@ -197,8 +201,8 @@ absl::Status ConnectionManager::BindAndStartListener(
   for (auto& addr : addrs) {
     auto bind_status = listener->Bind(*URIToResolvedAddress(addr));
     if (!bind_status.ok()) {
-      gpr_log(GPR_ERROR, "Binding listener failed: %s",
-              bind_status.status().ToString().c_str());
+      LOG(ERROR) << "Binding listener failed: "
+                 << bind_status.status().ToString();
       return bind_status.status();
     }
   }
@@ -226,8 +230,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
   event_engine->Connect(
       [this](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
         if (!status.ok()) {
-          gpr_log(GPR_ERROR, "Connect failed: %s",
-                  status.status().ToString().c_str());
+          LOG(ERROR) << "Connect failed: " << status.status().ToString();
           last_in_progress_connection_.SetClientEndpoint(nullptr);
         } else {
           last_in_progress_connection_.SetClientEndpoint(std::move(*status));

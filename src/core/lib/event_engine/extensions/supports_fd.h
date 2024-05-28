@@ -112,6 +112,13 @@ class EventEngineSupportsFdExtension {
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) = 0;
 
+  /// Creates an EventEngine::Endpoint from an fd which is already assumed to be
+  /// connected to a remote peer. See \a CreatePosixEndpointFromFd for details.
+  /// This has the same behavior, but the \a memory_allocator is taken from the
+  /// EndpointConfig's resource quota.
+  virtual std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
+      int fd, const EndpointConfig& config) = 0;
+
   /// Called when the posix listener has accepted a new client connection.
   /// \a listener_fd - The listening socket fd that accepted the new client
   /// connection.

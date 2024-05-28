@@ -18,10 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 // in order of preference
 static const char* const supported_versions[] = {"h2"};
@@ -42,6 +44,6 @@ size_t grpc_chttp2_num_alpn_versions(void) {
 }
 
 const char* grpc_chttp2_get_alpn_version_index(size_t i) {
-  GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));
+  CHECK_LT(i, GPR_ARRAY_SIZE(supported_versions));
   return supported_versions[i];
 }

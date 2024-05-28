@@ -31,7 +31,7 @@
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/notification.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {

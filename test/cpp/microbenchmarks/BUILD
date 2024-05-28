@@ -25,7 +25,7 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
-    deps = ["//test/core/util:grpc_test_util"],
+    deps = ["//test/core/test_util:grpc_test_util"],
 )
 
 grpc_cc_test(
@@ -38,7 +38,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -52,7 +52,7 @@ grpc_cc_test(
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -118,8 +118,8 @@ grpc_cc_library(
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util_base",
-        "//test/core/util:grpc_test_util_unsecure",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
 )
@@ -141,8 +141,8 @@ grpc_cc_library(
     deps = [
         "//:grpc++",
         "//src/proto/grpc/testing:echo_proto",
-        "//test/core/util:grpc_test_util",
-        "//test/core/util:grpc_test_util_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
     ],
 )
@@ -382,25 +382,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "bm_chttp2_transport",
-    srcs = ["bm_chttp2_transport.cc"],
-    args = grpc_benchmark_args(),
-    external_deps = [
-        "absl/log:check",
-    ],
-    tags = [
-        "no_mac",
-        "no_windows",
-        "nomsan",
-    ],
-    deps = [
-        ":helpers",
-        "//src/core:closure",
-        "//src/core:slice",
-    ],
-)
-
-grpc_cc_test(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
     args = grpc_benchmark_args(),
@@ -510,6 +491,6 @@ grpc_cc_test(
         "//:gpr",
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_basic_work_queue",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

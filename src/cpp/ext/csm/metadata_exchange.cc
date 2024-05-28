@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <unordered_map>
 
+#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -38,14 +39,14 @@
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 
 namespace grpc {
@@ -263,7 +264,7 @@ NextFromAttributeList(absl::Span<const RemoteAttribute> attributes,
                       size_t start_index, size_t curr,
                       google_protobuf_Struct* decoded_metadata,
                       upb_Arena* arena) {
-  GPR_DEBUG_ASSERT(curr >= start_index);
+  DCHECK_GE(curr, start_index);
   const size_t index = curr - start_index;
   if (index >= attributes.size()) return absl::nullopt;
   const auto& attribute = attributes[index];

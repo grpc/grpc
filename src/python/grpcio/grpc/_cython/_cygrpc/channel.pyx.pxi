@@ -77,18 +77,22 @@ cdef class _CallState:
       return
     _observability.delete_call_tracer(self.call_tracer_capsule)
 
+  cdef void maybe_save_registered_method(self, bytes method_name) except *:
+    with _observability.get_plugin() as plugin:
+      if plugin and plugin.observability_enabled:
+        plugin.save_registered_method(method_name)
+
   cdef void maybe_set_client_call_tracer_on_call(self, bytes method_name, bytes target) except *:
     # TODO(xuanwn): use channel args to exclude those metrics.
     for exclude_prefix in _observability._SERVICES_TO_EXCLUDE:
       if exclude_prefix in method_name:
         return
     with _observability.get_plugin() as plugin:
-      if not (plugin and plugin.observability_enabled):
-        return
-      capsule = plugin.create_client_call_tracer(method_name, target)
-      capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
-      _set_call_tracer(self.c_call, capsule_ptr)
-      self.call_tracer_capsule = capsule
+      if plugin and plugin.observability_enabled:
+        capsule = plugin.create_client_call_tracer(method_name, target)
+        capsule_ptr = cpython.PyCapsule_GetPointer(capsule, CLIENT_CALL_TRACER)
+        _set_call_tracer(self.c_call, capsule_ptr)
+        self.call_tracer_capsule = capsule
 
 cdef class _ChannelState:
 
@@ -268,6 +272,7 @@ cdef void _call(
             channel_state.c_channel, NULL, flags,
             c_completion_queue, cpython.PyLong_AsVoidPtr(registered_call_handle),
             _timespec_from_time(deadline), NULL)
+        call_state.maybe_save_registered_method(method)
       else:
         call_state.c_call = grpc_channel_create_call(
             channel_state.c_channel, NULL, flags,

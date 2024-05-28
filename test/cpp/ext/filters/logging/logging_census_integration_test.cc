@@ -36,8 +36,8 @@
 #include "src/cpp/ext/gcp/observability_logging_sink.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/filters/census/library.h"
 #include "test/cpp/ext/filters/logging/library.h"
@@ -319,5 +319,6 @@ TEST_F(LoggingCensusIntegrationTest, Basic) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::RegisterOpenCensusPlugin();
   return RUN_ALL_TESTS();
 }

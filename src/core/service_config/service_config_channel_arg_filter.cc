@@ -17,19 +17,19 @@
 // This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
 // in the call context per call for direct channels.
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <memory>
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -42,13 +42,13 @@
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/service_config/service_config_parser.h"
-#include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -59,9 +59,9 @@ class ServiceConfigChannelArgFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServiceConfigChannelArgFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServiceConfigChannelArgFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
-    return ServiceConfigChannelArgFilter(args);
+    return std::make_unique<ServiceConfigChannelArgFilter>(args);
   }
 
   explicit ServiceConfigChannelArgFilter(const ChannelArgs& args) {
@@ -70,7 +70,7 @@ class ServiceConfigChannelArgFilter final
       auto service_config =
           ServiceConfigImpl::Create(args, *service_config_str);
       if (!service_config.ok()) {
-        gpr_log(GPR_ERROR, "%s", service_config.status().ToString().c_str());
+        LOG(ERROR) << service_config.status().ToString();
       } else {
         service_config_ = std::move(*service_config);
       }
@@ -84,6 +84,7 @@ class ServiceConfigChannelArgFilter final
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
@@ -98,6 +99,8 @@ const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnClientToServerMessage;
+const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServiceConfigChannelArgFilter::Call::OnFinalize;

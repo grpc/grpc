@@ -19,7 +19,7 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/util/fuzzing_channel_args.h"
+#include "test/core/test_util/fuzzing_channel_args.h"
 
 namespace grpc_core {
 

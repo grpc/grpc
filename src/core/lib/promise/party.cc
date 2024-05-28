@@ -17,6 +17,7 @@
 #include <atomic>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
@@ -102,7 +103,7 @@ class Party::Handle final : public Wakeable {
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
-    GPR_ASSERT(party_ != nullptr);
+    CHECK_NE(party_, nullptr);
     party_ = nullptr;
     mu_.Unlock();
     Unref();
@@ -194,13 +195,13 @@ std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
 }
 
 Waker Party::MakeOwningWaker() {
-  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+  DCHECK(currently_polling_ != kNotPolling);
   IncrementRefCount();
   return Waker(this, 1u << currently_polling_);
 }
 
 Waker Party::MakeNonOwningWaker() {
-  GPR_DEBUG_ASSERT(currently_polling_ != kNotPolling);
+  DCHECK(currently_polling_ != kNotPolling);
   return Waker(participants_[currently_polling_]
                    .load(std::memory_order_relaxed)
                    ->MakeNonOwningWakeable(this),
@@ -208,7 +209,7 @@ Waker Party::MakeNonOwningWaker() {
 }
 
 void Party::ForceImmediateRepoll(WakeupMask mask) {
-  GPR_DEBUG_ASSERT(is_current());
+  DCHECK(is_current());
   sync_.ForceImmediateRepoll(mask);
 }
 
@@ -232,11 +233,11 @@ void Party::RunLocked() {
     return;
   }
   auto body = [this]() {
-    GPR_DEBUG_ASSERT(g_current_party_run_next == nullptr);
+    DCHECK_EQ(g_current_party_run_next, nullptr);
     Party* run_next = nullptr;
     g_current_party_run_next = &run_next;
     const bool done = RunParty();
-    GPR_DEBUG_ASSERT(g_current_party_run_next == &run_next);
+    DCHECK(g_current_party_run_next == &run_next);
     g_current_party_run_next = nullptr;
     if (done) {
       ScopedActivity activity(this);
@@ -273,7 +274,7 @@ bool Party::RunOneParticipant(int i) {
   auto* participant = participants_[i].load(std::memory_order_acquire);
   if (participant == nullptr) {
     if (grpc_trace_promise_primitives.enabled()) {
-      gpr_log(GPR_DEBUG, "%s[party] wakeup %d already complete",
+      gpr_log(GPR_INFO, "%s[party] wakeup %d already complete",
               DebugTag().c_str(), i);
     }
     return false;
@@ -281,7 +282,7 @@ bool Party::RunOneParticipant(int i) {
   absl::string_view name;
   if (grpc_trace_promise_primitives.enabled()) {
     name = participant->name();
-    gpr_log(GPR_DEBUG, "%s[%s] begin job %d", DebugTag().c_str(),
+    gpr_log(GPR_INFO, "%s[%s] begin job %d", DebugTag().c_str(),
             std::string(name).c_str(), i);
   }
   // Poll the participant.
@@ -290,12 +291,12 @@ bool Party::RunOneParticipant(int i) {
   currently_polling_ = kNotPolling;
   if (done) {
     if (!name.empty()) {
-      gpr_log(GPR_DEBUG, "%s[%s] end poll and finish job %d",
-              DebugTag().c_str(), std::string(name).c_str(), i);
+      gpr_log(GPR_INFO, "%s[%s] end poll and finish job %d", DebugTag().c_str(),
+              std::string(name).c_str(), i);
     }
     participants_[i].store(nullptr, std::memory_order_relaxed);
   } else if (!name.empty()) {
-    gpr_log(GPR_DEBUG, "%s[%s] end poll", DebugTag().c_str(),
+    gpr_log(GPR_INFO, "%s[%s] end poll", DebugTag().c_str(),
             std::string(name).c_str());
   }
   return done;
@@ -306,7 +307,7 @@ void Party::AddParticipants(Participant** participants, size_t count) {
                                                        count](size_t* slots) {
     for (size_t i = 0; i < count; i++) {
       if (grpc_trace_party_state.enabled()) {
-        gpr_log(GPR_DEBUG,
+        gpr_log(GPR_INFO,
                 "Party %p                 AddParticipant: %s @ %" PRIdPTR,
                 &sync_, std::string(participants[i]->name()).c_str(), slots[i]);
       }

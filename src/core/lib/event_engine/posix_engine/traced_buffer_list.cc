@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -48,7 +49,7 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
 
 void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
                                absl::Status /*shudown_err*/) {
-  gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
+  VLOG(2) << "Timestamps callback has not been registered";
 }
 
 // The saved callback function that will be invoked when we get all the

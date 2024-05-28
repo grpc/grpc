@@ -27,7 +27,8 @@ from tests.unit import test_common
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
-_UNARY_UNARY = "/test/UnaryUnary"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 _CLIENT_IDS = (
@@ -62,24 +63,23 @@ def handle_unary_unary(request, servicer_context):
     )
 
 
+_METHOD_HANDLERS = {
+    "UnaryUnary": grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+}
+
+
 class AuthContextTest(unittest.TestCase):
     def testInsecure(self):
-        handler = grpc.method_handlers_generic_handler(
-            "test",
-            {
-                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-                    handle_unary_unary
-                )
-            },
-        )
         server = test_common.test_server()
-        server.add_generic_rpc_handlers((handler,))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         port = server.add_insecure_port("[::]:0")
         server.start()
 
         with grpc.insecure_channel("localhost:%d" % port) as channel:
             response = channel.unary_unary(
-                _UNARY_UNARY,
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _UNARY_UNARY
+                ),
                 _registered_method=True,
             )(_REQUEST)
         server.stop(None)
@@ -96,16 +96,8 @@ class AuthContextTest(unittest.TestCase):
         )
 
     def testSecureNoCert(self):
-        handler = grpc.method_handlers_generic_handler(
-            "test",
-            {
-                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-                    handle_unary_unary
-                )
-            },
-        )
         server = test_common.test_server()
-        server.add_generic_rpc_handlers((handler,))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
         port = server.add_secure_port("[::]:0", server_cred)
         server.start()
@@ -119,7 +111,7 @@ class AuthContextTest(unittest.TestCase):
             options=_PROPERTY_OPTIONS,
         )
         response = channel.unary_unary(
-            _UNARY_UNARY,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=True,
         )(_REQUEST)
         channel.close()
@@ -138,16 +130,8 @@ class AuthContextTest(unittest.TestCase):
         )
 
     def testSecureClientCert(self):
-        handler = grpc.method_handlers_generic_handler(
-            "test",
-            {
-                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-                    handle_unary_unary
-                )
-            },
-        )
         server = test_common.test_server()
-        server.add_generic_rpc_handlers((handler,))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_cred = grpc.ssl_server_credentials(
             _SERVER_CERTS,
             root_certificates=_TEST_ROOT_CERTIFICATES,
@@ -168,7 +152,7 @@ class AuthContextTest(unittest.TestCase):
         )
 
         response = channel.unary_unary(
-            _UNARY_UNARY,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=True,
         )(_REQUEST)
         channel.close()
@@ -190,7 +174,7 @@ class AuthContextTest(unittest.TestCase):
             "localhost:{}".format(port), channel_creds, options=channel_options
         )
         response = channel.unary_unary(
-            _UNARY_UNARY,
+            grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
             _registered_method=True,
         )(_REQUEST)
         auth_data = pickle.loads(response)
@@ -202,16 +186,8 @@ class AuthContextTest(unittest.TestCase):
 
     def testSessionResumption(self):
         # Set up a secure server
-        handler = grpc.method_handlers_generic_handler(
-            "test",
-            {
-                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-                    handle_unary_unary
-                )
-            },
-        )
         server = test_common.test_server()
-        server.add_generic_rpc_handlers((handler,))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
         port = server.add_secure_port("[::]:0", server_cred)
         server.start()

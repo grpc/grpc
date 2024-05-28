@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/grpclb/client_load_reporting_filter.h"
 
 #include <functional>
@@ -27,7 +25,8 @@
 
 #include "absl/types/optional.h"
 
-#include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/context.h"
@@ -36,48 +35,48 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 
 namespace grpc_core {
+
+const NoInterceptor ClientLoadReportingFilter::Call::OnServerToClientMessage;
+const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerMessage;
+const NoInterceptor ClientLoadReportingFilter::Call::OnClientToServerHalfClose;
+const NoInterceptor ClientLoadReportingFilter::Call::OnFinalize;
+
 const grpc_channel_filter ClientLoadReportingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoadReportingFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>(
         "client_load_reporting");
 
-absl::StatusOr<ClientLoadReportingFilter> ClientLoadReportingFilter::Create(
-    const ChannelArgs&, ChannelFilter::Args) {
-  return ClientLoadReportingFilter();
+absl::StatusOr<std::unique_ptr<ClientLoadReportingFilter>>
+ClientLoadReportingFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
+  return std::make_unique<ClientLoadReportingFilter>();
 }
 
-ArenaPromise<ServerMetadataHandle> ClientLoadReportingFilter::MakeCallPromise(
-    CallArgs call_args, NextPromiseFactory next_promise_factory) {
-  // Stats object to update.
-  RefCountedPtr<GrpcLbClientStats> client_stats;
-
+void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
+    ClientMetadata& client_initial_metadata) {
   // Handle client initial metadata.
   // Grab client stats object from metadata.
   auto client_stats_md =
-      call_args.client_initial_metadata->Take(GrpcLbClientStatsMetadata());
+      client_initial_metadata.Take(GrpcLbClientStatsMetadata());
   if (client_stats_md.has_value()) {
-    client_stats.reset(*client_stats_md);
+    client_stats_.reset(*client_stats_md);
   }
-
-  auto* saw_initial_metadata = GetContext<Arena>()->New<bool>(false);
-  call_args.server_initial_metadata->InterceptAndMap(
-      [saw_initial_metadata](ServerMetadataHandle md) {
-        *saw_initial_metadata = true;
-        return md;
-      });
-
-  return Map(next_promise_factory(std::move(call_args)),
-             [saw_initial_metadata, client_stats = std::move(client_stats)](
-                 ServerMetadataHandle trailing_metadata) {
-               if (client_stats != nullptr) {
-                 client_stats->AddCallFinished(
-                     trailing_metadata->get(GrpcStreamNetworkState()) ==
-                         GrpcStreamNetworkState::kNotSentOnWire,
-                     *saw_initial_metadata);
-               }
-               return trailing_metadata;
-             });
 }
+
+void ClientLoadReportingFilter::Call::OnServerInitialMetadata(ServerMetadata&) {
+  saw_initial_metadata_ = true;
+}
+
+void ClientLoadReportingFilter::Call::OnServerTrailingMetadata(
+    ServerMetadata& server_trailing_metadata) {
+  if (client_stats_ != nullptr) {
+    client_stats_->AddCallFinished(
+        server_trailing_metadata.get(GrpcStreamNetworkState()) ==
+            GrpcStreamNetworkState::kNotSentOnWire,
+        saw_initial_metadata_);
+  }
+}
+
 }  // namespace grpc_core

@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/grpclb/load_balancer_api.h"
 
 #include <string.h>
@@ -29,6 +27,7 @@
 #include "upb/base/string_view.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/memory.h"

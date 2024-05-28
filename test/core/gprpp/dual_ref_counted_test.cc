@@ -18,9 +18,10 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
@@ -29,7 +30,7 @@ namespace {
 class Foo : public DualRefCounted<Foo> {
  public:
   Foo() = default;
-  ~Foo() override { GPR_ASSERT(shutting_down_); }
+  ~Foo() override { CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 
@@ -92,7 +93,7 @@ TEST(DualRefCounted, RefAndWeakRefAsSubclass) {
 class FooWithTracing : public DualRefCounted<FooWithTracing> {
  public:
   FooWithTracing() : DualRefCounted("FooWithTracing") {}
-  ~FooWithTracing() override { GPR_ASSERT(shutting_down_); }
+  ~FooWithTracing() override { CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 

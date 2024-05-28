@@ -27,9 +27,10 @@
 #include <set>
 #include <tuple>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "opencensus/tags/tag_key.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/cpp/server/load_reporter/constants.h"
@@ -168,11 +169,10 @@ double CensusViewProvider::GetRelatedViewDataRowDouble(
     const ViewDataMap& view_data_map, const char* view_name,
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
-  GPR_ASSERT(it_vd != view_data_map.end());
-  GPR_ASSERT(it_vd->second.type() ==
-             ::opencensus::stats::ViewData::Type::kDouble);
+  CHECK(it_vd != view_data_map.end());
+  CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kDouble);
   auto it_row = it_vd->second.double_data().find(tag_values);
-  GPR_ASSERT(it_row != it_vd->second.double_data().end());
+  CHECK(it_row != it_vd->second.double_data().end());
   return it_row->second;
 }
 
@@ -180,12 +180,11 @@ uint64_t CensusViewProvider::GetRelatedViewDataRowInt(
     const ViewDataMap& view_data_map, const char* view_name,
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
-  GPR_ASSERT(it_vd != view_data_map.end());
-  GPR_ASSERT(it_vd->second.type() ==
-             ::opencensus::stats::ViewData::Type::kInt64);
+  CHECK(it_vd != view_data_map.end());
+  CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kInt64);
   auto it_row = it_vd->second.int_data().find(tag_values);
-  GPR_ASSERT(it_row != it_vd->second.int_data().end());
-  GPR_ASSERT(it_row->second >= 0);
+  CHECK(it_row != it_vd->second.int_data().end());
+  CHECK_GE(it_row->second, 0);
   return it_row->second;
 }
 
@@ -202,20 +201,19 @@ CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
 }
 
 CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
-  gpr_log(GPR_DEBUG, "[CVP %p] Starts fetching Census view data.", this);
+  VLOG(2) << "[CVP " << this << "] Starts fetching Census view data.";
   ViewDataMap view_data_map;
   for (auto& p : view_map_) {
     const std::string& view_name = p.first;
     ::opencensus::stats::View& view = p.second;
     if (view.IsValid()) {
       view_data_map.emplace(view_name, view.GetData());
-      gpr_log(GPR_DEBUG, "[CVP %p] Fetched view data (view: %s).", this,
-              view_name.c_str());
+      VLOG(2) << "[CVP " << this << "] Fetched view data (view: " << view_name
+              << ").";
     } else {
-      gpr_log(
-          GPR_DEBUG,
-          "[CVP %p] Can't fetch view data because view is invalid (view: %s).",
-          this, view_name.c_str());
+      VLOG(2) << "[CVP " << this
+              << "] Can't fetch view data because view is invalid (view: "
+              << view_name << ").";
     }
   }
   return view_data_map;
@@ -224,13 +222,13 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
 std::string LoadReporter::GenerateLbId() {
   while (true) {
     if (next_lb_id_ > UINT32_MAX) {
-      gpr_log(GPR_ERROR, "[LR %p] The LB ID exceeds the max valid value!",
-              this);
+      LOG(ERROR) << "[LR " << this
+                 << "] The LB ID exceeds the max valid value!";
       return "";
     }
     int64_t lb_id = next_lb_id_++;
     // Overflow should never happen.
-    GPR_ASSERT(lb_id >= 0);
+    CHECK_GE(lb_id, 0);
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
     char buf[kLbIdLength + 1];
     snprintf(buf, sizeof(buf), "%08" PRIx64, lb_id);
@@ -299,11 +297,11 @@ LoadReporter::GenerateLoads(const std::string& hostname,
                             const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
-  GPR_ASSERT(assigned_stores != nullptr);
-  GPR_ASSERT(!assigned_stores->empty());
+  CHECK_NE(assigned_stores, nullptr);
+  CHECK(!assigned_stores->empty());
   ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> loads;
   for (PerBalancerStore* per_balancer_store : *assigned_stores) {
-    GPR_ASSERT(!per_balancer_store->IsSuspended());
+    CHECK(!per_balancer_store->IsSuspended());
     if (!per_balancer_store->load_record_map().empty()) {
       for (const auto& p : per_balancer_store->load_record_map()) {
         const auto& key = p.first;
@@ -388,17 +386,16 @@ void LoadReporter::ReportStreamCreated(const std::string& hostname,
                                        const std::string& load_key) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamCreated(hostname, lb_id, load_key);
-  gpr_log(GPR_INFO,
-          "[LR %p] Report stream created (host: %s, LB ID: %s, load key: %s).",
-          this, hostname.c_str(), lb_id.c_str(), load_key.c_str());
+  LOG(INFO) << "[LR " << this << "] Report stream created (host: " << hostname
+            << ", LB ID: " << lb_id << ", load key: " << load_key << ").";
 }
 
 void LoadReporter::ReportStreamClosed(const std::string& hostname,
                                       const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
-  gpr_log(GPR_INFO, "[LR %p] Report stream closed (host: %s, LB ID: %s).", this,
-          hostname.c_str(), lb_id.c_str());
+  LOG(INFO) << "[LR " << this << "] Report stream closed (host: " << hostname
+            << ", LB ID: " << lb_id << ").";
 }
 
 void LoadReporter::ProcessViewDataCallStart(
@@ -438,9 +435,8 @@ void LoadReporter::ProcessViewDataCallEnd(
       // implementation.
       // TODO(juanlishen): Check whether this situation happens in OSS C++.
       if (client_ip_and_token.empty()) {
-        gpr_log(GPR_DEBUG,
-                "Skipping processing Opencensus record with empty "
-                "client_ip_and_token tag.");
+        VLOG(2) << "Skipping processing Opencensus record with empty "
+                   "client_ip_and_token tag.";
         continue;
       }
       LoadRecordKey key(client_ip_and_token, user_id);
@@ -501,10 +497,9 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
 }
 
 void LoadReporter::FetchAndSample() {
-  gpr_log(GPR_DEBUG,
-          "[LR %p] Starts fetching Census view data and sampling LB feedback "
-          "record.",
-          this);
+  VLOG(2) << "[LR " << this
+          << "] Starts fetching Census view data and sampling LB feedback "
+             "record.";
   CensusViewProvider::ViewDataMap view_data_map =
       census_view_provider_->FetchViewData();
   ProcessViewDataCallStart(view_data_map);

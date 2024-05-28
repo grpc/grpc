@@ -32,8 +32,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -41,6 +39,8 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
@@ -95,6 +95,8 @@ class OpenTelemetryPlugin::ClientCallTracer
                           grpc_core::RefCountedStringValue value) override;
 
    private:
+    void PopulateLabelInjectors(grpc_metadata_batch* metadata);
+
     const ClientCallTracer* parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
@@ -106,6 +108,7 @@ class OpenTelemetryPlugin::ClientCallTracer
         optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
+    bool is_trailers_only_ = false;
   };
 
   ClientCallTracer(

@@ -110,8 +110,11 @@ class ClientCompressionFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ClientCompressionFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ClientCompressionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  explicit ClientCompressionFilter(const ChannelArgs& args)
+      : compression_engine_(args) {}
 
   // Construct a promise for one call.
   class Call {
@@ -126,6 +129,7 @@ class ClientCompressionFilter final
     absl::StatusOr<MessageHandle> OnServerToClientMessage(
         MessageHandle message, ClientCompressionFilter* filter);
 
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
 
@@ -135,9 +139,6 @@ class ClientCompressionFilter final
   };
 
  private:
-  explicit ClientCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
-
   ChannelCompression compression_engine_;
 };
 
@@ -146,8 +147,11 @@ class ServerCompressionFilter final
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerCompressionFilter> Create(
+  static absl::StatusOr<std::unique_ptr<ServerCompressionFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
+
+  explicit ServerCompressionFilter(const ChannelArgs& args)
+      : compression_engine_(args) {}
 
   // Construct a promise for one call.
   class Call {
@@ -162,6 +166,7 @@ class ServerCompressionFilter final
     MessageHandle OnServerToClientMessage(MessageHandle message,
                                           ServerCompressionFilter* filter);
 
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
 
@@ -171,9 +176,6 @@ class ServerCompressionFilter final
   };
 
  private:
-  explicit ServerCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
-
   ChannelCompression compression_engine_;
 };
 

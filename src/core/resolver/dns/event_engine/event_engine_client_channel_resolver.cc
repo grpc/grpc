@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 
 #include <inttypes.h>
@@ -27,6 +25,8 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -37,6 +37,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -49,14 +50,14 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/dns/event_engine/service_config_helper.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
 
 // IWYU pragma: no_include <ratio>
 
@@ -435,7 +436,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "txt lookup");
     if (orphaned_) return;
-    GPR_ASSERT(is_txt_inflight_);
+    CHECK(is_txt_inflight_);
     is_txt_inflight_ = false;
     if (!service_config.ok()) {
       errors_.AddError(service_config.status().message());
@@ -567,7 +568,7 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
 bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
     const URI& uri) const {
   if (absl::StripPrefix(uri.path(), "/").empty()) {
-    gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+    LOG(ERROR) << "no server name supplied in dns URI";
     return false;
   }
   return true;

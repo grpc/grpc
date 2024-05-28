@@ -32,6 +32,7 @@
 #include "rb_server.h"
 #include "rb_xds_channel_credentials.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>

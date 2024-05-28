@@ -38,13 +38,14 @@ IN_FLIGHT_PARTIAL_UNARY_STREAM_CALL = "in_flight_partial_unary_stream_call"
 IN_FLIGHT_PARTIAL_STREAM_UNARY_CALL = "in_flight_partial_stream_unary_call"
 IN_FLIGHT_PARTIAL_STREAM_STREAM_CALL = "in_flight_partial_stream_stream_call"
 
-UNARY_UNARY = b"/test/UnaryUnary"
-UNARY_STREAM = b"/test/UnaryStream"
-STREAM_UNARY = b"/test/StreamUnary"
-STREAM_STREAM = b"/test/StreamStream"
-PARTIAL_UNARY_STREAM = b"/test/PartialUnaryStream"
-PARTIAL_STREAM_UNARY = b"/test/PartialStreamUnary"
-PARTIAL_STREAM_STREAM = b"/test/PartialStreamStream"
+_SERVICE_NAME = "test"
+UNARY_UNARY = b"UnaryUnary"
+UNARY_STREAM = b"UnaryStream"
+STREAM_UNARY = b"StreamUnary"
+STREAM_STREAM = b"StreamStream"
+PARTIAL_UNARY_STREAM = b"PartialUnaryStream"
+PARTIAL_STREAM_UNARY = b"PartialStreamUnary"
+PARTIAL_STREAM_STREAM = b"PartialStreamStream"
 
 TEST_TO_METHOD = {
     IN_FLIGHT_UNARY_UNARY_CALL: UNARY_UNARY,
@@ -140,6 +141,17 @@ class GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
+_METHOD_HANDLERS = {
+    UNARY_UNARY: MethodHandler(False, False, False),
+    UNARY_STREAM: MethodHandler(False, True, False),
+    STREAM_UNARY: MethodHandler(True, False, False),
+    STREAM_STREAM: MethodHandler(True, True, False),
+    PARTIAL_UNARY_STREAM: MethodHandler(False, True, True),
+    PARTIAL_STREAM_UNARY: MethodHandler(True, False, True),
+    PARTIAL_STREAM_STREAM: MethodHandler(True, True, True),
+}
+
+
 # Traditional executors will not exit until all their
 # current jobs complete.  Because we submit jobs that will
 # never finish, we don't want to block exit on these jobs.
@@ -200,14 +212,17 @@ if __name__ == "__main__":
             time.sleep(WAIT_TIME)
 
     else:
-        handler = GenericHandler()
         server = grpc.server(DaemonPool(), options=(("grpc.so_reuseport", 0),))
         port = server.add_insecure_port("[::]:0")
-        server.add_generic_rpc_handlers((handler,))
+        server.add_registered_method_handlers(_SERVICE_NAME, _METHOD_HANDLERS)
         server.start()
         channel = grpc.insecure_channel("localhost:%d" % port)
 
-        method = TEST_TO_METHOD[args.scenario]
+        method = (
+            grpc._common.fully_qualified_method(
+                _SERVICE_NAME, TEST_TO_METHOD[args.scenario]
+            ),
+        )
 
         if args.scenario == IN_FLIGHT_UNARY_UNARY_CALL:
             multi_callable = channel.unary_unary(

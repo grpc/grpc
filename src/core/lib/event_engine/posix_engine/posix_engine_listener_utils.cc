@@ -22,6 +22,8 @@
 #include <string>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_replace.h"
@@ -137,7 +139,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
                            ListenerSocket& socket) {
   ResolvedAddress sockname_temp;
   int fd = socket.sock.Fd();
-  GPR_ASSERT(fd >= 0);
+  CHECK_GE(fd, 0);
   bool close_fd = true;
   socket.zero_copy_enabled = false;
   socket.port = 0;
@@ -155,7 +157,7 @@ absl::Status PrepareSocket(const PosixTcpOptions& options,
 #ifdef GRPC_LINUX_ERRQUEUE
   if (!socket.sock.SetSocketZeroCopy().ok()) {
     // it's not fatal, so just log it.
-    gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
+    VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
   } else {
     socket.zero_copy_enabled = true;
   }
@@ -226,7 +228,7 @@ absl::StatusOr<ListenerSocket> CreateAndPrepareListenerSocket(
     socket.addr = addr;
   }
   GRPC_RETURN_IF_ERROR(PrepareSocket(options, socket));
-  GPR_ASSERT(socket.port > 0);
+  CHECK_GT(socket.port, 0);
   return socket;
 }
 
@@ -243,7 +245,7 @@ absl::StatusOr<int> ListenerContainerAddAllLocalAddresses(
     auto result = GetUnusedPort();
     GRPC_RETURN_IF_ERROR(result.status());
     requested_port = *result;
-    gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
+    VLOG(2) << "Picked unused port " << requested_port;
   }
   if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
     return absl::FailedPreconditionError(
@@ -359,8 +361,8 @@ absl::StatusOr<int> ListenerContainerAddWildcardAddresses(
     }
     return assigned_port;
   } else {
-    GPR_ASSERT(!v6_sock.ok());
-    GPR_ASSERT(!v4_sock.ok());
+    CHECK(!v6_sock.ok());
+    CHECK(!v4_sock.ok());
     return absl::FailedPreconditionError(absl::StrCat(
         "Failed to add any wildcard listeners: ", v6_sock.status().message(),
         v4_sock.status().message()));

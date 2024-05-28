@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
@@ -42,6 +43,7 @@
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -61,7 +63,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 // Test feature flags.
 #define FEATURE_MASK_DOES_NOT_SUPPORT_RETRY (1 << 0)
@@ -177,6 +179,36 @@ class CoreEnd2endTest : public ::testing::Test {
   class Call;
   struct RegisteredCall {
     void* p;
+  };
+
+  // Safe notification to use for core e2e tests.
+  // Since when we're fuzzing we don't run background threads, the normal
+  // Notification type isn't safe to wait on (for some background timer to fire
+  // for instance...), consequently we need to use this.
+  class TestNotification {
+   public:
+    explicit TestNotification(CoreEnd2endTest* test) : test_(test) {}
+
+    void WaitForNotificationWithTimeout(absl::Duration wait_time) {
+      if (g_is_fuzzing_core_e2e_tests) {
+        Timestamp end = Timestamp::Now() + Duration::NanosecondsRoundUp(
+                                               ToInt64Nanoseconds(wait_time));
+        while (true) {
+          if (base_.HasBeenNotified()) return;
+          auto now = Timestamp::Now();
+          if (now >= end) return;
+          test_->step_fn_(now - end);
+        }
+      } else {
+        base_.WaitForNotificationWithTimeout(wait_time);
+      }
+    }
+
+    void Notify() { base_.Notify(); }
+
+   private:
+    Notification base_;
+    CoreEnd2endTest* const test_;
   };
 
   // CallBuilder - results in a call to either grpc_channel_create_call or
@@ -639,7 +671,7 @@ class CoreEnd2endTest : public ::testing::Test {
     if (client_ != nullptr) ShutdownAndDestroyClient();
     auto& f = fixture();
     client_ = f.MakeClient(args, cq_);
-    GPR_ASSERT(client_ != nullptr);
+    CHECK_NE(client_, nullptr);
   }
   // Initialize the server.
   // If called, then InitClient must be called to create a client (otherwise one
@@ -649,7 +681,7 @@ class CoreEnd2endTest : public ::testing::Test {
     if (server_ != nullptr) ShutdownAndDestroyServer();
     auto& f = fixture();
     server_ = f.MakeServer(args, cq_, pre_server_start_);
-    GPR_ASSERT(server_ != nullptr);
+    CHECK_NE(server_, nullptr);
   }
   // Remove the client.
   void ShutdownAndDestroyClient() {
@@ -727,7 +759,7 @@ class CoreEnd2endTest : public ::testing::Test {
   }
 
   void SetPostGrpcInitFunc(absl::AnyInvocable<void()> fn) {
-    GPR_ASSERT(fixture_ == nullptr);
+    CHECK(fixture_ == nullptr);
     post_grpc_init_func_ = std::move(fn);
   }
 
@@ -751,7 +783,14 @@ class CoreEnd2endTest : public ::testing::Test {
           cq_,
           g_is_fuzzing_core_e2e_tests ? CqVerifier::FailUsingGprCrashWithStdio
                                       : CqVerifier::FailUsingGprCrash,
-          std::move(step_fn_));
+          step_fn_ == nullptr
+              ? nullptr
+              : absl::AnyInvocable<void(
+                    grpc_event_engine::experimental::EventEngine::Duration)
+                                       const>(
+                    [this](
+                        grpc_event_engine::experimental::EventEngine::Duration
+                            d) { step_fn_(d); }));
     }
     return *cq_verifier_;
   }

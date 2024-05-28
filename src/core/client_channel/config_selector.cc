@@ -19,7 +19,7 @@
 #include "src/core/client_channel/config_selector.h"
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 

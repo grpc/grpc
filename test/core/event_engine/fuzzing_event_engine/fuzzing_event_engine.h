@@ -29,6 +29,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -43,7 +44,7 @@
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -314,8 +315,10 @@ class ThreadedFuzzingEventEngine : public FuzzingEventEngine {
                            fuzzing_event_engine::Actions()),
         main_([this, max_time]() {
           while (!done_.load()) {
-            absl::SleepFor(absl::Milliseconds(
-                grpc_event_engine::experimental::Milliseconds(max_time)));
+            if (max_time > Duration::zero()) {
+              absl::SleepFor(absl::Milliseconds(
+                  grpc_event_engine::experimental::Milliseconds(max_time)));
+            }
             Tick();
           }
         }) {}

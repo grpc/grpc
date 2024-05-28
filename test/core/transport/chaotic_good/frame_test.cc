@@ -16,6 +16,7 @@
 
 #include <cstdint>
 
+#include "absl/log/check.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -34,15 +35,15 @@ template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   HPackCompressor hpack_compressor;
   auto serialized = input.Serialize(&hpack_compressor);
-  GPR_ASSERT(serialized.control.Length() >=
-             24);  // Initial output buffer size is 64 byte.
+  CHECK_GE(serialized.control.Length(),
+           24);  // Initial output buffer size is 64 byte.
   uint8_t header_bytes[24];
   serialized.control.MoveFirstNBytesIntoBuffer(24, header_bytes);
   auto header = FrameHeader::Parse(header_bytes);
   if (!header.ok()) {
     Crash("Failed to parse header");
   }
-  GPR_ASSERT(header->type == expected_frame_type);
+  CHECK(header->type == expected_frame_type);
   T output;
   HPackParser hpack_parser;
   absl::BitGen bitgen;
@@ -53,8 +54,8 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   auto deser =
       output.Deserialize(&hpack_parser, header.value(), absl::BitGenRef(bitgen),
                          arena.get(), std::move(serialized), TestFrameLimits());
-  GPR_ASSERT(deser.ok());
-  GPR_ASSERT(output == input);
+  CHECK_OK(deser);
+  CHECK(output == input);
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

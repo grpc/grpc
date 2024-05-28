@@ -23,8 +23,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {

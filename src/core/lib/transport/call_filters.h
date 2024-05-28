@@ -19,6 +19,8 @@
 #include <memory>
 #include <type_traits>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -41,6 +43,7 @@
 // - OnServerInitialMetadata  - $VALUE_TYPE = ServerMetadata
 // - OnServerToClientMessage  - $VALUE_TYPE = Message
 // - OnClientToServerMessage  - $VALUE_TYPE = Message
+// - OnClientToServerHalfClose - no value
 // - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
 // - OnFinalize               - special, see below
 // These members define an interception point for a particular event in
@@ -155,6 +158,10 @@ struct CallConstructor<FilterType,
 // Only one pointer can be set.
 template <typename T>
 struct ResultOr {
+  ResultOr(T ok, ServerMetadataHandle error)
+      : ok(std::move(ok)), error(std::move(error)) {
+    CHECK((this->ok == nullptr) ^ (this->error == nullptr));
+  }
   T ok;
   ServerMetadataHandle error;
 };
@@ -185,6 +192,16 @@ struct Operator {
   // this method is unnecessary (as it will never be called).
   void (*early_destroy)(void* promise_data);
 };
+
+struct HalfCloseOperator {
+  // Pointer to corresponding channel data for this filter
+  void* channel_data;
+  // Offset of the call data for this filter within the call data memory
+  size_t call_offset;
+  void (*half_close)(void* call_data, void* channel_data);
+};
+
+void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data);
 
 // We divide operations into fallible and infallible.
 // Fallible operations can fail, and that failure terminates the call.
@@ -258,6 +275,32 @@ void AddOp(FilterType* channel_data, size_t call_offset,
   AddOpImpl<FilterType, T, FunctionImpl, impl>::Add(channel_data, call_offset,
                                                     to);
 }
+
+template <typename FilterType>
+void AddHalfClose(FilterType* channel_data, size_t call_offset,
+                  void (FilterType::Call::*)(),
+                  std::vector<HalfCloseOperator>& to) {
+  to.push_back(
+      HalfCloseOperator{channel_data, call_offset, [](void* call_data, void*) {
+                          static_cast<typename FilterType::Call*>(call_data)
+                              ->OnClientToServerHalfClose();
+                        }});
+}
+
+template <typename FilterType>
+void AddHalfClose(FilterType* channel_data, size_t call_offset,
+                  void (FilterType::Call::*)(FilterType*),
+                  std::vector<HalfCloseOperator>& to) {
+  to.push_back(HalfCloseOperator{
+      channel_data, call_offset, [](void* call_data, void* channel_data) {
+        static_cast<typename FilterType::Call*>(call_data)
+            ->OnClientToServerHalfClose(static_cast<FilterType*>(channel_data));
+      }});
+}
+
+template <typename FilterType>
+void AddHalfClose(FilterType*, size_t, const NoInterceptor*,
+                  std::vector<HalfCloseOperator>&) {}
 
 // const NoInterceptor $EVENT
 // These do nothing, and specifically DO NOT add an operation to the layout.
@@ -846,6 +889,7 @@ struct StackData {
   Layout<FallibleOperator<ClientMetadataHandle>> client_initial_metadata;
   Layout<FallibleOperator<ServerMetadataHandle>> server_initial_metadata;
   Layout<FallibleOperator<MessageHandle>> client_to_server_messages;
+  std::vector<HalfCloseOperator> client_to_server_half_close;
   Layout<FallibleOperator<MessageHandle>> server_to_client_messages;
   Layout<InfallibleOperator<ServerMetadataHandle>> server_trailing_metadata;
   // A list of finalizers for this call.
@@ -922,7 +966,7 @@ struct StackData {
     filter_destructor.push_back(FilterDestructor{
         call_offset,
         [](void* call_data) {
-          static_cast<typename FilterType::Call*>(call_data)->~Call();
+          Destruct(static_cast<typename FilterType::Call*>(call_data));
         },
     });
   }
@@ -967,6 +1011,14 @@ struct StackData {
   }
 
   template <typename FilterType>
+  void AddClientToServerHalfClose(FilterType* channel_data,
+                                  size_t call_offset) {
+    AddHalfClose(channel_data, call_offset,
+                 &FilterType::Call::OnClientToServerHalfClose,
+                 client_to_server_half_close);
+  }
+
+  template <typename FilterType>
   void AddServerToClientMessageOp(FilterType* channel_data,
                                   size_t call_offset) {
     AddOp<decltype(&FilterType::Call::OnServerToClientMessage),
@@ -986,13 +1038,13 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType*, size_t, const NoInterceptor* p) {
-    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
+    DCHECK(p == &FilterType::Call::OnFinalize);
   }
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*)) {
-    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
+    DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1007,7 +1059,7 @@ struct StackData {
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
                     void (FilterType::Call::*p)(const grpc_call_final_info*,
                                                 FilterType*)) {
-    GPR_DEBUG_ASSERT(p == &FilterType::Call::OnFinalize);
+    DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
         call_offset,
@@ -1037,11 +1089,11 @@ class OperationExecutor {
   OperationExecutor(OperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
   }
   OperationExecutor& operator=(OperationExecutor&& other) noexcept {
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
-    GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
+    DCHECK_EQ(promise_data_, nullptr);
     ops_ = other.ops_;
     end_ops_ = other.end_ops_;
     return *this;
@@ -1090,12 +1142,12 @@ class InfallibleOperationExecutor {
   InfallibleOperationExecutor(InfallibleOperationExecutor&& other) noexcept
       : ops_(other.ops_), end_ops_(other.end_ops_) {
     // Movable iff we're not running.
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
   }
   InfallibleOperationExecutor& operator=(
       InfallibleOperationExecutor&& other) noexcept {
-    GPR_DEBUG_ASSERT(other.promise_data_ == nullptr);
-    GPR_DEBUG_ASSERT(promise_data_ == nullptr);
+    DCHECK_EQ(other.promise_data_, nullptr);
+    DCHECK_EQ(promise_data_, nullptr);
     ops_ = other.ops_;
     end_ops_ = other.end_ops_;
     return *this;
@@ -1211,6 +1263,7 @@ class ServerTrailingMetadataInterceptor {
     static const NoInterceptor OnClientInitialMetadata;
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
     void OnServerTrailingMetadata(ServerMetadata& md,
@@ -1235,9 +1288,52 @@ const NoInterceptor
     ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
 template <typename Fn>
 const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
+template <typename Fn>
+const NoInterceptor
     ServerTrailingMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
 template <typename Fn>
 const NoInterceptor ServerTrailingMetadataInterceptor<Fn>::Call::OnFinalize;
+
+template <typename Fn>
+class ClientInitialMetadataInterceptor {
+ public:
+  class Call {
+   public:
+    auto OnClientInitialMetadata(ClientMetadata& md,
+                                 ClientInitialMetadataInterceptor* filter) {
+      return filter->fn_(md);
+    }
+    static const NoInterceptor OnServerInitialMetadata;
+    static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
+    static const NoInterceptor OnServerToClientMessage;
+    static const NoInterceptor OnServerTrailingMetadata;
+    static const NoInterceptor OnFinalize;
+  };
+
+  explicit ClientInitialMetadataInterceptor(Fn fn) : fn_(std::move(fn)) {}
+
+ private:
+  GPR_NO_UNIQUE_ADDRESS Fn fn_;
+};
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnServerInitialMetadata;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnServerTrailingMetadata;
+template <typename Fn>
+const NoInterceptor ClientInitialMetadataInterceptor<Fn>::Call::OnFinalize;
 
 }  // namespace filters_detail
 
@@ -1277,6 +1373,7 @@ class CallFilters {
       data_.AddClientInitialMetadataOp(filter, call_offset);
       data_.AddServerInitialMetadataOp(filter, call_offset);
       data_.AddClientToServerMessageOp(filter, call_offset);
+      data_.AddClientToServerHalfClose(filter, call_offset);
       data_.AddServerToClientMessageOp(filter, call_offset);
       data_.AddServerTrailingMetadataOp(filter, call_offset);
       data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
@@ -1297,6 +1394,14 @@ class CallFilters {
     }
 
     template <typename Fn>
+    void AddOnClientInitialMetadata(Fn fn) {
+      auto filter = std::make_unique<
+          filters_detail::ClientInitialMetadataInterceptor<Fn>>(std::move(fn));
+      Add(filter.get());
+      AddOwnedObject(std::move(filter));
+    }
+
+    template <typename Fn>
     void AddOnServerTrailingMetadata(Fn fn) {
       auto filter = std::make_unique<
           filters_detail::ServerTrailingMetadataInterceptor<Fn>>(std::move(fn));
@@ -1308,44 +1413,6 @@ class CallFilters {
 
    private:
     filters_detail::StackData data_;
-  };
-
-  class NextMessage {
-   public:
-    NextMessage() : has_value_(false), cancelled_(false) {}
-    explicit NextMessage(MessageHandle value)
-        : has_value_(true), value_(std::move(value)) {}
-    explicit NextMessage(bool cancelled)
-        : has_value_(false), cancelled_(cancelled) {}
-    NextMessage(const NextMessage&) = delete;
-    NextMessage& operator=(const NextMessage&) = delete;
-    NextMessage(NextMessage&& other) noexcept = default;
-    NextMessage& operator=(NextMessage&& other) = default;
-
-    using value_type = MessageHandle;
-
-    void reset() {
-      has_value_ = false;
-      cancelled_ = false;
-      value_.reset();
-    }
-    bool has_value() const { return has_value_; }
-    const MessageHandle& value() const {
-      GPR_DEBUG_ASSERT(has_value_);
-      return value_;
-    }
-    MessageHandle& value() {
-      GPR_DEBUG_ASSERT(has_value_);
-      return value_;
-    }
-    const MessageHandle& operator*() const { return value(); }
-    MessageHandle& operator*() { return value(); }
-    bool cancelled() const { return !has_value_ && cancelled_; }
-
-   private:
-    bool has_value_;
-    bool cancelled_;
-    MessageHandle value_;
   };
 
   explicit CallFilters(ClientMetadataHandle client_initial_metadata);
@@ -1422,12 +1489,21 @@ class CallFilters {
      public:
       Push(CallFilters* filters, T x)
           : filters_(filters), value_(std::move(x)) {
+        CHECK(value_ != nullptr);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "BeginPush[%p|%p]: %s", &state(), this,
+                  state().DebugString().c_str());
+        }
+        CHECK_EQ(push_slot(), nullptr);
         state().BeginPush();
         push_slot() = this;
       }
       ~Push() {
         if (filters_ != nullptr) {
-          state().DropPush();
+          if (value_ != nullptr) {
+            state().DropPush();
+          }
+          CHECK(push_slot() == this);
           push_slot() = nullptr;
         }
       }
@@ -1438,16 +1514,56 @@ class CallFilters {
           : filters_(std::exchange(other.filters_, nullptr)),
             value_(std::move(other.value_)) {
         if (filters_ != nullptr) {
-          GPR_DEBUG_ASSERT(push_slot() == &other);
+          DCHECK(push_slot() == &other);
           push_slot() = this;
         }
       }
 
       Push& operator=(Push&&) = delete;
 
-      Poll<StatusFlag> operator()() { return state().PollPush(); }
+      Poll<StatusFlag> operator()() {
+        if (value_ == nullptr) {
+          CHECK_EQ(filters_, nullptr);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+            gpr_log(GPR_INFO, "Push[|%p]: already done", this);
+          }
+          return Success{};
+        }
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "Push[%p|%p]: %s", &state(), this,
+                  state().DebugString().c_str());
+        }
+        auto r = state().PollPush();
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          if (r.pending()) {
+            gpr_log(GPR_INFO, "Push[%p|%p]: pending; %s", &state(), this,
+                    state().DebugString().c_str());
+          } else if (r.value().ok()) {
+            gpr_log(GPR_INFO, "Push[%p|%p]: success; %s", &state(), this,
+                    state().DebugString().c_str());
+          } else {
+            gpr_log(GPR_INFO, "Push[%p|%p]: failure; %s", &state(), this,
+                    state().DebugString().c_str());
+          }
+        }
+        if (r.ready()) {
+          push_slot() = nullptr;
+          filters_ = nullptr;
+        }
+        return r;
+      }
 
-      T TakeValue() { return std::move(value_); }
+      T TakeValue() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "Push[%p|%p]: take value; %s", &state(), this,
+                  state().DebugString().c_str());
+        }
+        CHECK(value_ != nullptr);
+        CHECK(filters_ != nullptr);
+        push_slot() = nullptr;
+        filters_ = nullptr;
+        return std::move(value_);
+      }
 
       absl::string_view DebugString() const {
         return value_ != nullptr ? " (not pulled)" : "";
@@ -1485,6 +1601,10 @@ class CallFilters {
       PullMaybe& operator=(PullMaybe&&) = delete;
 
       Poll<ValueOrFailure<absl::optional<T>>> operator()() {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMaybe[%p|%p]: %s executor:%d", &state(), this,
+                  state().DebugString().c_str(), executor_.IsRunning());
+        }
         if (executor_.IsRunning()) {
           auto c = state().PollClosed();
           if (c.ready() && c.value()) {
@@ -1517,7 +1637,7 @@ class CallFilters {
           Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
-        GPR_DEBUG_ASSERT(!executor_.IsRunning());
+        DCHECK(!executor_.IsRunning());
         state().AckPull();
         if (r->ok != nullptr) return std::move(r->ok);
         filters_->PushServerTrailingMetadata(std::move(r->error));
@@ -1528,6 +1648,8 @@ class CallFilters {
       filters_detail::OperationExecutor<T> executor_;
     };
 
+    template <std::vector<filters_detail::HalfCloseOperator>(
+        filters_detail::StackData::*half_close_layout_ptr)>
     class PullMessage {
      public:
       explicit PullMessage(CallFilters* filters) : filters_(filters) {}
@@ -1544,23 +1666,43 @@ class CallFilters {
             executor_(std::move(other.executor_)) {}
       PullMessage& operator=(PullMessage&&) = delete;
 
-      Poll<NextMessage> operator()() {
+      Poll<ValueOrFailure<absl::optional<MessageHandle>>> operator()() {
+        CHECK(filters_ != nullptr);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMessage[%p|%p]: %s executor:%d", &state(),
+                  this, state().DebugString().c_str(), executor_.IsRunning());
+        }
         if (executor_.IsRunning()) {
           auto c = state().PollClosed();
           if (c.ready() && c.value()) {
             filters_->CancelDueToFailedPipeOperation();
-            return NextMessage(true);
+            return Failure{};
           }
           return FinishOperationExecutor(executor_.Step(filters_->call_data_));
         }
         auto p = state().PollPull();
         auto* r = p.value_if_ready();
-        if (r == nullptr) return Pending{};
+        if (r == nullptr) {
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+            gpr_log(GPR_INFO, "PullMessage[%p] pending: %s executor:%d",
+                    &state(), state().DebugString().c_str(),
+                    executor_.IsRunning());
+          }
+          return Pending{};
+        }
         if (!r->ok()) {
           filters_->CancelDueToFailedPipeOperation();
-          return NextMessage(true);
+          return Failure{};
         }
-        if (!**r) return NextMessage(false);
+        if (!**r) {
+          if (half_close_layout_ptr != nullptr) {
+            filters_detail::RunHalfClose(
+                filters_->stack_->data_.*half_close_layout_ptr,
+                filters_->call_data_);
+          }
+          return absl::nullopt;
+        }
+        CHECK(filters_ != nullptr);
         return FinishOperationExecutor(executor_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
       }
@@ -1573,15 +1715,19 @@ class CallFilters {
         return &(filters_->stack_->data_.*layout_ptr);
       }
 
-      Poll<NextMessage> FinishOperationExecutor(
-          Poll<filters_detail::ResultOr<T>> p) {
+      Poll<ValueOrFailure<absl::optional<MessageHandle>>>
+      FinishOperationExecutor(Poll<filters_detail::ResultOr<T>> p) {
         auto* r = p.value_if_ready();
         if (r == nullptr) return Pending{};
-        GPR_DEBUG_ASSERT(!executor_.IsRunning());
+        DCHECK(!executor_.IsRunning());
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+          gpr_log(GPR_INFO, "PullMessage[%p|%p] executor done: %s", &state(),
+                  this, state().DebugString().c_str());
+        }
         state().AckPull();
-        if (r->ok != nullptr) return NextMessage(std::move(r->ok));
+        if (r->ok != nullptr) return std::move(r->ok);
         filters_->PushServerTrailingMetadata(std::move(r->error));
-        return NextMessage(true);
+        return Failure{};
       }
 
       CallFilters* filters_;
@@ -1622,7 +1768,7 @@ class CallFilters {
         filters_->CancelDueToFailedPipeOperation();
         return Failure{};
       }
-      GPR_ASSERT(filters_->client_initial_metadata_ != nullptr);
+      CHECK(filters_->client_initial_metadata_ != nullptr);
       return FinishOperationExecutor(executor_.Start(
           &filters_->stack_->data_.client_initial_metadata,
           std::move(filters_->client_initial_metadata_), filters_->call_data_));
@@ -1637,7 +1783,7 @@ class CallFilters {
         Poll<filters_detail::ResultOr<ClientMetadataHandle>> p) {
       auto* r = p.value_if_ready();
       if (r == nullptr) return Pending{};
-      GPR_DEBUG_ASSERT(!executor_.IsRunning());
+      DCHECK(!executor_.IsRunning());
       state().AckPull();
       if (r->ok != nullptr) return std::move(r->ok);
       filters_->PushServerTrailingMetadata(std::move(r->error));
@@ -1699,9 +1845,21 @@ class CallFilters {
         return std::move(filters_->server_trailing_metadata_);
       }
       // Otherwise we need to process it through all the filters.
-      return executor_.Start(&filters_->stack_->data_.server_trailing_metadata,
-                             std::move(filters_->server_trailing_metadata_),
-                             filters_->call_data_);
+      auto r = executor_.Start(
+          &filters_->stack_->data_.server_trailing_metadata,
+          std::move(filters_->server_trailing_metadata_), filters_->call_data_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+        if (r.pending()) {
+          gpr_log(GPR_INFO,
+                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_);
+        } else {
+          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
+                  GetContext<Activity>()->DebugTag().c_str(), filters_,
+                  r.value()->DebugString().c_str());
+        }
+      }
+      return r;
     }
 
    private:
@@ -1755,7 +1913,7 @@ inline auto CallFilters::PullClientInitialMetadata() {
 }
 
 inline auto CallFilters::PushServerInitialMetadata(ServerMetadataHandle md) {
-  GPR_ASSERT(md != nullptr);
+  CHECK(md != nullptr);
   return [p = ServerInitialMetadataPromises::Push{
               this, std::move(md)}]() mutable { return p(); };
 }
@@ -1765,23 +1923,24 @@ inline auto CallFilters::PullServerInitialMetadata() {
 }
 
 inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
-  GPR_ASSERT(message != nullptr);
+  CHECK(message != nullptr);
   return [p = ClientToServerMessagePromises::Push{
               this, std::move(message)}]() mutable { return p(); };
 }
 
 inline auto CallFilters::PullClientToServerMessage() {
-  return ClientToServerMessagePromises::PullMessage{this};
+  return ClientToServerMessagePromises::PullMessage<
+      &filters_detail::StackData::client_to_server_half_close>{this};
 }
 
 inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
-  GPR_ASSERT(message != nullptr);
+  CHECK(message != nullptr);
   return [p = ServerToClientMessagePromises::Push{
               this, std::move(message)}]() mutable { return p(); };
 }
 
 inline auto CallFilters::PullServerToClientMessage() {
-  return ServerToClientMessagePromises::PullMessage{this};
+  return ServerToClientMessagePromises::PullMessage<nullptr>{this};
 }
 
 inline auto CallFilters::PullServerTrailingMetadata() {

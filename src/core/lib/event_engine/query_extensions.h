@@ -68,6 +68,7 @@ T* QueryExtension(EventEngine::Endpoint* endpoint) {
 /// supported by the listener.
 template <typename T>
 T* QueryExtension(EventEngine::Listener* listener) {
+  if (listener == nullptr) return nullptr;
   return static_cast<T*>(listener->QueryExtension(T::EndpointExtensionName()));
 }
 
@@ -75,6 +76,7 @@ T* QueryExtension(EventEngine::Listener* listener) {
 /// supported by the EventEngine.
 template <typename T>
 T* QueryExtension(EventEngine* engine) {
+  if (engine == nullptr) return nullptr;
   return static_cast<T*>(engine->QueryExtension(T::EndpointExtensionName()));
 }
 

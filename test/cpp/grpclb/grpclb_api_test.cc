@@ -29,7 +29,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/load_balancing/grpclb/load_balancer_api.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace {
@@ -46,7 +46,7 @@ class GrpclbTest : public ::testing::Test {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  CHECK(inet_pton(AF_INET, ip_str, &ip4) == 1);
+  CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
@@ -60,7 +60,7 @@ std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   } else {
     abort();
   }
-  CHECK(inet_ntop(af, (void*)server.ip_addr, ip_str, 46) != nullptr);
+  CHECK_NE(inet_ntop(af, (void*)server.ip_addr, ip_str, 46), nullptr);
   return ip_str;
 }
 
