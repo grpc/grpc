@@ -68,7 +68,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
-        "//:legacy_context",
         "//:tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",

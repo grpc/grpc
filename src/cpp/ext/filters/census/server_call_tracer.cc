@@ -40,15 +40,16 @@
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/opencensus.h>
 
-#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
@@ -205,7 +206,8 @@ void OpenCensusServerCallTracer::RecordReceivedInitialMetadata(
       tracing_enabled ? sml.tracing_slice.as_string_view() : "",
       absl::StrCat("Recv.", method_), &context_);
   if (tracing_enabled) {
-    grpc_core::SetContext<census_context>(&context_);
+    grpc_core::SetContext<census_context>(
+        reinterpret_cast<census_context*>(&context_));
   }
   if (OpenCensusStatsEnabled()) {
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
