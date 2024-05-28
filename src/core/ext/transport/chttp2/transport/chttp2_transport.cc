@@ -74,7 +74,6 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -228,13 +227,10 @@ namespace {
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
 grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
-  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_tracer = static_cast<grpc_core::CallTracerInterface*>(
-      static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-          .value);
+  auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
     return nullptr;
   }
@@ -243,13 +239,11 @@ grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
 
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_attempt_tracer = static_cast<grpc_core::CallTracerInterface*>(
-      static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER]
-          .value);
+  auto* call_attempt_tracer =
+      s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
     return nullptr;
   }
@@ -391,10 +385,10 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
-  if (cl != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(cl, nullptr, error);
+  if (context_list != nullptr) {
+    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
   }
-  cl = nullptr;
+  context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
@@ -617,7 +611,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           &memory_owner),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
       is_client(is_client) {
-  cl = new grpc_core::ContextList();
+  context_list = new grpc_core::ContextList();
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
         GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -784,7 +778,8 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s) {
 
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
-                                       const void* server_data)
+                                       const void* server_data,
+                                       grpc_core::Arena* arena)
     : t(t->Ref()),
       refcount([refcount]() {
 // We reserve one 'active stream' that's dropped when the stream is
@@ -798,6 +793,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 #endif
         return refcount;
       }()),
+      arena(arena),
       flow_control(&t->flow_control) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
@@ -855,8 +851,8 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 void grpc_chttp2_transport::InitStream(grpc_stream* gs,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
-                                       grpc_core::Arena*) {
-  new (gs) grpc_chttp2_stream(this, refcount, server_data);
+                                       grpc_core::Arena* arena) {
+  new (gs) grpc_chttp2_stream(this, refcount, server_data, arena);
 }
 
 static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
@@ -1015,13 +1011,13 @@ static void write_action_begin_locked(
 }
 
 static void write_action(grpc_chttp2_transport* t) {
-  void* cl = t->cl;
-  if (!t->cl->empty()) {
+  void* cl = t->context_list;
+  if (!t->context_list->empty()) {
     // Transfer the ownership of the context list to the endpoint and create and
     // associate a new context list with the transport.
     // The old context list is stored in the cl local variable which is passed
     // to the endpoint. Its upto the endpoint to manage its lifetime.
-    t->cl = new grpc_core::ContextList();
+    t->context_list = new grpc_core::ContextList();
   } else {
     // t->cl is Empty. There is nothing to trace in this endpoint_write. set cl
     // to nullptr.
@@ -1342,7 +1338,6 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_transport_stream_op_batch_payload* op_payload = op->payload;
   grpc_chttp2_transport* t = s->t.get();
 
-  s->context = op->payload->context;
   s->traced = op->is_traced;
   s->call_tracer = CallTracerIfSampled(s);
   s->tcp_tracer = TcpTracerIfSampled(s);

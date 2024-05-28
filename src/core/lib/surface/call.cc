@@ -61,7 +61,6 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -164,8 +163,8 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
           "Census tracing propagation requested without Census context "
           "propagation");
     }
-    ContextSet(GRPC_CONTEXT_TRACING, parent->ContextGet(GRPC_CONTEXT_TRACING),
-               nullptr);
+    arena()->SetContext<census_context>(
+        parent->arena()->GetContext<census_context>());
   } else if (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
     return absl::UnknownError(
         "Census context propagation requested without Census tracing "
@@ -423,11 +422,6 @@ class ChannelBasedCall : public Call {
 class FilterStackCall final : public ChannelBasedCall {
  public:
   ~FilterStackCall() override {
-    for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-      if (context_[i].destroy) {
-        context_[i].destroy(context_[i].value);
-      }
-    }
     gpr_free(static_cast<void*>(const_cast<char*>(final_info_.error_string)));
   }
 
@@ -466,12 +460,6 @@ class FilterStackCall final : public ChannelBasedCall {
   }
   void InternalUnref(const char* reason) override {
     GRPC_CALL_STACK_UNREF(call_stack(), reason);
-  }
-
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void* value)) override;
-  void* ContextGet(grpc_context_index elem) const override {
-    return context_[elem].value;
   }
 
   bool is_trailers_only() const override {
@@ -592,8 +580,8 @@ class FilterStackCall final : public ChannelBasedCall {
             std::move(arena), args.server_transport_data == nullptr,
             args.send_deadline, args.channel->RefAsSubclass<Channel>()),
         cq_(args.cq),
-        stream_op_payload_(context_) {
-    context_[GRPC_CONTEXT_CALL].value = this;
+        stream_op_payload_{} {
+    GetArena()->SetContext<Call>(this);
   }
 
   static void ReleaseCall(void* call, grpc_error_handle);
@@ -658,9 +646,6 @@ class FilterStackCall final : public ChannelBasedCall {
   // Call data useful used for reporting. Only valid after the call has
   // completed
   grpc_call_final_info final_info_;
-
-  // Contexts for various subsystems (security, tracing, ...).
-  grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
   SliceBuffer send_slice_buffer_;
   absl::optional<SliceBuffer> receiving_slice_buffer_;
@@ -758,7 +743,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
     channel_stack->stats_plugin_group->AddClientCallTracers(
-        Slice(CSliceRef(path)), args->registered_method, call->context_);
+        Slice(CSliceRef(path)), args->registered_method, call->GetArena());
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -781,12 +766,11 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
         // promise-based world, we would just a single tracer object for each
         // stack (call, subchannel_call, server_call.)
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
-                         server_call_tracer, nullptr);
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+        arena->SetContext<CallTracerAnnotationInterface>(server_call_tracer);
+        arena->SetContext<CallTracerInterface>(server_call_tracer);
       }
     }
-    channel_stack->stats_plugin_group->AddServerCallTracers(call->context_);
+    channel_stack->stats_plugin_group->AddServerCallTracers(arena.get());
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -796,10 +780,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
   // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
-      call->call_stack(), args->server_transport_data,
-      call->context_,     path,
-      call->start_time(), call->send_deadline(),
-      call->arena(),      &call->call_combiner_};
+      call->call_stack(),   args->server_transport_data, path,
+      call->start_time(),   call->send_deadline(),       call->arena(),
+      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
@@ -1233,8 +1216,7 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = static_cast<CallTracerAnnotationInterface*>(
-      ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
+  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
@@ -1863,15 +1845,6 @@ done_with_error:
     requested_final_op_ = false;
   }
   goto done;
-}
-
-void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
-                                 void (*destroy)(void*)) {
-  if (context_[elem].destroy) {
-    context_[elem].destroy(context_[elem].value);
-  }
-  context_[elem].value = value;
-  context_[elem].destroy = destroy;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3114,15 +3087,6 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
                                                   size_t nops,
                                                   grpc_closure* closure) {
   return grpc_core::Call::FromC(call)->StartBatch(ops, nops, closure, true);
-}
-
-void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
-                           void* value, void (*destroy)(void* value)) {
-  return grpc_core::Call::FromC(call)->ContextSet(elem, value, destroy);
-}
-
-void* grpc_call_context_get(grpc_call* call, grpc_context_index elem) {
-  return grpc_core::Call::FromC(call)->ContextGet(elem);
 }
 
 uint8_t grpc_call_is_client(grpc_call* call) {

@@ -44,7 +44,51 @@ namespace grpc_core {
 
 class Arena;
 
+template <typename T>
+struct ArenaContextType;
+
 namespace arena_detail {
+
+class BaseArenaContextTraits {
+ public:
+  static uint16_t NumContexts() {
+    return static_cast<uint16_t>(RegisteredTraits().size());
+  }
+
+  static size_t ContextSize() { return NumContexts() * sizeof(void*); }
+
+  static void Destroy(uint16_t id, void* ptr) {
+    if (ptr == nullptr) return;
+    RegisteredTraits()[id](ptr);
+  }
+
+ protected:
+  static uint16_t MakeId(void (*destroy)(void* ptr)) {
+    auto& traits = RegisteredTraits();
+    const uint16_t id = static_cast<uint16_t>(traits.size());
+    traits.push_back(destroy);
+    return id;
+  }
+
+ private:
+  static std::vector<void (*)(void*)>& RegisteredTraits() {
+    static NoDestruct<std::vector<void (*)(void*)>> registered_traits;
+    return *registered_traits;
+  }
+};
+
+template <typename T>
+class ArenaContextTraits : public BaseArenaContextTraits {
+ public:
+  static uint16_t id() { return id_; }
+
+ private:
+  static const uint16_t id_;
+};
+
+template <typename T>
+const uint16_t ArenaContextTraits<T>::id_ = BaseArenaContextTraits::MakeId(
+    [](void* ptr) { ArenaContextType<T>::Destroy(static_cast<T*>(ptr)); });
 
 template <typename T, typename A, typename B>
 struct IfArray {
@@ -215,6 +259,25 @@ class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
     delete p;
   }
 
+  // Context accessors
+  // Prefer to use the free-standing `GetContext<>` and `SetContext<>` functions
+  // for modern promise-based code -- however legacy filter stack based code
+  // often needs to access these directly.
+  template <typename T>
+  T* GetContext() {
+    return static_cast<T*>(
+        contexts()[arena_detail::ArenaContextTraits<T>::id()]);
+  }
+
+  template <typename T>
+  void SetContext(T* context) {
+    void*& slot = contexts()[arena_detail::ArenaContextTraits<T>::id()];
+    if (slot != nullptr) {
+      ArenaContextType<T>::Destroy(static_cast<T*>(slot));
+    }
+    slot = context;
+  }
+
  private:
   friend struct arena_detail::UnrefDestroy;
 
@@ -247,19 +310,20 @@ class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
   //   quick optimization (avoiding an atomic fetch-add) for the common case
   //   where we wish to create an arena and then perform an immediate
   //   allocation.
-  explicit Arena(size_t initial_size, size_t initial_alloc,
+  explicit Arena(size_t initial_size,
                  RefCountedPtr<ArenaFactory> arena_factory);
 
   ~Arena();
 
   void* AllocZone(size_t size);
   void Destroy();
+  void** contexts() { return reinterpret_cast<void**>(this + 1); }
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
-  std::atomic<size_t> total_used_{0};
-  std::atomic<size_t> total_allocated_{0};
   const size_t initial_zone_size_;
+  std::atomic<size_t> total_used_;
+  std::atomic<size_t> total_allocated_{initial_zone_size_};
   // If the initial arena allocation wasn't enough, we allocate additional zones
   // in a reverse linked list. Each additional zone consists of (1) a pointer to
   // the zone added before this zone (null if this is the first additional zone)
@@ -277,6 +341,17 @@ struct ContextType<Arena> {};
 namespace arena_detail {
 inline void UnrefDestroy::operator()(Arena* arena) const { arena->Destroy(); }
 }  // namespace arena_detail
+
+namespace promise_detail {
+
+template <typename T>
+class Context<T, absl::void_t<decltype(ArenaContextType<T>::Destroy)>> {
+ public:
+  static T* get() { return GetContext<Arena>()->GetContext<T>(); }
+  static void set(T* value) { GetContext<Arena>()->SetContext(value); }
+};
+
+}  // namespace promise_detail
 
 }  // namespace grpc_core
 

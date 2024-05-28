@@ -37,7 +37,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -380,7 +379,6 @@ class RetryFilter::LegacyCallData final {
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
-  grpc_call_context_element* call_context_;
 
   grpc_error_handle cancelled_from_surface_;
 

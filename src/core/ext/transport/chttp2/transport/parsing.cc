@@ -60,7 +60,6 @@
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/backoff/random_early_detection.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -943,11 +942,9 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
 
-    if (s->context != nullptr) {
-      call_tracer = static_cast<grpc_core::CallTracerAnnotationInterface*>(
-          static_cast<grpc_call_context_element*>(
-              s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-              .value);
+    if (s->arena != nullptr) {
+      call_tracer =
+          s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
     }
   }
   grpc_error_handle error = parser->Parse(

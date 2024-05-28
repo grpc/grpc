@@ -30,7 +30,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -450,10 +449,10 @@ class GlobalStatsPluginRegistry {
     // Adds all available client call tracers associated with the stats plugins
     // within the group to \a call_context.
     void AddClientCallTracers(const Slice& path, bool registered_method,
-                              grpc_call_context_element* call_context);
+                              Arena* arena);
     // Adds all available server call tracers associated with the stats plugins
     // within the group to \a call_context.
-    void AddServerCallTracers(grpc_call_context_element* call_context);
+    void AddServerCallTracers(Arena* arena);
 
    private:
     friend class RegisteredMetricCallback;

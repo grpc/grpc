@@ -28,7 +28,6 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/timer_manager.h"

@@ -46,7 +46,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -358,8 +357,7 @@ class ClientChannelFilter final {
 class ClientChannelFilter::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, UnrefCallDtor> {
  public:
-  LoadBalancedCall(ClientChannelFilter* chand,
-                   grpc_call_context_element* call_context,
+  LoadBalancedCall(ClientChannelFilter* chand, Arena* arena,
                    absl::AnyInvocable<void()> on_commit,
                    bool is_transparent_retry);
   ~LoadBalancedCall() override;
@@ -378,8 +376,8 @@ class ClientChannelFilter::LoadBalancedCall
  protected:
   ClientChannelFilter* chand() const { return chand_; }
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
-    return static_cast<ClientCallTracer::CallAttemptTracer*>(
-        call_context_[GRPC_CONTEXT_CALL_TRACER].value);
+    return DownCast<ClientCallTracer::CallAttemptTracer*>(
+        arena_->GetContext<CallTracerInterface>());
   }
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
@@ -413,14 +411,11 @@ class ClientChannelFilter::LoadBalancedCall
 
   void RecordLatency();
 
-  grpc_call_context_element* call_context() const { return call_context_; }
-
  private:
   class LbCallState;
   class Metadata;
   class BackendMetricAccessor;
 
-  virtual Arena* arena() const = 0;
   virtual grpc_polling_entity* pollent() = 0;
   virtual grpc_metadata_batch* send_initial_metadata() const = 0;
 
@@ -446,7 +441,7 @@ class ClientChannelFilter::LoadBalancedCall
   const BackendMetricData* backend_metric_data_ = nullptr;
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       lb_subchannel_call_tracker_;
-  grpc_call_context_element* const call_context_;
+  Arena* const arena_;
 };
 
 class ClientChannelFilter::FilterBasedLoadBalancedCall final
@@ -482,7 +477,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   using LoadBalancedCall::chand;
   using LoadBalancedCall::Commit;
 
-  Arena* arena() const override { return arena_; }
   grpc_polling_entity* pollent() override { return pollent_; }
   grpc_metadata_batch* send_initial_metadata() const override {
     return pending_batches_[0]

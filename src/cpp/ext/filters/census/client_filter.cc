@@ -53,7 +53,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -314,8 +313,8 @@ OpenCensusCallTracer::OpenCensusCallTracer(
       method_(GetMethod(path_)),
       arena_(arena),
       tracing_enabled_(tracing_enabled) {
-  auto* parent_context = reinterpret_cast<CensusContext*>(
-      call_context_[GRPC_CONTEXT_TRACING].value);
+  auto* parent_context =
+      reinterpret_cast<CensusContext*>(arena->GetContext<census_context>());
   GenerateClientContext(tracing_enabled_ ? absl::StrCat("Sent.", method_) : "",
                         &context_,
                         (parent_context == nullptr) ? nullptr : parent_context);
