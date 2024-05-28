@@ -120,9 +120,7 @@ class LbCallState : public ClientChannelLbCallState {
   }
 
   ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
-    auto* legacy_context = GetContext<grpc_call_context_element>();
-    return static_cast<ClientCallTracer::CallAttemptTracer*>(
-        legacy_context[GRPC_CONTEXT_CALL_TRACER].value);
+    return GetContext<ClientCallTracer::CallAttemptTracer>();
   }
 };
 

@@ -755,7 +755,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
     channel_stack->stats_plugin_group->AddClientCallTracers(
-        Slice(CSliceRef(path)), args->registered_method, call->context_);
+        Slice(CSliceRef(path)), args->registered_method, call->GetArena());
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -778,12 +778,11 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
         // promise-based world, we would just a single tracer object for each
         // stack (call, subchannel_call, server_call.)
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
-                         server_call_tracer, nullptr);
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+        arena->SetContext<CallTracerAnnotationInterface>(server_call_tracer);
+        arena->SetContext<CallTracerInterface>(server_call_tracer);
       }
     }
-    channel_stack->stats_plugin_group->AddServerCallTracers(call->context_);
+    channel_stack->stats_plugin_group->AddServerCallTracers(arena.get());
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -1230,8 +1229,7 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = static_cast<CallTracerAnnotationInterface*>(
-      ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
+  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
@@ -2613,7 +2611,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     }
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
-        *args->path, args->registered_method, this->context());
+        *args->path, args->registered_method, GetArena());
     send_initial_metadata_ = Arena::MakePooled<ClientMetadata>();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {

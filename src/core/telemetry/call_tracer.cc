@@ -299,63 +299,53 @@ class DelegatingServerCallTracer : public ServerCallTracer {
   std::vector<ServerCallTracer*> tracers_;
 };
 
-void AddClientCallTracerToContext(grpc_call_context_element* call_context,
-                                  ClientCallTracer* tracer) {
-  if (call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
-      nullptr) {
+void AddClientCallTracerToContext(Arena* arena, ClientCallTracer* tracer) {
+  if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
     // This is the first call tracer. Set it directly.
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy =
-        nullptr;
+    arena->SetContext<CallTracerAnnotationInterface>(tracer);
   } else {
     // There was already a call tracer present.
-    auto* orig_tracer = static_cast<ClientCallTracer*>(
-        call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
+    auto* orig_tracer = DownCast<ClientCallTracer*>(
+        arena->GetContext<CallTracerAnnotationInterface>());
     if (orig_tracer->IsDelegatingTracer()) {
       // We already created a delegating tracer. Just add the new tracer to the
       // list.
-      static_cast<DelegatingClientCallTracer*>(orig_tracer)->AddTracer(tracer);
+      DownCast<DelegatingClientCallTracer*>(orig_tracer)->AddTracer(tracer);
     } else {
       // Create a new delegating tracer and add the first tracer and the new
       // tracer to the list.
       auto* delegating_tracer =
           GetContext<Arena>()->ManagedNew<DelegatingClientCallTracer>(
               orig_tracer);
-      call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value =
-          delegating_tracer;
+      arena->SetContext<CallTracerAnnotationInterface>(delegating_tracer);
       delegating_tracer->AddTracer(tracer);
     }
   }
 }
 
-void AddServerCallTracerToContext(grpc_call_context_element* call_context,
-                                  ServerCallTracer* tracer) {
-  DCHECK(call_context[GRPC_CONTEXT_CALL_TRACER].value ==
-         call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
-  if (call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
-      nullptr) {
+void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer) {
+  DCHECK_EQ(arena->GetContext<CallTracerInterface>(),
+            arena->GetContext<CallTracerAnnotationInterface>());
+  if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
     // This is the first call tracer. Set it directly.
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
-    call_context[GRPC_CONTEXT_CALL_TRACER].value = tracer;
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy =
-        nullptr;
+    arena->SetContext<CallTracerAnnotationInterface>(tracer);
+    arena->SetContext<CallTracerInterface>(tracer);
   } else {
     // There was already a call tracer present.
-    auto* orig_tracer = static_cast<ServerCallTracer*>(
-        call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value);
+    auto* orig_tracer = DownCast<ServerCallTracer*>(
+        arena->GetContext<CallTracerAnnotationInterface>());
     if (orig_tracer->IsDelegatingTracer()) {
       // We already created a delegating tracer. Just add the new tracer to the
       // list.
-      static_cast<DelegatingServerCallTracer*>(orig_tracer)->AddTracer(tracer);
+      DownCast<DelegatingServerCallTracer*>(orig_tracer)->AddTracer(tracer);
     } else {
       // Create a new delegating tracer and add the first tracer and the new
       // tracer to the list.
       auto* delegating_tracer =
           GetContext<Arena>()->ManagedNew<DelegatingServerCallTracer>(
               orig_tracer);
-      call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value =
-          delegating_tracer;
-      call_context[GRPC_CONTEXT_CALL_TRACER].value = delegating_tracer;
+      arena->SetContext<CallTracerAnnotationInterface>(delegating_tracer);
+      arena->SetContext<CallTracerInterface>(delegating_tracer);
       delegating_tracer->AddTracer(tracer);
     }
   }
