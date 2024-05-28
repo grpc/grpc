@@ -21,18 +21,23 @@
 #include <atomic>
 #include <new>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/alloc.h"
+namespace grpc_core {
 
 namespace {
 
-void* ArenaStorage(size_t initial_size) {
+void* ArenaStorage(size_t& initial_size) {
   static constexpr size_t base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_core::Arena));
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
+  initial_size = std::max(initial_size,
+                          arena_detail::BaseArenaContextTraits::ContextSize());
   size_t alloc_size = base_size + initial_size;
   static constexpr size_t alignment =
       (GPR_CACHELINE_SIZE > GPR_MAX_ALIGNMENT &&
@@ -44,9 +49,11 @@ void* ArenaStorage(size_t initial_size) {
 
 }  // namespace
 
-namespace grpc_core {
-
 Arena::~Arena() {
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       i++) {
+    arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
+  }
   Zone* z = last_zone_;
   while (z) {
     Zone* prev_z = z->prev;
@@ -54,24 +61,25 @@ Arena::~Arena() {
     gpr_free_aligned(z);
     z = prev_z;
   }
-#ifdef GRPC_ARENA_TRACE_POOLED_ALLOCATIONS
-  gpr_log(GPR_ERROR, "DESTRUCT_ARENA %p", this);
-#endif
 }
 
 RefCountedPtr<Arena> Arena::Create(size_t initial_size,
                                    RefCountedPtr<ArenaFactory> arena_factory) {
-  return RefCountedPtr<Arena>(new (ArenaStorage(initial_size)) Arena(
-      initial_size, 0, std::move(arena_factory)));
+  void* p = ArenaStorage(initial_size);
+  return RefCountedPtr<Arena>(
+      new (p) Arena(initial_size, std::move(arena_factory)));
 }
 
-Arena::Arena(size_t initial_size, size_t initial_alloc,
-             RefCountedPtr<ArenaFactory> arena_factory)
-    : total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc)),
-      initial_zone_size_(initial_size),
+Arena::Arena(size_t initial_size, RefCountedPtr<ArenaFactory> arena_factory)
+    : initial_zone_size_(initial_size),
+      total_used_(arena_detail::BaseArenaContextTraits::ContextSize()),
       arena_factory_(std::move(arena_factory)) {
-  arena_factory_->allocator().Reserve(
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc));
+  for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
+       i++) {
+    contexts()[i] = nullptr;
+  }
+  CHECK_GE(initial_size, arena_detail::BaseArenaContextTraits::ContextSize());
+  arena_factory_->allocator().Reserve(initial_size);
 }
 
 void Arena::DestroyManagedNewObjects() {
