@@ -1117,7 +1117,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/channel/channel_stack_trace.h )
   s.files += %w( src/core/lib/channel/connected_channel.cc )
   s.files += %w( src/core/lib/channel/connected_channel.h )
-  s.files += %w( src/core/lib/channel/context.h )
   s.files += %w( src/core/lib/channel/promise_based_filter.cc )
   s.files += %w( src/core/lib/channel/promise_based_filter.h )
   s.files += %w( src/core/lib/channel/status_util.cc )
