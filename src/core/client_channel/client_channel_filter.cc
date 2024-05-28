@@ -159,7 +159,6 @@ class ClientChannelFilter::CallData {
   virtual Arena* arena() const = 0;
   virtual grpc_polling_entity* pollent() = 0;
   virtual grpc_metadata_batch* send_initial_metadata() = 0;
-  virtual grpc_call_context_element* call_context() const = 0;
 
   // Helper function for CheckResolution().  Returns true if the call
   // can continue (i.e., there is a valid resolution result, or there is
@@ -222,9 +221,6 @@ class ClientChannelFilter::FilterBasedCallData final
     return pending_batches_[0]
         ->payload->send_initial_metadata.send_initial_metadata;
   }
-  grpc_call_context_element* call_context() const override {
-    return call_context_;
-  }
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -278,7 +274,6 @@ class ClientChannelFilter::FilterBasedCallData final
       void* arg, grpc_error_handle error);
 
   grpc_slice path_;  // Request path.
-  grpc_call_context_element* call_context_;
   gpr_cycle_counter call_start_time_;
   Timestamp deadline_;
 
@@ -364,9 +359,6 @@ class ClientChannelFilter::PromiseBasedCallData final
   grpc_polling_entity* pollent() override { return &pollent_; }
   grpc_metadata_batch* send_initial_metadata() override {
     return client_initial_metadata_.get();
-  }
-  grpc_call_context_element* call_context() const override {
-    return GetContext<grpc_call_context_element>();
   }
 
   void OnAddToQueueLocked() override
@@ -530,10 +522,10 @@ class DynamicTerminationFilter::CallData final {
     auto* calld = static_cast<CallData*>(elem->call_data);
     auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     ClientChannelFilter* client_channel = chand->chand_;
-    grpc_call_element_args args = {calld->owning_call_,  nullptr,
-                                   calld->call_context_, calld->path_,
-                                   /*start_time=*/0,     calld->deadline_,
-                                   calld->arena_,        calld->call_combiner_};
+    grpc_call_element_args args = {calld->owning_call_, nullptr,
+                                   calld->path_,
+                                   /*start_time=*/0,    calld->deadline_,
+                                   calld->arena_,       calld->call_combiner_};
     auto* service_config_call_data = GetServiceConfigCallData(calld->arena_);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
         args, pollent, nullptr,
@@ -552,8 +544,7 @@ class DynamicTerminationFilter::CallData final {
         deadline_(args.deadline),
         arena_(args.arena),
         owning_call_(args.call_stack),
-        call_combiner_(args.call_combiner),
-        call_context_(args.context) {}
+        call_combiner_(args.call_combiner) {}
 
   ~CallData() { CSliceUnref(path_); }
 
@@ -562,7 +553,6 @@ class DynamicTerminationFilter::CallData final {
   Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
-  grpc_call_context_element* call_context_;
 
   OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall> lb_call_;
 };
@@ -2177,7 +2167,6 @@ bool ClientChannelFilter::CallData::CheckResolutionLocked(
 ClientChannelFilter::FilterBasedCallData::FilterBasedCallData(
     grpc_call_element* elem, const grpc_call_element_args& args)
     : path_(CSliceRef(args.path)),
-      call_context_(args.context),
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
@@ -2515,9 +2504,9 @@ void ClientChannelFilter::FilterBasedCallData::RetryCheckResolutionLocked() {
 }
 
 void ClientChannelFilter::FilterBasedCallData::CreateDynamicCall() {
-  DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,       path_,
-                                     call_start_time_,  deadline_,      arena(),
-                                     call_context_,     call_combiner()};
+  DynamicFilters::Call::Args args = {dynamic_filters(), pollent_,  path_,
+                                     call_start_time_,  deadline_, arena(),
+                                     call_combiner()};
   grpc_error_handle error;
   DynamicFilters* channel_stack = args.channel_stack.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -2736,16 +2725,14 @@ void CreateCallAttemptTracer(Arena* arena, bool is_transparent_retry) {
 }  // namespace
 
 ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
-    ClientChannelFilter* chand, grpc_call_context_element* call_context,
-    Arena* arena, absl::AnyInvocable<void()> on_commit,
-    bool is_transparent_retry)
+    ClientChannelFilter* chand, Arena* arena,
+    absl::AnyInvocable<void()> on_commit, bool is_transparent_retry)
     : InternallyRefCounted(
           GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)
               ? "LoadBalancedCall"
               : nullptr),
       chand_(chand),
       on_commit_(std::move(on_commit)),
-      call_context_(call_context),
       arena_(arena) {
   CreateCallAttemptTracer(arena, is_transparent_retry);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3014,7 +3001,7 @@ ClientChannelFilter::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
     ClientChannelFilter* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry)
-    : LoadBalancedCall(chand, args.context, args.arena, std::move(on_commit),
+    : LoadBalancedCall(chand, args.arena, std::move(on_commit),
                        is_transparent_retry),
       arena_(args.arena),
       owning_call_(args.call_stack),
@@ -3456,10 +3443,9 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
   SubchannelCall::Args call_args = {
       connected_subchannel()->RefAsSubclass<ConnectedSubchannel>(), pollent_,
       path->Ref(), /*start_time=*/0, arena_->GetContext<Call>()->deadline(),
-      arena_,
       // TODO(roth): When we implement hedging support, we will probably
-      // need to use a separate call context for each subchannel call.
-      call_context(), call_combiner_};
+      // need to use a separate call arena for each subchannel call.
+      arena_, call_combiner_};
   grpc_error_handle error;
   subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
@@ -3485,8 +3471,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
 ClientChannelFilter::PromiseBasedLoadBalancedCall::PromiseBasedLoadBalancedCall(
     ClientChannelFilter* chand, absl::AnyInvocable<void()> on_commit,
     bool is_transparent_retry)
-    : LoadBalancedCall(chand, GetContext<grpc_call_context_element>(),
-                       GetContext<Arena>(), std::move(on_commit),
+    : LoadBalancedCall(chand, GetContext<Arena>(), std::move(on_commit),
                        is_transparent_retry) {}
 
 ArenaPromise<ServerMetadataHandle>

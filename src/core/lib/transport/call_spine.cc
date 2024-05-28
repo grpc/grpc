@@ -95,11 +95,10 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
 CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena, grpc_call_context_element* legacy_context) {
+    RefCountedPtr<Arena> arena) {
   CHECK_NE(arena.get(), nullptr);
-  auto spine =
-      CallSpine::Create(std::move(client_initial_metadata), event_engine,
-                        std::move(arena), legacy_context);
+  auto spine = CallSpine::Create(std::move(client_initial_metadata),
+                                 event_engine, std::move(arena));
   return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 

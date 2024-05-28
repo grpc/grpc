@@ -1757,7 +1757,6 @@ grpc_cc_library(
     visibility = ["@grpc:alt_grpc_base_legacy"],
     deps = [
         "gpr",
-        "legacy_context",
         "tcp_tracer",
         "//src/core:arena",
         "//src/core:call_final_info",
@@ -2070,7 +2069,6 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr",
         "iomgr_timer",
-        "legacy_context",
         "orphanable",
         "promise",
         "ref_counted_ptr",
@@ -2138,19 +2136,6 @@ grpc_cc_library(
         "//src/core:transport_fwd",
         "//src/core:try_seq",
         "//src/core:useful",
-    ],
-)
-
-grpc_cc_library(
-    name = "legacy_context",
-    hdrs = [
-        "//src/core:lib/channel/context.h",
-    ],
-    language = "c++",
-    visibility = ["@grpc:alt_grpc_base_legacy"],
-    deps = [
-        "gpr_platform",
-        "//src/core:context",
     ],
 )
 
@@ -2345,7 +2330,6 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker",
         "iomgr",
-        "legacy_context",
         "promise",
         "ref_counted_ptr",
         "resource_quota_api",
@@ -2526,7 +2510,6 @@ grpc_cc_library(
         "grpcpp_status",
         "iomgr",
         "iomgr_timer",
-        "legacy_context",
         "ref_counted_ptr",
         "resource_quota_api",
         "server",
@@ -2612,7 +2595,6 @@ grpc_cc_library(
         "grpcpp_status",
         "iomgr",
         "iomgr_timer",
-        "legacy_context",
         "ref_counted_ptr",
         "resource_quota_api",
         "server",
@@ -2938,7 +2920,6 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_public_hdrs",
-        "legacy_context",
         "tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
@@ -3765,7 +3746,6 @@ grpc_cc_library(
         "grpc_trace",
         "iomgr",
         "lb_child_policy_handler",
-        "legacy_context",
         "orphanable",
         "promise",
         "ref_counted_ptr",
@@ -4345,7 +4325,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
-        "legacy_context",
         "promise",
         "//src/core:activity",
         "//src/core:arena",
@@ -4828,7 +4807,6 @@ grpc_cc_library(
         "httpcli",
         "iomgr",
         "iomgr_buffer_list",
-        "legacy_context",
         "ref_counted_ptr",
         "stats",
         "tcp_tracer",

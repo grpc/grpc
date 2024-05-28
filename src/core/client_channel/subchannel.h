@@ -36,7 +36,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -109,7 +108,6 @@ class SubchannelCall final {
     gpr_cycle_counter start_time;
     Timestamp deadline;
     Arena* arena;
-    grpc_call_context_element* context;
     CallCombiner* call_combiner;
   };
   static RefCountedPtr<SubchannelCall> Create(Args args,

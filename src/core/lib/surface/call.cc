@@ -59,7 +59,6 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -436,11 +435,6 @@ class ChannelBasedCall : public Call {
 class FilterStackCall final : public ChannelBasedCall {
  public:
   ~FilterStackCall() override {
-    for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-      if (context_[i].destroy) {
-        context_[i].destroy(context_[i].value);
-      }
-    }
     gpr_free(static_cast<void*>(const_cast<char*>(final_info_.error_string)));
   }
 
@@ -479,12 +473,6 @@ class FilterStackCall final : public ChannelBasedCall {
   }
   void InternalUnref(const char* reason) override {
     GRPC_CALL_STACK_UNREF(call_stack(), reason);
-  }
-
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void* value)) override;
-  void* ContextGet(grpc_context_index elem) const override {
-    return context_[elem].value;
   }
 
   bool is_trailers_only() const override {
@@ -601,7 +589,7 @@ class FilterStackCall final : public ChannelBasedCall {
                          args.server_transport_data == nullptr,
                          args.send_deadline, args.channel->Ref()),
         cq_(args.cq),
-        stream_op_payload_(context_) {
+        stream_op_payload_{} {
     GetArena()->SetContext<Call>(this);
   }
 
@@ -659,9 +647,6 @@ class FilterStackCall final : public ChannelBasedCall {
   // Call data useful used for reporting. Only valid after the call has
   // completed
   grpc_call_final_info final_info_;
-
-  // Contexts for various subsystems (security, tracing, ...).
-  grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
   SliceBuffer send_slice_buffer_;
   absl::optional<SliceBuffer> receiving_slice_buffer_;
@@ -792,10 +777,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
   // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
-      call->call_stack(), args->server_transport_data,
-      call->context_,     path,
-      call->start_time(), call->send_deadline(),
-      call->arena(),      &call->call_combiner_};
+      call->call_stack(),   args->server_transport_data, path,
+      call->start_time(),   call->send_deadline(),       call->arena(),
+      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
@@ -1860,15 +1844,6 @@ done_with_error:
   goto done;
 }
 
-void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
-                                 void (*destroy)(void*)) {
-  if (context_[elem].destroy) {
-    context_[elem].destroy(context_[elem].value);
-  }
-  context_[elem].value = value;
-  context_[elem].destroy = destroy;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Metadata validation helpers
 
@@ -1922,11 +1897,6 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
 
   ~BasicPromiseBasedCall() override {
     if (cq_) GRPC_CQ_INTERNAL_UNREF(cq_, "bind");
-    for (int i = 0; i < GRPC_CONTEXT_COUNT; i++) {
-      if (context_[i].destroy) {
-        context_[i].destroy(context_[i].value);
-      }
-    }
   }
 
   virtual void OrphanCall() = 0;
@@ -1972,19 +1942,6 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
         [](Empty) {});
   }
 
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void*)) final {
-    if (context_[elem].destroy != nullptr) {
-      context_[elem].destroy(context_[elem].value);
-    }
-    context_[elem].value = value;
-    context_[elem].destroy = destroy;
-  }
-
-  void* ContextGet(grpc_context_index elem) const final {
-    return context_[elem].value;
-  }
-
   // Accept the stats from the context (call once we have proof the transport is
   // done with them).
   void AcceptTransportStatsFromContext() {
@@ -2000,22 +1957,17 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
   }
 
  protected:
-  class ScopedContext
-      : public ScopedActivity,
-        public promise_detail::Context<Arena>,
-        public promise_detail::Context<grpc_call_context_element>,
-        public promise_detail::Context<CallContext>,
-        public promise_detail::Context<CallFinalization> {
+  class ScopedContext : public ScopedActivity,
+                        public promise_detail::Context<Arena>,
+                        public promise_detail::Context<CallContext>,
+                        public promise_detail::Context<CallFinalization> {
    public:
     explicit ScopedContext(BasicPromiseBasedCall* call)
         : ScopedActivity(call),
           promise_detail::Context<Arena>(call->arena()),
-          promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
           promise_detail::Context<CallFinalization>(&call->finalization_) {}
   };
-
-  grpc_call_context_element* context() { return context_; }
 
   grpc_completion_queue* cq() { return cq_; }
 
@@ -2057,8 +2009,6 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
   std::atomic<size_t> external_refs_;
   CallFinalization finalization_;
   CallContext call_context_{this};
-  // Contexts for various subsystems (security, tracing, ...).
-  grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_call_stats final_stats_{};
   Slice final_message_;
   grpc_status_code final_status_ = GRPC_STATUS_UNKNOWN;
@@ -2341,7 +2291,7 @@ class PromiseBasedCall : public BasicPromiseBasedCall {
   // Waiter for when sends_queued_ becomes 0.
   IntraActivityWaiter waiting_for_queued_sends_;
   grpc_byte_buffer** recv_message_ = nullptr;
-  grpc_transport_stream_op_batch_payload batch_payload_{context()};
+  grpc_transport_stream_op_batch_payload batch_payload_{};
 };
 
 template <typename T>
@@ -3213,16 +3163,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
     CancelWithError(absl::CancelledError());
   }
 
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void*)) override {
-    call_handler_.legacy_context()[elem] =
-        grpc_call_context_element{value, destroy};
-  }
-
-  void* ContextGet(grpc_context_index elem) const override {
-    return call_handler_.legacy_context()[elem].value;
-  }
-
   void SetCompletionQueue(grpc_completion_queue*) override {
     Crash("unimplemented");
   }
@@ -3749,15 +3689,6 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
                                                   size_t nops,
                                                   grpc_closure* closure) {
   return grpc_core::Call::FromC(call)->StartBatch(ops, nops, closure, true);
-}
-
-void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
-                           void* value, void (*destroy)(void* value)) {
-  return grpc_core::Call::FromC(call)->ContextSet(elem, value, destroy);
-}
-
-void* grpc_call_context_get(grpc_call* call, grpc_context_index elem) {
-  return grpc_core::Call::FromC(call)->ContextGet(elem);
 }
 
 uint8_t grpc_call_is_client(grpc_call* call) {

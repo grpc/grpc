@@ -46,7 +46,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -371,8 +370,7 @@ class ClientChannelFilter final {
 class ClientChannelFilter::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, UnrefCallDtor> {
  public:
-  LoadBalancedCall(ClientChannelFilter* chand,
-                   grpc_call_context_element* call_context, Arena* arena,
+  LoadBalancedCall(ClientChannelFilter* chand, Arena* arena,
                    absl::AnyInvocable<void()> on_commit,
                    bool is_transparent_retry);
   ~LoadBalancedCall() override;
@@ -426,8 +424,6 @@ class ClientChannelFilter::LoadBalancedCall
 
   void RecordLatency();
 
-  grpc_call_context_element* call_context() const { return call_context_; }
-
  private:
   class LbCallState;
   class Metadata;
@@ -458,7 +454,6 @@ class ClientChannelFilter::LoadBalancedCall
   const BackendMetricData* backend_metric_data_ = nullptr;
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       lb_subchannel_call_tracker_;
-  grpc_call_context_element* const call_context_;
   Arena* const arena_;
 };
 

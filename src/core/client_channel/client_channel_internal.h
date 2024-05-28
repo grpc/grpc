@@ -26,7 +26,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/load_balancing/lb_policy.h"
