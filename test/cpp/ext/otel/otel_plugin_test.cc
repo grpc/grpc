@@ -1979,7 +1979,6 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterPerChannelStatsPlugins) {
   builder.SetMeterProvider(std::move(meter_provider));
   builder.EnableMetrics(
       {grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName});
-  // builder.SetChannelScopeFilter();
   absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>> plugin =
       builder.Build();
   ASSERT_TRUE(plugin.ok());
