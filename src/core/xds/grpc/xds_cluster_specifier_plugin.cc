@@ -33,8 +33,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 

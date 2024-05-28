@@ -60,7 +60,6 @@ struct grpc_binder_transport final : public grpc_core::FilterStackTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override;
-  grpc_endpoint* GetEndpoint() override;
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
     return false;

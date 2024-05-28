@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/transport/test_suite/test.h"
+#include "test/core/transport/test_suite/transport_test.h"
 
 namespace grpc_core {
 

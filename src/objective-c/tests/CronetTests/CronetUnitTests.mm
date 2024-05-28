@@ -29,7 +29,6 @@
 #import "test/core/test_util/port.h"
 
 #import <grpc/support/alloc.h>
-#import <grpc/support/log.h>
 
 #import "src/core/lib/channel/channel_args.h"
 #import "src/core/lib/gprpp/env.h"
@@ -322,7 +321,7 @@ unsigned int parse_h2_length(const char *field) {
     long len;
     BOOL coalesced = NO;
     while ((len = SSL_read(ssl, buf, sizeof(buf))) > 0) {
-      gpr_log(GPR_DEBUG, "Read len: %ld", len);
+      VLOG(2) << "Read len: " << len;
 
       // Analyze the HTTP/2 frames in the same TLS PDU to identify if
       // coalescing is successful

@@ -34,7 +34,7 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
   cdef cppclass condition_variable:
     void notify_all()
 
-cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
+cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
   cdef cppclass ClientCallTracer:
     pass
 

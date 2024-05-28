@@ -35,8 +35,8 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 

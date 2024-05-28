@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -114,6 +115,11 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_xds_server_uses_tls_creds(bool value) {
+    xds_server_uses_tls_creds_ = value;
+    return *this;
+  }
+
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
@@ -129,6 +135,7 @@ class XdsTestType {
   rbac_audit_condition() const {
     return rbac_audit_condition_;
   }
+  bool xds_server_uses_tls_creds() const { return xds_server_uses_tls_creds_; }
 
   std::string AsString() const {
     std::string retval = "V3";
@@ -157,6 +164,9 @@ class XdsTestType {
                                  RBAC_AuditLoggingOptions_AuditCondition_Name(
                                      rbac_audit_condition_));
     }
+    if (xds_server_uses_tls_creds_) {
+      retval += "XdsServerUsesTlsCreds";
+    }
     return retval;
   }
 
@@ -177,6 +187,7 @@ class XdsTestType {
   ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
       rbac_audit_condition_ = ::envoy::config::rbac::v3::
           RBAC_AuditLoggingOptions_AuditCondition_NONE;
+  bool xds_server_uses_tls_creds_ = false;
 };
 
 // A base class for xDS end-to-end tests.
@@ -411,6 +422,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
 
+    // If XdsTestType::xds_server_uses_tls_creds() is true,
+    // returns TlsServerCredentials.
+    // Otherwise, returns fake credentials.
+    std::shared_ptr<ServerCredentials> Credentials() override;
+
    private:
     const char* Type() override { return "Balancer"; }
     void RegisterAllServices(ServerBuilder* builder) override;
@@ -577,7 +593,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // All tests must call this exactly once at the start of the test.
   void InitClient(absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
                   std::string lb_expected_authority = "",
-                  int xds_resource_does_not_exist_timeout_ms = 0);
+                  int xds_resource_does_not_exist_timeout_ms = 0,
+                  std::string balancer_authority_override = "");
 
   XdsBootstrapBuilder MakeBootstrapBuilder() {
     return XdsBootstrapBuilder().SetServers(
@@ -946,10 +963,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
     num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.
-    gpr_log(GPR_INFO,
-            "Sending %" PRIuPTR
-            " RPCs for percentage=%.3f error_tolerance=%.3f",
-            num_rpcs, p, error_tolerance);
+    LOG(INFO) << "Sending " << num_rpcs << " RPCs for percentage=" << p
+              << " error_tolerance=" << error_tolerance;
     return num_rpcs;
   }
 

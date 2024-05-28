@@ -19,12 +19,12 @@
 #include <random>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
@@ -66,8 +66,8 @@ TEST(TimerManagerTest, StressTest) {
                << called.load(std::memory_order_relaxed) << "/" << kTimerCount
                << " callbacks executed";
       }
-      gpr_log(GPR_DEBUG, "Processed %d/%d callbacks",
-              called.load(std::memory_order_relaxed), kTimerCount);
+      VLOG(2) << "Processed " << called.load(std::memory_order_relaxed) << "/"
+              << kTimerCount << " callbacks";
       absl::SleepFor(absl::Milliseconds(333));
     }
   }

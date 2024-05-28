@@ -19,11 +19,11 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/memory_allocator.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -63,8 +63,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   auto header = FrameHeader::Parse(header_bytes);
   if (!header.ok()) {
     if (!squelch) {
-      gpr_log(GPR_ERROR, "Failed to parse header: %s",
-              header.status().ToString().c_str());
+      LOG(ERROR) << "Failed to parse header: " << header.status().ToString();
     }
     Crash("Failed to parse header");
   }
@@ -89,7 +88,7 @@ void FinishParseAndChecks(const FrameHeader& header, BufferPair buffers) {
                                   absl::BitGenRef(bitgen), GetContext<Arena>(),
                                   std::move(buffers), FuzzerFrameLimits());
   if (!deser.ok()) return;
-  gpr_log(GPR_INFO, "Read frame: %s", parsed.ToString().c_str());
+  LOG(INFO) << "Read frame: " << parsed.ToString();
   AssertRoundTrips(parsed, header.type);
 }
 
@@ -101,7 +100,7 @@ void Run(const frame_fuzzer::Test& test) {
   auto r = FrameHeader::Parse(control_data);
   if (!r.ok()) return;
   if (test.data().size() != r->message_length) return;
-  gpr_log(GPR_INFO, "Read frame header: %s", r->ToString().c_str());
+  LOG(INFO) << "Read frame header: " << r->ToString();
   control_data += 24;
   control_size -= 24;
   MemoryAllocator memory_allocator = MemoryAllocator(

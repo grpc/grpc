@@ -21,8 +21,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/server/server.h"
+#include "src/core/telemetry/stats.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -262,10 +262,9 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
   auto end_stats = grpc_core::global_stats().Collect()->Diff(*baseline);
   double writes_per_iteration =
       end_stats->syscall_write / static_cast<double>(kIterations);
-  gpr_log(GPR_DEBUG,
-          "UnaryPingPong(%d, %d): writes_per_iteration=%0.3f (total=%lu)",
-          request_size, response_size, writes_per_iteration,
-          end_stats->syscall_write);
+  VLOG(2) << "UnaryPingPong(" << request_size << ", " << response_size
+          << "): writes_per_iteration=" << writes_per_iteration
+          << " (total=" << end_stats->syscall_write << ")";
 
   fixture.reset();
   server_env[0]->~ServerEnv();

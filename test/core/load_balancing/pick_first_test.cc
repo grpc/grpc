@@ -37,7 +37,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -45,9 +44,10 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/util/json/json.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"

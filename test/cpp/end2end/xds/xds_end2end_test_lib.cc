@@ -27,6 +27,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -135,7 +136,7 @@ class XdsEnd2endTest::ServerThread::XdsChannelArgsServerBuilderOption
 //
 
 void XdsEnd2endTest::ServerThread::Start() {
-  gpr_log(GPR_INFO, "starting %s server on port %d", Type(), port_);
+  LOG(INFO) << "starting " << Type() << " server on port " << port_;
   CHECK(!running_);
   running_ = true;
   StartAllServices();
@@ -147,38 +148,38 @@ void XdsEnd2endTest::ServerThread::Start() {
   thread_ = std::make_unique<std::thread>(
       std::bind(&ServerThread::Serve, this, &mu, &cond));
   cond.Wait(&mu);
-  gpr_log(GPR_INFO, "%s server startup complete", Type());
+  LOG(INFO) << Type() << " server startup complete";
 }
 
 void XdsEnd2endTest::ServerThread::Shutdown() {
   if (!running_) return;
-  gpr_log(GPR_INFO, "%s about to shutdown", Type());
+  LOG(INFO) << Type() << " about to shutdown";
   ShutdownAllServices();
   server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   thread_->join();
-  gpr_log(GPR_INFO, "%s shutdown completed", Type());
+  LOG(INFO) << Type() << " shutdown completed";
   running_ = false;
 }
 
 void XdsEnd2endTest::ServerThread::StopListeningAndSendGoaways() {
-  gpr_log(GPR_INFO, "%s sending GOAWAYs", Type());
+  LOG(INFO) << Type() << " sending GOAWAYs";
   {
     grpc_core::ExecCtx exec_ctx;
     auto* server = grpc_core::Server::FromC(server_->c_server());
     server->StopListening();
     server->SendGoaways();
   }
-  gpr_log(GPR_INFO, "%s done sending GOAWAYs", Type());
+  LOG(INFO) << Type() << " done sending GOAWAYs";
 }
 
 void XdsEnd2endTest::ServerThread::StopListening() {
-  gpr_log(GPR_INFO, "%s about to stop listening", Type());
+  LOG(INFO) << Type() << " about to stop listening";
   {
     grpc_core::ExecCtx exec_ctx;
     auto* server = grpc_core::Server::FromC(server_->c_server());
     server->StopListening();
   }
-  gpr_log(GPR_INFO, "%s stopped listening", Type());
+  LOG(INFO) << Type() << " stopped listening";
 }
 
 void XdsEnd2endTest::ServerThread::Serve(grpc_core::Mutex* mu,
@@ -316,6 +317,26 @@ XdsEnd2endTest::BalancerServerThread::BalancerServerThread(
                 ::testing::Contains("envoy.lrs.supports_send_all_clusters"));
           },
           debug_label)) {}
+
+std::shared_ptr<ServerCredentials>
+XdsEnd2endTest::BalancerServerThread::Credentials() {
+  if (GetParam().xds_server_uses_tls_creds()) {
+    std::string identity_cert =
+        grpc_core::testing::GetFileContents(kServerCertPath);
+    std::string private_key =
+        grpc_core::testing::GetFileContents(kServerKeyPath);
+    std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
+        {private_key, identity_cert}};
+    auto certificate_provider =
+        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+            identity_key_cert_pairs);
+    grpc::experimental::TlsServerCredentialsOptions options(
+        certificate_provider);
+    options.watch_identity_key_cert_pairs();
+    return grpc::experimental::TlsServerCredentials(options);
+  }
+  return ServerThread::Credentials();
+}
 
 void XdsEnd2endTest::BalancerServerThread::RegisterAllServices(
     ServerBuilder* builder) {
@@ -489,7 +510,8 @@ std::vector<int> XdsEnd2endTest::GetBackendPorts(size_t start_index,
 
 void XdsEnd2endTest::InitClient(absl::optional<XdsBootstrapBuilder> builder,
                                 std::string lb_expected_authority,
-                                int xds_resource_does_not_exist_timeout_ms) {
+                                int xds_resource_does_not_exist_timeout_ms,
+                                std::string balancer_authority_override) {
   if (!builder.has_value()) {
     builder = MakeBootstrapBuilder();
   }
@@ -507,6 +529,11 @@ void XdsEnd2endTest::InitClient(absl::optional<XdsBootstrapBuilder> builder,
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS),
         const_cast<char*>(lb_expected_authority.c_str())));
+  }
+  if (!balancer_authority_override.empty()) {
+    xds_channel_args_to_add_.emplace_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+        const_cast<char*>(balancer_authority_override.c_str())));
   }
   xds_channel_args_.num_args = xds_channel_args_to_add_.size();
   xds_channel_args_.args = xds_channel_args_to_add_.data();
@@ -758,10 +785,8 @@ size_t XdsEnd2endTest::WaitForAllBackends(
           << debug_location.file() << ":" << debug_location.line();
     };
   }
-  gpr_log(GPR_INFO,
-          "========= WAITING FOR BACKENDS [%" PRIuPTR ", %" PRIuPTR
-          ") ==========",
-          start_index, stop_index);
+  LOG(INFO) << "========= WAITING FOR BACKENDS [" << start_index << ", "
+            << stop_index << ") ==========";
   size_t num_rpcs = 0;
   SendRpcsUntil(
       debug_location,
@@ -772,8 +797,7 @@ size_t XdsEnd2endTest::WaitForAllBackends(
       },
       wait_options.timeout_ms, rpc_options);
   if (wait_options.reset_counters) ResetBackendCounters();
-  gpr_log(GPR_INFO, "Backends up; sent %" PRIuPTR " warm up requests",
-          num_rpcs);
+  LOG(INFO) << "Backends up; sent " << num_rpcs << " warm up requests";
   return num_rpcs;
 }
 

@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
@@ -98,8 +99,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
 
  protected:
   static void OnConnectingFinished(void* arg, grpc_error_handle error) {
-    gpr_log(GPR_ERROR, "OnConnectingFinished: %p %s", arg,
-            error.ToString().c_str());
+    LOG(ERROR) << "OnConnectingFinished: " << arg << " " << error.ToString();
     ChaoticGoodServerTest* test = static_cast<ChaoticGoodServerTest*>(arg);
     test->connecting_successful_ = error.ok();
     test->connect_finished_.Notify();

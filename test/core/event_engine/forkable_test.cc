@@ -25,10 +25,9 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -94,14 +93,14 @@ TEST_F(ForkableTest, BasicPthreadAtForkOperations) {
   int child_pid = fork();
   ASSERT_NE(child_pid, -1);
   if (child_pid == 0) {
-    gpr_log(GPR_DEBUG, "I am child pid: %d", getpid());
+    VLOG(2) << "I am child pid: " << getpid();
     forkable->CheckChild();
     exit(testing::Test::HasFailure());
   } else {
-    gpr_log(GPR_DEBUG, "I am parent pid: %d", getpid());
+    VLOG(2) << "I am parent pid: " << getpid();
     forkable->CheckParent();
     int status;
-    gpr_log(GPR_DEBUG, "Waiting for child pid: %d", child_pid);
+    VLOG(2) << "Waiting for child pid: " << child_pid;
     do {
       // retry on EINTR, and fail otherwise
       if (waitpid(child_pid, &status, 0) != -1) break;
