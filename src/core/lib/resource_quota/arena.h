@@ -338,7 +338,16 @@ namespace arena_detail {
 inline void UnrefDestroy::operator()(Arena* arena) const { arena->Destroy(); }
 }  // namespace arena_detail
 
-namespace promise_detail {}  // namespace promise_detail
+namespace promise_detail {
+
+template <typename T>
+class Context<T, absl::void_t<decltype(ArenaContextType<T>::Destroy)>> {
+ public:
+  static T* get() { return GetContext<Arena>()->GetContext<T>(); }
+  static void set(T* value) { GetContext<Arena>()->SetContext(value); }
+};
+
+}  // namespace promise_detail
 
 }  // namespace grpc_core
 
