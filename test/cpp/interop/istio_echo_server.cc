@@ -30,6 +30,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
@@ -114,8 +115,7 @@ void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
     if (xds_ports.find(port) != xds_ports.end()) {
       xds_builder.AddListeningPort(
           server_address, XdsServerCredentials(InsecureServerCredentials()));
-      gpr_log(GPR_INFO, "Server listening on %s over xds",
-              server_address.c_str());
+      LOG(INFO) << "Server listening on " << server_address << " over xds";
       has_xds_listeners = true;
     } else if (tls_ports.find(port) != tls_ports.end()) {
       // Create Credentials for Tls Servers -
@@ -130,12 +130,10 @@ void RunServer(const std::set<int>& grpc_ports, const std::set<int>& xds_ports,
       options.watch_identity_key_cert_pairs();
       options.set_check_call_host(false);
       builder.AddListeningPort(server_address, TlsServerCredentials(options));
-      gpr_log(GPR_INFO, "Server listening on %s over tls",
-              server_address.c_str());
+      LOG(INFO) << "Server listening on " << server_address << " over tls";
     } else {
       builder.AddListeningPort(server_address, InsecureServerCredentials());
-      gpr_log(GPR_INFO, "Server listening on %s over insecure",
-              server_address.c_str());
+      LOG(INFO) << "Server listening on " << server_address << " over insecure";
     }
   }
   // Enable the default health check service, probably not needed though.
@@ -206,7 +204,7 @@ int main(int argc, char** argv) {
   for (const auto& p : absl::GetFlag(FLAGS_xds_grpc_server)) {
     int port = 0;
     if (!absl::SimpleAtoi(p, &port)) {
-      gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      LOG(ERROR) << "SimpleAtoi Failure: " << p;
       return 1;
     }
     xds_ports.insert(port);
@@ -220,7 +218,7 @@ int main(int argc, char** argv) {
   for (const auto& p : absl::GetFlag(FLAGS_tls)) {
     int port = 0;
     if (!absl::SimpleAtoi(p, &port)) {
-      gpr_log(GPR_ERROR, "SimpleAtoi Failure: %s", p.c_str());
+      LOG(ERROR) << "SimpleAtoi Failure: " << p;
       return 1;
     }
     tls_ports.insert(port);

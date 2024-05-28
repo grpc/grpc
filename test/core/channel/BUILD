@@ -19,20 +19,6 @@ grpc_package(name = "test/core/channel")
 licenses(["notice"])
 
 grpc_cc_test(
-    name = "call_tracer_test",
-    srcs = ["call_tracer_test.cc"],
-    external_deps = ["gtest"],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:grpc",
-        "//test/core/test_util:fake_stats_plugin",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "channel_args_test",
     srcs = ["channel_args_test.cc"],
     external_deps = [
@@ -142,23 +128,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "metrics_test",
-    srcs = ["metrics_test.cc"],
-    external_deps = [
-        "absl/log:log",
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//src/core:metrics",
-        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
 )

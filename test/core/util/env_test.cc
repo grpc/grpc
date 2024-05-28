@@ -18,19 +18,16 @@
 
 #include "src/core/lib/gprpp/env.h"
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
-
 #include "test/core/test_util/test_config.h"
-
-#define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
 
 TEST(EnvTest, SetenvGetenv) {
   const char* name = "FOO";
   const char* value = "BAR";
 
-  LOG_TEST_NAME("test_setenv_getenv");
+  LOG(INFO) << "test_setenv_getenv";
 
   grpc_core::SetEnv(name, value);
   auto retrieved_value = grpc_core::GetEnv(name);
@@ -41,7 +38,7 @@ TEST(EnvTest, Unsetenv) {
   const char* name = "FOO";
   const char* value = "BAR";
 
-  LOG_TEST_NAME("test_unsetenv");
+  LOG(INFO) << "test_unsetenv";
 
   grpc_core::SetEnv(name, value);
   grpc_core::UnsetEnv(name);

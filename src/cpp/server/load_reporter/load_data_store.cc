@@ -27,8 +27,8 @@
 #include <unordered_map>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -111,9 +111,8 @@ std::string LoadRecordKey::GetClientIpBytes() const {
   } else if (client_ip_hex_.size() == kIpv4AddressLength) {
     uint32_t ip_bytes;
     if (sscanf(client_ip_hex_.c_str(), "%x", &ip_bytes) != 1) {
-      gpr_log(GPR_ERROR,
-              "Can't parse client IP (%s) from a hex string to an integer.",
-              client_ip_hex_.c_str());
+      LOG(ERROR) << "Can't parse client IP (" << client_ip_hex_
+                 << ") from a hex string to an integer.";
       return "";
     }
     ip_bytes = grpc_htonl(ip_bytes);
@@ -124,10 +123,9 @@ std::string LoadRecordKey::GetClientIpBytes() const {
     for (size_t i = 0; i < 4; ++i) {
       if (sscanf(client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str(), "%x",
                  ip_bytes + i) != 1) {
-        gpr_log(
-            GPR_ERROR,
-            "Can't parse client IP part (%s) from a hex string to an integer.",
-            client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str());
+        LOG(ERROR) << "Can't parse client IP part ("
+                   << client_ip_hex_.substr(i * 8, (i + 1) * 8)
+                   << ") from a hex string to an integer.";
         return "";
       }
       ip_bytes[i] = grpc_htonl(ip_bytes[i]);
@@ -150,13 +148,13 @@ void PerBalancerStore::MergeRow(const LoadRecordKey& key,
   // During suspension, the load data received will be dropped.
   if (!suspended_) {
     load_record_map_[key].MergeFrom(value);
-    gpr_log(GPR_DEBUG,
-            "[PerBalancerStore %p] Load data merged (Key: %s, Value: %s).",
-            this, key.ToString().c_str(), value.ToString().c_str());
+    VLOG(2) << "[PerBalancerStore " << this
+            << "] Load data merged (Key: " << key.ToString()
+            << ", Value: " << value.ToString() << ").";
   } else {
-    gpr_log(GPR_DEBUG,
-            "[PerBalancerStore %p] Load data dropped (Key: %s, Value: %s).",
-            this, key.ToString().c_str(), value.ToString().c_str());
+    VLOG(2) << "[PerBalancerStore " << this
+            << "] Load data dropped (Key: " << key.ToString()
+            << ", Value: " << value.ToString() << ").";
   }
   // We always keep track of num_calls_in_progress_, so that when this
   // store is resumed, we still have a correct value of
@@ -170,12 +168,12 @@ void PerBalancerStore::MergeRow(const LoadRecordKey& key,
 void PerBalancerStore::Suspend() {
   suspended_ = true;
   load_record_map_.clear();
-  gpr_log(GPR_DEBUG, "[PerBalancerStore %p] Suspended.", this);
+  VLOG(2) << "[PerBalancerStore " << this << "] Suspended.";
 }
 
 void PerBalancerStore::Resume() {
   suspended_ = false;
-  gpr_log(GPR_DEBUG, "[PerBalancerStore %p] Resumed.", this);
+  VLOG(2) << "[PerBalancerStore " << this << "] Resumed.";
 }
 
 uint64_t PerBalancerStore::GetNumCallsInProgressForReport() {
@@ -260,11 +258,9 @@ void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
   auto it = assigned_stores_.find(new_receiver);
   CHECK(it != assigned_stores_.end());
   it->second.insert(orphaned_store);
-  gpr_log(GPR_INFO,
-          "[PerHostStore %p] Re-assigned orphaned store (%p) with original LB"
-          " ID of %s to new receiver %s",
-          this, orphaned_store, orphaned_store->lb_id().c_str(),
-          new_receiver.c_str());
+  LOG(INFO) << "[PerHostStore " << this << "] Re-assigned orphaned store ("
+            << orphaned_store << ") with original LB ID of "
+            << orphaned_store->lb_id() << " to new receiver " << new_receiver;
 }
 
 void PerHostStore::SetUpForNewLbId(const std::string& lb_id,
@@ -306,17 +302,16 @@ void LoadDataStore::MergeRow(const std::string& hostname,
   if (in_progress_delta != 0) {
     auto it_tracker = unknown_balancer_id_trackers_.find(key.lb_id());
     if (it_tracker == unknown_balancer_id_trackers_.end()) {
-      gpr_log(
-          GPR_DEBUG,
-          "[LoadDataStore %p] Start tracking unknown balancer (lb_id_: %s).",
-          this, key.lb_id().c_str());
+      VLOG(2) << "[LoadDataStore " << this
+              << "] Start tracking unknown balancer (lb_id_: " << key.lb_id()
+              << ").";
       unknown_balancer_id_trackers_.insert(
           {key.lb_id(), static_cast<uint64_t>(in_progress_delta)});
     } else if ((it_tracker->second += in_progress_delta) == 0) {
       unknown_balancer_id_trackers_.erase(it_tracker);
-      gpr_log(GPR_DEBUG,
-              "[LoadDataStore %p] Stop tracking unknown balancer (lb_id_: %s).",
-              this, key.lb_id().c_str());
+      VLOG(2) << "[LoadDataStore " << this
+              << "] Stop tracking unknown balancer (lb_id_: " << key.lb_id()
+              << ").";
     }
   }
 }

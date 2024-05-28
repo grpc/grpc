@@ -25,9 +25,9 @@
 #include <grpc/grpc_audit_logging.h>
 
 #include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

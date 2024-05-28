@@ -35,7 +35,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/json/json_channel_args.h"
+#include "src/core/util/json/json_channel_args.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5

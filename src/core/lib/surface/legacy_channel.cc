@@ -36,10 +36,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -57,6 +54,9 @@
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 namespace grpc_core {
 

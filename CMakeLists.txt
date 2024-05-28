@@ -2228,14 +2228,12 @@ add_library(grpc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/backoff/random_early_detection.cc
-  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -2243,9 +2241,6 @@ add_library(grpc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
-  src/core/lib/debug/histogram_view.cc
-  src/core/lib/debug/stats.cc
-  src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -2388,10 +2383,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_object_loader.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_util.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
@@ -2565,6 +2556,11 @@ add_library(grpc
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
+  src/core/telemetry/call_tracer.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/metrics.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2594,6 +2590,10 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/json/json_object_loader.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_util.cc
+  src/core/util/json/json_writer.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3013,14 +3013,12 @@ add_library(grpc_unsecure
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
   src/core/lib/backoff/random_early_detection.cc
-  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -3028,9 +3026,6 @@ add_library(grpc_unsecure
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
-  src/core/lib/debug/histogram_view.cc
-  src/core/lib/debug/stats.cc
-  src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -3170,9 +3165,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_object_loader.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
@@ -3299,11 +3291,19 @@ add_library(grpc_unsecure
   src/core/service_config/service_config_channel_arg_filter.cc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
+  src/core/telemetry/call_tracer.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/metrics.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/json/json_object_loader.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -5126,14 +5126,12 @@ add_library(grpc_authorization_provider
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
-  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -5141,9 +5139,6 @@ add_library(grpc_authorization_provider
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
-  src/core/lib/debug/histogram_view.cc
-  src/core/lib/debug/stats.cc
-  src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -5279,8 +5274,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
@@ -5366,9 +5359,16 @@ add_library(grpc_authorization_provider
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/service_config/service_config_parser.cc
+  src/core/telemetry/call_tracer.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/metrics.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -8684,7 +8684,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_tracer_test
-  test/core/channel/call_tracer_test.cc
+  test/core/telemetry/call_tracer_test.cc
   test/core/test_util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
@@ -17570,15 +17570,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
-    test/core/transport/test_suite/fixture.cc
     test/core/transport/test_suite/inproc_fixture.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/test.cc
-    test/core/transport/test_suite/test_main.cc
+    test/core/transport/test_suite/transport_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -17778,14 +17778,12 @@ add_executable(interception_chain_test
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/backoff/backoff.cc
-  src/core/lib/channel/call_tracer.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
   src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/metrics.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
@@ -17793,9 +17791,6 @@ add_executable(interception_chain_test
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
-  src/core/lib/debug/histogram_view.cc
-  src/core/lib/debug/stats.cc
-  src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
@@ -17931,7 +17926,6 @@ add_executable(interception_chain_test
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json_writer.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/api.cc
@@ -17993,7 +17987,13 @@ add_executable(interception_chain_test
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/service_config/service_config_parser.cc
+  src/core/telemetry/call_tracer.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/metrics.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/json/json_writer.cc
   test/core/transport/interception_chain_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -20004,7 +20004,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(metrics_test
-  test/core/channel/metrics_test.cc
+  test/core/telemetry/metrics_test.cc
   test/core/test_util/fake_stats_plugin.cc
 )
 if(WIN32 AND MSVC)
@@ -28761,7 +28761,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(stats_test
-  test/core/debug/stats_test.cc
+  test/core/telemetry/stats_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -30253,15 +30253,15 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good/frame_header.cc
     src/core/ext/transport/chaotic_good/server_transport.cc
     src/core/lib/transport/promise_endpoint.cc
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
     test/core/transport/test_suite/chaotic_good_fixture.cc
-    test/core/transport/test_suite/fixture.cc
     test/core/transport/test_suite/no_op.cc
     test/core/transport/test_suite/stress.cc
-    test/core/transport/test_suite/test.cc
-    test/core/transport/test_suite/test_main.cc
+    test/core/transport/test_suite/transport_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -37015,3 +37015,14 @@ generate_pkgconfig(
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
   "grpc++_unsecure.pc")
+
+# grpcpp_otel_plugin .pc file
+generate_pkgconfig(
+  "gRPC++ OpenTelemetry Plugin"
+  "OpenTelemetry Plugin for gRPC C++"
+  "${gRPC_CPP_VERSION}"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time absl_type_traits absl_utility absl_variant gpr grpc grpc++ opentelemetry_api"
+  "libcares openssl re2 zlib"
+  "-lgrpcpp_otel_plugin"
+  "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_message_lib -lupb_mem_lib -lupb_base_lib -lutf8_range_lib"
+  "grpcpp_otel_plugin.pc")

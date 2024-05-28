@@ -771,7 +771,9 @@ class CallOpRecvInitialMetadata {
 class CallOpClientRecvStatus {
  public:
   CallOpClientRecvStatus()
-      : recv_status_(nullptr), debug_error_string_(nullptr) {}
+      : metadata_map_(nullptr),
+        recv_status_(nullptr),
+        debug_error_string_(nullptr) {}
 
   void ClientRecvStatus(grpc::ClientContext* context, Status* status) {
     client_context_ = context;

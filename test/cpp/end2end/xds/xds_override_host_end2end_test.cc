@@ -18,6 +18,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
@@ -89,8 +90,8 @@ class OverrideHostTest : public XdsEnd2endTest {
           absl::StrSplit(key_value.second, ';');
       std::string decoded;
       EXPECT_TRUE(absl::Base64Unescape(key_value2.first, &decoded));
-      gpr_log(GPR_INFO, "set-cookie header: %s (decoded: %s)",
-              std::string(it->second).c_str(), decoded.c_str());
+      LOG(INFO) << "set-cookie header: " << it->second
+                << " (decoded: " << decoded << ")";
       values.emplace_back(ParseCookie(it->second));
       EXPECT_FALSE(values.back().value.empty());
       EXPECT_THAT(values.back().attributes, ::testing::Contains("HttpOnly"));

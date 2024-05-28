@@ -70,9 +70,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
@@ -82,6 +79,9 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 
 namespace grpc_core {

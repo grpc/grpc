@@ -84,7 +84,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
   grpc_closure done;
   grpc_core::ExecCtx exec_ctx;
 
-  gpr_log(GPR_DEBUG, "test_succeeds");
+  VLOG(2) << "test_succeeds";
 
   auto resolved_addr = grpc_core::StringToSockaddr("127.0.0.1:0");
   CHECK(resolved_addr.ok());
@@ -141,7 +141,7 @@ static void must_fail(void* arg, grpc_error_handle error) {
   grpc_closure done;
   int svr_fd;
 
-  gpr_log(GPR_DEBUG, "test_fails");
+  VLOG(2) << "test_fails";
 
   auto resolved_addr = grpc_core::StringToSockaddr("127.0.0.1:0");
   CHECK(resolved_addr.ok());

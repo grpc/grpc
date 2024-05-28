@@ -28,9 +28,9 @@
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
 namespace grpc {

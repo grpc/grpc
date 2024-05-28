@@ -102,8 +102,10 @@ class OpenTelemetryPlugin:
         enabled for this OpenTelemetryPlugin.
           meter_provider: A MeterProvider which will be used to collect telemetry data,
         or None which means no metrics will be collected.
-          target_attribute_filter: Once provided, this will be called per channel to decide
-        whether to record the target attribute on client or to replace it with "other".
+          target_attribute_filter: [DEPRECATED] This attribute is deprecated and should
+        not be used.
+        Once provided, this will be called per channel to decide whether to record the
+        target attribute on client or to replace it with "other".
         This helps reduce the cardinality on metrics in cases where many channels
         are created with different targets in the same binary (which might happen
         for example, if the channel target string uses IP addresses directly).

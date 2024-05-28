@@ -42,7 +42,7 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 

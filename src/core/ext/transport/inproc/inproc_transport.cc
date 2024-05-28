@@ -85,7 +85,6 @@ class InprocServerTransport final : public ServerTransport {
       Crash("set_accept_stream not supported on inproc transport");
     }
   }
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
 
   void Disconnect(absl::Status error) {
     if (disconnecting_.exchange(true, std::memory_order_relaxed)) return;
@@ -162,7 +161,6 @@ class InprocClientTransport final : public ClientTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
 
  private:
   ~InprocClientTransport() override {
