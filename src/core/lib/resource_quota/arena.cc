@@ -34,7 +34,7 @@ namespace {
 
 void* ArenaStorage(size_t& initial_size) {
   static constexpr size_t base_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_core::Arena));
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
   initial_size = std::max(initial_size,
                           arena_detail::BaseArenaContextTraits::ContextSize());
