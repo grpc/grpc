@@ -100,6 +100,13 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
             experimental::StatsPluginChannelScope(target, authority));
+    // Merge in per-channel stats plugins.
+    auto* stats_plugin_group = args.GetPointer<std::shared_ptr<
+        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>>(
+        GRPC_ARG_STATS_PLUGINS);
+    if (stats_plugin_group != nullptr) {
+      (*r)->stats_plugin_group->Take(stats_plugin_group);
+    }
   }
   return MakeOrphanable<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),

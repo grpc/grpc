@@ -123,8 +123,8 @@ class OpenTelemetryPluginBuilder {
   /// If set, \a generic_method_attribute_filter is called per call with a
   /// generic method type to decide whether to record the method name or to
   /// replace it with "other". Non-generic or pre-registered methods remain
-  /// unaffected. If not set, by default, generic method names are replaced with
-  /// "other" when recording metrics.
+  /// unaffectePd. If not set, by default, generic method names are replaced
+  /// with "other" when recording metrics.
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>
           generic_method_attribute_filter);
@@ -154,7 +154,8 @@ class OpenTelemetryPluginBuilder {
   absl::Status BuildAndRegisterGlobal();
   /// Builds an open telemetry plugin, returns the plugin object when succeeded
   /// or an error status when failed.
-  absl::StatusOr<std::shared_ptr<OpenTelemetryPlugin>> Build();
+  GRPC_MUST_USE_RESULT absl::StatusOr<std::shared_ptr<OpenTelemetryPlugin>>
+  Build();
 
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;

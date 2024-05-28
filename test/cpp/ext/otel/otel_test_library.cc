@@ -151,7 +151,6 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   if (!config.service_config.empty()) {
     channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
-  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
   grpc_init();
   grpc::ServerBuilder builder;
   int port;
@@ -164,6 +163,13 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   ASSERT_NE(0, port);
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
+  for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
+    per_channel_stats_plugin->MaybeAddToChannelArguments(
+        grpc_core::experimental::StatsPluginChannelScope(
+            /*target=*/canonical_server_address_, /*default_authority=*/""),
+        &channel_args);
+  }
+  reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
 
   auto channel = grpc::CreateCustomChannel(
       server_address_, grpc::InsecureChannelCredentials(), channel_args);

@@ -455,6 +455,8 @@ class GlobalStatsPluginRegistry {
     // within the group to \a call_context.
     void AddServerCallTracers(grpc_call_context_element* call_context);
 
+    void Take(std::shared_ptr<StatsPluginGroup>* stats_plugin_group);
+
    private:
     friend class RegisteredMetricCallback;
 

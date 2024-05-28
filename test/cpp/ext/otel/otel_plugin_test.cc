@@ -1969,6 +1969,69 @@ TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
               ::testing::UnorderedElementsAre("grpc.test.metric_3"));
 }
 
+TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterPerChannelStatsPlugins) {
+  grpc::internal::OpenTelemetryPluginBuilderImpl builder;
+  auto meter_provider =
+      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader =
+      std::make_shared<grpc::testing::MockMetricReader>();
+  meter_provider->AddMetricReader(reader);
+  builder.SetMeterProvider(std::move(meter_provider));
+  builder.EnableMetrics(
+      {grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName});
+  // builder.SetChannelScopeFilter();
+  absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>> plugin =
+      builder.Build();
+  ASSERT_TRUE(plugin.ok());
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName})
+          .add_per_channel_stats_plugin(std::move(*plugin))));
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.duration";
+  auto verify =
+      [&](absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) {
+        ASSERT_EQ(data[kMetricName].size(), 1);
+        auto point_data =
+            absl::get_if<opentelemetry::sdk::metrics::HistogramPointData>(
+                &data[kMetricName][0].point_data);
+        ASSERT_NE(point_data, nullptr);
+        ASSERT_EQ(point_data->count_, 1);
+        const auto& attributes =
+            data[kMetricName][0].attributes.GetAttributes();
+        EXPECT_EQ(attributes.size(), 3);
+        const auto* method_value =
+            absl::get_if<std::string>(&attributes.at("grpc.method"));
+        ASSERT_NE(method_value, nullptr);
+        EXPECT_EQ(*method_value, kMethodName);
+        const auto* target_value =
+            absl::get_if<std::string>(&attributes.at("grpc.target"));
+        ASSERT_NE(target_value, nullptr);
+        EXPECT_EQ(*target_value, canonical_server_address_);
+        const auto* status_value =
+            absl::get_if<std::string>(&attributes.at("grpc.status"));
+        ASSERT_NE(status_value, nullptr);
+        EXPECT_EQ(*status_value, "OK");
+      };
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  verify(data);
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader.get());
+  verify(data);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
