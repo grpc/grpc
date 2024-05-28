@@ -55,8 +55,7 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
       : max_send_size_(max_send_size), max_recv_size_(max_recv_size) {}
 
   static const MessageSizeParsedConfig* GetFromCallContext(
-      const grpc_call_context_element* context,
-      size_t service_config_parser_index);
+      Arena* arena, size_t service_config_parser_index);
 
   static MessageSizeParsedConfig GetFromChannelArgs(const ChannelArgs& args);
 

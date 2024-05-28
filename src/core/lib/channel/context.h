@@ -36,9 +36,6 @@ typedef enum {
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
-  /// Holds a pointer to ServiceConfigCallData associated with this call.
-  GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
-
   /// Holds a pointer to BackendMetricProvider associated with this call on
   /// the server.
   GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
@@ -64,15 +61,10 @@ struct ContextType<grpc_call_context_element> {};
 
 // Also as a transition step allow exposing a GetContext<T> that can peek into
 // the legacy context array.
+// nb. still in use by SubchannelCallTrackerInterface
 namespace promise_detail {
 template <typename T>
 struct OldStyleContext;
-
-template <>
-struct OldStyleContext<ServiceConfigCallData> {
-  static constexpr grpc_context_index kIndex =
-      GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA;
-};
 
 template <typename T>
 class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {

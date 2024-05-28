@@ -1291,7 +1291,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
   // below us in the stack, and it will be cleaned up when the call ends.
   auto* service_config_call_data =
       GetContext<Arena>()->New<ClientChannelServiceConfigCallData>(
-          GetContext<Arena>(), GetContext<grpc_call_context_element>());
+          GetContext<Arena>());
   // Use the ConfigSelector to determine the config for the call.
   absl::Status call_config_status = config_selector.GetCallConfig(
       {&client_initial_metadata, GetContext<Arena>(),

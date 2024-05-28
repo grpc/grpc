@@ -259,6 +259,10 @@ class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
     delete p;
   }
 
+  // Context accessors
+  // Prefer to use the free-standing `GetContext<>` and `SetContext<>` functions
+  // for modern promise-based code -- however legacy filter stack based code
+  // often needs to access these directly.
   template <typename T>
   T* GetContext() {
     return static_cast<T*>(

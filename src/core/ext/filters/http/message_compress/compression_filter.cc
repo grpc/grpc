@@ -232,8 +232,7 @@ ChannelCompression::DecompressArgs ChannelCompression::HandleIncomingMetadata(
   auto max_recv_message_length = max_recv_size_;
   const MessageSizeParsedConfig* limits =
       MessageSizeParsedConfig::GetFromCallContext(
-          GetContext<grpc_call_context_element>(),
-          message_size_service_config_parser_index_);
+          GetContext<Arena>(), message_size_service_config_parser_index_);
   if (limits != nullptr && limits->max_recv_size().has_value() &&
       (!max_recv_message_length.has_value() ||
        *limits->max_recv_size() < *max_recv_message_length)) {
