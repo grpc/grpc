@@ -71,7 +71,6 @@ struct grpc_call_context_element {
 };
 
 namespace grpc_core {
-class Call;
 class CallTracerAnnotationInterface;
 class CallTracerInterface;
 class ServiceConfigCallData;
