@@ -22,11 +22,11 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
@@ -137,7 +137,7 @@ TEST(ErrorTest, PrintErrorString) {
       grpc_error_set_int(error, grpc_core::StatusIntProperty::kHttp2Error, 666);
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "message");
-  // gpr_log(GPR_DEBUG, "%s", grpc_core::StatusToString(error).c_str());
+  //  VLOG(2) << grpc_core::StatusToString(error);
 }
 
 TEST(ErrorTest, PrintErrorStringReference) {

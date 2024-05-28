@@ -37,8 +37,8 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
@@ -469,6 +469,28 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
                                            kClientAttemptStartedInstrumentName})
                     .set_use_meter_provider(false)));
   SendRPC();
+}
+
+// Test that the otel plugin sees the expected channel target and default
+// authority.
+TEST_F(OpenTelemetryPluginEnd2EndTest, VerifyChannelScopeTargetAndAuthority) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName})
+          .set_channel_scope_filter(
+              [&](const OpenTelemetryPluginBuilder::ChannelScope& scope) {
+                return scope.target() == canonical_server_address_ &&
+                       scope.default_authority() == server_address_;
+              })));
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
 }
 
 // Test that a channel scope filter returning true records metrics on the

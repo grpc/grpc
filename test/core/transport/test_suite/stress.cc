@@ -14,7 +14,7 @@
 
 #include "absl/random/random.h"
 
-#include "test/core/transport/test_suite/test.h"
+#include "test/core/transport/test_suite/transport_test.h"
 
 namespace grpc_core {
 

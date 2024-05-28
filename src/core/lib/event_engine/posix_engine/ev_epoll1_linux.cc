@@ -19,7 +19,6 @@
 #include <memory>
 
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -165,14 +164,14 @@ int EpollCreateAndCloexec() {
 #ifdef GRPC_LINUX_EPOLL_CREATE1
   int fd = epoll_create1(EPOLL_CLOEXEC);
   if (fd < 0) {
-    LOG(ERROR) << "epoll_create1 unavailable";
+    gpr_log(GPR_ERROR, "epoll_create1 unavailable");
   }
 #else
   int fd = epoll_create(MAX_EPOLL_EVENTS);
   if (fd < 0) {
-    LOG(ERROR) << "epoll_create unavailable";
+    gpr_log(GPR_ERROR, "epoll_create unavailable");
   } else if (fcntl(fd, F_SETFD, FD_CLOEXEC) != 0) {
-    LOG(ERROR) << "fcntl following epoll_create failed";
+    gpr_log(GPR_ERROR, "fcntl following epoll_create failed");
     return -1;
   }
 #endif
@@ -357,7 +356,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
   wakeup_fd_ = *CreateWakeupFd();
   CHECK(wakeup_fd_ != nullptr);
   CHECK_GE(g_epoll_set_.epfd, 0);
-  LOG(INFO) << "grpc epoll fd: " << g_epoll_set_.epfd;
+  gpr_log(GPR_INFO, "grpc epoll fd: %d", g_epoll_set_.epfd);
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = wakeup_fd_.get();

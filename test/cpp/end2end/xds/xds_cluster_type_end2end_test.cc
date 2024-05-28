@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 
@@ -367,9 +368,9 @@ TEST_P(AggregateClusterTest, FallBackWithConnectivityChurn) {
   // Meanwhile, the channel will also start a second attempt for backend
   // 0, which we have NOT held, so it will complete normally, and the
   // RPC will finish on backend 0.
-  gpr_log(GPR_INFO, "=== WAITING FOR RPC TO FINISH === ");
+  LOG(INFO) << "=== WAITING FOR RPC TO FINISH === ";
   Status status = rpc.GetStatus();
-  gpr_log(GPR_INFO, "=== RPC FINISHED === ");
+  LOG(INFO) << "=== RPC FINISHED === ";
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                            << " message=" << status.error_message();
   EXPECT_EQ(1UL, backends_[0]->backend_service()->request_count());

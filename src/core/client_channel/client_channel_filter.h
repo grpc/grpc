@@ -43,7 +43,6 @@
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -70,6 +69,7 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/time_precise.h"
 
 //

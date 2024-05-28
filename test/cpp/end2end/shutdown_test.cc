@@ -21,9 +21,9 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -132,7 +132,7 @@ std::vector<string> GetAllCredentialsTypeList() {
   for (const string& type : credentials_types) {
     credentials_type_list.append(" " + type);
   }
-  gpr_log(GPR_INFO, "%s", credentials_type_list.c_str());
+  LOG(INFO) << credentials_type_list;
   return credentials_types;
 }
 

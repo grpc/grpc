@@ -129,6 +129,7 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = &GetContext<
       grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
   if (ctx == nullptr) {

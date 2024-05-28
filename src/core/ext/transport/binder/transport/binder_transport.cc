@@ -693,11 +693,6 @@ void grpc_binder_transport::Orphan() {
                 absl::OkStatus());
 }
 
-grpc_endpoint* grpc_binder_transport::GetEndpoint() {
-  gpr_log(GPR_INFO, __func__);
-  return nullptr;
-}
-
 size_t grpc_binder_transport::SizeOfStream() const {
   return sizeof(grpc_binder_stream);
 }

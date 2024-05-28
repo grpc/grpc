@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 

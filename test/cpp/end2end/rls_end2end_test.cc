@@ -29,6 +29,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
@@ -417,7 +418,7 @@ class RlsEnd2endTest : public ::testing::Test {
           service_(std::forward<Args>(args)...) {}
 
     void Start() {
-      gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
+      LOG(INFO) << "starting " << type_ << " server on port " << port_;
       CHECK(!running_);
       running_ = true;
       service_.Start();
@@ -429,7 +430,7 @@ class RlsEnd2endTest : public ::testing::Test {
       thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, &mu, &cond));
       cond.Wait(&mu);
-      gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
+      LOG(INFO) << type_ << " server startup complete";
     }
 
     void Serve(grpc::internal::Mutex* mu, grpc::internal::CondVar* cond) {
@@ -448,11 +449,11 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Shutdown() {
       if (!running_) return;
-      gpr_log(GPR_INFO, "%s about to shutdown", type_.c_str());
+      LOG(INFO) << type_ << " about to shutdown";
       service_.Shutdown();
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
-      gpr_log(GPR_INFO, "%s shutdown completed", type_.c_str());
+      LOG(INFO) << type_ << " shutdown completed";
       running_ = false;
     }
 

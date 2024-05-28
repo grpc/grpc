@@ -14,7 +14,7 @@
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "test/core/transport/test_suite/fixture.h"
+#include "test/core/transport/test_suite/transport_test.h"
 
 namespace grpc_core {
 

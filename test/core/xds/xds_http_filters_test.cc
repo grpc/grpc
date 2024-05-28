@@ -48,7 +48,7 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/proto/grpc/testing/xds/v3/address.pb.h"

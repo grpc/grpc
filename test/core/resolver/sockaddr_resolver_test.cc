@@ -20,11 +20,10 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -47,12 +46,12 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,
                           const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          std::string(factory->scheme()).c_str());
+  VLOG(2) << "test: '" << string << "' should be valid for '"
+          << factory->scheme() << "'";
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    LOG(ERROR) << uri.status().ToString();
     ASSERT_TRUE(uri.ok());
   }
   grpc_core::ResolverArgs args;
@@ -70,12 +69,12 @@ static void test_succeeds(grpc_core::ResolverFactory* factory,
 
 static void test_fails(grpc_core::ResolverFactory* factory,
                        const char* string) {
-  gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          std::string(factory->scheme()).c_str());
+  VLOG(2) << "test: '" << string << "' should be invalid for '"
+          << factory->scheme() << "'";
   grpc_core::ExecCtx exec_ctx;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(string);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    LOG(ERROR) << uri.status().ToString();
     ASSERT_TRUE(uri.ok());
   }
   grpc_core::ResolverArgs args;

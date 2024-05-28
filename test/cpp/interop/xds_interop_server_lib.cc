@@ -20,11 +20,11 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
@@ -192,7 +192,7 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
     absl::string_view header_value, absl::string_view hostname) {
   for (auto part : absl::StrSplit(header_value, ' ')) {
     if (absl::ConsumePrefix(&part, kHostnameRpcBehaviorFilter)) {
-      gpr_log(GPR_INFO, "%s", std::string(part).c_str());
+      LOG(INFO) << part;
       if (part.empty()) {
         return Status(
             grpc::StatusCode::INVALID_ARGUMENT,
@@ -200,10 +200,8 @@ absl::optional<grpc::Status> GetStatusForRpcBehaviorMetadata(
                          header_value));
       }
       if (part != hostname) {
-        gpr_log(
-            GPR_DEBUG,
-            "RPC behavior for a different host: \"%s\", this one is: \"%s\"",
-            std::string(part).c_str(), std::string(hostname).c_str());
+        VLOG(2) << "RPC behavior for a different host: \"" << std::string(part)
+                << "\", this one is: \"" << hostname << "\"";
         return absl::nullopt;
       }
     } else if (absl::ConsumePrefix(&part, kErrorCodeRpcBehavior)) {
@@ -245,15 +243,14 @@ void RunServer(bool secure_mode, bool enable_csm_observability, int port,
         absl::StrCat("0.0.0.0:", port),
         grpc::XdsServerCredentials(grpc::InsecureServerCredentials()));
     xds_enabled_server = xds_builder.BuildAndStart();
-    gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
+    LOG(INFO) << "Server starting on 0.0.0.0:" << port;
     ServerBuilder builder;
     maintenance_services.AddToServerBuilder(&builder);
     server = builder
                  .AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                                    grpc::InsecureServerCredentials())
                  .BuildAndStart();
-    gpr_log(GPR_INFO, "Maintenance server listening on 0.0.0.0:%d",
-            maintenance_port);
+    LOG(INFO) << "Maintenance server listening on 0.0.0.0:" << maintenance_port;
   } else {
     // CSM Observability requires an xDS enabled server.
     auto builder = enable_csm_observability
@@ -265,7 +262,7 @@ void RunServer(bool secure_mode, bool enable_csm_observability, int port,
                                     grpc::InsecureServerCredentials())
                  .RegisterService(&service)
                  .BuildAndStart();
-    gpr_log(GPR_INFO, "Server listening on 0.0.0.0:%d", port);
+    LOG(INFO) << "Server listening on 0.0.0.0:" << port;
   }
   server_callback(server.get());
   server->Wait();

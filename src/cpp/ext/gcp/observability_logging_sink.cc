@@ -46,7 +46,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/uuid_v4.h"
-#include "src/core/lib/json/json.h"
+#include "src/core/util/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
 // IWYU pragma: no_include "google/protobuf/struct.pb.h"
