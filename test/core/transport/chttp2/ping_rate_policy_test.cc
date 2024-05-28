@@ -20,7 +20,6 @@
 #include "gtest/gtest.h"
 
 #include "src/core/lib/experiments/experiments.h"
-#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -122,9 +121,5 @@ TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
-  int result = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return result;
+  return RUN_ALL_TESTS();
 }
