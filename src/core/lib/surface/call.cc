@@ -124,6 +124,15 @@ using GrpcClosure = Closure;
 ///////////////////////////////////////////////////////////////////////////////
 // Call
 
+Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
+           grpc_event_engine::experimental::EventEngine* event_engine)
+    : arena_(std::move(arena)),
+      send_deadline_(send_deadline),
+      is_client_(is_client),
+      event_engine_(event_engine) {
+  arena_->SetContext<Call>(this);
+}
+
 Call::ParentCall* Call::GetOrCreateParentCall() {
   ParentCall* p = parent_call_.load(std::memory_order_acquire);
   if (p == nullptr) {
@@ -580,9 +589,7 @@ class FilterStackCall final : public ChannelBasedCall {
             std::move(arena), args.server_transport_data == nullptr,
             args.send_deadline, args.channel->RefAsSubclass<Channel>()),
         cq_(args.cq),
-        stream_op_payload_{} {
-    GetArena()->SetContext<Call>(this);
-  }
+        stream_op_payload_{} {}
 
   static void ReleaseCall(void* call, grpc_error_handle);
   static void DestroyCall(void* call, grpc_error_handle);
@@ -743,7 +750,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
     channel_stack->stats_plugin_group->AddClientCallTracers(
-        Slice(CSliceRef(path)), args->registered_method, call->GetArena());
+        Slice(CSliceRef(path)), args->registered_method, arena.get());
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -2388,15 +2395,6 @@ class ClientCall final
     CancelWithError(absl::CancelledError());
   }
 
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void*)) override {
-    legacy_context_[elem] = grpc_call_context_element{value, destroy};
-  }
-
-  void* ContextGet(grpc_context_index elem) const override {
-    return legacy_context_[elem].value;
-  }
-
   void SetCompletionQueue(grpc_completion_queue*) override {
     Crash("unimplemented");
   }
@@ -2479,7 +2477,6 @@ class ClientCall final
   ServerMetadataHandle received_initial_metadata_;
   ServerMetadataHandle received_trailing_metadata_;
   bool is_trailers_only_;
-  grpc_call_context_element legacy_context_[GRPC_CONTEXT_COUNT] = {};
 };
 
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
@@ -2578,7 +2575,7 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
   PrepareOutgoingInitialMetadata(send_initial_metadata_op,
                                  *send_initial_metadata_);
   auto call = MakeCallPair(std::move(send_initial_metadata_), event_engine(),
-                           arena()->Ref(), legacy_context_);
+                           arena()->Ref());
   Destruct(&send_initial_metadata_);
   Construct(&started_call_initiator_, std::move(call.initiator));
   call_destination_->StartCall(std::move(call.handler));
@@ -2755,8 +2752,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
         server_(server) {
-    call_handler_.legacy_context()[GRPC_CONTEXT_CALL].value =
-        static_cast<Call*>(this);
     global_stats().IncrementServerCallsCreated();
   }
 
@@ -2787,16 +2782,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   void Orphaned() override {
     // TODO(ctiller): only when we're not already finished
     CancelWithError(absl::CancelledError());
-  }
-
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void*)) override {
-    call_handler_.legacy_context()[elem] =
-        grpc_call_context_element{value, destroy};
-  }
-
-  void* ContextGet(grpc_context_index elem) const override {
-    return call_handler_.legacy_context()[elem].value;
   }
 
   void SetCompletionQueue(grpc_completion_queue*) override {

@@ -70,7 +70,7 @@ class ConnectedSubchannelTest : public YodelTest {
       ClientMetadataHandle client_initial_metadata) {
     return MakeCallPair(std::move(client_initial_metadata),
                         event_engine().get(),
-                        SimpleArenaAllocator()->MakeArena(), nullptr);
+                        SimpleArenaAllocator()->MakeArena());
   }
 
   CallHandler TickUntilCallStarted() {

@@ -256,9 +256,8 @@ CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 
 CLIENT_CHANNEL_TEST(StartCall) {
   auto& channel = InitChannel(ChannelArgs());
-  auto call =
-      MakeCallPair(MakeClientInitialMetadata(), channel.event_engine(),
-                   channel.call_arena_allocator()->MakeArena(), nullptr);
+  auto call = MakeCallPair(MakeClientInitialMetadata(), channel.event_engine(),
+                           channel.call_arena_allocator()->MakeArena());
   channel.StartCall(std::move(call.handler));
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));

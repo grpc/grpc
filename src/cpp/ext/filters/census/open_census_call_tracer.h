@@ -123,8 +123,7 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     absl::StatusCode status_code_;
   };
 
-  explicit OpenCensusCallTracer(grpc_call_context_element* call_context,
-                                grpc_core::Slice path, grpc_core::Arena* arena,
+  explicit OpenCensusCallTracer(grpc_core::Slice path, grpc_core::Arena* arena,
                                 bool tracing_enabled);
   ~OpenCensusCallTracer() override;
 
@@ -149,7 +148,6 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
  private:
   experimental::CensusContext CreateCensusContextForCallAttempt();
 
-  const grpc_call_context_element* call_context_;
   // Client method.
   grpc_core::Slice path_;
   absl::string_view method_;

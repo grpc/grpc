@@ -164,11 +164,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   };
 
   Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
-       grpc_event_engine::experimental::EventEngine* event_engine)
-      : arena_(std::move(arena)),
-        send_deadline_(send_deadline),
-        is_client_(is_client),
-        event_engine_(event_engine) {}
+       grpc_event_engine::experimental::EventEngine* event_engine);
   ~Call() override = default;
 
   ParentCall* GetOrCreateParentCall();
@@ -256,6 +252,11 @@ grpc_call* MakeClientCall(
     grpc_event_engine::experimental::EventEngine* event_engine,
     RefCountedPtr<Arena> arena,
     RefCountedPtr<UnstartedCallDestination> destination);
+
+template <>
+struct ArenaContextType<Call> {
+  static void Destroy(Call* call) {}
+};
 
 }  // namespace grpc_core
 

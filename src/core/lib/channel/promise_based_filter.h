@@ -942,7 +942,7 @@ class BaseCallData : public Activity, private Wakeable {
 
   virtual void StartBatch(grpc_transport_stream_op_batch* batch) = 0;
 
-  Call* call() { return static_cast<Call*>(context_[GRPC_CONTEXT_CALL].value); }
+  Call* call() { return arena_->GetContext<Call>(); }
 
  protected:
   class ScopedContext : public promise_detail::Context<Arena>,

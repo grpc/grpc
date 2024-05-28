@@ -123,7 +123,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_call_element_args args = {
       call_stack,                         // call_stack
       nullptr,                            // server_transport_data
-      nullptr,                            // context
       path,                               // path
       gpr_get_cycle_counter(),            // start_time
       grpc_core::Timestamp::InfFuture(),  // deadline
