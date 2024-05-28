@@ -96,7 +96,7 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
 
 void Chttp2PingRatePolicy::SentPing() {
   last_ping_sent_time_ = Timestamp::Now();
-  if (pings_before_data_sending_required_) {
+  if (pings_before_data_sending_required_ > 0) {
     --pings_before_data_sending_required_;
   }
 }
