@@ -1111,7 +1111,6 @@ let package = Package(
         "src/core/lib/channel/channel_stack_trace.h",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/connected_channel.h",
-        "src/core/lib/channel/context.h",
         "src/core/lib/channel/promise_based_filter.cc",
         "src/core/lib/channel/promise_based_filter.h",
         "src/core/lib/channel/status_util.cc",
