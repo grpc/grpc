@@ -79,6 +79,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
@@ -121,6 +122,73 @@ using internal::ClientChannelMethodParsedConfig;
 extern TraceFlag grpc_client_channel_trace;
 extern TraceFlag grpc_client_channel_call_trace;
 extern TraceFlag grpc_client_channel_lb_call_trace;
+
+//
+// ClientChannel::SubchannelWrapper
+//
+
+class ClientChannel::SubchannelWrapper
+    : public SubchannelInterfaceWithCallDestination {
+ public:
+  SubchannelWrapper(RefCountedPtr<ClientChannel> client_channel,
+                    RefCountedPtr<Subchannel> subchannel);
+  ~SubchannelWrapper() override;
+
+  void Orphaned() override;
+  void WatchConnectivityState(
+      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+  void CancelConnectivityStateWatch(
+      ConnectivityStateWatcherInterface* watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+
+  RefCountedPtr<UnstartedCallDestination> call_destination() override {
+    return subchannel_->connected_subchannel()->unstarted_call_destination();
+  }
+
+  void RequestConnection() override { subchannel_->RequestConnection(); }
+
+  void ResetBackoff() override { subchannel_->ResetBackoff(); }
+
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+  void CancelDataWatcher(DataWatcherInterface* watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+  void ThrottleKeepaliveTime(int new_keepalive_time);
+
+ private:
+  class WatcherWrapper;
+
+  // A heterogenous lookup comparator for data watchers that allows
+  // unique_ptr keys to be looked up as raw pointers.
+  struct DataWatcherLessThan {
+    using is_transparent = void;
+    bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                    const std::unique_ptr<DataWatcherInterface>& p2) const {
+      return p1 < p2;
+    }
+    bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                    const DataWatcherInterface* p2) const {
+      return p1.get() < p2;
+    }
+    bool operator()(const DataWatcherInterface* p1,
+                    const std::unique_ptr<DataWatcherInterface>& p2) const {
+      return p1 < p2.get();
+    }
+  };
+
+  RefCountedPtr<ClientChannel> client_channel_;
+  RefCountedPtr<Subchannel> subchannel_;
+  // Maps from the address of the watcher passed to us by the LB policy
+  // to the address of the WrapperWatcher that we passed to the underlying
+  // subchannel.  This is needed so that when the LB policy calls
+  // CancelConnectivityStateWatch() with its watcher, we know the
+  // corresponding WrapperWatcher to cancel on the underlying subchannel.
+  std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
+      ABSL_GUARDED_BY(*client_channel_->work_serializer_);
+  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
+      data_watchers_ ABSL_GUARDED_BY(*client_channel_->work_serializer_);
+};
 
 //
 // ClientChannel::ResolverResultHandler
