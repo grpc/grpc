@@ -484,12 +484,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         if (channel_init_err.ok()) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
-          // Note: The reinterpret_cast<>s here are safe, because
-          // grpc_chttp2_transport is a C-style extension of
-          // Transport, so this is morally equivalent of a
-          // static_cast<> to a derived class.
-          // TODO(roth): Change to static_cast<> when we C++-ify the
-          // transport API.
           self->connection_->transport_ =
               DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
           self->Ref().release();  // Held by OnReceiveSettings().
