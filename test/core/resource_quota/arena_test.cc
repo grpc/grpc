@@ -272,7 +272,7 @@ TEST(ArenaTest, ConcurrentMakePooled) {
 }
 
 struct Foo {
-  Foo(int x) : p(std::make_unique<int>(x)) {}
+  explicit Foo(int x) : p(std::make_unique<int>(x)) {}
   std::unique_ptr<int> p;
 };
 
