@@ -19918,7 +19918,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/debug/trace_flags_test.cc
+  - test/core/telemetry/trace_flags_test.cc
   deps:
   - gtest
   - grpc_test_util

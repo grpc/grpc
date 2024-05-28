@@ -31471,7 +31471,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(trace_flags_test
-  test/core/debug/trace_flags_test.cc
+  test/core/telemetry/trace_flags_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
