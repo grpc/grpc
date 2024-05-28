@@ -5029,6 +5029,7 @@ grpc_cc_library(
         "ext/filters/backend_metrics/backend_metric_provider.h",
     ],
     language = "c++",
+    deps = ["arena"],
 )
 
 grpc_cc_library(

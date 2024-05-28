@@ -36,10 +36,6 @@ typedef enum {
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
-  /// Holds a pointer to BackendMetricProvider associated with this call on
-  /// the server.
-  GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
-
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
