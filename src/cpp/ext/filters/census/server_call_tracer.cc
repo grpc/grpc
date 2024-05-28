@@ -206,8 +206,7 @@ void OpenCensusServerCallTracer::RecordReceivedInitialMetadata(
       tracing_enabled ? sml.tracing_slice.as_string_view() : "",
       absl::StrCat("Recv.", method_), &context_);
   if (tracing_enabled) {
-    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-    call_context[GRPC_CONTEXT_TRACING].value = &context_;
+    grpc_core::SetContext<census_context>(&context_);
   }
   if (OpenCensusStatsEnabled()) {
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =

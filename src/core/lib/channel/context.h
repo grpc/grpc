@@ -33,9 +33,6 @@ typedef enum {
   /// \a grpc_server_security_context.
   GRPC_CONTEXT_SECURITY,
 
-  /// Value is a \a census_context.
-  GRPC_CONTEXT_TRACING,
-
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 

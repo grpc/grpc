@@ -161,8 +161,8 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
           "Census tracing propagation requested without Census context "
           "propagation");
     }
-    ContextSet(GRPC_CONTEXT_TRACING, parent->ContextGet(GRPC_CONTEXT_TRACING),
-               nullptr);
+    arena()->SetContext<census_context>(
+        parent->arena()->GetContext<census_context>());
   } else if (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
     return absl::UnknownError(
         "Census context propagation requested without Census tracing "
