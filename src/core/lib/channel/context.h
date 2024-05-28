@@ -40,9 +40,6 @@ typedef enum {
   /// the server.
   GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
 
-  /// A LoadBalancingPolicy::SubchannelCallTrackerInterface
-  GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE,
-
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
@@ -59,33 +56,6 @@ class ServiceConfigCallData;
 template <>
 struct ContextType<grpc_call_context_element> {};
 
-// Also as a transition step allow exposing a GetContext<T> that can peek into
-// the legacy context array.
-// nb. still in use by SubchannelCallTrackerInterface
-namespace promise_detail {
-template <typename T>
-struct OldStyleContext;
-
-template <typename T>
-class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {
- public:
-  static T* get() {
-    return static_cast<T*>(
-        GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex]
-            .value);
-  }
-  static void set(T* value) {
-    auto& elem =
-        GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex];
-    if (elem.destroy != nullptr) {
-      elem.destroy(elem.value);
-      elem.destroy = nullptr;
-    }
-    elem.value = value;
-  }
-};
-
-}  // namespace promise_detail
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_CHANNEL_CONTEXT_H
