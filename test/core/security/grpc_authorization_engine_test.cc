@@ -23,8 +23,8 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
+#include "src/core/util/json/json.h"
 #include "test/core/test_util/audit_logging_utils.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
 

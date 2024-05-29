@@ -19,6 +19,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_filegroup",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
@@ -734,31 +735,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr",
     srcs = [
-        "//src/core:lib/gpr/alloc.cc",
-        "//src/core:lib/gpr/android/log.cc",
-        "//src/core:lib/gpr/iphone/cpu.cc",
-        "//src/core:lib/gpr/linux/cpu.cc",
-        "//src/core:lib/gpr/linux/log.cc",
-        "//src/core:lib/gpr/log.cc",
-        "//src/core:lib/gpr/msys/tmpfile.cc",
-        "//src/core:lib/gpr/posix/cpu.cc",
-        "//src/core:lib/gpr/posix/log.cc",
-        "//src/core:lib/gpr/posix/string.cc",
-        "//src/core:lib/gpr/posix/sync.cc",
-        "//src/core:lib/gpr/posix/time.cc",
-        "//src/core:lib/gpr/posix/tmpfile.cc",
-        "//src/core:lib/gpr/string.cc",
-        "//src/core:lib/gpr/sync.cc",
-        "//src/core:lib/gpr/sync_abseil.cc",
-        "//src/core:lib/gpr/time.cc",
-        "//src/core:lib/gpr/time_precise.cc",
-        "//src/core:lib/gpr/windows/cpu.cc",
-        "//src/core:lib/gpr/windows/log.cc",
-        "//src/core:lib/gpr/windows/string.cc",
-        "//src/core:lib/gpr/windows/string_util.cc",
-        "//src/core:lib/gpr/windows/sync.cc",
-        "//src/core:lib/gpr/windows/time.cc",
-        "//src/core:lib/gpr/windows/tmpfile.cc",
         "//src/core:lib/gprpp/crash.cc",
         "//src/core:lib/gprpp/fork.cc",
         "//src/core:lib/gprpp/host_port.cc",
@@ -768,12 +744,33 @@ grpc_cc_library(
         "//src/core:lib/gprpp/time_util.cc",
         "//src/core:lib/gprpp/windows/stat.cc",
         "//src/core:lib/gprpp/windows/thd.cc",
+        "//src/core:util/alloc.cc",
+        "//src/core:util/android/log.cc",
+        "//src/core:util/iphone/cpu.cc",
+        "//src/core:util/linux/cpu.cc",
+        "//src/core:util/linux/log.cc",
+        "//src/core:util/log.cc",
+        "//src/core:util/msys/tmpfile.cc",
+        "//src/core:util/posix/cpu.cc",
+        "//src/core:util/posix/log.cc",
+        "//src/core:util/posix/string.cc",
+        "//src/core:util/posix/sync.cc",
+        "//src/core:util/posix/time.cc",
+        "//src/core:util/posix/tmpfile.cc",
+        "//src/core:util/string.cc",
+        "//src/core:util/sync.cc",
+        "//src/core:util/sync_abseil.cc",
+        "//src/core:util/time.cc",
+        "//src/core:util/time_precise.cc",
+        "//src/core:util/windows/cpu.cc",
+        "//src/core:util/windows/log.cc",
+        "//src/core:util/windows/string.cc",
+        "//src/core:util/windows/string_util.cc",
+        "//src/core:util/windows/sync.cc",
+        "//src/core:util/windows/time.cc",
+        "//src/core:util/windows/tmpfile.cc",
     ],
     hdrs = [
-        "//src/core:lib/gpr/alloc.h",
-        "//src/core:lib/gpr/string.h",
-        "//src/core:lib/gpr/time_precise.h",
-        "//src/core:lib/gpr/tmpfile.h",
         "//src/core:lib/gprpp/crash.h",
         "//src/core:lib/gprpp/fork.h",
         "//src/core:lib/gprpp/host_port.h",
@@ -783,6 +780,10 @@ grpc_cc_library(
         "//src/core:lib/gprpp/sync.h",
         "//src/core:lib/gprpp/thd.h",
         "//src/core:lib/gprpp/time_util.h",
+        "//src/core:util/alloc.h",
+        "//src/core:util/string.h",
+        "//src/core:util/time_precise.h",
+        "//src/core:util/tmpfile.h",
     ],
     external_deps = [
         "absl/base",
@@ -1741,10 +1742,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "call_tracer",
     srcs = [
-        "//src/core:lib/channel/call_tracer.cc",
+        "//src/core:telemetry/call_tracer.cc",
     ],
     hdrs = [
-        "//src/core:lib/channel/call_tracer.h",
+        "//src/core:telemetry/call_tracer.h",
     ],
     external_deps = [
         "absl/log:check",
@@ -2083,6 +2084,7 @@ grpc_cc_library(
         "//src/core:call_final_info",
         "//src/core:call_finalization",
         "//src/core:call_spine",
+        "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
@@ -3036,6 +3038,11 @@ grpc_cc_library(
     ],
 )
 
+grpc_filegroup(
+    name = "trace_flag_files",
+    srcs = ["//src/core:lib/debug/trace_flags.yaml"],
+)
+
 grpc_cc_library(
     name = "load_config",
     srcs = [
@@ -3456,10 +3463,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "stats",
     srcs = [
-        "//src/core:lib/debug/stats.cc",
+        "//src/core:telemetry/stats.cc",
     ],
     hdrs = [
-        "//src/core:lib/debug/stats.h",
+        "//src/core:telemetry/stats.h",
     ],
     external_deps = [
         "absl/strings",
@@ -4744,7 +4751,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "tcp_tracer",
     hdrs = [
-        "//src/core:lib/channel/tcp_tracer.h",
+        "//src/core:telemetry/tcp_tracer.h",
     ],
     external_deps = [
         "absl/time",
@@ -4905,11 +4912,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "subprocess",
     srcs = [
-        "//src/core:lib/gpr/subprocess_posix.cc",
-        "//src/core:lib/gpr/subprocess_windows.cc",
+        "//src/core:util/subprocess_posix.cc",
+        "//src/core:util/subprocess_windows.cc",
     ],
     hdrs = [
-        "//src/core:lib/gpr/subprocess.h",
+        "//src/core:util/subprocess.h",
     ],
     external_deps = [
         "absl/log:check",

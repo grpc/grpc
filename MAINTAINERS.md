@@ -40,6 +40,7 @@ for general contribution guidelines.
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC
+- [yijiem](https://github.com/yijiem), Google LLC
 - [ZhouyihaiDing](https://github.com/ZhouyihaiDing), Google LLC
 <!-- go/keep-sorted end -->
 

@@ -297,7 +297,7 @@ static void recv_trailing_metadata_locked(void* arg,
         // Append status to metadata
         // TODO(b/192208695): See if we can avoid to manually put status
         // code into the header
-        gpr_log(GPR_INFO, "status = %d", args->status);
+        LOG(INFO) << "status = " << args->status;
         stream->recv_trailing_metadata->Set(
             grpc_core::GrpcStatusMetadata(),
             static_cast<grpc_status_code>(args->status));
@@ -350,7 +350,7 @@ class MetadataEncoder {
   }
 
   void Encode(grpc_core::GrpcStatusMetadata, grpc_status_code status) {
-    gpr_log(GPR_INFO, "send trailing metadata status = %d", status);
+    LOG(INFO) << "send trailing metadata status = " << status;
     tx_->SetStatus(status);
   }
 
@@ -395,7 +395,7 @@ static void perform_stream_op_locked(void* stream_op,
     CHECK(!op->send_initial_metadata && !op->send_message &&
           !op->send_trailing_metadata && !op->recv_initial_metadata &&
           !op->recv_message && !op->recv_trailing_metadata);
-    gpr_log(GPR_INFO, "cancel_stream is_client = %d", stream->is_client);
+    LOG(INFO) << "cancel_stream is_client = " << stream->is_client;
     if (!stream->is_client) {
       // Send trailing metadata to inform the other end about the cancellation,
       // regardless if we'd already done that or not.
@@ -691,11 +691,6 @@ void grpc_binder_transport::Orphan() {
   gpr_log(GPR_INFO, __func__);
   combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, this, nullptr),
                 absl::OkStatus());
-}
-
-grpc_endpoint* grpc_binder_transport::GetEndpoint() {
-  gpr_log(GPR_INFO, __func__);
-  return nullptr;
 }
 
 size_t grpc_binder_transport::SizeOfStream() const {

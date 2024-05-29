@@ -24,12 +24,13 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 
 static int all_ok = 1;
@@ -39,8 +40,8 @@ static void expect_slice_eq(grpc_slice expected, grpc_slice slice,
   if (!grpc_slice_eq(slice, expected)) {
     char* hs = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* he = grpc_dump_slice(expected, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_ERROR, "FAILED:%d: %s\ngot:  %s\nwant: %s", line, debug, hs,
-            he);
+    LOG(ERROR) << "FAILED:" << line << ": " << debug << "\ngot:  " << hs
+               << "\nwant: " << he;
     gpr_free(hs);
     gpr_free(he);
     all_ok = 0;
@@ -79,8 +80,8 @@ static void expect_combined_equiv(const char* s, size_t len, int line) {
     char* t = grpc_dump_slice(input, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* e = grpc_dump_slice(expect, GPR_DUMP_HEX | GPR_DUMP_ASCII);
     char* g = grpc_dump_slice(got, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_ERROR, "FAILED:%d:\ntest: %s\ngot:  %s\nwant: %s", line, t, g,
-            e);
+    LOG(ERROR) << "FAILED:" << line << ":\ntest: " << t << "\ngot:  " << g
+               << "\nwant: " << e;
     gpr_free(t);
     gpr_free(e);
     gpr_free(g);
@@ -97,8 +98,8 @@ static void expect_combined_equiv(const char* s, size_t len, int line) {
 
 static void expect_binary_header(const char* hdr, int binary) {
   if (grpc_is_binary_header(grpc_slice_from_static_string(hdr)) != binary) {
-    gpr_log(GPR_ERROR, "FAILED: expected header '%s' to be %s", hdr,
-            binary ? "binary" : "not binary");
+    LOG(ERROR) << "FAILED: expected header '" << hdr << "' to be "
+               << (binary ? "binary" : "not binary");
     all_ok = 0;
   }
 }

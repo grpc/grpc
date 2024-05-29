@@ -20,14 +20,13 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
-#define LOG_TEST() gpr_log(GPR_INFO, "test at %s:%d", __FILE__, __LINE__)
+#define LOG_TEST() LOG(INFO) << "test at " << __FILE__ << ":" << __LINE__
 
 TEST(CmdlineTest, SimpleInt) {
   int x = 1;

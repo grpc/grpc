@@ -25,10 +25,10 @@
 #include <gmock/gmock.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -37,7 +37,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -48,6 +47,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/string.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
@@ -120,8 +120,7 @@ class MockSourceAddrFactory : public address_sorting_source_addr_factory {
             .value();
     auto it = dest_addr_to_src_addr_.find(ip_addr_str);
     if (it == dest_addr_to_src_addr_.end()) {
-      gpr_log(GPR_DEBUG, "can't find |%s| in dest to src map",
-              ip_addr_str.c_str());
+      VLOG(2) << "can't find |" << ip_addr_str << "| in dest to src map";
       return false;
     }
     grpc_resolved_address source_addr_as_resolved_addr =

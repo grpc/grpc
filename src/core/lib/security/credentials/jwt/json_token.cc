@@ -30,6 +30,7 @@
 #include <openssl/rsa.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -44,9 +45,9 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
 using grpc_core::Json;
 
@@ -86,7 +87,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   memset(&result, 0, sizeof(grpc_auth_json_key));
   result.type = GRPC_AUTH_JSON_TYPE_INVALID;
   if (json.type() == Json::Type::kNull) {
-    gpr_log(GPR_ERROR, "Invalid json.");
+    LOG(ERROR) << "Invalid json.";
     goto end;
   }
 
@@ -114,7 +115,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   bio = BIO_new(BIO_s_mem());
   success = BIO_puts(bio, prop_value);
   if ((success < 0) || (static_cast<size_t>(success) != strlen(prop_value))) {
-    gpr_log(GPR_ERROR, "Could not write into openssl BIO.");
+    LOG(ERROR) << "Could not write into openssl BIO.";
     goto end;
   }
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
@@ -124,7 +125,7 @@ grpc_auth_json_key grpc_auth_json_key_create_from_json(const Json& json) {
   result.private_key = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
 #endif
   if (result.private_key == nullptr) {
-    gpr_log(GPR_ERROR, "Could not deserialize private key.");
+    LOG(ERROR) << "Could not deserialize private key.";
     goto end;
   }
   success = 1;
@@ -191,7 +192,7 @@ static char* encoded_jwt_claim(const grpc_auth_json_key* json_key,
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   gpr_timespec expiration = gpr_time_add(now, token_lifetime);
   if (gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()) > 0) {
-    gpr_log(GPR_INFO, "Cropping token lifetime to maximum allowed value.");
+    LOG(INFO) << "Cropping token lifetime to maximum allowed value.";
     expiration = gpr_time_add(now, grpc_max_auth_token_lifetime());
   }
 
@@ -256,7 +257,7 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
   if (md == nullptr) return nullptr;
   md_ctx = EVP_MD_CTX_create();
   if (md_ctx == nullptr) {
-    gpr_log(GPR_ERROR, "Could not create MD_CTX");
+    LOG(ERROR) << "Could not create MD_CTX";
     goto end;
   }
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
@@ -266,20 +267,20 @@ char* compute_and_encode_signature(const grpc_auth_json_key* json_key,
   if (EVP_DigestSignInit(md_ctx, nullptr, md, nullptr, json_key->private_key) !=
       1) {
 #endif
-    gpr_log(GPR_ERROR, "DigestInit failed.");
+    LOG(ERROR) << "DigestInit failed.";
     goto end;
   }
   if (EVP_DigestSignUpdate(md_ctx, to_sign, strlen(to_sign)) != 1) {
-    gpr_log(GPR_ERROR, "DigestUpdate failed.");
+    LOG(ERROR) << "DigestUpdate failed.";
     goto end;
   }
   if (EVP_DigestSignFinal(md_ctx, nullptr, &sig_len) != 1) {
-    gpr_log(GPR_ERROR, "DigestFinal (get signature length) failed.");
+    LOG(ERROR) << "DigestFinal (get signature length) failed.";
     goto end;
   }
   sig = static_cast<unsigned char*>(gpr_malloc(sig_len));
   if (EVP_DigestSignFinal(md_ctx, sig, &sig_len) != 1) {
-    gpr_log(GPR_ERROR, "DigestFinal (signature compute) failed.");
+    LOG(ERROR) << "DigestFinal (signature compute) failed.";
     goto end;
   }
   result =

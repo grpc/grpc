@@ -20,8 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/env.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 

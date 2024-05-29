@@ -27,19 +27,20 @@
 #include <limits>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 static ULONG g_iocp_kick_token;
 static OVERLAPPED g_iocp_custom_overlap;
@@ -157,7 +158,7 @@ void grpc_iocp_add_socket(grpc_winsocket* socket) {
                                (uintptr_t)socket, 0);
   if (!ret) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "Unable to add socket to iocp: %s", utf8_message);
+    LOG(ERROR) << "Unable to add socket to iocp: " << utf8_message;
     gpr_free(utf8_message);
     __debugbreak();
     abort();

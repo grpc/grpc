@@ -72,6 +72,7 @@ class ServerConfigSelectorFilter final
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
@@ -158,6 +159,7 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
 const NoInterceptor ServerConfigSelectorFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnFinalize;
 

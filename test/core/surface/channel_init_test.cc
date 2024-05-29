@@ -229,6 +229,7 @@ class TestFilter1 {
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
@@ -245,6 +246,7 @@ const NoInterceptor TestFilter1::Call::OnClientInitialMetadata;
 const NoInterceptor TestFilter1::Call::OnServerInitialMetadata;
 const NoInterceptor TestFilter1::Call::OnServerTrailingMetadata;
 const NoInterceptor TestFilter1::Call::OnClientToServerMessage;
+const NoInterceptor TestFilter1::Call::OnClientToServerHalfClose;
 const NoInterceptor TestFilter1::Call::OnServerToClientMessage;
 const NoInterceptor TestFilter1::Call::OnFinalize;
 

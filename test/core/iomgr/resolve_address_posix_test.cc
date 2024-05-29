@@ -35,8 +35,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -45,6 +43,8 @@
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/test_config.h"
 

@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -173,7 +174,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
     const tsi_ssl_root_certs_store* root_store =
         DefaultSslRootStore::GetRootStore();
     if (root_store == nullptr) {
-      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      LOG(ERROR) << "Could not get default pem root certs.";
       return nullptr;
     }
     absl::optional<std::string> target_string =

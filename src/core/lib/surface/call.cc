@@ -58,17 +58,11 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/alloc.h"
-#include "src/core/lib/gpr/time_precise.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/cpp_impl_of.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -107,6 +101,12 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+#include "src/core/util/alloc.h"
+#include "src/core/util/time_precise.h"
+#include "src/core/util/useful.h"
 
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
@@ -325,7 +325,7 @@ void Call::HandleCompressionAlgorithmDisabled(
   grpc_compression_algorithm_name(compression_algorithm, &algo_name);
   std::string error_msg =
       absl::StrFormat("Compression algorithm '%s' is disabled.", algo_name);
-  gpr_log(GPR_ERROR, "%s", error_msg.c_str());
+  LOG(ERROR) << error_msg;
   CancelWithError(grpc_error_set_int(absl::UnimplementedError(error_msg),
                                      StatusIntProperty::kRpcStatus,
                                      GRPC_STATUS_UNIMPLEMENTED));

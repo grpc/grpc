@@ -565,9 +565,6 @@ class Transport : public InternallyRefCounted<Transport> {
     op->disconnect_with_error = error;
     PerformOp(op);
   }
-
-  // implementation of grpc_transport_get_endpoint
-  virtual grpc_endpoint* GetEndpoint() = 0;
 };
 
 class FilterStackTransport : public Transport {

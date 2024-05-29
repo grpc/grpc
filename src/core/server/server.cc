@@ -33,6 +33,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -51,9 +52,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/mpscq.h"
@@ -83,6 +82,8 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/interception_chain.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -980,7 +981,7 @@ grpc_error_handle Server::SetupTransport(
     }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
-    gpr_log(GPR_INFO, "Adding connection");
+    LOG(INFO) << "Adding connection";
     connections_.emplace(std::move(t));
     ++connections_open_;
   } else {
@@ -1494,7 +1495,7 @@ void Server::ChannelData::Destroy() {
   GRPC_CLOSURE_INIT(&finish_destroy_channel_closure_, FinishDestroy, this,
                     grpc_schedule_on_exec_ctx);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_server_channel_trace)) {
-    gpr_log(GPR_INFO, "Disconnected client");
+    LOG(INFO) << "Disconnected client";
   }
   grpc_transport_op* op =
       grpc_make_transport_op(&finish_destroy_channel_closure_);

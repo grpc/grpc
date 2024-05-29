@@ -26,7 +26,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
@@ -80,6 +80,7 @@ class ServerCallTracerFilter
     }
 
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
 
    private:
@@ -92,6 +93,7 @@ class ServerCallTracerFilter
 };
 
 const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =

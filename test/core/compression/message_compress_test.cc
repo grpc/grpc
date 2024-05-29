@@ -24,13 +24,14 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/compression.h>
 #include <grpc/slice_buffer.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
 
@@ -56,12 +57,11 @@ static void assert_passthrough(grpc_slice value,
   const char* algorithm_name;
 
   ASSERT_NE(grpc_compression_algorithm_name(algorithm, &algorithm_name), 0);
-  gpr_log(GPR_INFO,
-          "assert_passthrough: value_length=%" PRIuPTR
-          " algorithm='%s' uncompressed_split='%s' compressed_split='%s'",
-          GRPC_SLICE_LENGTH(value), algorithm_name,
-          grpc_slice_split_mode_name(uncompressed_split_mode),
-          grpc_slice_split_mode_name(compressed_split_mode));
+  LOG(INFO) << "assert_passthrough: value_length=" << GRPC_SLICE_LENGTH(value)
+            << " algorithm='" << algorithm_name << "' uncompressed_split='"
+            << grpc_slice_split_mode_name(uncompressed_split_mode)
+            << "' compressed_split='"
+            << grpc_slice_split_mode_name(compressed_split_mode) << "'";
 
   grpc_slice_buffer_init(&input);
   grpc_slice_buffer_init(&compressed_raw);

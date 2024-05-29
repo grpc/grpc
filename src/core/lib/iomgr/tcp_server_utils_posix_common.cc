@@ -32,6 +32,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -221,7 +222,7 @@ grpc_error_handle grpc_tcp_server_prepare_socket(
   err = grpc_set_socket_zerocopy(fd);
   if (!err.ok()) {
     // it's not fatal, so just log it.
-    gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
+    VLOG(2) << "Node does not support SO_ZEROCOPY, continuing.";
   }
 #endif
   err = grpc_set_socket_nonblocking(fd, 1);

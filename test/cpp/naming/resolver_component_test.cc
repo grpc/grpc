@@ -28,6 +28,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -35,7 +36,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -48,7 +48,6 @@
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -62,6 +61,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/string.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/socket_use_after_close_detector.h"
@@ -241,8 +241,8 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     }
     gpr_timespec time_left =
         gpr_time_sub(deadline, gpr_now(GPR_CLOCK_REALTIME));
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", args->done,
-            time_left.tv_sec, time_left.tv_nsec);
+    VLOG(2) << "done=" << args->done << ", time_left=" << time_left.tv_sec
+            << "." << absl::StrFormat("%09d", time_left.tv_nsec);
     CHECK_GE(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)), 0);
     grpc_pollset_worker* worker = nullptr;
     grpc_core::ExecCtx exec_ctx;
@@ -342,11 +342,11 @@ class CheckingResultHandler : public ResultHandler {
       AddActualAddresses(*balancer_addresses, /*is_balancer=*/true,
                          &found_lb_addrs);
     }
-    gpr_log(GPR_INFO,
-            "found %" PRIdPTR " backend addresses and %" PRIdPTR
-            " balancer addresses",
-            result.addresses->size(),
-            balancer_addresses == nullptr ? 0L : balancer_addresses->size());
+    LOG(INFO) << "found " << result.addresses->size()
+              << " backend addresses and "
+              << (balancer_addresses == nullptr ? 0L
+                                                : balancer_addresses->size())
+              << " balancer addresses";
     if (args->expected_addrs.size() != found_lb_addrs.size()) {
       grpc_core::Crash(absl::StrFormat("found lb addrs size is: %" PRIdPTR
                                        ". expected addrs size is %" PRIdPTR,
@@ -359,10 +359,10 @@ class CheckingResultHandler : public ResultHandler {
       EXPECT_THAT(args->expected_addrs,
                   UnorderedElementsAreArray(found_lb_addrs));
     } else {
-      gpr_log(GPR_ERROR,
-              "Invalid for setting for --do_ordered_address_comparison. "
-              "Have %s, want True or False",
-              absl::GetFlag(FLAGS_do_ordered_address_comparison).c_str());
+      LOG(ERROR) << "Invalid for setting for --do_ordered_address_comparison. "
+                    "Have "
+                 << absl::GetFlag(FLAGS_do_ordered_address_comparison)
+                 << ", want True or False";
       CHECK(0);
     }
     if (!result.service_config.ok()) {
@@ -389,7 +389,7 @@ class CheckingResultHandler : public ResultHandler {
       std::string str =
           grpc_sockaddr_to_string(&addr.address(), true /* normalize */)
               .value();
-      gpr_log(GPR_INFO, "%s", str.c_str());
+      LOG(INFO) << str;
       out->emplace_back(GrpcLBAddress(std::move(str), is_balancer));
     }
   }
@@ -409,11 +409,9 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   CHECK(grpc_core::SplitHostPort(
       absl::GetFlag(FLAGS_local_dns_server_address).c_str(), &unused_host,
       &local_dns_server_port));
-  gpr_log(GPR_DEBUG,
-          "Injecting broken nameserver list. Bad server address:|[::1]:%d|. "
-          "Good server address:%s",
-          g_fake_non_responsive_dns_server_port,
-          absl::GetFlag(FLAGS_local_dns_server_address).c_str());
+  VLOG(2) << "Injecting broken nameserver list. Bad server address:|[::1]:"
+          << g_fake_non_responsive_dns_server_port << "|. Good server address:"
+          << absl::GetFlag(FLAGS_local_dns_server_address);
   // Put the non-responsive DNS server at the front of c-ares's nameserver list.
   dns_server_addrs[0].family = AF_INET6;
   (reinterpret_cast<char*>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
@@ -450,9 +448,8 @@ void RunResolvesRelevantRecordsTest(
   args.expected_lb_policy = absl::GetFlag(FLAGS_expected_lb_policy);
   // maybe build the address with an authority
   std::string whole_uri;
-  gpr_log(GPR_DEBUG,
-          "resolver_component_test: --inject_broken_nameserver_list: %s",
-          absl::GetFlag(FLAGS_inject_broken_nameserver_list).c_str());
+  VLOG(2) << "resolver_component_test: --inject_broken_nameserver_list: "
+          << absl::GetFlag(FLAGS_inject_broken_nameserver_list);
   std::unique_ptr<grpc_core::testing::FakeUdpAndTcpServer>
       fake_non_responsive_dns_server;
   if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "True") {
@@ -471,16 +468,16 @@ void RunResolvesRelevantRecordsTest(
     }
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {
-    gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
-            absl::GetFlag(FLAGS_local_dns_server_address).c_str());
+    LOG(INFO) << "Specifying authority in uris to: "
+              << absl::GetFlag(FLAGS_local_dns_server_address);
     whole_uri = absl::StrFormat("dns://%s/%s",
                                 absl::GetFlag(FLAGS_local_dns_server_address),
                                 absl::GetFlag(FLAGS_target_name));
   } else {
     grpc_core::Crash("Invalid value for --inject_broken_nameserver_list.");
   }
-  gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
-          absl::GetFlag(FLAGS_enable_srv_queries).c_str());
+  VLOG(2) << "resolver_component_test: --enable_srv_queries: "
+          << absl::GetFlag(FLAGS_enable_srv_queries);
   // By default, SRV queries are disabled, so tests that expect no SRV query
   // should avoid setting any channel arg. Test cases that do rely on the SRV
   // query must explicitly enable SRV though.
@@ -489,8 +486,8 @@ void RunResolvesRelevantRecordsTest(
   } else if (absl::GetFlag(FLAGS_enable_srv_queries) != "False") {
     grpc_core::Crash("Invalid value for --enable_srv_queries.");
   }
-  gpr_log(GPR_DEBUG, "resolver_component_test: --enable_txt_queries: %s",
-          absl::GetFlag(FLAGS_enable_txt_queries).c_str());
+  VLOG(2) << "resolver_component_test: --enable_txt_queries: "
+          << absl::GetFlag(FLAGS_enable_txt_queries);
   // By default, TXT queries are disabled, so tests that expect no TXT query
   // should avoid setting any channel arg. Test cases that do rely on the TXT
   // query must explicitly enable TXT though.

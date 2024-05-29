@@ -129,6 +129,7 @@ class ClientCompressionFilter final
     absl::StatusOr<MessageHandle> OnServerToClientMessage(
         MessageHandle message, ClientCompressionFilter* filter);
 
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
 
@@ -165,6 +166,7 @@ class ServerCompressionFilter final
     MessageHandle OnServerToClientMessage(MessageHandle message,
                                           ServerCompressionFilter* filter);
 
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
 

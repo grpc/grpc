@@ -20,10 +20,10 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/endpoint.h"
@@ -37,14 +37,14 @@ static void pretty_print_backoffs(reconnect_server* server) {
   int i = 1;
   double expected_backoff = 1000.0, backoff;
   timestamp_list* head = server->head;
-  gpr_log(GPR_INFO, "reconnect server: new connection");
+  LOG(INFO) << "reconnect server: new connection";
   for (head = server->head; head && head->next; head = head->next, i++) {
     diff = gpr_time_sub(head->next->timestamp, head->timestamp);
     backoff = gpr_time_to_millis(diff);
-    gpr_log(GPR_INFO,
-            "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%",
-            i, backoff / 1000.0, expected_backoff / 1000.0,
-            (backoff - expected_backoff) * 100.0 / expected_backoff);
+    LOG(INFO) << absl::StrFormat(
+        "retry %2d:backoff %6.2fs,expected backoff %6.2fs, jitter %4.2f%%", i,
+        backoff / 1000.0, expected_backoff / 1000.0,
+        (backoff - expected_backoff) * 100.0 / expected_backoff);
     expected_backoff *= 1.6;
     int max_reconnect_backoff_ms = 120 * 1000;
     if (server->max_reconnect_backoff_ms > 0) {
@@ -73,11 +73,10 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     server->peer = new std::string(peer);
   } else {
     if (last_colon == std::string::npos) {
-      gpr_log(GPR_ERROR, "peer does not contain a ':'");
+      LOG(ERROR) << "peer does not contain a ':'";
     } else if (peer.compare(0, static_cast<size_t>(last_colon),
                             *server->peer) != 0) {
-      gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer->c_str(),
-              std::string(peer).c_str());
+      LOG(ERROR) << "mismatched peer! " << *server->peer << " vs " << peer;
     }
   }
   new_tail = static_cast<timestamp_list*>(gpr_malloc(sizeof(timestamp_list)));

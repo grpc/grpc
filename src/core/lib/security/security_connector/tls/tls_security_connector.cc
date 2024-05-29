@@ -26,6 +26,7 @@
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -452,7 +453,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
   if (root_ready && identity_ready) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
-      gpr_log(GPR_ERROR, "Update handshaker factory failed.");
+      LOG(ERROR) << "Update handshaker factory failed.";
     }
   }
 }
@@ -721,7 +722,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
       (!root_being_watched && identity_being_watched && identity_has_value)) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
-      gpr_log(GPR_ERROR, "Update handshaker factory failed.");
+      LOG(ERROR) << "Update handshaker factory failed.";
     }
   }
 }

@@ -23,6 +23,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/tsi/transport_security_interface.h"
+
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
 // can't be in grpc, it has to be in gpr.
@@ -58,7 +60,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -66,6 +67,7 @@
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/useful.h"
 
 // --- Constants. ---
 
@@ -293,8 +295,7 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   }
   common_name_asn1 = X509_NAME_ENTRY_get_data(common_name_entry);
   if (common_name_asn1 == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Could not get common name entry asn1 from certificate.");
+    LOG(ERROR) << "Could not get common name entry asn1 from certificate.";
     return TSI_INTERNAL_ERROR;
   }
   utf8_returned_size = ASN1_STRING_to_UTF8(utf8, common_name_asn1);
@@ -804,7 +805,7 @@ static tsi_result populate_ssl_context(
   }
   if ((cipher_list != nullptr) &&
       !SSL_CTX_set_cipher_list(context, cipher_list)) {
-    gpr_log(GPR_ERROR, "Invalid cipher list: %s.", cipher_list);
+    LOG(ERROR) << "Invalid cipher list: " << cipher_list;
     return TSI_INVALID_ARGUMENT;
   }
   {
@@ -862,8 +863,7 @@ static tsi_result build_alpn_protocol_name_list(
     size_t length =
         alpn_protocols[i] == nullptr ? 0 : strlen(alpn_protocols[i]);
     if (length == 0 || length > 255) {
-      gpr_log(GPR_ERROR, "Invalid protocol name length: %d.",
-              static_cast<int>(length));
+      LOG(ERROR) << "Invalid protocol name length: " << length;
       return TSI_INVALID_ARGUMENT;
     }
     *protocol_name_list_length += length + 1;
@@ -892,13 +892,12 @@ static tsi_result build_alpn_protocol_name_list(
 static int verify_cb(int ok, X509_STORE_CTX* ctx) {
   int cert_error = X509_STORE_CTX_get_error(ctx);
   if (cert_error == X509_V_ERR_UNABLE_TO_GET_CRL) {
-    gpr_log(GPR_INFO,
-            "Certificate verification failed to find relevant CRL file. "
-            "Ignoring error.");
+    LOG(INFO) << "Certificate verification failed to find relevant CRL file. "
+                 "Ignoring error.";
     return 1;
   }
   if (cert_error != 0) {
-    gpr_log(GPR_ERROR, "Certificate verify failed with code %d", cert_error);
+    LOG(ERROR) << "Certificate verify failed with code " << cert_error;
   }
   return ok;
 }
@@ -942,8 +941,8 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   if (ssl_index < 0) {
     char err_str[256];
     ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
-    gpr_log(GPR_ERROR,
-            "error getting the SSL index from the X509_STORE_CTX: %s", err_str);
+    LOG(ERROR) << "error getting the SSL index from the X509_STORE_CTX: "
+               << err_str;
     return ret;
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
@@ -987,8 +986,7 @@ static grpc_core::experimental::CrlProvider* GetCrlProvider(
   }
   SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
   if (ssl == nullptr) {
-    gpr_log(GPR_INFO,
-            "error while fetching from CrlProvider. SSL object is null");
+    LOG(INFO) << "error while fetching from CrlProvider. SSL object is null";
     return nullptr;
   }
   SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
@@ -1175,8 +1173,8 @@ static tsi_result tsi_set_min_and_max_tls_versions(
     SSL_CTX* ssl_context, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version) {
   if (ssl_context == nullptr) {
-    gpr_log(GPR_INFO,
-            "Invalid nullptr argument to |tsi_set_min_and_max_tls_versions|.");
+    LOG(INFO) << "Invalid nullptr argument to "
+                 "|tsi_set_min_and_max_tls_versions|.";
     return TSI_INVALID_ARGUMENT;
   }
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2085,8 +2083,7 @@ static int does_entry_match_name(absl::string_view entry,
   entry.remove_prefix(2);                   // Remove *.
   size_t dot = name_subdomain.find('.');
   if (dot == absl::string_view::npos || dot == name_subdomain.size() - 1) {
-    gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s",
-            std::string(name_subdomain).c_str());
+    LOG(ERROR) << "Invalid toplevel subdomain: " << name_subdomain;
     return 0;
   }
   if (name_subdomain.back() == '.') {
@@ -2113,7 +2110,7 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
       return SSL_TLSEXT_ERR_OK;
     }
   }
-  gpr_log(GPR_ERROR, "No match found for server name: %s.", servername);
+  LOG(ERROR) << "No match found for server name: " << servername;
   return SSL_TLSEXT_ERR_NOACK;
 }
 
@@ -2297,8 +2294,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
           options->alpn_protocols, options->num_alpn_protocols,
           &impl->alpn_protocol_list, &impl->alpn_protocol_list_length);
       if (result != TSI_OK) {
-        gpr_log(GPR_ERROR, "Building alpn list failed with error %s.",
-                tsi_result_to_string(result));
+        LOG(ERROR) << "Building alpn list failed with error "
+                   << tsi_result_to_string(result);
         break;
       }
 #if TSI_OPENSSL_ALPN_SUPPORT

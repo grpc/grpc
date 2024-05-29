@@ -37,12 +37,12 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace channelz {

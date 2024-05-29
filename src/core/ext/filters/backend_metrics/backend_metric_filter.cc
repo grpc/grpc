@@ -52,6 +52,7 @@ TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
 const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
+const NoInterceptor BackendMetricFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor BackendMetricFilter::Call::OnServerToClientMessage;
 const NoInterceptor BackendMetricFilter::Call::OnFinalize;
 
@@ -128,6 +129,7 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = &GetContext<
       grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
   if (ctx == nullptr) {

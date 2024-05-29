@@ -18,6 +18,7 @@
 #include <ws2tcpip.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 
 #include "src/core/lib/event_engine/windows/win_socket.h"
@@ -55,10 +56,8 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   auto result =
       WSAConnect(cli_sock, (sockaddr*)&addr, addr_len, NULL, NULL, NULL, NULL);
   if (result != 0) {
-    gpr_log(GPR_DEBUG, "%s",
-            GRPC_WSA_ERROR(WSAGetLastError(), "Failed in WSAConnect")
-                .ToString()
-                .c_str());
+    VLOG(2)
+        << GRPC_WSA_ERROR(WSAGetLastError(), "Failed in WSAConnect").ToString();
     abort();
   }
   svr_sock = accept(lst_sock, (sockaddr*)&addr, &addr_len);
@@ -72,13 +71,11 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
   // logged status. WSAEINVAL is expected.
   auto status = PrepareSocket(cli_sock);
   // if (!status.ok()) {
-  //   gpr_log(GPR_DEBUG, "Error preparing client socket: %s",
-  //           status.ToString().c_str());
+  //   VLOG(2) << "Error preparing client socket: " << status.ToString();
   // }
   status = PrepareSocket(svr_sock);
   // if (!status.ok()) {
-  //   gpr_log(GPR_DEBUG, "Error preparing server socket: %s",
-  //           status.ToString().c_str());
+  //   VLOG(2) << "Error preparing server socket: " << status.ToString();
   // }
 
   sockpair[0] = svr_sock;

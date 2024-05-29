@@ -4066,6 +4066,16 @@ try:
         client_env["GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT"] = "true"
         client_env["GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION"] = "true"
         for test_case in args.test_case:
+            # Circuit breaking ported to the new framework.
+            # https://github.com/grpc/psm-interop/blob/main/tests/circuit_breaking_test.py
+            # To avoid backports, skipping it in the driver.
+            if test_case == "circuit_breaking":
+                logger.info(
+                    "Ported to https://github.com/grpc/psm-interop/"
+                    "blob/main/tests/circuit_breaking_test.py"
+                )
+                continue
+
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info(
                     "skipping test %s due to missing v3 support", test_case

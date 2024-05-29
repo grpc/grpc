@@ -26,6 +26,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -567,7 +568,7 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
 bool EventEngineClientChannelDNSResolverFactory::IsValidUri(
     const URI& uri) const {
   if (absl::StripPrefix(uri.path(), "/").empty()) {
-    gpr_log(GPR_ERROR, "no server name supplied in dns URI");
+    LOG(ERROR) << "no server name supplied in dns URI";
     return false;
   }
   return true;

@@ -25,18 +25,16 @@ void grpc_profiler_start(const char* filename) { ProfilerStart(filename); }
 
 void grpc_profiler_stop() { ProfilerStop(); }
 #else
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 void grpc_profiler_start(const char* filename) {
   static int printed_warning = 0;
   if (!printed_warning) {
-    gpr_log(GPR_DEBUG,
-            "You do not have google-perftools installed, profiling is disabled "
-            "[for %s]",
-            filename);
-    gpr_log(GPR_DEBUG,
-            "To install on ubuntu: sudo apt-get install google-perftools "
-            "libgoogle-perftools-dev");
+    VLOG(2) << "You do not have google-perftools installed, profiling is "
+               "disabled [for "
+            << filename << "]";
+    VLOG(2) << "To install on ubuntu: sudo apt-get install google-perftools "
+               "libgoogle-perftools-dev";
     printed_warning = 1;
   }
 }

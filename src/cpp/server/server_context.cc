@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
@@ -38,7 +39,6 @@
 #include <grpc/load_reporting.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/ext/call_metric_recorder.h>
@@ -347,7 +347,7 @@ void ServerContextBase::TryCancel() const {
       grpc_call_cancel_with_status(call_.call, GRPC_STATUS_CANCELLED,
                                    "Cancelled on the server side", nullptr);
   if (err != GRPC_CALL_OK) {
-    gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
+    LOG(ERROR) << "TryCancel failed with: " << err;
   }
 }
 

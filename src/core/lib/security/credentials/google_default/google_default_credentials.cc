@@ -24,6 +24,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
@@ -56,8 +57,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/external_account_credentials.h"
@@ -71,6 +70,8 @@
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 
 using grpc_core::Json;
 
@@ -137,7 +138,7 @@ grpc_google_default_channel_credentials::create_security_connector(
                         is_xds_non_cfe_cluster;
   // Return failure if ALTS is selected but not running on GCE.
   if (use_alts && alts_creds_ == nullptr) {
-    gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
+    LOG(ERROR) << "ALTS is selected, but not running on GCE.";
     return nullptr;
   }
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =

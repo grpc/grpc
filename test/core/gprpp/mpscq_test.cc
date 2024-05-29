@@ -23,14 +23,14 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
 using grpc_core::MultiProducerSingleConsumerQueue;
@@ -49,7 +49,7 @@ static test_node* new_node(size_t i, size_t* ctr) {
 }
 
 TEST(MpscqTest, Serial) {
-  gpr_log(GPR_DEBUG, "test_serial");
+  VLOG(2) << "test_serial";
   MultiProducerSingleConsumerQueue q;
   for (size_t i = 0; i < 10000000; i++) {
     q.Push(&new_node(i, nullptr)->node);
@@ -79,7 +79,7 @@ static void test_thread(void* args) {
 }
 
 TEST(MpscqTest, Mt) {
-  gpr_log(GPR_DEBUG, "test_mt");
+  VLOG(2) << "test_mt";
   gpr_event start;
   gpr_event_init(&start);
   grpc_core::Thread thds[100];
@@ -106,7 +106,7 @@ TEST(MpscqTest, Mt) {
     if (tn->i == THREAD_ITERATIONS) num_done++;
     delete tn;
   }
-  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, spins);
+  VLOG(2) << "spins: " << spins;
   for (auto& th : thds) {
     th.Join();
   }
@@ -146,7 +146,7 @@ static void pull_thread(void* arg) {
 }
 
 TEST(MpscqTest, MtMultipop) {
-  gpr_log(GPR_DEBUG, "test_mt_multipop");
+  VLOG(2) << "test_mt_multipop";
   gpr_event start;
   gpr_event_init(&start);
   grpc_core::Thread thds[50];
@@ -176,7 +176,7 @@ TEST(MpscqTest, MtMultipop) {
   for (auto& pth : pull_thds) {
     pth.Join();
   }
-  gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, pa.spins);
+  VLOG(2) << "spins: " << pa.spins;
   for (auto& th : thds) {
     th.Join();
   }

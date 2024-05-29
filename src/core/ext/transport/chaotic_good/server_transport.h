@@ -94,7 +94,6 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
-  grpc_endpoint* GetEndpoint() override { return nullptr; }
   void Orphan() override;
 
   void SetCallDestination(

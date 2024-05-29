@@ -44,6 +44,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
@@ -51,10 +52,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/string.h"
 
 // set a socket to use zerocopy
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {
@@ -411,7 +412,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
     }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+      LOG(INFO) << "TCP_USER_TIMEOUT not supported for this platform";
     }
   }
   return absl::OkStatus();
@@ -442,7 +443,7 @@ static void probe_ipv6_once(void) {
   int fd = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (fd < 0) {
-    gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+    LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));

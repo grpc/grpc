@@ -60,9 +60,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -74,6 +72,8 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/util/time_precise.h"
 
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;

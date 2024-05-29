@@ -81,6 +81,7 @@ class TestFilter {
     }
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
@@ -101,6 +102,8 @@ const NoInterceptor TestFilter<I>::Call::OnServerInitialMetadata;
 template <int I>
 const NoInterceptor TestFilter<I>::Call::OnClientToServerMessage;
 template <int I>
+const NoInterceptor TestFilter<I>::Call::OnClientToServerHalfClose;
+template <int I>
 const NoInterceptor TestFilter<I>::Call::OnServerToClientMessage;
 template <int I>
 const NoInterceptor TestFilter<I>::Call::OnServerTrailingMetadata;
@@ -118,6 +121,7 @@ class FailsToInstantiateFilter {
     static const NoInterceptor OnClientInitialMetadata;
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
@@ -136,6 +140,9 @@ template <int I>
 const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerInitialMetadata;
 template <int I>
 const NoInterceptor FailsToInstantiateFilter<I>::Call::OnClientToServerMessage;
+template <int I>
+const NoInterceptor
+    FailsToInstantiateFilter<I>::Call::OnClientToServerHalfClose;
 template <int I>
 const NoInterceptor FailsToInstantiateFilter<I>::Call::OnServerToClientMessage;
 template <int I>

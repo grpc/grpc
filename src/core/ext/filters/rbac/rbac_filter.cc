@@ -46,6 +46,7 @@ namespace grpc_core {
 const NoInterceptor RbacFilter::Call::OnServerInitialMetadata;
 const NoInterceptor RbacFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor RbacFilter::Call::OnClientToServerMessage;
+const NoInterceptor RbacFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor RbacFilter::Call::OnServerToClientMessage;
 const NoInterceptor RbacFilter::Call::OnFinalize;
 

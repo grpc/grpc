@@ -37,7 +37,6 @@ grpc_cc_test(
     srcs = ["timer_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     flaky = True,
@@ -53,7 +52,6 @@ grpc_cc_test(
     srcs = ["time_jump_test.cc"],
     external_deps = [
         "absl/log:check",
-        "absl/log:log",
         "gtest",
     ],
     tags = [

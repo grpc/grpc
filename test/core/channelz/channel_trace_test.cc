@@ -36,8 +36,8 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
@@ -321,7 +321,7 @@ TEST(ChannelTracerTest, TestEviction) {
 
 TEST(ChannelTracerTest, TestMultipleEviction) {
   ExecCtx exec_ctx;
-  const int kTraceEventSize = GetSizeofTraceEvent();
+  const size_t kTraceEventSize = GetSizeofTraceEvent();
   const int kNumEvents = 5;
   ChannelTrace tracer(kTraceEventSize * kNumEvents);
   std::list<::testing::Matcher<Json>> matchers;
@@ -337,14 +337,12 @@ TEST(ChannelTracerTest, TestMultipleEviction) {
   // At this point the list is full, and each subsequent enntry will cause an
   // eviction. We will now add in a trace event that has a copied string. This
   // uses more memory, so it will cause a double eviciction.
-  tracer.AddTraceEvent(
-      ChannelTrace::Severity::Info,
-      grpc_slice_from_copied_string(
-          "long enough string to trigger a multiple eviction"));
+  std::string msg(GRPC_SLICE_INLINED_SIZE + 1, 'x');
+  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
+                       grpc_slice_from_cpp_string(msg));
   matchers.pop_front();
   matchers.pop_front();
-  matchers.push_back(IsTraceEvent(
-      "long enough string to trigger a multiple eviction", "CT_INFO"));
+  matchers.push_back(IsTraceEvent(msg, "CT_INFO"));
   Json json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
   EXPECT_THAT(json, IsChannelTrace(kNumEvents + 1,

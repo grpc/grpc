@@ -23,9 +23,9 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
@@ -35,9 +35,9 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/string.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -119,22 +119,20 @@ bool CheckExpectedCompression(const ServerContext& context,
   if (compression_expected) {
     if (received_compression == GRPC_COMPRESS_NONE) {
       // Expected some compression, got NONE. This is an error.
-      gpr_log(GPR_ERROR,
-              "Expected compression but got uncompressed request from client.");
+      LOG(ERROR)
+          << "Expected compression but got uncompressed request from client.";
       return false;
     }
     if (!(inspector.WasCompressed())) {
-      gpr_log(GPR_ERROR,
-              "Failure: Requested compression in a compressable request, but "
-              "compression bit in message flags not set.");
+      LOG(ERROR) << "Failure: Requested compression in a compressable request, "
+                    "but compression bit in message flags not set.";
       return false;
     }
   } else {
     // Didn't expect compression -> make sure the request is uncompressed
     if (inspector.WasCompressed()) {
-      gpr_log(GPR_ERROR,
-              "Failure: Didn't requested compression, but compression bit in "
-              "message flags set.");
+      LOG(ERROR) << "Failure: Didn't requested compression, but compression "
+                    "bit in message flags set.";
       return false;
     }
   }
@@ -197,8 +195,9 @@ class TestServiceImpl : public TestService::Service {
     MaybeEchoMetadata(context);
     if (request->has_response_compressed()) {
       const bool compression_requested = request->response_compressed().value();
-      gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
-              compression_requested ? "enabled" : "disabled", __func__);
+      VLOG(2) << "Request for compression ("
+              << (compression_requested ? "enabled" : "disabled")
+              << ") present for " << __func__;
       if (compression_requested) {
         // Any level would do, let's go for HIGH because we are overachievers.
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
@@ -247,8 +246,9 @@ class TestServiceImpl : public TestService::Service {
         context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
         const bool compression_requested =
             request->response_parameters(i).compressed().value();
-        gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",
-                compression_requested ? "enabled" : "disabled", __func__);
+        VLOG(2) << "Request for compression ("
+                << (compression_requested ? "enabled" : "disabled")
+                << ") present for " << __func__;
         if (!compression_requested) {
           wopts.set_no_compression();
         }  // else, compression is already enabled via the context.
@@ -445,7 +445,7 @@ void grpc::testing::interop::RunServer(
   grpc::ServerBuilder::experimental_type(&builder).EnableCallMetricRecording(
       nullptr);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Server listening on %s", server_address.str().c_str());
+  LOG(INFO) << "Server listening on " << server_address.str();
 
   // Signal that the server has started.
   if (server_started_condition) {

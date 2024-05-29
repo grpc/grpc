@@ -119,6 +119,12 @@ T* GetContext() {
   return p;
 }
 
+// Retrieve the current value of a context, or nullptr if the value is unset.
+template <typename T>
+T* MaybeGetContext() {
+  return promise_detail::Context<T>::get();
+}
+
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
 promise_detail::WithContext<T, F> WithContext(F f, T* context) {

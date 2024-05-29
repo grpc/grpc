@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -40,9 +41,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
-#include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gprpp/atomic_utils.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -55,6 +53,9 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/event_string.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+#include "src/core/util/spinlock.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/experiments/experiments.h"
@@ -260,7 +261,7 @@ struct cq_next_data {
     CHECK_EQ(queue.num_items(), 0);
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
-      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+      LOG(ERROR) << "Destroying CQ without draining it fully.";
     }
 #endif
   }
@@ -290,7 +291,7 @@ struct cq_pluck_data {
     CHECK(completed_head.next == reinterpret_cast<uintptr_t>(&completed_head));
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
-      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+      LOG(ERROR) << "Destroying CQ without draining it fully.";
     }
 #endif
   }
@@ -327,7 +328,7 @@ struct cq_callback_data {
   ~cq_callback_data() {
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
-      gpr_log(GPR_ERROR, "Destroying CQ without draining it fully.");
+      LOG(ERROR) << "Destroying CQ without draining it fully.";
     }
 #endif
   }
@@ -942,7 +943,7 @@ static void dump_pending_tags(grpc_completion_queue* cq) {
     parts.push_back(absl::StrFormat(" %p", cq->outstanding_tags[i]));
   }
   gpr_mu_unlock(cq->mu);
-  gpr_log(GPR_DEBUG, "%s", absl::StrJoin(parts, "").c_str());
+  VLOG(2) << absl::StrJoin(parts, "");
 }
 #else
 static void dump_pending_tags(grpc_completion_queue* /*cq*/) {}

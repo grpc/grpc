@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -149,12 +150,12 @@ namespace grpc_core {
 
 void Thread::Signal(gpr_thd_id /* tid */, int /* sig */) {
   // TODO(hork): Implement
-  gpr_log(GPR_DEBUG, "Thread signals are not supported on Windows.");
+  VLOG(2) << "Thread signals are not supported on Windows.";
 }
 
 void Thread::Kill(gpr_thd_id /* tid */) {
   // TODO(hork): Implement
-  gpr_log(GPR_DEBUG, "Thread::Kill is not supported on Windows.");
+  VLOG(2) << "Thread::Kill is not supported on Windows.";
 }
 
 Thread::Thread(const char* /* thd_name */, void (*thd_body)(void* arg),

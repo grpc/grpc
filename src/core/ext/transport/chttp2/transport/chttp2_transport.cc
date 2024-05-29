@@ -73,15 +73,9 @@
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/tcp_tracer.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -110,6 +104,12 @@
 #include "src/core/lib/transport/metadata_info.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -803,8 +803,8 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     if (grpc_http_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "HTTP:%p/%p creating accept stream %d [from %p]", t,
-              this, id, server_data);
+      VLOG(2) << "HTTP:" << t << "/" << this << " creating accept stream " << id
+              << " [from " << server_data << "]";
     }
     *t->accepting_stream = this;
     t->stream_map.emplace(id, this);
@@ -1037,8 +1037,8 @@ static void write_action(grpc_chttp2_transport* t) {
     max_frame_size = INT_MAX;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    gpr_log(GPR_INFO, "%s[%p]: Write %" PRIdPTR " bytes",
-            t->is_client ? "CLIENT" : "SERVER", t, t->outbuf.Length());
+    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
+              << t->outbuf.Length() << " bytes";
   }
   t->write_size_policy.BeginWrite(t->outbuf.Length());
   grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
@@ -1051,8 +1051,8 @@ static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
                              grpc_error_handle error) {
   auto* tp = t.get();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    gpr_log(GPR_INFO, "%s[%p]: Finish write",
-            t->is_client ? "CLIENT" : "SERVER", t.get());
+    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t.get()
+              << "]: Finish write";
   }
   tp->combiner->Run(grpc_core::InitTransportClosure<write_action_end_locked>(
                         std::move(t), &tp->write_action_end_locked),
@@ -1325,11 +1325,11 @@ static bool contains_non_ok_status(grpc_metadata_batch* batch) {
 
 static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
                          bool is_client, bool is_initial) {
-  LOG(INFO) << "--metadata--";
+  VLOG(2) << "--metadata--";
   const std::string prefix = absl::StrCat(
       "HTTP:", id, is_initial ? ":HDR" : ":TRL", is_client ? ":CLI:" : ":SVR:");
   md_batch->Log([&prefix](absl::string_view key, absl::string_view value) {
-    gpr_log(GPR_INFO, "%s", absl::StrCat(prefix, key, ": ", value).c_str());
+    VLOG(2) << absl::StrCat(prefix, key, ": ", value);
   });
 }
 
@@ -3167,8 +3167,6 @@ const char* grpc_chttp2_initiate_write_reason_string(
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
-
-grpc_endpoint* grpc_chttp2_transport::GetEndpoint() { return ep; }
 
 size_t grpc_chttp2_transport::SizeOfStream() const {
   return sizeof(grpc_chttp2_stream);

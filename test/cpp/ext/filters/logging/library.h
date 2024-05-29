@@ -22,6 +22,7 @@
 #include <chrono>
 #include <thread>  // NOLINT
 
+#include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
@@ -58,10 +59,10 @@ class TestLoggingSink : public grpc_core::LoggingSink {
     grpc::internal::EntryToJsonStructProto(entry, &json);
     std::string output;
     ::google::protobuf::TextFormat::PrintToString(json, &output);
-    gpr_log(GPR_INFO, "%s", output.c_str());
-    gpr_log(GPR_INFO, "trace_id: %s", entry.trace_id.c_str());
-    gpr_log(GPR_INFO, "span_id: %s", entry.span_id.c_str());
-    gpr_log(GPR_INFO, "is_sampled: %d", entry.is_sampled);
+    LOG(INFO) << output;
+    LOG(INFO) << "trace_id: " << entry.trace_id;
+    LOG(INFO) << "span_id: " << entry.span_id;
+    LOG(INFO) << "is_sampled: " << entry.is_sampled;
     grpc_core::MutexLock lock(&mu_);
     entries_.push_back(std::move(entry));
     cv_.SignalAll();
@@ -104,7 +105,6 @@ class LoggingTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     g_test_logging_sink = new TestLoggingSink;
-    grpc::RegisterOpenCensusPlugin();
     grpc_core::RegisterLoggingFilter(g_test_logging_sink);
   }
 

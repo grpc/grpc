@@ -158,7 +158,7 @@
           ' "$(PODS_TARGET_SRCROOT)/third_party/utf8_range"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/third_party/xxhash"',
       # If we don't set these two settings, `include/grpc/support/time.h` and
-      # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+      # `src/core/util/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',

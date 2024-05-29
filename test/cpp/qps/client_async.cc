@@ -28,11 +28,11 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -227,7 +227,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
     int num_threads = config.async_client_threads();
     if (num_threads <= 0) {  // Use dynamic sizing
       num_threads = cores_;
-      gpr_log(GPR_INFO, "Sizing async client to %d threads", num_threads);
+      LOG(INFO) << "Sizing async client to " << num_threads << " threads";
     }
     return num_threads;
   }

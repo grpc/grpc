@@ -43,6 +43,7 @@
 // - OnServerInitialMetadata  - $VALUE_TYPE = ServerMetadata
 // - OnServerToClientMessage  - $VALUE_TYPE = Message
 // - OnClientToServerMessage  - $VALUE_TYPE = Message
+// - OnClientToServerHalfClose - no value
 // - OnServerTrailingMetadata - $VALUE_TYPE = ServerMetadata
 // - OnFinalize               - special, see below
 // These members define an interception point for a particular event in
@@ -192,6 +193,16 @@ struct Operator {
   void (*early_destroy)(void* promise_data);
 };
 
+struct HalfCloseOperator {
+  // Pointer to corresponding channel data for this filter
+  void* channel_data;
+  // Offset of the call data for this filter within the call data memory
+  size_t call_offset;
+  void (*half_close)(void* call_data, void* channel_data);
+};
+
+void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data);
+
 // We divide operations into fallible and infallible.
 // Fallible operations can fail, and that failure terminates the call.
 // Infallible operations cannot fail.
@@ -264,6 +275,32 @@ void AddOp(FilterType* channel_data, size_t call_offset,
   AddOpImpl<FilterType, T, FunctionImpl, impl>::Add(channel_data, call_offset,
                                                     to);
 }
+
+template <typename FilterType>
+void AddHalfClose(FilterType* channel_data, size_t call_offset,
+                  void (FilterType::Call::*)(),
+                  std::vector<HalfCloseOperator>& to) {
+  to.push_back(
+      HalfCloseOperator{channel_data, call_offset, [](void* call_data, void*) {
+                          static_cast<typename FilterType::Call*>(call_data)
+                              ->OnClientToServerHalfClose();
+                        }});
+}
+
+template <typename FilterType>
+void AddHalfClose(FilterType* channel_data, size_t call_offset,
+                  void (FilterType::Call::*)(FilterType*),
+                  std::vector<HalfCloseOperator>& to) {
+  to.push_back(HalfCloseOperator{
+      channel_data, call_offset, [](void* call_data, void* channel_data) {
+        static_cast<typename FilterType::Call*>(call_data)
+            ->OnClientToServerHalfClose(static_cast<FilterType*>(channel_data));
+      }});
+}
+
+template <typename FilterType>
+void AddHalfClose(FilterType*, size_t, const NoInterceptor*,
+                  std::vector<HalfCloseOperator>&) {}
 
 // const NoInterceptor $EVENT
 // These do nothing, and specifically DO NOT add an operation to the layout.
@@ -852,6 +889,7 @@ struct StackData {
   Layout<FallibleOperator<ClientMetadataHandle>> client_initial_metadata;
   Layout<FallibleOperator<ServerMetadataHandle>> server_initial_metadata;
   Layout<FallibleOperator<MessageHandle>> client_to_server_messages;
+  std::vector<HalfCloseOperator> client_to_server_half_close;
   Layout<FallibleOperator<MessageHandle>> server_to_client_messages;
   Layout<InfallibleOperator<ServerMetadataHandle>> server_trailing_metadata;
   // A list of finalizers for this call.
@@ -970,6 +1008,14 @@ struct StackData {
     AddOp<decltype(&FilterType::Call::OnClientToServerMessage),
           &FilterType::Call::OnClientToServerMessage>(
         channel_data, call_offset, client_to_server_messages);
+  }
+
+  template <typename FilterType>
+  void AddClientToServerHalfClose(FilterType* channel_data,
+                                  size_t call_offset) {
+    AddHalfClose(channel_data, call_offset,
+                 &FilterType::Call::OnClientToServerHalfClose,
+                 client_to_server_half_close);
   }
 
   template <typename FilterType>
@@ -1217,6 +1263,7 @@ class ServerTrailingMetadataInterceptor {
     static const NoInterceptor OnClientInitialMetadata;
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
     void OnServerTrailingMetadata(ServerMetadata& md,
@@ -1241,6 +1288,9 @@ const NoInterceptor
     ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
 template <typename Fn>
 const NoInterceptor
+    ServerTrailingMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
+template <typename Fn>
+const NoInterceptor
     ServerTrailingMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
 template <typename Fn>
 const NoInterceptor ServerTrailingMetadataInterceptor<Fn>::Call::OnFinalize;
@@ -1256,6 +1306,7 @@ class ClientInitialMetadataInterceptor {
     }
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
@@ -1272,6 +1323,9 @@ const NoInterceptor
 template <typename Fn>
 const NoInterceptor
     ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerMessage;
+template <typename Fn>
+const NoInterceptor
+    ClientInitialMetadataInterceptor<Fn>::Call::OnClientToServerHalfClose;
 template <typename Fn>
 const NoInterceptor
     ClientInitialMetadataInterceptor<Fn>::Call::OnServerToClientMessage;
@@ -1319,6 +1373,7 @@ class CallFilters {
       data_.AddClientInitialMetadataOp(filter, call_offset);
       data_.AddServerInitialMetadataOp(filter, call_offset);
       data_.AddClientToServerMessageOp(filter, call_offset);
+      data_.AddClientToServerHalfClose(filter, call_offset);
       data_.AddServerToClientMessageOp(filter, call_offset);
       data_.AddServerTrailingMetadataOp(filter, call_offset);
       data_.AddFinalizer(filter, call_offset, &FilterType::Call::OnFinalize);
@@ -1593,6 +1648,8 @@ class CallFilters {
       filters_detail::OperationExecutor<T> executor_;
     };
 
+    template <std::vector<filters_detail::HalfCloseOperator>(
+        filters_detail::StackData::*half_close_layout_ptr)>
     class PullMessage {
      public:
       explicit PullMessage(CallFilters* filters) : filters_(filters) {}
@@ -1637,7 +1694,14 @@ class CallFilters {
           filters_->CancelDueToFailedPipeOperation();
           return Failure{};
         }
-        if (!**r) return absl::nullopt;
+        if (!**r) {
+          if (half_close_layout_ptr != nullptr) {
+            filters_detail::RunHalfClose(
+                filters_->stack_->data_.*half_close_layout_ptr,
+                filters_->call_data_);
+          }
+          return absl::nullopt;
+        }
         CHECK(filters_ != nullptr);
         return FinishOperationExecutor(executor_.Start(
             layout(), push()->TakeValue(), filters_->call_data_));
@@ -1865,7 +1929,8 @@ inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
 }
 
 inline auto CallFilters::PullClientToServerMessage() {
-  return ClientToServerMessagePromises::PullMessage{this};
+  return ClientToServerMessagePromises::PullMessage<
+      &filters_detail::StackData::client_to_server_half_close>{this};
 }
 
 inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
@@ -1875,7 +1940,7 @@ inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
 }
 
 inline auto CallFilters::PullServerToClientMessage() {
-  return ServerToClientMessagePromises::PullMessage{this};
+  return ServerToClientMessagePromises::PullMessage<nullptr>{this};
 }
 
 inline auto CallFilters::PullServerTrailingMetadata() {

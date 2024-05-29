@@ -29,6 +29,7 @@
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -59,7 +60,6 @@
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/backoff/random_early_detection.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -75,6 +75,7 @@
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 using grpc_core::HPackParser;
 
@@ -769,7 +770,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       frame_type = HPackParser::LogInfo::kTrailers;
       break;
     case 2:
-      gpr_log(GPR_ERROR, "too many header frames received");
+      LOG(ERROR) << "too many header frames received";
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
   }
   if (frame_type == HPackParser::LogInfo::kTrailers && !t->header_eof) {
@@ -889,10 +890,9 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
                                            int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
   if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
-            "INCOMING[%p;%p]: Parse %" PRIdPTR "b %sframe fragment with %s", t,
-            s, GRPC_SLICE_LENGTH(slice), is_last ? "last " : "",
-            t->parser.name);
+    VLOG(2) << "INCOMING[" << t << ";" << s << "]: Parse "
+            << GRPC_SLICE_LENGTH(slice) << "b " << (is_last ? "last " : "")
+            << "frame fragment with " << t->parser.name;
   }
   grpc_error_handle err =
       t->parser.parser(t->parser.user_data, t, s, slice, is_last);
