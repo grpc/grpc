@@ -112,9 +112,42 @@ extern TraceFlag grpc_client_channel_call_trace;
 extern TraceFlag grpc_client_channel_lb_call_trace;
 
 //
+// ClientChannel::ResolverResultHandler
+//
+
+class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
+ public:
+  explicit ResolverResultHandler(RefCountedPtr<ClientChannel> client_channel)
+      : client_channel_(std::move(client_channel)) {}
+
+  ~ResolverResultHandler() override {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
+      gpr_log(GPR_INFO, "client_channel=%p: resolver shutdown complete",
+              client_channel_.get());
+    }
+  }
+
+  void ReportResult(Resolver::Result result) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
+    client_channel_->OnResolverResultChangedLocked(std::move(result));
+  }
+
+ private:
+  RefCountedPtr<ClientChannel> client_channel_;
+};
+
+//
 // ClientChannel::SubchannelWrapper
 //
 
+// This class is a wrapper for Subchannel that hides details of the
+// channel's implementation (such as the connected subchannel) from the
+// LB policy API.
+//
+// Note that no synchronization is needed here, because even if the
+// underlying subchannel is shared between channels, this wrapper will only
+// be used within one channel, so it will always be synchronized by the
+// control plane work_serializer.
 class ClientChannel::SubchannelWrapper
     : public SubchannelInterfaceWithCallDestination {
  public:
@@ -177,36 +210,6 @@ class ClientChannel::SubchannelWrapper
   std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
       data_watchers_ ABSL_GUARDED_BY(*client_channel_->work_serializer_);
 };
-
-//
-// ClientChannel::ResolverResultHandler
-//
-
-class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
- public:
-  explicit ResolverResultHandler(
-      WeakRefCountedPtr<ClientChannel> client_channel)
-      : client_channel_(std::move(client_channel)) {}
-
-  ~ResolverResultHandler() override {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_trace)) {
-      gpr_log(GPR_INFO, "client_channel=%p: resolver shutdown complete",
-              client_channel_.get());
-    }
-  }
-
-  void ReportResult(Resolver::Result result) override
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
-    client_channel_->OnResolverResultChangedLocked(std::move(result));
-  }
-
- private:
-  WeakRefCountedPtr<ClientChannel> client_channel_;
-};
-
-//
-// ClientChannel::SubchannelWrapper
-//
 
 // This wrapper provides a bridge between the internal Subchannel API
 // and the SubchannelInterface API that we expose to LB policies.

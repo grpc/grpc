@@ -39,16 +39,6 @@ namespace grpc_core {
 
 class ClientChannel : public Channel {
  public:
-  // This class is a wrapper for Subchannel that hides details of the
-  // channel's implementation (such as the connected subchannel) from the
-  // LB policy API.
-  //
-  // Note that no synchronization is needed here, because even if the
-  // underlying subchannel is shared between channels, this wrapper will only
-  // be used within one channel, so it will always be synchronized by the
-  // control plane work_serializer.
-  class SubchannelWrapper;
-
   using PickerObservable =
       Observable<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>;
 
@@ -132,8 +122,9 @@ class ClientChannel : public Channel {
   }
 
  private:
-  class ResolverResultHandler;
   class ClientChannelControlHelper;
+  class ResolverResultHandler;
+  class SubchannelWrapper;
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
