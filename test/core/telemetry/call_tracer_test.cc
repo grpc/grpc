@@ -37,20 +37,7 @@ namespace {
 
 class CallTracerTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    memory_allocator_ = new MemoryAllocator(
-        ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-            "test"));
-    arena_ = Arena::Create(1024, memory_allocator_);
-  }
-
-  void TearDown() override {
-    arena_->Destroy();
-    delete memory_allocator_;
-  }
-
-  MemoryAllocator* memory_allocator_ = nullptr;
-  Arena* arena_ = nullptr;
+  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   std::vector<std::string> annotation_logger_;
 };
@@ -65,7 +52,7 @@ TEST_F(CallTracerTest, BasicClientCallTracer) {
 }
 
 TEST_F(CallTracerTest, MultipleClientCallTracers) {
-  promise_detail::Context<Arena> arena_ctx(arena_);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
@@ -80,7 +67,7 @@ TEST_F(CallTracerTest, MultipleClientCallTracers) {
 }
 
 TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
-  promise_detail::Context<Arena> arena_ctx(arena_);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
@@ -110,7 +97,7 @@ TEST_F(CallTracerTest, BasicServerCallTracerTest) {
 }
 
 TEST_F(CallTracerTest, MultipleServerCallTracers) {
-  promise_detail::Context<Arena> arena_ctx(arena_);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   FakeServerCallTracer server_call_tracer1(&annotation_logger_);
   FakeServerCallTracer server_call_tracer2(&annotation_logger_);
   FakeServerCallTracer server_call_tracer3(&annotation_logger_);

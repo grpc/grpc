@@ -380,15 +380,15 @@ void Call::Run() {
 
 class ChannelBasedCall : public Call {
  protected:
-  ChannelBasedCall(Arena* arena, bool is_client, Timestamp send_deadline,
-                   RefCountedPtr<Channel> channel)
+  ChannelBasedCall(RefCountedPtr<Arena> arena, bool is_client,
+                   Timestamp send_deadline, RefCountedPtr<Channel> channel)
       : Call(is_client, send_deadline, channel->event_engine()),
         arena_(arena),
         channel_(std::move(channel)) {
-    DCHECK_NE(arena_, nullptr);
+    DCHECK_NE(arena_.get(), nullptr);
   }
 
-  Arena* arena() final { return arena_; }
+  Arena* arena() final { return arena_.get(); }
 
   char* GetPeer() final {
     Slice peer_slice = GetPeerString();
@@ -415,18 +415,17 @@ class ChannelBasedCall : public Call {
 
   void DeleteThis() {
     RefCountedPtr<Channel> channel = std::move(channel_);
-    Arena* arena = arena_;
+    RefCountedPtr<Arena> arena = arena_;
     this->~ChannelBasedCall();
-    channel->DestroyArena(arena);
   }
 
   Channel* channel() const { return channel_.get(); }
 
   // Non-virtual arena accessor -- needed by PipeBasedCall
-  Arena* GetArena() { return arena_; }
+  Arena* GetArena() { return arena_.get(); }
 
  private:
-  Arena* const arena_;
+  const RefCountedPtr<Arena> arena_;
   RefCountedPtr<Channel> channel_;
 };
 
@@ -597,8 +596,9 @@ class FilterStackCall final : public ChannelBasedCall {
     void FinishBatch(grpc_error_handle error);
   };
 
-  FilterStackCall(Arena* arena, const grpc_call_create_args& args)
-      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+  FilterStackCall(RefCountedPtr<Arena> arena, const grpc_call_create_args& args)
+      : ChannelBasedCall(std::move(arena),
+                         args.server_transport_data == nullptr,
                          args.send_deadline, args.channel->Ref()),
         cq_(args.cq),
         stream_op_payload_(context_) {
@@ -732,7 +732,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
 
-  Arena* arena = channel->CreateArena();
+  RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   DCHECK(FromC(call->c_ptr()) == call);
   DCHECK(FromCallStack(call->call_stack()) == call);
@@ -771,7 +771,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-              arena, args->server->channel_args());
+              arena.get(), args->server->channel_args());
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
@@ -1906,10 +1906,12 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
  public:
   using Call::arena;
 
-  BasicPromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+  BasicPromiseBasedCall(RefCountedPtr<Arena> arena,
+                        uint32_t initial_external_refs,
                         uint32_t initial_internal_refs,
                         const grpc_call_create_args& args)
-      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+      : ChannelBasedCall(std::move(arena),
+                         args.server_transport_data == nullptr,
                          args.send_deadline, args.channel->Ref()),
         Party(initial_internal_refs),
         external_refs_(initial_external_refs),
@@ -2067,7 +2069,7 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
 
 class PromiseBasedCall : public BasicPromiseBasedCall {
  public:
-  PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+  PromiseBasedCall(RefCountedPtr<Arena> arena, uint32_t initial_external_refs,
                    const grpc_call_create_args& args);
 
   bool Completed() final { return finished_.IsSet(); }
@@ -2349,16 +2351,17 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
                                        grpc_call** out_call) {
   Channel* channel = args->channel.get();
 
-  auto* arena = channel->CreateArena();
+  auto arena = channel->call_arena_allocator()->MakeArena();
   PromiseBasedCall* call = arena->New<T>(arena, args);
   *out_call = call->c_ptr();
   DCHECK(Call::FromC(*out_call) == call);
   return absl::OkStatus();
 }
 
-PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+PromiseBasedCall::PromiseBasedCall(RefCountedPtr<Arena> arena,
+                                   uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
-    : BasicPromiseBasedCall(arena, initial_external_refs,
+    : BasicPromiseBasedCall(std::move(arena), initial_external_refs,
                             initial_external_refs != 0 ? 1 : 0, args) {}
 
 static void CToMetadata(grpc_metadata* metadata, size_t count,
@@ -2591,8 +2594,9 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array,
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
-  ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
-      : PromiseBasedCall(arena, 1, *args),
+  ClientPromiseBasedCall(RefCountedPtr<Arena> arena,
+                         grpc_call_create_args* args)
+      : PromiseBasedCall(std::move(arena), 1, *args),
         polling_entity_(
             args->cq != nullptr
                 ? grpc_polling_entity_create_from_pollset(

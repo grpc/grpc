@@ -235,15 +235,14 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     FrameHeader frame_header, BufferPair buffers,
     ChaoticGoodTransport& transport) {
   ClientFragmentFrame fragment_frame;
-  ScopedArenaPtr arena(call_arena_allocator_->MakeArena());
+  RefCountedPtr<Arena> arena(call_arena_allocator_->MakeArena());
   absl::Status status = transport.DeserializeFrame(
       frame_header, std::move(buffers), arena.get(), fragment_frame,
       FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
-    auto call =
-        MakeCallPair(std::move(fragment_frame.headers), event_engine_.get(),
-                     arena.release(), call_arena_allocator_, nullptr);
+    auto call = MakeCallPair(std::move(fragment_frame.headers),
+                             event_engine_.get(), std::move(arena), nullptr);
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {

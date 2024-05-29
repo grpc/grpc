@@ -24,6 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/alloc.h"
 
 namespace {
@@ -58,19 +59,19 @@ Arena::~Arena() {
 #endif
 }
 
-Arena* Arena::Create(size_t initial_size, MemoryAllocator* memory_allocator) {
-  return new (ArenaStorage(initial_size))
-      Arena(initial_size, 0, memory_allocator);
+RefCountedPtr<Arena> Arena::Create(size_t initial_size,
+                                   RefCountedPtr<ArenaFactory> arena_factory) {
+  return RefCountedPtr<Arena>(new (ArenaStorage(initial_size)) Arena(
+      initial_size, 0, std::move(arena_factory)));
 }
 
-std::pair<Arena*, void*> Arena::CreateWithAlloc(
-    size_t initial_size, size_t alloc_size, MemoryAllocator* memory_allocator) {
-  static constexpr size_t base_size =
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
-  auto* new_arena = new (ArenaStorage(initial_size))
-      Arena(initial_size, alloc_size, memory_allocator);
-  void* first_alloc = reinterpret_cast<char*>(new_arena) + base_size;
-  return std::make_pair(new_arena, first_alloc);
+Arena::Arena(size_t initial_size, size_t initial_alloc,
+             RefCountedPtr<ArenaFactory> arena_factory)
+    : total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc)),
+      initial_zone_size_(initial_size),
+      arena_factory_(std::move(arena_factory)) {
+  arena_factory_->allocator().Reserve(
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc));
 }
 
 void Arena::DestroyManagedNewObjects() {
@@ -88,7 +89,8 @@ void Arena::DestroyManagedNewObjects() {
 
 void Arena::Destroy() {
   DestroyManagedNewObjects();
-  memory_allocator_->Release(total_allocated_.load(std::memory_order_relaxed));
+  arena_factory_->allocator().Release(
+      total_allocated_.load(std::memory_order_relaxed));
   this->~Arena();
   gpr_free_aligned(this);
 }
@@ -102,7 +104,7 @@ void* Arena::AllocZone(size_t size) {
   static constexpr size_t zone_base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
   size_t alloc_size = zone_base_size + size;
-  memory_allocator_->Reserve(alloc_size);
+  arena_factory_->allocator().Reserve(alloc_size);
   total_allocated_.fetch_add(alloc_size, std::memory_order_relaxed);
   Zone* z = new (gpr_malloc_aligned(alloc_size, GPR_MAX_ALIGNMENT)) Zone();
   auto* prev = last_zone_.load(std::memory_order_relaxed);
@@ -120,63 +122,27 @@ void Arena::ManagedNewObject::Link(std::atomic<ManagedNewObject*>* head) {
   }
 }
 
-#ifndef GRPC_ARENA_POOLED_ALLOCATIONS_USE_MALLOC
-void* Arena::AllocPooled(size_t obj_size, size_t alloc_size,
-                         std::atomic<FreePoolNode*>* head) {
-  // ABA mitigation:
-  // AllocPooled may be called by multiple threads, and to remove a node from
-  // the free list we need to manipulate the next pointer, which may be done
-  // differently by each thread in a naive implementation.
-  // The literature contains various ways of dealing with this. Here we expect
-  // to be mostly single threaded - Arena's are owned by calls and calls don't
-  // do a lot of concurrent work with the pooled allocator. The place that they
-  // do is allocating metadata batches for decoding HPACK headers in chttp2.
-  // So we adopt an approach that is simple and fast for the single threaded
-  // case, and that is also correct in the multi threaded case.
+RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size) {
+  class Allocator : public ArenaFactory {
+   public:
+    explicit Allocator(size_t initial_size)
+        : ArenaFactory(
+              ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+                  "simple-arena-allocator")),
+          initial_size_(initial_size) {}
 
-  // First, take ownership of the entire free list. At this point we know that
-  // no other thread can see free nodes and will be forced to allocate.
-  // We think we're mostly single threaded and so that's ok.
-  FreePoolNode* p = head->exchange(nullptr, std::memory_order_acquire);
-  // If there are no nodes in the free list, then go ahead and allocate from the
-  // arena.
-  if (p == nullptr) {
-    void* r = Alloc(alloc_size);
-    TracePoolAlloc(obj_size, r);
-    return r;
-  }
-  // We had a non-empty free list... but we own the *entire* free list.
-  // We only want one node, so if there are extras we'd better give them back.
-  if (p->next != nullptr) {
-    // We perform an exchange to do so, but if there were concurrent frees with
-    // this allocation then there'll be a free list that needs to be merged with
-    // ours.
-    FreePoolNode* extra = head->exchange(p->next, std::memory_order_acq_rel);
-    // If there was a free list concurrently created, we merge it into the
-    // overall free list here by simply freeing each node in turn. This is O(n),
-    // but only O(n) in the number of nodes that were freed concurrently, and
-    // again: we think real world use cases are going to see this as mostly
-    // single threaded.
-    while (extra != nullptr) {
-      FreePoolNode* next = extra->next;
-      FreePooled(extra, head);
-      extra = next;
+    RefCountedPtr<Arena> MakeArena() override {
+      return Arena::Create(initial_size_, Ref());
     }
-  }
-  TracePoolAlloc(obj_size, p);
-  return p;
-}
 
-void Arena::FreePooled(void* p, std::atomic<FreePoolNode*>* head) {
-  // May spuriously trace a free of an already freed object - see AllocPooled
-  // ABA mitigation.
-  TracePoolFree(p);
-  FreePoolNode* node = static_cast<FreePoolNode*>(p);
-  node->next = head->load(std::memory_order_acquire);
-  while (!head->compare_exchange_weak(
-      node->next, node, std::memory_order_acq_rel, std::memory_order_relaxed)) {
-  }
+    void FinalizeArena(Arena* arena) override {
+      // No-op.
+    }
+
+   private:
+    size_t initial_size_;
+  };
+  return MakeRefCounted<Allocator>(initial_size);
 }
-#endif
 
 }  // namespace grpc_core
