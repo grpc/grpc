@@ -147,6 +147,7 @@ grpc_cc_test(
     deps = [
         "//:promise",
         "//src/core:map",
+        "poll_matcher"
     ],
 )
 
