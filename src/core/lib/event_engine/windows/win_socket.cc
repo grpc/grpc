@@ -69,12 +69,14 @@ void WinSocket::Shutdown() {
                         sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
                         &ioctl_num_bytes, NULL, NULL);
 
-  if (status == 0) {
-    DisconnectEx(socket_, NULL, 0, 0);
-  } else {
+  if (status != 0) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s",
+    gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s",
             utf8_message);
+    gpr_free(utf8_message);
+  } else if (DisconnectEx(socket_, NULL, 0, 0) != 0) {
+    char* utf8_message = gpr_format_message(WSAGetLastError());
+    gpr_log(GPR_ERROR, "DisconnectEx failed : %s", utf8_message);
     gpr_free(utf8_message);
   }
   closesocket(socket_);

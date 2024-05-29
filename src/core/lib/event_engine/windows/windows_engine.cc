@@ -80,47 +80,55 @@ WindowsEventEngine::ConnectionState::ConnectionState(
   CHECK(socket_ != nullptr);
   connection_handle_ = ConnectionHandle{reinterpret_cast<intptr_t>(this),
                                         engine_->aba_token_.fetch_add(1)};
+  LOG(ERROR) << "DO NOT SUBMIT: ConnectionState owned engine::"
+             << engine_.use_count();
 }
 
 void WindowsEventEngine::ConnectionState::Start(Duration timeout) {
-  socket_->NotifyOnWrite(MakeOnConnectedCallback());
-  timer_handle_ = engine_->RunAfter(timeout, MakeDeadlineTimerCallback());
-}
-
-void WindowsEventEngine::ConnectionState::RunUserCallback(
-    absl::StatusOr<std::unique_ptr<Endpoint>> error) ABSL_LOCKS_EXCLUDED(mu_) {
-  EventEngine::OnConnectCallback cb;
-  {
-    grpc_core::MutexLock lock(&mu_);
-    cb = std::exchange(on_connect_user_callback_, nullptr);
-  }
-  cb(std::move(error));
-}
-
-EventEngine::Closure*
-WindowsEventEngine::ConnectionState::MakeOnConnectedCallback() {
   on_connected_cb_ =
-      std::make_unique<OnConnectedCallback>(engine_, shared_from_this());
-  return on_connected_cb_.get();
+      std::make_unique<OnConnectedCallback>(engine_.get(), shared_from_this());
+  socket_->NotifyOnWrite(on_connected_cb_.get());
+  deadline_timer_cb_ = std::make_unique<DeadlineTimerCallback>(
+      engine_.get(), shared_from_this());
+  timer_handle_ = engine_->RunAfter(timeout, deadline_timer_cb_.get());
 }
 
-EventEngine::Closure*
-WindowsEventEngine::ConnectionState::MakeDeadlineTimerCallback() {
-  deadline_timer_cb_ =
-      std::make_unique<DeadlineTimerCallback>(engine_, shared_from_this());
-  return deadline_timer_cb_.get();
+EventEngine::OnConnectCallback
+WindowsEventEngine::ConnectionState::TakeCallback() {
+  grpc_core::MutexLock lock(&mu_);
+  return std::exchange(on_connect_user_callback_, nullptr);
 }
 
 std::unique_ptr<WindowsEndpoint>
-WindowsEventEngine::ConnectionState::MakeEndpoint(ThreadPool* thread_pool) {
+WindowsEventEngine::ConnectionState::FinishConnectingAndMakeEndpoint(
+    ThreadPool* thread_pool) {
   ChannelArgsEndpointConfig cfg;
+  // DO NOT SUBMIT: both callbacks should have been called or destroyed.
+  // Need to assert that the deadline timer is cancelled
+  if (!engine_->Cancel(timer_handle_)) {
+    LOG(ERROR) << "DO NOT SUBMIT: deadline timer may still run";
+  } else {
+    LOG(ERROR) << "DO NOT SUBMIT: deadline timer cancelled, refs are released";
+    deadline_timer_cb_.reset();
+  }
   return std::make_unique<WindowsEndpoint>(address_, std::move(socket_),
                                            std::move(allocator_), cfg,
                                            thread_pool, engine_);
 }
 
+void WindowsEventEngine::ConnectionState::AbortOnConnect() {
+  LOG(ERROR) << "DO NOT SUBMIT: AbortOnConnect";
+  on_connected_cb_.reset();
+}
+
+void WindowsEventEngine::ConnectionState::AbortDeadlineTimer() {
+  LOG(ERROR) << "DO NOT SUBMIT: AbortDeadlineTimer";
+  deadline_timer_cb_.reset();
+}
+
 void WindowsEventEngine::ConnectionState::OnConnectedCallback::Run() {
-  CHECK_NE(connection_state_, nullptr)
+  LOG(ERROR) << "DO NOT SUBMIT: OnConnectedCallback::Run";
+  DCHECK_NE(connection_state_, nullptr)
       << "ConnectionState::OnConnectedCallback::" << this
       << " has already run. It should only ever run once.";
   bool has_run;
@@ -131,16 +139,24 @@ void WindowsEventEngine::ConnectionState::OnConnectedCallback::Run() {
   // This could race with the deadline timer. If so, the OnConnectCompleted
   // callback should not run, and the refs should be released.
   if (has_run) {
+    LOG(ERROR) << "DO NOT SUBMIT: OnConnectedCallback resetting "
+                  "connection_state_";
     connection_state_.reset();
-    engine_.reset();
     return;
   }
   engine_->OnConnectCompleted(std::move(connection_state_));
-  // Reset to release the ref.
-  engine_.reset();
 }
 
+// DO NOT SUBMIT: Need to get the deadline timer to release its ref if it's
+// never going to be called. bazel test --test_output=streamed
+// --config=windows_dbg --runs_per_test=1 --test_env=grpc_verbosity=debug
+// --test_env=GRPC_EXPERIMENTS=event_engine_client
+// --test_env=GRPC_TRACE=event_engine
+// --test_filter='*RlsEnd2endTest.ConnectivityStateTransientFailure*'
+// --test_arg=--v=10 //test/cpp/end2end:rls_end2end_test
+
 void WindowsEventEngine::ConnectionState::DeadlineTimerCallback::Run() {
+  LOG(ERROR) << "DO NOT SUBMIT: DeadlineTimerCallback::Run";
   CHECK_NE(connection_state_, nullptr)
       << "ConnectionState::DeadlineTimerCallback::" << this
       << " has already run. It should only ever run once.";
@@ -152,13 +168,12 @@ void WindowsEventEngine::ConnectionState::DeadlineTimerCallback::Run() {
   // This could race with the deadline timer. If so, the OnConnectCompleted
   // callback should not run, and the refs should be released.
   if (has_run) {
+    LOG(ERROR) << "DO NOT SUBMIT: DeadlineTimerCallback resetting "
+                  "connection_state_";
     connection_state_.reset();
-    engine_.reset();
     return;
   }
   engine_->OnDeadlineTimerFired(std::move(connection_state_));
-  // Reset to release the ref.
-  engine_.reset();
 }
 
 // ---- IOCPWorkClosure ----
@@ -358,7 +373,6 @@ bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
 void WindowsEventEngine::OnConnectCompleted(
     std::shared_ptr<ConnectionState> state) {
   absl::StatusOr<std::unique_ptr<WindowsEndpoint>> endpoint;
-  EventEngine::OnConnectCallback cb;
   {
     // Connection attempt complete!
     grpc_core::MutexLock lock(&state->mu());
@@ -376,20 +390,26 @@ void WindowsEventEngine::OnConnectCompleted(
           "Not accepting connection since the deadline timer has fired");
       return;
     }
+    // Release refs held by the deadline timer.
+    state->AbortDeadlineTimer();
     const auto& overlapped_result = state->socket()->write_info()->result();
     if (!overlapped_result.error_status.ok()) {
       state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
       endpoint = overlapped_result.error_status;
+      LOG(ERROR) << "DO NOT SUBMIT: error on connect: " << endpoint.status();
     } else if (overlapped_result.wsa_error != 0) {
       state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx failure");
       endpoint = GRPC_WSA_ERROR(overlapped_result.wsa_error, "ConnectEx");
+      LOG(ERROR) << "DO NOT SUBMIT: error on connect: " << endpoint.status();
     } else {
-      endpoint = state->MakeEndpoint(thread_pool_.get());
+      endpoint = state->FinishConnectingAndMakeEndpoint(thread_pool_.get());
     }
   }
   // This code should be running in a thread pool thread already, so the
   // callback can be run directly.
-  state->RunUserCallback(std::move(endpoint));
+  auto cb = state->TakeCallback();
+  state.reset();
+  cb(std::move(endpoint));
 }
 
 void WindowsEventEngine::OnDeadlineTimerFired(
@@ -400,8 +420,9 @@ void WindowsEventEngine::OnDeadlineTimerFired(
     cancelled = CancelConnectFromDeadlineTimer(connection_state.get());
   }
   if (cancelled) {
-    connection_state->RunUserCallback(
-        absl::DeadlineExceededError("Connection timed out"));
+    auto cb = connection_state->TakeCallback();
+    connection_state.reset();
+    cb(absl::DeadlineExceededError("Connection timed out"));
     return;
   }
   GRPC_EVENT_ENGINE_TRACE(
@@ -509,29 +530,39 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
                 address.size(), nullptr, 0, nullptr, info->overlapped());
   // It wouldn't be unusual to get a success immediately. But we'll still get an
   // IOCP notification, so let's ignore it.
-  if (!success) {
-    int last_error = WSAGetLastError();
-    if (last_error != ERROR_IO_PENDING) {
-      if (!Cancel(connection_state->timer_handle())) {
-        return EventEngine::ConnectionHandle::kInvalid;
-      }
-      connection_state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx");
-      {
-        grpc_core::MutexLock connection_handle_lock(&connection_mu_);
-        CHECK(known_connection_handles_.erase(
-                  connection_state->connection_handle()) == 1);
-      }
-      Run([connection_state = std::move(connection_state),
-           status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
-        connection_state->RunUserCallback(status);
-      });
-      return EventEngine::ConnectionHandle::kInvalid;
-    }
+  if (success) return connection_state->connection_handle();
+  // Otherwise, we need to handle an error or IO Event.
+  int last_error = WSAGetLastError();
+  if (last_error == ERROR_IO_PENDING) {
+    // Overlapped I/O operation is in progress.
+    return connection_state->connection_handle();
   }
-  return connection_state->connection_handle();
+  // Abort the connection.
+  // The on-connect callback won't run, so we must clean up its state.
+  connection_state->AbortOnConnect();
+  {
+    grpc_core::MutexLock connection_handle_lock(&connection_mu_);
+    CHECK(known_connection_handles_.erase(
+              connection_state->connection_handle()) == 1);
+  }
+  connection_state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx");
+  if (!Cancel(connection_state->timer_handle())) {
+    // The deadline timer will run, or is running.
+    return EventEngine::ConnectionHandle::kInvalid;
+  }
+  // The deadline timer won't run, so we must clean up its state.
+  connection_state->AbortDeadlineTimer();
+  Run([connection_state = std::move(connection_state),
+       status = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx")]() mutable {
+    auto cb = connection_state->TakeCallback();
+    connection_state.reset();
+    cb(std::move(status));
+  });
+  return EventEngine::ConnectionHandle::kInvalid;
 }
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
+  LOG(ERROR) << "DO NOT SUBMIT: CancelConnect for handle " << handle;
   if (handle == EventEngine::ConnectionHandle::kInvalid) {
     GRPC_EVENT_ENGINE_TRACE("%s",
                             "Attempted to cancel an invalid connection handle");
@@ -540,17 +571,20 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   // Erase the connection handle, which may be unknown
   {
     grpc_core::MutexLock lock(&connection_mu_);
-    if (!known_connection_handles_.contains(handle)) {
+    if (known_connection_handles_.erase(handle) != 1) {
       GRPC_EVENT_ENGINE_TRACE(
           "Unknown connection handle: %s",
           HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
       return false;
     }
-    known_connection_handles_.erase(handle);
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
   grpc_core::MutexLock state_lock(&connection_state->mu());
+  // The connection cannot be cancelled if the deadline timer is already firing.
   if (!Cancel(connection_state->timer_handle())) return false;
+  // The deadline timer was cancelled, so we must clean up its state. The
+  // on-connect callback will run when the
+  connection_state->AbortDeadlineTimer();
   return CancelConnectInternalStateLocked(connection_state);
 }
 
@@ -561,6 +595,8 @@ bool WindowsEventEngine::CancelConnectFromDeadlineTimer(
     grpc_core::MutexLock lock(&connection_mu_);
     if (known_connection_handles_.erase(
             connection_state->connection_handle()) != 1) {
+      LOG(ERROR) << "DO NOT SUBMIT: could not find connection handle, "
+                    "OnConnectCompleted must be running already";
       return false;
     }
   }

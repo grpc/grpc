@@ -38,6 +38,7 @@
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -82,6 +83,22 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
   while (engine.use_count() > 1) {
     ++n;
     if (n % 100 == 0) AsanAssertNoLeaks();
+    GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
+                         engine.use_count());
+    absl::SleepFor(absl::Milliseconds(100));
+  }
+}
+
+void WaitForSingleOwner(std::shared_ptr<EventEngine> engine,
+                        EventEngine::Duration timeout) {
+  int n = 0;
+  auto start = std::chrono::system_clock::now();
+  while (engine.use_count() > 1) {
+    ++n;
+    if (n % 100 == 0) AsanAssertNoLeaks();
+    if (std::chrono::system_clock::now() - start > timeout) {
+      grpc_core::Crash("Timed out waiting for a single EventEngine owner");
+    }
     GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
                          engine.use_count());
     absl::SleepFor(absl::Milliseconds(100));
