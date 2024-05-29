@@ -14713,6 +14713,7 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
+  - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/map_test.cc
   deps:
