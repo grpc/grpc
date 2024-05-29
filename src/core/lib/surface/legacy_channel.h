@@ -39,6 +39,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
@@ -55,16 +56,6 @@ class LegacyChannel final : public Channel {
                 RefCountedPtr<grpc_channel_stack> channel_stack);
 
   void Orphan() override;
-
-  Arena* CreateArena() override {
-    const size_t initial_size = call_size_estimator_.CallSizeEstimate();
-    global_stats().IncrementCallInitialSize(initial_size);
-    return Arena::Create(initial_size, &allocator_);
-  }
-  void DestroyArena(Arena* arena) override {
-    call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
-    arena->Destroy();
-  }
 
   bool IsLame() const override;
 
@@ -114,8 +105,6 @@ class LegacyChannel final : public Channel {
   const bool is_client_;
   const bool is_promising_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
-  CallSizeEstimator call_size_estimator_{1024};
-  grpc_event_engine::experimental::MemoryAllocator allocator_;
 };
 
 }  // namespace grpc_core
