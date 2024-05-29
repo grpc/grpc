@@ -361,7 +361,7 @@ void WindowsEventEngine::OnConnectCompleted(
     }
     if (erased_handles != 1 || !Cancel(state->timer_handle())) {
       GRPC_EVENT_ENGINE_TRACE(
-          "Not accepting connection since the deadline timer has fired");
+          "%s", "Not accepting connection since the deadline timer has fired");
       return;
     }
     // Release refs held by the deadline timer.
