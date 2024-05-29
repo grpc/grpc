@@ -434,6 +434,7 @@ for dirname in [
             "grpc_filegroup": lambda **kwargs: None,
             "grpc_transport_test": lambda **kwargs: None,
             "grpc_yodel_test": lambda **kwargs: None,
+            "grpc_yodel_simple_test": lambda **kwargs: None,
             "grpc_fuzzer": grpc_cc_library,
             "grpc_fuzz_test": grpc_cc_library,
             "grpc_proto_fuzzer": grpc_cc_library,
