@@ -104,7 +104,7 @@ UPB_INLINE bool envoy_config_trace_v3_SkyWalkingConfig_has_client_config(const e
 
 UPB_INLINE void envoy_config_trace_v3_SkyWalkingConfig_set_grpc_service(envoy_config_trace_v3_SkyWalkingConfig *msg, struct envoy_config_core_v3_GrpcService* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_SkyWalkingConfig_mutable_grpc_service(envoy_config_trace_v3_SkyWalkingConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_GrpcService* sub = (struct envoy_config_core_v3_GrpcService*)envoy_config_trace_v3_SkyWalkingConfig_grpc_service(msg);
@@ -116,7 +116,7 @@ UPB_INLINE struct envoy_config_core_v3_GrpcService* envoy_config_trace_v3_SkyWal
 }
 UPB_INLINE void envoy_config_trace_v3_SkyWalkingConfig_set_client_config(envoy_config_trace_v3_SkyWalkingConfig *msg, envoy_config_trace_v3_ClientConfig* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_trace_v3_ClientConfig* envoy_config_trace_v3_SkyWalkingConfig_mutable_client_config(envoy_config_trace_v3_SkyWalkingConfig* msg, upb_Arena* arena) {
   struct envoy_config_trace_v3_ClientConfig* sub = (struct envoy_config_trace_v3_ClientConfig*)envoy_config_trace_v3_SkyWalkingConfig_client_config(msg);
@@ -231,19 +231,19 @@ UPB_INLINE bool envoy_config_trace_v3_ClientConfig_has_max_cache_size(const envo
 
 UPB_INLINE void envoy_config_trace_v3_ClientConfig_set_service_name(envoy_config_trace_v3_ClientConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_ClientConfig_set_instance_name(envoy_config_trace_v3_ClientConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, UPB_SIZE(36, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_ClientConfig_set_backend_token(envoy_config_trace_v3_ClientConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 16), -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_trace_v3_ClientConfig_set_max_cache_size(envoy_config_trace_v3_ClientConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(16, 64), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_trace_v3_ClientConfig_mutable_max_cache_size(envoy_config_trace_v3_ClientConfig* msg, upb_Arena* arena) {
   struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_config_trace_v3_ClientConfig_max_cache_size(msg);

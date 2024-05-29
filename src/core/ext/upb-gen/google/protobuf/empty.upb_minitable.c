@@ -16,6 +16,9 @@ const upb_MiniTable google__protobuf__Empty_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.protobuf.Empty",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

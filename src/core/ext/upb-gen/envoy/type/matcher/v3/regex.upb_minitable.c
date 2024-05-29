@@ -30,6 +30,9 @@ const upb_MiniTable envoy__type__matcher__v3__RegexMatcher_msg_init = {
   &envoy_type_matcher_v3_RegexMatcher_submsgs[0],
   &envoy_type_matcher_v3_RegexMatcher__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.matcher.v3.RegexMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x002000080100000a, &upb_pom_1bt_max64b},
@@ -50,6 +53,9 @@ const upb_MiniTable envoy__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init =
   &envoy_type_matcher_v3_RegexMatcher_GoogleRE2_submsgs[0],
   &envoy_type_matcher_v3_RegexMatcher_GoogleRE2__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.matcher.v3.RegexMatcher.GoogleRE2",
+#endif
 };
 
 static const upb_MiniTableSub envoy_type_matcher_v3_RegexMatchAndSubstitute_submsgs[1] = {
@@ -65,6 +71,9 @@ const upb_MiniTable envoy__type__matcher__v3__RegexMatchAndSubstitute_msg_init =
   &envoy_type_matcher_v3_RegexMatchAndSubstitute_submsgs[0],
   &envoy_type_matcher_v3_RegexMatchAndSubstitute__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.type.matcher.v3.RegexMatchAndSubstitute",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
