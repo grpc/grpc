@@ -55,7 +55,7 @@ grpc_yodel_simple_test(
 )
 
 grpc_yodel_simple_test(
-    name = "load_balanced_call_destination_test_lib",
+    name = "load_balanced_call_destination",
     srcs = ["load_balanced_call_destination_test.cc"],
     external_deps = ["gtest"],
     deps = [
