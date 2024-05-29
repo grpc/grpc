@@ -216,6 +216,11 @@ grpc_cc_test(
     name = "xds_core_end2end_test",
     size = "large",
     srcs = ["xds_core_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
