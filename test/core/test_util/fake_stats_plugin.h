@@ -361,8 +361,7 @@ class FakeStatsPlugin : public StatsPlugin {
     return nullptr;
   }
   bool IsInstrumentEnabled(
-      grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle)
-      override {
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) override {
     const auto& descriptor =
         GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
     return use_disabled_by_default_metrics_ || descriptor.enable_by_default;
