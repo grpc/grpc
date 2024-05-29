@@ -151,7 +151,6 @@ TEST(DualRefCountedWithNoDelete, Basic) {
   foo->WeakUnref();
   EXPECT_TRUE(orphaned_called);
   EXPECT_TRUE(destructor_called);
-  foo.Destroy();
 }
 
 }  // namespace
