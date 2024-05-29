@@ -474,11 +474,6 @@ class CallHandler {
   explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
       : spine_(std::move(spine)) {}
 
-  template <typename ContextType>
-  void SetContext(ContextType) {
-    // FIXME: implement
-  }
-
   auto PullClientInitialMetadata() {
     return spine_->PullClientInitialMetadata();
   }

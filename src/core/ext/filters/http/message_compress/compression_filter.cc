@@ -118,7 +118,7 @@ MessageHandle ChannelCompression::CompressMessage(
     gpr_log(GPR_INFO, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
             message->payload()->Length(), algorithm, message->flags());
   }
-  auto* call_tracer = GetContext<CallTracerInterface>();
+  auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordSendMessage(*message->payload());
   }
@@ -175,7 +175,7 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
             message->payload()->Length(),
             args.max_recv_message_length.value_or(-1), args.algorithm);
   }
-  auto* call_tracer = GetContext<CallTracerInterface>();
+  auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordReceivedMessage(*message->payload());
   }

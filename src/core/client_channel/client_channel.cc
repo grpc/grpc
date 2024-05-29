@@ -79,6 +79,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
@@ -121,6 +122,73 @@ using internal::ClientChannelMethodParsedConfig;
 extern TraceFlag grpc_client_channel_trace;
 extern TraceFlag grpc_client_channel_call_trace;
 extern TraceFlag grpc_client_channel_lb_call_trace;
+
+//
+// ClientChannel::SubchannelWrapper
+//
+
+class ClientChannel::SubchannelWrapper
+    : public SubchannelInterfaceWithCallDestination {
+ public:
+  SubchannelWrapper(RefCountedPtr<ClientChannel> client_channel,
+                    RefCountedPtr<Subchannel> subchannel);
+  ~SubchannelWrapper() override;
+
+  void Orphaned() override;
+  void WatchConnectivityState(
+      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+  void CancelConnectivityStateWatch(
+      ConnectivityStateWatcherInterface* watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+
+  RefCountedPtr<UnstartedCallDestination> call_destination() override {
+    return subchannel_->call_destination();
+  }
+
+  void RequestConnection() override { subchannel_->RequestConnection(); }
+
+  void ResetBackoff() override { subchannel_->ResetBackoff(); }
+
+  void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+  void CancelDataWatcher(DataWatcherInterface* watcher) override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
+  void ThrottleKeepaliveTime(int new_keepalive_time);
+
+ private:
+  class WatcherWrapper;
+
+  // A heterogenous lookup comparator for data watchers that allows
+  // unique_ptr keys to be looked up as raw pointers.
+  struct DataWatcherLessThan {
+    using is_transparent = void;
+    bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                    const std::unique_ptr<DataWatcherInterface>& p2) const {
+      return p1 < p2;
+    }
+    bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
+                    const DataWatcherInterface* p2) const {
+      return p1.get() < p2;
+    }
+    bool operator()(const DataWatcherInterface* p1,
+                    const std::unique_ptr<DataWatcherInterface>& p2) const {
+      return p1 < p2.get();
+    }
+  };
+
+  RefCountedPtr<ClientChannel> client_channel_;
+  RefCountedPtr<Subchannel> subchannel_;
+  // Maps from the address of the watcher passed to us by the LB policy
+  // to the address of the WrapperWatcher that we passed to the underlying
+  // subchannel.  This is needed so that when the LB policy calls
+  // CancelConnectivityStateWatch() with its watcher, we know the
+  // corresponding WrapperWatcher to cancel on the underlying subchannel.
+  std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
+      ABSL_GUARDED_BY(*client_channel_->work_serializer_);
+  std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
+      data_watchers_ ABSL_GUARDED_BY(*client_channel_->work_serializer_);
+};
 
 //
 // ClientChannel::ResolverResultHandler
@@ -581,11 +649,6 @@ ClientChannel::ClientChannel(
       default_authority_(
           GetDefaultAuthorityFromChannelArgs(channel_args_, this->target())),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
-      call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
-          channel_args_.GetObject<ResourceQuota>()
-              ->memory_quota()
-              ->CreateMemoryAllocator("client_channel"),
-          1024)),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
       resolver_data_for_calls_(ResolverDataForCalls{}),
       picker_(nullptr),
@@ -655,7 +718,7 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
 
 void ClientChannel::WatchConnectivityState(grpc_connectivity_state, Timestamp,
                                            grpc_completion_queue*, void*) {
-  // FIXME: implement
+  // TODO(ctiller): implement
   Crash("not implemented");
 }
 
@@ -730,6 +793,7 @@ class PingRequest {
 }  // namespace
 
 void ClientChannel::Ping(grpc_completion_queue*, void*) {
+  // TODO(ctiller): implement
   Crash("not implemented");
 }
 
@@ -753,7 +817,7 @@ CallInitiator ClientChannel::CreateCall(
   // Create an initiator/unstarted-handler pair.
   auto call =
       MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                   call_arena_allocator_->MakeArena());
+                   call_arena_allocator()->MakeArena());
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuardedUntilCallCompletes(
@@ -1179,7 +1243,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
   // Construct filter stack.
-  // TODO(roth): Add service_config to channel_args_.
   InterceptionChainBuilder builder(channel_args_.SetObject(this));
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
@@ -1205,14 +1268,14 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   if (enable_retries) {
     Crash("call v3 stack does not yet support retries");
   }
-  auto filter_stack = builder.Build(call_destination_);
+  auto top_of_stack_call_destination = builder.Build(call_destination_);
   // Send result to data plane.
-  if (!filter_stack.ok()) {
+  if (!top_of_stack_call_destination.ok()) {
     resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(
-        filter_stack.status(), "channel construction"));
+        top_of_stack_call_destination.status(), "channel construction"));
   } else {
     resolver_data_for_calls_.Set(ResolverDataForCalls{
-        std::move(config_selector), std::move(*filter_stack)});
+        std::move(config_selector), std::move(*top_of_stack_call_destination)});
   }
 }
 

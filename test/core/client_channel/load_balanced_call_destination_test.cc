@@ -196,4 +196,7 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
   WaitForAllPendingWork();
 }
 
+// TODO(roth, ctiller): more tests
+// - tests for the picker returning queue, fail, and drop results.
+
 }  // namespace grpc_core
