@@ -38,7 +38,6 @@ const absl::string_view kDefaultAuthority = "test-authority";
 }  // namespace
 
 class ConnectedSubchannelTest : public YodelTest {
- public:
  protected:
   using YodelTest::YodelTest;
 

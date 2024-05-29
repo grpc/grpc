@@ -27,6 +27,7 @@ EXPERIMENT_ENABLES = {
     "http2_stats_fix": "http2_stats_fix",
     "keepalive_fix": "keepalive_fix",
     "keepalive_server_fix": "keepalive_server_fix",
+    "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
@@ -54,9 +55,15 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "event_engine_client",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -75,14 +82,10 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "event_engine_client",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

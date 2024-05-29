@@ -684,6 +684,8 @@ grpc_cc_library(
         "lib/promise/cancel_callback.h",
     ],
     deps = [
+        "arena",
+        "context",
         "promise_like",
         "//:gpr_platform",
     ],
@@ -3589,7 +3591,6 @@ grpc_cc_library(
     hdrs = ["load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
     deps = [
-        "call_destination",
         "dual_ref_counted",
         "iomgr_fwd",
         "//:event_engine_base_hdrs",

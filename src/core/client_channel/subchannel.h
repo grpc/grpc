@@ -244,6 +244,12 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     return connected_subchannel_;
   }
 
+  RefCountedPtr<UnstartedCallDestination> call_destination() {
+    MutexLock lock(&mu_);
+    if (connected_subchannel_ == nullptr) return nullptr;
+    return connected_subchannel_->unstarted_call_destination();
+  }
+
   // Attempt to connect to the backend.  Has no effect if already connected.
   void RequestConnection() ABSL_LOCKS_EXCLUDED(mu_);
 

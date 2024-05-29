@@ -40,7 +40,6 @@ std::string TestTarget() {
 }  // namespace
 
 class ClientChannelTest : public YodelTest {
- public:
  protected:
   using YodelTest::YodelTest;
 
@@ -164,7 +163,7 @@ class ClientChannelTest : public YodelTest {
     }
 
     ~TestResolver() override {
-      CHECK(test_->resolver_ == this);
+      CHECK_EQ(test_->resolver_, this);
       test_->resolver_ = nullptr;
     }
 
@@ -269,5 +268,10 @@ CLIENT_CHANNEL_TEST(StartCall) {
                });
   WaitForAllPendingWork();
 }
+
+// TODO(ctiller, roth): MANY more test cases
+// - Resolver returns an error for the initial result, then returns a valid
+// result.
+// - Resolver returns a service config (various permutations).
 
 }  // namespace grpc_core

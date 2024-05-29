@@ -19,6 +19,7 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
@@ -38,7 +39,8 @@ class LbMetadata : public LoadBalancingPolicy::MetadataInterface {
   void Add(absl::string_view key, absl::string_view value) override {
     if (batch_ == nullptr) return;
     // Gross, egregious hack to support legacy grpclb behavior.
-    // TODO(ctiller): Use a promise context for this once that plumbing is done.
+    // TODO(ctiller): Use a promise context for this once that plumbing is
+    // done.
     if (key == GrpcLbClientStatsMetadata::key()) {
       batch_->Set(
           GrpcLbClientStatsMetadata(),
@@ -158,7 +160,7 @@ T HandlePickResult(
 // Does an LB pick for a call.  Returns one of the following things:
 // - Continue{}, meaning to queue the pick
 // - a non-OK status, meaning to fail the call
-// - a connected subchannel, meaning that the pick is complete
+// - a call destination, meaning that the pick is complete
 // When the pick is complete, pushes client_initial_metadata onto
 // call_initiator.  Also adds the subchannel call tracker (if any) to
 // context.
@@ -191,13 +193,13 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                   complete_pick->subchannel.get());
         }
         CHECK(complete_pick->subchannel != nullptr);
-        // Grab a ref to the connected subchannel while we're still
+        // Grab a ref to the call destination while we're still
         // holding the data plane mutex.
         auto call_destination =
             DownCast<SubchannelInterfaceWithCallDestination*>(
                 complete_pick->subchannel.get())
                 ->call_destination();
-        // If the subchannel has no connected subchannel (e.g., if the
+        // If the subchannel has no call destination (e.g., if the
         // subchannel has moved out of state READY but the LB policy hasn't
         // yet seen that change and given us a new picker), then just
         // queue the pick.  We'll try again as soon as we get a new picker.
@@ -303,10 +305,10 @@ void LoadBalancedCallDestination::StartCall(
                     absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>,
                     bool>
                     pick_result) {
-              auto& connected_subchannel = std::get<0>(pick_result);
+              auto& call_destination = std::get<0>(pick_result);
               const bool was_queued = std::get<1>(pick_result);
-              if (!connected_subchannel.ok()) {
-                return connected_subchannel.status();
+              if (!call_destination.ok()) {
+                return call_destination.status();
               }
               // LB pick is done, so indicate that we've committed.
               auto* on_commit = MaybeGetContext<LbOnCommit>();
@@ -324,7 +326,7 @@ void LoadBalancedCallDestination::StartCall(
               // Delegate to connected subchannel.
               // FIXME: need to insert LbCallTracingFilter at the top of the
               // stack
-              (*connected_subchannel)->StartCall(unstarted_handler);
+              (*call_destination)->StartCall(unstarted_handler);
               return absl::OkStatus();
             });
       });

@@ -134,6 +134,10 @@ class Channel : public UnstartedCallDestination,
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
 
+  CallArenaAllocator* call_arena_allocator() {
+    return call_arena_allocator_.get();
+  }
+
  private:
   const std::string target_;
   const RefCountedPtr<channelz::ChannelNode> channelz_node_;
