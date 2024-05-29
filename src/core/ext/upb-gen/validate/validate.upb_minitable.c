@@ -69,6 +69,9 @@ const upb_MiniTable validate__FieldRules_msg_init = {
   &validate_FieldRules_submsgs[0],
   &validate_FieldRules__fields[0],
   UPB_SIZE(24, 32), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.FieldRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0018000c0100000a, &upb_pom_1bt_max64b},
@@ -120,6 +123,9 @@ const upb_MiniTable validate__FloatRules_msg_init = {
   NULL,
   &validate_FloatRules__fields[0],
   UPB_SIZE(48, 56), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.FloatRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -147,6 +153,9 @@ const upb_MiniTable validate__DoubleRules_msg_init = {
   NULL,
   &validate_DoubleRules__fields[0],
   UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.DoubleRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -174,6 +183,9 @@ const upb_MiniTable validate__Int32Rules_msg_init = {
   NULL,
   &validate_Int32Rules__fields[0],
   UPB_SIZE(48, 56), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.Int32Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -201,6 +213,9 @@ const upb_MiniTable validate__Int64Rules_msg_init = {
   NULL,
   &validate_Int64Rules__fields[0],
   UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.Int64Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -228,6 +243,9 @@ const upb_MiniTable validate__UInt32Rules_msg_init = {
   NULL,
   &validate_UInt32Rules__fields[0],
   UPB_SIZE(48, 56), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.UInt32Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -255,6 +273,9 @@ const upb_MiniTable validate__UInt64Rules_msg_init = {
   NULL,
   &validate_UInt64Rules__fields[0],
   UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.UInt64Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -282,6 +303,9 @@ const upb_MiniTable validate__SInt32Rules_msg_init = {
   NULL,
   &validate_SInt32Rules__fields[0],
   UPB_SIZE(48, 56), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.SInt32Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -309,6 +333,9 @@ const upb_MiniTable validate__SInt64Rules_msg_init = {
   NULL,
   &validate_SInt64Rules__fields[0],
   UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.SInt64Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -336,6 +363,9 @@ const upb_MiniTable validate__Fixed32Rules_msg_init = {
   NULL,
   &validate_Fixed32Rules__fields[0],
   UPB_SIZE(48, 56), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.Fixed32Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -363,6 +393,9 @@ const upb_MiniTable validate__Fixed64Rules_msg_init = {
   NULL,
   &validate_Fixed64Rules__fields[0],
   UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.Fixed64Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -390,6 +423,9 @@ const upb_MiniTable validate__SFixed32Rules_msg_init = {
   NULL,
   &validate_SFixed32Rules__fields[0],
   UPB_SIZE(48, 56), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.SFixed32Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -417,6 +453,9 @@ const upb_MiniTable validate__SFixed64Rules_msg_init = {
   NULL,
   &validate_SFixed64Rules__fields[0],
   UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.SFixed64Rules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -437,6 +476,9 @@ const upb_MiniTable validate__BoolRules_msg_init = {
   NULL,
   &validate_BoolRules__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.BoolRules",
+#endif
 };
 
 static const upb_MiniTableSub validate_StringRules_submsgs[1] = {
@@ -476,6 +518,9 @@ const upb_MiniTable validate__StringRules_msg_init = {
   &validate_StringRules_submsgs[0],
   &validate_StringRules__fields[0],
   UPB_SIZE(128, 184), 26, kUpb_ExtMode_NonExtendable, 26, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.StringRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -533,6 +578,9 @@ const upb_MiniTable validate__BytesRules_msg_init = {
   NULL,
   &validate_BytesRules__fields[0],
   UPB_SIZE(96, 144), 14, kUpb_ExtMode_NonExtendable, 14, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.BytesRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -564,6 +612,9 @@ const upb_MiniTable validate__EnumRules_msg_init = {
   NULL,
   &validate_EnumRules__fields[0],
   UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.EnumRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -585,6 +636,9 @@ const upb_MiniTable validate__MessageRules_msg_init = {
   NULL,
   &validate_MessageRules__fields[0],
   16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.MessageRules",
+#endif
 };
 
 static const upb_MiniTableSub validate_RepeatedRules_submsgs[1] = {
@@ -603,6 +657,9 @@ const upb_MiniTable validate__RepeatedRules_msg_init = {
   &validate_RepeatedRules_submsgs[0],
   &validate_RepeatedRules__fields[0],
   40, 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.RepeatedRules",
+#endif
 };
 
 static const upb_MiniTableSub validate_MapRules_submsgs[2] = {
@@ -623,6 +680,9 @@ const upb_MiniTable validate__MapRules_msg_init = {
   &validate_MapRules_submsgs[0],
   &validate_MapRules__fields[0],
   UPB_SIZE(40, 48), 6, kUpb_ExtMode_NonExtendable, 6, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.MapRules",
+#endif
 };
 
 static const upb_MiniTableField validate_AnyRules__fields[3] = {
@@ -635,6 +695,9 @@ const upb_MiniTable validate__AnyRules_msg_init = {
   NULL,
   &validate_AnyRules__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.AnyRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -668,6 +731,9 @@ const upb_MiniTable validate__DurationRules_msg_init = {
   &validate_DurationRules_submsgs[0],
   &validate_DurationRules__fields[0],
   UPB_SIZE(40, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.DurationRules",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -713,6 +779,9 @@ const upb_MiniTable validate__TimestampRules_msg_init = {
   &validate_TimestampRules_submsgs[0],
   &validate_TimestampRules__fields[0],
   UPB_SIZE(40, 64), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "validate.TimestampRules",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[23] = {
