@@ -59,6 +59,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_max_pings_wo_data_throttle =
+    "Experiment to throttle pings to a period of 1 min when "
+    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
+    "completely blocking).";
+const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -157,6 +162,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
+     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -241,6 +249,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_max_pings_wo_data_throttle =
+    "Experiment to throttle pings to a period of 1 min when "
+    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
+    "completely blocking).";
+const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -339,6 +352,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
+     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -423,6 +439,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_max_pings_wo_data_throttle =
+    "Experiment to throttle pings to a period of 1 min when "
+    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
+    "completely blocking).";
+const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -521,6 +542,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
+     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,

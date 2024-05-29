@@ -28,6 +28,7 @@ EXPERIMENT_ENABLES = {
     "http2_stats_fix": "http2_stats_fix",
     "keepalive_fix": "keepalive_fix",
     "keepalive_server_fix": "keepalive_server_fix",
+    "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
