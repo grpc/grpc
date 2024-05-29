@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: giggle
   protobuf_version: 3.26.1
-  version: 1.63.0
+  version: 1.63.1
 configs:
   asan:
     CC: clang
