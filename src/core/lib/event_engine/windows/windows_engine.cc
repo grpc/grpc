@@ -101,10 +101,6 @@ std::unique_ptr<WindowsEndpoint>
 WindowsEventEngine::ConnectionState::FinishConnectingAndMakeEndpoint(
     ThreadPool* thread_pool) {
   ChannelArgsEndpointConfig cfg;
-  // Release the engine refs if the timer callback can be cancelled.
-  if (engine_->Cancel(timer_handle_)) {
-    deadline_timer_cb_.reset();
-  }
   return std::make_unique<WindowsEndpoint>(address_, std::move(socket_),
                                            std::move(allocator_), cfg,
                                            thread_pool, engine_);
@@ -146,8 +142,8 @@ void WindowsEventEngine::ConnectionState::DeadlineTimerCallback::Run() {
     grpc_core::MutexLock lock(&connection_state_->mu_);
     has_run = std::exchange(connection_state_->has_run_, true);
   }
-  // This could race with the deadline timer. If so, the engine's
-  // OnConnectCompleted callback should not run, and the refs should be
+  // This could race with the on connected callback. If so, the engine's
+  // OnDeadlineTimerFired callback should not run, and the refs should be
   // released.
   if (has_run) {
     connection_state_.reset();

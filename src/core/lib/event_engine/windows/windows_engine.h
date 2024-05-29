@@ -131,7 +131,8 @@ class WindowsEventEngine : public EventEngine,
     // Create an Endpoint, transfering held object ownership to the endpoint.
     //
     // This can only be called once, and the connection state is no longer valid
-    // after an endpoint has been created.
+    // after an endpoint has been created. Callers must guarantee that the
+    // deadline timer callback will not be run.
     std::unique_ptr<WindowsEndpoint> FinishConnectingAndMakeEndpoint(
         ThreadPool* thread_pool);
 
