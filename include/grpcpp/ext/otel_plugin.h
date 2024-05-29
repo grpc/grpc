@@ -120,7 +120,7 @@ class OpenTelemetryPluginBuilder {
   /// If set, \a generic_method_attribute_filter is called per call with a
   /// generic method type to decide whether to record the method name or to
   /// replace it with "other". Non-generic or pre-registered methods remain
-  /// unaffectePd. If not set, by default, generic method names are replaced
+  /// unaffected. If not set, by default, generic method names are replaced
   /// with "other" when recording metrics.
   OpenTelemetryPluginBuilder& SetGenericMethodAttributeFilter(
       absl::AnyInvocable<bool(absl::string_view /*generic_method*/) const>

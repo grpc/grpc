@@ -102,7 +102,7 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
         GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
     // Add per-channel stats plugins.
     auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<grpc_core::StatsPlugin>>>>(
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
         GRPC_ARG_STATS_PLUGINS);
     if (stats_plugin_list != nullptr) {
       for (const auto& plugin : **stats_plugin_list) {
