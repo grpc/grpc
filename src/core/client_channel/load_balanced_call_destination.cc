@@ -324,8 +324,8 @@ void LoadBalancedCallDestination::StartCall(
                 }
               }
               // Delegate to connected subchannel.
-              // FIXME: need to insert LbCallTracingFilter at the top of the
-              // stack
+              // TODO(ctiller): need to insert LbCallTracingFilter at the top of
+              // the stack
               (*call_destination)->StartCall(unstarted_handler);
               return absl::OkStatus();
             });
