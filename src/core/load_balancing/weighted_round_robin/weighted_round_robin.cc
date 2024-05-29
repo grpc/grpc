@@ -691,11 +691,6 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
             self->BuildSchedulerAndStartTimerLocked();
           }
         }
-        if (!IsWorkSerializerDispatchEnabled()) {
-          // Release the picker ref inside the WorkSerializer.
-          work_serializer->Run([self = std::move(self)]() {}, DEBUG_LOCATION);
-          return;
-        }
         self.reset();
       });
 }

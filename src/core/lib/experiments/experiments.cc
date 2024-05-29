@@ -122,17 +122,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
-    "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const uint8_t required_experiments_work_serializer_dispatch[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 }  // namespace
 
 namespace grpc_core {
@@ -201,13 +190,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch,
-     required_experiments_work_serializer_dispatch, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -312,17 +294,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
-    "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const uint8_t required_experiments_work_serializer_dispatch[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 }  // namespace
 
 namespace grpc_core {
@@ -391,13 +362,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch,
-     required_experiments_work_serializer_dispatch, 1, false, true},
 };
 
 }  // namespace grpc_core
@@ -502,17 +466,6 @@ const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
     "{}";
-const char* const description_work_serializer_clears_time_cache =
-    "Have the work serializer clear the time cache when it dispatches work.";
-const char* const additional_constraints_work_serializer_clears_time_cache =
-    "{}";
-const char* const description_work_serializer_dispatch =
-    "Have the work serializer dispatch work to event engine for every "
-    "callback, instead of running things inline in the first thread that "
-    "successfully enqueues work.";
-const char* const additional_constraints_work_serializer_dispatch = "{}";
-const uint8_t required_experiments_work_serializer_dispatch[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
 }  // namespace
 
 namespace grpc_core {
@@ -581,13 +534,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
      false, true},
-    {"work_serializer_clears_time_cache",
-     description_work_serializer_clears_time_cache,
-     additional_constraints_work_serializer_clears_time_cache, nullptr, 0, true,
-     true},
-    {"work_serializer_dispatch", description_work_serializer_dispatch,
-     additional_constraints_work_serializer_dispatch,
-     required_experiments_work_serializer_dispatch, 1, true, true},
 };
 
 }  // namespace grpc_core

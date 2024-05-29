@@ -82,23 +82,14 @@ class ABSL_LOCKABLE WorkSerializer {
   //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) { ... }
   void Run(std::function<void()> callback, const DebugLocation& location);
 
-  // Schedule \a callback to be run later when the queue of callbacks is
-  // drained.
-  void Schedule(std::function<void()> callback, const DebugLocation& location);
-  // Drains the queue of callbacks.
-  void DrainQueue();
-
 #ifndef NDEBUG
   // Returns true if the current thread is running in the WorkSerializer.
   bool RunningInWorkSerializer() const;
 #endif
 
  private:
-  class WorkSerializerImpl;
-  class LegacyWorkSerializer;
-  class DispatchingWorkSerializer;
-
-  OrphanablePtr<WorkSerializerImpl> impl_;
+  class Impl;
+  OrphanablePtr<Impl> impl_;
 };
 
 }  // namespace grpc_core
