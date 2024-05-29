@@ -93,7 +93,7 @@ class ClientChannel : public Channel {
     return event_engine_.get();
   }
 
-  // FIXME: should we support lame channels somehow?
+  // TODO(ctiller): lame channels
   bool IsLame() const override { return false; }
 
   bool SupportsConnectivityWatcher() const override { return true; }

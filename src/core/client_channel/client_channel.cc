@@ -731,7 +731,7 @@ void ClientChannel::AddConnectivityWatcher(
     grpc_connectivity_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface>) {
   Crash("not implemented");
-  // FIXME: to make this work, need to change WorkSerializer to use
+  // TODO(ctiller): to make this work, need to change WorkSerializer to use
   // absl::AnyInvocable<> instead of std::function<>
   //  work_serializer_->Run(
   //      [self = RefAsSubclass<ClientChannel>(), initial_state,
@@ -806,10 +806,11 @@ grpc_call* ClientChannel::CreateCall(grpc_call*, uint32_t,
                                      grpc_completion_queue*, grpc_pollset_set*,
                                      Slice, absl::optional<Slice>, Timestamp,
                                      bool) {
+  // TODO(ctiller): code to convert from C-core batch API to v3 call, then
+  // invoke CreateCall(client_initial_metadata, arena)
+  // TODO(ctiller): make sure call holds a ref to ClientChannel for its entire
+  // lifetime
   Crash("not implemented");
-  // FIXME: code to convert from C-core batch API to v3 call, then invoke
-  // CreateCall(client_initial_metadata, arena)
-  // FIXME: make sure call holds a ref to ClientChannel for its entire lifetime
   return nullptr;
 }
 
@@ -1256,16 +1257,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   }
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_CLIENT_CHANNEL, builder);
-// FIXME: add filters returned by config selector
-#if 0
-  std::vector<const grpc_channel_filter*> filters =
-      config_selector->GetFilters();
-  ChannelArgs new_args =
-      channel_args_.SetObject(this).SetObject(service_config);
-  RefCountedPtr<DynamicFilters> dynamic_filters =
-      DynamicFilters::Create(new_args, std::move(filters));
-  CHECK(dynamic_filters != nullptr);
-#endif
+  // TODO(roth): add filters returned by config selector
   // Create call destination.
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
