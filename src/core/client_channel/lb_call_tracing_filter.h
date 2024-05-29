@@ -19,7 +19,7 @@ namespace grpc_core {
 
 // A filter to handle updating with the call tracer and LB subchannel
 // call tracker inside the LB call.
-// FIXME: register only when call v3 experiment is enabled
+// TODO(ctiller): register only when call v3 experiment is enabled
 class LbCallTracingFilter {
  public:
   static absl::StatusOr<LbCallTracingFilter> Create(const ChannelArgs&,
@@ -67,7 +67,7 @@ class LbCallTracingFilter {
       const BackendMetricData* backend_metric_data_ = nullptr;
     };
 
-    // FIXME: this isn't the right place to measure this from -- should be
+    // TODO(roth): this isn't the right place to measure this from -- should be
     // doing it from before we do the LB pick
     gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
     Slice peer_string_;

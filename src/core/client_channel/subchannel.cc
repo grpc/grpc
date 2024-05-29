@@ -239,7 +239,7 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
   }
 
   void Ping(absl::AnyInvocable<void(absl::Status)>) override {
-    // FIXME: add new transport API for this in v3 stack
+    // TODO(ctiller): add new transport API for this in v3 stack
     Crash("not implemented");
   }
 
