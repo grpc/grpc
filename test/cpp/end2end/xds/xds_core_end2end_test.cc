@@ -161,6 +161,34 @@ TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
 }
 
 //
+// XdsServerTlsTest: xDS server using TlsCreds
+//
+
+class XdsServerTlsTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {
+    InitClient(MakeBootstrapBuilder().SetXdsChannelCredentials(
+                   "tls", absl::StrCat("{\"ca_certificate_file\": \"",
+                                       kCaCertPath, "\"}")),
+               /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"foo.test.google.fr");
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsServerTlsTest,
+    ::testing::Values(XdsTestType().set_xds_server_uses_tls_creds(true)),
+    &XdsTestType::Name);
+
+TEST_P(XdsServerTlsTest, Basic) {
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendOk(DEBUG_LOCATION);
+}
+
+//
 // GlobalXdsClientTest - tests that need to run with a global XdsClient
 // (this is the default in production)
 //
