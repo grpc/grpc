@@ -117,7 +117,8 @@ extern TraceFlag grpc_client_channel_lb_call_trace;
 
 class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
  public:
-  explicit ResolverResultHandler(RefCountedPtr<ClientChannel> client_channel)
+  explicit ResolverResultHandler(
+      WeakRefCountedPtr<ClientChannel> client_channel)
       : client_channel_(std::move(client_channel)) {}
 
   ~ResolverResultHandler() override {
@@ -133,7 +134,7 @@ class ClientChannel::ResolverResultHandler : public Resolver::ResultHandler {
   }
 
  private:
-  RefCountedPtr<ClientChannel> client_channel_;
+  WeakRefCountedPtr<ClientChannel> client_channel_;
 };
 
 //
