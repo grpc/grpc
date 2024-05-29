@@ -1,3 +1,107 @@
+// Copyright 2024 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#include "src/core/lib/surface/server_call.h"
+
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/lib/promise/all_ok.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/server/server_interface.h"
+
+namespace grpc_core {
+
+namespace {
+
+grpc_call_error ValidateServerBatch(const grpc_op* ops, size_t nops) {
+  BitSet<8> got_ops;
+  for (size_t op_idx = 0; op_idx < nops; op_idx++) {
+    const grpc_op& op = ops[op_idx];
+    switch (op.op) {
+      case GRPC_OP_SEND_INITIAL_METADATA:
+        if (!AreInitialMetadataFlagsValid(op.flags)) {
+          return GRPC_CALL_ERROR_INVALID_FLAGS;
+        }
+        if (!ValidateMetadata(op.data.send_initial_metadata.count,
+                              op.data.send_initial_metadata.metadata)) {
+          return GRPC_CALL_ERROR_INVALID_METADATA;
+        }
+        break;
+      case GRPC_OP_SEND_MESSAGE:
+        if (!AreWriteFlagsValid(op.flags)) {
+          return GRPC_CALL_ERROR_INVALID_FLAGS;
+        }
+        break;
+      case GRPC_OP_SEND_STATUS_FROM_SERVER:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        if (!ValidateMetadata(
+                op.data.send_status_from_server.trailing_metadata_count,
+                op.data.send_status_from_server.trailing_metadata)) {
+          return GRPC_CALL_ERROR_INVALID_METADATA;
+        }
+        break;
+      case GRPC_OP_RECV_MESSAGE:
+      case GRPC_OP_RECV_CLOSE_ON_SERVER:
+        if (op.flags != 0) return GRPC_CALL_ERROR_INVALID_FLAGS;
+        break;
+      case GRPC_OP_RECV_INITIAL_METADATA:
+      case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
+      case GRPC_OP_RECV_STATUS_ON_CLIENT:
+        return GRPC_CALL_ERROR_NOT_ON_SERVER;
+    }
+    if (got_ops.is_set(op.op)) return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
+    got_ops.set(op.op);
+  }
+  return GRPC_CALL_OK;
+}
+
+}  // namespace
+
 grpc_call_error ServerCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
@@ -116,3 +220,5 @@ grpc_call* MakeServerCall(CallHandler call_handler,
                          std::move(call_handler), server, cq))
       ->c_ptr();
 }
+
+}  // namespace grpc_core

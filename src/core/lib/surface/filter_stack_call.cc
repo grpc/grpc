@@ -14,7 +14,71 @@
 
 #include "src/core/lib/surface/filter_stack_call.h"
 
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <algorithm>
+#include <cstdint>
+#include <string>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/channelz/channelz.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/lib/iomgr/call_combiner.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call_utils.h"
+#include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/completion_queue.h"
+#include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/server/server_interface.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+#include "src/core/util/alloc.h"
+#include "src/core/util/time_precise.h"
+
 namespace grpc_core {
+
+// Alias to make this type available in Call implementation without a grpc_core
+// prefix.
+using GrpcClosure = Closure;
 
 FilterStackCall::FilterStackCall(RefCountedPtr<Arena> arena,
                                  const grpc_call_create_args& args)
@@ -421,20 +485,6 @@ void FilterStackCall::RecvTrailingFilter(grpc_metadata_batch* b,
 }
 
 namespace {
-bool AreWriteFlagsValid(uint32_t flags) {
-  // check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set
-  const uint32_t allowed_write_positions =
-      (GRPC_WRITE_USED_MASK | GRPC_WRITE_INTERNAL_USED_MASK);
-  const uint32_t invalid_positions = ~allowed_write_positions;
-  return !(flags & invalid_positions);
-}
-
-bool AreInitialMetadataFlagsValid(uint32_t flags) {
-  // check that only bits in GRPC_WRITE_(INTERNAL?)_USED_MASK are set
-  uint32_t invalid_positions = ~GRPC_INITIAL_METADATA_USED_MASK;
-  return !(flags & invalid_positions);
-}
-
 size_t BatchSlotForOp(grpc_op_type type) {
   switch (type) {
     case GRPC_OP_SEND_INITIAL_METADATA:
@@ -679,24 +729,6 @@ void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
   }
   FinishStep(PendingOp::kSends);
 }
-
-namespace {
-void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
-                      bool is_notify_tag_closure) {
-  if (!is_notify_tag_closure) {
-    CHECK(grpc_cq_begin_op(cq, notify_tag));
-    grpc_cq_end_op(
-        cq, notify_tag, absl::OkStatus(),
-        [](void*, grpc_cq_completion* completion) { gpr_free(completion); },
-        nullptr,
-        static_cast<grpc_cq_completion*>(
-            gpr_malloc(sizeof(grpc_cq_completion))));
-  } else {
-    Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(notify_tag),
-                 absl::OkStatus());
-  }
-}
-}  // namespace
 
 grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                                             void* notify_tag,
@@ -1121,3 +1153,12 @@ char* FilterStackCall::GetPeer() {
 }
 
 }  // namespace grpc_core
+
+grpc_error_handle grpc_call_create(grpc_call_create_args* args,
+                                   grpc_call** out_call) {
+  return grpc_core::FilterStackCall::Create(args, out_call);
+}
+
+grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element) {
+  return grpc_core::FilterStackCall::FromTopElem(surface_element)->c_ptr();
+}

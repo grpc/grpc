@@ -238,21 +238,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
-// TODO(ctiller): remove once call-v3 finalized
-grpc_call* MakeServerCall(CallHandler call_handler,
-                          ClientMetadataHandle client_initial_metadata,
-                          ServerInterface* server, grpc_completion_queue* cq,
-                          grpc_metadata_array* publish_initial_metadata);
-
-grpc_call* MakeClientCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
-    bool registered_method, Timestamp deadline,
-    grpc_compression_options compression_options,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena,
-    RefCountedPtr<UnstartedCallDestination> destination);
-
 template <>
 struct ArenaContextType<Call> {
   static void Destroy(Call* call) {}
@@ -295,11 +280,6 @@ void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
-
-// Get the estimated memory size for a call BESIDES the call stack. Combined
-// with the size of the call stack, it helps estimate the arena size for the
-// initial call.
-size_t grpc_call_get_initial_size_estimate();
 
 // Return an appropriate compression algorithm for the requested compression \a
 // level in the context of \a call.

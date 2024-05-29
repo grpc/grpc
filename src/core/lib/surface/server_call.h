@@ -15,6 +15,49 @@
 #ifndef SERVERCALL_H
 #define SERVERCALL_H
 
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+
+#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/call_utils.h"
+#include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/server/server_interface.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+
 namespace grpc_core {
 
 class ServerCall final : public Call, public DualRefCounted<ServerCall> {
@@ -113,6 +156,11 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   grpc_completion_queue* const cq_;
   ServerInterface* const server_;
 };
+
+grpc_call* MakeServerCall(CallHandler call_handler,
+                          ClientMetadataHandle client_initial_metadata,
+                          ServerInterface* server, grpc_completion_queue* cq,
+                          grpc_metadata_array* publish_initial_metadata);
 
 }  // namespace grpc_core
 
