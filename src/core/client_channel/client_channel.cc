@@ -143,7 +143,7 @@ class ClientChannel::SubchannelWrapper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
 
   RefCountedPtr<UnstartedCallDestination> call_destination() override {
-    return subchannel_->connected_subchannel()->unstarted_call_destination();
+    return subchannel_->call_destination();
   }
 
   void RequestConnection() override { subchannel_->RequestConnection(); }
@@ -723,7 +723,7 @@ grpc_connectivity_state ClientChannel::CheckConnectivityState(
 
 void ClientChannel::WatchConnectivityState(grpc_connectivity_state, Timestamp,
                                            grpc_completion_queue*, void*) {
-  // FIXME: implement
+  // TODO(ctiller): implement
   Crash("not implemented");
 }
 
@@ -798,6 +798,7 @@ class PingRequest {
 }  // namespace
 
 void ClientChannel::Ping(grpc_completion_queue*, void*) {
+  // TODO(ctiller): implement
   Crash("not implemented");
 }
 
@@ -1247,7 +1248,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
         MakeRefCounted<DefaultConfigSelector>(saved_service_config_);
   }
   // Construct filter stack.
-  // TODO(roth): Add service_config to channel_args_.
   InterceptionChainBuilder builder(channel_args_.SetObject(this));
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
@@ -1273,14 +1273,14 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   if (enable_retries) {
     Crash("call v3 stack does not yet support retries");
   }
-  auto filter_stack = builder.Build(call_destination_);
+  auto top_of_stack_call_destination = builder.Build(call_destination_);
   // Send result to data plane.
-  if (!filter_stack.ok()) {
+  if (!top_of_stack_call_destination.ok()) {
     resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(
-        filter_stack.status(), "channel construction"));
+        top_of_stack_call_destination.status(), "channel construction"));
   } else {
     resolver_data_for_calls_.Set(ResolverDataForCalls{
-        std::move(config_selector), std::move(*filter_stack)});
+        std::move(config_selector), std::move(*top_of_stack_call_destination)});
   }
 }
 

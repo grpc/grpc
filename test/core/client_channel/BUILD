@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_test")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
 
 grpc_package(name = "test/core/client_channel")
 
@@ -34,66 +34,33 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_library(
-    name = "client_channel_test_lib",
-    testonly = True,
+grpc_yodel_simple_test(
+    name = "client_channel",
     srcs = ["client_channel_test.cc"],
     external_deps = ["gtest"],
     deps = [
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
     ],
-    alwayslink = 1,
 )
 
-grpc_yodel_test(
-    name = "client_channel",
-    deps = [
-        ":client_channel_test_lib",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
-    name = "connected_subchannel_test_lib",
-    testonly = True,
+grpc_yodel_simple_test(
+    name = "connected_subchannel",
     srcs = ["connected_subchannel_test.cc"],
     external_deps = ["gtest"],
     deps = [
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
     ],
-    alwayslink = 1,
 )
 
-grpc_yodel_test(
-    name = "connected_subchannel",
-    deps = [
-        ":connected_subchannel_test_lib",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_library(
+grpc_yodel_simple_test(
     name = "load_balanced_call_destination_test_lib",
-    testonly = True,
     srcs = ["load_balanced_call_destination_test.cc"],
     external_deps = ["gtest"],
     deps = [
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
-    ],
-    alwayslink = 1,
-)
-
-grpc_yodel_test(
-    name = "load_balanced_call_destination",
-    deps = [
-        ":load_balanced_call_destination_test_lib",
-        "//:grpc",
-        "//test/core/test_util:grpc_test_util",
     ],
 )
 

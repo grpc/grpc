@@ -148,6 +148,7 @@ class Channel : public InternallyRefCounted<Channel>,
   const RefCountedPtr<channelz::ChannelNode> channelz_node_;
   const grpc_compression_options compression_options_;
 
+  // TODO(ctiller): move to use CallArenaAllocator
   CallSizeEstimator call_size_estimator_;
   MemoryAllocator allocator_;
 
