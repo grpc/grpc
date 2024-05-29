@@ -34,7 +34,6 @@ cdef bint GLOBAL_SHUTDOWN_EXPORT_THREAD = False
 cdef object GLOBAL_EXPORT_THREAD
 
 PLUGIN_IDENTIFIER_SEP = ","
-PLUGIN_IDENTIFIER_KEY = "grpc_plugin_identifier"
 
 _LOGGER = logging.getLogger(__name__)
 

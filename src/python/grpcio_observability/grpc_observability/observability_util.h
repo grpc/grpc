@@ -36,8 +36,8 @@ namespace grpc_observability {
 struct CensusData {
   DataType type;
   std::vector<Label> labels;
-  // TODO(xuanwn): We can use union here
   std::string identifier;
+  // TODO(xuanwn): We can use union for span_data and measurement_data
   SpanCensusData span_data;
   Measurement measurement_data;
   CensusData() {}

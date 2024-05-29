@@ -61,7 +61,10 @@ METADATA_EXCHANGE_KEY_GCE_MAP = {
 class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     """
     An implementation of OpenTelemetryLabelInjector for CSM.
-    TODO(xuanwn): Add more details.
+
+    This injector will fetch labels from GCP resource detector and
+    environment, it's also responsible for serialize and deserialize
+    metadata exchange labels.
     """
 
     _exchange_labels: Dict[str, AnyStr]
@@ -208,7 +211,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
           True if this this plugin option is active on the channel, false otherwise.
         """
         # CSM channels should have an "xds" scheme
-        if not target.startswith("xds"):
+        if not target.startswith("xds:"):
             return False
         # If scheme is correct, the authority should be TD if exist
         authority_pattern = r"^xds:\/\/([^/]+)"
@@ -253,7 +256,6 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
     plugin_options: Iterable[OpenTelemetryPluginOption]
     meter_provider: Optional[MeterProvider]
     generic_method_attribute_filter: Callable[[str], bool]
-    _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
 
     def __init__(
         self,
@@ -262,9 +264,9 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
         meter_provider: Optional[MeterProvider] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
+        new_options = list(plugin_options) + [CsmOpenTelemetryPluginOption()]
         super().__init__(
-            plugin_options=list(plugin_options)
-            + [CsmOpenTelemetryPluginOption()],
+            plugin_options=new_options,
             meter_provider=meter_provider,
             generic_method_attribute_filter=generic_method_attribute_filter,
         )
@@ -287,6 +289,7 @@ def get_str_value_from_resource(
     return str(value)
 
 
+# pylint: disable=line-too-long
 def get_resource_type(gcp_resource: Resource) -> str:
     # Convert resource type from GoogleCloudResourceDetector to the value we used for
     # metadata exchange.

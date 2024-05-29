@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 
 # pytype: disable=pyi-error
@@ -26,12 +25,11 @@ GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
 GRPC_OTHER_LABEL_VALUE = "other"
 
 
-class OpenTelemetryLabelInjector(abc.ABC):
+class OpenTelemetryLabelInjector:
     """
     An interface that allows you to add additional labels on the calls traced.
     """
 
-    @abc.abstractmethod
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
         """
         Get labels used for metadata exchange.
@@ -42,7 +40,6 @@ class OpenTelemetryLabelInjector(abc.ABC):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
     def get_additional_labels(
         self, include_exchange_labels: bool
     ) -> Dict[str, str]:
@@ -84,7 +81,7 @@ class OpenTelemetryLabelInjector(abc.ABC):
         return labels
 
 
-class OpenTelemetryPluginOption(abc.ABC):
+class OpenTelemetryPluginOption:
     """
     An interface that allows you to add additional function to OpenTelemetryPlugin.
     """

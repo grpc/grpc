@@ -17,7 +17,6 @@
 #include <stddef.h>
 
 #include <algorithm>
-#include <typeinfo>
 #include <vector>
 
 #include "absl/strings/str_cat.h"

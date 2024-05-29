@@ -29,8 +29,8 @@ py_library(
     deps = [
         requirement("opentelemetry-resourcedetector-gcp"),
         requirement("opentelemetry-sdk"),
-        "@com_google_protobuf//:protobuf_python",
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "@com_google_protobuf//:protobuf_python",
     ],
 )

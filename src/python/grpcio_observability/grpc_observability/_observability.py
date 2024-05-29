@@ -42,7 +42,7 @@ class Exporter(metaclass=abc.ABCMeta):
         raise NotImplementedError()
 
 
-@dataclass
+@dataclass(frozen=True)
 class StatsData:
     """A data class representing stats data.
 
