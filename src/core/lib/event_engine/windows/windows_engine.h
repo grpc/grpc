@@ -117,10 +117,6 @@ class WindowsEventEngine : public EventEngine,
                     EventEngine::ResolvedAddress address,
                     MemoryAllocator allocator,
                     EventEngine::OnConnectCallback on_connect_user_callback);
-    ~ConnectionState() {
-      LOG(ERROR) << "DO NOT SUBMIT: ~ConnectionState. ee count::"
-                 << engine_.use_count() - 1;
-    }
 
     // Starts the deadline timer, and sets up the socket to notify on writes.
     //
@@ -128,16 +124,14 @@ class WindowsEventEngine : public EventEngine,
     // for the callbacks to hold a ref to this object.
     void Start(Duration timeout);
 
-    // Returns the user's callback and resets it to nullptr to ensure it only runs
-    // once.
-    // DO NOT SUBMIT: this probably should not be necessary.
+    // Returns the user's callback and resets it to nullptr to ensure it only
+    // runs once.
     OnConnectCallback TakeCallback() ABSL_LOCKS_EXCLUDED(mu_);
 
     // Create an Endpoint, transfering held object ownership to the endpoint.
     //
     // This can only be called once, and the connection state is no longer valid
     // after an endpoint has been created.
-    // DO NOT SUBMIT: is this a good API? Who should own this responsibility?
     std::unique_ptr<WindowsEndpoint> FinishConnectingAndMakeEndpoint(
         ThreadPool* thread_pool);
 
@@ -168,9 +162,6 @@ class WindowsEventEngine : public EventEngine,
       OnConnectedCallback(WindowsEventEngine* engine,
                           std::shared_ptr<ConnectionState> connection_state)
           : engine_(engine), connection_state_(std::move(connection_state)) {}
-      ~OnConnectedCallback() override {
-        LOG(ERROR) << "DO NOT SUBMIT: ~OnConnectedCallback";
-      }
 
       // Runs the WindowsEventEngine's OnConnectCompleted if the deadline timer
       // hasn't fired first.
@@ -190,9 +181,6 @@ class WindowsEventEngine : public EventEngine,
       DeadlineTimerCallback(WindowsEventEngine* engine,
                             std::shared_ptr<ConnectionState> connection_state)
           : engine_(engine), connection_state_(std::move(connection_state)) {}
-      ~DeadlineTimerCallback() override {
-        LOG(ERROR) << "DO NOT SUBMIT: ~DeadlineTimerCallback";
-      }
 
       // Runs the WindowsEventEngine's OnDeadlineTimerFired if the deadline
       // timer hasn't fired first.
