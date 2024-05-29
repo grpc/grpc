@@ -58,7 +58,7 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    windows: true
+    windows: false
 - name: event_engine_dns
   default:
     # not tested on iOS at all
@@ -78,6 +78,8 @@
 - name: keepalive_fix
   default: false
 - name: keepalive_server_fix
+  default: false
+- name: max_pings_wo_data_throttle
   default: false
 - name: monitoring_experiment
   default: true
