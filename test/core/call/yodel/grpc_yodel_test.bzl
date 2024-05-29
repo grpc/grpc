@@ -16,7 +16,7 @@
 Generate one transport test & associated fuzzer
 """
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_proto_fuzzer")
 
 def grpc_yodel_test(name, deps):
@@ -57,3 +57,12 @@ def grpc_yodel_test(name, deps):
         corpus = "corpus/%s" % name,
         proto = None,
     )
+
+def grpc_yodel_simple_test(name, **kwargs):
+    grpc_cc_library(
+        name = "%s_test_lib" % name,
+        testonly = True,
+        alwayslink = 1,
+        **kwargs
+    )
+    grpc_yodel_test(name, deps = ["%s_test_lib" % name])
