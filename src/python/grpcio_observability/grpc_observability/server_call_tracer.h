@@ -26,9 +26,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
-#include "python_observability_context.h"
-#include "metadata_exchange.h"
-#include "constants.h"
 
 namespace grpc_observability {
 
