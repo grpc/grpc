@@ -19,6 +19,8 @@
 
 #include "gtest/gtest.h"
 
+#include "src/core/lib/experiments/experiments.h"
+
 namespace grpc_core {
 namespace {
 
@@ -47,6 +49,10 @@ TEST(PingRatePolicy, ServerCanSendAtStart) {
 }
 
 TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
+  if (IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP()
+        << "Pings are not blocked if max_pings_wo_data_throttle is enabled.";
+  }
   Chttp2PingRatePolicy policy{ChannelArgs(), true};
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
             TooManyRecentPings());
@@ -57,6 +63,35 @@ TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
   EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
   policy.SentPing();
   EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), TooManyRecentPings());
+}
+
+TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
+  if (!IsMaxPingsWoDataThrottleEnabled()) {
+    GTEST_SKIP()
+        << "Throttling behavior is enabled with max_pings_wo_data_throttle.";
+  }
+  Chttp2PingRatePolicy policy{ChannelArgs(), true};
+  // First ping is allowed.
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
+            SendGranted());
+  policy.SentPing();
+  // Second ping is throttled since no data has been sent.
+  auto result = policy.RequestSendPing(Duration::Zero(), 0);
+  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+            Duration::Minutes(1));
+  policy.ResetPingsBeforeDataRequired();
+  // After resetting pings before data required (data sent), we can send pings
+  // without being throttled.
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
+  policy.SentPing();
+  // After reaching limit, we are throttled again.
+  result = policy.RequestSendPing(Duration::Zero(), 0);
+  EXPECT_TRUE(absl::holds_alternative<Chttp2PingRatePolicy::TooSoon>(result));
+  EXPECT_EQ(absl::get<Chttp2PingRatePolicy::TooSoon>(result).wait,
+            Duration::Minutes(1));
 }
 
 TEST(PingRatePolicy, RateThrottlingWorks) {
