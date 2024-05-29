@@ -88,8 +88,7 @@ class Observable {
     GRPC_MUST_USE_RESULT Waker Add(Observer* observer)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
       observers_.insert(observer);
-      Waker waker = GetContext<Activity>()->MakeNonOwningWaker();
-      return waker;
+      return GetContext<Activity>()->MakeNonOwningWaker();
     }
 
    private:
@@ -117,9 +116,8 @@ class Observable {
       // If we saw a pending at all then we *may* be in the set of observers.
       // If not we're definitely not and we can avoid taking the lock at all.
       if (!saw_pending_) return;
-      Waker w;
       MutexLock lock(state_->mu());
-      w = std::move(waker_);
+      auto w = std::move(waker_);
       state_->Remove(this);
     }
 
