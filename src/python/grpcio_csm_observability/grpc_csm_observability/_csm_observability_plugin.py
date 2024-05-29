@@ -18,7 +18,6 @@ import re
 from typing import AnyStr, Callable, Dict, Iterable, List, Optional, Union
 
 from google.protobuf import struct_pb2
-from grpc_observability import _open_telemetry_observability
 from grpc_observability._observability import OptionalLabelType
 from grpc_observability._open_telemetry_plugin import OpenTelemetryLabelInjector
 from grpc_observability._open_telemetry_plugin import OpenTelemetryPlugin
