@@ -124,7 +124,7 @@ class Epoll1EventHandlePool {
     grpc_core::MutexLock lock(&mu_);
     if (handle >= &events_.front() && handle <= &events_.back()) {
       int ind = handle - events_.data();
-      GPR_ASSERT(events_in_use_[ind]);
+      CHECK(events_in_use_[ind]);
       events_in_use_[ind] = false;
       gpr_log(GPR_INFO, "[%p] Returning event %d", this, ind);
     } else if (next_block_ != nullptr) {
