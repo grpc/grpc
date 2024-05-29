@@ -670,6 +670,7 @@ LIBGRPC_SRC = \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
     src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
     src/core/client_channel/client_channel_plugin.cc \
@@ -677,6 +678,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/config_selector.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/load_balanced_call_destination.cc \
     src/core/client_channel/local_subchannel_pool.cc \
     src/core/client_channel/retry_filter.cc \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
@@ -1137,6 +1139,7 @@ LIBGRPC_SRC = \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/crash.cc \
+    src/core/lib/gprpp/dump_args.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/host_port.cc \

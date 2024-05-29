@@ -114,6 +114,8 @@
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_filter.cc" role="src" />
@@ -129,6 +131,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/dynamic_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/global_subchannel_pool.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/load_balanced_call_destination.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/load_balanced_call_destination.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/local_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/local_subchannel_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/retry_filter.cc" role="src" />
@@ -1243,6 +1247,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/directory_reader.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/down_cast.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/dual_ref_counted.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/dump_args.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/dump_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/examine_stack.h" role="src" />
@@ -1468,6 +1474,7 @@
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/map.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/promise/observable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/party.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/party.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/pipe.h" role="src" />

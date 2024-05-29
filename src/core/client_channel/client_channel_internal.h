@@ -29,6 +29,7 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -73,6 +74,13 @@ class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
 
  private:
   absl::AnyInvocable<void()> on_commit_;
+};
+
+class SubchannelInterfaceWithCallDestination : public SubchannelInterface {
+ public:
+  using SubchannelInterface::SubchannelInterface;
+  // Obtain the call destination for this subchannel.
+  virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
 };
 
 }  // namespace grpc_core

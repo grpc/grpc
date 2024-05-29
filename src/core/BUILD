@@ -3281,12 +3281,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "call_destination",
         "grpc_service_config",
         "lb_policy",
         "unique_type_name",
         "//:call_tracer",
-        "//:gpr_public_hdrs",
-        "//:grpc_base",
+        "//:gpr",
         "//:legacy_context",
     ],
 )
@@ -7509,12 +7509,10 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_filters.h",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         "call_final_info",
+        "dump_args",
         "latch",
         "map",
         "message",
@@ -7620,20 +7618,19 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_spine.h",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         "1999",
         "call_arena_allocator",
         "call_filters",
+        "dual_ref_counted",
         "for_each",
         "if",
         "latch",
         "message",
         "metadata",
         "pipe",
+        "prioritized_race",
         "promise_status",
         "status_flag",
         "try_seq",

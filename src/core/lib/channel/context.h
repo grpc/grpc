@@ -59,6 +59,9 @@ typedef enum {
   /// the server.
   GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
 
+  /// A LoadBalancingPolicy::SubchannelCallTrackerInterface
+  GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE,
+
   /// Special Google context
   GRPC_CONTEXT_GOOGLE,
 
@@ -73,6 +76,8 @@ struct grpc_call_context_element {
 namespace grpc_core {
 class Call;
 class CallTracerAnnotationInterface;
+class CallTracerInterface;
+class ServiceConfigCallData;
 
 // Bind the legacy context array into the new style structure
 // TODO(ctiller): remove as we migrate these contexts to the new system.
@@ -96,6 +101,17 @@ struct OldStyleContext<CallTracerAnnotationInterface> {
       GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE;
 };
 
+template <>
+struct OldStyleContext<CallTracerInterface> {
+  static constexpr grpc_context_index kIndex = GRPC_CONTEXT_CALL_TRACER;
+};
+
+template <>
+struct OldStyleContext<ServiceConfigCallData> {
+  static constexpr grpc_context_index kIndex =
+      GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA;
+};
+
 template <typename T>
 class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {
  public:
@@ -103,6 +119,15 @@ class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {
     return static_cast<T*>(
         GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex]
             .value);
+  }
+  static void set(T* value) {
+    auto& elem =
+        GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex];
+    if (elem.destroy != nullptr) {
+      elem.destroy(elem.value);
+      elem.destroy = nullptr;
+    }
+    elem.value = value;
   }
 };
 
