@@ -68,9 +68,9 @@ class Channel : public InternallyRefCounted<Channel>,
     ~RegisteredCall();
   };
 
-  // Though internally ref counted transports expose their "Ref" method to
+  // Though internally ref counted channels expose their "Ref" method to
   // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
-  // singleton decision maker on whether the transport should be destroyed or
+  // singleton decision maker on whether the channel should be destroyed or
   // not.
   // TODO(ctiller): in a future change (I have it written) these will be removed
   // and substituted with DualRefCounted<Channel> as a base.
@@ -144,6 +144,10 @@ class Channel : public InternallyRefCounted<Channel>,
 
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
+
+  CallArenaAllocator* call_arena_allocator() {
+    return call_arena_allocator_.get();
+  }
 
  private:
   const std::string target_;
