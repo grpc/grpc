@@ -17,6 +17,7 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <chrono>
 #include <memory>
 #include <random>
 #include <string>
@@ -79,18 +80,11 @@ std::string GetNextSendMessage() {
 }
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
-  int n = 0;
-  while (engine.use_count() > 1) {
-    ++n;
-    if (n % 100 == 0) AsanAssertNoLeaks();
-    GRPC_LOG_EVERY_N_SEC(2, GPR_INFO, "engine.use_count() = %ld",
-                         engine.use_count());
-    absl::SleepFor(absl::Milliseconds(100));
-  }
+  WaitForSingleOwnerWithTimeout(std::move(engine), std::chrono::seconds(60));
 }
 
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine,
-                        EventEngine::Duration timeout) {
+void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
+                                   EventEngine::Duration timeout) {
   int n = 0;
   auto start = std::chrono::system_clock::now();
   while (engine.use_count() > 1) {

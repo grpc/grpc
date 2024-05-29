@@ -68,16 +68,20 @@ void WinSocket::Shutdown() {
   int status = WSAIoctl(socket_, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid,
                         sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
                         &ioctl_num_bytes, NULL, NULL);
-
   if (status != 0) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
     gpr_log(GPR_ERROR, "Unable to retrieve DisconnectEx pointer : %s",
             utf8_message);
     gpr_free(utf8_message);
-  } else if (DisconnectEx(socket_, NULL, 0, 0) != 0) {
-    char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_ERROR, "DisconnectEx failed : %s", utf8_message);
-    gpr_free(utf8_message);
+  } else if (DisconnectEx(socket_, NULL, 0, 0) == FALSE) {
+    auto last_error = WSAGetLastError();
+    // DisconnectEx may be called when the socket is not connected. Ignore that
+    // error, and log all others.
+    if (last_error != WSAENOTCONN) {
+      char* utf8_message = gpr_format_message(last_error);
+      gpr_log(GPR_DEBUG, "DisconnectEx failed : %s", utf8_message);
+      gpr_free(utf8_message);
+    }
   }
   closesocket(socket_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);

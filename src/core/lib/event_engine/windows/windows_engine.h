@@ -21,9 +21,7 @@
 #ifdef GPR_WINDOWS
 
 #include <memory>
-#include <ostream>
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -151,6 +149,8 @@ class WindowsEventEngine : public EventEngine,
     grpc_core::Mutex& mu() { return mu_; }
 
    private:
+    // Required for the custom operator<< overload to see the private
+    // ConnectionState internal state.
     friend std::ostream& operator<<(std::ostream& out,
                                     const ConnectionState& connection_state);
 
@@ -218,7 +218,8 @@ class WindowsEventEngine : public EventEngine,
     bool has_run_ ABSL_GUARDED_BY(mu_) = false;
   };
 
-  // Required for the function to see the private ConnectionState type.
+  // Required for the custom operator<< overload to see the private
+  // ConnectionState type.
   friend std::ostream& operator<<(std::ostream& out,
                                   const ConnectionState& connection_state);
 
@@ -228,7 +229,6 @@ class WindowsEventEngine : public EventEngine,
   class IOCPWorkClosure : public EventEngine::Closure {
    public:
     explicit IOCPWorkClosure(ThreadPool* thread_pool, IOCP* iocp);
-
     void Run() override;
     void WaitForShutdown();
 

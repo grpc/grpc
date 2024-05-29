@@ -187,7 +187,7 @@ void WindowsEventEngine::IOCPWorkClosure::WaitForShutdown() {
 struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   Timer timer;
-  std::shared_ptr<WindowsEventEngine> engine;
+  WindowsEventEngine* engine;
   EventEngine::TaskHandle handle;
 
   void Run() override {
@@ -287,7 +287,7 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   auto when_ts = ToTimestamp(timer_manager_.Now(), when);
   auto* cd = new TimerClosure;
   cd->cb = std::move(cb);
-  cd->engine = std::static_pointer_cast<WindowsEventEngine>(shared_from_this());
+  cd->engine = this;
   EventEngine::TaskHandle handle{reinterpret_cast<intptr_t>(cd),
                                  aba_token_.fetch_add(1)};
   grpc_core::MutexLock lock(&task_mu_);
@@ -353,15 +353,13 @@ void WindowsEventEngine::OnConnectCompleted(
     // Connection attempt complete!
     grpc_core::MutexLock lock(&state->mu());
     // return early if we cannot cancel the connection timeout timer.
+    int erased_handles = 0;
     {
       grpc_core::MutexLock handle_lock(&connection_mu_);
-      if (!known_connection_handles_.erase(state->connection_handle()) == 1) {
-        GRPC_EVENT_ENGINE_TRACE(
-            "Not accepting connection since the deadline timer has fired");
-        return;
-      }
+      erased_handles =
+          known_connection_handles_.erase(state->connection_handle());
     }
-    if (!Cancel(state->timer_handle())) {
+    if (erased_handles != 1 || !Cancel(state->timer_handle())) {
       GRPC_EVENT_ENGINE_TRACE(
           "Not accepting connection since the deadline timer has fired");
       return;
@@ -505,20 +503,25 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   // It wouldn't be unusual to get a success immediately. But we'll still get an
   // IOCP notification, so let's ignore it.
   if (success) return connection_state->connection_handle();
-  // Otherwise, we need to handle an error or IO Event.
+  // Otherwise, we need to handle an error or a pending IO Event.
   int last_error = WSAGetLastError();
   if (last_error == ERROR_IO_PENDING) {
     // Overlapped I/O operation is in progress.
     return connection_state->connection_handle();
   }
-  // Abort the connection.
+  // Time to abort the connection.
   // The on-connect callback won't run, so we must clean up its state.
   connection_state->AbortOnConnect();
+  int erased_handles = 0;
   {
     grpc_core::MutexLock connection_handle_lock(&connection_mu_);
-    CHECK(known_connection_handles_.erase(
-              connection_state->connection_handle()) == 1);
+    erased_handles =
+        known_connection_handles_.erase(connection_state->connection_handle());
   }
+  CHECK_EQ(erased_handles, 1) << "Did not find connection handle "
+                              << connection_state->connection_handle()
+                              << " after a synchronous connection failure. "
+                                 "This should not be possible.";
   connection_state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx");
   if (!Cancel(connection_state->timer_handle())) {
     // The deadline timer will run, or is running.
@@ -555,9 +558,9 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   grpc_core::MutexLock state_lock(&connection_state->mu());
   // The connection cannot be cancelled if the deadline timer is already firing.
   if (!Cancel(connection_state->timer_handle())) return false;
-  // The deadline timer was cancelled, so we must clean up its state. The
-  // on-connect callback will run when the
+  // The deadline timer was cancelled, so we must clean up its state.
   connection_state->AbortDeadlineTimer();
+  // The on-connect callback will run when the socket shutdown event occurs.
   return CancelConnectInternalStateLocked(connection_state);
 }
 

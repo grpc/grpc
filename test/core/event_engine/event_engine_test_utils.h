@@ -57,8 +57,8 @@ void WaitForSingleOwner(std::shared_ptr<EventEngine> engine);
 // Callers must give up their ref, or this method will block forever.
 // This version will CRASH after the given timeout
 // Usage: WaitForSingleOwner(std::move(engine), 30s)
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine,
-                        EventEngine::Duration timeout);
+void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
+                                   EventEngine::Duration timeout);
 
 // A helper method to exchange data between two endpoints. It is assumed
 // that both endpoints are connected. The data (specified as a string) is
