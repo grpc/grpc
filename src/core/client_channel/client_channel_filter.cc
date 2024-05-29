@@ -3454,9 +3454,8 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
   CHECK_NE(path, nullptr);
   SubchannelCall::Args call_args = {
-      connected_subchannel()->RefAsSubclass<ConnectedSubchannel>(), pollent_,
-      path->Ref(), /*start_time=*/0, arena_->GetContext<Call>()->deadline(),
-      arena_,
+      connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
+      arena_->GetContext<Call>()->deadline(), arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
       call_context(), call_combiner_};

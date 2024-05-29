@@ -111,9 +111,11 @@
   "grpc.server_max_unrequested_time_in_server"
 /** Channel arg to override the http2 :scheme header */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
-/** How many pings can the client send before needing to send a
-   data/header frame? (0 indicates that an infinite number of
-   pings can be sent without sending a data frame or header frame) */
+/** How many pings can the client send before needing to send a data/header
+   frame? (0 indicates that an infinite number of pings can be sent without
+   sending a data frame or header frame).
+   If experiment "max_pings_wo_data_throttle" is enabled, instead of pings being
+   completely blocked, they are throttled. */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
 /** How many misbehaving pings the server can bear before sending goaway and
