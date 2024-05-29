@@ -3281,12 +3281,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "call_destination",
         "grpc_service_config",
         "lb_policy",
         "unique_type_name",
         "//:call_tracer",
-        "//:gpr_public_hdrs",
-        "//:grpc_base",
+        "//:gpr",
         "//:legacy_context",
     ],
 )
