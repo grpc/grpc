@@ -376,9 +376,7 @@ class OpenTelemetryPlugin
   OptionalLabelStringToKey(absl::string_view key);
 
   // grpc::OpenTelemetryPlugin:
-  void MaybeAddToChannelArguments(
-      const grpc_core::experimental::StatsPluginChannelScope& scope,
-      grpc::ChannelArguments* args) override;
+  void AddToChannelArguments(grpc::ChannelArguments* args) override;
 
   // StatsPlugin:
   std::pair<bool, std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>>

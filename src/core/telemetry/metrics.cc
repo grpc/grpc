@@ -121,14 +121,6 @@ void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
   }
 }
 
-void GlobalStatsPluginRegistry::StatsPluginGroup::Take(
-    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>*
-        stats_plugin_group) {
-  for (auto& plugin_state : (*stats_plugin_group)->plugins_state_) {
-    plugins_state_.emplace_back(std::move(plugin_state));
-  }
-}
-
 NoDestruct<Mutex> GlobalStatsPluginRegistry::mutex_;
 NoDestruct<std::vector<std::shared_ptr<StatsPlugin>>>
     GlobalStatsPluginRegistry::plugins_;

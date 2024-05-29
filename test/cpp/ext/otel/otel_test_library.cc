@@ -41,6 +41,46 @@
 
 namespace grpc {
 namespace testing {
+namespace {
+
+std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> ConfigureOTBuilder(
+    OpenTelemetryPluginEnd2EndTest::Options options,
+    grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder) {
+  // We are resetting the MeterProvider and OpenTelemetry plugin at the start
+  // of each test to avoid test results from one test carrying over to another
+  // test. (Some measurements can get arbitrarily delayed.)
+  auto meter_provider =
+      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>(
+          std::make_unique<opentelemetry::sdk::metrics::ViewRegistry>(),
+          *options.resource);
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader =
+      std::make_shared<grpc::testing::MockMetricReader>();
+  meter_provider->AddMetricReader(reader);
+  ot_builder->DisableAllMetrics();
+  ot_builder->EnableMetrics(options.metric_names);
+  if (options.use_meter_provider) {
+    auto meter_provider =
+        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+    reader.reset(new grpc::testing::MockMetricReader);
+    meter_provider->AddMetricReader(reader);
+    ot_builder->SetMeterProvider(std::move(meter_provider));
+  }
+  ot_builder->SetChannelScopeFilter(std::move(options.channel_scope_filter));
+  ot_builder->SetServerSelector(std::move(options.server_selector));
+  ot_builder->SetTargetAttributeFilter(
+      std::move(options.target_attribute_filter));
+  ot_builder->SetGenericMethodAttributeFilter(
+      std::move(options.generic_method_attribute_filter));
+  for (auto& option : options.plugin_options) {
+    ot_builder->AddPluginOption(std::move(option));
+  }
+  for (auto& optional_label_key : options.optional_label_keys) {
+    ot_builder->AddOptionalLabel(optional_label_key);
+  }
+  return reader;
+}
+
+}  // namespace
 
 #define GRPC_ARG_LABELS_TO_INJECT "grpc.testing.labels_to_inject"
 
@@ -164,10 +204,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   server_address_ = absl::StrCat("localhost:", port);
   canonical_server_address_ = absl::StrCat("dns:///", server_address_);
   for (auto& per_channel_stats_plugin : config.per_channel_stats_plugins) {
-    per_channel_stats_plugin->MaybeAddToChannelArguments(
-        grpc_core::experimental::StatsPluginChannelScope(
-            /*target=*/canonical_server_address_, /*default_authority=*/""),
-        &channel_args);
+    per_channel_stats_plugin->AddToChannelArguments(&channel_args);
   }
   reader_ = BuildAndRegisterOpenTelemetryPlugin(std::move(config));
 
@@ -246,41 +283,22 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
   return data;
 }
 
+std::pair<std::shared_ptr<grpc::OpenTelemetryPlugin>,
+          std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>>
+OpenTelemetryPluginEnd2EndTest::BuildOpenTelemetryPlugin(
+    OpenTelemetryPluginEnd2EndTest::Options options) {
+  grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
+  auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
+  auto plugin = ot_builder.Build();
+  EXPECT_TRUE(plugin.ok());
+  return {*plugin, reader};
+}
+
 std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
 OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
     OpenTelemetryPluginEnd2EndTest::Options options) {
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
-  // We are resetting the MeterProvider and OpenTelemetry plugin at the start
-  // of each test to avoid test results from one test carrying over to another
-  // test. (Some measurements can get arbitrarily delayed.)
-  auto meter_provider =
-      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>(
-          std::make_unique<opentelemetry::sdk::metrics::ViewRegistry>(),
-          *options.resource);
-  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader =
-      std::make_shared<grpc::testing::MockMetricReader>();
-  meter_provider->AddMetricReader(reader);
-  ot_builder.DisableAllMetrics();
-  ot_builder.EnableMetrics(options.metric_names);
-  if (options.use_meter_provider) {
-    auto meter_provider =
-        std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
-    reader.reset(new grpc::testing::MockMetricReader);
-    meter_provider->AddMetricReader(reader);
-    ot_builder.SetMeterProvider(std::move(meter_provider));
-  }
-  ot_builder.SetChannelScopeFilter(std::move(options.channel_scope_filter));
-  ot_builder.SetServerSelector(std::move(options.server_selector));
-  ot_builder.SetTargetAttributeFilter(
-      std::move(options.target_attribute_filter));
-  ot_builder.SetGenericMethodAttributeFilter(
-      std::move(options.generic_method_attribute_filter));
-  for (auto& option : options.plugin_options) {
-    ot_builder.AddPluginOption(std::move(option));
-  }
-  for (auto& optional_label_key : options.optional_label_keys) {
-    ot_builder.AddOptionalLabel(optional_label_key);
-  }
+  auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
   EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), absl::OkStatus());
   return reader;
 }

@@ -1969,24 +1969,23 @@ TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
               ::testing::UnorderedElementsAre("grpc.test.metric_3"));
 }
 
-TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterPerChannelStatsPlugins) {
-  grpc::internal::OpenTelemetryPluginBuilderImpl builder;
-  auto meter_provider =
-      std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
-  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader =
-      std::make_shared<grpc::testing::MockMetricReader>();
-  meter_provider->AddMetricReader(reader);
-  builder.SetMeterProvider(std::move(meter_provider));
-  builder.EnableMetrics(
-      {grpc::OpenTelemetryPluginBuilder::kClientAttemptDurationInstrumentName});
-  absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>> plugin =
-      builder.Build();
-  ASSERT_TRUE(plugin.ok());
+TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultiplePerChannelStatsPlugins) {
+  std::shared_ptr<grpc::OpenTelemetryPlugin> plugin1;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader1;
+  std::tie(plugin1, reader1) = BuildOpenTelemetryPlugin(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
+  std::shared_ptr<grpc::OpenTelemetryPlugin> plugin2;
+  std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader2;
+  std::tie(plugin2, reader2) = BuildOpenTelemetryPlugin(std::move(
+      Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                      kClientAttemptDurationInstrumentName})));
   Init(std::move(
       Options()
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kClientAttemptDurationInstrumentName})
-          .add_per_channel_stats_plugin(std::move(*plugin))));
+          .add_per_channel_stats_plugin(std::move(plugin1))
+          .add_per_channel_stats_plugin(std::move(plugin2))));
   SendRPC();
   const char* kMetricName = "grpc.client.attempt.duration";
   auto verify =
@@ -2027,7 +2026,14 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterPerChannelStatsPlugins) {
           std::string,
           std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
               data) { return !data.contains(kMetricName); },
-      reader.get());
+      reader1.get());
+  verify(data);
+  data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); },
+      reader2.get());
   verify(data);
 }
 

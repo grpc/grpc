@@ -59,7 +59,7 @@ class MockMetricReader : public opentelemetry::sdk::metrics::MetricReader {
 };
 
 class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
- protected:
+ public:
   struct Options {
    public:
     Options& set_metric_names(std::vector<absl::string_view> names) {
@@ -168,6 +168,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
         per_channel_stats_plugins;
   };
 
+ protected:
   class MetricsCollectorThread {
    public:
     using ResultType = absl::flat_hash_map<
@@ -200,6 +201,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   void SendRPC();
   void SendGenericRPC();
+
+  std::pair<std::shared_ptr<grpc::OpenTelemetryPlugin>,
+            std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>>
+  BuildOpenTelemetryPlugin(OpenTelemetryPluginEnd2EndTest::Options options);
 
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
   BuildAndRegisterOpenTelemetryPlugin(

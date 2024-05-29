@@ -97,15 +97,22 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
                                 .value_or(CoreConfiguration::Get()
                                               .resolver_registry()
                                               .GetDefaultAuthority(target));
+    experimental::StatsPluginChannelScope scope(target, authority);
     *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-            experimental::StatsPluginChannelScope(target, authority));
-    // Merge in per-channel stats plugins.
-    auto* stats_plugin_group = args.GetPointer<std::shared_ptr<
-        grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>>(
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+    // Add per-channel stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<grpc_core::StatsPlugin>>>>(
         GRPC_ARG_STATS_PLUGINS);
-    if (stats_plugin_group != nullptr) {
-      (*r)->stats_plugin_group->Take(stats_plugin_group);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        bool is_enabled = false;
+        std::shared_ptr<StatsPlugin::ScopeConfig> config;
+        std::tie(is_enabled, config) = plugin->IsEnabledForChannel(scope);
+        if (is_enabled) {
+          (*r)->stats_plugin_group->AddStatsPlugin(plugin, std::move(config));
+        }
+      }
     }
   }
   return MakeOrphanable<LegacyChannel>(

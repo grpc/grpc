@@ -47,11 +47,8 @@ class OpenTelemetryPluginOption {
 
 class OpenTelemetryPlugin {
  public:
-  // Maybe adds this OpenTelemetryPlugin to the channel args \a args depending
-  // on the \a scope. The channel arg shares the ownership of this plugin.
-  virtual void MaybeAddToChannelArguments(
-      const grpc_core::experimental::StatsPluginChannelScope& scope,
-      grpc::ChannelArguments* args) = 0;
+  // Adds this OpenTelemetryPlugin to the channel args \a args.
+  virtual void AddToChannelArguments(grpc::ChannelArguments* args) = 0;
 };
 
 /// The most common way to use this API is -
