@@ -18,12 +18,11 @@
 #define GRPC_TEST_CORE_TEST_UTIL_FAKE_UDP_AND_TCP_SERVER_H
 
 #include <functional>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <memory>
 #include <string>
 #include <thread>
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
 
 namespace grpc_core {
 namespace testing {

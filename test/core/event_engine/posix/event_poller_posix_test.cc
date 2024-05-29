@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <stdint.h>
-#include <sys/select.h>
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstring>
+#include <grpc/grpc.h>
 #include <memory>
+#include <stdint.h>
+#include <sys/select.h>
 #include <vector>
 
 #include "absl/status/statusor.h"
@@ -28,9 +28,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
@@ -46,6 +43,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdlib.h>
@@ -54,10 +53,6 @@
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"

@@ -14,17 +14,15 @@
 
 #include "python_observability_context.h"
 
-#include <string.h>
-
 #include <iomanip>
 #include <iostream>
 #include <new>
+#include <string.h>
 
 #include "absl/numeric/int128.h"
 #include "absl/random/random.h"
 #include "absl/strings/escaping.h"
 #include "rpc_encoding.h"
-
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_observability {

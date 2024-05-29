@@ -18,13 +18,12 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "test/cpp/util/test_credentials_provider.h"
 

@@ -16,16 +16,7 @@
 
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 
-#include <string.h>
-
 #include <functional>
-#include <memory>
-#include <string_view>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/event_engine/event_engine.h>
@@ -36,7 +27,13 @@
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <memory>
+#include <string.h>
+#include <string_view>
+#include <utility>
 
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

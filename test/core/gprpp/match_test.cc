@@ -14,9 +14,8 @@
 
 #include "src/core/lib/gprpp/match.h"
 
-#include <stdlib.h>
-
 #include <memory>
+#include <stdlib.h>
 
 #include "gtest/gtest.h"
 

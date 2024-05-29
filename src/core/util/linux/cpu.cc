@@ -25,13 +25,12 @@
 #ifdef GPR_CPU_LINUX
 
 #include <errno.h>
-#include <sched.h>
-#include <string.h>
-#include <unistd.h>
-
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <sched.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"

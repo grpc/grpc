@@ -14,9 +14,8 @@
 
 #include "src/core/lib/gprpp/no_destruct.h"
 
-#include <stdlib.h>
-
 #include <memory>
+#include <stdlib.h>
 
 #include "gtest/gtest.h"
 

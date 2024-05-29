@@ -18,11 +18,10 @@
 
 #include "src/core/lib/config/config_vars.h"
 
-#include "absl/flags/flag.h"
-#include "absl/strings/escaping.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/flags/flag.h"
+#include "absl/strings/escaping.h"
 #include "src/core/lib/config/load_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING

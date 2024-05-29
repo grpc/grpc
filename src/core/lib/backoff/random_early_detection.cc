@@ -14,9 +14,9 @@
 
 #include "src/core/lib/backoff/random_early_detection.h"
 
-#include "absl/random/distributions.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "absl/random/distributions.h"
 
 namespace grpc_core {
 

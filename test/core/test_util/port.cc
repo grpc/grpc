@@ -18,18 +18,15 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-
-#include <utility>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <utility>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/port_server_client.h"

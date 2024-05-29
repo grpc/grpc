@@ -15,8 +15,8 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 #define GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 
+#include <grpc/support/time.h>
 #include <stdint.h>
-
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -25,9 +25,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {

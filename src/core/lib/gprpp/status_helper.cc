@@ -18,8 +18,9 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
-
 #include <utility>
 
 #include "absl/log/check.h"
@@ -32,14 +33,10 @@
 #include "absl/time/clock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
 
 namespace grpc_core {
 

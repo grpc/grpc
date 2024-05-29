@@ -15,17 +15,14 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ARENA_PROMISE_H
 
-#include <stdlib.h>
-
 #include <cstddef>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stdlib.h>
 #include <type_traits>
 #include <utility>
 
 #include "absl/meta/type_traits.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"

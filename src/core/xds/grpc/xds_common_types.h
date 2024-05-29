@@ -17,6 +17,7 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_COMMON_TYPES_H
 
+#include <grpc/support/port_platform.h>
 #include <string>
 #include <vector>
 
@@ -26,9 +27,6 @@
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/matchers/matchers.h"

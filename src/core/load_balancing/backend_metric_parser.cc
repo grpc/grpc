@@ -16,17 +16,15 @@
 
 #include "src/core/load_balancing/backend_metric_parser.h"
 
-#include <string.h>
-
+#include <grpc/support/port_platform.h>
 #include <map>
+#include <string.h>
 
 #include "absl/strings/string_view.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "upb/message/map.h"
 #include "xds/data/orca/v3/orca_load_report.upb.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

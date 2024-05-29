@@ -18,19 +18,15 @@
 
 #include "src/core/tsi/transport_security.h"
 
-#include <string.h>
-
-#include <string>
-
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <gtest/gtest.h>
 #include <openssl/crypto.h>
+#include <string.h>
+#include <string>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"

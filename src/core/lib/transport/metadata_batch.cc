@@ -14,9 +14,9 @@
 
 #include "src/core/lib/transport/metadata_batch.h"
 
-#include <string.h>
-
 #include <algorithm>
+#include <grpc/support/port_platform.h>
+#include <string.h>
 #include <string>
 
 #include "absl/base/no_destructor.h"
@@ -25,9 +25,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {

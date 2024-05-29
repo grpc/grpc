@@ -15,13 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_WAIT_FOR_CALLBACK_H
 #define GRPC_SRC_CORE_LIB_PROMISE_WAIT_FOR_CALLBACK_H
 
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"

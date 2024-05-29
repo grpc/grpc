@@ -16,10 +16,9 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <string.h>
-
-#include <grpc/grpc.h>
 
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"

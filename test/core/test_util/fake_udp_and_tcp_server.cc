@@ -17,9 +17,10 @@
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 
 #include <errno.h>
-#include <string.h>
-
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <set>
+#include <string.h>
 #include <utility>
 #include <vector>
 
@@ -27,10 +28,6 @@
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"

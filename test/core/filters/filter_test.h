@@ -15,27 +15,23 @@
 #ifndef GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
 #define GRPC_TEST_CORE_FILTERS_FILTER_TEST_H
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <gtest/gtest.h>
 #include <initializer_list>
 #include <iosfwd>
 #include <memory>
 #include <ostream>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <utility>
-
-#include <gtest/gtest.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

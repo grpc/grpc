@@ -16,10 +16,13 @@
 
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
-#include <stdio.h>
-
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/support/alloc.h>
 #include <map>
 #include <memory>
+#include <stdio.h>
 #include <string>
 #include <utility>
 
@@ -29,12 +32,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

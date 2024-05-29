@@ -14,12 +14,10 @@
 
 #include "src/core/lib/transport/batch_builder.h"
 
+#include <grpc/support/port_platform.h>
 #include <type_traits>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/call_trace.h"

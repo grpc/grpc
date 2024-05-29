@@ -17,17 +17,14 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 
 #include <deque>
-#include <list>
-
 #include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <gtest/gtest.h>
+#include <list>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/tmpfile.h"

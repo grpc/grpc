@@ -20,6 +20,11 @@
 
 #include <cinttypes>
 #include <deque>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
 #include <list>
 #include <thread>
 #include <unordered_map>
@@ -28,13 +33,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "google/protobuf/timestamp.pb.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"

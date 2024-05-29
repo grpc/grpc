@@ -16,19 +16,7 @@
 //
 //
 
-#include <stdio.h>
-#include <string.h>
-
 #include <functional>
-#include <memory>
-#include <string>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -39,7 +27,16 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
+#include <memory>
+#include <stdio.h>
+#include <string.h>
+#include <string>
 
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/types/optional.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/util/tmpfile.h"

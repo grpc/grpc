@@ -21,9 +21,6 @@
 
 #include <array>
 #include <functional>
-
-#include "absl/log/check.h"
-
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
@@ -31,6 +28,8 @@
 #include <grpcpp/impl/intercepted_channel.h>
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/server_interceptor.h>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 namespace internal {

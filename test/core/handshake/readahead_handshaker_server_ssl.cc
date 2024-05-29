@@ -16,12 +16,10 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"

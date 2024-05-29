@@ -16,14 +16,13 @@
 
 #include "src/core/lib/gprpp/time_util.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <time.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
 
 namespace grpc_core {
 

@@ -18,11 +18,10 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
 #ifdef GRPC_HAVE_VSOCK
@@ -42,14 +41,12 @@
 #include <sys/un.h>
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
+#include <grpc/support/log.h>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/grpc_if_nametoindex.h"

@@ -28,7 +28,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
-
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/telemetry/call_tracer.h"

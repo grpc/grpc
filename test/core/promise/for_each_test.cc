@@ -14,13 +14,11 @@
 
 #include "src/core/lib/promise/for_each.h"
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <memory>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"

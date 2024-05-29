@@ -14,11 +14,14 @@
 // limitations under the License.
 //
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,12 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -61,7 +58,6 @@
 #include <address_sorting/address_sorting.h>
 
 #include "absl/strings/str_cat.h"
-
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"

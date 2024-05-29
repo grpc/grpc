@@ -16,19 +16,16 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstdint>
-#include <vector>
-
 #include <benchmark/benchmark.h>
+#include <cstdint>
+#include <grpc/support/log.h>
+#include <vector>
 
 #include "absl/algorithm/container.h"
 #include "absl/log/check.h"
 #include "absl/random/random.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 

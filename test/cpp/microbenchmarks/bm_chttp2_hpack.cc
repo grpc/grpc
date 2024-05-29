@@ -18,20 +18,16 @@
 
 // Microbenchmarks around CHTTP2 HPACK operations
 
-#include <string.h>
-
+#include <benchmark/benchmark.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
 #include <memory>
 #include <sstream>
-
-#include <benchmark/benchmark.h>
+#include <string.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/gprpp/crash.h"

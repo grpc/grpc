@@ -15,13 +15,16 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
-#include <stdint.h>
-
 #include <array>
 #include <atomic>
 #include <cstddef>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <limits>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,12 +34,6 @@
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/orphanable.h"

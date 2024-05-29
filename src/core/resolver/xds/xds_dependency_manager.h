@@ -17,12 +17,11 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 #define GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"

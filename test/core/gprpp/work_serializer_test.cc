@@ -18,9 +18,11 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
-#include <stddef.h>
-
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <memory>
+#include <stddef.h>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -30,11 +32,6 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"

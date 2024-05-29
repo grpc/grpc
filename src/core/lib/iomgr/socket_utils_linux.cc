@@ -22,10 +22,9 @@
 
 #ifdef GRPC_LINUX_SOCKETUTILS
 
+#include <grpc/support/log.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"

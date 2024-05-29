@@ -13,15 +13,14 @@
 // limitations under the License.
 
 #include <android/log.h>
-#include <jni.h>
-
-#include "examples/protos/helloworld.grpc.pb.h"
-#include "examples/protos/helloworld.pb.h"
-
 #include <grpcpp/create_channel_binder.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/security/binder_credentials.h>
 #include <grpcpp/security/binder_security_policy.h>
+#include <jni.h>
+
+#include "examples/protos/helloworld.grpc.pb.h"
+#include "examples/protos/helloworld.pb.h"
 
 namespace {
 class GreeterService : public helloworld::Greeter::Service {

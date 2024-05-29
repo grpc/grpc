@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include <functional>
+#include <grpc/status.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -23,11 +26,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

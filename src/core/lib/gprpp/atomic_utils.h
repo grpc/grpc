@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_ATOMIC_UTILS_H
 
 #include <atomic>
-
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {

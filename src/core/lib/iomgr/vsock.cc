@@ -21,15 +21,13 @@
 
 #ifdef GRPC_HAVE_VSOCK
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"

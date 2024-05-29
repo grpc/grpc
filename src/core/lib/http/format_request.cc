@@ -18,10 +18,11 @@
 
 #include "src/core/lib/http/format_request.h"
 
+#include <algorithm>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -29,10 +30,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/http/httpcli.h"
 
 static void fill_common_header(const grpc_http_request* request,

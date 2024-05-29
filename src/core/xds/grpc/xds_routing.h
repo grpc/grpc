@@ -19,18 +19,15 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTING_H
 
-#include <stddef.h>
-
+#include <grpc/support/port_platform.h>
 #include <map>
+#include <stddef.h>
 #include <string>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/xds/grpc/xds_http_filters.h"

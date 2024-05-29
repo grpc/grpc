@@ -17,6 +17,9 @@
 // IWYU pragma: no_include <sys/socket.h>
 
 #include <cstring>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>  // IWYU pragma: keep
+#include <grpc/event_engine/slice_buffer.h>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -24,11 +27,6 @@
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>  // IWYU pragma: keep
-#include <grpc/event_engine/slice_buffer.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"

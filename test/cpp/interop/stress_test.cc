@@ -16,6 +16,9 @@
 // is % allowed in string
 //
 
+#include <grpc/support/time.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
 #include <memory>
 #include <string>
 #include <thread>
@@ -25,11 +28,6 @@
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"

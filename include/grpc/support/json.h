@@ -17,17 +17,15 @@
 #ifndef GRPC_SUPPORT_JSON_H
 #define GRPC_SUPPORT_JSON_H
 
-#include <stdint.h>
-
+#include <grpc/support/port_platform.h>
 #include <map>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace experimental {

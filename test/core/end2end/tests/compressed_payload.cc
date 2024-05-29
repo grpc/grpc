@@ -16,20 +16,17 @@
 //
 //
 
-#include <stdint.h>
-
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <initializer_list>
+#include <stdint.h>
 #include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/time.h"

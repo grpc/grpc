@@ -19,12 +19,10 @@
 #include "src/core/lib/backoff/backoff.h"
 
 #include <algorithm>
+#include <grpc/grpc.h>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/test_config.h"

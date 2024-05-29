@@ -19,18 +19,16 @@
 #ifndef GRPCPP_EXT_OTEL_PLUGIN_H
 #define GRPCPP_EXT_OTEL_PLUGIN_H
 
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+#include <memory>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <memory>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
-
-#include <grpc/support/metrics.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc {
 

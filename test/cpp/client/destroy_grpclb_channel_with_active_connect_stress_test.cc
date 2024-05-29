@@ -17,14 +17,7 @@
 //
 
 #include <atomic>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <sstream>
-#include <thread>
-
 #include <gmock/gmock.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -36,6 +29,11 @@
 #include <grpcpp/impl/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <sstream>
+#include <thread>
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"

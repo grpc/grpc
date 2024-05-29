@@ -15,7 +15,6 @@
 #include "test/core/call/yodel/yodel_test.h"
 
 #include "absl/random/random.h"
-
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 

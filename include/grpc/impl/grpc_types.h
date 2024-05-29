@@ -21,14 +21,13 @@
 
 // IWYU pragma: private, include <grpc/grpc.h>
 
-#include <stddef.h>
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

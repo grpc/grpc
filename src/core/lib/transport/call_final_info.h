@@ -16,7 +16,6 @@
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FINAL_INFO_H
 
 #include <cstdint>
-
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>

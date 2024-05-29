@@ -14,15 +14,16 @@
 // limitations under the License.
 //
 
-#include <inttypes.h>
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
 #include <chrono>
 #include <functional>
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
+#include <inttypes.h>
 #include <map>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -36,10 +37,6 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

@@ -21,19 +21,16 @@
 #ifdef GPR_POSIX_SUBPROCESS
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <iostream>
 #include <signal.h>
 #include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <iostream>
-
 #include "absl/log/check.h"
 #include "absl/strings/substitute.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/util/subprocess.h"

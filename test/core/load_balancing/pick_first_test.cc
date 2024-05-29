@@ -16,13 +16,14 @@
 
 #include "src/core/load_balancing/pick_first/pick_first.h"
 
-#include <stddef.h>
-
 #include <algorithm>
 #include <array>
 #include <chrono>
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <map>
 #include <memory>
+#include <stddef.h>
 #include <utility>
 #include <vector>
 
@@ -33,10 +34,6 @@
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"

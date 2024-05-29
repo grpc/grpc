@@ -13,12 +13,15 @@
 // limitations under the License.
 #include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 
-#include <inttypes.h>
-#include <stddef.h>
-
 #include <algorithm>
 #include <chrono>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -33,12 +36,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"

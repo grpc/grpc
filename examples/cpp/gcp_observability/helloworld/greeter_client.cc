@@ -17,6 +17,8 @@
 //
 
 #include <chrono>
+#include <grpcpp/ext/gcp_observability.h>
+#include <grpcpp/grpcpp.h>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -24,9 +26,6 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-
-#include <grpcpp/ext/gcp_observability.h>
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

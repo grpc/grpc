@@ -20,14 +20,12 @@
 // working
 
 #include <benchmark/benchmark.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"

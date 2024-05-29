@@ -16,19 +16,16 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/http/client_authority_filter.h"
 
 #include <functional>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/transport/auth_filters.h"

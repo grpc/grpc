@@ -18,14 +18,12 @@
 
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 

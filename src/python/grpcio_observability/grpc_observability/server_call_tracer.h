@@ -15,11 +15,10 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 #define GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"

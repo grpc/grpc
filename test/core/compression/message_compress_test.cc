@@ -18,18 +18,15 @@
 
 #include "src/core/lib/compression/message_compress.h"
 
+#include <grpc/compression.h>
+#include <grpc/slice_buffer.h>
 #include <inttypes.h>
+#include <memory>
 #include <stdlib.h>
 #include <string.h>
 
-#include <memory>
-
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/slice_buffer.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"

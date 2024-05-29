@@ -17,6 +17,8 @@
 #include "test/core/xds/xds_transport_fake.h"
 
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <string>
 #include <thread>
@@ -25,10 +27,6 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

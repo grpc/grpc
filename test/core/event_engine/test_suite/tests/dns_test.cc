@@ -17,6 +17,8 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -31,10 +33,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep

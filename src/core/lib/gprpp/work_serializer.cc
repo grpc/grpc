@@ -16,24 +16,21 @@
 
 #include "src/core/lib/gprpp/work_serializer.h"
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stdint.h>
 #include <thread>
 #include <utility>
 
 #include "absl/container/inlined_vector.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"

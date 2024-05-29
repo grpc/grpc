@@ -19,15 +19,13 @@
 
 #ifdef GPR_ANDROID
 
-#include <jni.h>
-
-#include <memory>
-
-#include "absl/strings/string_view.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/security/binder_security_policy.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <jni.h>
+#include <memory>
+
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace experimental {

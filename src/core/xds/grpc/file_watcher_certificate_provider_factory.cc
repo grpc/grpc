@@ -19,17 +19,15 @@
 #include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
 #include <algorithm>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <map>
 #include <memory>
 #include <vector>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
 

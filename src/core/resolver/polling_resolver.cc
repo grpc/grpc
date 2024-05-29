@@ -16,9 +16,10 @@
 
 #include "src/core/resolver/polling_resolver.h"
 
-#include <inttypes.h>
-
 #include <functional>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -28,10 +29,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"

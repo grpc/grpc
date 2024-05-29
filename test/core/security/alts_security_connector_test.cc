@@ -18,17 +18,14 @@
 
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <gtest/gtest.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/transport.h"

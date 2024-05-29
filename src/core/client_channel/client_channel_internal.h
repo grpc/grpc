@@ -17,15 +17,12 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_INTERNAL_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_INTERNAL_H
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"

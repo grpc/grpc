@@ -16,13 +16,6 @@
 //
 //
 
-#include <memory>
-#include <mutex>
-#include <thread>
-#include <vector>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -33,6 +26,11 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
+#include <memory>
+#include <mutex>
+#include <thread>
+#include <vector>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"

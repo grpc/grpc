@@ -15,12 +15,6 @@
 #include "grpc_tools/main.h"
 
 #include <algorithm>
-#include <map>
-#include <string>
-#include <tuple>
-#include <unordered_set>
-#include <vector>
-
 #include <google/protobuf/compiler/code_generator.h>
 #include <google/protobuf/compiler/command_line_interface.h>
 #include <google/protobuf/compiler/importer.h>
@@ -28,9 +22,13 @@
 #include <google/protobuf/compiler/python/pyi_generator.h>
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+#include <map>
+#include <string>
+#include <tuple>
+#include <unordered_set>
+#include <vector>
 
 #include "absl/strings/string_view.h"
-
 #include "src/compiler/python_generator.h"
 
 using ::google::protobuf::FileDescriptor;

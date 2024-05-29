@@ -19,12 +19,16 @@
 #ifndef GRPC_TEST_CPP_QPS_CLIENT_H
 #define GRPC_TEST_CPP_QPS_CLIENT_H
 
+#include <condition_variable>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/slice.h>
 #include <inttypes.h>
+#include <mutex>
 #include <stdint.h>
 #include <stdlib.h>
-
-#include <condition_variable>
-#include <mutex>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -33,13 +37,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/channel_arguments.h>
-#include <grpcpp/support/slice.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"

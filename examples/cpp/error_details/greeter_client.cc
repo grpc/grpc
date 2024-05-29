@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <condition_variable>
+#include <grpcpp/grpcpp.h>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -22,12 +23,9 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
 
-#include <grpcpp/grpcpp.h>
-
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #include "google/rpc/error_details.pb.h"
-
 #include "src/proto/grpc/status/status.pb.h"
 #else
 #include "error_details.pb.h"

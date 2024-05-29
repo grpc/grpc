@@ -17,12 +17,10 @@
 //
 
 #include <cstring>
-#include <vector>
-
-#include <gtest/gtest.h>
-
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/test/client_context_test_peer.h>
+#include <gtest/gtest.h>
+#include <vector>
 
 namespace grpc {
 namespace testing {

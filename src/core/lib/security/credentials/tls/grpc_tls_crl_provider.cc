@@ -18,9 +18,8 @@
 
 #include "src/core/lib/security/credentials/tls/grpc_tls_crl_provider.h"
 
-#include <limits.h>
-
 #include <grpc/support/port_platform.h>
+#include <limits.h>
 
 // IWYU pragma: no_include <ratio>
 #include <memory>
@@ -29,6 +28,7 @@
 #include <vector>
 
 // IWYU pragma: no_include <openssl/mem.h>
+#include <grpc/support/log.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>  // IWYU pragma: keep
 #include <openssl/pem.h>
@@ -40,9 +40,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/directory_reader.h"
 #include "src/core/lib/gprpp/load_file.h"

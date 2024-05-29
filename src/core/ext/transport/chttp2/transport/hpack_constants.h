@@ -17,7 +17,6 @@
 
 #include <cstddef>
 #include <cstdint>
-
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {

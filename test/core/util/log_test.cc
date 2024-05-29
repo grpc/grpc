@@ -16,16 +16,12 @@
 //
 //
 
+#include <grpc/support/log.h>
+#include <gtest/gtest.h>
+#include <memory>
 #include <string.h>
 
-#include <memory>
-
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/test_util/test_config.h"
 

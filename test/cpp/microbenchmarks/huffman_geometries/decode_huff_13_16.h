@@ -19,7 +19,6 @@
 #define GRPC_TEST_CPP_MICROBENCHMARKS_HUFFMAN_GEOMETRIES_DECODE_HUFF_13_16_H
 #include <cstddef>
 #include <cstdint>
-
 #include <grpc/support/port_platform.h>
 namespace grpc_core {
 namespace geometry_13_16 {

@@ -19,6 +19,7 @@
 #include "test/cpp/ext/otel/otel_test_library.h"
 
 #include <atomic>
+#include <grpcpp/grpcpp.h>
 
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
@@ -27,9 +28,6 @@
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/notification.h"

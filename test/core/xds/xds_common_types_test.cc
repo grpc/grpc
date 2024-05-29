@@ -16,13 +16,13 @@
 
 #include "src/core/xds/grpc/xds_common_types.h"
 
+#include <google/protobuf/struct.pb.h>
+#include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include <google/protobuf/struct.pb.h>
-#include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -33,11 +33,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -57,6 +52,8 @@
 #include "src/proto/grpc/testing/xds/v3/udpa_typed_struct.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
 
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;

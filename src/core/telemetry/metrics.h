@@ -16,6 +16,9 @@
 #define GRPC_SRC_CORE_TELEMETRY_METRICS_H
 
 #include <cstdint>
+#include <grpc/support/log.h>
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <type_traits>
 #include <vector>
@@ -24,11 +27,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/metrics.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"

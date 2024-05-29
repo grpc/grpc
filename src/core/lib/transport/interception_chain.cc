@@ -15,7 +15,6 @@
 #include "src/core/lib/transport/interception_chain.h"
 
 #include <cstddef>
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/match.h"

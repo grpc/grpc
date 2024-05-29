@@ -19,9 +19,8 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 #define GRPC_SRC_CORE_LIB_GPRPP_DEBUG_LOCATION_H
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+#include <utility>
 
 #if defined(__has_builtin)
 #if __has_builtin(__builtin_FILE)

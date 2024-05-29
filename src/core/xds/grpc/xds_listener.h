@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_LISTENER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_LISTENER_H
 
-#include <stdint.h>
-#include <string.h>
-
 #include <algorithm>
 #include <array>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <stdint.h>
+#include <string.h>
 #include <string>
 #include <vector>
 
@@ -32,10 +32,6 @@
 #include "absl/types/variant.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -45,6 +41,7 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 

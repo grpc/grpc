@@ -30,16 +30,14 @@
 //    std::string* msg("test");
 //    CelValue value = CelValue::CreateString(msg);
 
-#include <stdint.h>
-
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace mock_cel {

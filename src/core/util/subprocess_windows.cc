@@ -20,16 +20,14 @@
 
 #ifdef GPR_WINDOWS_SUBPROCESS
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <string.h>
 #include <tchar.h>
 #include <windows.h>
 
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/tchar.h"
 #include "src/core/util/string.h"

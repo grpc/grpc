@@ -21,7 +21,6 @@
 
 #include <assert.h>
 #include <jni.h>
-
 #include <memory>
 
 // This file defines NdkBinder functions, variables, and types in

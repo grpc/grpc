@@ -18,14 +18,12 @@
 
 #include "src/core/util/useful.h"
 
-#include <stdint.h>
-
+#include <grpc/support/port_platform.h>
 #include <limits>
 #include <memory>
+#include <stdint.h>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

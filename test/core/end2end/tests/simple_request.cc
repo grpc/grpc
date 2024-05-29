@@ -16,10 +16,10 @@
 //
 //
 
-#include <stdint.h>
-
 #include <algorithm>
+#include <grpc/status.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 
 #include "absl/log/log.h"
@@ -27,9 +27,6 @@
 #include "absl/types/optional.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"

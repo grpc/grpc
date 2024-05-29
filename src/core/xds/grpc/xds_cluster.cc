@@ -16,10 +16,12 @@
 
 #include "src/core/xds/grpc/xds_cluster.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <grpc/support/json.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
+#include <stddef.h>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -49,13 +51,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/text/encode.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -71,6 +66,8 @@
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "upb/base/string_view.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core {
 

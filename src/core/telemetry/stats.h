@@ -19,16 +19,13 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_STATS_H
 #define GRPC_SRC_CORE_TELEMETRY_STATS_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
-
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/telemetry/histogram_view.h"
 #include "src/core/telemetry/stats_data.h"

@@ -18,16 +18,20 @@
 
 #include "src/core/lib/http/httpcli.h"
 
-#include <string.h>
-#include <sys/socket.h>
-
+#include <ares.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+#include <gtest/gtest.h>
 #include <memory>
+#include <string.h>
 #include <string>
+#include <sys/socket.h>
 #include <thread>
 #include <utility>
-
-#include <ares.h>
-#include <gtest/gtest.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -35,14 +39,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/time_util.h"

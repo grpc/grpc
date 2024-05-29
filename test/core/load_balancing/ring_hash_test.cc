@@ -16,11 +16,12 @@
 
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <array>
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -30,10 +31,6 @@
 #include "absl/strings/strip.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/load_balancing/lb_policy.h"

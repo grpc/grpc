@@ -18,15 +18,13 @@
 
 #include "src/core/tsi/fake_transport_security.h"
 
-#include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <gtest/gtest.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/security/security_connector/security_connector.h"

@@ -17,15 +17,12 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
 #define GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
 
+#include <atomic>
+#include <grpc/support/port_platform.h>
+#include <memory>
 #include <stdint.h>
 
-#include <atomic>
-#include <memory>
-
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/telemetry/histogram_view.h"
 

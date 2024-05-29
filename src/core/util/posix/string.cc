@@ -20,12 +20,11 @@
 
 #ifdef GPR_POSIX_STRING
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
 
 int gpr_asprintf(char** strp, const char* format, ...) {
   va_list args;

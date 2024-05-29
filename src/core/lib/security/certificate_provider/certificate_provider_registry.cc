@@ -18,13 +18,12 @@
 
 #include "src/core/lib/security/certificate_provider/certificate_provider_registry.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <string>
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

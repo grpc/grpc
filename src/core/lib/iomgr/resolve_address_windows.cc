@@ -19,20 +19,17 @@
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include <inttypes.h>
-#include <string.h>
-#include <sys/types.h>
-
-#include <string>
-
-#include "absl/strings/str_format.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
+#include <string.h>
+#include <string>
+#include <sys/types.h>
 
+#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"

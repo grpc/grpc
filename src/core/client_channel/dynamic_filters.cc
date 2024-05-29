@@ -14,21 +14,17 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/dynamic_filters.h"
 
-#include <stddef.h>
-
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <new>
+#include <stddef.h>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"

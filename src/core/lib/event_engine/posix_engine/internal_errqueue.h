@@ -15,9 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_INTERNAL_ERRQUEUE_H
 
-#include <stdint.h>
-
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
 #include "src/core/lib/iomgr/port.h"
 

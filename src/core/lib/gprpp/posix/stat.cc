@@ -14,9 +14,8 @@
 // limitations under the License.
 //
 
-#include <string>
-
 #include <grpc/support/port_platform.h>
+#include <string>
 
 // IWYU pragma: no_include <bits/struct_stat.h>
 
@@ -25,12 +24,10 @@
 #ifdef GPR_POSIX_STAT
 
 #include <errno.h>
+#include <grpc/support/log.h>
 #include <sys/stat.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/lib/gprpp/stat.h"
 #include "src/core/lib/gprpp/strerror.h"
 

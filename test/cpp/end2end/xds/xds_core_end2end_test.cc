@@ -14,17 +14,15 @@
 //
 
 #include <algorithm>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/proto/grpc/testing/xds/v3/listener.pb.h"

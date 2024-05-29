@@ -12,26 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
-#include <inttypes.h>
-#include <stddef.h>
-
 #include <functional>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <map>
 #include <memory>
+#include <stddef.h>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -44,6 +37,9 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
 
 namespace grpc_core {
 

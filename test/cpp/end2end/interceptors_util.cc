@@ -20,7 +20,6 @@
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
-
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

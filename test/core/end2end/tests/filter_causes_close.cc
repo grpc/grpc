@@ -16,16 +16,13 @@
 //
 //
 
-#include <stdint.h>
-
+#include <grpc/status.h>
 #include <memory>
+#include <stdint.h>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/config/core_configuration.h"

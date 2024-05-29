@@ -17,12 +17,10 @@
 //
 
 #include <fstream>
+#include <gtest/gtest.h>
 #include <sstream>
 
-#include <gtest/gtest.h>
-
 #include "absl/flags/flag.h"
-
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 

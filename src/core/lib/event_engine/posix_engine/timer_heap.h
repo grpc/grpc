@@ -20,9 +20,8 @@
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TIMER_HEAP_H
 
 #include <cstddef>
-#include <vector>
-
 #include <grpc/support/port_platform.h>
+#include <vector>
 
 namespace grpc_event_engine {
 namespace experimental {

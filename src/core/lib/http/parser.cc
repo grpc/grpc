@@ -18,16 +18,14 @@
 
 #include "src/core/lib/http/parser.h"
 
-#include <string.h>
-
 #include <algorithm>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <string.h>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 
 grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 

@@ -16,20 +16,17 @@
 //
 //
 
-#include <stdint.h>
-
 #include <algorithm>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
 #include <memory>
+#include <stdint.h>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
-
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

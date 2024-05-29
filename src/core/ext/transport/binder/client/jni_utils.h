@@ -17,14 +17,12 @@
 
 #if defined(ANDROID) || defined(__ANDROID__)
 
-#include <jni.h>
-
 #include <functional>
+#include <grpc/support/port_platform.h>
+#include <jni.h>
 #include <string>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_binder {
 

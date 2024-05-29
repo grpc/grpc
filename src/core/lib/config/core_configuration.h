@@ -16,13 +16,11 @@
 #define GRPC_SRC_CORE_LIB_CONFIG_CORE_CONFIGURATION_H
 
 #include <atomic>
-
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/proxy_mapper_registry.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"

@@ -16,15 +16,6 @@
 //
 //
 
-#include <time.h>
-
-#include <mutex>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/time.h>
@@ -36,7 +27,12 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
+#include <mutex>
+#include <thread>
+#include <time.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

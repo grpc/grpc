@@ -20,9 +20,8 @@
 
 #ifdef GPR_WINDOWS_ENV
 
-#include <windows.h>
-
 #include <memory>
+#include <windows.h>
 
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/tchar.h"

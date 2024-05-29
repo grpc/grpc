@@ -17,16 +17,6 @@
 //
 
 #include <algorithm>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -38,7 +28,14 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
+#include <gtest/gtest.h>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"

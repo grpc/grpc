@@ -21,10 +21,9 @@
 
 #include <chrono>
 #include <cmath>
+#include <grpcpp/support/config.h>
 #include <random>
 #include <vector>
-
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {

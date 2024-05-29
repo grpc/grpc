@@ -18,16 +18,13 @@
 
 #include "src/core/lib/slice/percent_encoding.h"
 
-#include <stddef.h>
-
+#include <grpc/support/alloc.h>
 #include <memory>
+#include <stddef.h>
 #include <utility>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"

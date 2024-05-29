@@ -18,12 +18,10 @@
 
 #include "src/core/lib/gprpp/fork.h"
 
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/test_util/test_config.h"
 

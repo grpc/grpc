@@ -14,7 +14,6 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/log.h"
-
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"

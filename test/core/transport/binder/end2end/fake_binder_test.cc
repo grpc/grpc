@@ -15,16 +15,14 @@
 #include "test/core/transport/binder/end2end/fake_binder.h"
 
 #include <algorithm>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <random>
 #include <string>
 #include <utility>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
-
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_binder {

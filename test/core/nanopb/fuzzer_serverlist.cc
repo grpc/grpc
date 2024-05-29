@@ -16,11 +16,10 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <stdint.h>
+#include <string.h>
 
 bool squelch = true;
 bool leak_check = true;

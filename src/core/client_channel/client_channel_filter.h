@@ -17,13 +17,13 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_FILTER_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_FILTER_H
 
-#include <grpc/support/port_platform.h>
-
-#include <stddef.h>
-
 #include <atomic>
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <memory>
+#include <stddef.h>
 #include <string>
 #include <utility>
 
@@ -33,10 +33,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"

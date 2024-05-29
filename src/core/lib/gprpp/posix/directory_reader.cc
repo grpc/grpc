@@ -16,19 +16,17 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
 #include <memory>
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/port_platform.h>
-
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
     defined(GPR_APPLE)
 
 #include <dirent.h>
-
 #include <string>
 
 #include "src/core/lib/gprpp/directory_reader.h"

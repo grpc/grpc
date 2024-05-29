@@ -14,10 +14,10 @@
 
 #include "test/core/transport/chaotic_good/mock_promise_endpoint.h"
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using grpc_event_engine::experimental::EventEngine;

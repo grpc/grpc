@@ -17,9 +17,10 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CLUSTER_H
 
-#include <stdint.h>
-
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <set>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -30,11 +31,6 @@
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
 #include "envoy/extensions/upstreams/http/v3/http_protocol_options.upbdefs.h"
-#include "upb/reflection/def.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -44,6 +40,7 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "upb/reflection/def.h"
 
 namespace grpc_core {
 

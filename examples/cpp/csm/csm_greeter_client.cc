@@ -16,14 +16,16 @@
  *
  */
 
-#include <sys/types.h>
-
 #include <chrono>
 #include <condition_variable>
+#include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/string_ref.h>
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <string>
+#include <sys/types.h>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
@@ -33,10 +35,6 @@
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpcpp/ext/csm_observability.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/string_ref.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

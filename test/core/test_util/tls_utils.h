@@ -18,16 +18,14 @@
 #define GRPC_TEST_CORE_TEST_UTIL_TLS_UTILS_H
 
 #include <deque>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"

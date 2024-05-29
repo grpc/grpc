@@ -21,19 +21,16 @@
 // gpr_cpu_current_cpu()
 //
 
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <memory>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
+#include "gtest/gtest.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/test_util/test_config.h"
 

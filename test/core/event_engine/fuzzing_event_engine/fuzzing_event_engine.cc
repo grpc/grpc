@@ -14,22 +14,19 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include <inttypes.h>
-#include <stdlib.h>
-
 #include <algorithm>
 #include <chrono>
+#include <grpc/event_engine/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
+#include <inttypes.h>
 #include <limits>
+#include <stdlib.h>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/time.h"

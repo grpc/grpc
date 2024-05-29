@@ -17,12 +17,6 @@
 
 #include <atomic>
 #include <functional>
-#include <memory>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -32,7 +26,11 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
+#include <memory>
+#include <utility>
 
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"

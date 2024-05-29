@@ -14,11 +14,11 @@
 
 #include "server_call_tracer.h"
 
+#include <algorithm>
+#include <grpc/support/port_platform.h>
+#include <initializer_list>
 #include <stdint.h>
 #include <string.h>
-
-#include <algorithm>
-#include <initializer_list>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,9 +32,6 @@
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"

@@ -18,15 +18,12 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-#include <string.h>
-
 #include <gmock/gmock.h>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <string.h>
 
+#include "absl/log/log.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/test_util/test_config.h"
 

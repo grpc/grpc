@@ -16,10 +16,9 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_BINDER_CONSTANTS_H
 
 #include <cstdint>
+#include <grpc/support/port_platform.h>
 
 #include "absl/base/attributes.h"
-
-#include <grpc/support/port_platform.h>
 
 using transaction_code_t = uint32_t;
 

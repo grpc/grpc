@@ -16,12 +16,11 @@
 //
 //
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"

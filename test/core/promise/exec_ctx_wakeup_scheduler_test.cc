@@ -14,13 +14,11 @@
 
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 
-#include <stdlib.h>
-
 #include <memory>
+#include <stdlib.h>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 

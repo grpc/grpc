@@ -16,9 +16,8 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/util/useful.h"
 

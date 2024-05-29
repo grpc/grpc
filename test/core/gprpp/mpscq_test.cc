@@ -18,17 +18,14 @@
 
 #include "src/core/lib/gprpp/mpscq.h"
 
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
-#include <stdlib.h>
-
 #include <memory>
+#include <stdlib.h>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"

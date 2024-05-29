@@ -15,12 +15,12 @@
 #ifndef OBSERVABILITY_MAIN_H
 #define OBSERVABILITY_MAIN_H
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <condition_variable>
+#include <grpc/status.h>
 #include <mutex>
 #include <queue>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,8 +28,6 @@
 #include "absl/strings/string_view.h"
 #include "constants.h"
 #include "python_observability_context.h"
-
-#include <grpc/status.h>
 
 namespace grpc_observability {
 

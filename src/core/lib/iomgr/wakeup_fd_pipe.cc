@@ -23,10 +23,9 @@
 #ifdef GRPC_POSIX_WAKEUP_FD
 
 #include <errno.h>
+#include <grpc/support/log.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"

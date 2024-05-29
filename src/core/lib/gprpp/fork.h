@@ -20,9 +20,8 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_FORK_H
 
 #include <atomic>
-#include <set>
-
 #include <grpc/support/port_platform.h>
+#include <set>
 
 //
 // NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK

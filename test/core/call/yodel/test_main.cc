@@ -13,7 +13,6 @@
 // limitations under the License.
 
 #include "absl/random/random.h"
-
 #include "src/core/lib/debug/trace.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/test_util/test_config.h"

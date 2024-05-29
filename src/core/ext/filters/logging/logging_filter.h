@@ -20,12 +20,10 @@
 #define GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 
 #include <grpc/support/port_platform.h>
-
 #include <string>
 #include <utility>
 
 #include "absl/status/statusor.h"
-
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

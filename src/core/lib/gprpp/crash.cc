@@ -14,15 +14,13 @@
 
 #include "src/core/lib/gprpp/crash.h"
 
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include <string>
 
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

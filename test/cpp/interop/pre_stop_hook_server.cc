@@ -18,12 +18,10 @@
 
 #include "test/cpp/interop/pre_stop_hook_server.h"
 
+#include <grpcpp/grpcpp.h>
 #include <thread>
 
 #include "absl/strings/str_format.h"
-
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/gprpp/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 

@@ -18,6 +18,8 @@
 #include <cmath>
 #include <cstddef>
 #include <functional>
+#include <grpc/grpc.h>
+#include <grpc/support/thd_id.h>
 #include <memory>
 #include <thread>
 #include <tuple>
@@ -26,10 +28,6 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/thd_id.h>
-
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
 #include "src/core/lib/gprpp/notification.h"

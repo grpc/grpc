@@ -20,12 +20,10 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_MPSCQ_H
 
 #include <atomic>
-
-#include "absl/log/check.h"
-
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {

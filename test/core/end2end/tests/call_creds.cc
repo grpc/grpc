@@ -16,17 +16,15 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
 #include <memory>
 
 #include "absl/log/log.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/security/credentials/credentials.h"

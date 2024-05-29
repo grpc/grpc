@@ -19,14 +19,13 @@
 #include "test/cpp/util/proto_file_parser.h"
 
 #include <algorithm>
+#include <grpcpp/support/config.h>
 #include <iostream>
 #include <sstream>
 #include <unordered_set>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_split.h"
-
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {

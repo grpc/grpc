@@ -16,8 +16,8 @@
 
 #include "src/core/service_config/service_config_impl.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
-
 #include <string>
 #include <utility>
 
@@ -25,9 +25,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/validation_errors.h"

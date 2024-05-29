@@ -18,9 +18,8 @@
 
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
+#include <gtest/gtest.h>
 
 #include "test/core/test_util/test_config.h"
 

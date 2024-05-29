@@ -18,12 +18,18 @@
 
 #include "src/cpp/ext/filters/census/client_filter.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
 #include <functional>
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/opencensus.h>
+#include <grpcpp/support/status.h>
 #include <memory>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -42,15 +48,6 @@
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/opencensus.h>
-#include <grpcpp/support/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"

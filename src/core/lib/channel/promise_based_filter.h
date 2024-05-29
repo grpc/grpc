@@ -19,12 +19,15 @@
 // promise-style. Most of this will be removed once the promises conversion is
 // completed.
 
-#include <stdint.h>
-#include <stdlib.h>
-
 #include <atomic>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <memory>
 #include <new>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -36,12 +39,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"

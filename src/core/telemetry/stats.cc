@@ -18,15 +18,13 @@
 
 #include "src/core/telemetry/stats.h"
 
-#include <stddef.h>
-
 #include <algorithm>
+#include <grpc/support/port_platform.h>
+#include <stddef.h>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

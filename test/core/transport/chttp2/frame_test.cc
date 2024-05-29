@@ -21,7 +21,6 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/transport/http2_errors.h"
 
 namespace grpc_core {

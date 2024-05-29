@@ -14,14 +14,15 @@
 
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 
-#include <poll.h>
-#include <sys/socket.h>
-#include <unistd.h>
-
 #include <algorithm>
 #include <cerrno>
 #include <cstring>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
 #include <memory>
+#include <poll.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -30,10 +31,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"

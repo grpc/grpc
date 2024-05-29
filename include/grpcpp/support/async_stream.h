@@ -19,8 +19,6 @@
 #ifndef GRPCPP_SUPPORT_ASYNC_STREAM_H
 #define GRPCPP_SUPPORT_ASYNC_STREAM_H
 
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
@@ -28,6 +26,8 @@
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/status.h>
+
+#include "absl/log/check.h"
 
 namespace grpc {
 

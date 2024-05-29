@@ -18,6 +18,9 @@
 
 #include "src/core/lib/debug/trace.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -26,11 +29,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/config_vars.h"
 
 int grpc_tracer_set_enabled(const char* name, int enabled);

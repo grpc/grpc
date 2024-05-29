@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/status.h>
 #include <initializer_list>
 #include <memory>
 
@@ -23,9 +24,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"

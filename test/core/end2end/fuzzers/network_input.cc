@@ -14,11 +14,11 @@
 
 #include "test/core/end2end/fuzzers/network_input.h"
 
-#include <stddef.h>
-#include <stdint.h>
-
 #include <algorithm>
 #include <chrono>
+#include <grpc/slice.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -26,9 +26,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"

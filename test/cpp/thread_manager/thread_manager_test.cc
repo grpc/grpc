@@ -21,16 +21,13 @@
 #include <atomic>
 #include <chrono>
 #include <climits>
+#include <grpc/support/port_platform.h>
+#include <grpcpp/grpcpp.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <thread>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "test/core/test_util/test_config.h"
 

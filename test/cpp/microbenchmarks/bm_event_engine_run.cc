@@ -13,20 +13,17 @@
 // limitations under the License.
 
 #include <atomic>
+#include <benchmark/benchmark.h>
 #include <cmath>
+#include <grpc/event_engine/event_engine.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <memory>
 #include <vector>
-
-#include <benchmark/benchmark.h>
 
 #include "absl/debugging/leak_check.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpcpp/impl/grpc_library.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/crash.h"

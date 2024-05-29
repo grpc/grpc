@@ -20,6 +20,8 @@
 
 #include <atomic>
 #include <chrono>
+#include <grpcpp/ext/otel_plugin.h>
+#include <grpcpp/grpcpp.h>
 #include <ratio>
 #include <type_traits>
 
@@ -33,10 +35,6 @@
 #include "opentelemetry/sdk/metrics/data/point_data.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/grpcpp.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "test/core/test_util/test_config.h"

@@ -16,6 +16,8 @@
 #define GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 
 #include <functional>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <map>
 #include <memory>
 #include <string>
@@ -27,10 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
-
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/memory_quota.h"

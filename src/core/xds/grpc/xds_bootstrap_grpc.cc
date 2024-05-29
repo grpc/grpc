@@ -16,10 +16,11 @@
 
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 
-#include <stdlib.h>
-
 #include <algorithm>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <set>
+#include <stdlib.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,10 +33,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

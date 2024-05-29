@@ -14,17 +14,14 @@
 
 #include "src/core/lib/resource_quota/periodic_update.h"
 
-#include <stddef.h>
-
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <memory>
+#include <stddef.h>
 #include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {

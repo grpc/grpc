@@ -17,10 +17,10 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_API_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_API_H
 
-#include <stddef.h>
-
+#include <grpc/support/port_platform.h>
 #include <map>
 #include <set>
+#include <stddef.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,16 +29,13 @@
 #include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
 #include "envoy/service/status/v3/csds.upb.h"
-#include "upb/mem/arena.h"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client_stats.h"
+#include "upb/mem/arena.h"
+#include "upb/reflection/def.hpp"
 
 namespace grpc_core {
 

@@ -17,16 +17,14 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_ROUND_ROBIN_STATIC_STRIDE_SCHEDULER_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_WEIGHTED_ROUND_ROBIN_STATIC_STRIDE_SCHEDULER_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
-
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

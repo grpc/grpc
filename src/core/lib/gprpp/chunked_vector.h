@@ -16,14 +16,12 @@
 #define GRPC_SRC_CORE_LIB_GPRPP_CHUNKED_VECTOR_H
 
 #include <cstddef>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <iterator>
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/resource_quota/arena.h"
 

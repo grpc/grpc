@@ -17,12 +17,10 @@
 #include "src/core/lib/transport/error_utils.h"
 
 #include <stdint.h>
-
 #include <vector>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/test_util/test_config.h"

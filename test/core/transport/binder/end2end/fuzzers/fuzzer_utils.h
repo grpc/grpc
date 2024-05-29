@@ -15,6 +15,7 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_FUZZERS_FUZZER_UTILS_H
 #define GRPC_TEST_CORE_TRANSPORT_BINDER_END2END_FUZZERS_FUZZER_UTILS_H
 
+#include <grpc/support/log.h>
 #include <memory>
 #include <queue>
 #include <string>
@@ -23,9 +24,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/log.h>
-
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_reader.h"
 #include "src/core/lib/gprpp/crash.h"

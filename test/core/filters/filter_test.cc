@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <chrono>
+#include <grpc/grpc.h>
 #include <memory>
 #include <queue>
 
@@ -24,9 +25,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"

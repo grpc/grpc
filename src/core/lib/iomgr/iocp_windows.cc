@@ -22,17 +22,14 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include <winsock2.h>
-
-#include <limits>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
+#include <limits>
+#include <winsock2.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"

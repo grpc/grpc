@@ -18,10 +18,11 @@
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
-#include <inttypes.h>
-
 #include <algorithm>
 #include <cmath>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <inttypes.h>
 #include <ostream>
 #include <string>
 #include <tuple>
@@ -31,10 +32,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/resource_quota/memory_quota.h"

@@ -14,22 +14,19 @@
 
 #include "src/core/lib/promise/party.h"
 
-#include <stdio.h>
-
 #include <algorithm>
 #include <atomic>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
 #include <memory>
+#include <stdio.h>
 #include <thread>
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

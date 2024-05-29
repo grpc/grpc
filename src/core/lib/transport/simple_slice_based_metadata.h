@@ -15,10 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_SIMPLE_SLICE_BASED_METADATA_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_SIMPLE_SLICE_BASED_METADATA_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 

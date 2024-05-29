@@ -23,10 +23,9 @@
 #ifdef GRPC_LINUX_EVENTFD
 
 #include <errno.h>
+#include <grpc/support/log.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"

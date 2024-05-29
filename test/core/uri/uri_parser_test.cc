@@ -16,14 +16,12 @@
 
 #include "src/core/lib/uri/uri_parser.h"
 
+#include <grpc/grpc.h>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "test/core/test_util/test_config.h"
 
 using ::testing::ContainerEq;

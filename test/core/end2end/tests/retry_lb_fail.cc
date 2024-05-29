@@ -15,14 +15,12 @@
 //
 
 #include <atomic>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <memory>
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/time.h"

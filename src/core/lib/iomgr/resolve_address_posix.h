@@ -18,7 +18,6 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_POSIX_H
 
 #include <functional>
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"

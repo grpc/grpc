@@ -15,14 +15,12 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_PROTO_BIT_GEN_H
 #define GRPC_TEST_CORE_TEST_UTIL_PROTO_BIT_GEN_H
 
-#include <stddef.h>
-
 #include <cstdint>
+#include <grpc/support/port_platform.h>
 #include <limits>
 #include <random>
+#include <stddef.h>
 #include <vector>
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

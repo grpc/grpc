@@ -20,21 +20,18 @@
 #define GRPC_TEST_CPP_END2END_TEST_SERVICE_IMPL_H
 
 #include <condition_variable>
+#include <grpc/grpc.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <mutex>
 #include <string>
 #include <thread>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpcpp/alarm.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/server_context.h>
-
 #include "src/core/lib/gprpp/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"

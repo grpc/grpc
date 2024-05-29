@@ -17,14 +17,12 @@
 //
 
 #include <condition_variable>
+#include <grpcpp/alarm.h>
+#include <grpcpp/completion_queue.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <mutex>
 #include <thread>
-
-#include <gtest/gtest.h>
-
-#include <grpcpp/alarm.h>
-#include <grpcpp/completion_queue.h>
 
 #include "src/core/lib/gprpp/notification.h"
 #include "test/core/test_util/test_config.h"
