@@ -21,13 +21,12 @@ pyx_library(
 )
 
 internal_py_grpc_test(
-    name = "fork_test",
+    name = "_fork_interop_test",
     srcs = glob(["*.py"]),
     # TODO(yijiem): remove this to test EventEngine fork support
     env = {"GRPC_EXPERIMENTS": "-event_engine_client"},
     imports = ["../.."],
     main = "_fork_interop_test.py",
-    python_version = "PY3",
     deps = [
         ":native_debug",
         "//src/proto/grpc/testing:empty_py_pb2",
