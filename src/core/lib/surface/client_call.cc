@@ -114,7 +114,6 @@ ClientCall::ClientCall(
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
   global_stats().IncrementClientCallsCreated();
-  Construct(&send_initial_metadata_, Arena::MakePooled<ClientMetadata>());
   send_initial_metadata_->Set(HttpPathMetadata(), std::move(path));
   if (authority.has_value()) {
     send_initial_metadata_->Set(HttpAuthorityMetadata(), std::move(*authority));
@@ -128,19 +127,7 @@ ClientCall::ClientCall(
   }
 }
 
-ClientCall::~ClientCall() {
-  switch (call_state_.load(std::memory_order_acquire)) {
-    case kUnstarted:
-    default:
-      Destruct(&send_initial_metadata_);
-      break;
-    case kStarted:
-      Destruct(&started_call_initiator_);
-      break;
-    case kCancelled:
-      break;
-  }
-}
+ClientCall::~ClientCall() {}
 
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
@@ -171,7 +158,6 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
-          Destruct(&send_initial_metadata_);
           return;
         }
         break;
@@ -243,8 +229,7 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
                                  *send_initial_metadata_);
   auto call = MakeCallPair(std::move(send_initial_metadata_), event_engine(),
                            arena()->Ref());
-  Destruct(&send_initial_metadata_);
-  Construct(&started_call_initiator_, std::move(call.initiator));
+  started_call_initiator_ = std::move(call.initiator);
   call_destination_->StartCall(std::move(call.handler));
   while (true) {
     switch (cur_state) {

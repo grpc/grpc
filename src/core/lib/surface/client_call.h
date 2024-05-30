@@ -146,10 +146,9 @@ class ClientCall final
     kCancelled = 2,
   };
   std::atomic<uintptr_t> call_state_{kUnstarted};
-  union {
-    ClientMetadataHandle send_initial_metadata_;
-    CallInitiator started_call_initiator_;
-  };
+  ClientMetadataHandle send_initial_metadata_{
+      Arena::MakePooled<ClientMetadata>()};
+  CallInitiator started_call_initiator_;
   MessageReceiver message_receiver_;
   grpc_completion_queue* const cq_;
   const RefCountedPtr<UnstartedCallDestination> call_destination_;

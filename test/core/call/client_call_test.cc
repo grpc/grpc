@@ -207,10 +207,19 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   WaitForAllPendingWork();
 }
 
-CLIENT_CALL_TEST(CancelBeforeInvoke) {
+CLIENT_CALL_TEST(CancelBeforeInvoke1) {
   grpc_call_cancel(InitCall(CallOptions()), nullptr);
   IncomingStatusOnClient status;
   NewBatch(1).RecvStatusOnClient(status);
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_CANCELLED);
+}
+
+CLIENT_CALL_TEST(CancelBeforeInvoke2) {
+  grpc_call_cancel(InitCall(CallOptions()), nullptr);
+  IncomingStatusOnClient status;
+  NewBatch(1).RecvStatusOnClient(status).SendInitialMetadata({});
   Expect(1, true);
   TickThroughCqExpectations();
   EXPECT_EQ(status.status(), GRPC_STATUS_CANCELLED);
