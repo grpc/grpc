@@ -62,9 +62,6 @@ typedef enum {
   /// A LoadBalancingPolicy::SubchannelCallTrackerInterface
   GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE,
 
-  /// Special Google context
-  GRPC_CONTEXT_GOOGLE,
-
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
