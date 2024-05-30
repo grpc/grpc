@@ -653,11 +653,6 @@ ClientChannel::ClientChannel(
       default_authority_(
           GetDefaultAuthorityFromChannelArgs(channel_args_, this->target())),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
-      call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
-          channel_args_.GetObject<ResourceQuota>()
-              ->memory_quota()
-              ->CreateMemoryAllocator("client_channel"),
-          1024)),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
       resolver_data_for_calls_(ResolverDataForCalls{}),
       picker_(nullptr),
@@ -825,9 +820,9 @@ CallInitiator ClientChannel::CreateCall(
   // Exit IDLE if needed.
   CheckConnectivityState(/*try_to_connect=*/true);
   // Create an initiator/unstarted-handler pair.
-  auto call = MakeCallPair(
-      std::move(client_initial_metadata), event_engine_.get(),
-      call_arena_allocator_->MakeArena(), call_arena_allocator_, nullptr);
+  auto call =
+      MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
+                   call_arena_allocator()->MakeArena(), nullptr);
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuardedUntilCallCompletes(

@@ -1489,6 +1489,7 @@ grpc_cc_library(
         "context",
         "event_engine_memory_allocator",
         "memory_quota",
+        "resource_quota",
         "//:gpr",
     ],
 )

@@ -280,12 +280,12 @@ class CallSpine final : public CallSpineInterface, public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
-      grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-      RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned,
-      grpc_call_context_element* legacy_context) {
-    return RefCountedPtr<CallSpine>(arena->New<CallSpine>(
-        std::move(client_initial_metadata), event_engine, arena,
-        std::move(call_arena_allocator_if_arena_is_owned), legacy_context));
+      grpc_event_engine::experimental::EventEngine* event_engine,
+      RefCountedPtr<Arena> arena, grpc_call_context_element* legacy_context) {
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
+        std::move(client_initial_metadata), event_engine, std::move(arena),
+        legacy_context));
   }
 
   ~CallSpine() override {
@@ -301,7 +301,7 @@ class CallSpine final : public CallSpineInterface, public Party {
 
   Party& party() override { return *this; }
 
-  Arena* arena() override { return arena_; }
+  Arena* arena() override { return arena_.get(); }
 
   void IncrementRefCount() override { Party::IncrementRefCount(); }
 
@@ -385,18 +385,15 @@ class CallSpine final : public CallSpineInterface, public Party {
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
             grpc_event_engine::experimental::EventEngine* event_engine,
-            Arena* arena,
-            RefCountedPtr<CallArenaAllocator> call_arena_allocator,
+            RefCountedPtr<Arena> arena,
             grpc_call_context_element* legacy_context)
       : Party(1),
+        arena_(std::move(arena)),
         call_filters_(std::move(client_initial_metadata)),
-        arena_(arena),
-        event_engine_(event_engine),
-        call_arena_allocator_if_arena_is_owned_(
-            std::move(call_arena_allocator)) {
+        event_engine_(event_engine) {
     if (legacy_context == nullptr) {
-      legacy_context_ = static_cast<grpc_call_context_element*>(
-          arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
+      legacy_context_ = static_cast<grpc_call_context_element*>(arena_->Alloc(
+          sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
       memset(legacy_context_, 0,
              sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT);
       legacy_context_is_owned_ = true;
@@ -415,7 +412,7 @@ class CallSpine final : public CallSpineInterface, public Party {
    public:
     explicit ScopedContext(CallSpine* spine)
         : ScopedActivity(spine),
-          Context<Arena>(spine->arena_),
+          Context<Arena>(spine->arena_.get()),
           Context<grpc_event_engine::experimental::EventEngine>(
               spine->event_engine()),
           Context<grpc_call_context_element>(spine->legacy_context_) {}
@@ -427,29 +424,23 @@ class CallSpine final : public CallSpineInterface, public Party {
   }
 
   void PartyOver() override {
-    Arena* a = arena_;
-    RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned =
-        std::move(call_arena_allocator_if_arena_is_owned_);
+    auto arena = arena_;
     {
       ScopedContext context(this);
       CancelRemainingParticipants();
-      a->DestroyManagedNewObjects();
+      arena->DestroyManagedNewObjects();
     }
     this->~CallSpine();
-    if (call_arena_allocator_if_arena_is_owned != nullptr) {
-      call_arena_allocator_if_arena_is_owned->Destroy(a);
-    }
   }
 
+  const RefCountedPtr<Arena> arena_;
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
-  Arena* const arena_;
   // Event engine associated with this call
   grpc_event_engine::experimental::EventEngine* const event_engine_;
   // Legacy context
   // TODO(ctiller): remove
   grpc_call_context_element* legacy_context_;
-  RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned_;
   bool legacy_context_is_owned_;
 };
 
@@ -654,9 +645,8 @@ struct CallInitiatorAndHandler {
 
 CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-    RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned,
-    grpc_call_context_element* legacy_context);
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    RefCountedPtr<Arena> arena, grpc_call_context_element* legacy_context);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {
