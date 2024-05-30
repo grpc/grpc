@@ -49,20 +49,26 @@ struct ArenaContextType;
 
 namespace arena_detail {
 
+// Tracks all registered arena context types (these should only be registered
+// via ArenaContextTraits at static initialization time).
 class BaseArenaContextTraits {
  public:
+  // Count of number of contexts that have been allocated.
   static uint16_t NumContexts() {
     return static_cast<uint16_t>(RegisteredTraits().size());
   }
 
+  // Number of bytes required to store the context pointers on an arena.
   static size_t ContextSize() { return NumContexts() * sizeof(void*); }
 
+  // Call the registered destruction function for a context.
   static void Destroy(uint16_t id, void* ptr) {
     if (ptr == nullptr) return;
     RegisteredTraits()[id](ptr);
   }
 
  protected:
+  // Allocate a new context id and register the destruction function.
   static uint16_t MakeId(void (*destroy)(void* ptr)) {
     auto& traits = RegisteredTraits();
     const uint16_t id = static_cast<uint16_t>(traits.size());
