@@ -195,6 +195,36 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
   WaitForAllPendingWork();
 }
 
+LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
+  auto call = MakeCall(MakeClientInitialMetadata());
+  SpawnTestSeq(
+      call.initiator, "initiator",
+      [this, handler = std::move(call.handler),
+       initiator = call.initiator]() mutable {
+        destination_under_test().StartCall(handler);
+        return initiator.PullServerTrailingMetadata();
+      },
+      [](ServerMetadataHandle md) {
+        EXPECT_EQ(md->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN),
+                  GRPC_STATUS_UNAVAILABLE);
+        return Empty{};
+      });
+  auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
+  std::atomic<bool> queued_once{false};
+  EXPECT_CALL(*mock_picker, Pick)
+      .WillOnce([&queued_once](LoadBalancingPolicy::PickArgs) {
+        queued_once.store(true, std::memory_order_relaxed);
+        return LoadBalancingPolicy::PickResult::Queue{};
+      });
+  picker().Set(mock_picker);
+  TickUntil<Empty>([&queued_once]() -> Poll<Empty> {
+    if (queued_once.load(std::memory_order_relaxed)) return Empty{};
+    return Pending();
+  });
+  picker().Set(nullptr);
+  WaitForAllPendingWork();
+}
+
 // TODO(roth, ctiller): more tests
 // - tests for the picker returning queue, fail, and drop results.
 

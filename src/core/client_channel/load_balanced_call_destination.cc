@@ -290,7 +290,10 @@ void LoadBalancedCallDestination::StartCall(
                       picker.Next(last_picker),
                       [unstarted_handler, &last_picker](
                           RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-                              picker) mutable {
+                              picker) mutable ->LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>>{
+                        if (picker == nullptr) {
+                          return absl::UnavailableError("Channel shutting down");
+                        }
                         last_picker = std::move(picker);
                         // Returns 3 possible things:
                         // - Continue to queue the pick
