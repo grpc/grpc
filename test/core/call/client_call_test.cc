@@ -156,7 +156,9 @@ CLIENT_CALL_TEST(NoOp) { InitCall(CallOptions()); }
 
 CLIENT_CALL_TEST(SendInitialMetadata) {
   InitCall(CallOptions());
-  NewBatch(1).SendInitialMetadata({});
+  NewBatch(1).SendInitialMetadata({
+      {"foo", "bar"},
+  });
   Expect(1, true);
   TickThroughCqExpectations();
   SpawnTestSeq(
@@ -164,8 +166,12 @@ CLIENT_CALL_TEST(SendInitialMetadata) {
       [this]() { return handler().PullClientInitialMetadata(); },
       [](ValueOrFailure<ClientMetadataHandle> md) {
         CHECK(md.ok());
+        CHECK_NE((*md)->get_pointer(HttpPathMetadata()), nullptr);
         EXPECT_EQ((*md)->get_pointer(HttpPathMetadata())->as_string_view(),
                   kDefaultPath);
+        std::string buffer;
+        auto r = (*md)->GetStringValue("foo", &buffer);
+        EXPECT_EQ(r, "bar");
         return Immediate(Empty{});
       });
   WaitForAllPendingWork();
@@ -226,7 +232,7 @@ CLIENT_CALL_TEST(CancelBeforeInvoke2) {
 }
 
 CLIENT_CALL_TEST(NegativeDeadline) {
-    auto start = Timestamp::Now();
+  auto start = Timestamp::Now();
   InitCall(CallOptions().SetTimeout(Duration::Seconds(-1)));
   IncomingStatusOnClient status;
   NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status);
@@ -234,7 +240,8 @@ CLIENT_CALL_TEST(NegativeDeadline) {
   TickThroughCqExpectations();
   EXPECT_EQ(status.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
   auto now = Timestamp::Now();
-  EXPECT_LE(now - start, Duration::Milliseconds(100)) << GRPC_DUMP_ARGS(now, start);
+  EXPECT_LE(now - start, Duration::Milliseconds(100))
+      << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
 }
 

@@ -226,6 +226,9 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
 
 void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
   auto cur_state = call_state_.load(std::memory_order_acquire);
+  CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
+              send_initial_metadata_op.data.send_initial_metadata.count,
+              send_initial_metadata_.get());
   PrepareOutgoingInitialMetadata(send_initial_metadata_op,
                                  *send_initial_metadata_);
   auto call = MakeCallPair(std::move(send_initial_metadata_), event_engine(),
