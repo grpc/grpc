@@ -2350,9 +2350,8 @@ template <typename T>
 grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
                                        grpc_call** out_call) {
   Channel* channel = args->channel.get();
-
-  PromiseBasedCall* call =
-      arena->New<T>(channel->call_arena_allocator()->MakeArena(), args);
+  auto arena = channel->call_arena_allocator()->MakeArena();
+  PromiseBasedCall* call = arena->New<T>(arena, args);
   *out_call = call->c_ptr();
   DCHECK(Call::FromC(*out_call) == call);
   return absl::OkStatus();
