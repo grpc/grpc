@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef CLIENTCALL_H
-#define CLIENTCALL_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_CLIENT_CALL_H
+#define GRPC_SRC_CORE_LIB_SURFACE_CLIENT_CALL_H
 
 #include <inttypes.h>
 #include <limits.h>
@@ -170,4 +170,4 @@ grpc_call* MakeClientCall(
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_CLIENT_CALL_H
