@@ -281,8 +281,9 @@ class CallSpine final : public CallSpineInterface, public Party {
       ClientMetadataHandle client_initial_metadata,
       grpc_event_engine::experimental::EventEngine* event_engine,
       RefCountedPtr<Arena> arena) {
-    return RefCountedPtr<CallSpine>(arena->New<CallSpine>(
-        std::move(client_initial_metadata), event_engine, arena));
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
+        std::move(client_initial_metadata), event_engine, std::move(arena)));
   }
 
   ~CallSpine() override {}
