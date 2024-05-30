@@ -146,7 +146,7 @@ class SubchannelStreamClient final
     RefCountedPtr<SubchannelStreamClient> subchannel_stream_client_;
     grpc_polling_entity pollent_;
 
-    ScopedArenaPtr arena_;
+    RefCountedPtr<Arena> arena_;
     CallCombiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
@@ -201,7 +201,7 @@ class SubchannelStreamClient final
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   grpc_pollset_set* interested_parties_;  // Do not own.
   const char* tracer_;
-  MemoryAllocator call_allocator_;
+  RefCountedPtr<CallArenaAllocator> call_allocator_;
 
   Mutex mu_;
   std::unique_ptr<CallEventHandler> event_handler_ ABSL_GUARDED_BY(mu_);
