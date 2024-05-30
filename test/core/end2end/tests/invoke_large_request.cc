@@ -42,9 +42,9 @@ CORE_END2END_TEST(Http2SingleHopTest, InvokeLargeRequest) {
   InitClient(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage(send_from_client.Ref())
@@ -55,11 +55,11 @@ CORE_END2END_TEST(Http2SingleHopTest, InvokeLargeRequest) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step(Duration::Minutes(1));
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
   Expect(102, true);
   Step(Duration::Minutes(1));
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
       .SendMessage(send_from_server.Ref())

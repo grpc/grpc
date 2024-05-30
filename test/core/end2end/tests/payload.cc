@@ -38,9 +38,9 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
 
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(60)).Create();
 
-  CoreEnd2endTest::IncomingMetadata server_initial_md;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_md;
+  IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage(request_slice.Ref())
@@ -53,12 +53,12 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
   test.Expect(101, true);
   test.Step();
 
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).SendInitialMetadata({}).RecvMessage(client_message);
   test.Expect(102, true);
   test.Step();
 
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage(response_slice.Ref())

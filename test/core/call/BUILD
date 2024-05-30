@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
 
 grpc_package(name = "test/core/call")
@@ -26,7 +26,7 @@ grpc_yodel_simple_test(
     language = "C++",
     deps = [
         "//:grpc_base",
-        "//test/core/call/yodel:yodel_test"
+        "//test/core/call/yodel:yodel_test",
     ],
 )
 
@@ -39,7 +39,7 @@ grpc_yodel_simple_test(
     language = "C++",
     deps = [
         "//:grpc_base",
-        "//test/core/call/yodel:yodel_test"
+        "//test/core/call/yodel:yodel_test",
     ],
 )
 
@@ -52,5 +52,23 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "batch_builder",
+    testonly = True,
+    srcs = [
+        "batch_builder.cc",
+    ],
+    hdrs = [
+        "batch_builder.h",
+    ],
+    external_deps = ["absl/strings"],
+    visibility = ["//test/core:__subpackages__"],
+    deps = [
+        "//:grpc",
+        "//src/core:slice",
+        "//test/core/end2end:cq_verifier",
     ],
 )

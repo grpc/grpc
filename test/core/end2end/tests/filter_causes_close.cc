@@ -114,8 +114,8 @@ CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
     builder->channel_init()->RegisterFilter(GRPC_SERVER_CHANNEL, &test_filter);
   });
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("foo")
