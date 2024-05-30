@@ -136,7 +136,7 @@ RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size) {
       return Arena::Create(initial_size_, Ref());
     }
 
-    void FinalizeArena(Arena* arena) override {
+    void FinalizeArena(Arena*) override {
       // No-op.
     }
 
