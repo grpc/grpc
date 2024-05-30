@@ -29,6 +29,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "call_trace.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -341,12 +342,16 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     StartCall(*op);
   }
   if (const grpc_op* op = op_index.op(GRPC_OP_RECV_STATUS_ON_CLIENT)) {
+    auto out_status = op->data.recv_status_on_client.status;
+    auto out_status_details = op->data.recv_status_on_client.status_details;
+    auto out_error_string = op->data.recv_status_on_client.error_string;
+    *out_status = GRPC_STATUS_CANCELLED;
+    *out_status_details = grpc_empty_slice();
+    *out_error_string = nullptr;
     ScheduleCommittedBatch(InfallibleBatch(
         std::move(primary_ops),
         OpHandler<GRPC_OP_RECV_STATUS_ON_CLIENT>(
-            [this, out_status = op->data.recv_status_on_client.status,
-             out_status_details = op->data.recv_status_on_client.status_details,
-             out_error_string = op->data.recv_status_on_client.error_string,
+            [this, out_status, out_status_details, out_error_string,
              out_trailing_metadata =
                  op->data.recv_status_on_client.trailing_metadata]() {
               return Map(
@@ -354,6 +359,10 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                   [this, out_status, out_status_details, out_error_string,
                    out_trailing_metadata](
                       ServerMetadataHandle server_trailing_metadata) {
+                    if (grpc_call_trace.enabled()) {
+                      LOG(INFO) << DebugTag() << "RecvStatusOnClient "
+                                << server_trailing_metadata->DebugString();
+                    }
                     const auto status =
                         server_trailing_metadata->get(GrpcStatusMetadata())
                             .value_or(GRPC_STATUS_UNKNOWN);
