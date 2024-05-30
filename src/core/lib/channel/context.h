@@ -29,9 +29,6 @@
 /// This enum represents the indexes into the array, where each index
 /// contains a different type of value.
 typedef enum {
-  /// grpc_call* associated with this context.
-  GRPC_CONTEXT_CALL = 0,
-
   /// Value is either a \a grpc_client_security_context or a
   /// \a grpc_server_security_context.
   GRPC_CONTEXT_SECURITY,
@@ -74,7 +71,6 @@ struct grpc_call_context_element {
 };
 
 namespace grpc_core {
-class Call;
 class CallTracerAnnotationInterface;
 class CallTracerInterface;
 class ServiceConfigCallData;
@@ -89,11 +85,6 @@ struct ContextType<grpc_call_context_element> {};
 namespace promise_detail {
 template <typename T>
 struct OldStyleContext;
-
-template <>
-struct OldStyleContext<Call> {
-  static constexpr grpc_context_index kIndex = GRPC_CONTEXT_CALL;
-};
 
 template <>
 struct OldStyleContext<CallTracerAnnotationInterface> {
