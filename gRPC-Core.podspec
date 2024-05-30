@@ -199,7 +199,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.34'
+    ss.dependency 'BoringSSL-GRPC', '0.0.35'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -1441,14 +1441,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/work_serializer.cc',
                       'src/core/lib/gprpp/work_serializer.h',
                       'src/core/lib/gprpp/xxhash_inline.h',
-                      'src/core/lib/http/format_request.cc',
-                      'src/core/lib/http/format_request.h',
-                      'src/core/lib/http/httpcli.cc',
-                      'src/core/lib/http/httpcli.h',
-                      'src/core/lib/http/httpcli_security_connector.cc',
-                      'src/core/lib/http/httpcli_ssl_credentials.h',
-                      'src/core/lib/http/parser.cc',
-                      'src/core/lib/http/parser.h',
                       'src/core/lib/iomgr/block_annotate.h',
                       'src/core/lib/iomgr/buffer_list.cc',
                       'src/core/lib/iomgr/buffer_list.h',
@@ -2036,6 +2028,14 @@ Pod::Spec.new do |s|
                       'src/core/util/alloc.h',
                       'src/core/util/android/log.cc',
                       'src/core/util/atm.cc',
+                      'src/core/util/http_client/format_request.cc',
+                      'src/core/util/http_client/format_request.h',
+                      'src/core/util/http_client/httpcli.cc',
+                      'src/core/util/http_client/httpcli.h',
+                      'src/core/util/http_client/httpcli_security_connector.cc',
+                      'src/core/util/http_client/httpcli_ssl_credentials.h',
+                      'src/core/util/http_client/parser.cc',
+                      'src/core/util/http_client/parser.h',
                       'src/core/util/iphone/cpu.cc',
                       'src/core/util/json/json.h',
                       'src/core/util/json/json_args.h',
@@ -3062,10 +3062,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/validation_errors.h',
                               'src/core/lib/gprpp/work_serializer.h',
                               'src/core/lib/gprpp/xxhash_inline.h',
-                              'src/core/lib/http/format_request.h',
-                              'src/core/lib/http/httpcli.h',
-                              'src/core/lib/http/httpcli_ssl_credentials.h',
-                              'src/core/lib/http/parser.h',
                               'src/core/lib/iomgr/block_annotate.h',
                               'src/core/lib/iomgr/buffer_list.h',
                               'src/core/lib/iomgr/call_combiner.h',
@@ -3362,6 +3358,10 @@ Pod::Spec.new do |s|
                               'src/core/tsi/transport_security_grpc.h',
                               'src/core/tsi/transport_security_interface.h',
                               'src/core/util/alloc.h',
+                              'src/core/util/http_client/format_request.h',
+                              'src/core/util/http_client/httpcli.h',
+                              'src/core/util/http_client/httpcli_ssl_credentials.h',
+                              'src/core/util/http_client/parser.h',
                               'src/core/util/json/json.h',
                               'src/core/util/json/json_args.h',
                               'src/core/util/json/json_channel_args.h',

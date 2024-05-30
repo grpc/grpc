@@ -540,10 +540,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/windows/stat.cc \
     src/core/lib/gprpp/windows/thd.cc \
     src/core/lib/gprpp/work_serializer.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/httpcli_security_connector.cc \
-    src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
@@ -835,6 +831,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/alloc.cc \
     src/core/util/android/log.cc \
     src/core/util/atm.cc \
+    src/core/util/http_client/format_request.cc \
+    src/core/util/http_client/httpcli.cc \
+    src/core/util/http_client/httpcli_security_connector.cc \
+    src/core/util/http_client/parser.cc \
     src/core/util/iphone/cpu.cc \
     src/core/util/json/json_object_loader.cc \
     src/core/util/json/json_reader.cc \
@@ -1114,6 +1114,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/params.c \
     third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/dilithium/dilithium.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \
@@ -1532,7 +1533,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/linux)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/posix)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/windows)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine_shims)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
@@ -1603,6 +1603,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/android)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/http_client)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/iphone)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/json)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/util/linux)
@@ -1654,6 +1655,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/des)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/dh_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/digest_extra)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/dilithium)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/dsa)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/ec_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/ecdh_extra)

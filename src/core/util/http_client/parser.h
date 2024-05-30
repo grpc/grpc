@@ -16,14 +16,15 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_HTTP_PARSER_H
-#define GRPC_SRC_CORE_LIB_HTTP_PARSER_H
+#ifndef GRPC_SRC_CORE_UTIL_HTTP_CLIENT_PARSER_H
+#define GRPC_SRC_CORE_UTIL_HTTP_CLIENT_PARSER_H
+
+#include <grpc/support/port_platform.h>
 
 #include <stddef.h>
 #include <stdint.h>
 
 #include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -126,4 +127,4 @@ void grpc_http_response_destroy(grpc_http_response* response);
 
 extern grpc_core::TraceFlag grpc_http1_trace;
 
-#endif  // GRPC_SRC_CORE_LIB_HTTP_PARSER_H
+#endif  // GRPC_SRC_CORE_UTIL_HTTP_CLIENT_PARSER_H
