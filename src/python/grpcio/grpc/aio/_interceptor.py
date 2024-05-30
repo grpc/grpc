@@ -43,6 +43,7 @@ from ._call import _RPC_HALF_CLOSED_DETAILS
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
+from ._typing import EOFType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseIterableType
@@ -494,12 +495,15 @@ class _InterceptedStreamResponseMixin:
             )
         return self._response_aiter
 
-    async def read(self) -> ResponseType:
+    async def read(self) -> Union[EOFType, ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
-        return await self._response_aiter.asend(None)
+        try:
+            return await self._response_aiter.asend(None)
+        except StopAsyncIteration:
+            return cygrpc.EOF
 
 
 class _InterceptedStreamRequestMixin:
@@ -1141,7 +1145,7 @@ class UnaryStreamCallResponseIterator(
 ):
     """UnaryStreamCall class wich uses an alternative response iterator."""
 
-    async def read(self) -> ResponseType:
+    async def read(self) -> Union[EOFType, ResponseType]:
         # Behind the scenes everyting goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
@@ -1152,7 +1156,7 @@ class StreamStreamCallResponseIterator(
 ):
     """StreamStreamCall class wich uses an alternative response iterator."""
 
-    async def read(self) -> ResponseType:
+    async def read(self) -> Union[EOFType, ResponseType]:
         # Behind the scenes everyting goes through the
         # async iterator. So this path should not be reached.
         raise NotImplementedError()
