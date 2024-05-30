@@ -96,7 +96,7 @@ for general contribution guidelines.
 - [wcevans](https://github.com/wcevans), Google LLC
 - [y-zeng](https://github.com/y-zeng), Google LLC
 - [yang-g](https://github.com/yang-g), Google LLC
-- [yihuazhang](https://github.com/yihuazhang), Google LLC  
+- [yihuazhang](https://github.com/yihuazhang), Google LLC
 - [zpencer](https://github.com/zpencer), Google LLC
 - [ZhenLian](https://github.com/ZhenLian), Google LLC
 <!-- go/keep-sorted end -->
