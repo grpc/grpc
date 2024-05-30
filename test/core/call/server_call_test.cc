@@ -25,6 +25,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {
@@ -63,11 +64,24 @@ class ServerCallTest : public YodelTest {
     }
   }
 
-  ClientMetadataHandle MakeClientInitialMetadata() {
+  ClientMetadataHandle MakeClientInitialMetadata(
+      std::initializer_list<std::pair<absl::string_view, absl::string_view>>
+          md) {
     auto client_initial_metadata = Arena::MakePooled<ClientMetadata>();
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kDefaultPath));
+    for (const auto& pair : md) {
+      client_initial_metadata->Parse(
+          pair.first, Slice::FromCopiedBuffer(pair.second), true,
+          32 + pair.first.length() + pair.second.length(),
+          [](absl::string_view error, const Slice&) { Crash(error); });
+    }
     return client_initial_metadata;
+  }
+
+  absl::optional<std::string> GetClientInitialMetadata(absl::string_view key) {
+    CHECK_NE(call_.load(std::memory_order_acquire), nullptr);
+    return FindInMetadataArray(publish_initial_metadata_, key);
   }
 
  private:
@@ -113,6 +127,11 @@ class ServerCallTest : public YodelTest {
 
 #define SERVER_CALL_TEST(name) YODEL_TEST(ServerCallTest, name)
 
-SERVER_CALL_TEST(NoOp) { InitCall(MakeClientInitialMetadata()); }
+SERVER_CALL_TEST(NoOp) { InitCall(MakeClientInitialMetadata({})); }
+
+SERVER_CALL_TEST(InitialMetadataPassedThrough) {
+  InitCall(MakeClientInitialMetadata({{"foo", "bar"}}));
+  EXPECT_EQ(GetClientInitialMetadata("foo"), "bar");
+}
 
 }  // namespace grpc_core
