@@ -302,9 +302,7 @@ class WorkSerializer::DispatchingWorkSerializer final
   explicit DispatchingWorkSerializer(
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine)
-      : event_engine_(std::move(event_engine)) {
-    CHECK(event_engine_ != nullptr);
-  }
+      : event_engine_(std::move(event_engine)) {}
   void Run(std::function<void()> callback,
            const DebugLocation& location) override;
   void Schedule(std::function<void()> callback,
