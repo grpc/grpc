@@ -71,9 +71,8 @@ class ServerCallTest : public YodelTest {
     client_initial_metadata->Set(HttpPathMetadata(),
                                  Slice::FromCopiedString(kDefaultPath));
     for (const auto& pair : md) {
-      client_initial_metadata->Parse(
-          pair.first, Slice::FromCopiedBuffer(pair.second), true,
-          32 + pair.first.length() + pair.second.length(),
+      client_initial_metadata->Append(
+          pair.first, Slice::FromCopiedBuffer(pair.second),
           [](absl::string_view error, const Slice&) { Crash(error); });
     }
     return client_initial_metadata;
