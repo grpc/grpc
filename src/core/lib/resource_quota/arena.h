@@ -49,20 +49,26 @@ struct ArenaContextType;
 
 namespace arena_detail {
 
+// Tracks all registered arena context types (these should only be registered
+// via ArenaContextTraits at static initialization time).
 class BaseArenaContextTraits {
  public:
+  // Count of number of contexts that have been allocated.
   static uint16_t NumContexts() {
     return static_cast<uint16_t>(RegisteredTraits().size());
   }
 
+  // Number of bytes required to store the context pointers on an arena.
   static size_t ContextSize() { return NumContexts() * sizeof(void*); }
 
+  // Call the registered destruction function for a context.
   static void Destroy(uint16_t id, void* ptr) {
     if (ptr == nullptr) return;
     RegisteredTraits()[id](ptr);
   }
 
  protected:
+  // Allocate a new context id and register the destruction function.
   static uint16_t MakeId(void (*destroy)(void* ptr)) {
     auto& traits = RegisteredTraits();
     const uint16_t id = static_cast<uint16_t>(traits.size());
@@ -77,6 +83,7 @@ class BaseArenaContextTraits {
   }
 };
 
+// Traits for a specific context type.
 template <typename T>
 class ArenaContextTraits : public BaseArenaContextTraits {
  public:
@@ -101,7 +108,7 @@ struct IfArray<T[], A, B> {
 };
 
 struct UnrefDestroy {
-  void operator()(Arena* arena) const;
+  void operator()(const Arena* arena) const;
 };
 
 }  // namespace arena_detail
@@ -123,8 +130,8 @@ class ArenaFactory : public RefCounted<ArenaFactory> {
 
 RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size = 1024);
 
-class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
-                                arena_detail::UnrefDestroy> {
+class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
+                                      arena_detail::UnrefDestroy> {
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static RefCountedPtr<Arena> Create(size_t initial_size,
@@ -312,7 +319,7 @@ class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
   ~Arena();
 
   void* AllocZone(size_t size);
-  void Destroy();
+  void Destroy() const;
   void** contexts() { return reinterpret_cast<void**>(this + 1); }
 
   // Keep track of the total used size. We use this in our call sizing
@@ -335,7 +342,9 @@ template <>
 struct ContextType<Arena> {};
 
 namespace arena_detail {
-inline void UnrefDestroy::operator()(Arena* arena) const { arena->Destroy(); }
+inline void UnrefDestroy::operator()(const Arena* arena) const {
+  arena->Destroy();
+}
 }  // namespace arena_detail
 
 namespace promise_detail {
