@@ -83,6 +83,7 @@ class BaseArenaContextTraits {
   }
 };
 
+// Traits for a specific context type.
 template <typename T>
 class ArenaContextTraits : public BaseArenaContextTraits {
  public:
