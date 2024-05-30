@@ -51,7 +51,7 @@ void* ArenaStorage(size_t& initial_size) {
 
 Arena::~Arena() {
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
-       i++) {
+       ++i) {
     arena_detail::BaseArenaContextTraits::Destroy(i, contexts()[i]);
   }
   DestroyManagedNewObjects();
@@ -79,7 +79,7 @@ Arena::Arena(size_t initial_size, RefCountedPtr<ArenaFactory> arena_factory)
       total_used_(arena_detail::BaseArenaContextTraits::ContextSize()),
       arena_factory_(std::move(arena_factory)) {
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
-       i++) {
+       ++i) {
     contexts()[i] = nullptr;
   }
   CHECK_GE(initial_size, arena_detail::BaseArenaContextTraits::ContextSize());
