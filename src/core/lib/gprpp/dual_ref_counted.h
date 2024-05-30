@@ -217,7 +217,7 @@ class DualRefCounted : public Impl {
     CHECK_GT(weak_refs, 0u);
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      unref_behavior_(const_cast<Child*>(static_cast<const Child*>(this)));
+      unref_behavior_(static_cast<Child*>(this));
     }
   }
   void WeakUnref(const DebugLocation& location, const char* reason) {
@@ -244,7 +244,7 @@ class DualRefCounted : public Impl {
     (void)reason;
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      unref_behavior_(const_cast<Child*>(static_cast<const Child*>(this)));
+      unref_behavior_(static_cast<const Child*>(this));
     }
   }
 
