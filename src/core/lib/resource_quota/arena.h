@@ -57,7 +57,7 @@ struct IfArray<T[], A, B> {
 };
 
 struct UnrefDestroy {
-  void operator()(Arena* arena) const;
+  void operator()(const Arena* arena) const;
 };
 
 }  // namespace arena_detail
@@ -79,8 +79,8 @@ class ArenaFactory : public RefCounted<ArenaFactory> {
 
 RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size = 1024);
 
-class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
-                                arena_detail::UnrefDestroy> {
+class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
+                                      arena_detail::UnrefDestroy> {
  public:
   // Create an arena, with \a initial_size bytes in the first allocated buffer.
   static RefCountedPtr<Arena> Create(size_t initial_size,
@@ -253,7 +253,7 @@ class Arena : public RefCounted<Arena, NonPolymorphicRefCount,
   ~Arena();
 
   void* AllocZone(size_t size);
-  void Destroy();
+  void Destroy() const;
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
@@ -275,7 +275,9 @@ template <>
 struct ContextType<Arena> {};
 
 namespace arena_detail {
-inline void UnrefDestroy::operator()(Arena* arena) const { arena->Destroy(); }
+inline void UnrefDestroy::operator()(const Arena* arena) const {
+  arena->Destroy();
+}
 }  // namespace arena_detail
 
 }  // namespace grpc_core
