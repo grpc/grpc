@@ -445,10 +445,9 @@ const grpc_channel_filter ClientChannelFilter::kFilterVtableWithoutPromises = {
 
 namespace {
 
-ClientChannelServiceConfigCallData* GetServiceConfigCallData(
-    grpc_call_context_element* context) {
-  return static_cast<ClientChannelServiceConfigCallData*>(
-      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+ClientChannelServiceConfigCallData* GetServiceConfigCallData(Arena* arena) {
+  return DownCast<ClientChannelServiceConfigCallData*>(
+      arena->GetContext<ServiceConfigCallData>());
 }
 
 class DynamicTerminationFilter final {
@@ -483,7 +482,7 @@ class DynamicTerminationFilter final {
         std::move(call_args),
         []() {
           auto* service_config_call_data =
-              GetServiceConfigCallData(GetContext<grpc_call_context_element>());
+              GetServiceConfigCallData(GetContext<Arena>());
           service_config_call_data->Commit();
         },
         /*is_transparent_retry=*/false);
@@ -536,8 +535,7 @@ class DynamicTerminationFilter::CallData final {
                                    calld->call_context_, calld->path_,
                                    /*start_time=*/0,     calld->deadline_,
                                    calld->arena_,        calld->call_combiner_};
-    auto* service_config_call_data =
-        GetServiceConfigCallData(calld->call_context_);
+    auto* service_config_call_data = GetServiceConfigCallData(calld->arena_);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
         args, pollent, nullptr,
         [service_config_call_data]() { service_config_call_data->Commit(); },
@@ -2067,7 +2065,7 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   // itself in the call context, so that it can be accessed by filters
   // below us in the stack, and it will be cleaned up when the call ends.
   auto* service_config_call_data =
-      arena()->New<ClientChannelServiceConfigCallData>(arena(), call_context());
+      arena()->New<ClientChannelServiceConfigCallData>(arena());
   // Use the ConfigSelector to determine the config for the call.
   absl::Status call_config_status =
       (*config_selector)
@@ -2548,8 +2546,7 @@ void ClientChannelFilter::FilterBasedCallData::
         void* arg, grpc_error_handle error) {
   auto* calld = static_cast<FilterBasedCallData*>(arg);
   auto* chand = calld->chand();
-  auto* service_config_call_data =
-      GetServiceConfigCallData(calld->call_context());
+  auto* service_config_call_data = GetServiceConfigCallData(calld->arena());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: got recv_trailing_metadata_ready: error=%s "
@@ -2669,8 +2666,7 @@ class ClientChannelFilter::LoadBalancedCall::Metadata final
 ServiceConfigCallData::CallAttributeInterface*
 ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttribute(
     UniqueTypeName type) const {
-  auto* service_config_call_data =
-      GetServiceConfigCallData(lb_call_->call_context_);
+  auto* service_config_call_data = GetServiceConfigCallData(lb_call_->arena_);
   return service_config_call_data->GetCallAttribute(type);
 }
 
