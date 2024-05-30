@@ -47,6 +47,10 @@ void* ArenaStorage(size_t initial_size) {
 namespace grpc_core {
 
 Arena::~Arena() {
+  DestroyManagedNewObjects();
+  arena_factory_->FinalizeArena(this);
+  arena_factory_->allocator().Release(
+      total_allocated_.load(std::memory_order_relaxed));
   Zone* z = last_zone_;
   while (z) {
     Zone* prev_z = z->prev;
@@ -87,12 +91,9 @@ void Arena::DestroyManagedNewObjects() {
   }
 }
 
-void Arena::Destroy() {
-  DestroyManagedNewObjects();
-  arena_factory_->allocator().Release(
-      total_allocated_.load(std::memory_order_relaxed));
+void Arena::Destroy() const {
   this->~Arena();
-  gpr_free_aligned(this);
+  gpr_free_aligned(const_cast<Arena*>(this));
 }
 
 void* Arena::AllocZone(size_t size) {
