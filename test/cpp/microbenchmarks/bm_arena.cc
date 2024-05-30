@@ -26,8 +26,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-using grpc_core::Arena;
-
 static void BM_Arena_NoOp(benchmark::State& state) {
   auto factory = grpc_core::SimpleArenaAllocator();
   for (auto _ : state) {
