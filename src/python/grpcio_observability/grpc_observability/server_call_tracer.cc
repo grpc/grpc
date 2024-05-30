@@ -248,6 +248,20 @@ PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
   return nullptr;
 }
 
+std::string PythonOpenCensusServerCallTracer::TraceId() {
+  return absl::BytesToHexString(
+      absl::string_view(context_.GetSpanContext().TraceId()));
+}
+
+std::string PythonOpenCensusServerCallTracer::SpanId() {
+  return absl::BytesToHexString(
+      absl::string_view(context_.GetSpanContext().SpanId()));
+}
+
+bool PythonOpenCensusServerCallTracer::IsSampled() {
+  return context_.GetSpanContext().IsSampled();
+}
+
 //
 // PythonOpenCensusServerCallTracerFactory
 //

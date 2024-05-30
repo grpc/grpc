@@ -66,17 +66,11 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
         labels_injector_(exchange_labels),
         identifier_(identifier) {}
 
-  std::string TraceId() override {
-    return absl::BytesToHexString(
-        absl::string_view(context_.GetSpanContext().TraceId()));
-  }
+  std::string TraceId() override;
 
-  std::string SpanId() override {
-    return absl::BytesToHexString(
-        absl::string_view(context_.GetSpanContext().SpanId()));
-  }
+  std::string SpanId() override;
 
-  bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
+  bool IsSampled() override;
 
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
   // arguments.

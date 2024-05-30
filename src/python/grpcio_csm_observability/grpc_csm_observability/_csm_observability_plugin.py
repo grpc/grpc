@@ -292,7 +292,7 @@ def get_str_value_from_resource(
 def get_resource_type(gcp_resource: Resource) -> str:
     # Convert resource type from GoogleCloudResourceDetector to the value we used for
     # metadata exchange.
-    # Reference: https://github.com/GoogleCloudPlatform/opentelemetry-operations-python/blob/main/opentelemetry-resourcedetector-gcp/src/opentelemetry/resourcedetector/gcp_resource_detector/__init__.py#L96
+    # Reference: https://github.com/GoogleCloudPlatform/opentelemetry-operations-python/blob/cc61f23a5ff2f16f4aa2c38d07e55153828849cc/opentelemetry-resourcedetector-gcp/src/opentelemetry/resourcedetector/gcp_resource_detector/__init__.py#L96
     gcp_resource_type = get_str_value_from_resource(
         "gcp.resource_type", gcp_resource
     )
