@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BATCH_BUILDER_H
-#define BATCH_BUILDER_H
+#ifndef GRPC_TEST_CORE_CALL_BATCH_BUILDER_H
+#define GRPC_TEST_CORE_CALL_BATCH_BUILDER_H
 
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
@@ -258,4 +258,4 @@ class BatchBuilder {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_TEST_CORE_CALL_BATCH_BUILDER_H

@@ -25,9 +25,9 @@ grpc_yodel_simple_test(
     external_deps = ["gtest"],
     language = "C++",
     deps = [
+        "batch_builder",
         "//:grpc_base",
         "//test/core/call/yodel:yodel_test",
-        "batch_builder",
     ],
 )
 
