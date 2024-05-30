@@ -9151,9 +9151,7 @@ add_executable(call_utils_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9606,9 +9604,7 @@ add_executable(cancel_callback_test
   third_party/upb/upb/mini_descriptor/link.c
   third_party/upb/upb/wire/decode.c
   third_party/upb/upb/wire/encode.c
-  third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decode_fast.c
-  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

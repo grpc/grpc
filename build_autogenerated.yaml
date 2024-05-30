@@ -7001,13 +7001,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
@@ -7249,9 +7245,7 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
-  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
@@ -7679,13 +7673,9 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.h
   - third_party/upb/upb/wire/decode.h
   - third_party/upb/upb/wire/encode.h
-  - third_party/upb/upb/wire/eps_copy_input_stream.h
   - third_party/upb/upb/wire/internal/constants.h
   - third_party/upb/upb/wire/internal/decode_fast.h
   - third_party/upb/upb/wire/internal/decoder.h
-  - third_party/upb/upb/wire/internal/reader.h
-  - third_party/upb/upb/wire/reader.h
-  - third_party/upb/upb/wire/types.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -7721,9 +7711,7 @@ targets:
   - third_party/upb/upb/mini_descriptor/link.c
   - third_party/upb/upb/wire/decode.c
   - third_party/upb/upb/wire/encode.c
-  - third_party/upb/upb/wire/eps_copy_input_stream.c
   - third_party/upb/upb/wire/internal/decode_fast.c
-  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
   - utf8_range_lib
