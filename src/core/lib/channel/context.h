@@ -55,10 +55,6 @@ typedef enum {
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
-  /// Holds a pointer to BackendMetricProvider associated with this call on
-  /// the server.
-  GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
-
   /// A LoadBalancingPolicy::SubchannelCallTrackerInterface
   GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE,
 
