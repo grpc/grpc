@@ -1643,6 +1643,8 @@
     <file baseinstalldir="/" name="src/core/lib/surface/call_log_batch.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/call_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/call_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_create.cc" role="src" />
@@ -1651,12 +1653,16 @@
     <file baseinstalldir="/" name="src/core/lib/surface/channel_init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/channel_stack_type.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/client_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/client_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/completion_queue_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/event_string.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/filter_stack_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/filter_stack_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_internally.cc" role="src" />
@@ -1666,11 +1672,11 @@
     <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/legacy_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/metadata_array.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/server_call.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/surface/server_call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/validate_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/version.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/surface/wait_for_cq_end_op.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/bdp_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/call_arena_allocator.cc" role="src" />

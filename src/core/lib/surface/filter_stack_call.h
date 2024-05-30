@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef FILTERSTACKCALL_H
-#define FILTERSTACKCALL_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
+#define GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 
 #include <inttypes.h>
 #include <limits.h>
@@ -366,4 +366,4 @@ grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H

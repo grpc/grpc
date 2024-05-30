@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef SERVERCALL_H
-#define SERVERCALL_H
+#ifndef GRPC_SRC_CORE_LIB_SURFACE_SERVER_CALL_H
+#define GRPC_SRC_CORE_LIB_SURFACE_SERVER_CALL_H
 
 #include <inttypes.h>
 #include <limits.h>
@@ -164,4 +164,4 @@ grpc_call* MakeServerCall(CallHandler call_handler,
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_SURFACE_SERVER_CALL_H

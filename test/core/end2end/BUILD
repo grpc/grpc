@@ -147,9 +147,9 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:slice",
         "//src/core:time",
+        "//test/core/call:batch_builder",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/call:batch_builder",
     ],
 )
 
