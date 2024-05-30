@@ -27,6 +27,7 @@ grpc_yodel_simple_test(
     deps = [
         "//:grpc_base",
         "//test/core/call/yodel:yodel_test",
+        "batch_builder",
     ],
 )
 
@@ -64,7 +65,10 @@ grpc_cc_library(
     hdrs = [
         "batch_builder.h",
     ],
-    external_deps = ["absl/strings"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+    ],
     visibility = ["//test/core:__subpackages__"],
     deps = [
         "//:grpc",

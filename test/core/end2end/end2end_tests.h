@@ -402,7 +402,6 @@ class CoreEnd2endTest : public ::testing::Test {
   }
 
   // Pull in CqVerifier types for ergonomics
-  // TODO(ctiller): evaluate just dropping CqVerifier and folding it in here.
   using ExpectedResult = CqVerifier::ExpectedResult;
   using Maybe = CqVerifier::Maybe;
   using PerformAction = CqVerifier::PerformAction;
