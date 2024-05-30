@@ -1236,6 +1236,7 @@ grpc_cc_library(
     public_hdrs = ["lib/gprpp/dual_ref_counted.h"],
     deps = [
         "down_cast",
+        "ref_counted",
         "//:debug_location",
         "//:gpr",
         "//:orphanable",
