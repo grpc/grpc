@@ -24,9 +24,20 @@ grpc_yodel_simple_test(
     ],
     external_deps = ["gtest"],
     language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
-        "//src/core:client_call",
+        "//:grpc_base",
+        "//test/core/call/yodel:yodel_test"
+    ],
+)
+
+grpc_cc_test(
+    name = "call_utils_test",
+    srcs = [
+        "call_utils_test.cc",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:grpc_base",
     ],
 )
