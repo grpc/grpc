@@ -340,9 +340,9 @@ auto InfallibleBatch(FalliblePart fallible_part, FinalPart final_part,
                                                         absl::OkStatus(), cq);
                                 }));
       },
-      [cq]() {
+      [cq, notify_tag]() {
         grpc_cq_end_op(
-            cq, nullptr, absl::OkStatus(),
+            cq, notify_tag, absl::OkStatus(),
             [](void*, grpc_cq_completion* completion) { delete completion; },
             nullptr, new grpc_cq_completion);
       });

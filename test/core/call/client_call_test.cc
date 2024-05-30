@@ -207,4 +207,13 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   WaitForAllPendingWork();
 }
 
+CLIENT_CALL_TEST(CancelBeforeInvoke) {
+  grpc_call_cancel(InitCall(CallOptions()), nullptr);
+  IncomingStatusOnClient status;
+  NewBatch(1).RecvStatusOnClient(status);
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_CANCELLED);
+}
+
 }  // namespace grpc_core
