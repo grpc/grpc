@@ -557,7 +557,6 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 
 absl::StatusOr<RefCountedPtr<Channel>> ClientChannel::Create(
     std::string target, ChannelArgs channel_args) {
-  gpr_log(GPR_ERROR, "ARGS: %s", channel_args.ToString().c_str());
   // Get URI to resolve, using proxy mapper if needed.
   if (target.empty()) {
     return absl::InternalError("target URI is empty in client channel");
