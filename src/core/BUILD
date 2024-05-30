@@ -4420,10 +4420,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "httpcli_ssl_credentials",
     srcs = [
-        "lib/http/httpcli_security_connector.cc",
+        "util/http_client/httpcli_security_connector.cc",
     ],
     hdrs = [
-        "lib/http/httpcli_ssl_credentials.h",
+        "util/http_client/httpcli_ssl_credentials.h",
     ],
     external_deps = [
         "absl/log:log",

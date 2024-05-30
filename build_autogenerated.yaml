@@ -910,10 +910,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
-  - src/core/lib/http/format_request.h
-  - src/core/lib/http/httpcli.h
-  - src/core/lib/http/httpcli_ssl_credentials.h
-  - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -1210,6 +1206,10 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/http_client/format_request.h
+  - src/core/util/http_client/httpcli.h
+  - src/core/util/http_client/httpcli_ssl_credentials.h
+  - src/core/util/http_client/parser.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_channel_args.h
@@ -1731,10 +1731,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/http/format_request.cc
-  - src/core/lib/http/httpcli.cc
-  - src/core/lib/http/httpcli_security_connector.cc
-  - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -2024,6 +2020,10 @@ libs:
   - src/core/tsi/ssl_transport_security_utils.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/http_client/format_request.cc
+  - src/core/util/http_client/httpcli.cc
+  - src/core/util/http_client/httpcli_security_connector.cc
+  - src/core/util/http_client/parser.cc
   - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_util.cc
@@ -2453,9 +2453,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
-  - src/core/lib/http/format_request.h
-  - src/core/lib/http/httpcli.h
-  - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -2688,6 +2685,9 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/http_client/format_request.h
+  - src/core/util/http_client/httpcli.h
+  - src/core/util/http_client/parser.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_channel_args.h
@@ -2889,9 +2889,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/http/format_request.cc
-  - src/core/lib/http/httpcli.cc
-  - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -3109,6 +3106,9 @@ libs:
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/http_client/format_request.cc
+  - src/core/util/http_client/httpcli.cc
+  - src/core/util/http_client/parser.cc
   - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc

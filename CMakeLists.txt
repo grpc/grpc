@@ -2315,10 +2315,6 @@ add_library(grpc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/windows/directory_reader.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/http/format_request.cc
-  src/core/lib/http/httpcli.cc
-  src/core/lib/http/httpcli_security_connector.cc
-  src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -2608,6 +2604,10 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/http_client/format_request.cc
+  src/core/util/http_client/httpcli.cc
+  src/core/util/http_client/httpcli_security_connector.cc
+  src/core/util/http_client/parser.cc
   src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_util.cc
@@ -3109,9 +3109,6 @@ add_library(grpc_unsecure
   src/core/lib/gprpp/uuid_v4.cc
   src/core/lib/gprpp/validation_errors.cc
   src/core/lib/gprpp/work_serializer.cc
-  src/core/lib/http/format_request.cc
-  src/core/lib/http/httpcli.cc
-  src/core/lib/http/parser.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -3329,6 +3326,9 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/http_client/format_request.cc
+  src/core/util/http_client/httpcli.cc
+  src/core/util/http_client/parser.cc
   src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
