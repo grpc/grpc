@@ -30,6 +30,19 @@ grpc_yodel_simple_test(
     ],
 )
 
+grpc_yodel_simple_test(
+    name = "server_call",
+    srcs = [
+        "server_call_test.cc",
+    ],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:grpc_base",
+        "//test/core/call/yodel:yodel_test"
+    ],
+)
+
 grpc_cc_test(
     name = "call_utils_test",
     srcs = [

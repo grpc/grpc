@@ -127,11 +127,6 @@ class CallSpine final : public Party {
     return event_engine_;
   }
 
-  void V2HackToStartCallWithoutACallFilterStack() {
-    CallFilters::StackBuilder empty_stack_builder;
-    call_filters().SetStack(empty_stack_builder.Build());
-  }
-
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
   // The resulting (returned) promise will resolve to Empty.
@@ -416,9 +411,10 @@ class UnstartedCallHandler {
     return spine_->UnprocessedClientInitialMetadata();
   }
 
-  CallHandler V2HackToStartCallWithoutACallFilterStack() {
-    spine_->V2HackToStartCallWithoutACallFilterStack();
-    return CallHandler(std::move(spine_));
+  // Helper for the very common situation in tests where we want to start a call
+  // with an empty filter stack.
+  CallHandler StartWithEmptyFilterStack() {
+    return StartCall(CallFilters::StackBuilder().Build());
   }
 
   CallHandler StartCall(RefCountedPtr<CallFilters::Stack> call_filters) {
