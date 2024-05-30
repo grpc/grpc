@@ -377,6 +377,10 @@ void Call::ResetDeadline() {
 void Call::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
+  if (grpc_call_trace.enabled()) {
+    LOG(INFO) << "call deadline expired "
+              << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
+  }
   CancelWithError(grpc_error_set_int(
       absl::DeadlineExceededError("Deadline Exceeded"),
       StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));

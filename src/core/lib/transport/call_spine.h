@@ -267,7 +267,7 @@ class CallInitiator {
 
   void Cancel(absl::Status error = absl::CancelledError()) {
     CHECK(!error.ok());
-    auto status = ServerMetadataFromStatus(absl::CancelledError());
+    auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
   }

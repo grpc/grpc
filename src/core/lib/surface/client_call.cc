@@ -121,6 +121,10 @@ ClientCall::ClientCall(
   send_initial_metadata_->Set(
       GrpcRegisteredMethod(),
       reinterpret_cast<void*>(static_cast<uintptr_t>(registered_method)));
+  if (deadline != Timestamp::InfFuture()) {
+    send_initial_metadata_->Set(GrpcTimeoutMetadata(), deadline);
+    UpdateDeadline(deadline);
+  }
 }
 
 ClientCall::~ClientCall() {
@@ -155,6 +159,10 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
 void ClientCall::CancelWithError(grpc_error_handle error) {
   auto cur_state = call_state_.load(std::memory_order_acquire);
   while (true) {
+    if (grpc_call_trace.enabled()) {
+      LOG(INFO) << DebugTag() << "CancelWithError "
+                << GRPC_DUMP_ARGS(cur_state, error);
+    }
     switch (cur_state) {
       case kCancelled:
         return;

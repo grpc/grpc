@@ -14,6 +14,8 @@
 
 #include "src/core/lib/surface/client_call.h"
 
+#include "absl/status/status.h"
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
@@ -44,6 +46,11 @@ class ClientCallTest : public YodelTest {
     Duration timeout() const { return timeout_; }
     grpc_compression_options compression_options() const {
       return compression_options_;
+    }
+
+    CallOptions& SetTimeout(Duration timeout) {
+      timeout_ = timeout;
+      return *this;
     }
 
    private:
@@ -81,8 +88,9 @@ class ClientCallTest : public YodelTest {
     cq_verifier_->Expect(CqVerifier::tag(tag), std::move(result), whence);
   }
 
-  void Step(absl::optional<Duration> timeout = absl::nullopt,
-            SourceLocation whence = {}) {
+  void TickThroughCqExpectations(
+      absl::optional<Duration> timeout = absl::nullopt,
+      SourceLocation whence = {}) {
     if (expectations_ == 0) {
       cq_verifier_->VerifyEmpty(timeout.value_or(Duration::Seconds(1)), whence);
       return;
@@ -150,7 +158,7 @@ CLIENT_CALL_TEST(SendInitialMetadata) {
   InitCall(CallOptions());
   NewBatch(1).SendInitialMetadata({});
   Expect(1, true);
-  Step();
+  TickThroughCqExpectations();
   SpawnTestSeq(
       handler(), "pull-initial-metadata",
       [this]() { return handler().PullClientInitialMetadata(); },
@@ -160,6 +168,42 @@ CLIENT_CALL_TEST(SendInitialMetadata) {
                   kDefaultPath);
         return Immediate(Empty{});
       });
+  WaitForAllPendingWork();
+}
+
+CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterCancellation) {
+  InitCall(CallOptions());
+  IncomingStatusOnClient status;
+  NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status);
+  SpawnTestSeq(
+      handler(), "pull-initial-metadata",
+      [this]() { return handler().PullClientInitialMetadata(); },
+      [this](ValueOrFailure<ClientMetadataHandle> md) {
+        CHECK(md.ok());
+        EXPECT_EQ((*md)->get_pointer(HttpPathMetadata())->as_string_view(),
+                  kDefaultPath);
+        handler().PushServerTrailingMetadata(
+            ServerMetadataFromStatus(absl::InternalError("test error")));
+        return Immediate(Empty{});
+      });
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_INTERNAL);
+  EXPECT_EQ(status.message(), "test error");
+  WaitForAllPendingWork();
+}
+
+CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
+  auto start = Timestamp::Now();
+  InitCall(CallOptions().SetTimeout(Duration::Seconds(1)));
+  IncomingStatusOnClient status;
+  NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status);
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
+  auto now = Timestamp::Now();
+  EXPECT_GE(now - start, Duration::Seconds(1)) << GRPC_DUMP_ARGS(now, start);
+  EXPECT_LE(now - start, Duration::Seconds(5)) << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
 }
 

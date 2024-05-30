@@ -128,7 +128,7 @@ class ClientCall final
   StatusFlag FinishRecvMessage(
       ValueOrFailure<absl::optional<MessageHandle>> result);
 
-  std::string DebugTag() { return absl::StrFormat("SERVER_CALL[%p]: ", this); }
+  std::string DebugTag() { return absl::StrFormat("CLIENT_CALL[%p]: ", this); }
 
   // call_state_ is one of:
   // 1. kUnstarted - call has not yet been started
