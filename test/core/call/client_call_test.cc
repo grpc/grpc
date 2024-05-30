@@ -225,4 +225,17 @@ CLIENT_CALL_TEST(CancelBeforeInvoke2) {
   EXPECT_EQ(status.status(), GRPC_STATUS_CANCELLED);
 }
 
+CLIENT_CALL_TEST(NegativeDeadline) {
+    auto start = Timestamp::Now();
+  InitCall(CallOptions().SetTimeout(Duration::Seconds(-1)));
+  IncomingStatusOnClient status;
+  NewBatch(1).SendInitialMetadata({}).RecvStatusOnClient(status);
+  Expect(1, true);
+  TickThroughCqExpectations();
+  EXPECT_EQ(status.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
+  auto now = Timestamp::Now();
+  EXPECT_LE(now - start, Duration::Milliseconds(100)) << GRPC_DUMP_ARGS(now, start);
+  WaitForAllPendingWork();
+}
+
 }  // namespace grpc_core

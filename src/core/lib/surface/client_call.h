@@ -51,6 +51,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/transport/metadata.h"
+#include "src/core/lib/gprpp/single_set_ptr.h"
 
 namespace grpc_core {
 
@@ -149,6 +150,10 @@ class ClientCall final
   ClientMetadataHandle send_initial_metadata_{
       Arena::MakePooled<ClientMetadata>()};
   CallInitiator started_call_initiator_;
+  // Status passed to CancelWithError; 
+  // if call_state_ == kCancelled then this is the authoritative status, otherwise
+  // the server trailing metadata from started_call_initiator_ is authoritative.
+  SingleSetPtr<absl::Status> cancel_status_;
   MessageReceiver message_receiver_;
   grpc_completion_queue* const cq_;
   const RefCountedPtr<UnstartedCallDestination> call_destination_;

@@ -145,6 +145,7 @@ grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
 }
 
 void ClientCall::CancelWithError(grpc_error_handle error) {
+  cancel_status_.Set(new absl::Status(error));
   auto cur_state = call_state_.load(std::memory_order_acquire);
   while (true) {
     if (grpc_call_trace.enabled()) {
@@ -330,50 +331,61 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
     auto out_status = op->data.recv_status_on_client.status;
     auto out_status_details = op->data.recv_status_on_client.status_details;
     auto out_error_string = op->data.recv_status_on_client.error_string;
-    *out_status = GRPC_STATUS_CANCELLED;
-    *out_status_details = grpc_empty_slice();
-    *out_error_string = nullptr;
+    auto out_trailing_metadata =
+        op->data.recv_status_on_client.trailing_metadata;
+    auto make_read_trailing_metadata = [this, out_status, out_status_details,
+                                        out_error_string,
+                                        out_trailing_metadata]() {
+      return Map(
+          started_call_initiator_.PullServerTrailingMetadata(),
+
+          [this, out_status, out_status_details, out_error_string,
+           out_trailing_metadata](
+              ServerMetadataHandle server_trailing_metadata) {
+            if (grpc_call_trace.enabled()) {
+              LOG(INFO) << DebugTag() << "RecvStatusOnClient "
+                        << server_trailing_metadata->DebugString();
+            }
+            const auto status =
+                server_trailing_metadata->get(GrpcStatusMetadata())
+                    .value_or(GRPC_STATUS_UNKNOWN);
+            *out_status = status;
+            Slice message_slice;
+            if (Slice* message = server_trailing_metadata->get_pointer(
+                    GrpcMessageMetadata())) {
+              message_slice = message->Ref();
+            }
+            *out_status_details = message_slice.TakeCSlice();
+            if (out_error_string != nullptr) {
+              if (status != GRPC_STATUS_OK) {
+                *out_error_string = gpr_strdup(
+                    MakeErrorString(server_trailing_metadata.get()).c_str());
+              } else {
+                *out_error_string = nullptr;
+              }
+            }
+            PublishMetadataArray(server_trailing_metadata.get(),
+                                 out_trailing_metadata, true);
+            received_trailing_metadata_ = std::move(server_trailing_metadata);
+            return Success{};
+          });
+    };
     ScheduleCommittedBatch(InfallibleBatch(
         std::move(primary_ops),
-        OpHandler<GRPC_OP_RECV_STATUS_ON_CLIENT>(
+        OpHandler<GRPC_OP_RECV_STATUS_ON_CLIENT>(OnCancelFactory(
+            std::move(make_read_trailing_metadata),
             [this, out_status, out_status_details, out_error_string,
-             out_trailing_metadata =
-                 op->data.recv_status_on_client.trailing_metadata]() {
-              return Map(
-                  started_call_initiator_.PullServerTrailingMetadata(),
-                  [this, out_status, out_status_details, out_error_string,
-                   out_trailing_metadata](
-                      ServerMetadataHandle server_trailing_metadata) {
-                    if (grpc_call_trace.enabled()) {
-                      LOG(INFO) << DebugTag() << "RecvStatusOnClient "
-                                << server_trailing_metadata->DebugString();
-                    }
-                    const auto status =
-                        server_trailing_metadata->get(GrpcStatusMetadata())
-                            .value_or(GRPC_STATUS_UNKNOWN);
-                    *out_status = status;
-                    Slice message_slice;
-                    if (Slice* message = server_trailing_metadata->get_pointer(
-                            GrpcMessageMetadata())) {
-                      message_slice = message->Ref();
-                    }
-                    *out_status_details = message_slice.TakeCSlice();
-                    if (out_error_string != nullptr) {
-                      if (status != GRPC_STATUS_OK) {
-                        *out_error_string = gpr_strdup(
-                            MakeErrorString(server_trailing_metadata.get())
-                                .c_str());
-                      } else {
-                        *out_error_string = nullptr;
-                      }
-                    }
-                    PublishMetadataArray(server_trailing_metadata.get(),
-                                         out_trailing_metadata, true);
-                    received_trailing_metadata_ =
-                        std::move(server_trailing_metadata);
-                    return Success{};
-                  });
-            }),
+             out_trailing_metadata]() {
+              auto* status = cancel_status_.Get();
+              CHECK_NE(status, nullptr);
+              *out_status = static_cast<grpc_status_code>(status->code());
+              *out_status_details =
+                  Slice::FromCopiedString(status->message()).TakeCSlice();
+              if (out_error_string != nullptr) {
+                *out_error_string = nullptr;
+              }
+              out_trailing_metadata->count = 0;
+            })),
         is_notify_tag_closure, notify_tag, cq_));
   } else {
     ScheduleCommittedBatch(FallibleBatch(

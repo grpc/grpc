@@ -2131,6 +2131,7 @@ grpc_cc_library(
         "//src/core:ref_counted",
         "//src/core:seq",
         "//src/core:server_interface",
+        "//src/core:single_set_ptr",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_cast",
