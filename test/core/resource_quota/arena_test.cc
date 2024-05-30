@@ -29,6 +29,7 @@
 #include <vector>
 
 #include "absl/strings/str_join.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/sync.h>
@@ -39,6 +40,8 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/test_util/test_config.h"
+
+using testing::StrictMock;
 
 namespace grpc_core {
 
@@ -269,6 +272,23 @@ TEST(ArenaTest, ConcurrentMakePooled) {
   for (auto& th : thds2) {
     th.Join();
   }
+}
+
+class MockArenaFactory : public ArenaFactory {
+ public:
+  MockArenaFactory()
+      : ArenaFactory(
+            ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+                "test")) {}
+  MOCK_METHOD(RefCountedPtr<Arena>, MakeArena, (), (override));
+  MOCK_METHOD(void, FinalizeArena, (Arena * arena), (override));
+};
+
+TEST(ArenaTest, FinalizeArenaIsCalled) {
+  auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
+  auto arena = Arena::Create(1, factory);
+  EXPECT_CALL(*factory, FinalizeArena(arena.get()));
+  arena.reset();
 }
 
 }  // namespace grpc_core
