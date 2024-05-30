@@ -383,7 +383,7 @@ class ChannelBasedCall : public Call {
   ChannelBasedCall(RefCountedPtr<Arena> arena, bool is_client,
                    Timestamp send_deadline, RefCountedPtr<Channel> channel)
       : Call(is_client, send_deadline, channel->event_engine()),
-        arena_(arena),
+        arena_(std::move(arena)),
         channel_(std::move(channel)) {
     DCHECK_NE(arena_.get(), nullptr);
   }
@@ -2351,8 +2351,8 @@ grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
                                        grpc_call** out_call) {
   Channel* channel = args->channel.get();
 
-  auto arena = channel->call_arena_allocator()->MakeArena();
-  PromiseBasedCall* call = arena->New<T>(arena, args);
+  PromiseBasedCall* call =
+      arena->New<T>(channel->call_arena_allocator()->MakeArena(), args);
   *out_call = call->c_ptr();
   DCHECK(Call::FromC(*out_call) == call);
   return absl::OkStatus();
