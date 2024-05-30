@@ -263,7 +263,7 @@ class CoreEnd2endTest : public ::testing::Test {
     // Construct a batch with a tag - upon destruction of the BatchBuilder the
     // operation will occur.
     BatchBuilder NewBatch(int tag) {
-      return BatchBuilder(call_, test_->cq_verifier_.get(), tag);
+      return BatchBuilder(call_, &test_->cq_verifier(), tag);
     }
     // Cancel the call
     void Cancel() { grpc_call_cancel(call_, nullptr); }
