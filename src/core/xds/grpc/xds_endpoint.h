@@ -33,10 +33,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
-#include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_client_stats.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"

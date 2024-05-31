@@ -32,7 +32,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {

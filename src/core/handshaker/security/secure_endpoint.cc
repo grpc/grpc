@@ -42,9 +42,6 @@
 
 #include "src/core/handshaker/security/tsi_error.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -57,7 +54,10 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
 
 #define STAGING_BUFFER_SIZE 8192
 

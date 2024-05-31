@@ -39,14 +39,14 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 

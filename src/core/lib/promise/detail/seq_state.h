@@ -29,12 +29,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/construct_destruct.h"
-#include "src/core/util/debug_location.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/debug_location.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.

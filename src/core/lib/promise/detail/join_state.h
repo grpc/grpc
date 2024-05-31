@@ -26,11 +26,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/bitset.h"
-#include "src/core/util/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/trace.h"
+#include "src/core/util/bitset.h"
+#include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
 namespace promise_detail {

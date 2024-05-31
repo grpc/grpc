@@ -39,8 +39,8 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_callback.h>
 
-#include "src/core/util/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

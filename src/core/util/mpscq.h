@@ -19,12 +19,13 @@
 #ifndef GRPC_SRC_CORE_UTIL_MPSCQ_H
 #define GRPC_SRC_CORE_UTIL_MPSCQ_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 
 #include "absl/log/check.h"
 
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/sync.h"
 

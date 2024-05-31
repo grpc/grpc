@@ -49,9 +49,6 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
-#include "src/core/util/debug_location.h"
-#include "src/core/util/match.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -73,6 +70,9 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/match.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

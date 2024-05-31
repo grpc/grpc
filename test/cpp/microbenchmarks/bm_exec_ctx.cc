@@ -19,8 +19,8 @@
 
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/util/notification.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

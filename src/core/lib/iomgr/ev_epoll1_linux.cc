@@ -21,8 +21,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 
 // This polling engine is only relevant on linux kernels supporting epoll
 // epoll_create() or epoll_create1()
@@ -49,8 +49,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
 
-#include "src/core/util/manual_constructor.h"
-#include "src/core/util/strerror.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -59,6 +57,8 @@
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 

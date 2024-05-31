@@ -19,8 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/crash.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
+#include "src/core/util/crash.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
 

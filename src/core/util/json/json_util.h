@@ -32,9 +32,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

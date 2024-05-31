@@ -27,10 +27,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/manual_constructor.h"
-#include "src/core/util/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/mpscq.h"
 
 // These trace flags default to 1. The corresponding lines are only traced
 // if grpc_api_trace is also truthy

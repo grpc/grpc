@@ -26,8 +26,8 @@
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/string_ref.h>
 
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc {
 

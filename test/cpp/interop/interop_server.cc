@@ -36,8 +36,8 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/util/crash.h"
-#include "src/core/util/sync.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

@@ -24,10 +24,10 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

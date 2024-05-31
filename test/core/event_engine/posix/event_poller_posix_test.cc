@@ -35,8 +35,8 @@
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <ratio>

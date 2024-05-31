@@ -23,14 +23,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/trace.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/util/thd.h"       // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
+#include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_party_state(false, "party_state");

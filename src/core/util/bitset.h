@@ -15,12 +15,12 @@
 #ifndef GRPC_SRC_CORE_UTIL_BITSET_H
 #define GRPC_SRC_CORE_UTIL_BITSET_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdint.h>
 
 #include <type_traits>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/useful.h"
 

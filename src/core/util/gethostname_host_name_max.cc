@@ -18,8 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/gethostname.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/gethostname.h"
 
 #ifdef GRPC_POSIX_HOST_NAME_MAX
 

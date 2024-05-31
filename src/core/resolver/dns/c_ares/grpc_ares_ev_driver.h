@@ -27,11 +27,11 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

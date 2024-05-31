@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_UTIL_NO_DESTRUCT_H
 #define GRPC_SRC_CORE_UTIL_NO_DESTRUCT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <type_traits>
 #include <utility>
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/construct_destruct.h"
 

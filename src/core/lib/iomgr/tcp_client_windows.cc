@@ -34,7 +34,6 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 

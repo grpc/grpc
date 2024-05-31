@@ -35,9 +35,9 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>
 
+#include "src/core/lib/surface/completion_queue.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/qps_server_builder.h"

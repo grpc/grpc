@@ -38,10 +38,6 @@
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -56,6 +52,10 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace {
 grpc_error_handle ssl_check_peer(

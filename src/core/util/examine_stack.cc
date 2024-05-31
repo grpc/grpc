@@ -16,9 +16,9 @@
 //
 //
 
-#include "src/core/util/examine_stack.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/util/examine_stack.h"
 
 namespace grpc_core {
 

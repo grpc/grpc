@@ -29,8 +29,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/util/no_destruct.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 namespace {

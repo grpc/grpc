@@ -32,11 +32,11 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/util/backoff.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
+#include "src/core/util/backoff.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"

@@ -28,9 +28,9 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/time.h"
-#include "src/core/lib/iomgr/port.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON

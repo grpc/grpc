@@ -44,9 +44,9 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/util/env.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uuid_v4.h"
-#include "src/core/util/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 
 // IWYU pragma: no_include "google/protobuf/struct.pb.h"

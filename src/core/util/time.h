@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_UTIL_TIME_H
 #define GRPC_SRC_CORE_UTIL_TIME_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include <limits>
@@ -24,7 +26,6 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/util/time_precise.h"

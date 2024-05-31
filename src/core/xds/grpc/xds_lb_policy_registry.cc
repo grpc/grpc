@@ -36,9 +36,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
-#include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {

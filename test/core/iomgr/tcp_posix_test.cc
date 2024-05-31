@@ -19,9 +19,9 @@
 #include "absl/time/time.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
-#include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -47,7 +47,6 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -55,6 +54,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/test_util/test_config.h"

@@ -29,8 +29,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/util/crash.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_core {
 namespace internal {

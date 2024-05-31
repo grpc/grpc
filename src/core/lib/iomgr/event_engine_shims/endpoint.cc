@@ -38,9 +38,6 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
-#include "src/core/util/construct_destruct.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -49,7 +46,10 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

@@ -26,9 +26,9 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 struct grpc_ssl_config {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;

@@ -41,8 +41,6 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/orphanable.h"
-#include "src/core/util/ref_counted.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -63,6 +61,8 @@
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport_fwd.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
 
 // Minimum and maximum protocol accepted versions.
 #define GRPC_PROTOCOL_VERSION_MAX_MAJOR 2

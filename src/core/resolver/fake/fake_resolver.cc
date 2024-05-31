@@ -31,12 +31,12 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
-#include "src/core/util/work_serializer.h"
 #include "src/core/util/uri.h"
-#include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/useful.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 

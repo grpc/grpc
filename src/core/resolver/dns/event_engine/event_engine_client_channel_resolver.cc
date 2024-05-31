@@ -39,15 +39,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
-#include "src/core/util/time.h"
-#include "src/core/util/validation_errors.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
@@ -58,6 +52,12 @@
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
 
 // IWYU pragma: no_include <ratio>
 

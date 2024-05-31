@@ -27,11 +27,11 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tracer_util.h"
 

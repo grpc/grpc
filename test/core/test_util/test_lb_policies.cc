@@ -33,14 +33,9 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/util/orphanable.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/status_helper.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/util/uri.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
@@ -49,6 +44,11 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_util.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 

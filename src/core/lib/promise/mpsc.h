@@ -27,12 +27,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/ref_counted.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/wait_set.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 // Multi producer single consumer inter-activity comms.
 

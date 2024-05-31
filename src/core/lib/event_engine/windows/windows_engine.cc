@@ -42,10 +42,10 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {
 namespace experimental {

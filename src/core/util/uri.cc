@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/util/uri.h"
 
 #include <ctype.h>
@@ -37,7 +39,6 @@
 #include "absl/strings/strip.h"
 
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

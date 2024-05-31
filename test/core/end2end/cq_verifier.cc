@@ -45,10 +45,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/surface/event_string.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/match.h"
-#include "src/core/lib/surface/event_string.h"
 #include "test/core/test_util/test_config.h"
 
 // a set of metadata we expect to find on an event

@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 #define GRPC_SRC_CORE_UTIL_STATUS_HELPER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdint.h>
 
 #include <string>
@@ -28,8 +30,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/debug_location.h"
 

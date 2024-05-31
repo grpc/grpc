@@ -23,8 +23,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/tls_utils.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);

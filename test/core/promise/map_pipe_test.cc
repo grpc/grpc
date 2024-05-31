@@ -22,7 +22,6 @@
 
 #include <grpc/event_engine/memory_allocator.h>
 
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/join.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::Mock;

@@ -30,8 +30,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 

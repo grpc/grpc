@@ -40,10 +40,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/notification.h"
-#include "src/core/util/status_helper.h"
-#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -51,7 +47,11 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "src/core/util/thd.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

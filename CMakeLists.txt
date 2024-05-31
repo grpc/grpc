@@ -1670,45 +1670,45 @@ add_library(gpr
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
-  src/core/util/crash.cc
-  src/core/util/examine_stack.cc
-  src/core/util/fork.cc
-  src/core/util/host_port.cc
-  src/core/util/linux/env.cc
-  src/core/util/mpscq.cc
-  src/core/util/posix/env.cc
-  src/core/util/posix/stat.cc
-  src/core/util/posix/thd.cc
-  src/core/util/strerror.cc
-  src/core/util/tchar.cc
-  src/core/util/time_util.cc
-  src/core/util/windows/env.cc
-  src/core/util/windows/stat.cc
-  src/core/util/windows/thd.cc
   src/core/util/alloc.cc
   src/core/util/android/log.cc
   src/core/util/atm.cc
+  src/core/util/crash.cc
+  src/core/util/examine_stack.cc
+  src/core/util/fork.cc
+  src/core/util/gpr_time.cc
+  src/core/util/host_port.cc
   src/core/util/iphone/cpu.cc
   src/core/util/linux/cpu.cc
+  src/core/util/linux/env.cc
   src/core/util/linux/log.cc
   src/core/util/log.cc
+  src/core/util/mpscq.cc
   src/core/util/msys/tmpfile.cc
   src/core/util/posix/cpu.cc
+  src/core/util/posix/env.cc
   src/core/util/posix/log.cc
+  src/core/util/posix/stat.cc
   src/core/util/posix/string.cc
   src/core/util/posix/sync.cc
+  src/core/util/posix/thd.cc
   src/core/util/posix/time.cc
   src/core/util/posix/tmpfile.cc
+  src/core/util/strerror.cc
   src/core/util/string.cc
   src/core/util/sync.cc
   src/core/util/sync_abseil.cc
-  src/core/util/time.cc
+  src/core/util/tchar.cc
   src/core/util/time_precise.cc
+  src/core/util/time_util.cc
   src/core/util/windows/cpu.cc
+  src/core/util/windows/env.cc
   src/core/util/windows/log.cc
+  src/core/util/windows/stat.cc
   src/core/util/windows/string.cc
   src/core/util/windows/string_util.cc
   src/core/util/windows/sync.cc
+  src/core/util/windows/thd.cc
   src/core/util/windows/time.cc
   src/core/util/windows/tmpfile.cc
 )
@@ -2237,8 +2237,6 @@ add_library(grpc
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/util/backoff.cc
-  src/core/util/random_early_detection.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -2252,7 +2250,6 @@ add_library(grpc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -2303,18 +2300,6 @@ add_library(grpc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/dump_args.cc
-  src/core/util/load_file.cc
-  src/core/util/per_cpu.cc
-  src/core/util/posix/directory_reader.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
-  src/core/util/uuid_v4.cc
-  src/core/util/validation_errors.cc
-  src/core/util/windows/directory_reader.cc
-  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -2339,11 +2324,6 @@ add_library(grpc
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/util/gethostname_fallback.cc
-  src/core/util/gethostname_host_name_max.cc
-  src/core/util/gethostname_sysconf.cc
-  src/core/util/grpc_if_nametoindex_posix.cc
-  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -2392,7 +2372,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/util/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
@@ -2511,7 +2490,6 @@ add_library(grpc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/util/uri.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
@@ -2604,6 +2582,14 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/http_client/format_request.cc
   src/core/util/http_client/httpcli.cc
   src/core/util/http_client/httpcli_security_connector.cc
@@ -2612,6 +2598,20 @@ add_library(grpc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
+  src/core/util/load_file.cc
+  src/core/util/matchers.cc
+  src/core/util/per_cpu.cc
+  src/core/util/posix/directory_reader.cc
+  src/core/util/random_early_detection.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/uuid_v4.cc
+  src/core/util/validation_errors.cc
+  src/core/util/windows/directory_reader.cc
+  src/core/util/work_serializer.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3033,8 +3033,6 @@ add_library(grpc_unsecure
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/util/backoff.cc
-  src/core/util/random_early_detection.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -3048,7 +3046,6 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -3099,16 +3096,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/dump_args.cc
-  src/core/util/load_file.cc
-  src/core/util/per_cpu.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
-  src/core/util/uuid_v4.cc
-  src/core/util/validation_errors.cc
-  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -3133,11 +3120,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/util/gethostname_fallback.cc
-  src/core/util/gethostname_host_name_max.cc
-  src/core/util/gethostname_sysconf.cc
-  src/core/util/grpc_if_nametoindex_posix.cc
-  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -3270,7 +3252,6 @@ add_library(grpc_unsecure
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/util/uri.cc
   src/core/load_balancing/address_filtering.cc
   src/core/load_balancing/backend_metric_parser.cc
   src/core/load_balancing/child_policy_handler.cc
@@ -3326,12 +3307,31 @@ add_library(grpc_unsecure
   src/core/tsi/local_transport_security.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/http_client/format_request.cc
   src/core/util/http_client/httpcli.cc
   src/core/util/http_client/parser.cc
   src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/random_early_detection.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/uuid_v4.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -5153,7 +5153,6 @@ add_library(grpc_authorization_provider
   src/core/handshaker/security/tsi_error.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/util/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -5167,7 +5166,6 @@ add_library(grpc_authorization_provider
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -5218,15 +5216,6 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/dump_args.cc
-  src/core/util/load_file.cc
-  src/core/util/per_cpu.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
-  src/core/util/validation_errors.cc
-  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -5251,11 +5240,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/util/gethostname_fallback.cc
-  src/core/util/gethostname_host_name_max.cc
-  src/core/util/gethostname_sysconf.cc
-  src/core/util/grpc_if_nametoindex_posix.cc
-  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -5304,7 +5288,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_nospecial.cc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/util/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/trace.cc
@@ -5386,7 +5369,6 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/util/uri.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
   src/core/resolver/endpoint_addresses.cc
@@ -5401,8 +5383,26 @@ add_library(grpc_authorization_provider
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
+  src/core/util/load_file.cc
+  src/core/util/matchers.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -8522,10 +8522,6 @@ add_executable(call_filters_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/dump_args.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -8557,6 +8553,10 @@ add_executable(call_filters_test
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/util/dump_args.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/transport/call_filters_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -10198,8 +10198,6 @@ add_executable(chunked_vector_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -10219,6 +10217,8 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -12900,9 +12900,9 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_config_test
   src/core/lib/channel/channel_args.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/surface/channel_stack_type.cc
   src/core/util/ref_counted_string.cc
   src/core/util/time.cc
-  src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
 )
 if(WIN32 AND MSVC)
@@ -13447,8 +13447,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -13460,6 +13458,8 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -14306,8 +14306,6 @@ add_executable(flow_control_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -14328,6 +14326,8 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/transport/chttp2/flow_control_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -14392,8 +14392,6 @@ add_executable(for_each_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -14413,6 +14411,8 @@ add_executable(for_each_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/for_each_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -17849,7 +17849,6 @@ add_executable(interception_chain_test
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/util/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -17863,7 +17862,6 @@ add_executable(interception_chain_test
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -17914,15 +17912,6 @@ add_executable(interception_chain_test
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/dump_args.cc
-  src/core/util/load_file.cc
-  src/core/util/per_cpu.cc
-  src/core/util/ref_counted_string.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
-  src/core/util/time_averaged_stats.cc
-  src/core/util/validation_errors.cc
-  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -17947,11 +17936,6 @@ add_executable(interception_chain_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
-  src/core/util/gethostname_fallback.cc
-  src/core/util/gethostname_host_name_max.cc
-  src/core/util/gethostname_sysconf.cc
-  src/core/util/grpc_if_nametoindex_posix.cc
-  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -18058,7 +18042,6 @@ add_executable(interception_chain_test
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
-  src/core/util/uri.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
   src/core/resolver/endpoint_addresses.cc
@@ -18071,7 +18054,24 @@ add_executable(interception_chain_test
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/backoff.cc
+  src/core/util/dump_args.cc
+  src/core/util/event_log.cc
+  src/core/util/gethostname_fallback.cc
+  src/core/util/gethostname_host_name_max.cc
+  src/core/util/gethostname_sysconf.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/util/json/json_writer.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uri.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   test/core/transport/interception_chain_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -18144,8 +18144,6 @@ add_executable(interceptor_list_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -18165,6 +18163,8 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/interceptor_list_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -19389,8 +19389,6 @@ add_executable(map_pipe_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -19410,6 +19408,8 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/map_pipe_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -21661,8 +21661,6 @@ add_executable(periodic_update_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/util/status_helper.cc
-  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -21674,6 +21672,8 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/resource_quota/periodic_update_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c

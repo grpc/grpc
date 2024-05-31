@@ -19,8 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 #include <errno.h>

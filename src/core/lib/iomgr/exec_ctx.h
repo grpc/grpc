@@ -36,11 +36,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/fork.h"
 #include "src/core/util/time.h"
-#include "src/core/lib/iomgr/closure.h"
 #include "src/core/util/time_precise.h"
 
 #if !defined(_WIN32) || !defined(_DLL)

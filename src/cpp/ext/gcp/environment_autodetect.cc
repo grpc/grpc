@@ -36,12 +36,6 @@
 #include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/env.h"
-#include "src/core/util/load_file.h"
-#include "src/core/util/orphanable.h"
-#include "src/core/util/status_helper.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -49,6 +43,12 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 
 namespace grpc {
 namespace internal {

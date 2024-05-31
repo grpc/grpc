@@ -43,7 +43,6 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
@@ -61,6 +60,7 @@
 #include "src/core/lib/transport/metadata_batch.h"  // IWYU pragma: keep
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace chaotic_good {

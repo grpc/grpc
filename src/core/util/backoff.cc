@@ -16,11 +16,11 @@
 //
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/util/backoff.h"
 
 #include <algorithm>
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

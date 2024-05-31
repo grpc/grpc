@@ -26,9 +26,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/util/load_file.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/load_file.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 

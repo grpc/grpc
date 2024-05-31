@@ -31,9 +31,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
-#include "src/core/util/no_destruct.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/parsed_metadata.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 

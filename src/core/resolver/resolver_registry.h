@@ -27,11 +27,11 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/orphanable.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/util/uri.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 

@@ -20,8 +20,8 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
@@ -43,13 +43,13 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/util/crash.h"
 
 static grpc_pollset_set* g_pollset_set;
 static gpr_mu* g_mu;

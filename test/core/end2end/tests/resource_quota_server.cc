@@ -31,9 +31,9 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/time.h"
-#include "src/core/lib/slice/slice.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {

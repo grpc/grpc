@@ -33,14 +33,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/util/construct_destruct.h"
-#include "src/core/util/no_destruct.h"
-#include "src/core/util/orphanable.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

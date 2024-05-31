@@ -31,13 +31,13 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/util/crash.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
 
 extern char** environ;

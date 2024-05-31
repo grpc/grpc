@@ -31,9 +31,9 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
 
 using EventEngineFactory = std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>;

@@ -37,12 +37,12 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/util/notification.h"
-#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/telemetry/histogram_view.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/thd.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 

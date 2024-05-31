@@ -20,8 +20,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/fuzzing_channel_args.pb.h"
 
 namespace grpc_core {

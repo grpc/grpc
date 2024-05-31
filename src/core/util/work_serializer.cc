@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/util/work_serializer.h"
 
 #include <stdint.h>
@@ -32,17 +34,16 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/telemetry/stats.h"
-#include "src/core/telemetry/stats_data.h"
 
 namespace grpc_core {
 

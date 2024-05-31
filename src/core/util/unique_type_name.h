@@ -17,11 +17,11 @@
 #ifndef GRPC_SRC_CORE_UTIL_UNIQUE_TYPE_NAME_H
 #define GRPC_SRC_CORE_UTIL_UNIQUE_TYPE_NAME_H
 
+#include <grpc/support/port_platform.h>
+
 #include <string>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 #include "src/core/util/useful.h"
 

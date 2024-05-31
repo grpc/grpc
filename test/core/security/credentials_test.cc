@@ -42,11 +42,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/env.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/time.h"
-#include "src/core/util/unique_type_name.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/promise.h"
@@ -66,12 +61,17 @@
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/util/uri.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/string.h"
+#include "src/core/util/time.h"
 #include "src/core/util/tmpfile.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

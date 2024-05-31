@@ -31,8 +31,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/debug_location.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -42,6 +40,8 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/trace.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 

@@ -30,10 +30,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/util/host_port.h"
 
 namespace grpc_core {
 

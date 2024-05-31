@@ -41,17 +41,17 @@
 
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/util/chunked_vector.h"
-#include "src/core/util/if_list.h"
-#include "src/core/util/packed_table.h"
-#include "src/core/util/time.h"
-#include "src/core/util/type_list.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/custom_metadata.h"
 #include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/parsed_metadata.h"
 #include "src/core/lib/transport/simple_slice_based_metadata.h"
+#include "src/core/util/chunked_vector.h"
+#include "src/core/util/if_list.h"
+#include "src/core/util/packed_table.h"
+#include "src/core/util/time.h"
+#include "src/core/util/type_list.h"
 
 namespace grpc_core {
 

@@ -28,8 +28,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <linux/errqueue.h>  // IWYU pragma: keep

@@ -36,8 +36,8 @@
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/util/tchar.h"
 #include "src/core/util/string.h"
+#include "src/core/util/tchar.h"
 
 char* gpr_format_message(int messageid) {
   LPTSTR tmessage;

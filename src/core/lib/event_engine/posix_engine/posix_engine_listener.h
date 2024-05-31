@@ -34,8 +34,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"

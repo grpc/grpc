@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include "src/core/util/uri.h"
-
 #include <utility>
 
 #include "absl/status/status.h"
@@ -24,6 +22,7 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 
 using ::testing::ContainerEq;

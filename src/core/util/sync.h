@@ -19,12 +19,13 @@
 #ifndef GRPC_SRC_CORE_UTIL_SYNC_H
 #define GRPC_SRC_CORE_UTIL_SYNC_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/synchronization/mutex.h"
 
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
 #ifndef GPR_ABSEIL_SYNC

@@ -20,9 +20,9 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/util/notification.h"
 #include "src/core/lib/promise/event_engine_wakeup_scheduler.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/util/notification.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 

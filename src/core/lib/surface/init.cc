@@ -34,9 +34,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/util/fork.h"
-#include "src/core/util/sync.h"
-#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -47,6 +44,9 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/util/fork.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);

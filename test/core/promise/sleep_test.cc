@@ -27,11 +27,11 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/util/notification.h"
-#include "src/core/util/orphanable.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/orphanable.h"
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 

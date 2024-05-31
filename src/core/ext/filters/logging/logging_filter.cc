@@ -55,8 +55,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
@@ -68,9 +66,11 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/util/uri.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 

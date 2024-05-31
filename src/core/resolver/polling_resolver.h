@@ -26,15 +26,15 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/orphanable.h"
-#include "src/core/util/time.h"
-#include "src/core/util/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/time.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 

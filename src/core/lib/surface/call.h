@@ -38,8 +38,6 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -51,6 +49,8 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,

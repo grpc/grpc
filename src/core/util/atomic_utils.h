@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_ATOMIC_UTILS_H
 #define GRPC_SRC_CORE_UTIL_ATOMIC_UTILS_H
 
-#include <atomic>
-
 #include <grpc/support/port_platform.h>
+
+#include <atomic>
 
 namespace grpc_core {
 

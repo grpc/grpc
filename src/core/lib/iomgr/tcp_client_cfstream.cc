@@ -34,8 +34,6 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint_cfstream.h"
@@ -44,6 +42,8 @@
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

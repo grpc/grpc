@@ -30,10 +30,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 //
 // grpc_composite_channel_credentials

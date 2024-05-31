@@ -25,8 +25,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/util/crash.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
 
 #ifdef GPR_WINDOWS

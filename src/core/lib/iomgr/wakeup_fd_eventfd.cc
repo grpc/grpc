@@ -28,9 +28,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
-#include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
 static grpc_error_handle eventfd_create(grpc_wakeup_fd* fd_info) {
   fd_info->read_fd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);

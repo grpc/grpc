@@ -39,9 +39,6 @@
 
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -50,6 +47,9 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 

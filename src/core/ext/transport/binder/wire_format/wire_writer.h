@@ -25,8 +25,8 @@
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/transaction.h"
-#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_binder {
 

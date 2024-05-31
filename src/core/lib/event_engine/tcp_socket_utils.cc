@@ -60,9 +60,9 @@
 
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/uri.h"
 
 namespace grpc_event_engine {
