@@ -443,8 +443,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
-    src/core/lib/backoff/backoff.cc \
-    src/core/lib/backoff/random_early_detection.cc \
+    src/core/util/backoff.cc \
+    src/core/util/random_early_detection.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_args_preconditioning.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -1517,7 +1517,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/security)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/tcp_connect)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/config)

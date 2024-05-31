@@ -33,7 +33,7 @@
 
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/backoff/backoff.h"
+#include "src/core/util/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"

@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_LIB_BACKOFF_BACKOFF_H
-#define GRPC_SRC_CORE_LIB_BACKOFF_BACKOFF_H
+#ifndef GRPC_SRC_CORE_UTIL_BACKOFF_H
+#define GRPC_SRC_CORE_UTIL_BACKOFF_H
 
 #include "absl/random/random.h"
 
@@ -86,4 +86,4 @@ class BackOff {
 };
 
 }  // namespace grpc_core
-#endif  // GRPC_SRC_CORE_LIB_BACKOFF_BACKOFF_H
+#endif  // GRPC_SRC_CORE_UTIL_BACKOFF_H

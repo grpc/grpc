@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_LIB_BACKOFF_RANDOM_EARLY_DETECTION_H
-#define GRPC_SRC_CORE_LIB_BACKOFF_RANDOM_EARLY_DETECTION_H
+#ifndef GRPC_SRC_CORE_UTIL_RANDOM_EARLY_DETECTION_H
+#define GRPC_SRC_CORE_UTIL_RANDOM_EARLY_DETECTION_H
 
 #include <limits.h>
 
@@ -59,4 +59,4 @@ class RandomEarlyDetection {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_LIB_BACKOFF_RANDOM_EARLY_DETECTION_H
+#endif  // GRPC_SRC_CORE_UTIL_RANDOM_EARLY_DETECTION_H

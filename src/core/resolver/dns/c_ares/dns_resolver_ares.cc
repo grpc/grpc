@@ -62,7 +62,7 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/backoff/backoff.h"
+#include "src/core/util/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/iomgr/resolve_address.h"

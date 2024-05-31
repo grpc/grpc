@@ -2237,8 +2237,8 @@ add_library(grpc
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
-  src/core/lib/backoff/random_early_detection.cc
+  src/core/util/backoff.cc
+  src/core/util/random_early_detection.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -3033,8 +3033,8 @@ add_library(grpc_unsecure
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
-  src/core/lib/backoff/random_early_detection.cc
+  src/core/util/backoff.cc
+  src/core/util/random_early_detection.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -5153,7 +5153,7 @@ add_library(grpc_authorization_provider
   src/core/handshaker/security/tsi_error.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
+  src/core/util/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -17849,7 +17849,7 @@ add_executable(interception_chain_test
   src/core/handshaker/proxy_mapper_registry.cc
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
-  src/core/lib/backoff/backoff.cc
+  src/core/util/backoff.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_args_preconditioning.cc
   src/core/lib/channel/channel_stack.cc
@@ -23330,7 +23330,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(random_early_detection_test
-  src/core/lib/backoff/random_early_detection.cc
+  src/core/util/random_early_detection.cc
   test/core/backoff/random_early_detection_test.cc
 )
 target_compile_features(random_early_detection_test PUBLIC cxx_std_14)

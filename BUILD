@@ -3449,10 +3449,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "backoff",
     srcs = [
-        "//src/core:lib/backoff/backoff.cc",
+        "//src/core:util/backoff.cc",
     ],
     hdrs = [
-        "//src/core:lib/backoff/backoff.h",
+        "//src/core:util/backoff.h",
     ],
     external_deps = ["absl/random"],
     language = "c++",

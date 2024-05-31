@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/backoff/random_early_detection.h"
+#include "src/core/util/random_early_detection.h"
 
 #include "absl/random/distributions.h"
 

@@ -33,7 +33,7 @@
 #include <grpc/status.h>
 
 #include "src/core/client_channel/subchannel.h"
-#include "src/core/lib/backoff/backoff.h"
+#include "src/core/util/backoff.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"

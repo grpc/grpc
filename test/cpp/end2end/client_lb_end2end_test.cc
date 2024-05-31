@@ -55,7 +55,7 @@
 #include "src/core/client_channel/global_subchannel_pool.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/backoff/backoff.h"
+#include "src/core/util/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/gprpp/crash.h"

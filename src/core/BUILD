@@ -5001,10 +5001,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "random_early_detection",
     srcs = [
-        "lib/backoff/random_early_detection.cc",
+        "util/random_early_detection.cc",
     ],
     hdrs = [
-        "lib/backoff/random_early_detection.h",
+        "util/random_early_detection.h",
     ],
     external_deps = [
         "absl/random:bit_gen_ref",

@@ -36,7 +36,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 
-#include "src/core/lib/backoff/backoff.h"
+#include "src/core/util/backoff.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
 #include "src/core/lib/event_engine/trace.h"

@@ -46,7 +46,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/backoff/random_early_detection.h"
+#include "src/core/util/random_early_detection.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"

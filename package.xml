@@ -1078,10 +1078,10 @@
     <file baseinstalldir="/" name="src/core/lib/address_utils/parse_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/address_utils/sockaddr_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/backoff/backoff.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/backoff/backoff.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/backoff/random_early_detection.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/backoff/random_early_detection.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/backoff.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/backoff.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/random_early_detection.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/random_early_detection.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/call_finalization.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
