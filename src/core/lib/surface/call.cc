@@ -3175,7 +3175,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
         server_(server) {
-    call_handler.arena()->SetContext<Call>(this);
+    call_handler_.arena()->SetContext<Call>(this);
     global_stats().IncrementServerCallsCreated();
   }
 
