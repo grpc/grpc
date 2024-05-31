@@ -125,6 +125,11 @@ T* MaybeGetContext() {
   return promise_detail::Context<T>::get();
 }
 
+template <typename T>
+void SetContext(T* p) {
+  promise_detail::Context<T>::set(p);
+}
+
 // Given a promise and a context, return a promise that has that context set.
 template <typename T, typename F>
 promise_detail::WithContext<T, F> WithContext(F f, T* context) {
