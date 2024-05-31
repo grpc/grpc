@@ -49,9 +49,6 @@ typedef enum {
   /// future anyway, so not super important.
   GRPC_CONTEXT_CALL_TRACER,
 
-  /// Reserved for traffic_class_context.
-  GRPC_CONTEXT_TRAFFIC,
-
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
