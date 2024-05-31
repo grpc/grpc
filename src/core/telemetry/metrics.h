@@ -329,6 +329,9 @@ class StatsPlugin {
   // Removes a callback previously added via AddCallback().  The stats
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
+  // Returns true if instrument \a handle is enabled.
+  virtual bool IsInstrumentEnabled(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) = 0;
 
   // Gets a ClientCallTracer associated with this stats plugin which can be used
   // in a call.
@@ -423,6 +426,17 @@ class GlobalStatsPluginRegistry {
         state.plugin->RecordHistogram(handle, value, label_values,
                                       optional_values);
       }
+    }
+    // Returns true if any of the stats plugins in the group have enabled \a
+    // handle.
+    bool IsInstrumentEnabled(
+        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+      for (auto& state : plugins_state_) {
+        if (state.plugin->IsInstrumentEnabled(handle)) {
+          return true;
+        }
+      }
+      return false;
     }
 
     // Registers a callback to be used to populate callback metrics.

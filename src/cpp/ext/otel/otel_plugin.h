@@ -404,6 +404,9 @@ class OpenTelemetryPlugin : public grpc_core::StatsPlugin {
   grpc_core::ServerCallTracer* GetServerCallTracer(
       std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
       override;
+  bool IsInstrumentEnabled(
+      grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle)
+      override;
 
   const absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>&
   server_selector() const {

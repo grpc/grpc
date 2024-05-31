@@ -46,21 +46,12 @@ typedef enum {
   /// future anyway, so not super important.
   GRPC_CONTEXT_CALL_TRACER,
 
-  /// Reserved for traffic_class_context.
-  GRPC_CONTEXT_TRAFFIC,
-
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
   /// Holds a pointer to BackendMetricProvider associated with this call on
   /// the server.
   GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
-
-  /// A LoadBalancingPolicy::SubchannelCallTrackerInterface
-  GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE,
-
-  /// Special Google context
-  GRPC_CONTEXT_GOOGLE,
 
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
