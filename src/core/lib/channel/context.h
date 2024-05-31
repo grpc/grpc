@@ -55,12 +55,6 @@ typedef enum {
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
-  /// A LoadBalancingPolicy::SubchannelCallTrackerInterface
-  GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE,
-
-  /// Special Google context
-  GRPC_CONTEXT_GOOGLE,
-
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
