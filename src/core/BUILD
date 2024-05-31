@@ -1655,6 +1655,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/status",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
