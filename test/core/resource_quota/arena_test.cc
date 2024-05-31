@@ -284,12 +284,16 @@ struct ArenaContextType<Foo> {
   static void Destroy(Foo* p) { p->~Foo(); }
 };
 
+struct alignas(16) VeryAligned {};
+
 TEST(ArenaTest, FooContext) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   EXPECT_EQ(arena->GetContext<Foo>(), nullptr);
   arena->SetContext(arena->New<Foo>(42));
   ASSERT_NE(arena->GetContext<Foo>(), nullptr);
   EXPECT_EQ(*arena->GetContext<Foo>()->p, 42);
+  arena->New<VeryAligned>();
+  arena->New<VeryAligned>();
 }
 
 class MockArenaFactory : public ArenaFactory {
