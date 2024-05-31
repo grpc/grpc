@@ -9128,7 +9128,43 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_callback_test
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/lib/debug/trace.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/connection_quota.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/cancel_callback_test.cc
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/internal/decode_fast.c
+  third_party/upb/upb/wire/reader.c
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9161,7 +9197,13 @@ target_include_directories(cancel_callback_test
 target_link_libraries(cancel_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  utf8_range_lib
+  upb_message_lib
+  absl::config
+  absl::function_ref
+  absl::hash
   absl::type_traits
+  absl::statusor
   gpr
 )
 

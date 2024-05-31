@@ -57,11 +57,7 @@ ArenaPromise<ServerMetadataHandle> FakeStatsClientFilter::MakeCallPromise(
   FakeClientCallTracer* client_call_tracer =
       fake_client_call_tracer_factory_->CreateFakeClientCallTracer();
   if (client_call_tracer != nullptr) {
-    auto* call_context = GetContext<grpc_call_context_element>();
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value =
-        client_call_tracer;
-    call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy =
-        nullptr;
+    SetContext<CallTracerAnnotationInterface>(client_call_tracer);
   }
   return next_promise_factory(std::move(call_args));
 }
