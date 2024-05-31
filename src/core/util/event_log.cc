@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/debug/event_log.h"
+#include "src/core/util/event_log.h"
 
 #include <algorithm>
 #include <atomic>

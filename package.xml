@@ -1115,8 +1115,8 @@
     <file baseinstalldir="/" name="src/core/lib/config/core_configuration.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/load_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/config/load_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/event_log.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/debug/event_log.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/event_log.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/event_log.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/ares_resolver.cc" role="src" />

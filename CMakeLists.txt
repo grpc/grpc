@@ -2252,7 +2252,7 @@ add_library(grpc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
+  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -3048,7 +3048,7 @@ add_library(grpc_unsecure
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
+  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -5167,7 +5167,7 @@ add_library(grpc_authorization_provider
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
+  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -17863,7 +17863,7 @@ add_executable(interception_chain_test
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
   src/core/lib/config/core_configuration.cc
-  src/core/lib/debug/event_log.cc
+  src/core/util/event_log.cc
   src/core/lib/debug/trace.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc

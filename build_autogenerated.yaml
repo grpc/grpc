@@ -810,7 +810,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
-  - src/core/lib/debug/event_log.h
+  - src/core/util/event_log.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
@@ -1668,7 +1668,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
-  - src/core/lib/debug/event_log.cc
+  - src/core/util/event_log.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -2355,7 +2355,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
-  - src/core/lib/debug/event_log.h
+  - src/core/util/event_log.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
@@ -2828,7 +2828,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
-  - src/core/lib/debug/event_log.cc
+  - src/core/util/event_log.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -4450,7 +4450,7 @@ libs:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
-  - src/core/lib/debug/event_log.h
+  - src/core/util/event_log.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
@@ -4798,7 +4798,7 @@ libs:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
-  - src/core/lib/debug/event_log.cc
+  - src/core/util/event_log.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
@@ -11652,7 +11652,7 @@ targets:
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
   - src/core/lib/config/core_configuration.h
-  - src/core/lib/debug/event_log.h
+  - src/core/util/event_log.h
   - src/core/lib/debug/trace.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
@@ -11969,7 +11969,7 @@ targets:
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/config/core_configuration.cc
-  - src/core/lib/debug/event_log.cc
+  - src/core/util/event_log.cc
   - src/core/lib/debug/trace.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc

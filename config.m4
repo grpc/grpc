@@ -461,7 +461,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/config/config_vars_non_generated.cc \
     src/core/lib/config/core_configuration.cc \
     src/core/lib/config/load_config.cc \
-    src/core/lib/debug/event_log.cc \
+    src/core/util/event_log.cc \
     src/core/lib/debug/trace.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
