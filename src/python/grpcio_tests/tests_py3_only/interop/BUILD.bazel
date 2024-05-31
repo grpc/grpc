@@ -18,7 +18,7 @@ py_binary(
     name = "xds_interop_client",
     srcs = ["xds_interop_client.py"],
     python_version = "PY3",
-    deps = [
+    deps = ["//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability"] + [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
@@ -26,7 +26,6 @@ py_binary(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_admin/grpc_admin",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
-        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         requirement("opentelemetry-exporter-prometheus"),
     ],
 )
