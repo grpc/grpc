@@ -5757,7 +5757,7 @@ targets:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   src:
-  - test/core/avl/avl_test.cc
+  - test/core/util/avl_test.cc
   deps:
   - gtest
   - absl/base:config
@@ -5817,7 +5817,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/backoff/backoff_test.cc
+  - test/core/util/backoff_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6256,7 +6256,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/useful.h
   src:
-  - test/core/gprpp/bitset_test.cc
+  - test/core/util/bitset_test.cc
   deps:
   - gtest
   uses_polling: false
@@ -7777,7 +7777,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
-  - test/core/gprpp/chunked_vector_test.cc
+  - test/core/util/chunked_vector_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
   - third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -8449,7 +8449,7 @@ targets:
   headers:
   - src/core/util/cpp_impl_of.h
   src:
-  - test/core/gprpp/cpp_impl_of_test.cc
+  - test/core/util/cpp_impl_of_test.cc
   deps:
   - gtest
   uses_polling: false
@@ -8601,7 +8601,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/directory_reader_test.cc
+  - test/core/util/directory_reader_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8696,7 +8696,7 @@ targets:
   headers:
   - src/core/util/down_cast.h
   src:
-  - test/core/gprpp/down_cast_test.cc
+  - test/core/util/down_cast_test.cc
   deps:
   - gtest
   - absl/base:config
@@ -8708,7 +8708,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/dual_ref_counted_test.cc
+  - test/core/util/dual_ref_counted_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8736,7 +8736,7 @@ targets:
   - src/core/util/dump_args.h
   src:
   - src/core/util/dump_args.cc
-  - test/core/gprpp/dump_args_test.cc
+  - test/core/util/dump_args_test.cc
   deps:
   - gtest
   - absl/functional:any_invocable
@@ -9195,7 +9195,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/examine_stack_test.cc
+  - test/core/util/examine_stack_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -10100,7 +10100,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/fork_test.cc
+  - test/core/util/fork_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -10279,6 +10279,17 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: gpr_time_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/util/gpr_time_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: graceful_server_shutdown_test
   gtest: true
   build: test
@@ -11130,7 +11141,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/host_port_test.cc
+  - test/core/util/host_port_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11459,7 +11470,7 @@ targets:
   headers:
   - src/core/util/if_list.h
   src:
-  - test/core/gprpp/if_list_test.cc
+  - test/core/util/if_list_test.cc
   deps:
   - gtest
   uses_polling: false
@@ -12831,7 +12842,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/load_file_test.cc
+  - test/core/util/load_file_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13045,7 +13056,7 @@ targets:
   - src/core/util/match.h
   - src/core/util/overload.h
   src:
-  - test/core/gprpp/match_test.cc
+  - test/core/util/match_test.cc
   deps:
   - gtest
   uses_polling: false
@@ -13065,7 +13076,6 @@ targets:
   - test/core/test_util/slice_splitter.h
   - test/core/test_util/tracer_util.h
   src:
-  - test/core/matchers/matchers_test.cc
   - test/core/test_util/cmdline.cc
   - test/core/test_util/fuzzer_util.cc
   - test/core/test_util/grpc_profiler.cc
@@ -13075,6 +13085,7 @@ targets:
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
   - test/core/test_util/tracer_util.cc
+  - test/core/util/matchers_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13553,7 +13564,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/mpscq_test.cc
+  - test/core/util/mpscq_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13633,7 +13644,7 @@ targets:
   - src/core/util/construct_destruct.h
   - src/core/util/no_destruct.h
   src:
-  - test/core/gprpp/no_destruct_test.cc
+  - test/core/util/no_destruct_test.cc
   deps:
   - gtest
   uses_polling: false
@@ -13796,7 +13807,7 @@ targets:
   headers:
   - src/core/util/notification.h
   src:
-  - test/core/gprpp/notification_test.cc
+  - test/core/util/notification_test.cc
   deps:
   - gtest
   - gpr
@@ -13887,7 +13898,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/orphanable_test.cc
+  - test/core/util/orphanable_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13983,7 +13994,7 @@ targets:
   headers:
   - src/core/util/overload.h
   src:
-  - test/core/gprpp/overload_test.cc
+  - test/core/util/overload_test.cc
   deps:
   - gtest
   uses_polling: false
@@ -15010,7 +15021,7 @@ targets:
   - src/core/util/random_early_detection.h
   src:
   - src/core/util/random_early_detection.cc
-  - test/core/backoff/random_early_detection_test.cc
+  - test/core/util/random_early_detection_test.cc
   deps:
   - gtest
   - absl/random:bit_gen_ref
@@ -15081,7 +15092,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/ref_counted_ptr_test.cc
+  - test/core/util/ref_counted_ptr_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15091,7 +15102,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/ref_counted_test.cc
+  - test/core/util/ref_counted_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -18654,7 +18665,7 @@ targets:
   headers:
   - src/core/util/single_set_ptr.h
   src:
-  - test/core/gprpp/single_set_ptr_test.cc
+  - test/core/util/single_set_ptr_test.cc
   deps:
   - gtest
   - gpr
@@ -18765,7 +18776,7 @@ targets:
   - src/core/util/sorted_pack.h
   - src/core/util/type_list.h
   src:
-  - test/core/gprpp/sorted_pack_test.cc
+  - test/core/util/sorted_pack_test.cc
   deps:
   - gtest
   uses_polling: false
@@ -18833,7 +18844,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/stat_test.cc
+  - test/core/util/stat_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -18913,7 +18924,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/status_helper_test.cc
+  - test/core/util/status_helper_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -19153,7 +19164,7 @@ targets:
   - src/core/util/table.h
   - src/core/util/useful.h
   src:
-  - test/core/gprpp/table_test.cc
+  - test/core/util/table_test.cc
   deps:
   - gtest
   - absl/meta:type_traits
@@ -19438,20 +19449,6 @@ targets:
   - absl/status:statusor
   - absl/utility:utility
   - gpr
-- name: test_core_gprpp_time_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/util/time.h
-  src:
-  - src/core/util/time.cc
-  - test/core/gprpp/time_test.cc
-  deps:
-  - gtest
-  - absl/status:statusor
-  - gpr
-  uses_polling: false
 - name: test_core_iomgr_timer_heap_test
   gtest: true
   build: test
@@ -19613,12 +19610,15 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/util/time.h
   src:
+  - src/core/util/time.cc
   - test/core/util/time_test.cc
   deps:
   - gtest
-  - grpc_test_util
+  - absl/status:statusor
+  - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
@@ -19728,7 +19728,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/thd_test.cc
+  - test/core/util/thd_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -19841,7 +19841,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/time_util_test.cc
+  - test/core/util/time_util_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -20323,7 +20323,7 @@ targets:
   - src/core/util/unique_type_name.h
   - src/core/util/useful.h
   src:
-  - test/core/gprpp/unique_type_name_test.cc
+  - test/core/util/unique_type_name_test.cc
   deps:
   - gtest
   - absl/strings:str_format
@@ -20348,7 +20348,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/uri/uri_parser_test.cc
+  - test/core/util/uri_parser_test.cc
   deps:
   - gtest
   - grpc_test_util_unsecure
@@ -20369,7 +20369,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/uuid_v4_test.cc
+  - test/core/util/uuid_v4_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -20380,7 +20380,7 @@ targets:
   language: c++
   headers: []
   src:
-  - test/core/gprpp/validation_errors_test.cc
+  - test/core/util/validation_errors_test.cc
   deps:
   - gtest
   - grpc_test_util
@@ -20749,7 +20749,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/gprpp/work_serializer_test.cc
+  - test/core/util/work_serializer_test.cc
   deps:
   - gtest
   - grpc_test_util

@@ -1114,6 +1114,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx generic_end2end_test)
   add_dependencies(buildtests_cxx goaway_server_test)
   add_dependencies(buildtests_cxx google_c2p_resolver_test)
+  add_dependencies(buildtests_cxx gpr_time_test)
   add_dependencies(buildtests_cxx graceful_server_shutdown_test)
   add_dependencies(buildtests_cxx graceful_shutdown_test)
   add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
@@ -1467,7 +1468,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_event_engine_posix_timer_list_test)
   add_dependencies(buildtests_cxx test_core_event_engine_slice_buffer_test)
-  add_dependencies(buildtests_cxx test_core_gprpp_time_test)
   add_dependencies(buildtests_cxx test_core_iomgr_timer_heap_test)
   add_dependencies(buildtests_cxx test_core_security_credentials_test)
   add_dependencies(buildtests_cxx test_core_security_ssl_credentials_test)
@@ -7338,7 +7338,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(avl_test
-  test/core/avl/avl_test.cc
+  test/core/util/avl_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -7491,7 +7491,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(backoff_test
-  test/core/backoff/backoff_test.cc
+  test/core/util/backoff_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8283,7 +8283,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(bitset_test
-  test/core/gprpp/bitset_test.cc
+  test/core/util/bitset_test.cc
 )
 target_compile_features(bitset_test PUBLIC cxx_std_14)
 target_include_directories(bitset_test
@@ -10219,7 +10219,7 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
-  test/core/gprpp/chunked_vector_test.cc
+  test/core/util/chunked_vector_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -11772,7 +11772,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cpp_impl_of_test
-  test/core/gprpp/cpp_impl_of_test.cc
+  test/core/util/cpp_impl_of_test.cc
 )
 target_compile_features(cpp_impl_of_test PUBLIC cxx_std_14)
 target_include_directories(cpp_impl_of_test
@@ -12159,7 +12159,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(directory_reader_test
-  test/core/gprpp/directory_reader_test.cc
+  test/core/util/directory_reader_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12348,7 +12348,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(down_cast_test
-  test/core/gprpp/down_cast_test.cc
+  test/core/util/down_cast_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12390,7 +12390,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(dual_ref_counted_test
-  test/core/gprpp/dual_ref_counted_test.cc
+  test/core/util/dual_ref_counted_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12478,7 +12478,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(dump_args_test
   src/core/util/dump_args.cc
-  test/core/gprpp/dump_args_test.cc
+  test/core/util/dump_args_test.cc
 )
 target_compile_features(dump_args_test PUBLIC cxx_std_14)
 target_include_directories(dump_args_test
@@ -13340,7 +13340,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(examine_stack_test
-    test/core/gprpp/examine_stack_test.cc
+    test/core/util/examine_stack_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -14472,7 +14472,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(fork_test
-    test/core/gprpp/fork_test.cc
+    test/core/util/fork_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -14953,6 +14953,48 @@ target_link_libraries(google_c2p_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(gpr_time_test
+  test/core/util/gpr_time_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(gpr_time_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(gpr_time_test PUBLIC cxx_std_14)
+target_include_directories(gpr_time_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gpr_time_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -16831,7 +16873,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(host_port_test
-  test/core/gprpp/host_port_test.cc
+  test/core/util/host_port_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -17478,7 +17520,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(if_list_test
-  test/core/gprpp/if_list_test.cc
+  test/core/util/if_list_test.cc
 )
 target_compile_features(if_list_test PUBLIC cxx_std_14)
 target_include_directories(if_list_test
@@ -19166,7 +19208,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(load_file_test
-  test/core/gprpp/load_file_test.cc
+  test/core/util/load_file_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19468,7 +19510,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(match_test
-  test/core/gprpp/match_test.cc
+  test/core/util/match_test.cc
 )
 target_compile_features(match_test PUBLIC cxx_std_14)
 target_include_directories(match_test
@@ -19500,7 +19542,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(matchers_test
-  test/core/matchers/matchers_test.cc
   test/core/test_util/cmdline.cc
   test/core/test_util/fuzzer_util.cc
   test/core/test_util/grpc_profiler.cc
@@ -19510,6 +19551,7 @@ add_executable(matchers_test
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
   test/core/test_util/tracer_util.cc
+  test/core/util/matchers_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20421,7 +20463,7 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(mpscq_test
-    test/core/gprpp/mpscq_test.cc
+    test/core/util/mpscq_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -20527,7 +20569,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(no_destruct_test
-  test/core/gprpp/no_destruct_test.cc
+  test/core/util/no_destruct_test.cc
 )
 target_compile_features(no_destruct_test PUBLIC cxx_std_14)
 target_include_directories(no_destruct_test
@@ -20787,7 +20829,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(notification_test
-  test/core/gprpp/notification_test.cc
+  test/core/util/notification_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21017,7 +21059,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(orphanable_test
-  test/core/gprpp/orphanable_test.cc
+  test/core/util/orphanable_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21294,7 +21336,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(overload_test
-  test/core/gprpp/overload_test.cc
+  test/core/util/overload_test.cc
 )
 target_compile_features(overload_test PUBLIC cxx_std_14)
 target_include_directories(overload_test
@@ -23331,7 +23373,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(random_early_detection_test
   src/core/util/random_early_detection.cc
-  test/core/backoff/random_early_detection_test.cc
+  test/core/util/random_early_detection_test.cc
 )
 target_compile_features(random_early_detection_test PUBLIC cxx_std_14)
 target_include_directories(random_early_detection_test
@@ -23524,7 +23566,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_ptr_test
-  test/core/gprpp/ref_counted_ptr_test.cc
+  test/core/util/ref_counted_ptr_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -23566,7 +23608,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ref_counted_test
-  test/core/gprpp/ref_counted_test.cc
+  test/core/util/ref_counted_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28334,7 +28376,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(single_set_ptr_test
-  test/core/gprpp/single_set_ptr_test.cc
+  test/core/util/single_set_ptr_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -28643,7 +28685,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(sorted_pack_test
-  test/core/gprpp/sorted_pack_test.cc
+  test/core/util/sorted_pack_test.cc
 )
 target_compile_features(sorted_pack_test PUBLIC cxx_std_14)
 target_include_directories(sorted_pack_test
@@ -28851,7 +28893,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(stat_test
-  test/core/gprpp/stat_test.cc
+  test/core/util/stat_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29071,7 +29113,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(status_helper_test
-  test/core/gprpp/status_helper_test.cc
+  test/core/util/status_helper_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29641,7 +29683,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(table_test
-  test/core/gprpp/table_test.cc
+  test/core/util/table_test.cc
 )
 target_compile_features(table_test PUBLIC cxx_std_14)
 target_include_directories(table_test
@@ -30178,49 +30220,6 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(test_core_gprpp_time_test
-  src/core/util/time.cc
-  test/core/gprpp/time_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(test_core_gprpp_time_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(test_core_gprpp_time_test PUBLIC cxx_std_14)
-target_include_directories(test_core_gprpp_time_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(test_core_gprpp_time_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  absl::statusor
-  gpr
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
 add_executable(test_core_iomgr_timer_heap_test
   test/core/iomgr/timer_heap_test.cc
   test/core/test_util/cmdline.cc
@@ -30523,6 +30522,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_util_time_test
+  src/core/util/time.cc
   test/core/util/time_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30530,7 +30530,6 @@ if(WIN32 AND MSVC)
     target_compile_definitions(test_core_util_time_test
     PRIVATE
       "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30557,7 +30556,8 @@ target_include_directories(test_core_util_time_test
 target_link_libraries(test_core_util_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_test_util
+  absl::statusor
+  gpr
 )
 
 
@@ -30855,7 +30855,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(thd_test
-  test/core/gprpp/thd_test.cc
+  test/core/util/thd_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -31189,7 +31189,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(time_util_test
-  test/core/gprpp/time_util_test.cc
+  test/core/util/time_util_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32122,7 +32122,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(unique_type_name_test
-  test/core/gprpp/unique_type_name_test.cc
+  test/core/util/unique_type_name_test.cc
 )
 target_compile_features(unique_type_name_test PUBLIC cxx_std_14)
 target_include_directories(unique_type_name_test
@@ -32199,7 +32199,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uri_parser_test
-  test/core/uri/uri_parser_test.cc
+  test/core/util/uri_parser_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32273,7 +32273,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(uuid_v4_test
-  test/core/gprpp/uuid_v4_test.cc
+  test/core/util/uuid_v4_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32315,7 +32315,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(validation_errors_test
-  test/core/gprpp/validation_errors_test.cc
+  test/core/util/validation_errors_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -32934,7 +32934,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(work_serializer_test
     test/core/event_engine/event_engine_test_utils.cc
-    test/core/gprpp/work_serializer_test.cc
+    test/core/util/work_serializer_test.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)

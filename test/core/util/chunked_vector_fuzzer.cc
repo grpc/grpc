@@ -31,7 +31,7 @@
 #include "src/core/util/chunked_vector.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
-#include "test/core/gprpp/chunked_vector_fuzzer.pb.h"
+#include "test/core/util/chunked_vector_fuzzer.pb.h"
 
 bool squelch = true;
 bool leak_check = true;

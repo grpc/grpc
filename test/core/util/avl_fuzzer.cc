@@ -21,7 +21,7 @@
 
 #include "src/core/util/avl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
-#include "test/core/avl/avl_fuzzer.pb.h"
+#include "test/core/util/avl_fuzzer.pb.h"
 
 bool squelch = true;
 bool leak_check = true;
