@@ -409,6 +409,7 @@ void ServerContextBase::CreateCallMetricRecorder(
   grpc_core::Arena* arena = grpc_call_get_arena(call_.call);
   auto* backend_metric_state =
       arena->New<BackendMetricState>(server_metric_recorder);
+  call_metric_recorder_ = backend_metric_state;
   arena->SetContext<grpc_core::BackendMetricProvider>(backend_metric_state);
 }
 
