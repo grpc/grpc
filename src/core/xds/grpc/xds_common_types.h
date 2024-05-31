@@ -31,7 +31,7 @@
 
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/matchers.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 

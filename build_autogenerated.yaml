@@ -974,7 +974,7 @@ libs:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/matchers/matchers.h
+  - src/core/util/matchers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
@@ -1808,7 +1808,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/matchers/matchers.cc
+  - src/core/util/matchers.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
@@ -4610,7 +4610,7 @@ libs:
   - src/core/lib/iomgr/vsock.h
   - src/core/lib/iomgr/wakeup_fd_pipe.h
   - src/core/lib/iomgr/wakeup_fd_posix.h
-  - src/core/lib/matchers/matchers.h
+  - src/core/util/matchers.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/arena_promise.h
@@ -4935,7 +4935,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_nospecial.cc
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
-  - src/core/lib/matchers/matchers.cc
+  - src/core/util/matchers.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/trace.cc

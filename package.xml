@@ -1452,8 +1452,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/matchers/matchers.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/matchers/matchers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/matchers.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/activity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/all_ok.h" role="src" />

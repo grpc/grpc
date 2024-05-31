@@ -2243,8 +2243,8 @@ src/core/lib/iomgr/wakeup_fd_pipe.cc \
 src/core/lib/iomgr/wakeup_fd_pipe.h \
 src/core/lib/iomgr/wakeup_fd_posix.cc \
 src/core/lib/iomgr/wakeup_fd_posix.h \
-src/core/lib/matchers/matchers.cc \
-src/core/lib/matchers/matchers.h \
+src/core/util/matchers.cc \
+src/core/util/matchers.h \
 src/core/lib/promise/activity.cc \
 src/core/lib/promise/activity.h \
 src/core/lib/promise/all_ok.h \

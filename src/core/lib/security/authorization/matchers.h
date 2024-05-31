@@ -26,7 +26,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/matchers.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "src/core/lib/security/authorization/rbac_policy.h"
 

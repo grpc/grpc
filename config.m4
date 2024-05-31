@@ -617,7 +617,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/wakeup_fd_nospecial.cc \
     src/core/lib/iomgr/wakeup_fd_pipe.cc \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
-    src/core/lib/matchers/matchers.cc \
+    src/core/util/matchers.cc \
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
@@ -1536,7 +1536,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp/windows)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine_shims)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/matchers)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)

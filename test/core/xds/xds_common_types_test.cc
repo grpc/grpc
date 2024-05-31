@@ -43,7 +43,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/matchers.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"

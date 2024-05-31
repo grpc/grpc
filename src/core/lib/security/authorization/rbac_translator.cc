@@ -37,7 +37,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/matchers.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
