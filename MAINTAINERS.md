@@ -45,6 +45,7 @@ for general contribution guidelines.
 - [vignesh2208](https://github.com/vignesh2208), Google LLC 
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
+- [XuanWang-Amos](https://github.com/XuanWang-Amos), Google LLC 
 - [yashykt](https://github.com/yashykt), Google LLC
 - [yijiem](https://github.com/yijiem), Google LLC
 - [yousukseung](https://github.com/yousukseung), Google LLC
