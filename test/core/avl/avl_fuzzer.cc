@@ -19,7 +19,7 @@
 #include <map>
 #include <utility>
 
-#include "src/core/lib/avl/avl.h"
+#include "src/core/util/avl.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/avl/avl_fuzzer.pb.h"
 

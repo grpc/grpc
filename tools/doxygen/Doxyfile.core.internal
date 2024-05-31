@@ -1866,7 +1866,6 @@ src/core/lib/address_utils/parse_address.cc \
 src/core/lib/address_utils/parse_address.h \
 src/core/lib/address_utils/sockaddr_utils.cc \
 src/core/lib/address_utils/sockaddr_utils.h \
-src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
 src/core/lib/backoff/backoff.h \
 src/core/lib/backoff/random_early_detection.cc \
@@ -2699,6 +2698,7 @@ src/core/util/alloc.cc \
 src/core/util/alloc.h \
 src/core/util/android/log.cc \
 src/core/util/atm.cc \
+src/core/util/avl.h \
 src/core/util/http_client/format_request.cc \
 src/core/util/http_client/format_request.h \
 src/core/util/http_client/httpcli.cc \

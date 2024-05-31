@@ -793,7 +793,6 @@ libs:
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
@@ -1206,6 +1205,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/avl.h
   - src/core/util/http_client/format_request.h
   - src/core/util/http_client/httpcli.h
   - src/core/util/http_client/httpcli_ssl_credentials.h
@@ -2338,7 +2338,6 @@ libs:
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/backoff/random_early_detection.h
   - src/core/lib/channel/call_finalization.h
@@ -2685,6 +2684,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/avl.h
   - src/core/util/http_client/format_request.h
   - src/core/util/http_client/httpcli.h
   - src/core/util/http_client/parser.h
@@ -4434,7 +4434,6 @@ libs:
   - src/core/handshaker/security/tsi_error.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/channel_args.h
@@ -4742,6 +4741,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/avl.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_reader.h
@@ -5751,11 +5751,11 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/avl/avl.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/util/avl.h
   src:
   - test/core/avl/avl_test.cc
   deps:
@@ -6383,7 +6383,6 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
-  - src/core/lib/avl/avl.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
@@ -6460,6 +6459,7 @@ targets:
   - src/core/lib/transport/simple_slice_based_metadata.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
+  - src/core/util/avl.h
   - src/core/util/spinlock.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
@@ -8988,7 +8988,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/avl/avl.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/gprpp/atomic_utils.h
@@ -9000,6 +8999,7 @@ targets:
   - src/core/lib/gprpp/ref_counted_string.h
   - src/core/lib/gprpp/time.h
   - src/core/lib/surface/channel_stack_type.h
+  - src/core/util/avl.h
   src:
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -11636,7 +11636,6 @@ targets:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
-  - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/call_finalization.h
   - src/core/lib/channel/channel_args.h
@@ -11918,6 +11917,7 @@ targets:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/avl.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_writer.h
