@@ -130,16 +130,14 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
-  auto* ctx = &GetContext<
-      grpc_call_context_element>()[GRPC_CONTEXT_BACKEND_METRIC_PROVIDER];
+  auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
       gpr_log(GPR_INFO, "[%p] No BackendMetricProvider.", this);
     }
     return;
   }
-  absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(
-      reinterpret_cast<BackendMetricProvider*>(ctx->value));
+  absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
   if (serialized.has_value() && !serialized->empty()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
       gpr_log(GPR_INFO, "[%p] Backend metrics serialized. size: %" PRIuPTR,

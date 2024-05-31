@@ -685,6 +685,8 @@ grpc_cc_library(
         "lib/promise/cancel_callback.h",
     ],
     deps = [
+        "arena",
+        "context",
         "promise_like",
         "//:gpr_platform",
     ],
@@ -1653,6 +1655,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/status",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -5029,6 +5032,7 @@ grpc_cc_library(
         "ext/filters/backend_metrics/backend_metric_provider.h",
     ],
     language = "c++",
+    deps = ["arena"],
 )
 
 grpc_cc_library(
