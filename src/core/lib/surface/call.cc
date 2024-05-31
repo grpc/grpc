@@ -602,7 +602,7 @@ class FilterStackCall final : public ChannelBasedCall {
                          args.send_deadline, args.channel->Ref()),
         cq_(args.cq),
         stream_op_payload_(context_) {
-    context_[GRPC_CONTEXT_CALL].value = this;
+    GetArena()->SetContext<Call>(this);
   }
 
   static void ReleaseCall(void* call, grpc_error_handle);
@@ -1917,7 +1917,7 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
     if (args.cq != nullptr) {
       GRPC_CQ_INTERNAL_REF(args.cq, "bind");
     }
-    context_[GRPC_CONTEXT_CALL].value = this;
+    GetArena()->SetContext<Call>(this);
   }
 
   ~BasicPromiseBasedCall() override {
@@ -3173,8 +3173,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
         server_(server) {
-    call_handler_.legacy_context()[GRPC_CONTEXT_CALL].value =
-        static_cast<Call*>(this);
+    call_handler_.arena()->SetContext<Call>(this);
     global_stats().IncrementServerCallsCreated();
   }
 

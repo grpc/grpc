@@ -269,8 +269,7 @@ class ClientChannelFilter::FilterBasedCallData final
   void ResetDeadline(Duration timeout) override {
     const Timestamp per_method_deadline =
         Timestamp::FromCycleCounterRoundUp(call_start_time_) + timeout;
-    static_cast<Call*>(call_context_[GRPC_CONTEXT_CALL].value)
-        ->UpdateDeadline(per_method_deadline);
+    arena_->GetContext<Call>()->UpdateDeadline(per_method_deadline);
   }
 
   void CreateDynamicCall();
@@ -3320,10 +3319,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
       grpc_status_code code;
       std::string message;
       grpc_error_get_status(
-          error,
-          static_cast<Call*>(self->call_context()[GRPC_CONTEXT_CALL].value)
-              ->deadline(),
-          &code, &message,
+          error, self->arena()->GetContext<Call>()->deadline(), &code, &message,
           /*http_error=*/nullptr, /*error_string=*/nullptr);
       status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
@@ -3462,8 +3458,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
   CHECK_NE(path, nullptr);
   SubchannelCall::Args call_args = {
       connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
-      static_cast<Call*>(call_context()[GRPC_CONTEXT_CALL].value)->deadline(),
-      arena(),
+      arena()->GetContext<Call>()->deadline(), arena(),
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
       call_context(), call_combiner_};

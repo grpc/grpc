@@ -246,6 +246,11 @@ class Call : public CppImplOf<Call, grpc_call>,
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
+template <>
+struct ArenaContextType<Call> {
+  static void Destroy(Call*) {}
+};
+
 class BasicPromiseBasedCall;
 class ServerPromiseBasedCall;
 
