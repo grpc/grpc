@@ -243,7 +243,7 @@ class Call : public CppImplOf<Call, grpc_call>,
 
 template <>
 struct ArenaContextType<Call> {
-  static void Destroy(Call* p) {}
+  static void Destroy(Call*) {}
 };
 
 class BasicPromiseBasedCall;
