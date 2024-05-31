@@ -33,7 +33,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -49,6 +48,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/gcp_metadata_query.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
@@ -82,10 +82,10 @@ class GoogleCloud2ProdResolver final : public Resolver {
   std::string metadata_server_name_ = "metadata.google.internal.";
   bool shutdown_ = false;
 
-  OrphanablePtr<MetadataQuery> zone_query_;
+  OrphanablePtr<GcpMetadataQuery> zone_query_;
   absl::optional<std::string> zone_;
 
-  OrphanablePtr<MetadataQuery> ipv6_query_;
+  OrphanablePtr<GcpMetadataQuery> ipv6_query_;
   absl::optional<bool> supports_ipv6_;
 };
 
@@ -152,8 +152,8 @@ void GoogleCloud2ProdResolver::StartLocked() {
     return;
   }
   // Using xDS.  Start metadata server queries.
-  zone_query_ = MakeOrphanable<MetadataQuery>(
-      metadata_server_name_, std::string(MetadataQuery::kZoneAttribute),
+  zone_query_ = MakeOrphanable<GcpMetadataQuery>(
+      metadata_server_name_, std::string(GcpMetadataQuery::kZoneAttribute),
       &pollent_,
       [resolver = RefAsSubclass<GoogleCloud2ProdResolver>()](
           std::string /* attribute */,
@@ -166,8 +166,8 @@ void GoogleCloud2ProdResolver::StartLocked() {
             DEBUG_LOCATION);
       },
       Duration::Seconds(10));
-  ipv6_query_ = MakeOrphanable<MetadataQuery>(
-      metadata_server_name_, std::string(MetadataQuery::kIPv6Attribute),
+  ipv6_query_ = MakeOrphanable<GcpMetadataQuery>(
+      metadata_server_name_, std::string(GcpMetadataQuery::kIPv6Attribute),
       &pollent_,
       [resolver = RefAsSubclass<GoogleCloud2ProdResolver>()](
           std::string /* attribute */,

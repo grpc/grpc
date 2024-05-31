@@ -7195,10 +7195,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gcp_metadata_query",
     srcs = [
-        "ext/gcp/metadata_query.cc",
+        "util/gcp_metadata_query.cc",
     ],
     hdrs = [
-        "ext/gcp/metadata_query.h",
+        "util/gcp_metadata_query.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
