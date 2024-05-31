@@ -762,14 +762,11 @@ static void finish_estimate(grpc_tcp* tcp) {
 
 static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
-  return grpc_error_set_str(
-      grpc_error_set_int(
-          grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd,
-                             tcp->fd),
-          // All tcp errors are marked with UNAVAILABLE so that application may
-          // choose to retry.
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kTargetAddress, tcp->peer_string);
+  return grpc_error_set_int(
+      grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd, tcp->fd),
+      // All tcp errors are marked with UNAVAILABLE so that application may
+      // choose to retry.
+      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -1668,10 +1665,6 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
-      } else if (saved_errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
-        tcp_shutdown_buffer_list(tcp);
-        return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
@@ -1782,11 +1775,6 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
           grpc_slice_buffer_remove_first(tcp->outgoing_buffer);
         }
         return false;
-      } else if (saved_errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
-        grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
-        tcp_shutdown_buffer_list(tcp);
-        return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);

@@ -100,23 +100,22 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
-    const Slice& path, bool registered_method,
-    grpc_call_context_element* call_context) {
+    const Slice& path, bool registered_method, Arena* arena) {
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetClientCallTracer(
         path, registered_method, state.scope_config);
     if (call_tracer != nullptr) {
-      AddClientCallTracerToContext(call_context, call_tracer);
+      AddClientCallTracerToContext(arena, call_tracer);
     }
   }
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
-    grpc_call_context_element* call_context) {
+    Arena* arena) {
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetServerCallTracer(state.scope_config);
     if (call_tracer != nullptr) {
-      AddServerCallTracerToContext(call_context, call_tracer);
+      AddServerCallTracerToContext(arena, call_tracer);
     }
   }
 }

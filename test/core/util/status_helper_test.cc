@@ -47,26 +47,26 @@ TEST(StatusUtilTest, CreateStatus) {
 
 TEST(StatusUtilTest, SetAndGetInt) {
   absl::Status s = absl::CancelledError();
-  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
-  EXPECT_EQ(2021, StatusGetInt(s, StatusIntProperty::kErrorNo));
+  StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
+  EXPECT_EQ(2021, StatusGetInt(s, StatusIntProperty::kStreamId));
 }
 
 TEST(StatusUtilTest, GetIntNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(absl::optional<intptr_t>(),
-            StatusGetInt(s, StatusIntProperty::kErrorNo));
+            StatusGetInt(s, StatusIntProperty::kStreamId));
 }
 
 TEST(StatusUtilTest, SetAndGetStr) {
   absl::Status s = absl::CancelledError();
-  StatusSetStr(&s, StatusStrProperty::kOsError, "value");
-  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kOsError));
+  StatusSetStr(&s, StatusStrProperty::kFile, "value");
+  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kFile));
 }
 
 TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(absl::optional<std::string>(),
-            StatusGetStr(s, StatusStrProperty::kOsError));
+            StatusGetStr(s, StatusStrProperty::kFile));
 }
 
 TEST(StatusUtilTest, SetAndGetTime) {
@@ -96,8 +96,8 @@ TEST(StatusUtilTest, AddAndGetChildren) {
 
 TEST(StatusUtilTest, ToAndFromProto) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
-  StatusSetStr(&s, StatusStrProperty::kOsError, "value");
+  StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
+  StatusSetStr(&s, StatusStrProperty::kFile, "value");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   size_t len;
@@ -109,8 +109,8 @@ TEST(StatusUtilTest, ToAndFromProto) {
 
 TEST(StatusUtilTest, ToAndFromProtoWithNonUTF8Characters) {
   absl::Status s = absl::CancelledError("_\xAB\xCD\xEF_");
-  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
-  StatusSetStr(&s, StatusStrProperty::kOsError, "!\xFF\xCC\xAA!");
+  StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
+  StatusSetStr(&s, StatusStrProperty::kFile, "!\xFF\xCC\xAA!");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   size_t len;
@@ -134,9 +134,9 @@ TEST(StatusUtilTest, CancelledErrorToString) {
 
 TEST(StatusUtilTest, ErrorWithIntPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
+  StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {errno:2021}", t);
+  EXPECT_EQ("CANCELLED:Message {stream_id:2021}", t);
 }
 
 TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
@@ -158,16 +158,16 @@ TEST(StatusUtilTest, ErrorWithTimePropertyToString) {
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
+  StatusSetInt(&s, StatusIntProperty::kStreamId, 2021);
   absl::Status s1 = absl::AbortedError("Message1");
   StatusAddChild(&s, s1);
   absl::Status s2 = absl::AlreadyExistsError("Message2");
-  StatusSetStr(&s2, StatusStrProperty::kOsError, "value");
+  StatusSetStr(&s2, StatusStrProperty::kFile, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(
-      "CANCELLED:Message {errno:2021, children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {os_error:\"value\"}]}",
+      "CANCELLED:Message {stream_id:2021, children:["
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 {file:\"value\"}]}",
       t);
 }
 

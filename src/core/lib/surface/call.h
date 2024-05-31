@@ -78,6 +78,11 @@ typedef struct grpc_call_create_args {
 
 namespace grpc_core {
 
+template <>
+struct ArenaContextType<census_context> {
+  static void Destroy(census_context*) {}
+};
+
 class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
@@ -241,6 +246,11 @@ class Call : public CppImplOf<Call, grpc_call>,
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
+template <>
+struct ArenaContextType<Call> {
+  static void Destroy(Call*) {}
+};
+
 class BasicPromiseBasedCall;
 class ServerPromiseBasedCall;
 
@@ -337,6 +347,10 @@ void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
                            void* value, void (*destroy)(void* value));
 // Get a context pointer.
 void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
+
+void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
+
+void* grpc_call_tracer_get(grpc_call* call);
 
 #define GRPC_CALL_LOG_BATCH(sev, ops, nops)        \
   do {                                             \

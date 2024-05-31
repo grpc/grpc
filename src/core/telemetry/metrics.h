@@ -464,10 +464,10 @@ class GlobalStatsPluginRegistry {
     // Adds all available client call tracers associated with the stats plugins
     // within the group to \a call_context.
     void AddClientCallTracers(const Slice& path, bool registered_method,
-                              grpc_call_context_element* call_context);
+                              Arena* arena);
     // Adds all available server call tracers associated with the stats plugins
     // within the group to \a call_context.
-    void AddServerCallTracers(grpc_call_context_element* call_context);
+    void AddServerCallTracers(Arena* arena);
 
    private:
     friend class RegisteredMetricCallback;
