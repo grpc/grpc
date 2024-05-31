@@ -178,6 +178,7 @@ if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
   pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
+  pip_install_dir_and_deps "$ROOT/src/python/grpcio_csm_observability"
 fi
 
 # Build/install Channelz
