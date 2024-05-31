@@ -23,7 +23,7 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
 
 namespace {

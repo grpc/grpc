@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 #include <memory>
 
@@ -26,8 +26,8 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/ref_counted.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

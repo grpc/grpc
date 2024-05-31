@@ -23,7 +23,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/ref_counted.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_cluster.h"

@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/test_util/mock_endpoint.h"

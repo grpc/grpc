@@ -29,7 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string_windows.h"
 #include "src/core/util/tmpfile.h"
 

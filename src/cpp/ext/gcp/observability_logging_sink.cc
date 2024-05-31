@@ -43,9 +43,9 @@
 #include <grpcpp/support/status.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/uuid_v4.h"
+#include "src/core/util/env.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uuid_v4.h"
 #include "src/core/util/json/json.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
 

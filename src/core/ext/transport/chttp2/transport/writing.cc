@@ -56,10 +56,10 @@
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -74,7 +74,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/useful.h"
 
-// IWYU pragma: no_include "src/core/lib/gprpp/orphanable.h"
+// IWYU pragma: no_include "src/core/util/orphanable.h"
 
 static void add_to_write_list(grpc_chttp2_write_cb** list,
                               grpc_chttp2_write_cb* cb) {

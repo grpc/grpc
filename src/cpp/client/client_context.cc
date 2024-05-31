@@ -42,7 +42,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_interceptor.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc {
 

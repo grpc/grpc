@@ -25,7 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"

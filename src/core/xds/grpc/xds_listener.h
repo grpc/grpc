@@ -36,7 +36,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"

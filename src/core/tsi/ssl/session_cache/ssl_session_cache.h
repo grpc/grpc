@@ -28,10 +28,10 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/cpp_impl_of.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/cpp_impl_of.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 
 /// Cache for SSL sessions for sessions resumption.

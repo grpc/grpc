@@ -32,10 +32,10 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/env.h"
+#include "src/core/util/load_file.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"

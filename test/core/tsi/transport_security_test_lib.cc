@@ -38,8 +38,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/handshaker/security/tsi_error.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {
   gpr_mu_lock(&fixture->mu);

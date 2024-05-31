@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/ref_counted.h"
 
 #include <memory>
 #include <new>

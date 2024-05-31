@@ -28,7 +28,7 @@
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128

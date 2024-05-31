@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 

@@ -57,9 +57,9 @@
 #include <grpcpp/support/string_ref.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/cpp/server/backend_metric_recorder.h"

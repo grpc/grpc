@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/fork.h"
+#include "src/core/util/fork.h"
 
 #include <stdint.h>
 
@@ -24,7 +24,7 @@
 
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/test_config.h"
 
 TEST(ForkTest, Init) {

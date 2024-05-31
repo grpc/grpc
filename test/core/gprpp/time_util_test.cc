@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/gprpp/time_util.h"
+#include "src/core/util/time_util.h"
 
 #include <algorithm>
 #include <vector>

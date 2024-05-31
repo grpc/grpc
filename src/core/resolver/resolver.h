@@ -27,8 +27,8 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/server_address.h"  // IWYU pragma: keep
 #include "src/core/service_config/service_config.h"

@@ -28,8 +28,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
 namespace grpc_core {

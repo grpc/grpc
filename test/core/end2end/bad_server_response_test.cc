@@ -40,10 +40,10 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"

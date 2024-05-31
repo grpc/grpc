@@ -32,7 +32,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/promise.h"

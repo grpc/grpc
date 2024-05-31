@@ -35,13 +35,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #ifdef __FreeBSD__
 #include <sys/wait.h>
 #endif
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"

@@ -46,7 +46,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 #include "src/core/util/subprocess.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
 #include "src/proto/grpc/testing/xds/v3/health_check.pb.h"

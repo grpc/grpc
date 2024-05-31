@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/load_file.h"
+#include "src/core/util/load_file.h"
 
 #include <stdio.h>
 #include <string.h>

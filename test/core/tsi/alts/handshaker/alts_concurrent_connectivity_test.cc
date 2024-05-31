@@ -47,9 +47,9 @@
 #include <grpcpp/impl/service_type.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"

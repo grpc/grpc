@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
+#include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -31,7 +31,7 @@
 #endif
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
 namespace experimental {

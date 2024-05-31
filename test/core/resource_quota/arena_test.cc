@@ -35,8 +35,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/test_util/test_config.h"

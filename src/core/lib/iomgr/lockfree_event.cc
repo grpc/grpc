@@ -24,7 +24,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_polling_trace;

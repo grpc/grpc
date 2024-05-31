@@ -34,7 +34,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -239,7 +239,7 @@ class PosixEngineListener : public PosixListenerWithFdSupport {
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 class PosixEngineListener : public PosixListenerWithFdSupport {
  public:

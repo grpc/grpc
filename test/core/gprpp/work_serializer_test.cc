@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/util/work_serializer.h"
 
 #include <stddef.h>
 
@@ -37,8 +37,8 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/telemetry/histogram_view.h"
 #include "src/core/telemetry/stats.h"

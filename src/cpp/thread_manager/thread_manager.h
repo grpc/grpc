@@ -21,8 +21,8 @@
 
 #include <list>
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
 

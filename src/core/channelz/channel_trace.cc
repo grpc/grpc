@@ -28,7 +28,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/string.h"

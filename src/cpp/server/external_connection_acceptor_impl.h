@@ -26,7 +26,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
 namespace grpc {

@@ -27,7 +27,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 TEST(ErrorTest, SetGetInt) {

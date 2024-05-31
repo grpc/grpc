@@ -36,8 +36,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/no_destruct.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_refcount.h"
 #include "test/core/test_util/build.h"

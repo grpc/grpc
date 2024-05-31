@@ -19,7 +19,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/test_util/test_config.h"
 
@@ -51,9 +51,9 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/strerror.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"

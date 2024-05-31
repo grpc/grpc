@@ -24,7 +24,7 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/notification.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 

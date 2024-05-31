@@ -44,8 +44,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/examine_stack.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/examine_stack.h"
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/uuid_v4.h"
+#include "src/core/util/uuid_v4.h"
 
 #include "gtest/gtest.h"
 

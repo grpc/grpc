@@ -24,7 +24,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 void grpc_socket_mutator_init(grpc_socket_mutator* mutator,

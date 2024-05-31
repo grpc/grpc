@@ -30,7 +30,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {

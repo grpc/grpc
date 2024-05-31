@@ -735,17 +735,18 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr",
     srcs = [
-        "//src/core:lib/gprpp/crash.cc",
-        "//src/core:lib/gprpp/fork.cc",
-        "//src/core:lib/gprpp/host_port.cc",
-        "//src/core:lib/gprpp/mpscq.cc",
-        "//src/core:lib/gprpp/posix/stat.cc",
-        "//src/core:lib/gprpp/posix/thd.cc",
-        "//src/core:lib/gprpp/time_util.cc",
-        "//src/core:lib/gprpp/windows/stat.cc",
-        "//src/core:lib/gprpp/windows/thd.cc",
+        "//src/core:util/crash.cc",
+        "//src/core:util/fork.cc",
+        "//src/core:util/host_port.cc",
+        "//src/core:util/mpscq.cc",
+        "//src/core:util/posix/stat.cc",
+        "//src/core:util/posix/thd.cc",
+        "//src/core:util/time_util.cc",
+        "//src/core:util/windows/stat.cc",
+        "//src/core:util/windows/thd.cc",
         "//src/core:util/alloc.cc",
         "//src/core:util/android/log.cc",
+        "//src/core:util/gpr_time.cc",
         "//src/core:util/iphone/cpu.cc",
         "//src/core:util/linux/cpu.cc",
         "//src/core:util/linux/log.cc",
@@ -760,7 +761,6 @@ grpc_cc_library(
         "//src/core:util/string.cc",
         "//src/core:util/sync.cc",
         "//src/core:util/sync_abseil.cc",
-        "//src/core:util/time.cc",
         "//src/core:util/time_precise.cc",
         "//src/core:util/windows/cpu.cc",
         "//src/core:util/windows/log.cc",
@@ -771,15 +771,15 @@ grpc_cc_library(
         "//src/core:util/windows/tmpfile.cc",
     ],
     hdrs = [
-        "//src/core:lib/gprpp/crash.h",
-        "//src/core:lib/gprpp/fork.h",
-        "//src/core:lib/gprpp/host_port.h",
-        "//src/core:lib/gprpp/memory.h",
-        "//src/core:lib/gprpp/mpscq.h",
-        "//src/core:lib/gprpp/stat.h",
-        "//src/core:lib/gprpp/sync.h",
-        "//src/core:lib/gprpp/thd.h",
-        "//src/core:lib/gprpp/time_util.h",
+        "//src/core:util/crash.h",
+        "//src/core:util/fork.h",
+        "//src/core:util/host_port.h",
+        "//src/core:util/memory.h",
+        "//src/core:util/mpscq.h",
+        "//src/core:util/stat.h",
+        "//src/core:util/sync.h",
+        "//src/core:util/thd.h",
+        "//src/core:util/time_util.h",
         "//src/core:util/alloc.h",
         "//src/core:util/string.h",
         "//src/core:util/time_precise.h",
@@ -840,7 +840,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "cpp_impl_of",
-    hdrs = ["//src/core:lib/gprpp/cpp_impl_of.h"],
+    hdrs = ["//src/core:util/cpp_impl_of.h"],
     language = "c++",
 )
 
@@ -2998,10 +2998,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "work_serializer",
     srcs = [
-        "//src/core:lib/gprpp/work_serializer.cc",
+        "//src/core:util/work_serializer.cc",
     ],
     hdrs = [
-        "//src/core:lib/gprpp/work_serializer.h",
+        "//src/core:util/work_serializer.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3118,7 +3118,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "debug_location",
     language = "c++",
-    public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
+    public_hdrs = ["//src/core:util/debug_location.h"],
     visibility = ["@grpc:debug_location"],
     deps = ["gpr_platform"],
 )
@@ -3126,7 +3126,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "orphanable",
     language = "c++",
-    public_hdrs = ["//src/core:lib/gprpp/orphanable.h"],
+    public_hdrs = ["//src/core:util/orphanable.h"],
     visibility = [
         "@grpc:client_channel",
         "@grpc:xds_client_core",
@@ -3163,7 +3163,7 @@ grpc_cc_library(
     name = "ref_counted_ptr",
     external_deps = ["absl/hash"],
     language = "c++",
-    public_hdrs = ["//src/core:lib/gprpp/ref_counted_ptr.h"],
+    public_hdrs = ["//src/core:util/ref_counted_ptr.h"],
     visibility = ["@grpc:ref_counted_ptr"],
     deps = [
         "debug_location",

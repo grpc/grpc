@@ -38,7 +38,7 @@
 #include <grpcpp/opencensus.h>
 
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"

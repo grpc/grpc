@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/examine_stack.h"
+#include "src/core/util/examine_stack.h"
 
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/validation_errors.h"
 
 #include "gtest/gtest.h"
 

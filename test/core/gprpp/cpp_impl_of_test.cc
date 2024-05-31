@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/cpp_impl_of.h"
+#include "src/core/util/cpp_impl_of.h"
 
 #include <memory>
 

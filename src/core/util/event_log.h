@@ -27,8 +27,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
 
 namespace grpc_core {

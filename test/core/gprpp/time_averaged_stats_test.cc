@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/time_averaged_stats.h"
+#include "src/core/util/time_averaged_stats.h"
 
 #include <math.h>
 

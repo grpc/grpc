@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 
 #include "gtest/gtest.h"
 

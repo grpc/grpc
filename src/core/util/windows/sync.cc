@@ -29,7 +29,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   InitializeCriticalSection(&mu->cs);

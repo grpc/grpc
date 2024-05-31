@@ -69,7 +69,7 @@
 #include <grpcpp/support/status.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/util/manual_constructor.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/resource_quota/api.h"

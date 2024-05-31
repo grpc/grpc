@@ -23,7 +23,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/promise.h"

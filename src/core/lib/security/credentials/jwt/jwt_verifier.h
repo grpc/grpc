@@ -24,7 +24,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/util/json/json.h"
 

@@ -32,7 +32,7 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/useful.h"
@@ -42,7 +42,7 @@
 #if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
 #else
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #endif
 // IWYU pragma: no_include <sys/socket.h>
 

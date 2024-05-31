@@ -34,7 +34,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/port.h"

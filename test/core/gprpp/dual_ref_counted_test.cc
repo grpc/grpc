@@ -14,15 +14,15 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/gprpp/dual_ref_counted.h"
+#include "src/core/util/dual_ref_counted.h"
 
 #include <memory>
 
 #include "absl/log/check.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/ref_counted.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

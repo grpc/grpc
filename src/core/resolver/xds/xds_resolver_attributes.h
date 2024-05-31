@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/service_config/service_config_call_data.h"
 
 namespace grpc_core {

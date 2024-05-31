@@ -22,7 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/util/work_serializer.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 
 namespace grpc_core {

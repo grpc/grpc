@@ -38,8 +38,8 @@
 
 #include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 namespace grpc_core {

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/gprpp/directory_reader.h"
+#include "src/core/util/directory_reader.h"
 
 #include <string>
 #include <vector>

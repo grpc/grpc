@@ -55,9 +55,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

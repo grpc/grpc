@@ -18,7 +18,7 @@
 #include <memory>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 
 namespace grpc {

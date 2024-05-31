@@ -1138,33 +1138,33 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/work_queue/basic_work_queue.cc \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
-    src/core/lib/gprpp/crash.cc \
-    src/core/lib/gprpp/dump_args.cc \
-    src/core/lib/gprpp/examine_stack.cc \
-    src/core/lib/gprpp/fork.cc \
-    src/core/lib/gprpp/host_port.cc \
-    src/core/lib/gprpp/linux/env.cc \
-    src/core/lib/gprpp/load_file.cc \
-    src/core/lib/gprpp/mpscq.cc \
-    src/core/lib/gprpp/per_cpu.cc \
-    src/core/lib/gprpp/posix/directory_reader.cc \
-    src/core/lib/gprpp/posix/env.cc \
-    src/core/lib/gprpp/posix/stat.cc \
-    src/core/lib/gprpp/posix/thd.cc \
-    src/core/lib/gprpp/ref_counted_string.cc \
-    src/core/lib/gprpp/status_helper.cc \
-    src/core/lib/gprpp/strerror.cc \
-    src/core/lib/gprpp/tchar.cc \
-    src/core/lib/gprpp/time.cc \
-    src/core/lib/gprpp/time_averaged_stats.cc \
-    src/core/lib/gprpp/time_util.cc \
-    src/core/lib/gprpp/uuid_v4.cc \
-    src/core/lib/gprpp/validation_errors.cc \
-    src/core/lib/gprpp/windows/directory_reader.cc \
-    src/core/lib/gprpp/windows/env.cc \
-    src/core/lib/gprpp/windows/stat.cc \
-    src/core/lib/gprpp/windows/thd.cc \
-    src/core/lib/gprpp/work_serializer.cc \
+    src/core/util/crash.cc \
+    src/core/util/dump_args.cc \
+    src/core/util/examine_stack.cc \
+    src/core/util/fork.cc \
+    src/core/util/host_port.cc \
+    src/core/util/linux/env.cc \
+    src/core/util/load_file.cc \
+    src/core/util/mpscq.cc \
+    src/core/util/per_cpu.cc \
+    src/core/util/posix/directory_reader.cc \
+    src/core/util/posix/env.cc \
+    src/core/util/posix/stat.cc \
+    src/core/util/posix/thd.cc \
+    src/core/util/ref_counted_string.cc \
+    src/core/util/status_helper.cc \
+    src/core/util/strerror.cc \
+    src/core/util/tchar.cc \
+    src/core/util/time.cc \
+    src/core/util/time_averaged_stats.cc \
+    src/core/util/time_util.cc \
+    src/core/util/uuid_v4.cc \
+    src/core/util/validation_errors.cc \
+    src/core/util/windows/directory_reader.cc \
+    src/core/util/windows/env.cc \
+    src/core/util/windows/stat.cc \
+    src/core/util/windows/thd.cc \
+    src/core/util/work_serializer.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \

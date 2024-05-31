@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/util/orphanable.h"
 
 #include "gtest/gtest.h"
 

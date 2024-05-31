@@ -29,8 +29,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/mpscq.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 

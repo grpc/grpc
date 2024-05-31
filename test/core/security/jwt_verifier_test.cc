@@ -30,7 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/lib/security/credentials/jwt/json_token.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/json/json_reader.h"

@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/util/status_helper.h"
 
 #include <stddef.h>
 

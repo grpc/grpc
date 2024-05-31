@@ -38,7 +38,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/uri.h"

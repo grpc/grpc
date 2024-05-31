@@ -21,8 +21,8 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/util/useful.h"
 

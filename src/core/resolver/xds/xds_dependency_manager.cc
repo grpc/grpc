@@ -24,7 +24,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/match.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/xds/xds_resolver_trace.h"

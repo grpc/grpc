@@ -31,10 +31,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/time_averaged_stats.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/time.h"
+#include "src/core/util/time_averaged_stats.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/timer.h"

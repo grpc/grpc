@@ -28,7 +28,7 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "test/core/test_util/test_config.h"

@@ -20,7 +20,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/util/status_helper.h"
 
 grpc_error_handle grpc_set_tsi_error_result(grpc_error_handle error,
                                             tsi_result result) {

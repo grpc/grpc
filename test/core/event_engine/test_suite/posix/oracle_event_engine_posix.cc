@@ -35,8 +35,8 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 
 namespace grpc_event_engine {

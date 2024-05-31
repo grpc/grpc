@@ -25,7 +25,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 

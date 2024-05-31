@@ -26,9 +26,9 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/mpscq.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/dynamic_annotations.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

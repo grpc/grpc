@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/util/spinlock.h"
 

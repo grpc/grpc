@@ -23,7 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/notification.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "test/core/promise/poll_matcher.h"

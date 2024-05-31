@@ -28,8 +28,8 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 
 namespace grpc_event_engine {

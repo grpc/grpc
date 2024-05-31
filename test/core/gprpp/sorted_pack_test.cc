@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/sorted_pack.h"
+#include "src/core/util/sorted_pack.h"
 
 #include <vector>
 

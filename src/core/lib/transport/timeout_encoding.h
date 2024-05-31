@@ -25,7 +25,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {

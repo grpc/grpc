@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/env.h"
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"

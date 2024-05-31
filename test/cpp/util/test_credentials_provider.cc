@@ -33,7 +33,7 @@
 #include <grpc/support/sync.h>
 #include <grpcpp/security/server_credentials.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
 ABSL_FLAG(std::string, tls_cert_file, "",

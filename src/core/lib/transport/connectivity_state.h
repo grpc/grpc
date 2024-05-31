@@ -30,8 +30,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/work_serializer.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 

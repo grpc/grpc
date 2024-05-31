@@ -34,7 +34,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
-#include "src/core/lib/gprpp/load_file.h"
+#include "src/core/util/load_file.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"

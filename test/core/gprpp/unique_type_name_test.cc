@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/util/unique_type_name.h"
 
 #include <iosfwd>
 #include <map>

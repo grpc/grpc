@@ -25,7 +25,7 @@ def put_banner(files, banner):
         print("", file=f)
 
 
-with open("src/core/lib/gprpp/if_list.h", "w") as H:
+with open("src/core/util/if_list.h", "w") as H:
     # copy-paste copyright notice from this file
     with open(sys.argv[0]) as my_source:
         copyright = []

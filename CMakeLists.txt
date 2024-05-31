@@ -1670,21 +1670,21 @@ add_library(gpr
   src/core/lib/config/config_vars_non_generated.cc
   src/core/lib/config/load_config.cc
   src/core/lib/event_engine/thread_local.cc
-  src/core/lib/gprpp/crash.cc
-  src/core/lib/gprpp/examine_stack.cc
-  src/core/lib/gprpp/fork.cc
-  src/core/lib/gprpp/host_port.cc
-  src/core/lib/gprpp/linux/env.cc
-  src/core/lib/gprpp/mpscq.cc
-  src/core/lib/gprpp/posix/env.cc
-  src/core/lib/gprpp/posix/stat.cc
-  src/core/lib/gprpp/posix/thd.cc
-  src/core/lib/gprpp/strerror.cc
-  src/core/lib/gprpp/tchar.cc
-  src/core/lib/gprpp/time_util.cc
-  src/core/lib/gprpp/windows/env.cc
-  src/core/lib/gprpp/windows/stat.cc
-  src/core/lib/gprpp/windows/thd.cc
+  src/core/util/crash.cc
+  src/core/util/examine_stack.cc
+  src/core/util/fork.cc
+  src/core/util/host_port.cc
+  src/core/util/linux/env.cc
+  src/core/util/mpscq.cc
+  src/core/util/posix/env.cc
+  src/core/util/posix/stat.cc
+  src/core/util/posix/thd.cc
+  src/core/util/strerror.cc
+  src/core/util/tchar.cc
+  src/core/util/time_util.cc
+  src/core/util/windows/env.cc
+  src/core/util/windows/stat.cc
+  src/core/util/windows/thd.cc
   src/core/util/alloc.cc
   src/core/util/android/log.cc
   src/core/util/atm.cc
@@ -2303,18 +2303,18 @@ add_library(grpc
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/posix/directory_reader.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/uuid_v4.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/windows/directory_reader.cc
-  src/core/lib/gprpp/work_serializer.cc
+  src/core/util/dump_args.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/posix/directory_reader.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uuid_v4.cc
+  src/core/util/validation_errors.cc
+  src/core/util/windows/directory_reader.cc
+  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -3099,16 +3099,16 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/uuid_v4.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
+  src/core/util/dump_args.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/uuid_v4.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -5218,15 +5218,15 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
+  src/core/util/dump_args.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -8522,10 +8522,10 @@ add_executable(call_filters_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/dump_args.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -10198,8 +10198,8 @@ add_executable(chunked_vector_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -12477,7 +12477,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(dump_args_test
-  src/core/lib/gprpp/dump_args.cc
+  src/core/util/dump_args.cc
   test/core/gprpp/dump_args_test.cc
 )
 target_compile_features(dump_args_test PUBLIC cxx_std_14)
@@ -12900,8 +12900,8 @@ if(gRPC_BUILD_TESTS)
 add_executable(endpoint_config_test
   src/core/lib/channel/channel_args.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/time.cc
   src/core/lib/surface/channel_stack_type.cc
   test/core/event_engine/endpoint_config_test.cc
 )
@@ -13447,8 +13447,8 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -14306,8 +14306,8 @@ add_executable(flow_control_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -14392,8 +14392,8 @@ add_executable(for_each_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -17914,15 +17914,15 @@ add_executable(interception_chain_test
   src/core/lib/event_engine/work_queue/basic_work_queue.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/dump_args.cc
-  src/core/lib/gprpp/load_file.cc
-  src/core/lib/gprpp/per_cpu.cc
-  src/core/lib/gprpp/ref_counted_string.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
-  src/core/lib/gprpp/validation_errors.cc
-  src/core/lib/gprpp/work_serializer.cc
+  src/core/util/dump_args.cc
+  src/core/util/load_file.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
+  src/core/util/validation_errors.cc
+  src/core/util/work_serializer.cc
   src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/cfstream_handle.cc
@@ -18144,8 +18144,8 @@ add_executable(interceptor_list_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -19389,8 +19389,8 @@ add_executable(map_pipe_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -21661,8 +21661,8 @@ add_executable(periodic_update_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -30036,8 +30036,8 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/lib/event_engine/posix_engine/timer.cc
   src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
   test/core/event_engine/posix/timer_heap_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30082,8 +30082,8 @@ if(gRPC_BUILD_TESTS)
 add_executable(test_core_event_engine_posix_timer_list_test
   src/core/lib/event_engine/posix_engine/timer.cc
   src/core/lib/event_engine/posix_engine/timer_heap.cc
-  src/core/lib/gprpp/time.cc
-  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/util/time.cc
+  src/core/util/time_averaged_stats.cc
   test/core/event_engine/posix/timer_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30179,7 +30179,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_gprpp_time_test
-  src/core/lib/gprpp/time.cc
+  src/core/util/time.cc
   test/core/gprpp/time_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33104,7 +33104,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(write_size_policy_test
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
-  src/core/lib/gprpp/time.cc
+  src/core/util/time.cc
   test/core/transport/chttp2/write_size_policy_test.cc
 )
 if(WIN32 AND MSVC)

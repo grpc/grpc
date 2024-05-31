@@ -45,9 +45,9 @@
 
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/json/json_writer.h"

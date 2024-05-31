@@ -37,8 +37,8 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/notification.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"

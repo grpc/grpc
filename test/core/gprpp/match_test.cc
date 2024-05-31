@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/match.h"
 
 #include <stdlib.h>
 

@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #define RETURN_IF_ERROR(expr)           \
   do {                                  \

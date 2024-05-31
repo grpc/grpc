@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 
 #include <random>
 #include <set>

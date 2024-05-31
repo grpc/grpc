@@ -27,7 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/lib/security/security_connector/tls/tls_security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/tmpfile.h"

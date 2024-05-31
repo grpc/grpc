@@ -26,8 +26,8 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"

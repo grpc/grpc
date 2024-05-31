@@ -18,7 +18,7 @@
 
 // Test of gpr thread support.
 
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/thd.h"
 
 #include <atomic>
 
