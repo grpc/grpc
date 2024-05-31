@@ -29,10 +29,6 @@
 /// This enum represents the indexes into the array, where each index
 /// contains a different type of value.
 typedef enum {
-  /// Value is either a \a grpc_client_security_context or a
-  /// \a grpc_server_security_context.
-  GRPC_CONTEXT_SECURITY,
-
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
