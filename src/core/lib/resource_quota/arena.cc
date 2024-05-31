@@ -36,8 +36,9 @@ void* ArenaStorage(size_t& initial_size) {
   static constexpr size_t base_size =
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
   initial_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_size);
-  initial_size = std::max(initial_size,
-                          arena_detail::BaseArenaContextTraits::ContextSize());
+  initial_size = std::max(
+      initial_size, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+                        arena_detail::BaseArenaContextTraits::ContextSize()));
   size_t alloc_size = base_size + initial_size;
   static constexpr size_t alignment =
       (GPR_CACHELINE_SIZE > GPR_MAX_ALIGNMENT &&
@@ -76,7 +77,8 @@ RefCountedPtr<Arena> Arena::Create(size_t initial_size,
 
 Arena::Arena(size_t initial_size, RefCountedPtr<ArenaFactory> arena_factory)
     : initial_zone_size_(initial_size),
-      total_used_(arena_detail::BaseArenaContextTraits::ContextSize()),
+      total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+          arena_detail::BaseArenaContextTraits::ContextSize())),
       arena_factory_(std::move(arena_factory)) {
   for (size_t i = 0; i < arena_detail::BaseArenaContextTraits::NumContexts();
        ++i) {
