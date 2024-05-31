@@ -9130,8 +9130,6 @@ add_executable(cancel_callback_test
   src/core/lib/debug/trace.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
-  src/core/lib/gprpp/status_helper.cc
-  src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
@@ -9151,6 +9149,8 @@ add_executable(cancel_callback_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/status_helper.cc
+  src/core/util/time.cc
   test/core/promise/cancel_callback_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c

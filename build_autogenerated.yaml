@@ -6976,16 +6976,6 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
-  - src/core/lib/gprpp/atomic_utils.h
-  - src/core/lib/gprpp/bitset.h
-  - src/core/lib/gprpp/cpp_impl_of.h
-  - src/core/lib/gprpp/down_cast.h
-  - src/core/lib/gprpp/manual_constructor.h
-  - src/core/lib/gprpp/orphanable.h
-  - src/core/lib/gprpp/ref_counted.h
-  - src/core/lib/gprpp/ref_counted_ptr.h
-  - src/core/lib/gprpp/status_helper.h
-  - src/core/lib/gprpp/time.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
@@ -7019,7 +7009,17 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/bitset.h
+  - src/core/util/cpp_impl_of.h
+  - src/core/util/down_cast.h
+  - src/core/util/manual_constructor.h
+  - src/core/util/orphanable.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
   - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
+  - src/core/util/time.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h
@@ -7045,8 +7045,6 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/gprpp/status_helper.cc
-  - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
@@ -7066,6 +7064,8 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/status_helper.cc
+  - src/core/util/time.cc
   - test/core/promise/cancel_callback_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
   - third_party/upb/upb/mini_descriptor/decode.c
