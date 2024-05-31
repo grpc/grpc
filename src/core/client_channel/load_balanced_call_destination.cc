@@ -282,26 +282,27 @@ void LoadBalancedCallDestination::StartCall(
       "lb_pick", [unstarted_handler, picker = picker_]() mutable {
         return Map(
             // Wait for the LB picker.
-            CheckDelayed(Loop(
-                [last_picker =
-                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>(),
-                 unstarted_handler, picker]() mutable {
-                  return Map(
-                      picker.Next(last_picker),
-                      [unstarted_handler, &last_picker](
-                          RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-                              picker) mutable ->LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>>{
-                        if (picker == nullptr) {
-                          return absl::UnavailableError("Channel shutting down");
-                        }
-                        last_picker = std::move(picker);
-                        // Returns 3 possible things:
-                        // - Continue to queue the pick
-                        // - non-OK status to fail the pick
-                        // - a connected subchannel to complete the pick
-                        return PickSubchannel(*last_picker, unstarted_handler);
-                      });
-                })),
+            CheckDelayed(Loop([last_picker = RefCountedPtr<
+                                   LoadBalancingPolicy::SubchannelPicker>(),
+                               unstarted_handler, picker]() mutable {
+              return Map(
+                  picker.Next(last_picker),
+                  [unstarted_handler, &last_picker](
+                      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+                          picker) mutable
+                  -> LoopCtl<
+                      absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> {
+                    if (picker == nullptr) {
+                      return absl::UnavailableError("Channel shutting down");
+                    }
+                    last_picker = std::move(picker);
+                    // Returns 3 possible things:
+                    // - Continue to queue the pick
+                    // - non-OK status to fail the pick
+                    // - a connected subchannel to complete the pick
+                    return PickSubchannel(*last_picker, unstarted_handler);
+                  });
+            })),
             // Create call stack on the connected subchannel.
             [unstarted_handler](
                 std::tuple<
