@@ -3760,8 +3760,8 @@ void* grpc_call_context_get(grpc_call* call, grpc_context_index elem) {
   return grpc_core::Call::FromC(call)->ContextGet(elem);
 }
 
-void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer,
-                          void (*destroy)(void* value)) {
+void grpc_call_tracer_set(grpc_call* call,
+                          grpc_core::ClientCallTracer* tracer) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
   return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
 }

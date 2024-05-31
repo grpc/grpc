@@ -338,8 +338,7 @@ void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
 // Get a context pointer.
 void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
 
-void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer,
-                          void (*destroy)(void* value));
+void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
 void* grpc_call_tracer_get(grpc_call* call);
 
