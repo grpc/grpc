@@ -227,11 +227,13 @@ namespace {
 
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
+grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
+    grpc_chttp2_stream* s) {
   if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+  auto* call_tracer =
+      s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
     return nullptr;
   }
@@ -1373,7 +1375,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    if (s->call_tracer) {
+    if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                     gpr_now(GPR_CLOCK_REALTIME))

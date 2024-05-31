@@ -401,6 +401,7 @@ class ClientChannelFilter::LoadBalancedCall
   lb_subchannel_call_tracker() const {
     return lb_subchannel_call_tracker_.get();
   }
+  Arena* arena() const { return arena_; }
 
   void Commit() {
     auto on_commit = std::move(on_commit_);
@@ -549,7 +550,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
-  Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;

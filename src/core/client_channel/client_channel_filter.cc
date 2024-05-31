@@ -3021,7 +3021,6 @@ ClientChannelFilter::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry)
     : LoadBalancedCall(chand, args.context, args.arena, std::move(on_commit),
                        is_transparent_retry),
-      arena_(args.arena),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       pollent_(pollent),
@@ -3464,7 +3463,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
   SubchannelCall::Args call_args = {
       connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
       static_cast<Call*>(call_context()[GRPC_CONTEXT_CALL].value)->deadline(),
-      arena_,
+      arena(),
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
       call_context(), call_combiner_};
