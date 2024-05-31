@@ -47,12 +47,13 @@ CLASSIFIERS = [
 ]
 
 O11Y_CC_SRCS = [
-    "server_call_tracer.cc",
     "client_call_tracer.cc",
+    "metadata_exchange.cc",
     "observability_util.cc",
     "python_observability_context.cc",
-    "sampler.cc",
     "rpc_encoding.cc",
+    "sampler.cc",
+    "server_call_tracer.cc",
 ]
 
 
