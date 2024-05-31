@@ -35,16 +35,6 @@ typedef enum {
   /// Value is a \a census_context.
   GRPC_CONTEXT_TRACING,
 
-  /// Value is a CallTracerAnnotationInterface. (ClientCallTracer object on the
-  /// client-side call, or ServerCallTracer on the server-side.)
-  GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
-
-  /// Value is a CallTracerInterface (ServerCallTracer on the server-side,
-  /// CallAttemptTracer on a subchannel call.)
-  /// TODO(yashykt): Maybe come up with a better name. This will go away in the
-  /// future anyway, so not super important.
-  GRPC_CONTEXT_CALL_TRACER,
-
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
@@ -62,8 +52,6 @@ struct grpc_call_context_element {
 
 namespace grpc_core {
 class Call;
-class CallTracerAnnotationInterface;
-class CallTracerInterface;
 class ServiceConfigCallData;
 
 // Bind the legacy context array into the new style structure
@@ -80,17 +68,6 @@ struct OldStyleContext;
 template <>
 struct OldStyleContext<Call> {
   static constexpr grpc_context_index kIndex = GRPC_CONTEXT_CALL;
-};
-
-template <>
-struct OldStyleContext<CallTracerAnnotationInterface> {
-  static constexpr grpc_context_index kIndex =
-      GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE;
-};
-
-template <>
-struct OldStyleContext<CallTracerInterface> {
-  static constexpr grpc_context_index kIndex = GRPC_CONTEXT_CALL_TRACER;
 };
 
 template <>
