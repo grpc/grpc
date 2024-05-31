@@ -312,8 +312,8 @@ OpenCensusCallTracer::OpenCensusCallTracer(
       method_(GetMethod(path_)),
       arena_(arena),
       tracing_enabled_(tracing_enabled) {
-  auto* parent_context = reinterpret_cast<CensusContext*>(
-      call_context_[GRPC_CONTEXT_TRACING].value);
+  auto* parent_context =
+      reinterpret_cast<CensusContext*>(arena->GetContext<census_context>());
   GenerateClientContext(tracing_enabled_ ? absl::StrCat("Sent.", method_) : "",
                         &context_,
                         (parent_context == nullptr) ? nullptr : parent_context);

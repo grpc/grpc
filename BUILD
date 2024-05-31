@@ -1341,7 +1341,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
-        "legacy_context",
+        "//src/core:arena",
     ],
 )
 

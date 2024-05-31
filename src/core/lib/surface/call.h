@@ -78,6 +78,11 @@ typedef struct grpc_call_create_args {
 
 namespace grpc_core {
 
+template <>
+struct ArenaContextType<census_context> {
+  static void Destroy(census_context*) {}
+};
+
 class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {

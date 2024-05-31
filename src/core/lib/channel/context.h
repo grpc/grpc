@@ -32,9 +32,6 @@ typedef enum {
   /// grpc_call* associated with this context.
   GRPC_CONTEXT_CALL = 0,
 
-  /// Value is a \a census_context.
-  GRPC_CONTEXT_TRACING,
-
   /// Holds a pointer to ServiceConfigCallData associated with this call.
   GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
 
