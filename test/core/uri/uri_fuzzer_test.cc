@@ -23,7 +23,7 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 bool squelch = true;
 bool leak_check = true;

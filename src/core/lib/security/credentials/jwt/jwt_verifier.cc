@@ -66,7 +66,7 @@
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"

@@ -51,7 +51,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/http_client/parser.h"
 
 // User agent this library reports

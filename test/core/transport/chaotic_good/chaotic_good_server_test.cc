@@ -37,7 +37,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/server/server.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/build.h"

@@ -54,7 +54,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/http_client/parser.h"

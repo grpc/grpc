@@ -51,7 +51,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/load_balancing/rls/rls.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"

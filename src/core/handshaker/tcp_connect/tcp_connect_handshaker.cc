@@ -52,7 +52,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 

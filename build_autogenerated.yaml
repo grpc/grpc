@@ -1115,7 +1115,7 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/uri/uri_parser.h
+  - src/core/util/uri.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
@@ -1927,7 +1927,7 @@ libs:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
-  - src/core/lib/uri/uri_parser.cc
+  - src/core/util/uri.cc
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
@@ -2626,7 +2626,7 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/uri/uri_parser.h
+  - src/core/util/uri.h
   - src/core/load_balancing/address_filtering.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/backend_metric_parser.h
@@ -3050,7 +3050,7 @@ libs:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
-  - src/core/lib/uri/uri_parser.cc
+  - src/core/util/uri.cc
   - src/core/load_balancing/address_filtering.cc
   - src/core/load_balancing/backend_metric_parser.cc
   - src/core/load_balancing/child_policy_handler.cc
@@ -4716,7 +4716,7 @@ libs:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/uri/uri_parser.h
+  - src/core/util/uri.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/lb_policy.h
   - src/core/load_balancing/lb_policy_factory.h
@@ -5017,7 +5017,7 @@ libs:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
-  - src/core/lib/uri/uri_parser.cc
+  - src/core/util/uri.cc
   - src/core/load_balancing/lb_policy.cc
   - src/core/load_balancing/lb_policy_registry.cc
   - src/core/resolver/endpoint_addresses.cc
@@ -11895,7 +11895,7 @@ targets:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_fwd.h
-  - src/core/lib/uri/uri_parser.h
+  - src/core/util/uri.h
   - src/core/load_balancing/backend_metric_data.h
   - src/core/load_balancing/lb_policy.h
   - src/core/load_balancing/lb_policy_factory.h
@@ -12164,7 +12164,7 @@ targets:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
-  - src/core/lib/uri/uri_parser.cc
+  - src/core/util/uri.cc
   - src/core/load_balancing/lb_policy.cc
   - src/core/load_balancing/lb_policy_registry.cc
   - src/core/resolver/endpoint_addresses.cc

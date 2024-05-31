@@ -41,7 +41,7 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 

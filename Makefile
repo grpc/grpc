@@ -1361,7 +1361,7 @@ LIBGRPC_SRC = \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
-    src/core/lib/uri/uri_parser.cc \
+    src/core/util/uri.cc \
     src/core/load_balancing/address_filtering.cc \
     src/core/load_balancing/backend_metric_parser.cc \
     src/core/load_balancing/child_policy_handler.cc \

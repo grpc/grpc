@@ -45,7 +45,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"

@@ -63,7 +63,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -3400,10 +3400,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "uri_parser",
     srcs = [
-        "//src/core:lib/uri/uri_parser.cc",
+        "//src/core:util/uri.cc",
     ],
     hdrs = [
-        "//src/core:lib/uri/uri_parser.h",
+        "//src/core:util/uri.h",
     ],
     external_deps = [
         "absl/log:check",

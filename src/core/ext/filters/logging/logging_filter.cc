@@ -68,7 +68,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/call_tracer.h"
 

@@ -42,7 +42,7 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/polling_resolver.h"
 #include "src/core/resolver/resolver.h"

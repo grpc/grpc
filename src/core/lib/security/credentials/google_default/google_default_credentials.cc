@@ -65,7 +65,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/util/http_client/httpcli.h"

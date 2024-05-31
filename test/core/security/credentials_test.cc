@@ -66,7 +66,7 @@
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json_reader.h"

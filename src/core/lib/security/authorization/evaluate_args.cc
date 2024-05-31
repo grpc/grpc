@@ -31,7 +31,7 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/tls/tls_utils.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 namespace grpc_core {
 

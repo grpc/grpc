@@ -60,7 +60,7 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"

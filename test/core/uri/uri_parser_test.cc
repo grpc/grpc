@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 #include <utility>
 

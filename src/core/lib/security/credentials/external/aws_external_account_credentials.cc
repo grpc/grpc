@@ -41,7 +41,7 @@
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
