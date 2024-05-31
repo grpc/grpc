@@ -3318,9 +3318,9 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
       // Get status from error.
       grpc_status_code code;
       std::string message;
-      grpc_error_get_status(error, self->arena_->GetContext<Call>()->deadline(),
-                            &code, &message,
-                            /*http_error=*/nullptr, /*error_string=*/nullptr);
+      grpc_error_get_status(
+          error, self->arena()->GetContext<Call>()->deadline(), &code, &message,
+          /*http_error=*/nullptr, /*error_string=*/nullptr);
       status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
       // Get status from headers.
