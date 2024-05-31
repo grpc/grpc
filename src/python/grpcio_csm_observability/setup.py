@@ -36,7 +36,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    "opentelemetry-sdk>=1.24.0",
+    "opentelemetry-sdk>=1.25.0",
     "opentelemetry-resourcedetector-gcp>=1.6.0a0",
     "grpcio=={version}".format(version=grpc_version.VERSION),
     "protobuf>=5.26.1,<6.0dev",
