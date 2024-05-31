@@ -37,7 +37,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/posix_engine/ev_poll_posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/lib/gprpp/crash.h"
