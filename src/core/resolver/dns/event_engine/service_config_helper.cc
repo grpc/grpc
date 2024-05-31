@@ -24,7 +24,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/gethostname.h"
+#include "src/core/util/gethostname.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"

@@ -16,25 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
+#ifndef GRPC_SRC_CORE_UTIL_GETHOSTNAME_H
+#define GRPC_SRC_CORE_UTIL_GETHOSTNAME_H
 
-#include "src/core/lib/iomgr/gethostname.h"
-#include "src/core/lib/iomgr/port.h"
+// Returns the hostname of the local machine.
+// Caller takes ownership of result.
+char* grpc_gethostname();
 
-#ifdef GRPC_POSIX_HOST_NAME_MAX
-
-#include <limits.h>
-#include <unistd.h>
-
-#include <grpc/support/alloc.h>
-
-char* grpc_gethostname() {
-  char* hostname = static_cast<char*>(gpr_malloc(HOST_NAME_MAX));
-  if (gethostname(hostname, HOST_NAME_MAX) != 0) {
-    gpr_free(hostname);
-    return nullptr;
-  }
-  return hostname;
-}
-
-#endif  // GRPC_POSIX_HOST_NAME_MAX
+#endif  // GRPC_SRC_CORE_UTIL_GETHOSTNAME_H

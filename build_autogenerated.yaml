@@ -930,7 +930,7 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/gethostname.h
+  - src/core/util/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
@@ -1755,9 +1755,9 @@ libs:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
-  - src/core/lib/iomgr/gethostname_fallback.cc
-  - src/core/lib/iomgr/gethostname_host_name_max.cc
-  - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/util/gethostname_fallback.cc
+  - src/core/util/gethostname_host_name_max.cc
+  - src/core/util/gethostname_sysconf.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -2473,7 +2473,7 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/gethostname.h
+  - src/core/util/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
@@ -2913,9 +2913,9 @@ libs:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
-  - src/core/lib/iomgr/gethostname_fallback.cc
-  - src/core/lib/iomgr/gethostname_host_name_max.cc
-  - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/util/gethostname_fallback.cc
+  - src/core/util/gethostname_host_name_max.cc
+  - src/core/util/gethostname_sysconf.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -4566,7 +4566,7 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/gethostname.h
+  - src/core/util/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
@@ -4882,9 +4882,9 @@ libs:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
-  - src/core/lib/iomgr/gethostname_fallback.cc
-  - src/core/lib/iomgr/gethostname_host_name_max.cc
-  - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/util/gethostname_fallback.cc
+  - src/core/util/gethostname_host_name_max.cc
+  - src/core/util/gethostname_sysconf.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -11768,7 +11768,7 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
-  - src/core/lib/iomgr/gethostname.h
+  - src/core/util/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
@@ -12053,9 +12053,9 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
-  - src/core/lib/iomgr/gethostname_fallback.cc
-  - src/core/lib/iomgr/gethostname_host_name_max.cc
-  - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/util/gethostname_fallback.cc
+  - src/core/util/gethostname_host_name_max.cc
+  - src/core/util/gethostname_sysconf.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
   - src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
   - src/core/lib/iomgr/internal_errqueue.cc
