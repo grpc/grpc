@@ -227,6 +227,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
   - src/core/client_channel/client_channel_internal.h
@@ -235,6 +236,7 @@ libs:
   - src/core/client_channel/connector.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
@@ -883,6 +885,7 @@ libs:
   - src/core/lib/gprpp/directory_reader.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -907,10 +910,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
-  - src/core/lib/http/format_request.h
-  - src/core/lib/http/httpcli.h
-  - src/core/lib/http/httpcli_ssl_credentials.h
-  - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -995,6 +994,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -1206,6 +1206,10 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/http_client/format_request.h
+  - src/core/util/http_client/httpcli.h
+  - src/core/util/http_client/httpcli_ssl_credentials.h
+  - src/core/util/http_client/parser.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_channel_args.h
@@ -1251,6 +1255,7 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
   - src/core/client_channel/client_channel_plugin.cc
@@ -1258,6 +1263,7 @@ libs:
   - src/core/client_channel/config_selector.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -1713,6 +1719,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/posix/directory_reader.cc
@@ -1724,10 +1731,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/http/format_request.cc
-  - src/core/lib/http/httpcli.cc
-  - src/core/lib/http/httpcli_security_connector.cc
-  - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -2017,6 +2020,10 @@ libs:
   - src/core/tsi/ssl_transport_security_utils.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/http_client/format_request.cc
+  - src/core/util/http_client/httpcli.cc
+  - src/core/util/http_client/httpcli_security_connector.cc
+  - src/core/util/http_client/parser.cc
   - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_util.cc
@@ -2215,6 +2222,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_factory.h
   - src/core/client_channel/client_channel_filter.h
   - src/core/client_channel/client_channel_internal.h
@@ -2223,6 +2231,7 @@ libs:
   - src/core/client_channel/connector.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
+  - src/core/client_channel/load_balanced_call_destination.h
   - src/core/client_channel/local_subchannel_pool.h
   - src/core/client_channel/retry_filter.h
   - src/core/client_channel/retry_filter_legacy_call_data.h
@@ -2420,6 +2429,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -2443,9 +2453,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
-  - src/core/lib/http/format_request.h
-  - src/core/lib/http/httpcli.h
-  - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -2529,6 +2536,7 @@ libs:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
@@ -2677,6 +2685,9 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/http_client/format_request.h
+  - src/core/util/http_client/httpcli.h
+  - src/core/util/http_client/parser.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_channel_args.h
@@ -2708,6 +2719,7 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
   - src/core/client_channel/client_channel_plugin.cc
@@ -2715,6 +2727,7 @@ libs:
   - src/core/client_channel/config_selector.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
+  - src/core/client_channel/load_balanced_call_destination.cc
   - src/core/client_channel/local_subchannel_pool.cc
   - src/core/client_channel/retry_filter.cc
   - src/core/client_channel/retry_filter_legacy_call_data.cc
@@ -2866,6 +2879,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -2875,9 +2889,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/http/format_request.cc
-  - src/core/lib/http/httpcli.cc
-  - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -3095,6 +3106,9 @@ libs:
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/http_client/format_request.cc
+  - src/core/util/http_client/httpcli.cc
+  - src/core/util/http_client/parser.cc
   - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
@@ -4510,6 +4524,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -4618,6 +4633,7 @@ libs:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -4833,6 +4849,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -6376,8 +6393,10 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -6414,8 +6433,11 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6468,6 +6490,7 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -6480,8 +6503,11 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -7869,12 +7895,22 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
   - test/core/client_channel/client_channel_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
+  - protobuf
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: client_context_test_peer_test
   gtest: true
@@ -8225,6 +8261,27 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: connected_subchannel_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/client_channel/connected_subchannel_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
   build: test
@@ -11453,20 +11510,20 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/transport/test_suite/fixture.h
-  - test/core/transport/test_suite/test.h
+  - test/core/transport/test_suite/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/test_suite/call_content.cc
   - test/core/transport/test_suite/call_shapes.cc
-  - test/core/transport/test_suite/fixture.cc
   - test/core/transport/test_suite/inproc_fixture.cc
   - test/core/transport/test_suite/no_op.cc
   - test/core/transport/test_suite/stress.cc
-  - test/core/transport/test_suite/test.cc
-  - test/core/transport/test_suite/test_main.cc
+  - test/core/transport/test_suite/transport_test.cc
   deps:
   - gtest
   - protobuf
@@ -11669,6 +11726,7 @@ targets:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -11776,6 +11834,7 @@ targets:
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
@@ -11961,6 +12020,7 @@ targets:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -12733,6 +12793,27 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: load_balanced_call_destination_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/client_channel/load_balanced_call_destination_test.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: load_config_test
   gtest: true
   build: test
@@ -14639,6 +14720,7 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
+  - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/map_test.cc
   deps:
@@ -18993,6 +19075,17 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: subchannel_args_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/client_channel/subchannel_args_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: switch_test
   gtest: true
   build: test
@@ -19488,9 +19581,9 @@ targets:
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/yodel/yodel_test.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
-  - test/core/transport/test_suite/fixture.h
-  - test/core/transport/test_suite/test.h
+  - test/core/transport/test_suite/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
@@ -19499,15 +19592,15 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/test_suite/call_content.cc
   - test/core/transport/test_suite/call_shapes.cc
   - test/core/transport/test_suite/chaotic_good_fixture.cc
-  - test/core/transport/test_suite/fixture.cc
   - test/core/transport/test_suite/no_op.cc
   - test/core/transport/test_suite/stress.cc
-  - test/core/transport/test_suite/test.cc
-  - test/core/transport/test_suite/test_main.cc
+  - test/core/transport/test_suite/transport_test.cc
   deps:
   - gtest
   - protobuf

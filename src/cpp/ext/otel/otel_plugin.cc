@@ -913,6 +913,12 @@ grpc_core::ServerCallTracer* OpenTelemetryPlugin::GetServerCallTracer(
               scope_config));
 }
 
+bool OpenTelemetryPlugin::IsInstrumentEnabled(
+    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+  return !absl::holds_alternative<Disabled>(
+      instruments_data_.at(handle.index).instrument);
+}
+
 }  // namespace internal
 
 constexpr absl::string_view

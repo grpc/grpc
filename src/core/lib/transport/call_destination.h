@@ -31,6 +31,8 @@ namespace grpc_core {
 class UnstartedCallDestination
     : public DualRefCounted<UnstartedCallDestination> {
  public:
+  using DualRefCounted::DualRefCounted;
+
   ~UnstartedCallDestination() override = default;
   // Start a call. The UnstartedCallHandler will be consumed by the Destination
   // and started.
