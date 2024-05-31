@@ -87,7 +87,8 @@ def base_metrics() -> List[Metric]:
     return [
         CLIENT_ATTEMPT_STARTED,
         CLIENT_ATTEMPT_DURATION,
-        CLIENT_RPC_DURATION,
+        # CLIENT_RPC_DURATION is not required yet
+        # CLIENT_RPC_DURATION,
         CLIENT_ATTEMPT_SEND_BYTES,
         CLIENT_ATTEMPT_RECEIVED_BYTES,
         SERVER_STARTED_RPCS,

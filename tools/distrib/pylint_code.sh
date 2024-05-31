@@ -29,6 +29,7 @@ DIRS=(
     'src/python/grpcio_testing/grpc_testing'
     'src/python/grpcio_status/grpc_status'
     'src/python/grpcio_observability/grpc_observability'
+    'src/python/grpcio_csm_observability/grpc_csm_observability'
 )
 
 TEST_DIRS=(
