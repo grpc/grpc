@@ -2342,8 +2342,8 @@ add_library(grpc
   src/core/util/gethostname_fallback.cc
   src/core/util/gethostname_host_name_max.cc
   src/core/util/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -3136,8 +3136,8 @@ add_library(grpc_unsecure
   src/core/util/gethostname_fallback.cc
   src/core/util/gethostname_host_name_max.cc
   src/core/util/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -5254,8 +5254,8 @@ add_library(grpc_authorization_provider
   src/core/util/gethostname_fallback.cc
   src/core/util/gethostname_host_name_max.cc
   src/core/util/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
@@ -17950,8 +17950,8 @@ add_executable(interception_chain_test
   src/core/util/gethostname_fallback.cc
   src/core/util/gethostname_host_name_max.cc
   src/core/util/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
   src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc

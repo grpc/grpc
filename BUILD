@@ -3420,12 +3420,12 @@ grpc_cc_library(
     name = "parse_address",
     srcs = [
         "//src/core:lib/address_utils/parse_address.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_posix.cc",
-        "//src/core:lib/iomgr/grpc_if_nametoindex_unsupported.cc",
+        "//src/core:util/grpc_if_nametoindex_posix.cc",
+        "//src/core:util/grpc_if_nametoindex_unsupported.cc",
     ],
     hdrs = [
         "//src/core:lib/address_utils/parse_address.h",
-        "//src/core:lib/iomgr/grpc_if_nametoindex.h",
+        "//src/core:util/grpc_if_nametoindex.h",
     ],
     external_deps = [
         "absl/log:check",
