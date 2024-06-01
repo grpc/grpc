@@ -172,8 +172,7 @@ SubchannelStreamClient::CallState::CallState(
     grpc_pollset_set* interested_parties)
     : subchannel_stream_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
-      arena_(subchannel_stream_client_->call_allocator_->MakeArena()),
-      payload_{} {}
+      arena_(subchannel_stream_client_->call_allocator_->MakeArena()) {}
 
 SubchannelStreamClient::CallState::~CallState() {
   if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {

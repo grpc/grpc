@@ -588,8 +588,7 @@ class FilterStackCall final : public ChannelBasedCall {
       : ChannelBasedCall(std::move(arena),
                          args.server_transport_data == nullptr,
                          args.send_deadline, args.channel->Ref()),
-        cq_(args.cq),
-        stream_op_payload_{} {
+        cq_(args.cq) {
     GetArena()->SetContext<Call>(this);
   }
 

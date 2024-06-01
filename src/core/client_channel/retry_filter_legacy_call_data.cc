@@ -119,7 +119,6 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) ? "CallAttempt"
                                                            : nullptr),
       calld_(calld),
-      batch_payload_{},
       started_send_initial_metadata_(false),
       completed_send_initial_metadata_(false),
       started_send_trailing_metadata_(false),
