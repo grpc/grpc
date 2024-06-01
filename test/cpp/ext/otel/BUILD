@@ -34,6 +34,7 @@ grpc_cc_library(
         "gtest",
         "otel/api",
         "otel/sdk/src/metrics",
+        "otel/exporters/ostream:ostream_metric_exporter",
     ],
     language = "C++",
     tags = [

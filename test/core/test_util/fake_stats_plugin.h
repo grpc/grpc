@@ -269,6 +269,14 @@ class FakeStatsPlugin : public StatsPlugin {
       const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
   }
+  std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& scope) const override {
+    return nullptr;
+  }
+  std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const grpc_core::ChannelArgs& args) const override {
+    return nullptr;
+  }
 
   void AddCounter(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,

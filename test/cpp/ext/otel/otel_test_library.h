@@ -59,7 +59,7 @@ class MockMetricReader : public opentelemetry::sdk::metrics::MetricReader {
 };
 
 class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
- public:
+ protected:
   struct Options {
    public:
     Options& set_metric_names(std::vector<absl::string_view> names) {
@@ -138,6 +138,12 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
+    Options& add_per_server_stats_plugin(
+        std::shared_ptr<grpc::OpenTelemetryPlugin> plugin) {
+      per_server_stats_plugins.emplace_back(std::move(plugin));
+      return *this;
+    }
+
     std::vector<absl::string_view> metric_names;
     // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
     // assignment operator so wrapping it in a unique_ptr till it is fixed.
@@ -166,9 +172,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     absl::flat_hash_set<absl::string_view> optional_label_keys;
     std::vector<std::shared_ptr<grpc::OpenTelemetryPlugin>>
         per_channel_stats_plugins;
+    std::vector<std::shared_ptr<grpc::OpenTelemetryPlugin>>
+        per_server_stats_plugins;
   };
 
- protected:
   class MetricsCollectorThread {
    public:
     using ResultType = absl::flat_hash_map<
@@ -191,6 +198,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     std::atomic_bool finished_{false};
     std::thread thread_;
   };
+
+  static std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
+  ConfigureOTBuilder(
+      OpenTelemetryPluginEnd2EndTest::Options options,
+      grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder);
 
   // Note that we can't use SetUp() here since we want to send in parameters.
   void Init(Options config);
