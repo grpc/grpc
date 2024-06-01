@@ -28,9 +28,7 @@
 /// Call context is represented as an array of \a grpc_call_context_elements.
 /// This enum represents the indexes into the array, where each index
 /// contains a different type of value.
-typedef enum {
-  GRPC_CONTEXT_COUNT
-} grpc_context_index;
+typedef enum { GRPC_CONTEXT_COUNT } grpc_context_index;
 
 struct grpc_call_context_element {
   void* value = nullptr;
