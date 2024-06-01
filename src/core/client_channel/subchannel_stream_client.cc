@@ -173,18 +173,13 @@ SubchannelStreamClient::CallState::CallState(
     : subchannel_stream_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(subchannel_stream_client_->call_allocator_->MakeArena()),
-      payload_(context_) {}
+      payload_{} {}
 
 SubchannelStreamClient::CallState::~CallState() {
   if (GPR_UNLIKELY(subchannel_stream_client_->tracer_ != nullptr)) {
     gpr_log(GPR_INFO, "%s %p: SubchannelStreamClient destroying CallState %p",
             subchannel_stream_client_->tracer_, subchannel_stream_client_.get(),
             this);
-  }
-  for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-    if (context_[i].destroy != nullptr) {
-      context_[i].destroy(context_[i].value);
-    }
   }
   // Unset the call combiner cancellation closure.  This has the
   // effect of scheduling the previously set cancellation closure, if
@@ -206,7 +201,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       gpr_get_cycle_counter(),  // start_time
       Timestamp::InfFuture(),   // deadline
       arena_.get(),
-      context_,
       &call_combiner_,
   };
   grpc_error_handle error;
@@ -226,7 +220,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
     return;
   }
   // Initialize payload and batch.
-  payload_.context = context_;
   batch_.payload = &payload_;
   // on_complete callback takes ref, handled manually.
   call_->Ref(DEBUG_LOCATION, "on_complete").release();
