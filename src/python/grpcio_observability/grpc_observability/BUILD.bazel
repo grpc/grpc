@@ -21,6 +21,7 @@ cc_library(
     name = "observability",
     srcs = [
         "client_call_tracer.cc",
+        "metadata_exchange.cc",
         "observability_util.cc",
         "python_observability_context.cc",
         "rpc_encoding.cc",
@@ -30,6 +31,7 @@ cc_library(
     hdrs = [
         "client_call_tracer.h",
         "constants.h",
+        "metadata_exchange.h",
         "observability_util.h",
         "python_observability_context.h",
         "rpc_encoding.h",

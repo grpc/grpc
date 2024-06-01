@@ -950,6 +950,12 @@ grpc_core::ServerCallTracer* OpenTelemetryPluginImpl::GetServerCallTracer(
               scope_config));
 }
 
+bool OpenTelemetryPluginImpl::IsInstrumentEnabled(
+    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+  return !absl::holds_alternative<Disabled>(
+      instruments_data_.at(handle.index).instrument);
+}
+
 void OpenTelemetryPluginImpl::AddToChannelArguments(
     grpc::ChannelArguments* args) {
   const grpc_channel_args c_args = args->c_channel_args();

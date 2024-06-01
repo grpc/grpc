@@ -29,39 +29,6 @@
 /// This enum represents the indexes into the array, where each index
 /// contains a different type of value.
 typedef enum {
-  /// grpc_call* associated with this context.
-  GRPC_CONTEXT_CALL = 0,
-
-  /// Value is either a \a grpc_client_security_context or a
-  /// \a grpc_server_security_context.
-  GRPC_CONTEXT_SECURITY,
-
-  /// Value is a \a census_context.
-  GRPC_CONTEXT_TRACING,
-
-  /// Value is a CallTracerAnnotationInterface. (ClientCallTracer object on the
-  /// client-side call, or ServerCallTracer on the server-side.)
-  GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
-
-  /// Value is a CallTracerInterface (ServerCallTracer on the server-side,
-  /// CallAttemptTracer on a subchannel call.)
-  /// TODO(yashykt): Maybe come up with a better name. This will go away in the
-  /// future anyway, so not super important.
-  GRPC_CONTEXT_CALL_TRACER,
-
-  /// Reserved for traffic_class_context.
-  GRPC_CONTEXT_TRAFFIC,
-
-  /// Holds a pointer to ServiceConfigCallData associated with this call.
-  GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
-
-  /// Holds a pointer to BackendMetricProvider associated with this call on
-  /// the server.
-  GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
-
-  /// Special Google context
-  GRPC_CONTEXT_GOOGLE,
-
   GRPC_CONTEXT_COUNT
 } grpc_context_index;
 
@@ -71,8 +38,7 @@ struct grpc_call_context_element {
 };
 
 namespace grpc_core {
-class Call;
-class CallTracerAnnotationInterface;
+class ServiceConfigCallData;
 
 // Bind the legacy context array into the new style structure
 // TODO(ctiller): remove as we migrate these contexts to the new system.
@@ -85,17 +51,6 @@ namespace promise_detail {
 template <typename T>
 struct OldStyleContext;
 
-template <>
-struct OldStyleContext<Call> {
-  static constexpr grpc_context_index kIndex = GRPC_CONTEXT_CALL;
-};
-
-template <>
-struct OldStyleContext<CallTracerAnnotationInterface> {
-  static constexpr grpc_context_index kIndex =
-      GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE;
-};
-
 template <typename T>
 class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {
  public:
@@ -103,6 +58,15 @@ class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {
     return static_cast<T*>(
         GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex]
             .value);
+  }
+  static void set(T* value) {
+    auto& elem =
+        GetContext<grpc_call_context_element>()[OldStyleContext<T>::kIndex];
+    if (elem.destroy != nullptr) {
+      elem.destroy(elem.value);
+      elem.destroy = nullptr;
+    }
+    elem.value = value;
   }
 };
 

@@ -13,14 +13,15 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
 
 grpc_package(name = "test/core/client_channel")
 
 licenses(["notice"])
 
 grpc_cc_test(
-    name = "client_channel_test",
-    srcs = ["client_channel_test.cc"],
+    name = "subchannel_args_test",
+    srcs = ["subchannel_args_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     uses_event_engine = False,
@@ -30,6 +31,36 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:subchannel_pool_interface",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "client_channel",
+    srcs = ["client_channel_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "connected_subchannel",
+    srcs = ["connected_subchannel_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "load_balanced_call_destination",
+    srcs = ["load_balanced_call_destination_test.cc"],
+    external_deps = ["gtest"],
+    deps = [
+        "//:grpc_client_channel",
+        "//test/core/call/yodel:yodel_test",
     ],
 )
 
