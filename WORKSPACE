@@ -138,19 +138,20 @@ opentelemetry_extra_deps()
 
 # TODO: Enable below once https://github.com/bazel-xcode/PodToBUILD/issues/232 is resolved
 #
-#http_archive(
-#    name = "rules_pods",
-#    urls = ["https://github.com/pinterest/PodToBUILD/releases/download/4.1.0-412495/PodToBUILD.zip"],
-#)
-#
-#load(
-#    "@rules_pods//BazelExtensions:workspace.bzl",
-#    "new_pod_repository",
-#)
-#
-#new_pod_repository(
-#    name = "CronetFramework",
-#    is_dynamic_framework = True,
-#    podspec_url = "https://raw.githubusercontent.com/CocoaPods/Specs/master/Specs/2/e/1/CronetFramework/0.0.5/CronetFramework.podspec.json",
-#    url = "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v0.0.5.zip",
-#)
+http_archive(
+   name = "rules_pods",
+    urls = ["https://github.com/pinterest/PodToBUILD/releases/download/6.3.2-370b622/PodToBUILD.zip"],
+    sha256 = "ffdfe8c7a4c73cca5d7b7a67daa6ccdd046355637dbdb9b1366d021b4ad339b5",
+)
+
+load(
+   "@rules_pods//BazelExtensions:workspace.bzl",
+   "new_pod_repository",
+)
+
+new_pod_repository(
+   name = "CronetFramework",
+   is_dynamic_framework = True,
+   podspec_url = "https://raw.githubusercontent.com/CocoaPods/Specs/master/Specs/2/e/1/CronetFramework/0.0.5/CronetFramework.podspec.json",
+   url = "https://storage.googleapis.com/grpc-precompiled-binaries/cronet/Cronet.framework-v0.0.5.zip",
+)
