@@ -170,8 +170,10 @@ class InprocClientTransport final : public ClientTransport {
   const RefCountedPtr<InprocServerTransport> server_transport_;
 };
 
-bool UsePromiseBasedTransport() {
-  return IsPromiseBasedInprocTransportEnabled();
+bool UsePromiseBasedTransport(const ChannelArgs& channel_args) {
+  return channel_args
+      .GetBool("grpc.experimental.promise_based_inproc_transport")
+      .value_or(IsPromiseBasedInprocTransportEnabled());
 }
 
 OrphanablePtr<InprocClientTransport>
@@ -236,13 +238,14 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          void* reserved) {
   grpc_core::ApplicationCallbackExecCtx app_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  if (!grpc_core::UsePromiseBasedTransport()) {
+  const auto channel_args = grpc_core::CoreConfiguration::Get()
+                                .channel_args_preconditioning()
+                                .PreconditionChannelArgs(args);
+  if (!grpc_core::UsePromiseBasedTransport(channel_args)) {
     return grpc_legacy_inproc_channel_create(server, args, reserved);
   }
   return grpc_core::MakeInprocChannel(grpc_core::Server::FromC(server),
-                                      grpc_core::CoreConfiguration::Get()
-                                          .channel_args_preconditioning()
-                                          .PreconditionChannelArgs(args))
+                                      channel_args)
       .release()
       ->c_ptr();
 }

@@ -836,7 +836,15 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
             FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
-              return std::make_unique<InprocFixture>();
+              return std::make_unique<InprocFixture>(false);
+            },
+        },
+        CoreTestConfiguration{
+            "InprocWithPromises",
+            FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
+            nullptr,
+            [](const ChannelArgs&, const ChannelArgs&) {
+              return std::make_unique<InprocFixture>(true);
             },
         },
         CoreTestConfiguration{

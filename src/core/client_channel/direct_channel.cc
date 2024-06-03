@@ -16,8 +16,8 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/surface/client_call.h"
 #include "src/core/lib/transport/interception_chain.h"
 
 namespace grpc_core {
