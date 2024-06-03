@@ -27574,9 +27574,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/batch_builder.cc
     test/core/call/server_call_test.cc
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
+    test/core/end2end/cq_verifier.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )
