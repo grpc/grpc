@@ -38,7 +38,7 @@ class GPR_DLL ConfigVars {
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
     absl::optional<bool> not_use_system_ssl_roots;
-    absl::optional<bool> absl_disable_vlog;
+    absl::optional<bool> grpc_disable_vlog;
     absl::optional<std::string> dns_resolver;
     absl::optional<std::string> verbosity;
     absl::optional<std::string> stacktrace_minloglevel;
@@ -103,8 +103,10 @@ class GPR_DLL ConfigVars {
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
-  // Disable absl vlog.
-  bool AbslDisableVlog() const;
+  // Disable absl vlog for in "*grpc*/*" folder. For other folders it will
+  // remain unchanged. A good use case for this is if you want to enable VLOG
+  // for other parts of the code but not for grpc.
+  bool GrpcDisableVlog() const;
 
  private:
   explicit ConfigVars(const Overrides& overrides);
@@ -121,7 +123,7 @@ class GPR_DLL ConfigVars {
   std::string ssl_cipher_suites_;
   std::string experiments_;
   std::string trace_;
-  absl::optional<bool> override_absl_disable_vlog_;
+  absl::optional<bool> override_grpc_disable_vlog_;
   absl::optional<std::string> override_system_ssl_roots_dir_;
   absl::optional<std::string> override_default_ssl_roots_file_path_;
 };

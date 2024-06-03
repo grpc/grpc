@@ -126,8 +126,11 @@
     ECDHE-ECDSA-AES256-GCM-SHA384:\
     ECDHE-RSA-AES128-GCM-SHA256:\
     ECDHE-RSA-AES256-GCM-SHA384"
-- name: absl_disable_vlog
+- name: grpc_disable_vlog
   type: bool
   default: false
-  description: Disable absl vlog. 
+  description: 
+    Disable absl vlog for in "*grpc*/*" folder. For other folders it will
+    remain unchanged. A good use case for this is if you want to enable
+    VLOG for other parts of the code but not for grpc.
   force-load-on-access: true
