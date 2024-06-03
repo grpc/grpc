@@ -103,9 +103,9 @@ class GPR_DLL ConfigVars {
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
   absl::string_view SslCipherSuites() const { return ssl_cipher_suites_; }
-  // Disable absl VLOG for in "*grpc*/*" folder. For other folders it will
-  // remain unchanged. A good use case for this is if you want to enable VLOG
-  // for other parts of the code but not for grpc.
+  // Disable absl VLOG for in *grpc*/* folder. For other folders it will remain
+  // unchanged. A good use case for this is if you want to enable VLOG for other
+  // parts of the code but not for grpc.
   bool DisableVlog() const;
 
  private:

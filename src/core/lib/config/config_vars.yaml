@@ -130,7 +130,7 @@
   type: bool
   default: false
   description: 
-    Disable absl VLOG for in "*grpc*/*" folder. For other folders it will
+    Disable absl VLOG for in *grpc*/* folder. For other folders it will
     remain unchanged. A good use case for this is if you want to enable
     VLOG for other parts of the code but not for grpc.
   force-load-on-access: true
