@@ -270,12 +270,12 @@ class FakeStatsPlugin : public StatsPlugin {
       const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
   }
-  std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
       const experimental::StatsPluginChannelScope& scope) const override {
     return nullptr;
   }
-  std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> GetServerScopeConfig(
-      const grpc_core::ChannelArgs& args) const override {
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const ChannelArgs& args) const override {
     return nullptr;
   }
 
