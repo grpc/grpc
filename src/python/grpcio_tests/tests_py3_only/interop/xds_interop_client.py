@@ -69,6 +69,8 @@ _METHOD_STR_TO_ENUM = {
 
 _METHOD_ENUM_TO_STR = {v: k for k, v in _METHOD_STR_TO_ENUM.items()}
 
+_PROMETHEUS_PORT = 9464
+
 PerMethodMetadataType = Mapping[str, Sequence[Tuple[str, str]]]
 
 
@@ -604,7 +606,7 @@ def bool_arg(arg: str) -> bool:
 
 def _prepare_csm_observability_plugin() -> CsmOpenTelemetryPlugin:
     # Start Prometheus client
-    start_http_server(port=9464, addr="0.0.0.0")
+    start_http_server(port=_PROMETHEUS_PORT, addr="0.0.0.0")
     reader = PrometheusMetricReader()
     meter_provider = MeterProvider(metric_readers=[reader])
     csm_plugin = CsmOpenTelemetryPlugin(

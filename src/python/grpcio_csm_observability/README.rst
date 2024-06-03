@@ -50,7 +50,7 @@ gRPC Python CSM Observability Depends on the following packages:
 Usage
 -----
 
-Example usage is similar to `the example here <https://github.com/grpc/grpc/tree/master/examples/python/observability>`_, instead of import from ``grpc_observability``, you should import from ``grpc_csm_observability``:
+Example usage is similar to `the example here <https://github.com/grpc/grpc/tree/master/examples/python/observability>`_, instead of importing from ``grpc_observability``, you should import from ``grpc_csm_observability``:
 
 .. code-block:: python
 
@@ -62,6 +62,8 @@ Example usage is similar to `the example here <https://github.com/grpc/grpc/tree
 
 
 We also provide several environment variables to help you optimize gRPC python observability for your particular use.
+
+* Note: The term "Census" here is just for historical backwards compatibility reasons and does not imply any dependencies.
 
 1. GRPC_PYTHON_CENSUS_EXPORT_BATCH_INTERVAL
     * This controls how frequently telemetry data collected within gRPC Core is sent to Python layer.

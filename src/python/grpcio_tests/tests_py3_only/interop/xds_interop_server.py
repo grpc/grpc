@@ -45,6 +45,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 #  tests.
 
 _LISTEN_HOST = "0.0.0.0"
+_PROMETHEUS_PORT = 9464
 
 _THREAD_POOL_SIZE = 256
 
@@ -174,7 +175,7 @@ def bool_arg(arg: str) -> bool:
 
 def _prepare_csm_observability_plugin() -> CsmOpenTelemetryPlugin:
     # Start Prometheus client
-    start_http_server(port=9464, addr="0.0.0.0")
+    start_http_server(port=_PROMETHEUS_PORT, addr="0.0.0.0")
     reader = PrometheusMetricReader()
     meter_provider = MeterProvider(metric_readers=[reader])
     csm_plugin = CsmOpenTelemetryPlugin(
