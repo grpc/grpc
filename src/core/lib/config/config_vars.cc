@@ -76,7 +76,7 @@ ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
           "A colon separated list of cipher suites to use with OpenSSL");
 ABSL_FLAG(absl::optional<bool>, grpc_disable_vlog, {},
-          "Disable absl vlog for in \042*grpc*/*\042 folder. For other folders "
+          "Disable absl VLOG for in \042*grpc*/*\042 folder. For other folders "
           "it will remain unchanged. A good use case for this is if you want "
           "to enable VLOG for other parts of the code but not for grpc.");
 
