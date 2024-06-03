@@ -17,7 +17,6 @@
 #include "src/core/lib/surface/channel_create.h"
 
 #include "absl/log/check.h"
-#include "channel_stack_type.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -31,6 +30,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/telemetry/stats.h"
@@ -92,7 +92,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     case GRPC_CLIENT_CHANNEL:
       return ClientChannel::Create(std::move(target), std::move(args));
     case GRPC_CLIENT_DIRECT_CHANNEL:
-      return DirectChannel::Create(std::move(target), std::move(args));
+      return DirectChannel::Create(std::move(target), args);
     default:
       Crash(absl::StrCat("Invalid channel stack type for ChannelCreate: ",
                          grpc_channel_stack_type_string(channel_stack_type)));

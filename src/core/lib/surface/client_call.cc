@@ -29,7 +29,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "call_trace.h"
 
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
@@ -55,6 +54,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/telemetry/stats.h"

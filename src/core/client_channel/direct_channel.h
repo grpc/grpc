@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef DIRECT_CHANNEL_H
-#define DIRECT_CHANNEL_H
+#ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_DIRECT_CHANNEL_H
+#define GRPC_SRC_CORE_CLIENT_CHANNEL_DIRECT_CHANNEL_H
 
 #include <memory>
 
@@ -98,4 +98,4 @@ class DirectChannel final : public Channel {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_DIRECT_CHANNEL_H
