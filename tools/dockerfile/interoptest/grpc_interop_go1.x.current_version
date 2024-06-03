@@ -1,2 +1,1 @@
-us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.x:latest
-
+us-docker.pkg.dev/grpc-testing/testing-images-public/grpc_interop_go1.x:402e85d50efa7097db729173f2f0d0255ae8528a@sha256:c1d1babd31ea7e635aa68d56803212f9e0091ff628288c18dc86d890f837303a
