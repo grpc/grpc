@@ -1186,6 +1186,90 @@ class InfallibleOperationExecutor {
   const InfallibleOperator<T>* end_ops_;
 };
 
+class CallState {
+ public:
+  CallState();
+  // Start the call: allows pulls to proceed
+  void Start();
+  // PUSH: client -> server
+  StatusFlag BeginPushClientToServerMessage();
+  Poll<StatusFlag> PollPushClientToServerMessage();
+  void ClientToServerHalfClose();
+  // PUSH: server -> client
+  void PushServerInitialMetadata();
+  void BeginPushServerToClientMessage();
+  Poll<StatusFlag> PollPushServerToClientMessage();
+  void PushServerTrailingMetadata();
+  // PULL: client -> server
+  void FinishPullClientInitialMetadata();
+  void BeginPullClientToServerMessage();
+  Poll<StatusFlag> PollPullClientToServerMessageAvailable();
+  void WaitingForClientToServerMessageAck();
+  void AckClientToServerMessage();
+  // PULL: server -> client
+  void BeginPullServerInitialMetadata();
+  Poll<ValueOrFailure<bool>> PollPullServerInitialMetadata();
+  void FinishPullServerInitialMetadata();
+  void BeginPullServerToClientMessage();
+  Poll<StatusFlag> PollPullServerToClientMessageAvailable();
+  void WaitingForServerToClientMessageAck();
+  void AckServerToClientMessage();
+
+ private:
+  enum class ClientToServerPullState : uint8_t {
+    // Ready to read: client initial metadata is there, but not yet processed
+    // Next state: kIdle or kTerminated
+    kBegin,
+    // Main call loop: not reading
+    // Next state: kReading or kProcessingClientToServerMessage, or kTerminated
+    kIdle,
+    // Main call loop: reading but no message available
+    // Next state: kProcessingClientToServerMessage or kTerminated
+    kReading,
+    // Main call loop: processing one message
+    // Next state: kWaitingForClientToServerMessageAck or kTerminated
+    kProcessingClientToServerMessage,
+    // Main call loop: waiting for the ack that a message has been processed
+    // Next state: kIdle or kTerminated
+    kWaitingForClientToServerMessageAck,
+    // Client initial metadata has been processed
+    // Request has finished
+    kTerminated,
+  };
+  enum class ClientToServerPushState : uint8_t {
+    kIdle,
+    kPushedMessage,
+    kPushedHalfClose,
+    kPushedMessageAndHalfClosed,
+    kFinished,
+  };
+  enum class ServerToClientPullState : uint8_t {
+    // Not yet started: cannot read
+    kUnstarted,
+    // Waiting for server initial metadata to be available
+    kWaitingForServerInitialMetadata,
+    // Processing server initial metadata
+    kProcessingServerInitialMetadata,
+    // Main call loop: not reading
+    kIdle,
+    // Main call loop: reading but no message available
+    kReading,
+    // Main call loop: processing one message
+    kProcessingServerToClientMessage,
+    // Main call loop: waiting for the ack that a message has been processed
+    kWaitingForServerToClientMessageAck,
+    // Processing server trailing metadata
+    kProcessingServerTrailingMetadata,
+  };
+  ClientToServerPullState client_to_server_pull_state_ : 3;
+  ClientToServerPushState client_to_server_push_state_ : 3;
+  ServerToClientPullState server_to_client_pull_state_ : 3;
+  IntraActivityWaiter client_to_server_pull_waiter_;
+  IntraActivityWaiter server_to_client_pull_waiter_;
+  IntraActivityWaiter client_to_server_push_waiter_;
+  IntraActivityWaiter server_to_client_push_waiter_;
+};
+
 // The current state of a pipe.
 // CallFilters expose a set of pipe like objects for client & server initial
 // metadata and for messages.

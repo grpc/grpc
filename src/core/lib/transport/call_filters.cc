@@ -303,6 +303,127 @@ RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// CallState
+
+namespace filters_detail {
+
+CallState::CallState()
+    : client_to_server_pull_state_(ClientToServerPullState::kBegin),
+      client_to_server_push_state_(ClientToServerPushState::kIdle),
+      server_to_client_pull_state_(ServerToClientPullState::kUnstarted) {}
+
+void CallState::Start() {
+  CHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kUnstarted);
+  server_to_client_pull_state_ =
+      ServerToClientPullState::kWaitingForServerInitialMetadata;
+  client_to_server_pull_waiter_.Wake();
+  server_to_client_pull_waiter_.Wake();
+}
+
+StatusFlag CallState::BeginPushClientToServerMessage() {
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      client_to_server_push_state_ = ClientToServerPushState::kPushedMessage;
+      client_to_server_pull_waiter_.Wake();
+      return Success{};
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      Crash("Only one push allowed to be outstanding");
+    case ClientToServerPushState::kPushedHalfClose:
+    case ClientToServerPushState::kFinished:
+      return Failure{};
+  }
+  Crash("unreachable");
+}
+
+Poll<StatusFlag> CallState::PollPushClientToServerMessage() {
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+    case ClientToServerPushState::kPushedHalfClose:
+      return Success{};
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      return Pending{};
+    case ClientToServerPushState::kFinished:
+      return Failure{};
+  }
+}
+
+void CallState::ClientToServerHalfClose() {
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
+      client_to_server_pull_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kPushedMessage:
+      client_to_server_push_state_ =
+          ClientToServerPushState::kPushedMessageAndHalfClosed;
+      break;
+    case ClientToServerPushState::kPushedHalfClose:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      // swallow the dupe, it does no harm
+      break;
+    case ClientToServerPushState::kFinished:
+      break;
+  }
+}
+
+void CallState::FinishPullClientInitialMetadata() {
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+      client_to_server_pull_state_ = ClientToServerPullState::kIdle;
+      client_to_server_pull_waiter_.Wake();
+      break;
+    case ClientToServerPullState::kTerminated:
+      break;
+    default:
+      Crash(absl::StrCat(
+          "FinishPullClientInitialMetadata called in invalid state ",
+          client_to_server_pull_state_));
+  }
+}
+
+void CallState::BeginPullClientToServerMessage() {
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kIdle:
+      client_to_server_pull_state_ = ClientToServerPullState::kReading;
+      break;
+    case ClientToServerPullState::kTerminated:
+      break;
+    default:
+      Crash(absl::StrCat(
+          "BeginPullClientToServerMessage called in invalid state ",
+          client_to_server_pull_state_));
+  }
+}
+
+Poll<StatusFlag> CallState::PollPullClientToServerMessageAvailable() {
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kReading:
+      break;
+    case ClientToServerPullState::kTerminated:
+      return Failure{};
+    default:
+      Crash(absl::StrCat(
+          "PollPullClientToServerMessageAvailable called in invalid state ",
+          client_to_server_pull_state_));
+  }
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      return Pending{};
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      return Success{};
+    case ClientToServerPushState::kPushedHalfClose:
+    case ClientToServerPushState::kFinished:
+      return Failure{};
+  }
+  Crash("unreachable");
+}
+
+}  // namespace filters_detail
+
+///////////////////////////////////////////////////////////////////////////////
 // CallFilters::PipeState
 
 void filters_detail::PipeState::Start() {
