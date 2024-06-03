@@ -268,8 +268,8 @@ grpc_local_channel_security_connector_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
     const grpc_core::ChannelArgs& args, const char* target_name) {
   if (channel_creds == nullptr || target_name == nullptr) {
-    LOG(ERROR)
-        << "Invalid arguments to grpc_local_channel_security_connector_create";
+    LOG(ERROR) << "Invalid arguments to "
+                  "grpc_local_channel_security_connector_create()";
     return nullptr;
   }
   // Perform sanity check on UDS address. For TCP local connection, the check
@@ -282,7 +282,7 @@ grpc_local_channel_security_connector_create(
       !absl::StartsWith(server_uri_str, GRPC_UDS_URI_PATTERN) &&
       !absl::StartsWith(server_uri_str, GRPC_ABSTRACT_UDS_URI_PATTERN)) {
     LOG(ERROR) << "Invalid UDS target name to "
-                  "grpc_local_channel_security_connector_create";
+                  "grpc_local_channel_security_connector_create()";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_local_channel_security_connector>(
@@ -294,7 +294,7 @@ grpc_local_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds) {
   if (server_creds == nullptr) {
     LOG(ERROR)
-        << "Invalid arguments to grpc_local_server_security_connector_create";
+        << "Invalid arguments to grpc_local_server_security_connector_create()";
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_local_server_security_connector>(
