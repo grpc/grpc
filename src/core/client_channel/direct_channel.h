@@ -52,7 +52,8 @@ class DirectChannel final : public Channel {
       RefCountedPtr<UnstartedCallDestination> interception_chain)
       : Channel(std::move(target), args),
         transport_call_destination_(std::move(transport_call_destination)),
-        interception_chain_(std::move(interception_chain)) {}
+        interception_chain_(std::move(interception_chain)),
+        event_engine_(std::move(event_engine)) {}
 
   void Orphaned() override;
   void StartCall(UnstartedCallHandler unstarted_handler) override;
