@@ -772,15 +772,6 @@ static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
 static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error_handle error);
 
-static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  ZerocopyDisableAndWaitForRemaining(tcp);
-  grpc_fd_shutdown(tcp->em_fd, why);
-  tcp->read_mu.Lock();
-  tcp->memory_owner.Reset();
-  tcp->read_mu.Unlock();
-}
-
 static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
@@ -818,10 +809,11 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
+  gpr_log(GPR_INFO, "IOMGR endpoint shutdown");
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+  ZerocopyDisableAndWaitForRemaining(tcp);
+  grpc_fd_shutdown(tcp->em_fd, absl::UnavailableError("endpoint shutdown"));
   if (grpc_event_engine_can_track_errors()) {
-    ZerocopyDisableAndWaitForRemaining(tcp);
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
@@ -1965,7 +1957,6 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_add_to_pollset,
                                             tcp_add_to_pollset_set,
                                             tcp_delete_from_pollset_set,
-                                            tcp_shutdown,
                                             tcp_destroy,
                                             tcp_get_peer,
                                             tcp_get_local_address,
