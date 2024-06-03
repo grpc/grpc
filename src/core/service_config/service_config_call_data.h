@@ -24,7 +24,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"

@@ -82,11 +82,6 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
-  grpc_endpoint_shutdown(m->wrapped_ep, why);
-}
-
 static void me_destroy(grpc_endpoint* ep) {
   intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
   grpc_endpoint_destroy(m->wrapped_ep);
@@ -111,7 +106,6 @@ static const grpc_endpoint_vtable vtable = {me_read,
                                             me_add_to_pollset,
                                             me_add_to_pollset_set,
                                             me_delete_from_pollset_set,
-                                            me_shutdown,
                                             me_destroy,
                                             me_get_peer,
                                             me_get_local_address,
@@ -294,8 +288,6 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   ASSERT_EQ(incoming.count, 1);
   ASSERT_TRUE(grpc_slice_eq(s, incoming.slices[0]));
 
-  grpc_endpoint_shutdown(f.client_ep, GRPC_ERROR_CREATE("test_leftover end"));
-  grpc_endpoint_shutdown(f.server_ep, GRPC_ERROR_CREATE("test_leftover end"));
   grpc_endpoint_destroy(f.client_ep);
   grpc_endpoint_destroy(f.server_ep);
 

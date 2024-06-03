@@ -142,7 +142,7 @@ class ClientTransportTest : public ::testing::Test {
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
     return MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                        call_arena_allocator_->MakeArena(), nullptr);
+                        call_arena_allocator_->MakeArena());
   }
 
  private:

@@ -432,7 +432,7 @@ class OpenTelemetryPluginImpl
       override;
   bool IsInstrumentEnabled(
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle)
-      override;
+      const override;
 
   const absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>&
   server_selector() const {

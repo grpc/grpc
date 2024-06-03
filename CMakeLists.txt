@@ -1093,7 +1093,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx file_watcher_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx filter_causes_close_test)
-  add_dependencies(buildtests_cxx filter_context_test)
   add_dependencies(buildtests_cxx filter_init_fails_test)
   add_dependencies(buildtests_cxx filter_test_test)
   add_dependencies(buildtests_cxx filtered_metadata_test)
@@ -1872,7 +1871,6 @@ add_library(grpc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
-  src/core/ext/gcp/metadata_query.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
@@ -2603,6 +2601,7 @@ add_library(grpc
   src/core/tsi/ssl_transport_security_utils.cc
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_grpc.cc
+  src/core/util/gcp_metadata_query.cc
   src/core/util/http_client/format_request.cc
   src/core/util/http_client/httpcli.cc
   src/core/util/http_client/httpcli_security_connector.cc
@@ -14026,69 +14025,6 @@ target_include_directories(filter_causes_close_test
 )
 
 target_link_libraries(filter_causes_close_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc_authorization_provider
-  grpc_unsecure
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(filter_context_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
-  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  src/core/ext/transport/chaotic_good/client_transport.cc
-  src/core/ext/transport/chaotic_good/frame.cc
-  src/core/ext/transport/chaotic_good/frame_header.cc
-  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  src/core/ext/transport/chaotic_good/server_transport.cc
-  src/core/ext/transport/chaotic_good/settings_metadata.cc
-  src/core/lib/transport/promise_endpoint.cc
-  test/core/end2end/cq_verifier.cc
-  test/core/end2end/end2end_test_main.cc
-  test/core/end2end/end2end_test_suites.cc
-  test/core/end2end/end2end_tests.cc
-  test/core/end2end/fixtures/http_proxy_fixture.cc
-  test/core/end2end/fixtures/local_util.cc
-  test/core/end2end/fixtures/proxy.cc
-  test/core/end2end/tests/filter_context.cc
-  test/core/event_engine/event_engine_test_utils.cc
-  test/core/test_util/fake_stats_plugin.cc
-  test/core/test_util/test_lb_policies.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(filter_context_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(filter_context_test PUBLIC cxx_std_14)
-target_include_directories(filter_context_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(filter_context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_authorization_provider

@@ -949,7 +949,7 @@ grpc_core::ServerCallTracer* OpenTelemetryPluginImpl::GetServerCallTracer(
 }
 
 bool OpenTelemetryPluginImpl::IsInstrumentEnabled(
-    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const {
   return !absl::holds_alternative<Disabled>(
       instruments_data_.at(handle.index).instrument);
 }

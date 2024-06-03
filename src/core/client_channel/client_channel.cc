@@ -822,7 +822,7 @@ CallInitiator ClientChannel::CreateCall(
   // Create an initiator/unstarted-handler pair.
   auto call =
       MakeCallPair(std::move(client_initial_metadata), event_engine_.get(),
-                   call_arena_allocator()->MakeArena(), nullptr);
+                   call_arena_allocator()->MakeArena());
   // Spawn a promise to wait for the resolver result.
   // This will eventually start the call.
   call.initiator.SpawnGuardedUntilCallCompletes(

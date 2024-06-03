@@ -124,7 +124,6 @@ typedef struct grpc_tcp {
   // to protect ourselves when requesting a shutdown.
   gpr_mu mu;
   int shutting_down;
-  grpc_error_handle shutdown_error;
 
   std::string peer_string;
   std::string local_address;
@@ -220,10 +219,8 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         }
         grpc_slice_buffer_reset_and_unref(tcp->read_slices);
         error = grpc_error_set_int(
-            tcp->shutting_down
-                ? GRPC_ERROR_CREATE_REFERENCING("TCP stream shutting down",
-                                                &tcp->shutdown_error, 1)
-                : GRPC_ERROR_CREATE("End of TCP stream"),
+            tcp->shutting_down ? GRPC_ERROR_CREATE("TCP stream shutting down")
+                               : GRPC_ERROR_CREATE("End of TCP stream"),
             grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
       }
     }
@@ -255,10 +252,9 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   if (tcp->shutting_down) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_REFERENCING("TCP socket is shutting down",
-                                          &tcp->shutdown_error, 1),
-            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
+        grpc_error_set_int(GRPC_ERROR_CREATE("TCP socket is shutting down"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
+                           GRPC_STATUS_UNAVAILABLE));
     return;
   }
 
@@ -371,10 +367,9 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   if (tcp->shutting_down) {
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION, cb,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_REFERENCING("TCP socket is shutting down",
-                                          &tcp->shutdown_error, 1),
-            grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE));
+        grpc_error_set_int(GRPC_ERROR_CREATE("TCP socket is shutting down"),
+                           grpc_core::StatusIntProperty::kRpcStatus,
+                           GRPC_STATUS_UNAVAILABLE));
     return;
   }
 
@@ -479,21 +474,14 @@ static void win_delete_from_pollset_set(grpc_endpoint* /* ep */,
 // we're not going to protect against these. However the IO Completion Port
 // callback will happen from another thread, so we need to protect against
 // concurrent access of the data structure in that regard.
-static void win_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
+static void win_destroy(grpc_endpoint* ep) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   gpr_mu_lock(&tcp->mu);
   // At that point, what may happen is that we're already inside the IOCP
   // callback. See the comments in on_read and on_write.
-  if (!tcp->shutting_down) {
-    tcp->shutting_down = 1;
-    tcp->shutdown_error = why;
-  }
+  tcp->shutting_down = 1;
   grpc_winsocket_shutdown(tcp->socket);
   gpr_mu_unlock(&tcp->mu);
-}
-
-static void win_destroy(grpc_endpoint* ep) {
-  grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
   TCP_UNREF(tcp, "destroy");
 }
@@ -517,7 +505,6 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_add_to_pollset,
                                       win_add_to_pollset_set,
                                       win_delete_from_pollset_set,
-                                      win_shutdown,
                                       win_destroy,
                                       win_get_peer,
                                       win_get_local_address,
