@@ -130,11 +130,8 @@ RetryFilter::RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
           server_name, config->max_milli_tokens(), config->milli_token_ratio());
 }
 
-const RetryMethodConfig* RetryFilter::GetRetryPolicy(
-    const grpc_call_context_element* context) {
-  if (context == nullptr) return nullptr;
-  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
-      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+const RetryMethodConfig* RetryFilter::GetRetryPolicy(Arena* arena) {
+  auto* svc_cfg_call_data = arena->GetContext<ServiceConfigCallData>();
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const RetryMethodConfig*>(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));

@@ -18,6 +18,7 @@
 #include <type_traits>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 

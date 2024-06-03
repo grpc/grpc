@@ -20,14 +20,16 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/context.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/prioritized_race.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/message.h"
@@ -133,6 +135,23 @@ class CallSpineInterface {
             PushServerTrailingMetadata(std::move(status));
           }
         });
+  }
+
+  // Wrap a promise so that if the call completes that promise is cancelled.
+  template <typename Promise>
+  auto UntilCallCompletes(Promise promise) {
+    using Result = PromiseResult<Promise>;
+    return PrioritizedRace(std::move(promise), Map(WasCancelled(), [](bool) {
+                             return FailureStatusCast<Result>(Failure{});
+                           }));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    SpawnGuarded(name, [this, promise_factory]() mutable {
+      return UntilCallCompletes(promise_factory());
+    });
   }
 
  private:
@@ -260,28 +279,20 @@ class CallSpine final : public CallSpineInterface, public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
-      grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-      RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned,
-      grpc_call_context_element* legacy_context) {
-    return RefCountedPtr<CallSpine>(arena->New<CallSpine>(
-        std::move(client_initial_metadata), event_engine, arena,
-        std::move(call_arena_allocator_if_arena_is_owned), legacy_context));
+      grpc_event_engine::experimental::EventEngine* event_engine,
+      RefCountedPtr<Arena> arena) {
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
+        std::move(client_initial_metadata), event_engine, std::move(arena)));
   }
 
-  ~CallSpine() override {
-    if (legacy_context_is_owned_) {
-      for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
-        grpc_call_context_element& elem = legacy_context_[i];
-        if (elem.destroy != nullptr) elem.destroy(&elem);
-      }
-    }
-  }
+  ~CallSpine() override {}
 
   CallFilters& call_filters() { return call_filters_; }
 
   Party& party() override { return *this; }
 
-  Arena* arena() override { return arena_; }
+  Arena* arena() override { return arena_.get(); }
 
   void IncrementRefCount() override { Party::IncrementRefCount(); }
 
@@ -345,13 +356,6 @@ class CallSpine final : public CallSpineInterface, public Party {
     return *call_filters().unprocessed_client_initial_metadata();
   }
 
-  // TODO(ctiller): re-evaluate legacy context apis
-  grpc_call_context_element& legacy_context(grpc_context_index index) const {
-    return legacy_context_[index];
-  }
-
-  grpc_call_context_element* legacy_context() { return legacy_context_; }
-
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_;
   }
@@ -365,40 +369,22 @@ class CallSpine final : public CallSpineInterface, public Party {
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
             grpc_event_engine::experimental::EventEngine* event_engine,
-            Arena* arena,
-            RefCountedPtr<CallArenaAllocator> call_arena_allocator,
-            grpc_call_context_element* legacy_context)
+            RefCountedPtr<Arena> arena)
       : Party(1),
+        arena_(std::move(arena)),
         call_filters_(std::move(client_initial_metadata)),
-        arena_(arena),
-        event_engine_(event_engine),
-        call_arena_allocator_if_arena_is_owned_(
-            std::move(call_arena_allocator)) {
-    if (legacy_context == nullptr) {
-      legacy_context_ = static_cast<grpc_call_context_element*>(
-          arena->Alloc(sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
-      memset(legacy_context_, 0,
-             sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT);
-      legacy_context_is_owned_ = true;
-    } else {
-      legacy_context_ = legacy_context;
-      legacy_context_is_owned_ = false;
-    }
-  }
+        event_engine_(event_engine) {}
 
-  class ScopedContext
-      : public ScopedActivity,
-        public promise_detail::Context<Arena>,
-        public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine>,
-        public promise_detail::Context<grpc_call_context_element> {
+  class ScopedContext : public ScopedActivity,
+                        public promise_detail::Context<Arena>,
+                        public promise_detail::Context<
+                            grpc_event_engine::experimental::EventEngine> {
    public:
     explicit ScopedContext(CallSpine* spine)
         : ScopedActivity(spine),
-          Context<Arena>(spine->arena_),
+          Context<Arena>(spine->arena_.get()),
           Context<grpc_event_engine::experimental::EventEngine>(
-              spine->event_engine()),
-          Context<grpc_call_context_element>(spine->legacy_context_) {}
+              spine->event_engine()) {}
   };
 
   bool RunParty() override {
@@ -407,30 +393,20 @@ class CallSpine final : public CallSpineInterface, public Party {
   }
 
   void PartyOver() override {
-    Arena* a = arena_;
-    RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned =
-        std::move(call_arena_allocator_if_arena_is_owned_);
+    auto arena = arena_;
     {
       ScopedContext context(this);
       CancelRemainingParticipants();
-      a->DestroyManagedNewObjects();
+      arena->DestroyManagedNewObjects();
     }
     this->~CallSpine();
-    if (call_arena_allocator_if_arena_is_owned != nullptr) {
-      call_arena_allocator_if_arena_is_owned->Destroy(a);
-    }
   }
 
+  const RefCountedPtr<Arena> arena_;
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
-  Arena* const arena_;
   // Event engine associated with this call
   grpc_event_engine::experimental::EventEngine* const event_engine_;
-  // Legacy context
-  // TODO(ctiller): remove
-  grpc_call_context_element* legacy_context_;
-  RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned_;
-  bool legacy_context_is_owned_;
 };
 
 class CallInitiator {
@@ -470,6 +446,12 @@ class CallInitiator {
   template <typename PromiseFactory>
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnGuarded(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
@@ -527,6 +509,12 @@ class CallHandler {
   }
 
   template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
+  }
+
+  template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
     spine_->SpawnInfallible(name, std::move(promise_factory));
   }
@@ -540,15 +528,6 @@ class CallHandler {
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
     return DownCast<CallSpine*>(spine_.get())->event_engine();
-  }
-
-  // TODO(ctiller): re-evaluate this API
-  const grpc_call_context_element* legacy_context() const {
-    return DownCast<CallSpine*>(spine_.get())->legacy_context();
-  }
-
-  grpc_call_context_element* legacy_context() {
-    return DownCast<CallSpine*>(spine_.get())->legacy_context();
   }
 
  private:
@@ -575,6 +554,12 @@ class UnstartedCallHandler {
   void SpawnGuarded(absl::string_view name, PromiseFactory promise_factory,
                     DebugLocation whence = {}) {
     spine_->SpawnGuarded(name, std::move(promise_factory), whence);
+  }
+
+  template <typename PromiseFactory>
+  void SpawnGuardedUntilCallCompletes(absl::string_view name,
+                                      PromiseFactory promise_factory) {
+    spine_->SpawnGuardedUntilCallCompletes(name, std::move(promise_factory));
   }
 
   template <typename PromiseFactory>
@@ -616,9 +601,8 @@ struct CallInitiatorAndHandler {
 
 CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena,
-    RefCountedPtr<CallArenaAllocator> call_arena_allocator_if_arena_is_owned,
-    grpc_call_context_element* legacy_context);
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {

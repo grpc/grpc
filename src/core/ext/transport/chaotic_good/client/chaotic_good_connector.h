@@ -79,10 +79,7 @@ class ChaoticGoodConnector : public SubchannelConnector {
       RefCountedPtr<ChaoticGoodConnector> self);
   static void OnHandshakeDone(void* arg, grpc_error_handle error);
 
-  grpc_event_engine::experimental::MemoryAllocator memory_allocator_ =
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-          "connect_activity");
-  ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
+  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   Mutex mu_;
   Args args_;
   Result* result_ ABSL_GUARDED_BY(mu_);

@@ -670,6 +670,7 @@ LIBGRPC_SRC = \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
     src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \
     src/core/client_channel/client_channel_plugin.cc \
@@ -677,6 +678,7 @@ LIBGRPC_SRC = \
     src/core/client_channel/config_selector.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \
+    src/core/client_channel/load_balanced_call_destination.cc \
     src/core/client_channel/local_subchannel_pool.cc \
     src/core/client_channel/retry_filter.cc \
     src/core/client_channel/retry_filter_legacy_call_data.cc \
@@ -701,7 +703,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
-    src/core/ext/gcp/metadata_query.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -1062,7 +1063,6 @@ LIBGRPC_SRC = \
     src/core/handshaker/proxy_mapper_registry.cc \
     src/core/handshaker/security/secure_endpoint.cc \
     src/core/handshaker/security/security_handshaker.cc \
-    src/core/handshaker/security/tsi_error.cc \
     src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
@@ -1137,6 +1137,7 @@ LIBGRPC_SRC = \
     src/core/lib/experiments/config.cc \
     src/core/lib/experiments/experiments.cc \
     src/core/lib/gprpp/crash.cc \
+    src/core/lib/gprpp/dump_args.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/host_port.cc \
@@ -1162,10 +1163,6 @@ LIBGRPC_SRC = \
     src/core/lib/gprpp/windows/stat.cc \
     src/core/lib/gprpp/windows/thd.cc \
     src/core/lib/gprpp/work_serializer.cc \
-    src/core/lib/http/format_request.cc \
-    src/core/lib/http/httpcli.cc \
-    src/core/lib/http/httpcli_security_connector.cc \
-    src/core/lib/http/parser.cc \
     src/core/lib/iomgr/buffer_list.cc \
     src/core/lib/iomgr/call_combiner.cc \
     src/core/lib/iomgr/cfstream_handle.cc \
@@ -1458,6 +1455,11 @@ LIBGRPC_SRC = \
     src/core/util/alloc.cc \
     src/core/util/android/log.cc \
     src/core/util/atm.cc \
+    src/core/util/gcp_metadata_query.cc \
+    src/core/util/http_client/format_request.cc \
+    src/core/util/http_client/httpcli.cc \
+    src/core/util/http_client/httpcli_security_connector.cc \
+    src/core/util/http_client/parser.cc \
     src/core/util/iphone/cpu.cc \
     src/core/util/json/json_object_loader.cc \
     src/core/util/json/json_reader.cc \
@@ -1935,6 +1937,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/dh_extra/params.c \
     third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
+    third_party/boringssl-with-bazel/src/crypto/dilithium/dilithium.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/ec_extra/ec_asn1.c \

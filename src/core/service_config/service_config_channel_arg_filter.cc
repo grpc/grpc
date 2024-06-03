@@ -35,7 +35,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -113,8 +112,7 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
         md.get_pointer(HttpPathMetadata())->c_slice());
   }
   auto* arena = GetContext<Arena>();
-  auto* service_config_call_data = arena->New<ServiceConfigCallData>(
-      arena, GetContext<grpc_call_context_element>());
+  auto* service_config_call_data = arena->New<ServiceConfigCallData>(arena);
   service_config_call_data->SetServiceConfig(filter->service_config_,
                                              method_configs);
 }

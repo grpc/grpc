@@ -16,7 +16,9 @@
 //
 //
 
-#include "src/core/lib/http/httpcli.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/util/http_client/httpcli.h"
 
 #include <limits.h>
 
@@ -32,7 +34,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -41,8 +42,6 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/http/format_request.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -52,6 +51,8 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/http_client/format_request.h"
+#include "src/core/util/http_client/parser.h"
 
 namespace grpc_core {
 
@@ -243,11 +244,8 @@ void HttpRequest::AppendError(grpc_error_handle error) {
   }
   const grpc_resolved_address* addr = &addresses_[next_address_ - 1];
   auto addr_text = grpc_sockaddr_to_uri(addr);
-  overall_error_ = grpc_error_add_child(
-      overall_error_,
-      grpc_error_set_str(
-          error, StatusStrProperty::kTargetAddress,
-          addr_text.ok() ? addr_text.value() : addr_text.status().ToString()));
+  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, std::move(error));
+  overall_error_ = grpc_error_add_child(overall_error_, std::move(error));
 }
 
 void HttpRequest::OnReadInternal(grpc_error_handle error) {
