@@ -32,10 +32,10 @@
 
 #include <grpc/support/metrics.h>
 #include <grpc/support/port_platform.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
-class ChannelArguments;
-class ServerBuilder;
 namespace internal {
 class OpenTelemetryPluginBuilderImpl;
 }  // namespace internal
@@ -153,12 +153,12 @@ class OpenTelemetryPluginBuilder {
       absl::AnyInvocable<bool(const ChannelScope& /*scope*/) const>
           channel_scope_filter);
   /// Builds and registers a global plugin that acts on all channels and servers
-  /// running on the process. Note that calling BuildAndRegisterGlobal more than
-  /// once when the first call succeeded is undefined behavior.
+  /// running on the process. Must be called no more than once and must not be
+  /// called if Build() is called.
   absl::Status BuildAndRegisterGlobal();
   /// Builds an open telemetry plugin, returns the plugin object when succeeded
-  /// or an error status when failed. Note that calling Build more than once
-  /// when the first call succeeded is undefined behavior.
+  /// or an error status when failed. Must be called no more than once and must
+  /// not be called if BuildAndRegisterGlobal() is called.
   GRPC_MUST_USE_RESULT absl::StatusOr<std::shared_ptr<OpenTelemetryPlugin>>
   Build();
 

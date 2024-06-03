@@ -33,8 +33,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/server_builder.h>
-#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/version_info.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
