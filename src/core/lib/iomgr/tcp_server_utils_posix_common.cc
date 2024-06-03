@@ -36,7 +36,6 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -73,10 +72,8 @@ static void init_max_accept_queue_size(void) {
   s_max_accept_queue_size = n;
 
   if (s_max_accept_queue_size < MIN_SAFE_ACCEPT_QUEUE_SIZE) {
-    gpr_log(GPR_INFO,
-            "Suspiciously small accept queue (%d) will probably lead to "
-            "connection drops",
-            s_max_accept_queue_size);
+    LOG(INFO) << "Suspiciously small accept queue (" << s_max_accept_queue_size
+              << ") will probably lead to connection drops";
   }
 }
 

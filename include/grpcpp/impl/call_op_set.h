@@ -24,13 +24,13 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/call.h>
@@ -976,8 +976,8 @@ class CallOpSet : public CallOpSetInterface,
       // A failure here indicates an API misuse; for example, doing a Write
       // while another Write is already pending on the same RPC or invoking
       // WritesDone multiple times
-      gpr_log(GPR_ERROR, "API misuse of type %s observed",
-              grpc_call_error_to_string(err));
+      LOG(ERROR) << "API misuse of type " << grpc_call_error_to_string(err)
+                 << " observed";
       CHECK(false);
     }
   }
