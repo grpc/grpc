@@ -76,27 +76,6 @@ int gpr_should_log(gpr_log_severity severity) {
              : 0;
 }
 
-void absl_disable_debug() {}
-
-void gpr_to_absl_verbosity_setting_init(void) {
-  absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
-  DVLOG(2) << "Log verbosity: " << verbosity;
-  if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
-    LOG(WARNING) << "Not suitable for production. Prefer WARNING or ERROR.";
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
-  } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
-    LOG(ERROR) << "Not suitable for production. Prefer WARNING or ERROR.";
-    absl::SetVLogLevel("*grpc*/*", 2);
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
-  } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
-  } else if (absl::EqualsIgnoreCase(verbosity, "WARNING")) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kWarning);
-  } else if (!absl::EqualsIgnoreCase(verbosity, "NONE")) {
-    LOG(ERROR) << "Unknown log verbosity: " << verbosity;
-  }
-}
-
 void gpr_default_log(gpr_log_func_args* args) {
   switch (args->severity) {
     case GPR_LOG_SEVERITY_DEBUG:
@@ -144,6 +123,27 @@ static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
   return error_value;
 }
 
+void disable_vlog_for_grpc() { absl::SetVLogLevel("*grpc*/*", -1); }
+
+void gpr_to_absl_verbosity_setting_init(void) {
+  absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
+  DVLOG(2) << "Log verbosity: " << verbosity;
+  if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
+    LOG(WARNING) << "Not suitable for production. Prefer WARNING or ERROR.";
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
+    LOG(ERROR) << "Not suitable for production. Prefer WARNING or ERROR.";
+    absl::SetVLogLevel("*grpc*/*", 2);
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
+  } else if (absl::EqualsIgnoreCase(verbosity, "WARNING")) {
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kWarning);
+  } else if (!absl::EqualsIgnoreCase(verbosity, "NONE")) {
+    LOG(ERROR) << "Unknown log verbosity: " << verbosity;
+  }
+}
+
 void gpr_log_verbosity_init() {
   // init verbosity when it hasn't been set
   if ((gpr_atm_no_barrier_load(&g_min_severity_to_print)) ==
@@ -170,6 +170,9 @@ void gpr_log_verbosity_init() {
                              min_severity_to_print_stacktrace);
   }
   gpr_to_absl_verbosity_setting_init();
+  if (grpc_core::ConfigVars::Get().GrpcDisableVlog()) {
+    disable_vlog_for_grpc();
+  }
 }
 
 void gpr_set_log_function(gpr_log_func f) {
