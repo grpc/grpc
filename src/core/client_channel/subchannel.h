@@ -64,30 +64,35 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel final : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
-  ConnectedSubchannel(
-      grpc_channel_stack* channel_stack, const ChannelArgs& args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
-  ~ConnectedSubchannel() override;
-
-  void StartWatch(grpc_pollset_set* interested_parties,
-                  OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
-
-  void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-
-  grpc_channel_stack* channel_stack() const { return channel_stack_; }
   const ChannelArgs& args() const { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
 
-  size_t GetInitialCallSizeEstimate() const;
+  virtual void StartWatch(
+      grpc_pollset_set* interested_parties,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) = 0;
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs call_args);
+  // Methods for v3 stack.
+  virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
+  virtual RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
+      const = 0;
+
+  // Methods for legacy stack.
+  virtual grpc_channel_stack* channel_stack() const = 0;
+  virtual size_t GetInitialCallSizeEstimate() const = 0;
+  virtual ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args) = 0;
+  virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
+
+ protected:
+  ConnectedSubchannel(
+      const ChannelArgs& args,
+      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
 
  private:
-  grpc_channel_stack* channel_stack_;
   ChannelArgs args_;
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
@@ -243,6 +248,12 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     return connected_subchannel_;
   }
 
+  RefCountedPtr<UnstartedCallDestination> call_destination() {
+    MutexLock lock(&mu_);
+    if (connected_subchannel_ == nullptr) return nullptr;
+    return connected_subchannel_->unstarted_call_destination();
+  }
+
   // Attempt to connect to the backend.  Has no effect if already connected.
   void RequestConnection() ABSL_LOCKS_EXCLUDED(mu_);
 
@@ -271,6 +282,12 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine() {
     return event_engine_;
   }
+
+  // Exposed for testing purposes only.
+  static ChannelArgs MakeSubchannelArgs(
+      const ChannelArgs& channel_args, const ChannelArgs& address_args,
+      const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
+      const std::string& channel_default_authority);
 
  private:
   // Tears down any existing connection, and arranges for destruction

@@ -113,8 +113,7 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
         md.get_pointer(HttpPathMetadata())->c_slice());
   }
   auto* arena = GetContext<Arena>();
-  auto* service_config_call_data = arena->New<ServiceConfigCallData>(
-      arena, GetContext<grpc_call_context_element>());
+  auto* service_config_call_data = arena->New<ServiceConfigCallData>(arena);
   service_config_call_data->SetServiceConfig(filter->service_config_,
                                              method_configs);
 }

@@ -119,9 +119,7 @@ MessageHandle ChannelCompression::CompressMessage(
     gpr_log(GPR_INFO, "CompressMessage: len=%" PRIdPTR " alg=%d flags=%d",
             message->payload()->Length(), algorithm, message->flags());
   }
-  auto* call_context = GetContext<grpc_call_context_element>();
-  auto* call_tracer = static_cast<CallTracerInterface*>(
-      call_context[GRPC_CONTEXT_CALL_TRACER].value);
+  auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordSendMessage(*message->payload());
   }
@@ -178,9 +176,7 @@ absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
             message->payload()->Length(),
             args.max_recv_message_length.value_or(-1), args.algorithm);
   }
-  auto* call_context = GetContext<grpc_call_context_element>();
-  auto* call_tracer = static_cast<CallTracerInterface*>(
-      call_context[GRPC_CONTEXT_CALL_TRACER].value);
+  auto* call_tracer = MaybeGetContext<CallTracerInterface>();
   if (call_tracer != nullptr) {
     call_tracer->RecordReceivedMessage(*message->payload());
   }
@@ -236,8 +232,7 @@ ChannelCompression::DecompressArgs ChannelCompression::HandleIncomingMetadata(
   auto max_recv_message_length = max_recv_size_;
   const MessageSizeParsedConfig* limits =
       MessageSizeParsedConfig::GetFromCallContext(
-          GetContext<grpc_call_context_element>(),
-          message_size_service_config_parser_index_);
+          GetContext<Arena>(), message_size_service_config_parser_index_);
   if (limits != nullptr && limits->max_recv_size().has_value() &&
       (!max_recv_message_length.has_value() ||
        *limits->max_recv_size() < *max_recv_message_length)) {

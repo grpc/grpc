@@ -28,6 +28,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/down_cast.h"
 #include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -46,14 +47,15 @@ namespace grpc_core {
 //
 // This will be used by CRTP (curiously-recurring template pattern), e.g.:
 //   class MyClass : public RefCounted<MyClass> { ... };
-template <typename Child>
-class DualRefCounted {
+//
+// Impl & UnrefBehavior are as per RefCounted.
+template <typename Child, typename Impl = PolymorphicRefCount,
+          typename UnrefBehavior = UnrefDelete>
+class DualRefCounted : public Impl {
  public:
   // Not copyable nor movable.
   DualRefCounted(const DualRefCounted&) = delete;
   DualRefCounted& operator=(const DualRefCounted&) = delete;
-
-  virtual ~DualRefCounted() = default;
 
   GRPC_MUST_USE_RESULT RefCountedPtr<Child> Ref() {
     IncrementRefCount();
@@ -218,7 +220,7 @@ class DualRefCounted {
     CHECK_GT(weak_refs, 0u);
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      delete static_cast<Child*>(this);
+      unref_behavior_(static_cast<Child*>(this));
     }
   }
   void WeakUnref(const DebugLocation& location, const char* reason) {
@@ -245,7 +247,7 @@ class DualRefCounted {
     (void)reason;
 #endif
     if (GPR_UNLIKELY(prev_ref_pair == MakeRefPair(0, 1))) {
-      delete static_cast<Child*>(this);
+      unref_behavior_(static_cast<const Child*>(this));
     }
   }
 
@@ -268,6 +270,9 @@ class DualRefCounted {
 
   // Ref count has dropped to zero, so the object is now orphaned.
   virtual void Orphaned() = 0;
+
+  // Note: Depending on the Impl used, this dtor can be implicitly virtual.
+  ~DualRefCounted() = default;
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
@@ -362,6 +367,7 @@ class DualRefCounted {
   const char* trace_;
 #endif
   std::atomic<uint64_t> refs_{0};
+  GPR_NO_UNIQUE_ADDRESS UnrefBehavior unref_behavior_;
 };
 
 }  // namespace grpc_core

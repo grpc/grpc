@@ -41,13 +41,7 @@ using testing::StrictMock;
 
 namespace grpc_core {
 
-class PipeTest : public ::testing::Test {
- protected:
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-};
-
-TEST_F(PipeTest, CanSendAndReceive) {
+TEST(PipeTest, CanSendAndReceive) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -68,10 +62,10 @@ TEST_F(PipeTest, CanSendAndReceive) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanInterceptAndMapAtSender) {
+TEST(PipeTest, CanInterceptAndMapAtSender) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -93,10 +87,10 @@ TEST_F(PipeTest, CanInterceptAndMapAtSender) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanInterceptAndMapAtReceiver) {
+TEST(PipeTest, CanInterceptAndMapAtReceiver) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -118,10 +112,10 @@ TEST_F(PipeTest, CanInterceptAndMapAtReceiver) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, InterceptionOrderingIsCorrect) {
+TEST(PipeTest, InterceptionOrderingIsCorrect) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -154,10 +148,10 @@ TEST_F(PipeTest, InterceptionOrderingIsCorrect) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanReceiveAndSend) {
+TEST(PipeTest, CanReceiveAndSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -178,10 +172,10 @@ TEST_F(PipeTest, CanReceiveAndSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanSeeClosedOnSend) {
+TEST(PipeTest, CanSeeClosedOnSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -208,10 +202,10 @@ TEST_F(PipeTest, CanSeeClosedOnSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanSeeClosedOnReceive) {
+TEST(PipeTest, CanSeeClosedOnReceive) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -240,10 +234,10 @@ TEST_F(PipeTest, CanSeeClosedOnReceive) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanCloseSend) {
+TEST(PipeTest, CanCloseSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -270,10 +264,10 @@ TEST_F(PipeTest, CanCloseSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanCloseWithErrorSend) {
+TEST(PipeTest, CanCloseWithErrorSend) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -300,10 +294,10 @@ TEST_F(PipeTest, CanCloseWithErrorSend) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanCloseWithErrorRecv) {
+TEST(PipeTest, CanCloseWithErrorRecv) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -330,10 +324,10 @@ TEST_F(PipeTest, CanCloseWithErrorRecv) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanCloseSendWithInterceptor) {
+TEST(PipeTest, CanCloseSendWithInterceptor) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -361,10 +355,10 @@ TEST_F(PipeTest, CanCloseSendWithInterceptor) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanCancelSendWithInterceptor) {
+TEST(PipeTest, CanCancelSendWithInterceptor) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -389,10 +383,10 @@ TEST_F(PipeTest, CanCancelSendWithInterceptor) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
-TEST_F(PipeTest, CanFlowControlThroughManyStages) {
+TEST(PipeTest, CanFlowControlThroughManyStages) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   auto done = std::make_shared<bool>(false);
@@ -437,11 +431,11 @@ TEST_F(PipeTest, CanFlowControlThroughManyStages) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
   ASSERT_TRUE(*done);
 }
 
-TEST_F(PipeTest, AwaitClosedWorks) {
+TEST(PipeTest, AwaitClosedWorks) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   MakeActivity(
@@ -468,7 +462,7 @@ TEST_F(PipeTest, AwaitClosedWorks) {
       },
       NoWakeupScheduler(),
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
-      MakeScopedArena(1024, &memory_allocator_));
+      SimpleArenaAllocator()->MakeArena());
 }
 
 class FakeActivity final : public Activity {
@@ -483,7 +477,7 @@ class FakeActivity final : public Activity {
   }
 };
 
-TEST_F(PipeTest, PollAckWaitsForReadyClosed) {
+TEST(PipeTest, PollAckWaitsForReadyClosed) {
   FakeActivity().Run([]() {
     pipe_detail::Center<int> c;
     int i = 1;

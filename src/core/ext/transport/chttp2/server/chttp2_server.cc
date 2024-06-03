@@ -474,23 +474,18 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       // handshaker may have handed off the connection to some external
       // code, so we can just clean up here without creating a transport.
       if (args->endpoint != nullptr) {
-        Transport* transport =
-            grpc_create_chttp2_transport(args->args, args->endpoint, false);
+        RefCountedPtr<Transport> transport =
+            grpc_create_chttp2_transport(args->args, args->endpoint, false)
+                ->Ref();
         grpc_error_handle channel_init_err =
             self->connection_->listener_->server_->SetupTransport(
-                transport, self->accepting_pollset_, args->args,
-                grpc_chttp2_transport_get_socket_node(transport));
+                transport.get(), self->accepting_pollset_, args->args,
+                grpc_chttp2_transport_get_socket_node(transport.get()));
         if (channel_init_err.ok()) {
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
-          // Note: The reinterpret_cast<>s here are safe, because
-          // grpc_chttp2_transport is a C-style extension of
-          // Transport, so this is morally equivalent of a
-          // static_cast<> to a derived class.
-          // TODO(roth): Change to static_cast<> when we C++-ify the
-          // transport API.
           self->connection_->transport_ =
-              reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
+              DownCast<grpc_chttp2_transport*>(transport.get())->Ref();
           self->Ref().release();  // Held by OnReceiveSettings().
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
@@ -520,9 +515,9 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
                                            grpc_schedule_on_exec_ctx_);
             cleanup_connection = true;
           }
-          grpc_chttp2_transport_start_reading(transport, args->read_buffer,
-                                              &self->on_receive_settings_,
-                                              on_close);
+          grpc_chttp2_transport_start_reading(
+              transport.get(), args->read_buffer, &self->on_receive_settings_,
+              on_close);
           self->timer_handle_ = self->connection_->event_engine_->RunAfter(
               self->deadline_ - Timestamp::Now(),
               [self = self->Ref()]() mutable {

@@ -40,8 +40,10 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // Forward declaration to avoid dependency loop.
@@ -52,7 +54,7 @@ namespace grpc_core {
 // Forward declaration to avoid dependency loop.
 class Transport;
 
-class Channel : public RefCounted<Channel>,
+class Channel : public InternallyRefCounted<Channel>,
                 public CppImplOf<Channel, grpc_channel> {
  public:
   struct RegisteredCall {
@@ -66,10 +68,17 @@ class Channel : public RefCounted<Channel>,
     ~RegisteredCall();
   };
 
-  virtual void Orphan() = 0;
-
-  virtual Arena* CreateArena() = 0;
-  virtual void DestroyArena(Arena* arena) = 0;
+  // Though internally ref counted channels expose their "Ref" method to
+  // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
+  // singleton decision maker on whether the channel should be destroyed or
+  // not.
+  // TODO(ctiller): in a future change (I have it written) these will be removed
+  // and substituted with DualRefCounted<Channel> as a base.
+  RefCountedPtr<Channel> Ref() { return InternallyRefCounted<Channel>::Ref(); }
+  template <typename T>
+  RefCountedPtr<T> RefAsSubclass() {
+    return InternallyRefCounted<Channel>::RefAsSubclass<T>();
+  }
 
   virtual bool IsLame() const = 0;
 
@@ -129,6 +138,10 @@ class Channel : public RefCounted<Channel>,
   virtual bool is_client() const { return true; }
   virtual bool is_promising() const { return true; }
 
+  CallArenaAllocator* call_arena_allocator() const {
+    return call_arena_allocator_.get();
+  }
+
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
 
@@ -143,6 +156,7 @@ class Channel : public RefCounted<Channel>,
   // the C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       registration_table_ ABSL_GUARDED_BY(mu_);
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
 };
 
 }  // namespace grpc_core

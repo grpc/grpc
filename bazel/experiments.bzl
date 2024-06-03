@@ -18,7 +18,6 @@
 
 EXPERIMENT_ENABLES = {
     "call_status_override_on_cancellation": "call_status_override_on_cancellation",
-    "call_v3": "call_v3",
     "canary_client_privacy": "canary_client_privacy",
     "client_privacy": "client_privacy",
     "event_engine_client": "event_engine_client",
@@ -28,6 +27,7 @@ EXPERIMENT_ENABLES = {
     "http2_stats_fix": "http2_stats_fix",
     "keepalive_fix": "keepalive_fix",
     "keepalive_server_fix": "keepalive_server_fix",
+    "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
@@ -44,6 +44,7 @@ EXPERIMENT_ENABLES = {
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
+    "call_v3": "call_v3,event_engine_client,event_engine_listener,work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [
@@ -57,9 +58,15 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "core_end2end_test": [
+                "event_engine_client",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -78,14 +85,10 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
-                "event_engine_client",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
