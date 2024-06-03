@@ -37,7 +37,6 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -503,9 +502,7 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   if (result.ok()) {
     set_rcvlowat_ = *result;
   } else {
-    gpr_log(GPR_ERROR, "%s",
-            absl::StrCat("ERROR in SO_RCVLOWAT: ", result.status().message())
-                .c_str());
+    LOG(ERROR) << "ERROR in SO_RCVLOWAT: " << result.status().message();
   }
 }
 
@@ -1280,15 +1277,14 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (zerocopy_enabled) {
     if (GetRLimitMemLockMax() == 0) {
       zerocopy_enabled = false;
-      gpr_log(
-          GPR_ERROR,
-          "Tx zero-copy will not be used by gRPC since RLIMIT_MEMLOCK value is "
-          "not set. Consider raising its value with setrlimit().");
+      LOG(ERROR) << "Tx zero-copy will not be used by gRPC since RLIMIT_MEMLOCK"
+                 << " value is not set. Consider raising its value with "
+                 << "setrlimit().";
     } else if (GetUlimitHardMemLock() == 0) {
       zerocopy_enabled = false;
-      gpr_log(GPR_ERROR,
-              "Tx zero-copy will not be used by gRPC since hard memlock ulimit "
-              "value is not set. Use ulimit -l <value> to set its value.");
+      LOG(ERROR) << "Tx zero-copy will not be used by gRPC since hard memlock "
+                 << "ulimit value is not set. Use ulimit -l <value> to set its "
+                 << "value.";
     } else {
       const int enable = 1;
       if (setsockopt(fd_, SOL_SOCKET, SO_ZEROCOPY, &enable, sizeof(enable)) !=
@@ -1299,10 +1295,9 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     }
 
     if (zerocopy_enabled) {
-      gpr_log(GPR_INFO,
-              "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value = "
-              "%" PRIu64 ",ulimit hard memlock value = %" PRIu64,
-              GetRLimitMemLockMax(), GetUlimitHardMemLock());
+      LOG(INFO) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
+                << "=" << GetRLimitMemLockMax()
+                << ",ulimit hard memlock value = " << GetUlimitHardMemLock();
     }
   }
 #endif  // GRPC_LINUX_ERRQUEUE
@@ -1314,7 +1309,7 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
   if (setsockopt(fd_, SOL_TCP, TCP_INQ, &one, sizeof(one)) == 0) {
     inq_capable_ = true;
   } else {
-    gpr_log(GPR_DEBUG, "cannot set inq fd=%d errno=%d", fd_, errno);
+    VLOG(2) << "cannot set inq fd=" << fd_ << " errno=" << errno;
     inq_capable_ = false;
   }
 #else
