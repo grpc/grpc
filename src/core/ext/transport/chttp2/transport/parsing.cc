@@ -942,13 +942,8 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
-
-    if (s->context != nullptr) {
-      call_tracer = static_cast<grpc_core::CallTracerAnnotationInterface*>(
-          static_cast<grpc_call_context_element*>(
-              s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-              .value);
-    }
+    call_tracer =
+        s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   }
   grpc_error_handle error = parser->Parse(
       slice, is_last != 0, absl::BitGenRef(t->bitgen), call_tracer);

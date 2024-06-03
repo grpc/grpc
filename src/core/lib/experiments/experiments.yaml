@@ -52,6 +52,8 @@
   expiry: 2024/06/01
   owner: ctiller@google.com
   test_tags: []
+  requires: ["work_serializer_dispatch", "event_engine_listener", "event_engine_client"]
+  allow_in_fuzzing_config: false
 - name: canary_client_privacy
   description:
     If set, canary client privacy
@@ -120,6 +122,14 @@
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: max_pings_wo_data_throttle
+  description:
+    Experiment to throttle pings to a period of 1 min when
+    GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
+    completely blocking).
+  expiry: 2024/12/31
+  owner: yashkt@google.com
+  test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever

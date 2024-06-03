@@ -153,12 +153,6 @@ grpc_slice EncodeHeaderIntoBytes(
     const std::vector<std::pair<std::string, std::string>>& header_fields) {
   std::unique_ptr<grpc_core::HPackCompressor> compressor =
       std::make_unique<grpc_core::HPackCompressor>();
-
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b;
 
   for (const auto& field : header_fields) {
@@ -307,7 +301,6 @@ static void verify_continuation_headers(const char* key, const char* value,
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_slice_buffer output;
   grpc_metadata_batch b;
   b.Append(key, grpc_core::Slice::FromStaticString(value), CrashOnAppendError);
@@ -344,11 +337,6 @@ TEST(HpackEncoderTest, TestContinuationHeaders) {
 }
 
 TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b;
   // Haiku by Bard
   b.Append("grpc-trace-bin",
@@ -374,11 +362,6 @@ TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
 }
 
 TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b;
   // Haiku by Bard
   b.Append("grpc-trace-bin",

@@ -16,7 +16,9 @@
 //
 //
 
-#include "src/core/lib/http/format_request.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/util/http_client/format_request.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -31,9 +33,8 @@
 #include "absl/strings/string_view.h"
 
 #include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/http/httpcli.h"
+#include "src/core/util/http_client/httpcli.h"
 
 static void fill_common_header(const grpc_http_request* request,
                                const char* host, const char* path,

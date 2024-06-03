@@ -211,14 +211,9 @@ bool CmsgIsZeroCopy(const cmsghdr& cmsg) {
 }
 #endif  // GRPC_LINUX_ERRQUEUE
 
-absl::Status PosixOSError(int error_no, const char* call_name) {
-  absl::Status s = absl::UnknownError(grpc_core::StrError(error_no));
-  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, error_no);
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
-                          grpc_core::StrError(error_no));
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
-                          call_name);
-  return s;
+absl::Status PosixOSError(int error_no, absl::string_view call_name) {
+  return absl::UnknownError(absl::StrCat(
+      call_name, ": ", grpc_core::StrError(error_no), " (", error_no, ")"));
 }
 
 }  // namespace
@@ -281,12 +276,7 @@ void PosixEndpointImpl::FinishEstimate() {
   bytes_read_this_round_ = 0;
 }
 
-absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) {
-  auto peer_string = ResolvedAddressToNormalizedString(peer_address_);
-
-  grpc_core::StatusSetStr(&src_error,
-                          grpc_core::StatusStrProperty::kTargetAddress,
-                          peer_string.ok() ? *peer_string : "");
+absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kFd,
                           handle_->WrappedFd());
   grpc_core::StatusSetInt(&src_error, grpc_core::StatusIntProperty::kRpcStatus,
