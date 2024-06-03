@@ -51,7 +51,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
       ClientMetadataHandle client_initial_metadata) {
     return MakeCallPair(std::move(client_initial_metadata),
                         event_engine().get(),
-                        call_arena_allocator_->MakeArena(), nullptr);
+                        call_arena_allocator_->MakeArena());
   }
 
   CallHandler TickUntilCallStarted() {

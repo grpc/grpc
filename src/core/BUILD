@@ -163,7 +163,6 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:legacy_context",
     ],
 )
 
@@ -3196,7 +3195,6 @@ grpc_cc_library(
         "unique_type_name",
         "useful",
         "//:gpr_platform",
-        "//:legacy_context",
         "//:ref_counted_ptr",
     ],
 )
@@ -3295,7 +3293,6 @@ grpc_cc_library(
         "unique_type_name",
         "//:call_tracer",
         "//:gpr",
-        "//:legacy_context",
     ],
 )
 
@@ -3515,7 +3512,6 @@ grpc_cc_library(
         "//:gpr_public_hdrs",
         "//:grpc_base",
         "//:grpc_service_config_impl",
-        "//:legacy_context",
         "//:ref_counted_ptr",
     ],
 )
@@ -3767,7 +3763,6 @@ grpc_cc_library(
         "status_helper",
         "//:gpr",
         "//:grpc_base",
-        "//:legacy_context",
         "//:promise",
         "//:ref_counted_ptr",
     ],
@@ -4775,7 +4770,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
-        "//:legacy_context",
     ],
 )
 
@@ -4820,7 +4814,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
-        "//:legacy_context",
     ],
 )
 
@@ -4862,7 +4855,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_security_base",
-        "//:legacy_context",
         "//:promise",
     ],
 )
@@ -4908,7 +4900,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",
-        "//:legacy_context",
     ],
 )
 
@@ -6344,7 +6335,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_trace",
-        "//:legacy_context",
         "//:xds_orca_upb",
     ],
 )
@@ -6684,7 +6674,6 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
-        "//:legacy_context",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri_parser",
@@ -7297,7 +7286,6 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
-        "//:legacy_context",
         "//:uri_parser",
     ],
 )
@@ -7644,7 +7632,6 @@ grpc_cc_library(
         "status_flag",
         "try_seq",
         "//:gpr",
-        "//:legacy_context",
         "//:promise",
     ],
 )
@@ -7915,7 +7902,6 @@ grpc_cc_library(
         "time",
         "//:call_tracer",
         "//:gpr",
-        "//:legacy_context",
     ],
 )
 
