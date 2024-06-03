@@ -140,9 +140,10 @@ some configuration as environment variables that can be set.
   export GRPC_TRACE=all,-pending_tags
 
 * GRPC_VERBOSITY
+  This is present only for backward compatibility. If you dont already use this, the recommendation dont start using it. Prefer setting absl log level and verbosity directly as needed.
   gRPC logging verbosity - one of:
   - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too, so it can be used when you want to debug a specific issue. 
-  - INFO - log INFO, WARNING ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
+  - INFO - log INFO, WARNING, ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
   - ERROR - log ERROR and FATAL messages. This is recommended for production systems.
   - NONE - won't log any.
   GRPC_VERBOSITY will set verbosity of absl logging. 

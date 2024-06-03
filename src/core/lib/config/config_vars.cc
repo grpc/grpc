@@ -54,7 +54,7 @@ ABSL_FLAG(std::vector<std::string>, grpc_trace, {},
           "A comma separated list of tracers that provide additional insight "
           "into how gRPC C core is processing requests via debug logs.");
 ABSL_FLAG(absl::optional<std::string>, grpc_verbosity, {},
-          "Default gRPC logging verbosity");
+          "Logging verbosity.");
 ABSL_FLAG(absl::optional<std::string>, grpc_stacktrace_minloglevel, {},
           "Messages logged at the same or higher level than this will print "
           "stacktrace");
