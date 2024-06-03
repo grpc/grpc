@@ -81,7 +81,6 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -107,6 +106,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/http_client/parser.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 
@@ -226,11 +226,13 @@ namespace {
 
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
+grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
+    grpc_chttp2_stream* s) {
   if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+  auto* call_tracer =
+      s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
     return nullptr;
   }
@@ -1119,19 +1121,16 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
-  t->goaway_error = grpc_error_set_str(
+  t->goaway_error = grpc_error_set_int(
       grpc_error_set_int(
-          grpc_error_set_int(
-              grpc_core::StatusCreate(
-                  absl::StatusCode::kUnavailable,
-                  absl::StrFormat(
-                      "GOAWAY received; Error code: %u; Debug Text: %s",
-                      goaway_error, goaway_text),
-                  DEBUG_LOCATION, {}),
-              grpc_core::StatusIntProperty::kHttp2Error,
-              static_cast<intptr_t>(goaway_error)),
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kRawBytes, goaway_text);
+          grpc_core::StatusCreate(
+              absl::StatusCode::kUnavailable,
+              absl::StrFormat("GOAWAY received; Error code: %u; Debug Text: %s",
+                              goaway_error, goaway_text),
+              DEBUG_LOCATION, {}),
+          grpc_core::StatusIntProperty::kHttp2Error,
+          static_cast<intptr_t>(goaway_error)),
+      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "transport %p got goaway with last stream id %d", t,
@@ -1289,12 +1288,10 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     if (cl_err.ok()) {
       cl_err = GRPC_ERROR_CREATE(absl::StrCat(
           "Error in HTTP transport completing operation: ", desc,
-          " write_state=", write_state_name(t->write_state), " refs=",
-          closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
-          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT));
-      cl_err = grpc_error_set_str(cl_err,
-                                  grpc_core::StatusStrProperty::kTargetAddress,
-                                  std::string(t->peer_string.as_string_view()));
+          " write_state=", write_state_name(t->write_state),
+          " refs=", closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT,
+          " flags=", closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT,
+          " peer_address=", t->peer_string.as_string_view()));
     }
     cl_err = grpc_error_add_child(cl_err, error);
     closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);
@@ -1371,7 +1368,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    if (s->call_tracer) {
+    if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                     gpr_now(GPR_CLOCK_REALTIME))
@@ -2608,9 +2605,9 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   if (parse_error.ok() &&
       (parse_error = grpc_http_parser_eof(&parser)) == absl::OkStatus()) {
     error = grpc_error_set_int(
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
-            grpc_core::StatusIntProperty::kHttpStatus, response.status),
+        GRPC_ERROR_CREATE(
+            absl::StrCat("Trying to connect an http1.x server (HTTP status ",
+                         response.status, ")")),
         grpc_core::StatusIntProperty::kRpcStatus,
         grpc_http2_status_to_grpc_status(response.status));
   }

@@ -1654,6 +1654,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/status",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -4419,10 +4420,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "httpcli_ssl_credentials",
     srcs = [
-        "lib/http/httpcli_security_connector.cc",
+        "util/http_client/httpcli_security_connector.cc",
     ],
     hdrs = [
-        "lib/http/httpcli_ssl_credentials.h",
+        "util/http_client/httpcli_ssl_credentials.h",
     ],
     external_deps = [
         "absl/log:log",

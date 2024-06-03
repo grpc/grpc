@@ -272,6 +272,10 @@ grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
                          const grpc_op* ops, size_t nops);
 
+void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
+
+void* grpc_call_tracer_get(grpc_call* call);
+
 #define GRPC_CALL_LOG_BATCH(sev, ops, nops)        \
   do {                                             \
     if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace)) { \

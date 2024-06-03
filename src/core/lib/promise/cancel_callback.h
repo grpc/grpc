@@ -51,6 +51,11 @@ class Handler {
 
  private:
   Fn fn_;
+  // Since cancellation happens at destruction time we need to either capture
+  // context here (via the arena), or make sure that no promise is destructed
+  // without an Arena context on the stack. The latter is an eternal game of
+  // whackamole, so we're choosing the former for now.
+  // TODO(ctiller): re-evaluate at some point in the future.
   RefCountedPtr<Arena> arena_ =
       HasContext<Arena>() ? GetContext<Arena>()->Ref() : nullptr;
   bool done_ = false;

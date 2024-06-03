@@ -2287,7 +2287,6 @@ grpc_cc_library(
     srcs = [
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
-        "//src/core:handshaker/security/tsi_error.cc",
         "//src/core:lib/security/context/security_context.cc",
         "//src/core:lib/security/credentials/call_creds_util.cc",
         "//src/core:lib/security/credentials/composite/composite_credentials.cc",
@@ -2300,7 +2299,6 @@ grpc_cc_library(
     hdrs = [
         "//src/core:handshaker/security/secure_endpoint.h",
         "//src/core:handshaker/security/security_handshaker.h",
-        "//src/core:handshaker/security/tsi_error.h",
         "//src/core:lib/security/context/security_context.h",
         "//src/core:lib/security/credentials/call_creds_util.h",
         "//src/core:lib/security/credentials/composite/composite_credentials.h",
@@ -3901,14 +3899,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "httpcli",
     srcs = [
-        "//src/core:lib/http/format_request.cc",
-        "//src/core:lib/http/httpcli.cc",
-        "//src/core:lib/http/parser.cc",
+        "//src/core:util/http_client/format_request.cc",
+        "//src/core:util/http_client/httpcli.cc",
+        "//src/core:util/http_client/parser.cc",
     ],
     hdrs = [
-        "//src/core:lib/http/format_request.h",
-        "//src/core:lib/http/httpcli.h",
-        "//src/core:lib/http/parser.h",
+        "//src/core:util/http_client/format_request.h",
+        "//src/core:util/http_client/httpcli.h",
+        "//src/core:util/http_client/parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",

@@ -2854,7 +2854,6 @@ ClientChannelFilter::FilterBasedLoadBalancedCall::FilterBasedLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry)
     : LoadBalancedCall(chand, args.arena, std::move(on_commit),
                        is_transparent_retry),
-      arena_(args.arena),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       pollent_(pollent),
@@ -3153,9 +3152,9 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
       // Get status from error.
       grpc_status_code code;
       std::string message;
-      grpc_error_get_status(error, self->arena_->GetContext<Call>()->deadline(),
-                            &code, &message,
-                            /*http_error=*/nullptr, /*error_string=*/nullptr);
+      grpc_error_get_status(
+          error, self->arena()->GetContext<Call>()->deadline(), &code, &message,
+          /*http_error=*/nullptr, /*error_string=*/nullptr);
       status = absl::Status(static_cast<absl::StatusCode>(code), message);
     } else {
       // Get status from headers.
@@ -3293,10 +3292,10 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::CreateSubchannelCall() {
   CHECK_NE(path, nullptr);
   SubchannelCall::Args call_args = {
       connected_subchannel()->Ref(), pollent_, path->Ref(), /*start_time=*/0,
-      arena_->GetContext<Call>()->deadline(),
+      arena()->GetContext<Call>()->deadline(),
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call arena for each subchannel call.
-      arena_, call_combiner_};
+      arena(), call_combiner_};
   grpc_error_handle error;
   subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
