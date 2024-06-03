@@ -207,6 +207,7 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   Expect(1, true);
   TickThroughCqExpectations();
   EXPECT_EQ(status.status(), GRPC_STATUS_DEADLINE_EXCEEDED);
+  ExecCtx::Get()->InvalidateNow();
   auto now = Timestamp::Now();
   EXPECT_GE(now - start, Duration::Seconds(1)) << GRPC_DUMP_ARGS(now, start);
   EXPECT_LE(now - start, Duration::Seconds(5)) << GRPC_DUMP_ARGS(now, start);

@@ -146,7 +146,7 @@ void YodelTest::RunTest() {
   state_->event_engine =
       std::make_shared<grpc_event_engine::experimental::FuzzingEventEngine>(
           []() {
-            grpc_timer_manager_set_threading(false);
+            grpc_timer_manager_set_start_threaded(false);
             grpc_event_engine::experimental::FuzzingEventEngine::Options
                 options;
             return options;

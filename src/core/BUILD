@@ -2234,6 +2234,9 @@ grpc_cc_library(
     hdrs = [
         "lib/event_engine/posix_engine/internal_errqueue.h",
     ],
+    external_deps = [
+        "absl/log:log",
+    ],
     deps = [
         "iomgr_port",
         "strerror",
@@ -7188,10 +7191,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gcp_metadata_query",
     srcs = [
-        "ext/gcp/metadata_query.cc",
+        "util/gcp_metadata_query.cc",
     ],
     hdrs = [
-        "ext/gcp/metadata_query.h",
+        "util/gcp_metadata_query.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
