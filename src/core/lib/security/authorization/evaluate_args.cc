@@ -57,8 +57,8 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   auto resolved_address = StringToSockaddr(uri->path());
   if (!resolved_address.ok()) {
     VLOG(2)
-        "Address \"" << uri->path() << "\" is not IPv4/IPv6. Error: "
-                     << resolved_address.status();
+    "Address \"" << uri->path()
+                 << "\" is not IPv4/IPv6. Error: " << resolved_address.status();
     memset(&address.address, 0, sizeof(address.address));
   } else {
     address.address = *resolved_address;
