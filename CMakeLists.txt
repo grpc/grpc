@@ -1851,6 +1851,7 @@ add_library(grpc
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
   src/core/client_channel/config_selector.cc
+  src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
   src/core/client_channel/load_balanced_call_destination.cc
@@ -2952,6 +2953,7 @@ add_library(grpc_unsecure
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
   src/core/client_channel/config_selector.cc
+  src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
   src/core/client_channel/load_balanced_call_destination.cc
@@ -27574,9 +27576,11 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/batch_builder.cc
     test/core/call/server_call_test.cc
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
+    test/core/end2end/cq_verifier.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )

@@ -25,6 +25,7 @@ CORE_SOURCE_FILES = [
     'src/core/client_channel/client_channel_plugin.cc',
     'src/core/client_channel/client_channel_service_config.cc',
     'src/core/client_channel/config_selector.cc',
+    'src/core/client_channel/direct_channel.cc',
     'src/core/client_channel/dynamic_filters.cc',
     'src/core/client_channel/global_subchannel_pool.cc',
     'src/core/client_channel/load_balanced_call_destination.cc',
