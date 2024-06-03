@@ -16,7 +16,9 @@
 //
 //
 
-#include "src/core/ext/gcp/metadata_query.h"
+#include <grpc/support/port_platform.h>
+
+#include "src/core/util/gcp_metadata_query.h"
 
 #include <string.h>
 
@@ -34,7 +36,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -47,29 +48,29 @@ namespace grpc_core {
 
 TraceFlag grpc_metadata_query_trace(false, "metadata_query");
 
-constexpr const char MetadataQuery::kZoneAttribute[];
-constexpr const char MetadataQuery::kClusterNameAttribute[];
-constexpr const char MetadataQuery::kRegionAttribute[];
-constexpr const char MetadataQuery::kInstanceIdAttribute[];
-constexpr const char MetadataQuery::kIPv6Attribute[];
+constexpr const char GcpMetadataQuery::kZoneAttribute[];
+constexpr const char GcpMetadataQuery::kClusterNameAttribute[];
+constexpr const char GcpMetadataQuery::kRegionAttribute[];
+constexpr const char GcpMetadataQuery::kInstanceIdAttribute[];
+constexpr const char GcpMetadataQuery::kIPv6Attribute[];
 
-MetadataQuery::MetadataQuery(
+GcpMetadataQuery::GcpMetadataQuery(
     std::string attribute, grpc_polling_entity* pollent,
     absl::AnyInvocable<void(std::string /* attribute */,
                             absl::StatusOr<std::string> /* result */)>
         callback,
     Duration timeout)
-    : MetadataQuery("metadata.google.internal.", std::move(attribute), pollent,
-                    std::move(callback), timeout) {}
+    : GcpMetadataQuery("metadata.google.internal.", std::move(attribute),
+                       pollent, std::move(callback), timeout) {}
 
-MetadataQuery::MetadataQuery(
+GcpMetadataQuery::GcpMetadataQuery(
     std::string metadata_server_name, std::string attribute,
     grpc_polling_entity* pollent,
     absl::AnyInvocable<void(std::string /* attribute */,
                             absl::StatusOr<std::string> /* result */)>
         callback,
     Duration timeout)
-    : InternallyRefCounted<MetadataQuery>(nullptr, 2),
+    : InternallyRefCounted<GcpMetadataQuery>(nullptr, 2),
       attribute_(std::move(attribute)),
       callback_(std::move(callback)) {
   GRPC_CLOSURE_INIT(&on_done_, OnDone, this, nullptr);
@@ -90,15 +91,17 @@ MetadataQuery::MetadataQuery(
   http_request_->Start();
 }
 
-MetadataQuery::~MetadataQuery() { grpc_http_response_destroy(&response_); }
+GcpMetadataQuery::~GcpMetadataQuery() {
+  grpc_http_response_destroy(&response_);
+}
 
-void MetadataQuery::Orphan() {
+void GcpMetadataQuery::Orphan() {
   http_request_.reset();
   Unref();
 }
 
-void MetadataQuery::OnDone(void* arg, grpc_error_handle error) {
-  auto* self = static_cast<MetadataQuery*>(arg);
+void GcpMetadataQuery::OnDone(void* arg, grpc_error_handle error) {
+  auto* self = static_cast<GcpMetadataQuery*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
     gpr_log(GPR_INFO, "MetadataServer Query for %s: HTTP status: %d, error: %s",
             self->attribute_.c_str(), self->response_.status,

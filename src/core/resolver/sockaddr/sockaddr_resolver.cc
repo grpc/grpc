@@ -19,11 +19,11 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -76,8 +76,8 @@ bool ParseUri(const URI& uri,
               bool parse(const URI& uri, grpc_resolved_address* dst),
               EndpointAddressesList* addresses) {
   if (!uri.authority().empty()) {
-    gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
-            uri.scheme().c_str());
+    LOG(ERROR) << "authority-based URIs not supported by the " << uri.scheme()
+               << " scheme";
     return false;
   }
   // Construct addresses.

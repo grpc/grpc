@@ -854,10 +854,7 @@ const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
 void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata&) {
   auto* service_config_call_data =
-      static_cast<ClientChannelServiceConfigCallData*>(
-          GetContext<grpc_call_context_element>()
-              [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                  .value);
+      GetContext<ClientChannelServiceConfigCallData>();
   CHECK_NE(service_config_call_data, nullptr);
   auto* route_state_attribute = static_cast<XdsRouteStateAttributeImpl*>(
       service_config_call_data->GetCallAttribute<XdsRouteStateAttribute>());

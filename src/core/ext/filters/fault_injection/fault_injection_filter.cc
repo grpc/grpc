@@ -167,10 +167,7 @@ FaultInjectionFilter::MakeInjectionDecision(
     const ClientMetadata& initial_metadata) {
   // Fetch the fault injection policy from the service config, based on the
   // relative index for which policy should this CallData use.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      GetContext<
-          grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-          .value);
+  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           service_config_parser_index_));

@@ -410,8 +410,7 @@ void ServerContextBase::CreateCallMetricRecorder(
   auto* backend_metric_state =
       arena->New<BackendMetricState>(server_metric_recorder);
   call_metric_recorder_ = backend_metric_state;
-  grpc_call_context_set(call_.call, GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
-                        backend_metric_state, nullptr);
+  arena->SetContext<grpc_core::BackendMetricProvider>(backend_metric_state);
 }
 
 grpc::string_ref ServerContextBase::ExperimentalGetAuthority() const {

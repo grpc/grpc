@@ -28,16 +28,7 @@
 /// Call context is represented as an array of \a grpc_call_context_elements.
 /// This enum represents the indexes into the array, where each index
 /// contains a different type of value.
-typedef enum {
-  /// Holds a pointer to ServiceConfigCallData associated with this call.
-  GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA,
-
-  /// Holds a pointer to BackendMetricProvider associated with this call on
-  /// the server.
-  GRPC_CONTEXT_BACKEND_METRIC_PROVIDER,
-
-  GRPC_CONTEXT_COUNT
-} grpc_context_index;
+typedef enum { GRPC_CONTEXT_COUNT } grpc_context_index;
 
 struct grpc_call_context_element {
   void* value = nullptr;
@@ -57,12 +48,6 @@ struct ContextType<grpc_call_context_element> {};
 namespace promise_detail {
 template <typename T>
 struct OldStyleContext;
-
-template <>
-struct OldStyleContext<ServiceConfigCallData> {
-  static constexpr grpc_context_index kIndex =
-      GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA;
-};
 
 template <typename T>
 class Context<T, absl::void_t<decltype(OldStyleContext<T>::kIndex)>> {

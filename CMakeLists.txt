@@ -1872,7 +1872,6 @@ add_library(grpc
   src/core/ext/filters/rbac/rbac_service_config_parser.cc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
-  src/core/ext/gcp/metadata_query.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
@@ -2584,6 +2583,7 @@ add_library(grpc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/event_log.cc
+  src/core/util/gcp_metadata_query.cc
   src/core/util/gethostname_fallback.cc
   src/core/util/gethostname_host_name_max.cc
   src/core/util/gethostname_sysconf.cc

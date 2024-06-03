@@ -15,6 +15,7 @@
 
 #ifdef GPR_WINDOWS
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
@@ -73,8 +74,7 @@ void WinSocket::Shutdown() {
     DisconnectEx(socket_, NULL, 0, 0);
   } else {
     char* utf8_message = gpr_format_message(WSAGetLastError());
-    gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s",
-            utf8_message);
+    LOG(INFO) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
   }
   closesocket(socket_);

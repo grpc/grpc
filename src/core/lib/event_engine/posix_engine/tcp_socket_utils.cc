@@ -18,7 +18,6 @@
 #include <limits.h>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
@@ -50,9 +49,8 @@
 #include <cstring>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/status_helper.h"
@@ -629,27 +627,25 @@ void PosixSocketWrapper::TrySetSocketTcpUserTimeout(
     // if it is available.
     if (g_socket_supports_tcp_user_timeout.load() == 0) {
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        gpr_log(GPR_INFO,
-                "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT won't "
-                "be used thereafter");
+        LOG(INFO) << "TCP_USER_TIMEOUT is not available. TCP_USER_TIMEOUT "
+                     "won't be used thereafter";
         g_socket_supports_tcp_user_timeout.store(-1);
       } else {
-        gpr_log(GPR_INFO,
-                "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
-                "used thereafter");
+        LOG(INFO) << "TCP_USER_TIMEOUT is available. TCP_USER_TIMEOUT will be "
+                     "used thereafter";
         g_socket_supports_tcp_user_timeout.store(1);
       }
     }
     if (g_socket_supports_tcp_user_timeout.load() > 0) {
       if (0 != setsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
                           sizeof(timeout))) {
-        gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s",
-                grpc_core::StrError(errno).c_str());
+        LOG(ERROR) << "setsockopt(TCP_USER_TIMEOUT) "
+                   << grpc_core::StrError(errno);
         return;
       }
       if (0 != getsockopt(fd_, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
-        gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s",
-                grpc_core::StrError(errno).c_str());
+        LOG(ERROR) << "getsockopt(TCP_USER_TIMEOUT) "
+                   << grpc_core::StrError(errno);
         return;
       }
       if (newval != timeout) {
@@ -694,8 +690,7 @@ bool PosixSocketWrapper::IsIpv6LoopbackAvailable() {
       if (bind(fd, reinterpret_cast<sockaddr*>(&addr), sizeof(addr)) == 0) {
         loopback_available = true;
       } else {
-        gpr_log(GPR_INFO,
-                "Disabling AF_INET6 sockets because ::1 is not available.");
+        LOG(INFO) << "Disabling AF_INET6 sockets because ::1 is not available.";
       }
       close(fd);
     }
