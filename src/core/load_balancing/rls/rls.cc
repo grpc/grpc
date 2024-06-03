@@ -1636,7 +1636,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
       std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
       GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
   if (stats_plugin_list != nullptr) {
-    args = args.Set(GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS, *stats_plugin_list);
+    args = args.Set(GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS, stats_plugin_list);
   }
   channel_.reset(Channel::FromC(
       grpc_channel_create(lb_policy_->config_->lookup_service().c_str(),
