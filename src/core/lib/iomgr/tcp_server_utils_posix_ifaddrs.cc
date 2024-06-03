@@ -150,8 +150,9 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     if (!addr_str.ok()) {
       return GRPC_ERROR_CREATE(addr_str.status().ToString());
     }
-    VLOG(2) << "Adding local addr from interface " << ifa_name << " flags 0x"
-            << std::hex << ifa_it->ifa_flags << " to server: " << *addr_str;
+    VLOG(2) << absl::StrFormat(
+        "Adding local addr from interface %s flags 0x%x to server: %s",
+        ifa_name, ifa_it->ifa_flags, addr_str->c_str());
     // We could have multiple interfaces with the same address (e.g., bonding),
     // so look for duplicates.
     if (find_listener_with_addr(s, &addr) != nullptr) {
