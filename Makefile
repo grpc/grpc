@@ -703,7 +703,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/rbac/rbac_service_config_parser.cc \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
-    src/core/ext/gcp/metadata_query.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -1064,7 +1063,6 @@ LIBGRPC_SRC = \
     src/core/handshaker/proxy_mapper_registry.cc \
     src/core/handshaker/security/secure_endpoint.cc \
     src/core/handshaker/security/security_handshaker.cc \
-    src/core/handshaker/security/tsi_error.cc \
     src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
     src/core/lib/address_utils/parse_address.cc \
     src/core/lib/address_utils/sockaddr_utils.cc \
@@ -1457,6 +1455,7 @@ LIBGRPC_SRC = \
     src/core/util/alloc.cc \
     src/core/util/android/log.cc \
     src/core/util/atm.cc \
+    src/core/util/gcp_metadata_query.cc \
     src/core/util/http_client/format_request.cc \
     src/core/util/http_client/httpcli.cc \
     src/core/util/http_client/httpcli_security_connector.cc \

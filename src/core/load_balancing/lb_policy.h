@@ -484,15 +484,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   ChannelArgs channel_args_;
 };
 
-namespace promise_detail {
-
 template <>
-struct OldStyleContext<LoadBalancingPolicy::SubchannelCallTrackerInterface> {
-  static constexpr grpc_context_index kIndex =
-      GRPC_SUBCHANNEL_CALL_TRACKER_INTERFACE;
+struct ArenaContextType<LoadBalancingPolicy::SubchannelCallTrackerInterface> {
+  static void Destroy(LoadBalancingPolicy::SubchannelCallTrackerInterface*) {}
 };
-
-}  // namespace promise_detail
 
 }  // namespace grpc_core
 

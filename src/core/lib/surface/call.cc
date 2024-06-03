@@ -161,8 +161,8 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
           "Census tracing propagation requested without Census context "
           "propagation");
     }
-    ContextSet(GRPC_CONTEXT_TRACING, parent->ContextGet(GRPC_CONTEXT_TRACING),
-               nullptr);
+    arena()->SetContext<census_context>(
+        parent->arena()->GetContext<census_context>());
   } else if (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
     return absl::UnknownError(
         "Census context propagation requested without Census tracing "
@@ -602,7 +602,7 @@ class FilterStackCall final : public ChannelBasedCall {
                          args.send_deadline, args.channel->Ref()),
         cq_(args.cq),
         stream_op_payload_(context_) {
-    context_[GRPC_CONTEXT_CALL].value = this;
+    GetArena()->SetContext<Call>(this);
   }
 
   static void ReleaseCall(void* call, grpc_error_handle);
@@ -755,7 +755,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
     channel_stack->stats_plugin_group->AddClientCallTracers(
-        Slice(CSliceRef(path)), args->registered_method, call->context_);
+        Slice(CSliceRef(path)), args->registered_method, call->GetArena());
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -778,12 +778,11 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
         // promise-based world, we would just a single tracer object for each
         // stack (call, subchannel_call, server_call.)
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
-                         server_call_tracer, nullptr);
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+        arena->SetContext<CallTracerAnnotationInterface>(server_call_tracer);
+        arena->SetContext<CallTracerInterface>(server_call_tracer);
       }
     }
-    channel_stack->stats_plugin_group->AddServerCallTracers(call->context_);
+    channel_stack->stats_plugin_group->AddServerCallTracers(arena.get());
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -1230,8 +1229,7 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = static_cast<CallTracerAnnotationInterface*>(
-      ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
+  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
@@ -1919,7 +1917,7 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
     if (args.cq != nullptr) {
       GRPC_CQ_INTERNAL_REF(args.cq, "bind");
     }
-    context_[GRPC_CONTEXT_CALL].value = this;
+    GetArena()->SetContext<Call>(this);
   }
 
   ~BasicPromiseBasedCall() override {
@@ -2612,7 +2610,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     }
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
-        *args->path, args->registered_method, this->context());
+        *args->path, args->registered_method, GetArena());
     send_initial_metadata_ = Arena::MakePooled<ClientMetadata>();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
@@ -3175,8 +3173,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
         server_(server) {
-    call_handler_.legacy_context()[GRPC_CONTEXT_CALL].value =
-        static_cast<Call*>(this);
+    call_handler_.arena()->SetContext<Call>(this);
     global_stats().IncrementServerCallsCreated();
   }
 
@@ -3760,6 +3757,19 @@ void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
 
 void* grpc_call_context_get(grpc_call* call, grpc_context_index elem) {
   return grpc_core::Call::FromC(call)->ContextGet(elem);
+}
+
+void grpc_call_tracer_set(grpc_call* call,
+                          grpc_core::ClientCallTracer* tracer) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+}
+
+void* grpc_call_tracer_get(grpc_call* call) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  auto* call_tracer =
+      arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+  return call_tracer;
 }
 
 uint8_t grpc_call_is_client(grpc_call* call) {
