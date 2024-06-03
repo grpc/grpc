@@ -141,11 +141,14 @@ some configuration as environment variables that can be set.
 
 * GRPC_VERBOSITY
   gRPC logging verbosity - one of:
-  - DEBUG - log INFO, WARNING and ERROR messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too. 
-  - INFO - log INFO, WARNING and ERROR messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
-  - ERROR - log only ERROR messages. This is recommended for production systems.
+  - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too. 
+  - INFO - log INFO, WARNING ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
+  - ERROR - log ERROR and FATAL messages. This is recommended for production systems.
   - NONE - won't log any.
-  GRPC_VERBOSITY will set verbosity of absl logging. If the external application sets some other verbosity, then whatever is set later will be honoured. If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured. If nothing is set by the external application also, the default set by absl will be honoured.
+  GRPC_VERBOSITY will set verbosity of absl logging. 
+  - If the external application sets some other verbosity, then whatever is set later will be honoured. 
+  - If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured.
+  - If nothing is set by the external application also, the default set by absl will be honoured.
 
 * GRPC_STACKTRACE_MINLOGLEVEL
   Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.

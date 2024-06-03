@@ -10,7 +10,11 @@ that gets printed to stderr.
 
 ## GRPC_VERBOSITY
 
-`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO` and `ERROR`). If this environment variable is unset, only `ERROR` logs will be printed. `GRPC_VERBOSITY` value 'DEBUG' is recommended for debugging in local, testing or staging systems. `DEBUG` is not recommeded for production usage. `ERROR`  is recomeded for production systems.
+This is present only for backward compatibility. If you dont already use this, the recommendation dont start using it. Prefer setting absl verbosity directly as needed.
+
+`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO`, `ERROR` and `NONE`). 
+'DEBUG' is recommended for debugging in local, testing or staging systems. `DEBUG` is not recommeded for production usage. 
+`ERROR`  is recomeded for production systems.
 
 ## GRPC_TRACE
 
