@@ -10,11 +10,11 @@ that gets printed to stderr.
 
 ## GRPC_VERBOSITY
 
-This is present only for backward compatibility. If you dont already use this, the recommendation dont start using it. Prefer setting absl verbosity directly as needed.
+This is present only for backward compatibility. If you dont already use this, the recommendation dont start using it. Prefer setting absl log level and verbosity directly as needed.
 
 `GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO`, `ERROR` and `NONE`). 
-'DEBUG' is recommended for debugging in local, testing or staging systems. `DEBUG` is not recommeded for production usage. 
-`ERROR`  is recomeded for production systems.
+`DEBUG` is recommended for debugging in local, testing or staging systems. `DEBUG` is not recommeded for production usage. 
+`ERROR` is recomeded for production systems.
 
 ## GRPC_TRACE
 

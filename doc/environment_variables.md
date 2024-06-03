@@ -141,7 +141,7 @@ some configuration as environment variables that can be set.
 
 * GRPC_VERBOSITY
   gRPC logging verbosity - one of:
-  - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too. 
+  - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too, so it can be used when you want to debug a specific issue. 
   - INFO - log INFO, WARNING ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
   - ERROR - log ERROR and FATAL messages. This is recommended for production systems.
   - NONE - won't log any.
