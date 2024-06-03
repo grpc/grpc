@@ -30,7 +30,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -339,7 +338,7 @@ class StatsPlugin {
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
   // Returns true if instrument \a handle is enabled.
   virtual bool IsInstrumentEnabled(
-      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) = 0;
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const = 0;
 
   // Gets a ClientCallTracer associated with this stats plugin which can be used
   // in a call.
@@ -438,7 +437,7 @@ class GlobalStatsPluginRegistry {
     // Returns true if any of the stats plugins in the group have enabled \a
     // handle.
     bool IsInstrumentEnabled(
-        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const {
       for (auto& state : plugins_state_) {
         if (state.plugin->IsInstrumentEnabled(handle)) {
           return true;

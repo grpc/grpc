@@ -59,7 +59,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -84,7 +83,6 @@ struct grpc_channel_element_args {
 struct grpc_call_element_args {
   grpc_call_stack* call_stack;
   const void* server_transport_data;
-  grpc_call_context_element* context;
   const grpc_slice& path;
   gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
   grpc_core::Timestamp deadline;

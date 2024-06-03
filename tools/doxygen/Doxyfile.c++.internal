@@ -1160,8 +1160,6 @@ src/core/ext/filters/stateful_session/stateful_session_filter.cc \
 src/core/ext/filters/stateful_session/stateful_session_filter.h \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
 src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h \
-src/core/ext/gcp/metadata_query.cc \
-src/core/ext/gcp/metadata_query.h \
 src/core/ext/transport/binder/client/binder_connector.cc \
 src/core/ext/transport/binder/client/binder_connector.h \
 src/core/ext/transport/binder/client/channel_create.cc \
@@ -2114,7 +2112,6 @@ src/core/lib/channel/channel_stack_trace.cc \
 src/core/lib/channel/channel_stack_trace.h \
 src/core/lib/channel/connected_channel.cc \
 src/core/lib/channel/connected_channel.h \
-src/core/lib/channel/context.h \
 src/core/lib/channel/promise_based_filter.cc \
 src/core/lib/channel/promise_based_filter.h \
 src/core/lib/channel/status_util.cc \
@@ -2915,6 +2912,8 @@ src/core/util/alloc.cc \
 src/core/util/alloc.h \
 src/core/util/android/log.cc \
 src/core/util/atm.cc \
+src/core/util/gcp_metadata_query.cc \
+src/core/util/gcp_metadata_query.h \
 src/core/util/http_client/format_request.cc \
 src/core/util/http_client/format_request.h \
 src/core/util/http_client/httpcli.cc \

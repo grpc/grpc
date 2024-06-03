@@ -45,6 +45,7 @@ class OpenTelemetryPluginOption {
   virtual ~OpenTelemetryPluginOption() = default;
 };
 
+/// EXPERIMENTAL API
 class OpenTelemetryPlugin {
  public:
   virtual ~OpenTelemetryPlugin() = default;
@@ -156,6 +157,7 @@ class OpenTelemetryPluginBuilder {
   /// running on the process. Must be called no more than once and must not be
   /// called if Build() is called.
   absl::Status BuildAndRegisterGlobal();
+  /// EXPERIMENTAL API
   /// Builds an open telemetry plugin, returns the plugin object when succeeded
   /// or an error status when failed. Must be called no more than once and must
   /// not be called if BuildAndRegisterGlobal() is called.

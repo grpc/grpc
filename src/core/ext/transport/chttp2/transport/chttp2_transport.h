@@ -59,9 +59,14 @@ grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport);
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
 /// If non-null, \a notify_on_receive_settings will be scheduled when
 /// HTTP/2 settings are received from the peer.
+/// If non-null, the endpoint will be removed from
+/// interested_parties_until_recv_settings before
+/// notify_on_receive_settings is invoked.
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close);
+    grpc_closure* notify_on_receive_settings,
+    grpc_pollset_set* interested_parties_until_recv_settings,
+    grpc_closure* notify_on_close);
 
 namespace grpc_core {
 typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
