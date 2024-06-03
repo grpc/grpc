@@ -143,10 +143,10 @@ void gpr_to_absl_verbosity_setting_init(void) {
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
-  } else if (absl::EqualsIgnoreCase(verbosity, "WARNING")) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kWarning);
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
-    // No-op
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  } else if (absl::EqualsIgnoreCase(verbosity, "UNKNOWN")) {
+    // No op
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }

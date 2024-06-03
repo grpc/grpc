@@ -140,11 +140,12 @@ some configuration as environment variables that can be set.
   export GRPC_TRACE=all,-pending_tags
 
 * GRPC_VERBOSITY
-  Default gRPC logging verbosity - one of:
-  - DEBUG - log all gRPC messages
-  - INFO - log INFO and ERROR message
-  - ERROR - log only errors (default)
-  - NONE - won't log any
+  gRPC logging verbosity - one of:
+  - DEBUG - log INFO, WARNING and ERROR messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too. 
+  - INFO - log INFO, WARNING and ERROR messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
+  - ERROR - log only ERROR messages. This is recommended for production systems.
+  - NONE - won't log any.
+  GRPC_VERBOSITY will set verbosity of absl logging. If the external application sets some other verbosity, then whatever is set later will be honoured. If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured. If nothing is set by the external application also, the default set by absl will be honoured.
 
 * GRPC_STACKTRACE_MINLOGLEVEL
   Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.
