@@ -29,6 +29,12 @@ void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
 
 namespace filters_detail {
 
+void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data) {
+  for (const auto& op : ops) {
+    op.half_close(Offset(call_data, op.call_offset), op.channel_data);
+  }
+}
+
 template <typename T>
 OperationExecutor<T>::~OperationExecutor() {
   if (promise_data_ != nullptr) {
@@ -164,7 +170,14 @@ Poll<T> InfallibleOperationExecutor<T>::ContinueStep(void* call_data) {
 template class OperationExecutor<ClientMetadataHandle>;
 template class OperationExecutor<MessageHandle>;
 template class InfallibleOperationExecutor<ServerMetadataHandle>;
+
 }  // namespace filters_detail
+
+namespace {
+// Call data for those calls that don't have any call data
+// (we form pointers to this that aren't allowed to be nullptr)
+char g_empty_call_data;
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters
@@ -175,7 +188,7 @@ CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
       client_initial_metadata_(std::move(client_initial_metadata)) {}
 
 CallFilters::~CallFilters() {
-  if (call_data_ != nullptr) {
+  if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
     for (const auto& destructor : stack_->data_.filter_destructor) {
       destructor.call_destroy(Offset(call_data_, destructor.call_offset));
     }
@@ -186,8 +199,12 @@ CallFilters::~CallFilters() {
 void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
   CHECK_EQ(call_data_, nullptr);
   stack_ = std::move(stack);
-  call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
-                                  stack_->data_.call_data_alignment);
+  if (stack_->data_.call_data_size != 0) {
+    call_data_ = gpr_malloc_aligned(stack_->data_.call_data_size,
+                                    stack_->data_.call_data_alignment);
+  } else {
+    call_data_ = &g_empty_call_data;
+  }
   for (const auto& constructor : stack_->data_.filter_constructor) {
     constructor.call_init(Offset(call_data_, constructor.call_offset),
                           constructor.channel_data);
@@ -226,7 +243,8 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
             md->DebugString().c_str(), DebugString().c_str());
   }
   CHECK(md != nullptr);
-  if (server_trailing_metadata_ != nullptr) return;
+  if (cancelled_.is_set()) return;
+  cancelled_.Set(md->get(GrpcCallWasCancelled()).value_or(false));
   server_trailing_metadata_ = std::move(md);
   client_initial_metadata_state_.CloseWithError();
   server_initial_metadata_state_.CloseSending();

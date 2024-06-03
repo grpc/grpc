@@ -82,19 +82,19 @@ ServerMetadataHandle TestTrailingMetadata() {
   return md;
 }
 
-class MockAcceptor : public ServerTransport::Acceptor {
+class MockCallDestination : public UnstartedCallDestination {
  public:
-  virtual ~MockAcceptor() = default;
-  MOCK_METHOD(Arena*, CreateArena, (), (override));
-  MOCK_METHOD(absl::StatusOr<CallInitiator>, CreateCall,
-              (ClientMetadataHandle client_initial_metadata, Arena* arena),
+  ~MockCallDestination() override = default;
+  MOCK_METHOD(void, Orphaned, (), (override));
+  MOCK_METHOD(void, StartCall, (UnstartedCallHandler unstarted_call_handler),
               (override));
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
-  StrictMock<MockAcceptor> acceptor;
+  auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
+  EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
       CoreConfiguration::Get()
           .channel_args_preconditioning()
@@ -112,19 +112,21 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   data_endpoint.ExpectRead(
       {EventEngineSlice::FromCopiedString("12345678"), Zeros(56)}, nullptr);
   // Once that's read we'll create a new call
-  auto* call_arena = MakeArena();
-  EXPECT_CALL(acceptor, CreateArena).WillOnce(Return(call_arena));
   StrictMock<MockFunction<void()>> on_done;
-  EXPECT_CALL(acceptor, CreateCall(_, call_arena))
-      .WillOnce(WithArgs<0>([this, call_arena, &on_done](
-                                ClientMetadataHandle client_initial_metadata) {
-        EXPECT_EQ(client_initial_metadata->get_pointer(HttpPathMetadata())
+  auto control_address =
+      grpc_event_engine::experimental::URIToResolvedAddress("ipv4:1.2.3.4:5678")
+          .value();
+  EXPECT_CALL(*control_endpoint.endpoint, GetPeerAddress)
+      .WillRepeatedly([&control_address]() { return control_address; });
+  EXPECT_CALL(*call_destination, StartCall(_))
+      .WillOnce(WithArgs<0>([&on_done](
+                                UnstartedCallHandler unstarted_call_handler) {
+        EXPECT_EQ(unstarted_call_handler.UnprocessedClientInitialMetadata()
+                      .get_pointer(HttpPathMetadata())
                       ->as_string_view(),
                   "/demo.Service/Step");
-        CallInitiatorAndHandler call = MakeCallPair(
-            std::move(client_initial_metadata), event_engine().get(),
-            call_arena, call_arena_allocator(), nullptr);
-        auto handler = call.handler.V2HackToStartCallWithoutACallFilterStack();
+        auto handler =
+            unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack();
         handler.SpawnInfallible("test-io", [&on_done, handler]() mutable {
           return Seq(
               handler.PullClientInitialMetadata(),
@@ -163,9 +165,8 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                 return Empty{};
               });
         });
-        return std::move(call.initiator);
       }));
-  transport->SetAcceptor(&acceptor);
+  transport->SetCallDestination(call_destination);
   EXPECT_CALL(on_done, Call());
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)

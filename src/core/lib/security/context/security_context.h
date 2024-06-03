@@ -33,12 +33,12 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"  // IWYU pragma: keep
+#include "src/core/util/useful.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
@@ -136,15 +136,24 @@ struct grpc_security_context_extension {
   void (*destroy)(void*) = nullptr;
 };
 
+namespace grpc_core {
+
+class SecurityContext {
+ public:
+  virtual ~SecurityContext() = default;
+};
+
+}  // namespace grpc_core
+
 // --- grpc_client_security_context ---
 
 // Internal client-side security context.
 
-struct grpc_client_security_context {
+struct grpc_client_security_context final : public grpc_core::SecurityContext {
   explicit grpc_client_security_context(
       grpc_core::RefCountedPtr<grpc_call_credentials> creds)
       : creds(std::move(creds)) {}
-  ~grpc_client_security_context();
+  ~grpc_client_security_context() override;
 
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
@@ -159,9 +168,9 @@ void grpc_client_security_context_destroy(void* ctx);
 
 // Internal server-side security context.
 
-struct grpc_server_security_context {
+struct grpc_server_security_context final : public grpc_core::SecurityContext {
   grpc_server_security_context() = default;
-  ~grpc_server_security_context();
+  ~grpc_server_security_context() override;
 
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   grpc_security_context_extension extension;
@@ -177,5 +186,21 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
 grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* args);
+
+namespace grpc_core {
+template <>
+struct ArenaContextType<SecurityContext> {
+  static void Destroy(SecurityContext* p) { p->~SecurityContext(); }
+};
+
+template <>
+struct ContextSubclass<grpc_client_security_context> {
+  using Base = SecurityContext;
+};
+template <>
+struct ContextSubclass<grpc_server_security_context> {
+  using Base = SecurityContext;
+};
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_SECURITY_CONTEXT_SECURITY_CONTEXT_H

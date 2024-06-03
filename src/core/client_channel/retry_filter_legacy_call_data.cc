@@ -35,7 +35,6 @@
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -54,6 +53,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -137,9 +137,8 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
         lb_call_committed_ = true;
         if (calld_->retry_committed_) {
           auto* service_config_call_data =
-              static_cast<ClientChannelServiceConfigCallData*>(
-                  calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                      .value);
+              DownCast<ClientChannelServiceConfigCallData*>(
+                  calld_->arena_->GetContext<ServiceConfigCallData>());
           service_config_call_data->Commit();
         }
       },
@@ -1545,7 +1544,7 @@ RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
                                             const grpc_call_element_args& args)
     : chand_(chand),
       retry_throttle_data_(chand->retry_throttle_data()),
-      retry_policy_(chand->GetRetryPolicy(args.context)),
+      retry_policy_(chand->GetRetryPolicy(args.arena)),
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(retry_policy_ == nullptr
@@ -1685,8 +1684,8 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
       }
       PendingBatchClear(pending);
       auto* service_config_call_data =
-          static_cast<ClientChannelServiceConfigCallData*>(
-              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+          DownCast<ClientChannelServiceConfigCallData*>(
+              arena_->GetContext<ServiceConfigCallData>());
       committed_call_ = CreateLoadBalancedCall(
           [service_config_call_data]() { service_config_call_data->Commit(); },
           /*is_transparent_retry=*/false);
@@ -1976,8 +1975,8 @@ void RetryFilter::LegacyCallData::RetryCommit(CallAttempt* call_attempt) {
     // problem anymore.
     if (call_attempt->lb_call_committed()) {
       auto* service_config_call_data =
-          static_cast<ClientChannelServiceConfigCallData*>(
-              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+          DownCast<ClientChannelServiceConfigCallData*>(
+              arena_->GetContext<ServiceConfigCallData>());
       service_config_call_data->Commit();
     }
     // Free cached send ops.

@@ -27,6 +27,7 @@
 #include <openssl/rsa.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -36,23 +37,17 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/promise/exec_ctx_wakeup_scheduler.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
@@ -72,6 +67,11 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/http_client/httpcli_ssl_credentials.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/string.h"
+#include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -494,9 +494,8 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
   };
 
   void CheckRequestMetadata(grpc_error_handle error) {
-    gpr_log(GPR_INFO, "expected_error: %s",
-            StatusToString(expected_error_).c_str());
-    gpr_log(GPR_INFO, "actual_error: %s", StatusToString(error).c_str());
+    LOG(INFO) << "expected_error: " << StatusToString(expected_error_);
+    LOG(INFO) << "actual_error: " << StatusToString(error);
     if (expected_error_.ok()) {
       CHECK_OK(error);
     } else {
@@ -510,15 +509,13 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
     }
     md_.Remove(HttpAuthorityMetadata());
     md_.Remove(HttpPathMetadata());
-    gpr_log(GPR_INFO, "expected metadata: %s", expected_.c_str());
-    gpr_log(GPR_INFO, "actual metadata: %s", md_.DebugString().c_str());
+    LOG(INFO) << "expected metadata: " << expected_;
+    LOG(INFO) << "actual metadata: " << md_.DebugString();
   }
 
   grpc_error_handle expected_error_;
   std::string expected_;
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  ScopedArenaPtr arena_ = MakeScopedArena(1024, &memory_allocator_);
+  RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
   grpc_metadata_batch md_;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args_;
   grpc_polling_entity pollent_;
@@ -1010,8 +1007,7 @@ void assert_query_parameters(const URI& uri, absl::string_view expected_key,
   const auto it = uri.query_parameter_map().find(expected_key);
   CHECK(it != uri.query_parameter_map().end());
   if (it->second != expected_val) {
-    gpr_log(GPR_ERROR, "%s!=%s", std::string(it->second).c_str(),
-            std::string(expected_val).c_str());
+    LOG(ERROR) << it->second << "!=" << expected_val;
   }
   CHECK(it->second == expected_val);
 }
@@ -1027,7 +1023,7 @@ void validate_sts_token_http_request(const grpc_http_request* request,
       absl::StrFormat("%s?%s", test_sts_endpoint_url, body);
   absl::StatusOr<URI> url = URI::Parse(get_url_equivalent);
   if (!url.ok()) {
-    gpr_log(GPR_ERROR, "%s", url.status().ToString().c_str());
+    LOG(ERROR) << url.status();
     CHECK_OK(url);
   }
   assert_query_parameters(*url, "resource", "resource");
@@ -2011,7 +2007,7 @@ void auth_metadata_context_build(const char* url_scheme,
   char* service_url = nullptr;
   grpc_auth_metadata_context_reset(auth_md_context);
   if (last_slash == nullptr) {
-    gpr_log(GPR_ERROR, "No '/' found in fully qualified method name");
+    LOG(ERROR) << "No '/' found in fully qualified method name";
     service[0] = '\0';
     method_name = gpr_strdup("");
   } else if (last_slash == service) {
@@ -2114,7 +2110,7 @@ void validate_external_account_creds_token_exchage_request(
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
   if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "%s", uri.status().ToString().c_str());
+    LOG(ERROR) << uri.status().ToString();
     CHECK_OK(uri);
   }
   assert_query_parameters(*uri, "audience", "audience");

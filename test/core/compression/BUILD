@@ -26,7 +26,10 @@ licenses(["notice"])
 grpc_cc_test(
     name = "compression_test",
     srcs = ["compression_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,
@@ -67,7 +70,10 @@ grpc_fuzzer(
 grpc_cc_test(
     name = "message_compress_test",
     srcs = ["message_compress_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

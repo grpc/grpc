@@ -20,6 +20,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/synchronization/notification.h"
 
 #include <grpc/grpc_security.h>
@@ -114,9 +115,8 @@ void DoRpc(const std::string& server_addr,
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {
-    gpr_log(GPR_ERROR, "Echo failed: %d, %s, %s",
-            static_cast<int>(result.error_code()),
-            result.error_message().c_str(), result.error_details().c_str());
+    LOG(ERROR) << "Echo failed: " << result.error_code() << ", "
+               << result.error_message() << ", " << result.error_details();
   }
   EXPECT_EQ(response.message(), kMessage);
 }

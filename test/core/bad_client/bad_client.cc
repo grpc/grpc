@@ -22,11 +22,11 @@
 #include <limits.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -35,7 +35,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"
 
@@ -111,11 +111,11 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     hex = gpr_dump(arg->client_payload, arg->client_payload_length,
                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
     // Add a debug log
-    gpr_log(GPR_INFO, "TEST: %s", hex);
+    LOG(INFO) << "TEST: " << hex;
     gpr_free(hex);
   } else {
-    gpr_log(GPR_INFO, "TEST: (%" PRIdPTR " byte long string)",
-            arg->client_payload_length);
+    LOG(INFO) << "TEST: (" << arg->client_payload_length
+              << " byte long string)";
   }
 
   grpc_slice slice = grpc_slice_from_copied_buffer(arg->client_payload,
@@ -171,9 +171,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                     .type == GRPC_QUEUE_TIMEOUT);
         } while (!gpr_event_get(&read_done_event));
         if (arg->client_validator(&incoming, arg->client_validator_arg)) break;
-        gpr_log(GPR_INFO,
-                "client validator failed; trying additional read "
-                "in case we didn't get all the data");
+        LOG(INFO) << "client validator failed; trying additional read "
+                     "in case we didn't get all the data";
       }
       grpc_slice_buffer_destroy(&incoming);
     }
@@ -317,7 +316,7 @@ bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* /*arg*/) {
       *p++ == 0 || *p++ == 0 || *p++ == 0 || *p == 0 || *p == 11;
 
   if (!success) {
-    gpr_log(GPR_INFO, "client expected RST_STREAM frame, not found");
+    LOG(INFO) << "client expected RST_STREAM frame, not found";
   }
 
   grpc_slice_buffer_destroy(&last_frame_buffer);

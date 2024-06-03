@@ -36,6 +36,7 @@ grpc_cc_library(
     hdrs = ["fuzzing_common.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
     ],
     deps = [
@@ -92,6 +93,7 @@ grpc_cc_library(
     name = "network_input",
     srcs = ["network_input.cc"],
     hdrs = ["network_input.h"],
+    external_deps = ["absl/log:log"],
     deps = [
         "fuzzer_input_proto",
         "//:chttp2_frame",

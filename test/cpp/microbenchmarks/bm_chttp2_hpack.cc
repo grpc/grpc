@@ -26,11 +26,11 @@
 #include <benchmark/benchmark.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/random.h"
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -75,7 +75,6 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
       grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
                                      ->memory_quota()
                                      ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b;
   b.Set(grpc_core::GrpcTimeoutMetadata(),
         saved_now + grpc_core::Duration::Seconds(30));
@@ -107,11 +106,6 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   static bool logged_representative_output = false;
 
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
   grpc_metadata_batch b;
   Fixture::Prepare(&b);
 
@@ -135,7 +129,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
       logged_representative_output = true;
       for (size_t i = 0; i < outbuf.count; i++) {
         char* s = grpc_dump_slice(outbuf.slices[i], GPR_DUMP_HEX);
-        gpr_log(GPR_DEBUG, "%" PRIdPTR ": %s", i, s);
+        VLOG(2) << i << ": " << s;
         gpr_free(s);
       }
     }
@@ -345,12 +339,6 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
   std::vector<grpc_slice> benchmark_slices = Fixture::GetBenchmarkSlices();
   grpc_core::ExecCtx exec_ctx;
   grpc_core::HPackParser p;
-  const int kArenaSize = 4096 * 4096;
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto* arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
   grpc_core::ManualConstructor<grpc_metadata_batch> b;
   b.Init();
   p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
@@ -373,25 +361,11 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
     b->Clear();
     parse_vec(benchmark_slices);
     grpc_core::ExecCtx::Get()->Flush();
-    // Recreate arena every 4k iterations to avoid oom
-    if (0 == (state.iterations() & 0xfff)) {
-      b.Destroy();
-      arena->Destroy();
-      arena = grpc_core::Arena::Create(kArenaSize, &memory_allocator);
-      b.Init();
-      p.BeginFrame(&*b, std::numeric_limits<uint32_t>::max(),
-                   std::numeric_limits<uint32_t>::max(),
-                   grpc_core::HPackParser::Boundary::None,
-                   grpc_core::HPackParser::Priority::None,
-                   grpc_core::HPackParser::LogInfo{
-                       1, grpc_core::HPackParser::LogInfo::kHeaders, false});
-    }
   }
   // Clean up
   b.Destroy();
   for (auto slice : init_slices) grpc_slice_unref(slice);
   for (auto slice : benchmark_slices) grpc_slice_unref(slice);
-  arena->Destroy();
 }
 
 namespace hpack_parser_fixtures {
@@ -405,12 +379,6 @@ class FromEncoderFixture {
  private:
   static std::vector<grpc_slice> Generate(int iteration) {
     grpc_core::ExecCtx exec_ctx;
-
-    grpc_core::MemoryAllocator memory_allocator =
-        grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                       ->memory_quota()
-                                       ->CreateMemoryAllocator("test"));
-    auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
     grpc_metadata_batch b;
     EncoderFixture::Prepare(&b);
 

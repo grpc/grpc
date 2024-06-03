@@ -60,6 +60,7 @@ namespace grpc_core {
 
 TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
+const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
 const NoInterceptor StatefulSessionFilter::Call::OnFinalize;
 
@@ -224,10 +225,7 @@ bool IsConfiguredPath(absl::string_view configured_path,
 void StatefulSessionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, StatefulSessionFilter* filter) {
   // Get config.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      GetContext<
-          grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-          .value);
+  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   CHECK_NE(service_config_call_data, nullptr);
   auto* method_params = static_cast<StatefulSessionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(

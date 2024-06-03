@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -38,7 +39,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -174,7 +174,7 @@ class Client {
         break;
       }
       if (state.error() != absl::OkStatus()) break;
-      gpr_log(GPR_INFO, "client read %" PRIuPTR " bytes", read_buffer.length);
+      LOG(INFO) << "client read " << read_buffer.length << " bytes";
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
     grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE("shutdown"));
@@ -210,7 +210,7 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s", StatusToString(error).c_str());
+      LOG(INFO) << "OnEventDone(): " << StatusToString(error);
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = error;
       gpr_atm_rel_store(&state->done_atm_, 1);
@@ -255,21 +255,21 @@ TEST(SettingsTimeout, Basic) {
   const int server_port = grpc_pick_unused_port_or_die();
   std::string server_address_string = absl::StrCat("localhost:", server_port);
   // Start server.
-  gpr_log(GPR_INFO, "starting server on %s", server_address_string.c_str());
+  LOG(INFO) << "starting server on " << server_address_string;
   ServerThread server_thread(server_address_string.c_str());
   server_thread.Start();
   // Create client and connect to server.
-  gpr_log(GPR_INFO, "starting client connect");
+  LOG(INFO) << "starting client connect";
   Client client(server_address_string.c_str());
   client.Connect();
   // Client read.  Should fail due to server dropping connection.
-  gpr_log(GPR_INFO, "starting client read");
+  LOG(INFO) << "starting client read";
   EXPECT_TRUE(client.ReadUntilError());
   // Shut down client.
-  gpr_log(GPR_INFO, "shutting down client");
+  LOG(INFO) << "shutting down client";
   client.Shutdown();
   // Shut down server.
-  gpr_log(GPR_INFO, "shutting down server");
+  LOG(INFO) << "shutting down server";
   server_thread.Shutdown();
   // Clean up.
 }

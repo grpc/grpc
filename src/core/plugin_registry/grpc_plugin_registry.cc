@@ -79,10 +79,11 @@ namespace {
 void RegisterBuiltins(CoreConfiguration::Builder* builder) {
   RegisterServerCallTracerFilter(builder);
   builder->channel_init()
-      ->RegisterFilter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
+      ->RegisterV2Filter<LameClientFilter>(GRPC_CLIENT_LAME_CHANNEL)
       .Terminal();
   builder->channel_init()
       ->RegisterFilter(GRPC_SERVER_CHANNEL, &Server::kServerTopFilter)
+      .SkipV3()
       .BeforeAll();
 }
 

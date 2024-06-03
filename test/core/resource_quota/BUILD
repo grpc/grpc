@@ -117,6 +117,7 @@ grpc_cc_test(
     srcs = ["memory_quota_stress_test.cc"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/log:log",
         "absl/strings",
         "absl/types:optional",
         "gtest",

@@ -30,12 +30,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/util/useful.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
 
@@ -579,7 +579,7 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfterLocked(
   }
   if (trace_timers.enabled()) {
     gpr_log(GPR_INFO,
-            "Schedule timer %" PRIx64 " @ %" PRIu64 " (now=%" PRIu64
+            "Schedule timer %" PRIxPTR " @ %" PRIu64 " (now=%" PRIu64
             "; delay=%" PRIu64 "; fuzzing_added=%" PRIu64 "; type=%d)",
             id, static_cast<uint64_t>(final_time.time_since_epoch().count()),
             now.time_since_epoch().count(), when.count(), delay_taken.count(),
@@ -600,7 +600,7 @@ bool FuzzingEventEngine::Cancel(TaskHandle handle) {
     return false;
   }
   if (trace_timers.enabled()) {
-    gpr_log(GPR_INFO, "Cancel timer %" PRIx64, id);
+    gpr_log(GPR_INFO, "Cancel timer %" PRIxPTR, id);
   }
   it->second->closure = nullptr;
   return true;

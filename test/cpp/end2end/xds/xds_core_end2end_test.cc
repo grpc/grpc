@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include "src/core/client_channel/backup_poller.h"
@@ -150,13 +151,41 @@ TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
   balancer_->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
   auto status = SendRpc();
-  gpr_log(GPR_INFO,
-          "XdsStreamErrorPropagation test: RPC got error: code=%d message=%s",
-          status.error_code(), status.error_message().c_str());
+  LOG(INFO) << "XdsStreamErrorPropagation test: RPC got error: code="
+            << status.error_code()
+            << " message=" << status.error_message().c_str();
   EXPECT_THAT(status.error_code(), StatusCode::UNAVAILABLE);
   EXPECT_THAT(status.error_message(), ::testing::HasSubstr(kErrorMessage));
   EXPECT_THAT(status.error_message(),
               ::testing::HasSubstr("(node ID:xds_end2end_test)"));
+}
+
+//
+// XdsServerTlsTest: xDS server using TlsCreds
+//
+
+class XdsServerTlsTest : public XdsEnd2endTest {
+ protected:
+  void SetUp() override {
+    InitClient(MakeBootstrapBuilder().SetXdsChannelCredentials(
+                   "tls", absl::StrCat("{\"ca_certificate_file\": \"",
+                                       kCaCertPath, "\"}")),
+               /*lb_expected_authority=*/"",
+               /*xds_resource_does_not_exist_timeout_ms=*/0,
+               /*balancer_authority_override=*/"foo.test.google.fr");
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsServerTlsTest,
+    ::testing::Values(XdsTestType().set_xds_server_uses_tls_creds(true)),
+    &XdsTestType::Name);
+
+TEST_P(XdsServerTlsTest, Basic) {
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  CheckRpcSendOk(DEBUG_LOCATION);
 }
 
 //
@@ -288,8 +317,8 @@ TEST_P(GlobalXdsClientTest, MultipleBadLdsResources) {
               response->error_message == expected_message2) {
             return response;
           }
-          gpr_log(GPR_INFO, "non-matching NACK message: %s",
-                  response->error_message.c_str());
+          LOG(INFO) << "non-matching NACK message: "
+                    << response->error_message.c_str();
         }
         return absl::nullopt;
       });
@@ -1217,11 +1246,11 @@ TEST_P(XdsMetricsTest, MetricValues) {
   CheckRpcSendOk(DEBUG_LOCATION);
   stats_plugin_->TriggerCallbacks();
   // Check client metrics.
-  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
-                                                   {kTarget, kXdsServer}, {}),
+  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
+                  kMetricConnected, {kTarget, kXdsServer}, {}),
               ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricServerFailure,
-                                             {kTarget, kXdsServer}, {}),
+  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kMetricServerFailure,
+                                                   {kTarget, kXdsServer}, {}),
               absl::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
@@ -1229,37 +1258,37 @@ TEST_P(XdsMetricsTest, MetricValues) {
         "envoy.config.cluster.v3.Cluster",
         "envoy.config.endpoint.v3.ClusterLoadAssignment"}) {
     EXPECT_THAT(
-        stats_plugin_->GetCounterValue(kMetricResourceUpdatesValid,
-                                       {kTarget, kXdsServer, type_url}, {}),
+        stats_plugin_->GetUInt64CounterValue(
+            kMetricResourceUpdatesValid, {kTarget, kXdsServer, type_url}, {}),
         ::testing::Optional(1));
     EXPECT_THAT(
-        stats_plugin_->GetCounterValue(kMetricResourceUpdatesInvalid,
-                                       {kTarget, kXdsServer, type_url}, {}),
+        stats_plugin_->GetUInt64CounterValue(
+            kMetricResourceUpdatesInvalid, {kTarget, kXdsServer, type_url}, {}),
         ::testing::Optional(0));
-    EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+    EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                     kMetricResources, {kTarget, "#old", type_url, "acked"}, {}),
                 ::testing::Optional(1));
   }
   // Check server metrics.
-  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
-                                                   {"#server", kXdsServer}, {}),
+  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
+                  kMetricConnected, {"#server", kXdsServer}, {}),
               ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetCounterValue(kMetricServerFailure,
-                                             {"#server", kXdsServer}, {}),
+  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(kMetricServerFailure,
+                                                   {"#server", kXdsServer}, {}),
               absl::nullopt);
   for (absl::string_view type_url :
        {"envoy.config.listener.v3.Listener",
         "envoy.config.route.v3.RouteConfiguration"}) {
     EXPECT_THAT(
-        stats_plugin_->GetCounterValue(kMetricResourceUpdatesValid,
-                                       {"#server", kXdsServer, type_url}, {}),
+        stats_plugin_->GetUInt64CounterValue(
+            kMetricResourceUpdatesValid, {"#server", kXdsServer, type_url}, {}),
         ::testing::Optional(1));
+    EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
+                    kMetricResourceUpdatesInvalid,
+                    {"#server", kXdsServer, type_url}, {}),
+                ::testing::Optional(0));
     EXPECT_THAT(
-        stats_plugin_->GetCounterValue(kMetricResourceUpdatesInvalid,
-                                       {"#server", kXdsServer, type_url}, {}),
-        ::testing::Optional(0));
-    EXPECT_THAT(
-        stats_plugin_->GetCallbackGaugeValue(
+        stats_plugin_->GetInt64CallbackGaugeValue(
             kMetricResources, {"#server", "#old", type_url, "acked"}, {}),
         ::testing::Optional(1));
   }
@@ -1269,8 +1298,8 @@ TEST_P(XdsMetricsTest, MetricValues) {
     const absl::Time deadline =
         absl::Now() + absl::Seconds(5 * grpc_test_slowdown_factor());
     while (true) {
-      auto value = stats_plugin_->GetCounterValue(kMetricServerFailure,
-                                                  {target, kXdsServer}, {});
+      auto value = stats_plugin_->GetUInt64CounterValue(
+          kMetricServerFailure, {target, kXdsServer}, {});
       if (value.has_value()) {
         EXPECT_EQ(1, *value);
         break;
@@ -1279,8 +1308,8 @@ TEST_P(XdsMetricsTest, MetricValues) {
       absl::SleepFor(absl::Seconds(1));
     }
     stats_plugin_->TriggerCallbacks();
-    EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(kMetricConnected,
-                                                     {target, kXdsServer}, {}),
+    EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
+                    kMetricConnected, {target, kXdsServer}, {}),
                 ::testing::Optional(0));
   }
 }

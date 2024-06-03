@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/http/parser.h"
+#include "src/core/util/http_client/parser.h"
 
 #include <stdarg.h>
 #include <string.h>
@@ -29,7 +29,7 @@
 
 #include <grpc/support/alloc.h>
 
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
 

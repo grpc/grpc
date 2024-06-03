@@ -36,10 +36,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -57,6 +54,9 @@
 #include "src/core/lib/surface/init_internally.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 namespace grpc_core {
 
@@ -93,13 +93,13 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
   } else {
-    experimental::StatsPluginChannelScope scope(
-        target, args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
-                    .value_or(CoreConfiguration::Get()
-                                  .resolver_registry()
-                                  .GetDefaultAuthority(target)));
+    std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+                                .value_or(CoreConfiguration::Get()
+                                              .resolver_registry()
+                                              .GetDefaultAuthority(target));
     *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+            experimental::StatsPluginChannelScope(target, authority));
   }
   return MakeOrphanable<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
@@ -113,10 +113,7 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
     : Channel(std::move(target), channel_args),
       is_client_(is_client),
       is_promising_(is_promising),
-      channel_stack_(std::move(channel_stack)),
-      allocator_(channel_args.GetObject<ResourceQuota>()
-                     ->memory_quota()
-                     ->CreateMemoryOwner()) {
+      channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,

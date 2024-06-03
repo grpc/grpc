@@ -35,6 +35,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/credentials.h>
@@ -42,7 +43,6 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -152,7 +152,7 @@ void server_thread(void* arg) {
     CHECK(ev.type == GRPC_QUEUE_TIMEOUT);
   }
 
-  gpr_log(GPR_INFO, "Shutting down server");
+  LOG(INFO) << "Shutting down server";
   grpc_server_shutdown_and_notify(server, cq, nullptr);
   grpc_completion_queue_shutdown(cq);
 
@@ -246,7 +246,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     }
   }
   CHECK_GT(sock, 0);
-  gpr_log(GPR_INFO, "Connected to server on port %d", s.port());
+  LOG(INFO) << "Connected to server on port " << s.port();
 
   // Establish a SSL* and connect at SSL layer.
   SSL* ssl = SSL_new(ctx);
@@ -254,10 +254,10 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   SSL_set_fd(ssl, sock);
   if (SSL_connect(ssl) <= 0) {
     ERR_print_errors_fp(stderr);
-    gpr_log(GPR_ERROR, "Handshake failed.");
+    LOG(ERROR) << "Handshake failed.";
     success = false;
   } else {
-    gpr_log(GPR_INFO, "Handshake successful.");
+    LOG(INFO) << "Handshake successful.";
     // Validate ALPN preferred by server matches alpn_expected.
     const unsigned char* alpn_selected;
     unsigned int alpn_selected_len;
@@ -265,7 +265,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     if (strlen(alpn_expected) != alpn_selected_len ||
         strncmp(reinterpret_cast<const char*>(alpn_selected), alpn_expected,
                 alpn_selected_len) != 0) {
-      gpr_log(GPR_ERROR, "Unexpected ALPN protocol preference");
+      LOG(ERROR) << "Unexpected ALPN protocol preference";
       success = false;
     }
   }

@@ -39,6 +39,7 @@ grpc_cc_test(
     name = "interception_chain_test",
     srcs = ["interception_chain_test.cc"],
     external_deps = [
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",

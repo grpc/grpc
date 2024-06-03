@@ -26,7 +26,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
@@ -56,42 +56,37 @@ class ServerCallTracerFilter
   class Call {
    public:
     void OnClientInitialMetadata(ClientMetadata& client_initial_metadata) {
-      auto* call_tracer = CallTracer();
+      auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
       call_tracer->RecordReceivedInitialMetadata(&client_initial_metadata);
     }
 
     void OnServerInitialMetadata(ServerMetadata& server_initial_metadata) {
-      auto* call_tracer = CallTracer();
+      auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
       call_tracer->RecordSendInitialMetadata(&server_initial_metadata);
     }
 
     void OnFinalize(const grpc_call_final_info* final_info) {
-      auto* call_tracer = CallTracer();
+      auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
       call_tracer->RecordEnd(final_info);
     }
 
     void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata) {
-      auto* call_tracer = CallTracer();
+      auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
       call_tracer->RecordSendTrailingMetadata(&server_trailing_metadata);
     }
 
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
-
-   private:
-    static ServerCallTracer* CallTracer() {
-      auto* call_context = GetContext<grpc_call_context_element>();
-      return static_cast<ServerCallTracer*>(
-          call_context[GRPC_CONTEXT_CALL_TRACER].value);
-    }
   };
 };
 
 const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerCallTracerFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerCallTracerFilter::Call::OnServerToClientMessage;
 
 const grpc_channel_filter ServerCallTracerFilter::kFilter =

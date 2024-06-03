@@ -44,6 +44,7 @@ class BackendMetricFilter : public ImplementChannelFilter<BackendMetricFilter> {
     static const NoInterceptor OnServerInitialMetadata;
     void OnServerTrailingMetadata(ServerMetadata& md);
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };

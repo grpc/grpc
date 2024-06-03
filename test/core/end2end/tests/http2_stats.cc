@@ -28,14 +28,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/notification.h"
@@ -50,6 +47,9 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 
@@ -199,6 +199,7 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   g_mu = new Mutex();
   g_client_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
   g_server_call_ended_notify = new CoreEnd2endTest::TestNotification(this);
+  GlobalStatsPluginRegistryTestPeer::ResetGlobalStatsPluginRegistry();
   GlobalStatsPluginRegistry::RegisterStatsPlugin(
       std::make_shared<NewFakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
@@ -265,8 +266,6 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
   EXPECT_GE(server_transport_stats.incoming.framing_bytes, 32);
   EXPECT_LE(server_transport_stats.incoming.framing_bytes, 58);
 
-  delete ServerCallTracerFactory::Get(ChannelArgs());
-  ServerCallTracerFactory::RegisterGlobal(nullptr);
   delete g_client_call_ended_notify;
   g_client_call_ended_notify = nullptr;
   delete g_server_call_ended_notify;

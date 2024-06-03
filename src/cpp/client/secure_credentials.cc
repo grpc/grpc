@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
@@ -35,7 +36,6 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -49,9 +49,9 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/lib/gprpp/load_file.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -273,8 +273,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const std::string& json_key, long token_lifetime_seconds) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   if (token_lifetime_seconds <= 0) {
-    gpr_log(GPR_ERROR,
-            "Trying to create JWTCredentials with non-positive lifetime");
+    LOG(ERROR) << "Trying to create JWTCredentials with non-positive lifetime";
     return WrapCallCredentials(nullptr);
   }
   gpr_timespec lifetime =

@@ -28,13 +28,12 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -42,6 +41,8 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 namespace grpc_core {
 
@@ -151,7 +152,7 @@ void WorkSerializer::LegacyWorkSerializer::Run(std::function<void()> callback,
     // We took ownership of the WorkSerializer. Invoke callback and drain queue.
     SetCurrentThread();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Executing immediately");
+      LOG(INFO) << "  Executing immediately";
     }
     callback();
     // Delete the callback while still holding the WorkSerializer, so
@@ -193,7 +194,7 @@ void WorkSerializer::LegacyWorkSerializer::Orphan() {
       refs_.fetch_sub(MakeRefPair(0, 1), std::memory_order_acq_rel);
   if (GetOwners(prev_ref_pair) == 0 && GetSize(prev_ref_pair) == 1) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-      gpr_log(GPR_INFO, "  Destroying");
+      LOG(INFO) << "  Destroying";
     }
     delete this;
   }
@@ -232,7 +233,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
     // up orphaning the work serializer. In that case, delete the object.
     if (GetSize(prev_ref_pair) == 1) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-        gpr_log(GPR_INFO, "  Queue Drained. Destroying");
+        LOG(INFO) << "  Queue Drained. Destroying";
       }
       delete this;
       return;
@@ -252,7 +253,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
       if (GetSize(expected) == 0) {
         // WorkSerializer got orphaned while this was running
         if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-          gpr_log(GPR_INFO, "  Queue Drained. Destroying");
+          LOG(INFO) << "  Queue Drained. Destroying";
         }
         delete this;
         return;
@@ -272,7 +273,7 @@ void WorkSerializer::LegacyWorkSerializer::DrainQueueOwned() {
       // This can happen due to a race condition within the mpscq
       // implementation or because of a race with Run()/Schedule().
       if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {
-        gpr_log(GPR_INFO, "  Queue returned nullptr, trying again");
+        LOG(INFO) << "  Queue returned nullptr, trying again";
       }
     }
     if (GRPC_TRACE_FLAG_ENABLED(grpc_work_serializer_trace)) {

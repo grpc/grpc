@@ -38,6 +38,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_filters.h"
+#include "src/core/lib/transport/interception_chain.h"
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.
@@ -68,6 +69,8 @@ class ChannelInit {
   using InclusionPredicate = absl::AnyInvocable<bool(const ChannelArgs&) const>;
   // Post processor for the channel stack - applied in PostProcessorSlot order
   using PostProcessor = absl::AnyInvocable<void(ChannelStackBuilder&) const>;
+  // Function that can be called to add a filter to a stack builder
+  using FilterAdder = void (*)(InterceptionChainBuilder&);
   // Post processing slots - up to one PostProcessor per slot can be registered
   // They run after filters registered are added to the channel stack builder,
   // but before Build is called - allowing ad-hoc mutation to the channel stack.
@@ -77,25 +80,15 @@ class ChannelInit {
     kCount
   };
 
-  // Vtable-like data structure for channel data initialization
-  struct ChannelFilterVtable {
-    size_t size;
-    size_t alignment;
-    absl::Status (*init)(void* data, const ChannelArgs& args);
-    void (*destroy)(void* data);
-    void (*add_to_stack_builder)(void* data,
-                                 CallFilters::StackBuilder& builder);
-  };
-
   class FilterRegistration {
    public:
     // TODO(ctiller): Remove grpc_channel_filter* arg when that can be
     // deprecated (once filter stack is removed).
     explicit FilterRegistration(const grpc_channel_filter* filter,
-                                const ChannelFilterVtable* vtable,
+                                FilterAdder filter_adder,
                                 SourceLocation registration_source)
         : filter_(filter),
-          vtable_(vtable),
+          filter_adder_(filter_adder),
           registration_source_(registration_source) {}
     FilterRegistration(const FilterRegistration&) = delete;
     FilterRegistration& operator=(const FilterRegistration&) = delete;
@@ -170,7 +163,7 @@ class ChannelInit {
    private:
     friend class ChannelInit;
     const grpc_channel_filter* const filter_;
-    const ChannelFilterVtable* const vtable_;
+    const FilterAdder filter_adder_;
     std::vector<const grpc_channel_filter*> after_;
     std::vector<const grpc_channel_filter*> before_;
     std::vector<InclusionPredicate> predicates_;
@@ -188,16 +181,17 @@ class ChannelInit {
     // properties of the filter being registered.
     // TODO(ctiller): remove in favor of the version that does not mention
     // grpc_channel_filter
-    FilterRegistration& RegisterFilter(
-        grpc_channel_stack_type type, const grpc_channel_filter* filter,
-        const ChannelFilterVtable* vtable = nullptr,
-        SourceLocation registration_source = {});
+    FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
+                                       const grpc_channel_filter* filter,
+                                       FilterAdder filter_adder = nullptr,
+                                       SourceLocation registration_source = {});
     template <typename Filter>
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
-      return RegisterFilter(type, &Filter::kFilter,
-                            VtableForType<Filter>::vtable(),
-                            registration_source);
+      return RegisterFilter(
+          type, &Filter::kFilter,
+          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
+          registration_source);
     }
 
     // Filter does not participate in v3
@@ -232,58 +226,13 @@ class ChannelInit {
                                   [static_cast<int>(PostProcessorSlot::kCount)];
   };
 
-  // A set of channel filters that can be added to a call stack.
-  // TODO(ctiller): move this out so it can be used independently of
-  // the global registration mechanisms.
-  class StackSegment final {
-   public:
-    // Registration of one channel filter in the stack.
-    struct ChannelFilter {
-      size_t offset;
-      const ChannelFilterVtable* vtable;
-    };
-
-    StackSegment() = default;
-    explicit StackSegment(std::vector<ChannelFilter> filters,
-                          uint8_t* channel_data);
-    StackSegment(const StackSegment& other) = delete;
-    StackSegment& operator=(const StackSegment& other) = delete;
-    StackSegment(StackSegment&& other) noexcept = default;
-    StackSegment& operator=(StackSegment&& other) = default;
-
-    // Add this segment to a call filter stack builder
-    void AddToCallFilterStack(CallFilters::StackBuilder& builder);
-
-   private:
-    // Combined channel data for the stack
-    class ChannelData : public RefCounted<ChannelData> {
-     public:
-      explicit ChannelData(std::vector<ChannelFilter> filters,
-                           uint8_t* channel_data);
-      ~ChannelData() override;
-
-      void AddToCallFilterStack(CallFilters::StackBuilder& builder);
-
-     private:
-      std::vector<ChannelFilter> filters_;
-      uint8_t* channel_data_;
-    };
-
-    RefCountedPtr<ChannelData> data_;
-  };
-
   /// Construct a channel stack of some sort: see channel_stack.h for details
   /// \a builder is the channel stack builder to build into.
   GRPC_MUST_USE_RESULT
   bool CreateStack(ChannelStackBuilder* builder) const;
 
-  // Create a segment of a channel stack.
-  // Terminators and post processors are not included in this construction:
-  // terminators are a legacy filter-stack concept, and post processors
-  // need to migrate to other mechanisms.
-  // TODO(ctiller): figure out other mechanisms.
-  absl::StatusOr<StackSegment> CreateStackSegment(
-      grpc_channel_stack_type type, const ChannelArgs& args) const;
+  void AddToInterceptionChainBuilder(grpc_channel_stack_type type,
+                                     InterceptionChainBuilder& builder) const;
 
  private:
   // The type of object returned by a filter's Create method.
@@ -292,16 +241,16 @@ class ChannelInit {
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
   struct Filter {
-    Filter(const grpc_channel_filter* filter, const ChannelFilterVtable* vtable,
+    Filter(const grpc_channel_filter* filter, FilterAdder filter_adder,
            std::vector<InclusionPredicate> predicates, bool skip_v3,
            SourceLocation registration_source)
         : filter(filter),
-          vtable(vtable),
+          filter_adder(filter_adder),
           predicates(std::move(predicates)),
           registration_source(registration_source),
           skip_v3(skip_v3) {}
     const grpc_channel_filter* filter;
-    const ChannelFilterVtable* vtable;
+    const FilterAdder filter_adder;
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
     bool skip_v3 = false;
@@ -313,39 +262,12 @@ class ChannelInit {
     std::vector<PostProcessor> post_processors;
   };
 
-  template <typename T, typename = void>
-  struct VtableForType {
-    static const ChannelFilterVtable* vtable() { return nullptr; }
-  };
-
-  template <typename T>
-  struct VtableForType<T, absl::void_t<typename T::Call>> {
-    static const ChannelFilterVtable kVtable;
-    static const ChannelFilterVtable* vtable() { return &kVtable; }
-  };
-
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
   static StackConfig BuildStackConfig(
       const std::vector<std::unique_ptr<FilterRegistration>>& registrations,
       PostProcessor* post_processors, grpc_channel_stack_type type);
 };
-
-template <typename T>
-const ChannelInit::ChannelFilterVtable
-    ChannelInit::VtableForType<T, absl::void_t<typename T::Call>>::kVtable = {
-        sizeof(CreatedType<T>), alignof(CreatedType<T>),
-        [](void* data, const ChannelArgs& args) -> absl::Status {
-          // TODO(ctiller): fill in ChannelFilter::Args (2nd arg)
-          absl::StatusOr<CreatedType<T>> r = T::Create(args, {});
-          if (!r.ok()) return r.status();
-          new (data) CreatedType<T>(std::move(*r));
-          return absl::OkStatus();
-        },
-        [](void* data) { Destruct(static_cast<CreatedType<T>*>(data)); },
-        [](void* data, CallFilters::StackBuilder& builder) {
-          builder.Add(static_cast<CreatedType<T>*>(data)->get());
-        }};
 
 }  // namespace grpc_core
 

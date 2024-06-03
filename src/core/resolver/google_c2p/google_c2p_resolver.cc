@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -32,7 +33,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/gcp/metadata_query.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -42,14 +42,15 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 #include "src/core/lib/uri/uri_parser.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/gcp_metadata_query.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
@@ -81,10 +82,10 @@ class GoogleCloud2ProdResolver final : public Resolver {
   std::string metadata_server_name_ = "metadata.google.internal.";
   bool shutdown_ = false;
 
-  OrphanablePtr<MetadataQuery> zone_query_;
+  OrphanablePtr<GcpMetadataQuery> zone_query_;
   absl::optional<std::string> zone_;
 
-  OrphanablePtr<MetadataQuery> ipv6_query_;
+  OrphanablePtr<GcpMetadataQuery> ipv6_query_;
   absl::optional<bool> supports_ipv6_;
 };
 
@@ -151,8 +152,8 @@ void GoogleCloud2ProdResolver::StartLocked() {
     return;
   }
   // Using xDS.  Start metadata server queries.
-  zone_query_ = MakeOrphanable<MetadataQuery>(
-      metadata_server_name_, std::string(MetadataQuery::kZoneAttribute),
+  zone_query_ = MakeOrphanable<GcpMetadataQuery>(
+      metadata_server_name_, std::string(GcpMetadataQuery::kZoneAttribute),
       &pollent_,
       [resolver = RefAsSubclass<GoogleCloud2ProdResolver>()](
           std::string /* attribute */,
@@ -165,8 +166,8 @@ void GoogleCloud2ProdResolver::StartLocked() {
             DEBUG_LOCATION);
       },
       Duration::Seconds(10));
-  ipv6_query_ = MakeOrphanable<MetadataQuery>(
-      metadata_server_name_, std::string(MetadataQuery::kIPv6Attribute),
+  ipv6_query_ = MakeOrphanable<GcpMetadataQuery>(
+      metadata_server_name_, std::string(GcpMetadataQuery::kIPv6Attribute),
       &pollent_,
       [resolver = RefAsSubclass<GoogleCloud2ProdResolver>()](
           std::string /* attribute */,
@@ -282,7 +283,7 @@ class GoogleCloud2ProdResolverFactory final : public ResolverFactory {
 
   bool IsValidUri(const URI& uri) const override {
     if (GPR_UNLIKELY(!uri.authority().empty())) {
-      gpr_log(GPR_ERROR, "google-c2p URI scheme does not support authorities");
+      LOG(ERROR) << "google-c2p URI scheme does not support authorities";
       return false;
     }
     return true;

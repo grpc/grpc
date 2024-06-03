@@ -86,6 +86,7 @@ class StatefulSessionFilter
     void OnServerInitialMetadata(ServerMetadata& md);
     void OnServerTrailingMetadata(ServerMetadata& md);
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
 

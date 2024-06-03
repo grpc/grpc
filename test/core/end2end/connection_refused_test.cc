@@ -21,6 +21,7 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -29,7 +30,6 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -49,8 +49,8 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_status_code status;
   grpc_slice details;
 
-  gpr_log(GPR_INFO, "TEST: wait_for_ready=%d use_service_config=%d",
-          wait_for_ready, use_service_config);
+  LOG(INFO) << "TEST: wait_for_ready=" << wait_for_ready
+            << " use_service_config=" << use_service_config;
 
   grpc_init();
 
@@ -81,7 +81,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   // create a call, channel to a port which will refuse connection
   int port = grpc_pick_unused_port_or_die();
   std::string addr = grpc_core::JoinHostPort("127.0.0.1", port);
-  gpr_log(GPR_INFO, "server: %s", addr.c_str());
+  LOG(INFO) << "server: " << addr;
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   chan = grpc_channel_create(addr.c_str(), creds, args);
   grpc_channel_credentials_release(creds);

@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 
 #include <grpc/byte_buffer.h>
@@ -38,7 +39,6 @@
 #include <grpc/impl/propagation_bits.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -228,11 +228,11 @@ class TestServer {
         grpc_completion_queue_destroy(call_cq);
       }
     }
-    gpr_log(GPR_INFO, "test server shutdown, joining RPC threads...");
+    LOG(INFO) << "test server shutdown, joining RPC threads...";
     for (auto& t : rpc_threads) {
       t.join();
     }
-    gpr_log(GPR_INFO, "test server threads all finished!");
+    LOG(INFO) << "test server threads all finished!";
   }
 
   static void HandleOneRpc(grpc_call* call, grpc_completion_queue* call_cq) {
@@ -337,15 +337,15 @@ TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   for (auto& thread : threads) {
     thread.join();
   }
-  gpr_log(GPR_DEBUG, "All RPCs completed!");
+  VLOG(2) << "All RPCs completed!";
   int num_calls_seen_at_server = test_server->ShutdownAndGetNumCallsHandled();
   if (num_calls_seen_at_server != kNumCalls) {
-    gpr_log(GPR_ERROR,
-            "Expected server to handle %d calls, but instead it only handled "
-            "%d. This suggests some or all RPCs didn't make it to the server, "
-            "which means "
-            "that this test likely isn't doing what it's meant to be doing.",
-            kNumCalls, num_calls_seen_at_server);
+    LOG(ERROR) << "Expected server to handle " << kNumCalls
+               << " calls, but instead it only handled "
+               << num_calls_seen_at_server
+               << ". This suggests some or all RPCs didn't make it to the "
+                  "server, which means that this test likely isn't doing what "
+                  "it's meant to be doing.";
     CHECK(0);
   }
 }

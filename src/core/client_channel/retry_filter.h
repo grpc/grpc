@@ -40,10 +40,10 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/useful.h"
 
 extern grpc_core::TraceFlag grpc_retry_trace;
 
@@ -66,8 +66,7 @@ class RetryFilter final {
   // any even moderately compelling reason to do so.
   static double BackoffJitter() { return 0.2; }
 
-  const internal::RetryMethodConfig* GetRetryPolicy(
-      const grpc_call_context_element* context);
+  const internal::RetryMethodConfig* GetRetryPolicy(Arena* arena);
 
   RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data() const {
     return retry_throttle_data_;

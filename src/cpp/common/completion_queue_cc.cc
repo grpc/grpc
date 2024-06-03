@@ -19,19 +19,19 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/useful.h"
 
 namespace grpc {
 namespace {
@@ -134,8 +134,7 @@ CompletionQueue::CompletionQueue(grpc_completion_queue* take)
 void CompletionQueue::Shutdown() {
 #ifndef NDEBUG
   if (!ServerListEmpty()) {
-    gpr_log(GPR_ERROR,
-            "CompletionQueue shutdown being shutdown before its server.");
+    LOG(ERROR) << "CompletionQueue shutdown being shutdown before its server.";
   }
 #endif
   CompleteAvalanching();

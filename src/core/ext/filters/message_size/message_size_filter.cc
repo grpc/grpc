@@ -51,10 +51,12 @@ namespace grpc_core {
 const NoInterceptor ClientMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ClientMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ClientMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ClientMessageSizeFilter::Call::OnFinalize;
 const NoInterceptor ServerMessageSizeFilter::Call::OnClientInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerMessageSizeFilter::Call::OnServerTrailingMetadata;
+const NoInterceptor ServerMessageSizeFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 
 //
@@ -62,11 +64,8 @@ const NoInterceptor ServerMessageSizeFilter::Call::OnFinalize;
 //
 
 const MessageSizeParsedConfig* MessageSizeParsedConfig::GetFromCallContext(
-    const grpc_call_context_element* context,
-    size_t service_config_parser_index) {
-  if (context == nullptr) return nullptr;
-  auto* svc_cfg_call_data = static_cast<ServiceConfigCallData*>(
-      context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+    Arena* arena, size_t service_config_parser_index) {
+  auto* svc_cfg_call_data = arena->GetContext<ServiceConfigCallData>();
   if (svc_cfg_call_data == nullptr) return nullptr;
   return static_cast<const MessageSizeParsedConfig*>(
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index));
@@ -186,8 +185,7 @@ ClientMessageSizeFilter::Call::Call(ClientMessageSizeFilter* filter)
   // size to the receive limit.
   const MessageSizeParsedConfig* config_from_call_context =
       MessageSizeParsedConfig::GetFromCallContext(
-          GetContext<grpc_call_context_element>(),
-          filter->service_config_parser_index_);
+          GetContext<Arena>(), filter->service_config_parser_index_);
   if (config_from_call_context != nullptr) {
     absl::optional<uint32_t> max_send_size = limits_.max_send_size();
     absl::optional<uint32_t> max_recv_size = limits_.max_recv_size();

@@ -18,10 +18,10 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
@@ -31,13 +31,13 @@
 namespace grpc_core {
 
 static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
-  gpr_log(GPR_ERROR, "Create client side call");
+  LOG(ERROR) << "Create client side call";
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(30))
                .Create();
   CoreEnd2endTest::IncomingMetadata server_initial_md;
   CoreEnd2endTest::IncomingStatusOnClient server_status;
-  gpr_log(GPR_ERROR, "Start initial batch");
+  LOG(ERROR) << "Start initial batch";
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()

@@ -34,10 +34,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 
 struct test_socket_mutator {

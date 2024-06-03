@@ -20,7 +20,8 @@
 
 #include <fstream>
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
+
 #include <grpcpp/client_context.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -79,58 +80,52 @@ void CompositeReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
 }
 
 void GprLogReporter::ReportQPS(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "QPS: %.1f", result.summary().qps());
+  LOG(INFO) << "QPS: " << result.summary().qps();
   if (result.summary().failed_requests_per_second() > 0) {
-    gpr_log(GPR_INFO, "failed requests/second: %.1f",
-            result.summary().failed_requests_per_second());
-    gpr_log(GPR_INFO, "successful requests/second: %.1f",
-            result.summary().successful_requests_per_second());
+    LOG(INFO) << "failed requests/second: "
+              << result.summary().failed_requests_per_second();
+    LOG(INFO) << "successful requests/second: "
+              << result.summary().successful_requests_per_second();
   }
 }
 
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", result.summary().qps(),
-          result.summary().qps_per_server_core());
+  LOG(INFO) << "QPS: " << result.summary().qps() << " ("
+            << result.summary().qps_per_server_core() << "/server core)";
 }
 
 void GprLogReporter::ReportLatency(const ScenarioResult& result) {
-  gpr_log(GPR_INFO,
-          "Latencies (50/90/95/99/99.9%%-ile): %.1f/%.1f/%.1f/%.1f/%.1f us",
-          result.summary().latency_50() / 1000,
-          result.summary().latency_90() / 1000,
-          result.summary().latency_95() / 1000,
-          result.summary().latency_99() / 1000,
-          result.summary().latency_999() / 1000);
+  LOG(INFO) << "Latencies (50/90/95/99/99.9%-ile): "
+            << result.summary().latency_50() / 1000 << "/"
+            << result.summary().latency_90() / 1000 << "/"
+            << result.summary().latency_95() / 1000 << "/"
+            << result.summary().latency_99() / 1000 << "/"
+            << result.summary().latency_999() / 1000 << " us";
 }
 
 void GprLogReporter::ReportTimes(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "Server system time: %.2f%%",
-          result.summary().server_system_time());
-  gpr_log(GPR_INFO, "Server user time:   %.2f%%",
-          result.summary().server_user_time());
-  gpr_log(GPR_INFO, "Client system time: %.2f%%",
-          result.summary().client_system_time());
-  gpr_log(GPR_INFO, "Client user time:   %.2f%%",
-          result.summary().client_user_time());
+  LOG(INFO) << "Server system time: " << result.summary().server_system_time();
+  LOG(INFO) << "Server user time:   " << result.summary().server_user_time();
+  LOG(INFO) << "Client system time: " << result.summary().client_system_time();
+  LOG(INFO) << "Client user time:   " << result.summary().client_user_time();
 }
 
 void GprLogReporter::ReportCpuUsage(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "Server CPU usage: %.2f%%",
-          result.summary().server_cpu_usage());
+  LOG(INFO) << "Server CPU usage: " << result.summary().server_cpu_usage();
 }
 
 void GprLogReporter::ReportPollCount(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "Client Polls per Request: %.2f",
-          result.summary().client_polls_per_request());
-  gpr_log(GPR_INFO, "Server Polls per Request: %.2f",
-          result.summary().server_polls_per_request());
+  LOG(INFO) << "Client Polls per Request: "
+            << result.summary().client_polls_per_request();
+  LOG(INFO) << "Server Polls per Request: "
+            << result.summary().server_polls_per_request();
 }
 
 void GprLogReporter::ReportQueriesPerCpuSec(const ScenarioResult& result) {
-  gpr_log(GPR_INFO, "Server Queries/CPU-sec: %.2f",
-          result.summary().server_queries_per_cpu_sec());
-  gpr_log(GPR_INFO, "Client Queries/CPU-sec: %.2f",
-          result.summary().client_queries_per_cpu_sec());
+  LOG(INFO) << "Server Queries/CPU-sec: "
+            << result.summary().server_queries_per_cpu_sec();
+  LOG(INFO) << "Client Queries/CPU-sec: "
+            << result.summary().client_queries_per_cpu_sec();
 }
 
 void JsonReporter::ReportQPS(const ScenarioResult& result) {
@@ -170,14 +165,14 @@ void RpcReporter::ReportQPS(const ScenarioResult& result) {
   grpc::Status status;
   Void phony;
 
-  gpr_log(GPR_INFO, "RPC reporter sending scenario result to server");
+  LOG(INFO) << "RPC reporter sending scenario result to server";
   status = stub_->ReportScenario(&context, result, &phony);
 
   if (status.ok()) {
-    gpr_log(GPR_INFO, "RpcReporter report RPC success!");
+    LOG(INFO) << "RpcReporter report RPC success!";
   } else {
-    gpr_log(GPR_ERROR, "RpcReporter report RPC: code: %d. message: %s",
-            status.error_code(), status.error_message().c_str());
+    LOG(ERROR) << "RpcReporter report RPC: code: " << status.error_code()
+               << ". message: " << status.error_message();
   }
 }
 

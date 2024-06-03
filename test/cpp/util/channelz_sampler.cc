@@ -46,8 +46,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_writer.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/cpp/server/channelz/channelz_service.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 #include "test/core/test_util/test_config.h"

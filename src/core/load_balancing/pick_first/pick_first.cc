@@ -43,11 +43,9 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -57,15 +55,17 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/health_check_client.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 
@@ -84,19 +84,25 @@ const auto kMetricDisconnections =
         "grpc.lb.pick_first.disconnections",
         "EXPERIMENTAL.  Number of times the selected subchannel becomes "
         "disconnected.",
-        "{disconnection}", {kMetricLabelTarget}, {}, false);
+        "{disconnection}", false)
+        .Labels(kMetricLabelTarget)
+        .Build();
 
 const auto kMetricConnectionAttemptsSucceeded =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_succeeded",
         "EXPERIMENTAL.  Number of successful connection attempts.", "{attempt}",
-        {kMetricLabelTarget}, {}, false);
+        false)
+        .Labels(kMetricLabelTarget)
+        .Build();
 
 const auto kMetricConnectionAttemptsFailed =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.connection_attempts_failed",
         "EXPERIMENTAL.  Number of failed connection attempts.", "{attempt}",
-        {kMetricLabelTarget}, {}, false);
+        false)
+        .Labels(kMetricLabelTarget)
+        .Build();
 
 class PickFirstConfig final : public LoadBalancingPolicy::Config {
  public:

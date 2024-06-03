@@ -21,9 +21,9 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/time.h"
@@ -105,7 +105,7 @@ TEST_F(TimerTest, OneTimerExpires) {
   // Actual number of wakeups is more due to bug
   // https://github.com/grpc/grpc/issues/19947
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
-  gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
+  VLOG(2) << "wakeups: " << wakeups;
 }
 
 TEST_F(TimerTest, MultipleTimersExpire) {
@@ -135,7 +135,7 @@ TEST_F(TimerTest, MultipleTimersExpire) {
   // wakeups. Actual number of wakeups is more due to bug
   // https://github.com/grpc/grpc/issues/19947
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
-  gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
+  VLOG(2) << "wakeups: " << wakeups;
 }
 
 TEST_F(TimerTest, CancelSomeTimers) {
@@ -177,7 +177,7 @@ TEST_F(TimerTest, CancelSomeTimers) {
   // Actual number of wakeups is more due to bug
   // https://github.com/grpc/grpc/issues/19947
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
-  gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
+  VLOG(2) << "wakeups: " << wakeups;
 }
 
 // Enable the following test after

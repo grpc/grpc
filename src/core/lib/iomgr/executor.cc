@@ -28,11 +28,11 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/util/useful.h"
 
 #define MAX_DEPTH 2
 

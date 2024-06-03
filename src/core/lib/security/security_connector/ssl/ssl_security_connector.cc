@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -380,7 +381,7 @@ grpc_ssl_channel_security_connector_create(
     const char* overridden_target_name,
     tsi_ssl_client_handshaker_factory* client_factory) {
   if (config == nullptr || target_name == nullptr) {
-    gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
+    LOG(ERROR) << "An ssl channel needs a config and a target name.";
     return nullptr;
   }
 

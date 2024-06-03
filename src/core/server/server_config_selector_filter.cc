@@ -72,6 +72,7 @@ class ServerConfigSelectorFilter final
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
@@ -148,8 +149,7 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
     return absl::UnavailableError(StatusToString(call_config.status()));
   }
   auto* service_config_call_data =
-      GetContext<Arena>()->New<ServiceConfigCallData>(
-          GetContext<Arena>(), GetContext<grpc_call_context_element>());
+      GetContext<Arena>()->New<ServiceConfigCallData>(GetContext<Arena>());
   service_config_call_data->SetServiceConfig(
       std::move(call_config->service_config), call_config->method_configs);
   return absl::OkStatus();
@@ -158,6 +158,7 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
 const NoInterceptor ServerConfigSelectorFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerConfigSelectorFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServerConfigSelectorFilter::Call::OnFinalize;
 

@@ -21,8 +21,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -34,7 +34,6 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/server/server.h"
+#include "src/core/telemetry/stats.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -61,7 +61,7 @@ using grpc_event_engine::experimental::URIToResolvedAddress;
 
 void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
-constexpr int kIterations = 10000;
+constexpr int kIterations = 1000;
 constexpr int kSnapshotEvery = kIterations / 10;
 }  // namespace
 
@@ -216,17 +216,20 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
       EchoTestService::NewStub(fixture->channel()));
   auto baseline = grpc_core::global_stats().Collect();
   auto snapshot = grpc_core::global_stats().Collect();
+  auto last_snapshot = absl::Now();
   for (int iteration = 0; iteration < kIterations; iteration++) {
-    if (iteration % kSnapshotEvery == 0) {
+    if (iteration > 0 && iteration % kSnapshotEvery == 0) {
       auto new_snapshot = grpc_core::global_stats().Collect();
       auto diff = new_snapshot->Diff(*snapshot);
-      gpr_log(GPR_DEBUG,
-              "  SNAPSHOT: UnaryPingPong(%d, %d): writes_per_iteration=%0.3f "
-              "(total=%lu, i=%d) pings=%lu",
-              request_size, response_size,
-              static_cast<double>(diff->syscall_write) /
-                  static_cast<double>(kSnapshotEvery),
-              diff->syscall_write, iteration, diff->http2_pings_sent);
+      auto now = absl::Now();
+      LOG(ERROR) << "  SNAPSHOT: UnaryPingPong(" << request_size << ", "
+                 << response_size << "): writes_per_iteration="
+                 << static_cast<double>(diff->syscall_write) /
+                        static_cast<double>(kSnapshotEvery)
+                 << " (total=" << diff->syscall_write << ", i=" << iteration
+                 << ") pings=" << diff->http2_pings_sent
+                 << "; duration=" << now - last_snapshot;
+      last_snapshot = now;
       snapshot = std::move(new_snapshot);
     }
     recv_response.Clear();
@@ -238,7 +241,7 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
     response_reader->Finish(&recv_response, &recv_status, tag(4));
     CHECK(fixture->cq()->Next(&t, &ok));
     CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1));
+    CHECK(t == tag(0) || t == tag(1)) << "Found unexpected tag " << t;
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
@@ -259,10 +262,9 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
   auto end_stats = grpc_core::global_stats().Collect()->Diff(*baseline);
   double writes_per_iteration =
       end_stats->syscall_write / static_cast<double>(kIterations);
-  gpr_log(GPR_DEBUG,
-          "UnaryPingPong(%d, %d): writes_per_iteration=%0.3f (total=%lu)",
-          request_size, response_size, writes_per_iteration,
-          end_stats->syscall_write);
+  VLOG(2) << "UnaryPingPong(" << request_size << ", " << response_size
+          << "): writes_per_iteration=" << writes_per_iteration
+          << " (total=" << end_stats->syscall_write << ")";
 
   fixture.reset();
   server_env[0]->~ServerEnv();

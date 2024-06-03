@@ -77,7 +77,10 @@ grpc_cc_library(
         "driver.h",
         "report.h",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     deps = [
         ":histogram",
         ":parse_json",

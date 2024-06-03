@@ -68,6 +68,7 @@ const grpc_channel_filter ServerAuthFilter::kFilter =
         "server-auth");
 
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerAuthFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServerAuthFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerAuthFilter::Call::OnServerTrailingMetadata;
@@ -202,11 +203,7 @@ ServerAuthFilter::Call::Call(ServerAuthFilter* filter) {
       grpc_server_security_context_create(GetContext<Arena>());
   server_ctx->auth_context =
       filter->auth_context_->Ref(DEBUG_LOCATION, "server_auth_filter");
-  grpc_call_context_element& context =
-      GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY];
-  if (context.value != nullptr) context.destroy(context.value);
-  context.value = server_ctx;
-  context.destroy = grpc_server_security_context_destroy;
+  SetContext<SecurityContext>(server_ctx);
 }
 
 ServerAuthFilter::ServerAuthFilter(

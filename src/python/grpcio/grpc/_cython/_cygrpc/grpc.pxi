@@ -59,8 +59,11 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
 
 # gRPC Core Declarations
 
-cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
+cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
     cdef cppclass ClientCallTracer:
+        pass
+
+    cdef cppclass CallTracerAnnotationInterface:
         pass
 
     cdef cppclass ServerCallTracer:
@@ -72,14 +75,10 @@ cdef extern from "src/core/lib/channel/call_tracer.h" namespace "grpc_core":
         @staticmethod
         void RegisterGlobal(ServerCallTracerFactory* factory) nogil
 
-cdef extern from "src/core/lib/channel/context.h":
-  ctypedef enum grpc_context_index:
-    GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE
-
 cdef extern from "src/core/lib/surface/call.h":
-  void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
-                             void* value, void (*destroy)(void* value)) nogil
-  void *grpc_call_context_get(grpc_call* call, grpc_context_index elem) nogil
+  void grpc_call_tracer_set(grpc_call* call, void* value) nogil
+
+  void* grpc_call_tracer_get(grpc_call* call) nogil
 
 cdef extern from "grpc/support/alloc.h":
 

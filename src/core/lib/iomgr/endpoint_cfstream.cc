@@ -31,7 +31,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/string.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -106,12 +106,9 @@ static void CFStreamUnref(CFStreamEndpoint* ep) {
 static void CFStreamRef(CFStreamEndpoint* ep) { gpr_ref(&ep->refcount); }
 #endif
 
-static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error,
-                                               CFStreamEndpoint* ep) {
-  return grpc_error_set_str(
-      grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kTargetAddress, ep->peer_string);
+static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error) {
+  return grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kRpcStatus,
+                            GRPC_STATUS_UNAVAILABLE);
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
@@ -170,7 +167,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     CFErrorRef stream_error = CFReadStreamCopyError(ep->read_stream);
     if (stream_error != nullptr) {
       error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"), ep);
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"));
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("Read error");
@@ -179,8 +176,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     EP_UNREF(ep, "read");
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
-    CallReadCb(ep,
-               CFStreamAnnotateError(GRPC_ERROR_CREATE("Socket closed"), ep));
+    CallReadCb(ep, CFStreamAnnotateError(GRPC_ERROR_CREATE("Socket closed")));
     EP_UNREF(ep, "read");
   } else {
     if (read_size < static_cast<CFIndex>(len)) {
@@ -209,7 +205,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     CFErrorRef stream_error = CFWriteStreamCopyError(ep->write_stream);
     if (stream_error != nullptr) {
       error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write failed."), ep);
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Write failed"));
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("write failed.");

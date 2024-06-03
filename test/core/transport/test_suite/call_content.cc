@@ -14,7 +14,7 @@
 
 #include "gmock/gmock.h"
 
-#include "test/core/transport/test_suite/test.h"
+#include "test/core/transport/test_suite/transport_test.h"
 
 using testing::UnorderedElementsAreArray;
 
@@ -62,7 +62,7 @@ void FillMetadata(const std::vector<std::pair<std::string, std::string>>& md,
 }  // namespace
 
 TRANSPORT_TEST(UnaryWithSomeContent) {
-  SetServerAcceptor();
+  SetServerCallDestination();
   const auto client_initial_metadata = RandomMetadata();
   const auto server_initial_metadata = RandomMetadata();
   const auto server_trailing_metadata = RandomMetadata();

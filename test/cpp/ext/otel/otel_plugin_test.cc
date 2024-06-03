@@ -37,8 +37,9 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
@@ -469,6 +470,28 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, NoMeterProviderRegistered) {
                                            kClientAttemptStartedInstrumentName})
                     .set_use_meter_provider(false)));
   SendRPC();
+}
+
+// Test that the otel plugin sees the expected channel target and default
+// authority.
+TEST_F(OpenTelemetryPluginEnd2EndTest, VerifyChannelScopeTargetAndAuthority) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName})
+          .set_channel_scope_filter(
+              [&](const OpenTelemetryPluginBuilder::ChannelScope& scope) {
+                return scope.target() == canonical_server_address_ &&
+                       scope.default_authority() == server_address_;
+              })));
+  SendRPC();
+  const char* kMetricName = "grpc.client.attempt.started";
+  auto data = ReadCurrentMetricsData(
+      [&](const absl::flat_hash_map<
+          std::string,
+          std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>&
+              data) { return !data.contains(kMetricName); });
+  ASSERT_EQ(data[kMetricName].size(), 1);
 }
 
 // Test that a channel scope filter returning true records metrics on the
@@ -1259,11 +1282,21 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key5")), "value5");
 }
 
-using OpenTelemetryPluginNPCMetricsTest = OpenTelemetryPluginEnd2EndTest;
+class OpenTelemetryPluginNPCMetricsTest
+    : public OpenTelemetryPluginEnd2EndTest {
+ protected:
+  void TearDown() override {
+    // We are tearing down OpenTelemetryPluginEnd2EndTest first to ensure that
+    // gRPC has shutdown before we reset the instruments registry.
+    OpenTelemetryPluginEnd2EndTest::TearDown();
+    grpc_core::GlobalInstrumentsRegistryTestPeer::
+        ResetGlobalInstrumentsRegistry();
+  }
+};
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   constexpr absl::string_view kMetricName = "uint64_counter";
-  constexpr int kCounterValues[] = {1, 2, 3};
+  constexpr uint64_t kCounterValues[] = {1, 2, 3};
   constexpr int64_t kCounterResult = 6;
   constexpr std::array<absl::string_view, 2> kLabelKeys = {"label_key_1",
                                                            "label_key_2"};
@@ -1273,9 +1306,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
                                                              "label_value_2"};
   constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
-  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
-      kMetricName, "A simple uint64 counter.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+  auto handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+          kMetricName, "A simple uint64 counter.", "unit",
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
                      .set_channel_scope_filter(
@@ -1319,9 +1356,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
                                                              "label_value_2"};
   constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
-  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleCounter(
-      kMetricName, "A simple double counter.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/false);
+  auto handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleCounter(
+          kMetricName, "A simple double counter.", "unit",
+          /*enable_by_default=*/false)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   Init(std::move(Options()
                      .set_metric_names({kMetricName})
                      .set_channel_scope_filter(
@@ -1355,7 +1396,7 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleCounter) {
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
   constexpr absl::string_view kMetricName = "uint64_histogram";
-  constexpr int kHistogramValues[] = {1, 1, 2, 3, 4, 4, 5, 6};
+  constexpr uint64_t kHistogramValues[] = {1, 1, 2, 3, 4, 4, 5, 6};
   constexpr int64_t kSum = 26;
   constexpr int64_t kMin = 1;
   constexpr int64_t kMax = 6;
@@ -1368,9 +1409,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Histogram) {
                                                              "label_value_2"};
   constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
-  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Histogram(
-      kMetricName, "A simple uint64 histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+  auto handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Histogram(
+          kMetricName, "A simple uint64 histogram.", "unit",
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   Init(std::move(
       Options()
           .set_metric_names({kMetricName})
@@ -1419,9 +1464,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordDoubleHistogram) {
                                                              "label_value_2"};
   constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
-  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+  auto handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          kMetricName, "A simple double histogram.", "unit",
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   Init(std::move(
       Options()
           .set_metric_names({kMetricName})
@@ -1466,9 +1515,13 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
                                                              "label_value_2"};
   constexpr std::array<absl::string_view, 2> kOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2"};
-  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+  auto handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          kMetricName, "A simple double histogram.", "unit",
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   // Build and register a separate OpenTelemetryPlugin and verify its histogram
   // recording.
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
@@ -1592,9 +1645,14 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
   constexpr std::array<absl::string_view, 3> kActualOptionalLabelValues = {
       "optional_label_value_1", "optional_label_value_2",
       "optional_label_value_4"};
-  auto handle = grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
-      kMetricName, "A simple double histogram.", "unit", kLabelKeys,
-      kOptionalLabelKeys, /*enable_by_default=*/true);
+  auto handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          kMetricName, "A simple double histogram.", "unit",
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1],
+                          kOptionalLabelKeys[2], kOptionalLabelKeys[3])
+          .Build();
   Init(std::move(
       Options()
           .set_metric_names({kMetricName})
@@ -1630,6 +1688,28 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
                                 ::testing::DoubleEq(kMax), kCount))))));
 }
 
+TEST_F(OpenTelemetryPluginNPCMetricsTest, InstrumentsEnabledTest) {
+  constexpr absl::string_view kDoubleHistogramMetricName =
+      "yet_another_yet_another_double_histogram";
+  constexpr absl::string_view kUnit64CounterMetricName = "uint64_counter";
+  auto histogram_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          kDoubleHistogramMetricName, "A simple double histogram.", "unit",
+          /*enable_by_default=*/false)
+          .Build();
+  auto counter_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+          kUnit64CounterMetricName, "A simple unit64 counter.", "unit",
+          /*enable_by_default=*/false)
+          .Build();
+  Init(std::move(Options().set_metric_names({kDoubleHistogramMetricName})));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(
+          grpc_core::ChannelArgs());
+  EXPECT_TRUE(stats_plugins.IsInstrumentEnabled(histogram_handle));
+  EXPECT_FALSE(stats_plugins.IsInstrumentEnabled(counter_handle));
+}
+
 using OpenTelemetryPluginCallbackMetricsTest = OpenTelemetryPluginEnd2EndTest;
 
 // The callback minimal interval is longer than the OT reporting interval, so we
@@ -1655,13 +1735,17 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto integer_gauge_handle =
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
           kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
-          kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   auto double_gauge_handle =
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
           kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
-          kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   Init(std::move(Options()
                      .set_metric_names({kInt64CallbackGaugeMetric,
                                         kDoubleCallbackGaugeMetric})
@@ -1671,8 +1755,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
               "dns:///localhost:8080", ""));
-  // Multiple callbacks for the same metrics, each reporting different label
-  // values.
+  // Multiple callbacks for the same metrics, each reporting different
+  // label values.
   int report_count_1 = 0;
   int64_t int_value_1 = 1;
   double double_value_1 = 0.5;
@@ -1688,8 +1772,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
@@ -1705,8 +1789,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(100) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   constexpr int kIterations = 100;
   MetricsCollectorThread collector{
       this, grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
@@ -1786,13 +1870,17 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
   auto integer_gauge_handle =
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackInt64Gauge(
           kInt64CallbackGaugeMetric, "An int64 callback gauge.", "unit",
-          kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   auto double_gauge_handle =
       grpc_core::GlobalInstrumentsRegistry::RegisterCallbackDoubleGauge(
           kDoubleCallbackGaugeMetric, "A double callback gauge.", "unit",
-          kLabelKeys, kOptionalLabelKeys,
-          /*enable_by_default=*/true);
+          /*enable_by_default=*/true)
+          .Labels(kLabelKeys[0], kLabelKeys[1])
+          .OptionalLabels(kOptionalLabelKeys[0], kOptionalLabelKeys[1])
+          .Build();
   Init(std::move(Options()
                      .set_metric_names({kInt64CallbackGaugeMetric,
                                         kDoubleCallbackGaugeMetric})
@@ -1802,8 +1890,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
           grpc_core::experimental::StatsPluginChannelScope(
               "dns:///localhost:8080", ""));
-  // Multiple callbacks for the same metrics, each reporting different label
-  // values.
+  // Multiple callbacks for the same metrics, each reporting different
+  // label values.
   int report_count_1 = 0;
   int64_t int_value_1 = 1;
   double double_value_1 = 0.5;
@@ -1819,8 +1907,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_1++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   int report_count_2 = 0;
   int64_t int_value_2 = 1;
   double double_value_2 = 0.5;
@@ -1836,8 +1924,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
         reporter.Report(double_gauge_handle, double_value_2++, kLabelValuesSet2,
                         kOptionalLabelValuesSet2);
       },
-      {integer_gauge_handle, double_gauge_handle},
-      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor());
+      grpc_core::Duration::Milliseconds(10) * grpc_test_slowdown_factor(),
+      integer_gauge_handle, double_gauge_handle);
   constexpr int kIterations = 100;
   MetricsCollectorThread collector{
       this,
@@ -1854,7 +1942,8 @@ TEST_F(OpenTelemetryPluginCallbackMetricsTest,
       std::string,
       std::vector<opentelemetry::sdk::metrics::PointDataAttributes>>
       data = collector.Stop();
-  // Verify that data is incremental without duplications (cached values).
+  // Verify that data is incremental without duplications (cached
+  // values).
   EXPECT_EQ(report_count_1, kIterations);
   EXPECT_EQ(report_count_2, kIterations);
   EXPECT_EQ(data[kInt64CallbackGaugeMetric].size(),

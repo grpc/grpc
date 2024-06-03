@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
@@ -69,7 +70,7 @@ class ServiceConfigChannelArgFilter final
       auto service_config =
           ServiceConfigImpl::Create(args, *service_config_str);
       if (!service_config.ok()) {
-        gpr_log(GPR_ERROR, "%s", service_config.status().ToString().c_str());
+        LOG(ERROR) << service_config.status().ToString();
       } else {
         service_config_ = std::move(*service_config);
       }
@@ -83,6 +84,7 @@ class ServiceConfigChannelArgFilter final
     static const NoInterceptor OnServerInitialMetadata;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnFinalize;
   };
@@ -98,6 +100,8 @@ const NoInterceptor
 const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnClientToServerMessage;
 const NoInterceptor
+    ServiceConfigChannelArgFilter::Call::OnClientToServerHalfClose;
+const NoInterceptor
     ServiceConfigChannelArgFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServiceConfigChannelArgFilter::Call::OnFinalize;
 
@@ -109,8 +113,7 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
         md.get_pointer(HttpPathMetadata())->c_slice());
   }
   auto* arena = GetContext<Arena>();
-  auto* service_config_call_data = arena->New<ServiceConfigCallData>(
-      arena, GetContext<grpc_call_context_element>());
+  auto* service_config_call_data = arena->New<ServiceConfigCallData>(arena);
   service_config_call_data->SetServiceConfig(filter->service_config_,
                                              method_configs);
 }

@@ -49,9 +49,7 @@
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodServerListener final
-    : public Server::ListenerInterface,
-      public RefCounted<ChaoticGoodServerListener> {
+class ChaoticGoodServerListener final : public Server::ListenerInterface {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
     return [bitgen = absl::BitGen()]() mutable {
@@ -108,8 +106,6 @@ class ChaoticGoodServerListener final
 
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
       Timestamp GetConnectionDeadline();
-      const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
-          memory_allocator_;
       const RefCountedPtr<ActiveConnection> connection_;
       const RefCountedPtr<HandshakeManager> handshake_mgr_;
     };
@@ -117,9 +113,7 @@ class ChaoticGoodServerListener final
    private:
     void Done(absl::optional<absl::string_view> error = absl::nullopt);
     void NewConnectionID();
-    const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
-        memory_allocator_;
-    ScopedArenaPtr arena_ = MakeScopedArena(1024, memory_allocator_.get());
+    RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
     const RefCountedPtr<ChaoticGoodServerListener> listener_;
     RefCountedPtr<HandshakingState> handshaking_state_;
     Mutex mu_;
@@ -163,11 +157,6 @@ class ChaoticGoodServerListener final
   absl::AnyInvocable<std::string()> connection_id_generator_
       ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
-  std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
-      memory_allocator_ =
-          std::make_shared<grpc_event_engine::experimental::MemoryAllocator>(
-              ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-                  "server_connection"));
 };
 
 }  // namespace chaotic_good

@@ -43,12 +43,10 @@
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -71,6 +69,8 @@
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/time_precise.h"
 
 //
 // Client channel filter
@@ -85,9 +85,6 @@
 
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
-
-// Channel arg containing a pointer to the ClientChannelFilter object.
-#define GRPC_ARG_CLIENT_CHANNEL "grpc.internal.client_channel_filter"
 
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:
@@ -112,7 +109,9 @@ class ClientChannelFilter final {
 
   // Flag that this object gets stored in channel args as a raw pointer.
   struct RawPointerChannelArgTag {};
-  static absl::string_view ChannelArgName() { return GRPC_ARG_CLIENT_CHANNEL; }
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.client_channel_filter";
+  }
 
   static ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       grpc_channel_element* elem, CallArgs call_args,
@@ -165,12 +164,6 @@ class ClientChannelFilter final {
   ArenaPromise<ServerMetadataHandle> CreateLoadBalancedCallPromise(
       CallArgs call_args, absl::AnyInvocable<void()> on_commit,
       bool is_transparent_retry);
-
-  // Exposed for testing only.
-  static ChannelArgs MakeSubchannelArgs(
-      const ChannelArgs& channel_args, const ChannelArgs& address_args,
-      const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
-      const std::string& channel_default_authority);
 
  private:
   class CallData;
@@ -379,7 +372,7 @@ class ClientChannelFilter::LoadBalancedCall
     : public InternallyRefCounted<LoadBalancedCall, UnrefCallDtor> {
  public:
   LoadBalancedCall(ClientChannelFilter* chand,
-                   grpc_call_context_element* call_context,
+                   grpc_call_context_element* call_context, Arena* arena,
                    absl::AnyInvocable<void()> on_commit,
                    bool is_transparent_retry);
   ~LoadBalancedCall() override;
@@ -398,8 +391,8 @@ class ClientChannelFilter::LoadBalancedCall
  protected:
   ClientChannelFilter* chand() const { return chand_; }
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
-    return static_cast<ClientCallTracer::CallAttemptTracer*>(
-        call_context_[GRPC_CONTEXT_CALL_TRACER].value);
+    return DownCast<ClientCallTracer::CallAttemptTracer*>(
+        arena_->GetContext<CallTracerInterface>());
   }
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
@@ -408,6 +401,7 @@ class ClientChannelFilter::LoadBalancedCall
   lb_subchannel_call_tracker() const {
     return lb_subchannel_call_tracker_.get();
   }
+  Arena* arena() const { return arena_; }
 
   void Commit() {
     auto on_commit = std::move(on_commit_);
@@ -440,7 +434,6 @@ class ClientChannelFilter::LoadBalancedCall
   class Metadata;
   class BackendMetricAccessor;
 
-  virtual Arena* arena() const = 0;
   virtual grpc_polling_entity* pollent() = 0;
   virtual grpc_metadata_batch* send_initial_metadata() const = 0;
 
@@ -467,6 +460,7 @@ class ClientChannelFilter::LoadBalancedCall
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       lb_subchannel_call_tracker_;
   grpc_call_context_element* const call_context_;
+  Arena* const arena_;
 };
 
 class ClientChannelFilter::FilterBasedLoadBalancedCall final
@@ -502,7 +496,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   using LoadBalancedCall::chand;
   using LoadBalancedCall::Commit;
 
-  Arena* arena() const override { return arena_; }
   grpc_polling_entity* pollent() override { return pollent_; }
   grpc_metadata_batch* send_initial_metadata() const override {
     return pending_batches_[0]
@@ -557,7 +550,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
   // context.  This will save per-call memory overhead.
-  Arena* arena_;
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;
@@ -605,7 +597,6 @@ class ClientChannelFilter::PromiseBasedLoadBalancedCall final
       CallArgs call_args, OrphanablePtr<PromiseBasedLoadBalancedCall> lb_call);
 
  private:
-  Arena* arena() const override;
   grpc_polling_entity* pollent() override { return &pollent_; }
   grpc_metadata_batch* send_initial_metadata() const override;
 

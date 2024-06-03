@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -33,15 +34,14 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/json/json.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/test_config.h"
 
@@ -215,14 +215,14 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kAddresses);
   ASSERT_NE(picker, nullptr);
-  gpr_log(GPR_INFO, "### RR startup complete");
+  LOG(INFO) << "### RR startup complete";
   // Do a pick and report a failed call.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  gpr_log(GPR_INFO, "### ejection complete");
+  LOG(INFO) << "### ejection complete";
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
@@ -231,7 +231,7 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   WaitForRoundRobinListChange(kAddresses, remaining_addresses);
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  gpr_log(GPR_INFO, "### un-ejection complete");
+  LOG(INFO) << "### un-ejection complete";
   // Expect a picker update.
   WaitForRoundRobinListChange(remaining_addresses, kAddresses);
 }
@@ -265,11 +265,11 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kEndpoints);
   ASSERT_NE(picker, nullptr);
-  gpr_log(GPR_INFO, "### RR startup complete");
+  LOG(INFO) << "### RR startup complete";
   // Do a pick and report a failed call.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  LOG(INFO) << "### failed RPC on " << *address;
   // Based on the address that the failed call went to, we determine
   // which addresses to use in the subsequent steps.
   absl::Span<const absl::string_view> ejected_endpoint_addresses;
@@ -297,12 +297,12 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   }
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  gpr_log(GPR_INFO, "### ejection complete");
+  LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
       {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
       {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
-  gpr_log(GPR_INFO, "### ejected endpoint removed");
+  LOG(INFO) << "### ejected endpoint removed";
   // Cause the connection to the ejected endpoint to fail, and then
   // have it reconnect to a different address.  The endpoint is still
   // ejected, so the new address should not be used.
@@ -312,7 +312,7 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // re-resolution request in the queue.
   DrainRoundRobinPickerUpdates(
       {sentinel_endpoint_addresses[0], unmodified_endpoint_address});
-  gpr_log(GPR_INFO, "### done changing address of ejected endpoint");
+  LOG(INFO) << "### done changing address of ejected endpoint";
   // Do the same thing for the sentinel endpoint, so that we
   // know that the LB policy has seen the address change for the ejected
   // endpoint.
@@ -324,10 +324,10 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   WaitForRoundRobinListChange(
       {unmodified_endpoint_address},
       {sentinel_endpoint_addresses[1], unmodified_endpoint_address});
-  gpr_log(GPR_INFO, "### done changing address of ejected endpoint");
+  LOG(INFO) << "### done changing address of ejected endpoint";
   // Advance time and run the timer callback to trigger un-ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  gpr_log(GPR_INFO, "### un-ejection complete");
+  LOG(INFO) << "### un-ejection complete";
   // The ejected endpoint should come back using the new address.
   WaitForRoundRobinListChange(
       {sentinel_endpoint_addresses[1], unmodified_endpoint_address},
@@ -363,11 +363,11 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   // Expect normal startup.
   auto picker = ExpectRoundRobinStartup(kEndpoints);
   ASSERT_NE(picker, nullptr);
-  gpr_log(GPR_INFO, "### RR startup complete");
+  LOG(INFO) << "### RR startup complete";
   // Do a pick and report a failed call.
   auto ejected_address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(ejected_address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", ejected_address->c_str());
+  LOG(INFO) << "### failed RPC on " << *ejected_address;
   // Based on the address that the failed call went to, we determine
   // which addresses to use in the subsequent steps.
   std::vector<absl::string_view> expected_round_robin_while_ejected;
@@ -393,12 +393,12 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   }
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  gpr_log(GPR_INFO, "### ejection complete");
+  LOG(INFO) << "### ejection complete";
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
       {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
       expected_round_robin_while_ejected);
-  gpr_log(GPR_INFO, "### ejected endpoint removed");
+  LOG(INFO) << "### ejected endpoint removed";
   // Send an update that removes the other address from the ejected endpoint.
   status = ApplyUpdate(BuildUpdate(new_endpoints, kConfig), lb_policy_.get());
   EXPECT_TRUE(status.ok()) << status;
@@ -447,14 +447,14 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(ExpectPickComplete(picker.get()), kAddresses[0]);
   }
-  gpr_log(GPR_INFO, "### PF startup complete");
+  LOG(INFO) << "### PF startup complete";
   // Now have an RPC to that subchannel fail.
   auto address = DoPickWithFailedCall(picker.get());
   ASSERT_TRUE(address.has_value());
-  gpr_log(GPR_INFO, "### failed RPC on %s", address->c_str());
+  LOG(INFO) << "### failed RPC on " << *address;
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
-  gpr_log(GPR_INFO, "### ejection timer pass complete");
+  LOG(INFO) << "### ejection timer pass complete";
   // Subchannel should not be ejected.
   ExpectQueueEmpty();
   // Subchannel should not see a reconnection request.

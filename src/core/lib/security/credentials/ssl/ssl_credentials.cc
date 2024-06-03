@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
@@ -54,7 +55,7 @@ grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs =
         grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (pem_root_certs == nullptr) {
-      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      LOG(ERROR) << "Could not get default pem root certs.";
     } else {
       char* default_roots = gpr_strdup(pem_root_certs);
       config_.pem_root_certs = default_roots;
@@ -378,7 +379,7 @@ grpc_ssl_server_credentials_create_options_using_config(
     grpc_ssl_server_certificate_config* config) {
   grpc_ssl_server_credentials_options* options = nullptr;
   if (config == nullptr) {
-    gpr_log(GPR_ERROR, "Certificate config must not be NULL.");
+    LOG(ERROR) << "Certificate config must not be NULL.";
     goto done;
   }
   options = static_cast<grpc_ssl_server_credentials_options*>(
@@ -394,7 +395,7 @@ grpc_ssl_server_credentials_create_options_using_config_fetcher(
     grpc_ssl_client_certificate_request_type client_certificate_request,
     grpc_ssl_server_certificate_config_callback cb, void* user_data) {
   if (cb == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid certificate config callback parameter.");
+    LOG(ERROR) << "Invalid certificate config callback parameter.";
     return nullptr;
   }
 
@@ -466,7 +467,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_with_options(
     goto done;
   } else if (options->certificate_config_fetcher != nullptr &&
              options->certificate_config_fetcher->cb == nullptr) {
-    gpr_log(GPR_ERROR, "Certificate config fetcher callback must not be NULL.");
+    LOG(ERROR) << "Certificate config fetcher callback must not be NULL.";
     goto done;
   }
 

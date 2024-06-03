@@ -25,7 +25,10 @@ grpc_cc_library(
     name = "xds_server",
     srcs = ["xds_server.cc"],
     hdrs = ["xds_server.h"],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
     visibility = ["@grpc:xds_end2end_test_utils"],
     deps = [
         "//:gpr",
@@ -213,6 +216,11 @@ grpc_cc_test(
     name = "xds_core_end2end_test",
     size = "large",
     srcs = ["xds_core_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
@@ -349,6 +357,7 @@ grpc_cc_test(
     srcs = ["xds_ring_hash_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)

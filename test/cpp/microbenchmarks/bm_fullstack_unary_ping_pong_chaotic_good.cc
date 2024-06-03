@@ -111,7 +111,6 @@ int main(int argc, char** argv) {
   grpc_core::ForceEnableExperiment("event_engine_client", true);
   grpc_core::ForceEnableExperiment("event_engine_listener", true);
   grpc_core::ForceEnableExperiment("promise_based_client_call", true);
-  grpc_core::ForceEnableExperiment("promise_based_server_call", true);
   grpc_core::ForceEnableExperiment("chaotic_good", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   LibraryInitializer libInit;

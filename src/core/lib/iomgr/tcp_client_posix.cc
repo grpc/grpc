@@ -30,6 +30,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
@@ -39,7 +40,6 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
@@ -54,6 +54,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/string.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -198,8 +199,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (!error.ok()) {
-    error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kOsError,
-                               "Timeout occurred");
+    error = grpc_core::AddMessagePrefix("Timeout occurred", error);
     goto finish;
   }
 
@@ -240,7 +240,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
       // your program or another program on the same computer
       // opened too many network connections.  The "easy" fix:
       // don't do that!
-      gpr_log(GPR_ERROR, "kernel out of buffers");
+      LOG(ERROR) << "kernel out of buffers";
       gpr_mu_unlock(&ac->mu);
       grpc_fd_notify_on_write(fd, &ac->write_closure);
       return;
@@ -280,8 +280,6 @@ finish:
         absl::StrCat("Failed to connect to remote host: ", str);
     error = grpc_error_set_str(
         error, grpc_core::StatusStrProperty::kDescription, description);
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kTargetAddress, addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -346,7 +344,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     return 0;
   }
 
-  std::string name = absl::StrCat("tcp-client:", addr_uri.value());
+  std::string name = absl::StrCat("tcp-client:", *addr_uri);
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
   int64_t connection_id = 0;
   if (connect_errno == EWOULDBLOCK || connect_errno == EINPROGRESS) {
@@ -357,7 +355,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (err >= 0) {
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
-    *ep = grpc_tcp_client_create_from_fd(fdobj, options, addr_uri.value());
+    *ep = grpc_tcp_client_create_from_fd(fdobj, options, *addr_uri);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
@@ -365,8 +363,6 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     grpc_error_handle error = GRPC_OS_ERROR(connect_errno, "connect");
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kTargetAddress, addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;

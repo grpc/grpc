@@ -44,6 +44,8 @@
 #include <string>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
@@ -51,10 +53,10 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/string.h"
 
 // set a socket to use zerocopy
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {
@@ -411,7 +413,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
     }
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+      LOG(INFO) << "TCP_USER_TIMEOUT not supported for this platform";
     }
   }
   return absl::OkStatus();
@@ -442,7 +444,7 @@ static void probe_ipv6_once(void) {
   int fd = socket(AF_INET6, SOCK_STREAM, 0);
   g_ipv6_loopback_available = 0;
   if (fd < 0) {
-    gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+    LOG(INFO) << "Disabling AF_INET6 sockets because socket() failed.";
   } else {
     grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
@@ -463,15 +465,9 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-static grpc_error_handle error_for_fd(int fd,
-                                      const grpc_resolved_address* addr) {
+static grpc_error_handle error_for_fd(int fd) {
   if (fd >= 0) return absl::OkStatus();
-  auto addr_str = grpc_sockaddr_to_string(addr, false);
-  grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"),
-      grpc_core::StatusStrProperty::kTargetAddress,
-      addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
-  return err;
+  return GRPC_OS_ERROR(errno, "socket");
 }
 
 grpc_error_handle grpc_create_dualstack_socket(
@@ -522,7 +518,7 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
     // If this isn't an IPv4 address, then return whatever we've got.
     if (!grpc_sockaddr_is_v4mapped(resolved_addr, nullptr)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return error_for_fd(*newfd, resolved_addr);
+      return error_for_fd(*newfd);
     }
     // Fall back to AF_INET.
     if (*newfd >= 0) {
@@ -532,7 +528,7 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = create_socket(factory, family, type, protocol);
-  return error_for_fd(*newfd, resolved_addr);
+  return error_for_fd(*newfd);
 }
 
 #endif

@@ -22,9 +22,9 @@
 #include <limits>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -54,7 +54,7 @@ static void add_test(void) {
   grpc_timer timers[20];
   grpc_core::ExecCtx exec_ctx;
 
-  gpr_log(GPR_INFO, "add_test");
+  LOG(INFO) << "add_test";
 
   grpc_timer_list_init();
   grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
@@ -122,7 +122,7 @@ void destruction_test(void) {
   grpc_timer timers[5];
   grpc_core::ExecCtx exec_ctx;
 
-  gpr_log(GPR_INFO, "destruction_test");
+  LOG(INFO) << "destruction_test";
 
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0));
@@ -179,7 +179,7 @@ void long_running_service_cleanup_test(void) {
   grpc_timer timers[4];
   grpc_core::ExecCtx exec_ctx;
 
-  gpr_log(GPR_INFO, "long_running_service_cleanup_test");
+  LOG(INFO) << "long_running_service_cleanup_test";
 
   grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   CHECK(now.milliseconds_after_process_epoch() >= k25Days.millis());

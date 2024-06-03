@@ -29,6 +29,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/optional.h"
@@ -417,7 +418,7 @@ class RlsEnd2endTest : public ::testing::Test {
           service_(std::forward<Args>(args)...) {}
 
     void Start() {
-      gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
+      LOG(INFO) << "starting " << type_ << " server on port " << port_;
       CHECK(!running_);
       running_ = true;
       service_.Start();
@@ -429,7 +430,7 @@ class RlsEnd2endTest : public ::testing::Test {
       thread_ = std::make_unique<std::thread>(
           std::bind(&ServerThread::Serve, this, &mu, &cond));
       cond.Wait(&mu);
-      gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
+      LOG(INFO) << type_ << " server startup complete";
     }
 
     void Serve(grpc::internal::Mutex* mu, grpc::internal::CondVar* cond) {
@@ -448,11 +449,11 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Shutdown() {
       if (!running_) return;
-      gpr_log(GPR_INFO, "%s about to shutdown", type_.c_str());
+      LOG(INFO) << type_ << " about to shutdown";
       service_.Shutdown();
       server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
       thread_->join();
-      gpr_log(GPR_INFO, "%s shutdown completed", type_.c_str());
+      LOG(INFO) << type_ << " shutdown completed";
       running_ = false;
     }
 
@@ -1535,24 +1536,24 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 0);
   // Check exported metrics.
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(
+      stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
       ::testing::Optional(1));
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(
+      stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
       absl::nullopt);
-  EXPECT_EQ(stats_plugin_->GetCounterValue(
+  EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
                 kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
             absl::nullopt);
   stats_plugin_->TriggerCallbacks();
-  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
                   {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
               ::testing::Optional(1));
-  auto cache_size = stats_plugin_->GetCallbackGaugeValue(
+  auto cache_size = stats_plugin_->GetInt64CallbackGaugeValue(
       kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
       {});
   EXPECT_THAT(cache_size, ::testing::Optional(::testing::Ge(1)));
@@ -1567,24 +1568,24 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Check exported metrics.
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(
+      stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
       ::testing::Optional(1));
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(
+      stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
       ::testing::Optional(1));
-  EXPECT_EQ(stats_plugin_->GetCounterValue(
+  EXPECT_EQ(stats_plugin_->GetUInt64CounterValue(
                 kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
             absl::nullopt);
   stats_plugin_->TriggerCallbacks();
-  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
                   {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
               ::testing::Optional(2));
-  auto cache_size2 = stats_plugin_->GetCallbackGaugeValue(
+  auto cache_size2 = stats_plugin_->GetInt64CallbackGaugeValue(
       kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
       {});
   EXPECT_THAT(cache_size2, ::testing::Optional(::testing::Ge(2)));
@@ -1611,24 +1612,24 @@ TEST_F(RlsMetricsEnd2endTest, MetricValues) {
   EXPECT_EQ(backends_[1]->service_.request_count(), 1);
   // Check exported metrics.
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(
+      stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target0, "complete"}, {}),
       ::testing::Optional(1));
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(
+      stats_plugin_->GetUInt64CounterValue(
           kMetricTargetPicks,
           {target_uri_, rls_server_target_, rls_target1, "complete"}, {}),
       ::testing::Optional(1));
-  EXPECT_THAT(stats_plugin_->GetCounterValue(
+  EXPECT_THAT(stats_plugin_->GetUInt64CounterValue(
                   kMetricFailedPicks, {target_uri_, rls_server_target_}, {}),
               ::testing::Optional(1));
   stats_plugin_->TriggerCallbacks();
-  EXPECT_THAT(stats_plugin_->GetCallbackGaugeValue(
+  EXPECT_THAT(stats_plugin_->GetInt64CallbackGaugeValue(
                   kMetricCacheEntries,
                   {target_uri_, rls_server_target_, kRlsInstanceUuid}, {}),
               ::testing::Optional(3));
-  auto cache_size3 = stats_plugin_->GetCallbackGaugeValue(
+  auto cache_size3 = stats_plugin_->GetInt64CallbackGaugeValue(
       kMetricCacheSize, {target_uri_, rls_server_target_, kRlsInstanceUuid},
       {});
   EXPECT_THAT(cache_size3, ::testing::Optional(::testing::Ge(3)));
@@ -1678,7 +1679,7 @@ TEST_F(RlsMetricsEnd2endTest, MetricValuesDefaultTargetRpcs) {
   EXPECT_EQ(backends_[0]->service_.request_count(), 1);
   // Check expected metrics.
   EXPECT_THAT(
-      stats_plugin_->GetCounterValue(
+      stats_plugin_->GetUInt64CounterValue(
           kMetricDefaultTargetPicks,
           {target_uri_, rls_server_target_, default_target, "complete"}, {}),
       ::testing::Optional(1));

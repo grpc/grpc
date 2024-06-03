@@ -35,7 +35,7 @@
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
+#include "src/core/util/useful.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 

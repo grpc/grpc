@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -31,8 +32,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_trace.h"
-#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/surface/channel_init.h"
+#include "src/core/util/alloc.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -121,7 +122,7 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_core::ChannelArgs& channel_args, const char* name,
     grpc_channel_stack* stack) {
   if (grpc_trace_channel_stack.enabled()) {
-    gpr_log(GPR_INFO, "CHANNEL_STACK: init %s", name);
+    LOG(INFO) << "CHANNEL_STACK: init " << name;
     for (size_t i = 0; i < filter_count; i++) {
       gpr_log(GPR_INFO, "CHANNEL_STACK:   filter %s%s", filters[i]->name,
               filters[i]->make_call_promise ? " [promise-capable]" : "");
@@ -305,13 +306,6 @@ grpc_core::NextPromiseFactory ClientNext(grpc_channel_element* elem) {
   };
 }
 
-grpc_core::NextPromiseFactory ServerNext(grpc_channel_element* elem) {
-  return [elem](grpc_core::CallArgs args) {
-    return elem->filter->make_call_promise(elem, std::move(args),
-                                           ServerNext(elem - 1));
-  };
-}
-
 }  // namespace
 
 grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
@@ -319,29 +313,10 @@ grpc_channel_stack::MakeClientCallPromise(grpc_core::CallArgs call_args) {
   return ClientNext(grpc_channel_stack_element(this, 0))(std::move(call_args));
 }
 
-grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle>
-grpc_channel_stack::MakeServerCallPromise(grpc_core::CallArgs call_args) {
-  return ServerNext(grpc_channel_stack_element(this, this->count - 1))(
-      std::move(call_args));
-}
-
 void grpc_channel_stack::InitClientCallSpine(
     grpc_core::CallSpineInterface* call) {
   for (size_t i = 0; i < count; i++) {
     auto* elem = grpc_channel_stack_element(this, i);
-    if (elem->filter->init_call == nullptr) {
-      grpc_core::Crash(
-          absl::StrCat("Filter '", elem->filter->name,
-                       "' does not support the call-v3 interface"));
-    }
-    elem->filter->init_call(elem, call);
-  }
-}
-
-void grpc_channel_stack::InitServerCallSpine(
-    grpc_core::CallSpineInterface* call) {
-  for (size_t i = 0; i < count; i++) {
-    auto* elem = grpc_channel_stack_element(this, count - 1 - i);
     if (elem->filter->init_call == nullptr) {
       grpc_core::Crash(
           absl::StrCat("Filter '", elem->filter->name,

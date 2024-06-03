@@ -37,7 +37,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -45,9 +44,10 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/util/json/json.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
@@ -1307,8 +1307,8 @@ TEST_F(PickFirstTest, MetricValues) {
   // The first subchannel's connection attempt fails.
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::UnavailableError("failed to connect"));
-  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionAttemptsFailed,
-                                            kLabelValues, {}),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kConnectionAttemptsFailed,
+                                                  kLabelValues, {}),
               ::testing::Optional(1));
   // The LB policy will start a connection attempt on the second subchannel.
   EXPECT_TRUE(subchannel2->ConnectionRequested());
@@ -1317,8 +1317,8 @@ TEST_F(PickFirstTest, MetricValues) {
   subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   // The connection attempt succeeds.
   subchannel2->SetConnectivityState(GRPC_CHANNEL_READY);
-  EXPECT_THAT(stats_plugin->GetCounterValue(kConnectionAttemptsSucceeded,
-                                            kLabelValues, {}),
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kConnectionAttemptsSucceeded,
+                                                  kLabelValues, {}),
               ::testing::Optional(1));
   // The LB policy will report CONNECTING some number of times (doesn't
   // matter how many) and then report READY.
@@ -1332,8 +1332,9 @@ TEST_F(PickFirstTest, MetricValues) {
   subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
   ExpectReresolutionRequest();
   ExpectState(GRPC_CHANNEL_IDLE);
-  EXPECT_THAT(stats_plugin->GetCounterValue(kDisconnections, kLabelValues, {}),
-              ::testing::Optional(1));
+  EXPECT_THAT(
+      stats_plugin->GetUInt64CounterValue(kDisconnections, kLabelValues, {}),
+      ::testing::Optional(1));
 }
 
 class PickFirstHealthCheckingEnabledTest : public PickFirstTest {

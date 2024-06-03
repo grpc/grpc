@@ -65,6 +65,7 @@ grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
     external_deps = [
+        "absl/log:log",
         "gtest",
     ],
     language = "C++",
@@ -81,7 +82,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_string_helpers_test",
     srcs = ["slice_string_helpers_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     uses_event_engine = False,
     uses_polling = False,

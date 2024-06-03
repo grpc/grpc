@@ -60,9 +60,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -74,6 +72,8 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/util/time_precise.h"
 
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
@@ -230,6 +230,7 @@ struct grpc_channel_stack {
   // full C++-ification for now.
   void IncrementRefCount();
   void Unref();
+  void Unref(const grpc_core::DebugLocation& location, const char* reason);
   grpc_core::RefCountedPtr<grpc_channel_stack> Ref() {
     IncrementRefCount();
     return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
@@ -241,7 +242,6 @@ struct grpc_channel_stack {
   MakeServerCallPromise(grpc_core::CallArgs call_args);
 
   void InitClientCallSpine(grpc_core::CallSpineInterface* call);
-  void InitServerCallSpine(grpc_core::CallSpineInterface* call);
 };
 
 // A call stack tracks a set of related filters for one call, and guarantees
@@ -344,6 +344,11 @@ inline void grpc_channel_stack::IncrementRefCount() {
 
 inline void grpc_channel_stack::Unref() {
   GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
+}
+
+inline void grpc_channel_stack::Unref(const grpc_core::DebugLocation&,
+                                      const char* reason) {
+  GRPC_CHANNEL_STACK_UNREF(this, reason);
 }
 
 inline void grpc_call_stack::IncrementRefCount() {

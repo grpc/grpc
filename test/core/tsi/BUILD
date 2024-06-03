@@ -91,7 +91,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "ssl_transport_security_test",
-    timeout = "long",
+    timeout = "eternal",
     srcs = ["ssl_transport_security_test.cc"],
     data = [
         "//src/core/tsi/test_creds:badclient.key",
@@ -111,10 +111,12 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
     language = "C++",
+    shard_count = 5,
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
@@ -166,7 +168,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

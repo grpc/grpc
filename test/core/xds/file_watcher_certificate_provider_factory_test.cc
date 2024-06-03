@@ -27,7 +27,7 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/json/json_reader.h"
+#include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

@@ -43,6 +43,7 @@ class ClientLoadReportingFilter final
     void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata);
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnFinalize;
 
    private:

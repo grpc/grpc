@@ -42,6 +42,7 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/log:check",
+        "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",

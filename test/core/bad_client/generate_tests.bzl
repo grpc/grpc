@@ -44,15 +44,16 @@ def grpc_bad_client_tests():
         hdrs = ["bad_client.h"],
         language = "C++",
         testonly = 1,
+        external_deps = [
+            "absl/log:check",
+            "absl/log:log",
+        ],
         deps = [
             "//test/core/test_util:grpc_test_util",
             "//:grpc",
             "//:gpr",
             "//test/core/end2end:cq_verifier",
             "//:grpc_http_filters",
-        ],
-        external_deps = [
-            "absl/log:check",
         ],
     )
     for t, topt in BAD_CLIENT_TESTS.items():

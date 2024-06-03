@@ -30,10 +30,10 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/notification.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -68,9 +68,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
     using CallAttemptTracer = grpc_core::ClientCallTracer::CallAttemptTracer;
-    auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-    auto* call_tracer = static_cast<CallAttemptTracer*>(
-        call_context[GRPC_CONTEXT_CALL_TRACER].value);
+    auto* call_tracer = grpc_core::GetContext<CallAttemptTracer>();
     EXPECT_NE(call_tracer, nullptr);
     for (const auto& pair : labels_to_inject_) {
       call_tracer->SetOptionalLabel(pair.first, pair.second);

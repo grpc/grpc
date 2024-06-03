@@ -26,6 +26,7 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -51,10 +52,10 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include <errno.h>       // IWYU pragma: keep
@@ -231,7 +232,7 @@ void AsyncConnect::OnWritable(absl::Status status)
       // your program or another program on the same computer
       // opened too many network connections.  The "easy" fix:
       // don't do that!
-      gpr_log(GPR_ERROR, "kernel out of buffers");
+      LOG(ERROR) << "kernel out of buffers";
       mu_.Unlock();
       fd->NotifyOnWrite(on_writable_);
       // Don't run the cleanup function for this case.
@@ -675,6 +676,22 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
       "PosixEventEngine::CreatePosixEndpointFromFd is not supported on "
       "this platform");
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+}
+
+std::unique_ptr<EventEngine::Endpoint> PosixEventEngine::CreateEndpointFromFd(
+    int fd, const EndpointConfig& config) {
+  auto options = TcpOptionsFromEndpointConfig(config);
+  MemoryAllocator allocator;
+  if (options.memory_allocator_factory != nullptr) {
+    return CreatePosixEndpointFromFd(
+        fd, config,
+        options.memory_allocator_factory->CreateMemoryAllocator(
+            absl::StrCat("allocator:", fd)));
+  }
+  return CreatePosixEndpointFromFd(
+      fd, config,
+      options.resource_quota->memory_quota()->CreateMemoryAllocator(
+          absl::StrCat("allocator:", fd)));
 }
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>

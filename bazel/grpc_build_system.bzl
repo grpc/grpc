@@ -235,6 +235,7 @@ def grpc_proto_library(
         name,
         srcs = [],
         deps = [],
+        visibility = None,
         well_known_protos = False,
         has_services = True,
         use_external = False,
@@ -243,6 +244,7 @@ def grpc_proto_library(
         name = name,
         srcs = srcs,
         deps = deps,
+        visibility = visibility,
         well_known_protos = well_known_protos,
         proto_only = not has_services,
         use_external = use_external,
@@ -734,6 +736,13 @@ def grpc_package(name, visibility = "private", features = []):
             default_visibility = visibility,
             features = features,
         )
+
+def grpc_filegroup(name, srcs, **kwargs):
+    native.filegroup(
+        name = name,
+        srcs = srcs,
+        **kwargs
+    )
 
 def grpc_objc_library(
         name,

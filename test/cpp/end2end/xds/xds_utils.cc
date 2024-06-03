@@ -34,9 +34,9 @@
 #include <grpcpp/security/tls_certificate_provider.h>
 
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/env.h"
 #include "src/core/server/server.h"
+#include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -84,7 +84,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "          \"server_uri\": \"<SERVER_URI>\",\n"
       "          \"channel_creds\": [\n"
       "            {\n"
-      "              \"type\": \"<SERVER_CREDS_TYPE>\"\n"
+      "              \"type\": \"<SERVER_CREDS_TYPE>\"<SERVER_CREDS_CONFIG>\n"
       "            }\n"
       "          ],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
@@ -99,6 +99,11 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
         kXdsServerTemplate,
         {{"<SERVER_URI>", server_uri},
          {"<SERVER_CREDS_TYPE>", xds_channel_creds_type_},
+         {"<SERVER_CREDS_CONFIG>",
+          xds_channel_creds_config_.empty()
+              ? ""
+              : absl::StrCat(",\n              \"config\": ",
+                             xds_channel_creds_config_)},
          {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}}));
   }
   return absl::StrCat("      \"xds_servers\": [\n",

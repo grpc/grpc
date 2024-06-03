@@ -21,9 +21,9 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
       control_stub->Start(&start_context, reconnect_params, &empty_response);
   CHECK(start_status.ok());
 
-  gpr_log(GPR_INFO, "Starting connections with retries.");
+  LOG(INFO) << "Starting connections with retries.";
   server_address.str("");
   server_address << absl::GetFlag(FLAGS_server_host) << ':'
                  << absl::GetFlag(FLAGS_server_retry_port);
@@ -100,13 +100,13 @@ int main(int argc, char** argv) {
   Status retry_status =
       retry_stub->Start(&retry_context, reconnect_params, &empty_response);
   CHECK(retry_status.error_code() == grpc::StatusCode::DEADLINE_EXCEEDED);
-  gpr_log(GPR_INFO, "Done retrying, getting final data from server");
+  LOG(INFO) << "Done retrying, getting final data from server";
 
   ClientContext stop_context;
   ReconnectInfo response;
   Status stop_status = control_stub->Stop(&stop_context, Empty(), &response);
   CHECK(stop_status.ok());
   CHECK(response.passed() == true);
-  gpr_log(GPR_INFO, "Passed");
+  LOG(INFO) << "Passed";
   return 0;
 }

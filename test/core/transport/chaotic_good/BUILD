@@ -95,6 +95,7 @@ grpc_proto_fuzzer(
     corpus = "frame_fuzzer_corpus",
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/random:bit_gen_ref",
         "absl/status:statusor",
     ],
@@ -224,6 +225,7 @@ grpc_cc_test(
     srcs = ["chaotic_good_server_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
         "absl/strings",
         "absl/time",
         "gtest",

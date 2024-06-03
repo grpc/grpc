@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
@@ -35,16 +36,15 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/test_config.h"
@@ -295,21 +295,20 @@ TEST_F(XdsOverrideHostTest,
   auto* address1_attribute = MakeOverrideHostAttribute(kAddresses[1]);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
   // Subchannel for address 1 becomes disconnected.
-  gpr_log(GPR_INFO, "### subchannel 1 reporting IDLE");
+  LOG(INFO) << "### subchannel 1 reporting IDLE";
   auto subchannel = FindSubchannel(kAddresses[1]);
   ASSERT_NE(subchannel, nullptr);
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   EXPECT_TRUE(subchannel->ConnectionRequested());
-  gpr_log(GPR_INFO, "### expecting re-resolution request");
+  LOG(INFO) << "### expecting re-resolution request";
   ExpectReresolutionRequest();
-  gpr_log(GPR_INFO,
-          "### expecting RR picks to exclude the disconnected subchannel");
+  LOG(INFO) << "### expecting RR picks to exclude the disconnected subchannel";
   picker =
       WaitForRoundRobinListChange(kAddresses, {kAddresses[0], kAddresses[2]});
   // Picks with the override will be queued.
   ExpectPickQueued(picker.get(), {address1_attribute});
   // The subchannel starts trying to reconnect.
-  gpr_log(GPR_INFO, "### subchannel 1 reporting CONNECTING");
+  LOG(INFO) << "### subchannel 1 reporting CONNECTING";
   subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ASSERT_NE(picker, nullptr);
@@ -317,15 +316,15 @@ TEST_F(XdsOverrideHostTest,
   // Picks with the override will still be queued.
   ExpectPickQueued(picker.get(), {address1_attribute});
   // The connection attempt fails.
-  gpr_log(GPR_INFO, "### subchannel 1 reporting TRANSIENT_FAILURE");
+  LOG(INFO) << "### subchannel 1 reporting TRANSIENT_FAILURE";
   subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                    absl::ResourceExhaustedError("Hmmmm"));
-  gpr_log(GPR_INFO, "### expecting re-resolution request");
+  LOG(INFO) << "### expecting re-resolution request";
   ExpectReresolutionRequest();
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectRoundRobinPicks(picker.get(), {kAddresses[0], kAddresses[2]});
   // The host override is not used.
-  gpr_log(GPR_INFO, "### checking that host override is not used");
+  LOG(INFO) << "### checking that host override is not used";
   ExpectRoundRobinPicksWithAttribute(picker.get(), address1_attribute,
                                      {kAddresses[0], kAddresses[2]});
 }
@@ -376,7 +375,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // The picker should use the DRAINING host when a call's override
   // points to that hose, but the host should not be used if there is no
   // override pointing to it.
-  gpr_log(GPR_INFO, "### sending update with DRAINING host");
+  LOG(INFO) << "### sending update with DRAINING host";
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
                                  {kAddresses[1], XdsHealthStatus::kDraining},
                                  {kAddresses[2], XdsHealthStatus::kHealthy}},
@@ -391,7 +390,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // Now the connection to the draining host gets dropped.
   // The picker should queue picks where the override host is IDLE.
   // All picks without an override host should not use this host.
-  gpr_log(GPR_INFO, "### closing connection to DRAINING host");
+  LOG(INFO) << "### closing connection to DRAINING host";
   subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectPickQueued(picker.get(), {address1_attribute});
@@ -401,7 +400,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // The pick behavior is the same as above: The picker should queue
   // picks where the override host is CONNECTING.  All picks without an
   // override host should not use this host.
-  gpr_log(GPR_INFO, "### subchannel starts reconnecting");
+  LOG(INFO) << "### subchannel starts reconnecting";
   WaitForWorkSerializerToFlush();
   EXPECT_TRUE(subchannel->ConnectionRequested());
   ExpectQueueEmpty();
@@ -412,7 +411,7 @@ TEST_F(XdsOverrideHostTest, DrainingSubchannelIsConnecting) {
   // The subchannel now becomes connected again.
   // Now picks with this override host can be completed again.
   // Picks without an override host still don't use the draining host.
-  gpr_log(GPR_INFO, "### subchannel becomes reconnected");
+  LOG(INFO) << "### subchannel becomes reconnected";
   subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
   picker = ExpectState(GRPC_CHANNEL_READY);
   ExpectOverridePicks(picker.get(), address1_attribute, kAddresses[1]);
@@ -644,7 +643,7 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
       });
   const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  gpr_log(GPR_INFO, "### sending initial update");
+  LOG(INFO) << "### sending initial update";
   EXPECT_EQ(UpdateXdsOverrideHostPolicy(kAddresses, {"UNKNOWN", "HEALTHY"},
                                         Duration::Minutes(1)),
             absl::OkStatus());
@@ -663,7 +662,7 @@ TEST_F(XdsOverrideHostTest, IdleTimer) {
   ExpectOverridePicks(picker.get(), address2_attribute, kAddresses[2]);
   // Increment time by 5 seconds and send an update that moves endpoints 1
   // and 2 to state DRAINING.
-  gpr_log(GPR_INFO, "### moving endpoints 1 and 2 to state DRAINING");
+  LOG(INFO) << "### moving endpoints 1 and 2 to state DRAINING";
   IncrementTimeBy(Duration::Seconds(5));
   ApplyUpdateWithHealthStatuses({{kAddresses[0], XdsHealthStatus::kUnknown},
                                  {kAddresses[1], XdsHealthStatus::kDraining},

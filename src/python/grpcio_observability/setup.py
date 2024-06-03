@@ -47,12 +47,13 @@ CLASSIFIERS = [
 ]
 
 O11Y_CC_SRCS = [
-    "server_call_tracer.cc",
     "client_call_tracer.cc",
+    "metadata_exchange.cc",
     "observability_util.cc",
     "python_observability_context.cc",
-    "sampler.cc",
     "rpc_encoding.cc",
+    "sampler.cc",
+    "server_call_tracer.cc",
 ]
 
 
@@ -207,7 +208,7 @@ elif "linux" in sys.platform or "darwin" in sys.platform:
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
-# <inttypes.h> was included in core/lib/channel/call_tracer.h.
+# <inttypes.h> was included in core/telemetry/call_tracer.h.
 # This macro should already be defined in grpc/grpc.h through port_platform.h,
 # but we're still having issue in aarch64, so we manually define the macro here.
 # TODO(xuanwn): Figure out what's going on in the aarch64 build so we can support

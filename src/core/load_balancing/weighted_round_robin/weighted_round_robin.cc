@@ -45,10 +45,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/metrics.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -61,9 +58,6 @@
 #include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/endpoint_list.h"
@@ -74,6 +68,12 @@
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 #include "src/core/load_balancing/weighted_target/weighted_target.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -85,12 +85,16 @@ constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
 
-const auto kMetricRrFallback = GlobalInstrumentsRegistry::RegisterUInt64Counter(
-    "grpc.lb.wrr.rr_fallback",
-    "EXPERIMENTAL.  Number of scheduler updates in which there were not "
-    "enough endpoints with valid weight, which caused the WRR policy to "
-    "fall back to RR behavior.",
-    "{update}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+const auto kMetricRrFallback =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.lb.wrr.rr_fallback",
+        "EXPERIMENTAL.  Number of scheduler updates in which there were not "
+        "enough endpoints with valid weight, which caused the WRR policy to "
+        "fall back to RR behavior.",
+        "{update}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 const auto kMetricEndpointWeightNotYetUsable =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -99,14 +103,20 @@ const auto kMetricEndpointWeightNotYetUsable =
         "don't yet have usable weight information (i.e., either the load "
         "report has not yet been received, or it is within the blackout "
         "period).",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 const auto kMetricEndpointWeightStale =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.wrr.endpoint_weight_stale",
         "EXPERIMENTAL.  Number of endpoints from each scheduler update whose "
         "latest weight is older than the expiration period.",
-        "{endpoint}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{endpoint}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 const auto kMetricEndpointWeights =
     GlobalInstrumentsRegistry::RegisterDoubleHistogram(
@@ -115,7 +125,10 @@ const auto kMetricEndpointWeights =
         "Each bucket will be a counter that is incremented once for every "
         "endpoint whose weight is within that range. Note that endpoints "
         "without usable weights will have weight 0.",
-        "{weight}", {kMetricLabelTarget}, {kMetricLabelLocality}, false);
+        "{weight}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels(kMetricLabelLocality)
+        .Build();
 
 // Config for WRR policy.
 class WeightedRoundRobinConfig final : public LoadBalancingPolicy::Config {

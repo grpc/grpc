@@ -46,16 +46,14 @@ namespace grpc_core {
 const NoInterceptor RbacFilter::Call::OnServerInitialMetadata;
 const NoInterceptor RbacFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor RbacFilter::Call::OnClientToServerMessage;
+const NoInterceptor RbacFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor RbacFilter::Call::OnServerToClientMessage;
 const NoInterceptor RbacFilter::Call::OnFinalize;
 
 absl::Status RbacFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
                                                        RbacFilter* filter) {
   // Fetch and apply the rbac policy from the service config.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      GetContext<
-          grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-          .value);
+  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   auto* method_params = static_cast<RbacMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           filter->service_config_parser_index_));

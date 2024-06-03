@@ -20,9 +20,9 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server.h>
@@ -90,7 +90,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
 
       // Send a simple response after a small delay that would ensure the client
       // deadline is exceeded.
-      gpr_log(GPR_INFO, "Got request %d", n);
+      LOG(INFO) << "Got request " << n;
       testing::EchoResponse response;
       response.set_message("foobar");
       // A bit of sleep to make sure the deadline elapses.
@@ -99,12 +99,11 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       {
         std::lock_guard<std::mutex> lock(mu);
         if (shutting_down) {
-          gpr_log(GPR_INFO,
-                  "shut down while processing call, not calling Finish()");
+          LOG(INFO) << "shut down while processing call, not calling Finish()";
           // Continue flushing the CQ.
           continue;
         }
-        gpr_log(GPR_INFO, "Finishing request %d", n);
+        LOG(INFO) << "Finishing request " << n;
         responder.Finish(response, grpc::Status::OK,
                          reinterpret_cast<void*>(2));
         if (!cq->Next(&tag, &ok)) {
@@ -119,7 +118,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
       grpc::CreateChannel(address, InsecureChannelCredentials()));
 
   for (int i = 0; i < 100; i++) {
-    gpr_log(GPR_INFO, "Sending %d.", i);
+    LOG(INFO) << "Sending " << i;
     testing::EchoRequest request;
 
     /////////
@@ -138,12 +137,12 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
                      std::chrono::milliseconds(1));
     grpc::Status status = stub->Echo(&ctx, request, &response);
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
-    gpr_log(GPR_INFO, "Success.");
+    LOG(INFO) << "Success.";
   }
-  gpr_log(GPR_INFO, "Done sending RPCs.");
+  LOG(INFO) << "Done sending RPCs.";
 
   // Shut down everything properly.
-  gpr_log(GPR_INFO, "Shutting down.");
+  LOG(INFO) << "Shutting down.";
   {
     std::lock_guard<std::mutex> lock(mu);
     shutting_down = true;
@@ -226,7 +225,7 @@ TEST(ServerRequestCallTest, MultithreadedUnimplementedService) {
   }
 
   // Shut down everything properly.
-  gpr_log(GPR_INFO, "Shutting down.");
+  LOG(INFO) << "Shutting down.";
   shutdown.store(true);
   server->Shutdown();
   cq->Shutdown();

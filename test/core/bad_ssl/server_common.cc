@@ -21,8 +21,8 @@
 #include <signal.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "test/core/test_util/cmdline.h"
@@ -74,7 +74,7 @@ void bad_ssl_run(grpc_server* server) {
   signal(SIGINT, sigint_handler);
   while (!shutdown_finished) {
     if (got_sigint && !shutdown_started) {
-      gpr_log(GPR_INFO, "Shutting down due to SIGINT");
+      LOG(INFO) << "Shutting down due to SIGINT";
       shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
       grpc_server_shutdown_and_notify(server, shutdown_cq, nullptr);
       CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,

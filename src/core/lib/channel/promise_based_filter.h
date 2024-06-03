@@ -59,6 +59,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
@@ -354,31 +355,72 @@ template <typename Promise, typename Derived>
 auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
-    auto status = call_data->call.OnServerTrailingMetadata(*md);
-    if (!status.ok()) return ServerMetadataFromStatus(status);
-    return md;
-  });
+  return OnCancel(
+      Map(std::move(x),
+          [call_data](ServerMetadataHandle md) {
+            auto status = call_data->call.OnServerTrailingMetadata(*md);
+            if (!status.ok()) {
+              return ServerMetadataFromStatus(status);
+            }
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture it here.
+      // This ought to be easy to fix once client side promises are completely
+      // rolled out.
+      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+        grpc_metadata_batch b;
+        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+        b.Set(GrpcCallWasCancelled(), true);
+        promise_detail::Context<grpc_call_context_element> context(ctx);
+        call_data->call.OnServerTrailingMetadata(b).IgnoreError();
+      });
 }
 
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
-    call_data->call.OnServerTrailingMetadata(*md);
-    return md;
-  });
+  return OnCancel(
+      Map(std::move(x),
+          [call_data](ServerMetadataHandle md) {
+            call_data->call.OnServerTrailingMetadata(*md);
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture it here.
+      // This ought to be easy to fix once client side promises are completely
+      // rolled out.
+      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+        grpc_metadata_batch b;
+        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+        b.Set(GrpcCallWasCancelled(), true);
+        promise_detail::Context<grpc_call_context_element> context(ctx);
+        call_data->call.OnServerTrailingMetadata(b);
+      });
 }
 
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return Map(std::move(x), [call_data](ServerMetadataHandle md) {
-    call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
-    return md;
-  });
+  return OnCancel(
+      Map(std::move(x),
+          [call_data](ServerMetadataHandle md) {
+            call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
+            return md;
+          }),
+      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
+      // valid for the cancellation function requiring us to capture it here.
+      // This ought to be easy to fix once client side promises are completely
+      // rolled out.
+      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+        grpc_metadata_batch b;
+        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+        b.Set(GrpcCallWasCancelled(), true);
+        promise_detail::Context<grpc_call_context_element> context(ctx);
+        call_data->call.OnServerTrailingMetadata(b, call_data->channel);
+      });
 }
 
 template <typename Interceptor, typename Derived, typename SfinaeVoid = void>
@@ -492,129 +534,192 @@ auto RunCall(Interceptor interceptor, CallArgs call_args,
       std::move(call_args), std::move(next_promise_factory), call_data);
 }
 
-inline void InterceptClientToServerMessage(const NoInterceptor*, void*,
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
+    void (Derived::Call::*fn)(const Message&),
+    FilterCallData<Derived>* call_data, const CallArgs&) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+    call_data->call.OnClientToServerMessage(*msg);
+    return std::move(msg);
+  };
+}
+
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    FilterCallData<Derived>* call_data, const CallArgs&) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+    auto return_md = call_data->call.OnClientToServerMessage(*msg);
+    if (return_md == nullptr) return std::move(msg);
+    if (call_data->error_latch.is_set()) return absl::nullopt;
+    call_data->error_latch.Set(std::move(return_md));
+    return absl::nullopt;
+  };
+}
+
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
+    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs&) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+    auto return_md =
+        call_data->call.OnClientToServerMessage(*msg, call_data->channel);
+    if (return_md == nullptr) return std::move(msg);
+    if (call_data->error_latch.is_set()) return absl::nullopt;
+    call_data->error_latch.Set(std::move(return_md));
+    return absl::nullopt;
+  };
+}
+
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
+    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs&) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+    return call_data->call.OnClientToServerMessage(std::move(msg),
+                                                   call_data->channel);
+  };
+}
+
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
+    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    FilterCallData<Derived>* call_data, const CallArgs&) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+    auto r = call_data->call.OnClientToServerMessage(std::move(msg),
+                                                     call_data->channel);
+    if (r.ok()) return std::move(*r);
+    if (call_data->error_latch.is_set()) return absl::nullopt;
+    call_data->error_latch.Set(ServerMetadataFromStatus(r.status()));
+    return absl::nullopt;
+  };
+}
+
+template <typename Derived, typename HookFunction>
+inline void InterceptClientToServerMessage(HookFunction hook,
+                                           const NoInterceptor*,
+                                           FilterCallData<Derived>* call_data,
+                                           const CallArgs& call_args) {
+  call_args.client_to_server_messages->InterceptAndMap(
+      InterceptClientToServerMessageHandler(hook, call_data, call_args));
+}
+
+template <typename Derived, typename HookFunction>
+inline void InterceptClientToServerMessage(HookFunction hook,
+                                           void (Derived::Call::*)(),
+                                           FilterCallData<Derived>* call_data,
+                                           const CallArgs& call_args) {
+  call_args.client_to_server_messages->InterceptAndMapWithHalfClose(
+      InterceptClientToServerMessageHandler(hook, call_data, call_args),
+      [call_data]() { call_data->call.OnClientToServerHalfClose(); });
+}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(const NoInterceptor*,
+                                           const NoInterceptor*,
+                                           FilterCallData<Derived>*,
                                            const CallArgs&) {}
 
 template <typename Derived>
-inline void InterceptClientToServerMessage(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
-  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_args.client_to_server_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
-        auto return_md = call_data->call.OnClientToServerMessage(*msg);
-        if (return_md == nullptr) return std::move(msg);
-        if (call_data->error_latch.is_set()) return absl::nullopt;
-        call_data->error_latch.Set(std::move(return_md));
-        return absl::nullopt;
-      });
-}
-
-template <typename Derived>
-inline void InterceptClientToServerMessage(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
-  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_args.client_to_server_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
-        auto return_md =
-            call_data->call.OnClientToServerMessage(*msg, call_data->channel);
-        if (return_md == nullptr) return std::move(msg);
-        if (call_data->error_latch.is_set()) return absl::nullopt;
-        call_data->error_latch.Set(std::move(return_md));
-        return absl::nullopt;
-      });
-}
-
-template <typename Derived>
-inline void InterceptClientToServerMessage(
-    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
-  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_args.client_to_server_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
-        return call_data->call.OnClientToServerMessage(std::move(msg),
-                                                       call_data->channel);
-      });
-}
-
-template <typename Derived>
-inline void InterceptClientToServerMessage(
-    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
-    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
-  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_args.client_to_server_messages->InterceptAndMap(
-      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
-        auto r = call_data->call.OnClientToServerMessage(std::move(msg),
-                                                         call_data->channel);
-        if (r.ok()) return std::move(*r);
-        if (call_data->error_latch.is_set()) return absl::nullopt;
-        call_data->error_latch.Set(ServerMetadataFromStatus(r.status()));
-        return absl::nullopt;
-      });
-}
-
-inline void InterceptClientToServerMessage(const NoInterceptor*, void*, void*,
-                                           CallSpineInterface*) {}
-
-template <typename Derived>
-inline void InterceptClientToServerMessage(
+inline auto InterceptClientToServerMessageHandler(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
     typename Derived::Call* call, Derived*, PipeBasedCallSpine* call_spine) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_spine->client_to_server_messages().receiver.InterceptAndMap(
+  return
       [call, call_spine](MessageHandle msg) -> absl::optional<MessageHandle> {
         auto return_md = call->OnClientToServerMessage(*msg);
         if (return_md == nullptr) return std::move(msg);
         call_spine->PushServerTrailingMetadata(std::move(return_md));
         return absl::nullopt;
-      });
+      };
 }
 
 template <typename Derived>
-inline void InterceptClientToServerMessage(
+inline auto InterceptClientToServerMessageHandler(
+    void (Derived::Call::*fn)(const Message&), typename Derived::Call* call,
+    Derived*, PipeBasedCallSpine*) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  return [call](MessageHandle msg) -> absl::optional<MessageHandle> {
+    call->OnClientToServerMessage(*msg);
+    return std::move(msg);
+  };
+}
+
+template <typename Derived>
+inline auto InterceptClientToServerMessageHandler(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
     typename Derived::Call* call, Derived* channel,
     PipeBasedCallSpine* call_spine) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_spine->client_to_server_messages().receiver.InterceptAndMap(
-      [call, call_spine,
-       channel](MessageHandle msg) -> absl::optional<MessageHandle> {
-        auto return_md = call->OnClientToServerMessage(*msg, channel);
-        if (return_md == nullptr) return std::move(msg);
-        call_spine->PushServerTrailingMetadata(std::move(return_md));
-        return absl::nullopt;
-      });
+  return [call, call_spine,
+          channel](MessageHandle msg) -> absl::optional<MessageHandle> {
+    auto return_md = call->OnClientToServerMessage(*msg, channel);
+    if (return_md == nullptr) return std::move(msg);
+    call_spine->PushServerTrailingMetadata(std::move(return_md));
+    return absl::nullopt;
+  };
 }
 
 template <typename Derived>
-inline void InterceptClientToServerMessage(
+inline auto InterceptClientToServerMessageHandler(
     MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
-    typename Derived::Call* call, Derived* channel,
-    PipeBasedCallSpine* call_spine) {
+    typename Derived::Call* call, Derived* channel, PipeBasedCallSpine*) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_spine->client_to_server_messages().receiver.InterceptAndMap(
-      [call, channel](MessageHandle msg) {
-        return call->OnClientToServerMessage(std::move(msg), channel);
-      });
+  return [call, channel](MessageHandle msg) {
+    return call->OnClientToServerMessage(std::move(msg), channel);
+  };
 }
 
 template <typename Derived>
-inline void InterceptClientToServerMessage(
+inline auto InterceptClientToServerMessageHandler(
     absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
     typename Derived::Call* call, Derived* channel,
     PipeBasedCallSpine* call_spine) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
-  call_spine->client_to_server_messages().receiver.InterceptAndMap(
-      [call, call_spine,
-       channel](MessageHandle msg) -> absl::optional<MessageHandle> {
-        auto r = call->OnClientToServerMessage(std::move(msg), channel);
-        if (r.ok()) return std::move(*r);
-        call_spine->PushServerTrailingMetadata(
-            ServerMetadataFromStatus(r.status()));
-        return absl::nullopt;
-      });
+  return [call, call_spine,
+          channel](MessageHandle msg) -> absl::optional<MessageHandle> {
+    auto r = call->OnClientToServerMessage(std::move(msg), channel);
+    if (r.ok()) return std::move(*r);
+    call_spine->PushServerTrailingMetadata(
+        ServerMetadataFromStatus(r.status()));
+    return absl::nullopt;
+  };
 }
+
+template <typename Derived, typename HookFunction>
+inline void InterceptClientToServerMessage(HookFunction fn,
+                                           const NoInterceptor*,
+                                           typename Derived::Call* call,
+                                           Derived* channel,
+                                           PipeBasedCallSpine* call_spine) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  call_spine->client_to_server_messages().receiver.InterceptAndMap(
+      InterceptClientToServerMessageHandler(fn, call, channel, call_spine));
+}
+
+template <typename Derived, typename HookFunction>
+inline void InterceptClientToServerMessage(HookFunction fn,
+                                           void (Derived::Call::*half_close)(),
+                                           typename Derived::Call* call,
+                                           Derived* channel,
+                                           PipeBasedCallSpine* call_spine) {
+  DCHECK(fn == &Derived::Call::OnClientToServerMessage);
+  DCHECK(half_close == &Derived::Call::OnClientToServerHalfClose);
+  call_spine->client_to_server_messages().receiver.InterceptAndMapWithHalfClose(
+      InterceptClientToServerMessageHandler(fn, call, channel, call_spine),
+      [call]() { call->OnClientToServerHalfClose(); });
+}
+
+template <typename Derived>
+inline void InterceptClientToServerMessage(const NoInterceptor*,
+                                           const NoInterceptor*,
+                                           typename Derived::Call*, Derived*,
+                                           PipeBasedCallSpine*) {}
 
 inline void InterceptClientInitialMetadata(const NoInterceptor*, void*, void*,
                                            PipeBasedCallSpine*) {}
@@ -863,6 +968,18 @@ inline void InterceptServerToClientMessage(const NoInterceptor*, void*,
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
+    void (Derived::Call::*fn)(const Message&),
+    FilterCallData<Derived>* call_data, const CallArgs& call_args) {
+  DCHECK(fn == &Derived::Call::OnServerToClientMessage);
+  call_args.server_to_client_messages->InterceptAndMap(
+      [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
+        call_data->call.OnServerToClientMessage(*msg);
+        return std::move(msg);
+      });
+}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
     ServerMetadataHandle (Derived::Call::*fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
@@ -922,6 +1039,18 @@ inline void InterceptServerToClientMessage(
 
 inline void InterceptServerToClientMessage(const NoInterceptor*, void*, void*,
                                            CallSpineInterface*) {}
+
+template <typename Derived>
+inline void InterceptServerToClientMessage(
+    void (Derived::Call::*fn)(const Message&), typename Derived::Call* call,
+    Derived*, PipeBasedCallSpine* call_spine) {
+  DCHECK(fn == &Derived::Call::OnServerToClientMessage);
+  call_spine->server_to_client_messages().sender.InterceptAndMap(
+      [call](MessageHandle msg) -> absl::optional<MessageHandle> {
+        call->OnServerToClientMessage(*msg);
+        return std::move(msg);
+      });
+}
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
@@ -1120,7 +1249,8 @@ class ImplementChannelFilter : public ChannelFilter,
     promise_filter_detail::InterceptClientInitialMetadata(
         &Derived::Call::OnClientInitialMetadata, call, d, c);
     promise_filter_detail::InterceptClientToServerMessage(
-        &Derived::Call::OnClientToServerMessage, call, d, c);
+        &Derived::Call::OnClientToServerMessage,
+        &Derived::Call::OnClientToServerHalfClose, call, d, c);
     promise_filter_detail::InterceptServerInitialMetadata(
         &Derived::Call::OnServerInitialMetadata, call, d, c);
     promise_filter_detail::InterceptServerToClientMessage(
@@ -1139,7 +1269,8 @@ class ImplementChannelFilter : public ChannelFilter,
     auto* call = promise_filter_detail::MakeFilterCall<Derived>(
         static_cast<Derived*>(this));
     promise_filter_detail::InterceptClientToServerMessage(
-        &Derived::Call::OnClientToServerMessage, call, call_args);
+        &Derived::Call::OnClientToServerMessage,
+        &Derived::Call::OnClientToServerHalfClose, call, call_args);
     promise_filter_detail::InterceptServerInitialMetadata(
         &Derived::Call::OnServerInitialMetadata, call, call_args);
     promise_filter_detail::InterceptServerToClientMessage(

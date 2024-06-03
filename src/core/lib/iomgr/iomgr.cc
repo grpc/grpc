@@ -29,8 +29,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/buffer_list.h"
@@ -40,6 +38,8 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
