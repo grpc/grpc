@@ -36,7 +36,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -107,7 +106,6 @@ class SubchannelCall final {
     gpr_cycle_counter start_time;
     Timestamp deadline;
     Arena* arena;
-    grpc_call_context_element* context;
     CallCombiner* call_combiner;
   };
   static RefCountedPtr<SubchannelCall> Create(Args args,
@@ -244,6 +242,12 @@ class Subchannel final : public DualRefCounted<Subchannel> {
       ABSL_LOCKS_EXCLUDED(mu_) {
     MutexLock lock(&mu_);
     return connected_subchannel_;
+  }
+
+  RefCountedPtr<UnstartedCallDestination> call_destination() {
+    MutexLock lock(&mu_);
+    if (connected_subchannel_ == nullptr) return nullptr;
+    return connected_subchannel_->unstarted_call_destination();
   }
 
   // Attempt to connect to the backend.  Has no effect if already connected.

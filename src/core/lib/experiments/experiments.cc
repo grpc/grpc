@@ -32,10 +32,6 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -61,6 +57,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_max_pings_wo_data_throttle =
+    "Experiment to throttle pings to a period of 1 min when "
+    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
+    "completely blocking).";
+const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -126,8 +127,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -144,6 +143,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
+     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -195,10 +197,6 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -224,6 +222,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_max_pings_wo_data_throttle =
+    "Experiment to throttle pings to a period of 1 min when "
+    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
+    "completely blocking).";
+const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -289,12 +292,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
-     additional_constraints_event_engine_client, nullptr, 0, true, true},
+     additional_constraints_event_engine_client, nullptr, 0, false, true},
     {"event_engine_dns", description_event_engine_dns,
      additional_constraints_event_engine_dns, nullptr, 0, true, false},
     {"event_engine_listener", description_event_engine_listener,
@@ -307,6 +308,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
+     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -358,10 +362,6 @@ const char* const additional_constraints_call_status_override_on_cancellation =
 const char* const description_canary_client_privacy =
     "If set, canary client privacy";
 const char* const additional_constraints_canary_client_privacy = "{}";
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
 const char* const description_client_privacy = "If set, client privacy";
 const char* const additional_constraints_client_privacy = "{}";
 const char* const description_event_engine_client =
@@ -387,6 +387,11 @@ const char* const description_keepalive_server_fix =
     "Allows overriding keepalive_permit_without_calls for servers. Refer "
     "https://github.com/grpc/grpc/pull/33917 for more information.";
 const char* const additional_constraints_keepalive_server_fix = "{}";
+const char* const description_max_pings_wo_data_throttle =
+    "Experiment to throttle pings to a period of 1 min when "
+    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
+    "completely blocking).";
+const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -452,8 +457,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true, true},
     {"canary_client_privacy", description_canary_client_privacy,
      additional_constraints_canary_client_privacy, nullptr, 0, false, false},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, nullptr, 0, false, true},
     {"client_privacy", description_client_privacy,
      additional_constraints_client_privacy, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -470,6 +473,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_keepalive_fix, nullptr, 0, false, false},
     {"keepalive_server_fix", description_keepalive_server_fix,
      additional_constraints_keepalive_server_fix, nullptr, 0, false, false},
+    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
+     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, false,
+     true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,

@@ -36,7 +36,6 @@
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/time.h"
@@ -78,6 +77,11 @@ typedef struct grpc_call_create_args {
 
 namespace grpc_core {
 
+template <>
+struct ArenaContextType<census_context> {
+  static void Destroy(census_context*) {}
+};
+
 class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
@@ -85,9 +89,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   Arena* arena() { return arena_.get(); }
   bool is_client() const { return is_client_; }
 
-  virtual void ContextSet(grpc_context_index elem, void* value,
-                          void (*destroy)(void* value)) = 0;
-  virtual void* ContextGet(grpc_context_index elem) const = 0;
   virtual bool Completed() = 0;
   void CancelWithStatus(grpc_status_code status, const char* description);
   virtual void CancelWithError(grpc_error_handle error) = 0;
@@ -163,11 +164,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   };
 
   Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
-       grpc_event_engine::experimental::EventEngine* event_engine)
-      : arena_(std::move(arena)),
-        send_deadline_(send_deadline),
-        is_client_(is_client),
-        event_engine_(event_engine) {}
+       grpc_event_engine::experimental::EventEngine* event_engine);
   ~Call() override = default;
 
   ParentCall* GetOrCreateParentCall();
@@ -241,20 +238,10 @@ class Call : public CppImplOf<Call, grpc_call>,
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 
-// TODO(ctiller): remove once call-v3 finalized
-grpc_call* MakeServerCall(CallHandler call_handler,
-                          ClientMetadataHandle client_initial_metadata,
-                          ServerInterface* server, grpc_completion_queue* cq,
-                          grpc_metadata_array* publish_initial_metadata);
-
-grpc_call* MakeClientCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
-    bool registered_method, Timestamp deadline,
-    grpc_compression_options compression_options,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena,
-    RefCountedPtr<UnstartedCallDestination> destination);
+template <>
+struct ArenaContextType<Call> {
+  static void Destroy(Call* call) {}
+};
 
 }  // namespace grpc_core
 
@@ -285,13 +272,9 @@ grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
                          const grpc_op* ops, size_t nops);
 
-// Set a context pointer.
-// No thread safety guarantees are made wrt this value.
-// TODO(#9731): add exec_ctx to destroy
-void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
-                           void* value, void (*destroy)(void* value));
-// Get a context pointer.
-void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
+void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
+
+void* grpc_call_tracer_get(grpc_call* call);
 
 #define GRPC_CALL_LOG_BATCH(sev, ops, nops)        \
   do {                                             \
@@ -301,11 +284,6 @@ void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
-
-// Get the estimated memory size for a call BESIDES the call stack. Combined
-// with the size of the call stack, it helps estimate the arena size for the
-// initial call.
-size_t grpc_call_get_initial_size_estimate();
 
 // Return an appropriate compression algorithm for the requested compression \a
 // level in the context of \a call.

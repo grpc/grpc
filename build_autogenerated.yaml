@@ -789,7 +789,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/tsi_error.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -805,7 +804,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
-  - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -885,6 +883,7 @@ libs:
   - src/core/lib/gprpp/directory_reader.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -909,10 +908,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
   - src/core/lib/gprpp/xxhash_inline.h
-  - src/core/lib/http/format_request.h
-  - src/core/lib/http/httpcli.h
-  - src/core/lib/http/httpcli_ssl_credentials.h
-  - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -1083,19 +1078,22 @@ libs:
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
+  - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
+  - src/core/lib/surface/filter_stack_call.h
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
+  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
@@ -1208,6 +1206,10 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/http_client/format_request.h
+  - src/core/util/http_client/httpcli.h
+  - src/core/util/http_client/httpcli_ssl_credentials.h
+  - src/core/util/http_client/parser.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_channel_args.h
@@ -1647,7 +1649,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
-  - src/core/handshaker/security/tsi_error.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
@@ -1717,6 +1718,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/posix/directory_reader.cc
@@ -1728,10 +1730,6 @@ libs:
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/windows/directory_reader.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/http/format_request.cc
-  - src/core/lib/http/httpcli.cc
-  - src/core/lib/http/httpcli_security_connector.cc
-  - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -1895,21 +1893,24 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_utils.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
+  - src/core/lib/surface/filter_stack_call.cc
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
@@ -2020,6 +2021,10 @@ libs:
   - src/core/tsi/ssl_transport_security_utils.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/http_client/format_request.cc
+  - src/core/util/http_client/httpcli.cc
+  - src/core/util/http_client/httpcli_security_connector.cc
+  - src/core/util/http_client/parser.cc
   - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_util.cc
@@ -2330,7 +2335,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/tsi_error.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -2346,7 +2350,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
-  - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -2425,6 +2428,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -2448,9 +2452,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.h
   - src/core/lib/gprpp/validation_errors.h
   - src/core/lib/gprpp/work_serializer.h
-  - src/core/lib/http/format_request.h
-  - src/core/lib/http/httpcli.h
-  - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
@@ -2589,19 +2590,22 @@ libs:
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
+  - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_create.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
+  - src/core/lib/surface/filter_stack_call.h
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
   - src/core/lib/surface/legacy_channel.h
+  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
@@ -2682,6 +2686,9 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - src/core/util/http_client/format_request.h
+  - src/core/util/http_client/httpcli.h
+  - src/core/util/http_client/parser.h
   - src/core/util/json/json.h
   - src/core/util/json/json_args.h
   - src/core/util/json/json_channel_args.h
@@ -2803,7 +2810,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
-  - src/core/handshaker/security/tsi_error.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
@@ -2873,6 +2879,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -2882,9 +2889,6 @@ libs:
   - src/core/lib/gprpp/uuid_v4.cc
   - src/core/lib/gprpp/validation_errors.cc
   - src/core/lib/gprpp/work_serializer.cc
-  - src/core/lib/http/format_request.cc
-  - src/core/lib/http/httpcli.cc
-  - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
@@ -3013,21 +3017,24 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_utils.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_create.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
+  - src/core/lib/surface/filter_stack_call.cc
   - src/core/lib/surface/init.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/legacy_channel.cc
   - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
@@ -3101,6 +3108,9 @@ libs:
   - src/core/tsi/local_transport_security.cc
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
+  - src/core/util/http_client/format_request.cc
+  - src/core/util/http_client/httpcli.cc
+  - src/core/util/http_client/parser.cc
   - src/core/util/json/json_object_loader.cc
   - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
@@ -4423,7 +4433,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
-  - src/core/handshaker/security/tsi_error.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/avl/avl.h
@@ -4437,7 +4446,6 @@ libs:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
-  - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -4516,6 +4524,7 @@ libs:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -4676,17 +4685,20 @@ libs:
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
+  - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
+  - src/core/lib/surface/filter_stack_call.h
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
@@ -4771,7 +4783,6 @@ libs:
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
-  - src/core/handshaker/security/tsi_error.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/backoff/backoff.cc
@@ -4839,6 +4850,7 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -4978,18 +4990,21 @@ libs:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_utils.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
+  - src/core/lib/surface/filter_stack_call.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
@@ -5831,6 +5846,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -5857,6 +5873,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6057,6 +6074,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6083,6 +6101,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6320,6 +6339,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6346,6 +6366,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6384,6 +6405,7 @@ targets:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -6477,6 +6499,7 @@ targets:
   - src/core/lib/debug/trace.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -6568,6 +6591,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6594,6 +6618,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6623,6 +6648,604 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: call_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/channelz/channel_trace.h
+  - src/core/channelz/channelz.h
+  - src/core/channelz/channelz_registry.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/lib/address_utils/parse_address.h
+  - src/core/lib/address_utils/sockaddr_utils.h
+  - src/core/lib/avl/avl.h
+  - src/core/lib/backoff/backoff.h
+  - src/core/lib/channel/call_finalization.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/channel/channel_args_preconditioning.h
+  - src/core/lib/channel/channel_fwd.h
+  - src/core/lib/channel/channel_stack.h
+  - src/core/lib/channel/channel_stack_builder.h
+  - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/channel_stack_trace.h
+  - src/core/lib/channel/connected_channel.h
+  - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/channel/status_util.h
+  - src/core/lib/compression/compression_internal.h
+  - src/core/lib/compression/message_compress.h
+  - src/core/lib/config/core_configuration.h
+  - src/core/lib/debug/event_log.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/ares_resolver.h
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
+  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
+  - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/common_closures.h
+  - src/core/lib/event_engine/default_event_engine.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/forkable.h
+  - src/core/lib/event_engine/grpc_polled_fd.h
+  - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
+  - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix.h
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_poller.h
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/internal_errqueue.h
+  - src/core/lib/event_engine/posix_engine/lockfree_event.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
+  - src/core/lib/event_engine/posix_engine/posix_engine.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/lib/event_engine/posix_engine/timer_manager.h
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/query_extensions.h
+  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/event_engine/shim.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
+  - src/core/lib/event_engine/thread_pool/thread_count.h
+  - src/core/lib/event_engine/thread_pool/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
+  - src/core/lib/event_engine/time_util.h
+  - src/core/lib/event_engine/trace.h
+  - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
+  - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
+  - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
+  - src/core/lib/event_engine/windows/windows_engine.h
+  - src/core/lib/event_engine/windows/windows_listener.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/chunked_vector.h
+  - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/if_list.h
+  - src/core/lib/gprpp/load_file.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/match.h
+  - src/core/lib/gprpp/notification.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/overload.h
+  - src/core/lib/gprpp/packed_table.h
+  - src/core/lib/gprpp/per_cpu.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/ref_counted_string.h
+  - src/core/lib/gprpp/sorted_pack.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/table.h
+  - src/core/lib/gprpp/time.h
+  - src/core/lib/gprpp/time_averaged_stats.h
+  - src/core/lib/gprpp/type_list.h
+  - src/core/lib/gprpp/unique_type_name.h
+  - src/core/lib/gprpp/validation_errors.h
+  - src/core/lib/gprpp/work_serializer.h
+  - src/core/lib/iomgr/block_annotate.h
+  - src/core/lib/iomgr/buffer_list.h
+  - src/core/lib/iomgr/call_combiner.h
+  - src/core/lib/iomgr/cfstream_handle.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/dynamic_annotations.h
+  - src/core/lib/iomgr/endpoint.h
+  - src/core/lib/iomgr/endpoint_cfstream.h
+  - src/core/lib/iomgr/endpoint_pair.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_cfstream.h
+  - src/core/lib/iomgr/ev_apple.h
+  - src/core/lib/iomgr/ev_epoll1_linux.h
+  - src/core/lib/iomgr/ev_poll_posix.h
+  - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/gethostname.h
+  - src/core/lib/iomgr/grpc_if_nametoindex.h
+  - src/core/lib/iomgr/internal_errqueue.h
+  - src/core/lib/iomgr/iocp_windows.h
+  - src/core/lib/iomgr/iomgr.h
+  - src/core/lib/iomgr/iomgr_fwd.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/iomgr/lockfree_event.h
+  - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/polling_entity.h
+  - src/core/lib/iomgr/pollset.h
+  - src/core/lib/iomgr/pollset_set.h
+  - src/core/lib/iomgr/pollset_set_windows.h
+  - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/python_util.h
+  - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resolve_address_impl.h
+  - src/core/lib/iomgr/resolve_address_posix.h
+  - src/core/lib/iomgr/resolve_address_windows.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_factory_posix.h
+  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/iomgr/socket_utils_posix.h
+  - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
+  - src/core/lib/iomgr/tcp_client.h
+  - src/core/lib/iomgr/tcp_client_posix.h
+  - src/core/lib/iomgr/tcp_posix.h
+  - src/core/lib/iomgr/tcp_server.h
+  - src/core/lib/iomgr/tcp_server_utils_posix.h
+  - src/core/lib/iomgr/tcp_windows.h
+  - src/core/lib/iomgr/timer.h
+  - src/core/lib/iomgr/timer_generic.h
+  - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_manager.h
+  - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/vsock.h
+  - src/core/lib/iomgr/wakeup_fd_pipe.h
+  - src/core/lib/iomgr/wakeup_fd_posix.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
+  - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/latch.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/party.h
+  - src/core/lib/promise/pipe.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/trace.h
+  - src/core/lib/promise/try_seq.h
+  - src/core/lib/resource_quota/api.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_quota/trace.h
+  - src/core/lib/security/certificate_provider/certificate_provider_factory.h
+  - src/core/lib/security/certificate_provider/certificate_provider_registry.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/lib/security/credentials/channel_creds_registry.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/api_trace.h
+  - src/core/lib/surface/call.h
+  - src/core/lib/surface/call_test_only.h
+  - src/core/lib/surface/call_trace.h
+  - src/core/lib/surface/call_utils.h
+  - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_init.h
+  - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/surface/client_call.h
+  - src/core/lib/surface/completion_queue.h
+  - src/core/lib/surface/completion_queue_factory.h
+  - src/core/lib/surface/event_string.h
+  - src/core/lib/surface/filter_stack_call.h
+  - src/core/lib/surface/init.h
+  - src/core/lib/surface/init_internally.h
+  - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/server_call.h
+  - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/call_arena_allocator.h
+  - src/core/lib/transport/call_destination.h
+  - src/core/lib/transport/call_filters.h
+  - src/core/lib/transport/call_final_info.h
+  - src/core/lib/transport/call_spine.h
+  - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/custom_metadata.h
+  - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/http2_errors.h
+  - src/core/lib/transport/interception_chain.h
+  - src/core/lib/transport/message.h
+  - src/core/lib/transport/metadata.h
+  - src/core/lib/transport/metadata_batch.h
+  - src/core/lib/transport/metadata_compression_traits.h
+  - src/core/lib/transport/parsed_metadata.h
+  - src/core/lib/transport/simple_slice_based_metadata.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/timeout_encoding.h
+  - src/core/lib/transport/transport.h
+  - src/core/lib/transport/transport_fwd.h
+  - src/core/lib/uri/uri_parser.h
+  - src/core/load_balancing/backend_metric_data.h
+  - src/core/load_balancing/lb_policy.h
+  - src/core/load_balancing/lb_policy_factory.h
+  - src/core/load_balancing/lb_policy_registry.h
+  - src/core/load_balancing/subchannel_interface.h
+  - src/core/resolver/endpoint_addresses.h
+  - src/core/resolver/resolver.h
+  - src/core/resolver/resolver_factory.h
+  - src/core/resolver/resolver_registry.h
+  - src/core/resolver/server_address.h
+  - src/core/server/server_interface.h
+  - src/core/service_config/service_config.h
+  - src/core/service_config/service_config_call_data.h
+  - src/core/service_config/service_config_parser.h
+  - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/metrics.h
+  - src/core/telemetry/stats.h
+  - src/core/telemetry/stats_data.h
+  - src/core/telemetry/tcp_tracer.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_args.h
+  - src/core/util/json/json_writer.h
+  - src/core/util/spinlock.h
+  - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/mini_descriptor/build_enum.h
+  - third_party/upb/upb/mini_descriptor/decode.h
+  - third_party/upb/upb/mini_descriptor/internal/base92.h
+  - third_party/upb/upb/mini_descriptor/internal/decoder.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
+  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
+  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
+  - third_party/upb/upb/mini_descriptor/link.h
+  - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/constants.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
+  src:
+  - src/core/channelz/channel_trace.cc
+  - src/core/channelz/channelz.cc
+  - src/core/channelz/channelz_registry.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/lib/address_utils/parse_address.cc
+  - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/backoff/backoff.cc
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/channel/channel_args_preconditioning.cc
+  - src/core/lib/channel/channel_stack.cc
+  - src/core/lib/channel/channel_stack_builder.cc
+  - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/channel_stack_trace.cc
+  - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/channel/status_util.cc
+  - src/core/lib/compression/compression.cc
+  - src/core/lib/compression/compression_internal.cc
+  - src/core/lib/compression/message_compress.cc
+  - src/core/lib/config/core_configuration.cc
+  - src/core/lib/debug/event_log.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/ares_resolver.cc
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
+  - src/core/lib/event_engine/channel_args_endpoint_config.cc
+  - src/core/lib/event_engine/default_event_engine.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/forkable.cc
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  - src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/lib/event_engine/posix_engine/timer_manager.cc
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/shim.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
+  - src/core/lib/event_engine/thread_pool/thread_count.cc
+  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
+  - src/core/lib/event_engine/time_util.cc
+  - src/core/lib/event_engine/trace.cc
+  - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
+  - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
+  - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
+  - src/core/lib/event_engine/windows/windows_engine.cc
+  - src/core/lib/event_engine/windows/windows_listener.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/load_file.cc
+  - src/core/lib/gprpp/per_cpu.cc
+  - src/core/lib/gprpp/ref_counted_string.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/time.cc
+  - src/core/lib/gprpp/time_averaged_stats.cc
+  - src/core/lib/gprpp/validation_errors.cc
+  - src/core/lib/gprpp/work_serializer.cc
+  - src/core/lib/iomgr/buffer_list.cc
+  - src/core/lib/iomgr/call_combiner.cc
+  - src/core/lib/iomgr/cfstream_handle.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/dualstack_socket_posix.cc
+  - src/core/lib/iomgr/endpoint.cc
+  - src/core/lib/iomgr/endpoint_cfstream.cc
+  - src/core/lib/iomgr/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/endpoint_pair_windows.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/ev_apple.cc
+  - src/core/lib/iomgr/ev_epoll1_linux.cc
+  - src/core/lib/iomgr/ev_poll_posix.cc
+  - src/core/lib/iomgr/ev_posix.cc
+  - src/core/lib/iomgr/ev_windows.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/fork_posix.cc
+  - src/core/lib/iomgr/fork_windows.cc
+  - src/core/lib/iomgr/gethostname_fallback.cc
+  - src/core/lib/iomgr/gethostname_host_name_max.cc
+  - src/core/lib/iomgr/gethostname_sysconf.cc
+  - src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+  - src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  - src/core/lib/iomgr/internal_errqueue.cc
+  - src/core/lib/iomgr/iocp_windows.cc
+  - src/core/lib/iomgr/iomgr.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/iomgr/iomgr_posix.cc
+  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  - src/core/lib/iomgr/iomgr_windows.cc
+  - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/polling_entity.cc
+  - src/core/lib/iomgr/pollset.cc
+  - src/core/lib/iomgr/pollset_set.cc
+  - src/core/lib/iomgr/pollset_set_windows.cc
+  - src/core/lib/iomgr/pollset_windows.cc
+  - src/core/lib/iomgr/resolve_address.cc
+  - src/core/lib/iomgr/resolve_address_posix.cc
+  - src/core/lib/iomgr/resolve_address_windows.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_factory_posix.cc
+  - src/core/lib/iomgr/socket_mutator.cc
+  - src/core/lib/iomgr/socket_utils_common_posix.cc
+  - src/core/lib/iomgr/socket_utils_linux.cc
+  - src/core/lib/iomgr/socket_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
+  - src/core/lib/iomgr/tcp_client.cc
+  - src/core/lib/iomgr/tcp_client_cfstream.cc
+  - src/core/lib/iomgr/tcp_client_posix.cc
+  - src/core/lib/iomgr/tcp_client_windows.cc
+  - src/core/lib/iomgr/tcp_posix.cc
+  - src/core/lib/iomgr/tcp_server.cc
+  - src/core/lib/iomgr/tcp_server_posix.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  - src/core/lib/iomgr/tcp_server_windows.cc
+  - src/core/lib/iomgr/tcp_windows.cc
+  - src/core/lib/iomgr/timer.cc
+  - src/core/lib/iomgr/timer_generic.cc
+  - src/core/lib/iomgr/timer_heap.cc
+  - src/core/lib/iomgr/timer_manager.cc
+  - src/core/lib/iomgr/unix_sockets_posix.cc
+  - src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  - src/core/lib/iomgr/vsock.cc
+  - src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  - src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  - src/core/lib/iomgr/wakeup_fd_pipe.cc
+  - src/core/lib/iomgr/wakeup_fd_posix.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/party.cc
+  - src/core/lib/promise/trace.cc
+  - src/core/lib/resource_quota/api.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/api_trace.cc
+  - src/core/lib/surface/byte_buffer.cc
+  - src/core/lib/surface/byte_buffer_reader.cc
+  - src/core/lib/surface/call.cc
+  - src/core/lib/surface/call_details.cc
+  - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_utils.cc
+  - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_init.cc
+  - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/surface/client_call.cc
+  - src/core/lib/surface/completion_queue.cc
+  - src/core/lib/surface/completion_queue_factory.cc
+  - src/core/lib/surface/event_string.cc
+  - src/core/lib/surface/filter_stack_call.cc
+  - src/core/lib/surface/init_internally.cc
+  - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/server_call.cc
+  - src/core/lib/surface/validate_metadata.cc
+  - src/core/lib/surface/version.cc
+  - src/core/lib/transport/call_arena_allocator.cc
+  - src/core/lib/transport/call_filters.cc
+  - src/core/lib/transport/call_final_info.cc
+  - src/core/lib/transport/call_spine.cc
+  - src/core/lib/transport/connectivity_state.cc
+  - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/interception_chain.cc
+  - src/core/lib/transport/message.cc
+  - src/core/lib/transport/metadata.cc
+  - src/core/lib/transport/metadata_batch.cc
+  - src/core/lib/transport/parsed_metadata.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/timeout_encoding.cc
+  - src/core/lib/transport/transport.cc
+  - src/core/lib/transport/transport_op_string.cc
+  - src/core/lib/uri/uri_parser.cc
+  - src/core/load_balancing/lb_policy.cc
+  - src/core/load_balancing/lb_policy_registry.cc
+  - src/core/resolver/endpoint_addresses.cc
+  - src/core/resolver/resolver.cc
+  - src/core/resolver/resolver_registry.cc
+  - src/core/service_config/service_config_parser.cc
+  - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/metrics.cc
+  - src/core/telemetry/stats.cc
+  - src/core/telemetry/stats_data.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/json/json_writer.cc
+  - test/core/call/call_utils_test.cc
+  - third_party/upb/upb/mini_descriptor/build_enum.c
+  - third_party/upb/upb/mini_descriptor/decode.c
+  - third_party/upb/upb/mini_descriptor/internal/base92.c
+  - third_party/upb/upb/mini_descriptor/internal/encode.c
+  - third_party/upb/upb/mini_descriptor/link.c
+  - third_party/upb/upb/wire/decode.c
+  - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
+  deps:
+  - gtest
+  - utf8_range_lib
+  - upb_message_lib
+  - z
+  - absl/base:config
+  - absl/base:no_destructor
+  - absl/cleanup:cleanup
+  - absl/container:flat_hash_map
+  - absl/container:inlined_vector
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
+  - absl/utility:utility
+  - cares
+  - gpr
+  - address_sorting
 - name: cancel_after_accept_test
   gtest: true
   build: test
@@ -6644,6 +7267,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6670,6 +7294,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6707,6 +7332,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6733,6 +7359,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6770,6 +7397,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6796,6 +7424,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6833,6 +7462,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6859,6 +7489,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6913,6 +7544,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -6939,6 +7571,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -6960,14 +7593,124 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/gprpp/atomic_utils.h
+  - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/cpp_impl_of.h
+  - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/manual_constructor.h
+  - src/core/lib/gprpp/orphanable.h
+  - src/core/lib/gprpp/ref_counted.h
+  - src/core/lib/gprpp/ref_counted_ptr.h
+  - src/core/lib/gprpp/status_helper.h
+  - src/core/lib/gprpp/time.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/promise/activity.h
   - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/trace.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/connection_quota.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_quota/trace.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/spinlock.h
+  - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/mini_descriptor/build_enum.h
+  - third_party/upb/upb/mini_descriptor/decode.h
+  - third_party/upb/upb/mini_descriptor/internal/base92.h
+  - third_party/upb/upb/mini_descriptor/internal/decoder.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.h
+  - third_party/upb/upb/mini_descriptor/internal/encode.hpp
+  - third_party/upb/upb/mini_descriptor/internal/modifiers.h
+  - third_party/upb/upb/mini_descriptor/internal/wire_constants.h
+  - third_party/upb/upb/mini_descriptor/link.h
+  - third_party/upb/upb/wire/decode.h
+  - third_party/upb/upb/wire/encode.h
+  - third_party/upb/upb/wire/eps_copy_input_stream.h
+  - third_party/upb/upb/wire/internal/constants.h
+  - third_party/upb/upb/wire/internal/decode_fast.h
+  - third_party/upb/upb/wire/internal/decoder.h
+  - third_party/upb/upb/wire/internal/reader.h
+  - third_party/upb/upb/wire/reader.h
+  - third_party/upb/upb/wire/types.h
   src:
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/status_helper.cc
+  - src/core/lib/gprpp/time.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/trace.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/connection_quota.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_quota/trace.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_refcount.cc
+  - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/cancel_callback_test.cc
+  - third_party/upb/upb/mini_descriptor/build_enum.c
+  - third_party/upb/upb/mini_descriptor/decode.c
+  - third_party/upb/upb/mini_descriptor/internal/base92.c
+  - third_party/upb/upb/mini_descriptor/internal/encode.c
+  - third_party/upb/upb/mini_descriptor/link.c
+  - third_party/upb/upb/wire/decode.c
+  - third_party/upb/upb/wire/encode.c
+  - third_party/upb/upb/wire/eps_copy_input_stream.c
+  - third_party/upb/upb/wire/internal/decode_fast.c
+  - third_party/upb/upb/wire/reader.c
   deps:
   - gtest
+  - utf8_range_lib
+  - upb_message_lib
+  - absl/base:config
+  - absl/functional:function_ref
+  - absl/hash:hash
   - absl/meta:type_traits
+  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: cancel_in_a_vacuum_test
@@ -6991,6 +7734,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -7017,6 +7761,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -7054,6 +7799,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -7080,6 +7826,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -7848,6 +8595,33 @@ targets:
   - protobuf
   - grpc_test_util
   uses_polling: false
+- name: client_call_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/batch_builder.h
+  - test/core/call/yodel/yodel_test.h
+  - test/core/end2end/cq_verifier.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/batch_builder.cc
+  - test/core/call/client_call_test.cc
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/end2end/cq_verifier.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: client_callback_end2end_test
   gtest: true
   build: test
@@ -7883,12 +8657,14 @@ targets:
   language: c++
   headers:
   - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/call/yodel/test_main.cc
   - test/core/call/yodel/yodel_test.cc
   - test/core/client_channel/client_channel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
@@ -8010,6 +8786,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8036,6 +8813,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8184,6 +8962,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8210,6 +8989,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8253,12 +9033,14 @@ targets:
   language: c++
   headers:
   - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/call/yodel/test_main.cc
   - test/core/call/yodel/yodel_test.cc
   - test/core/client_channel/connected_subchannel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
@@ -8344,6 +9126,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8370,6 +9153,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8513,6 +9297,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8539,6 +9324,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8613,6 +9399,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8639,6 +9426,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -8763,6 +9551,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -8789,6 +9578,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9546,6 +10336,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9572,6 +10363,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9580,69 +10372,6 @@ targets:
   - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/fixtures/proxy.cc
   - test/core/end2end/tests/filter_causes_close.cc
-  - test/core/event_engine/event_engine_test_utils.cc
-  - test/core/test_util/fake_stats_plugin.cc
-  - test/core/test_util/test_lb_policies.cc
-  deps:
-  - gtest
-  - grpc_authorization_provider
-  - grpc_unsecure
-  - grpc_test_util
-- name: filter_context_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/settings_metadata.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
-  - test/core/end2end/cq_verifier.h
-  - test/core/end2end/end2end_tests.h
-  - test/core/end2end/fixtures/h2_oauth2_common.h
-  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
-  - test/core/end2end/fixtures/h2_ssl_tls_common.h
-  - test/core/end2end/fixtures/h2_tls_common.h
-  - test/core/end2end/fixtures/http_proxy_fixture.h
-  - test/core/end2end/fixtures/inproc_fixture.h
-  - test/core/end2end/fixtures/local_util.h
-  - test/core/end2end/fixtures/proxy.h
-  - test/core/end2end/fixtures/secure_fixture.h
-  - test/core/end2end/fixtures/sockpair_fixture.h
-  - test/core/end2end/tests/cancel_test_helpers.h
-  - test/core/event_engine/event_engine_test_utils.h
-  - test/core/test_util/fake_stats_plugin.h
-  - test/core/test_util/test_lb_policies.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/settings_metadata.cc
-  - src/core/lib/transport/promise_endpoint.cc
-  - test/core/end2end/cq_verifier.cc
-  - test/core/end2end/end2end_test_main.cc
-  - test/core/end2end/end2end_test_suites.cc
-  - test/core/end2end/end2end_tests.cc
-  - test/core/end2end/fixtures/http_proxy_fixture.cc
-  - test/core/end2end/fixtures/local_util.cc
-  - test/core/end2end/fixtures/proxy.cc
-  - test/core/end2end/tests/filter_context.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9672,6 +10401,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9698,6 +10428,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -9753,6 +10484,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -9779,6 +10511,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -10286,6 +11019,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -10312,6 +11046,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -10481,6 +11216,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -10507,6 +11243,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -10892,6 +11629,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/data/ssl_test_data.h
   - test/core/end2end/end2end_tests.h
@@ -10906,6 +11644,7 @@ targets:
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   src:
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
   - test/core/end2end/data/server1_cert.cc
@@ -11038,6 +11777,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11064,6 +11804,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11232,6 +11973,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11258,6 +12000,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11319,6 +12062,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -11345,6 +12089,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -11497,12 +12242,14 @@ targets:
   language: c++
   headers:
   - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/test_suite/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/call/yodel/test_main.cc
   - test/core/call/yodel/yodel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/test_suite/call_content.cc
   - test/core/transport/test_suite/call_shapes.cc
@@ -11633,7 +12380,6 @@ targets:
   - src/core/lib/channel/channel_stack_builder_impl.h
   - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
-  - src/core/lib/channel/context.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
   - src/core/lib/compression/compression_internal.h
@@ -11712,6 +12458,7 @@ targets:
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -11849,17 +12596,20 @@ targets:
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
   - src/core/lib/surface/call_trace.h
+  - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
   - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/surface/client_call.h
   - src/core/lib/surface/completion_queue.h
   - src/core/lib/surface/completion_queue_factory.h
   - src/core/lib/surface/event_string.h
+  - src/core/lib/surface/filter_stack_call.h
   - src/core/lib/surface/init.h
   - src/core/lib/surface/init_internally.h
   - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/server_call.h
   - src/core/lib/surface/validate_metadata.h
-  - src/core/lib/surface/wait_for_cq_end_op.h
   - src/core/lib/transport/call_arena_allocator.h
   - src/core/lib/transport/call_destination.h
   - src/core/lib/transport/call_filters.h
@@ -12004,6 +12754,7 @@ targets:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -12119,18 +12870,21 @@ targets:
   - src/core/lib/surface/call.cc
   - src/core/lib/surface/call_details.cc
   - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_utils.cc
   - src/core/lib/surface/channel.cc
   - src/core/lib/surface/channel_init.cc
   - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/surface/client_call.cc
   - src/core/lib/surface/completion_queue.cc
   - src/core/lib/surface/completion_queue_factory.cc
   - src/core/lib/surface/event_string.cc
+  - src/core/lib/surface/filter_stack_call.cc
   - src/core/lib/surface/init_internally.cc
   - src/core/lib/surface/lame_client.cc
   - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/server_call.cc
   - src/core/lib/surface/validate_metadata.cc
   - src/core/lib/surface/version.cc
-  - src/core/lib/surface/wait_for_cq_end_op.cc
   - src/core/lib/transport/call_arena_allocator.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
@@ -12388,6 +13142,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12414,6 +13169,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12588,6 +13344,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12614,6 +13371,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12663,6 +13421,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -12689,6 +13448,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -12781,12 +13541,14 @@ targets:
   language: c++
   headers:
   - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/call/yodel/test_main.cc
   - test/core/call/yodel/yodel_test.cc
   - test/core/client_channel/load_balanced_call_destination_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   deps:
   - gtest
@@ -13093,6 +13855,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13119,6 +13882,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13156,6 +13920,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13182,6 +13947,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13219,6 +13985,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13245,6 +14012,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13282,6 +14050,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13308,6 +14077,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13565,6 +14335,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13591,6 +14362,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13640,6 +14412,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13666,6 +14439,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -13703,6 +14477,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -13729,6 +14504,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14073,6 +14849,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14099,6 +14876,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14328,6 +15106,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14354,6 +15133,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14421,6 +15201,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14447,6 +15228,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -14702,6 +15484,7 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
+  - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/map_test.cc
   deps:
@@ -14840,6 +15623,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -14866,6 +15650,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15097,6 +15882,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15123,6 +15909,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15174,6 +15961,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15200,6 +15988,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15237,6 +16026,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15263,6 +16053,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15448,6 +16239,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15474,6 +16266,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15522,6 +16315,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15548,6 +16342,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15585,6 +16380,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15611,6 +16407,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15648,6 +16445,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15674,6 +16472,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15711,6 +16510,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15737,6 +16537,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15774,6 +16575,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15800,6 +16602,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15837,6 +16640,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15863,6 +16667,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15900,6 +16705,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15926,6 +16732,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -15963,6 +16770,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -15989,6 +16797,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16026,6 +16835,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16052,6 +16862,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16089,6 +16900,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16115,6 +16927,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16152,6 +16965,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16178,6 +16992,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16215,6 +17030,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16241,6 +17057,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16278,6 +17095,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16304,6 +17122,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16341,6 +17160,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16367,6 +17187,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16404,6 +17225,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16430,6 +17252,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16467,6 +17290,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16493,6 +17317,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16530,6 +17355,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16556,6 +17382,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16593,6 +17420,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16619,6 +17447,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16656,6 +17485,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16682,6 +17512,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16719,6 +17550,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16745,6 +17577,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16782,6 +17615,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16808,6 +17642,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16845,6 +17680,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16871,6 +17707,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16908,6 +17745,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -16934,6 +17772,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -16982,6 +17821,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17008,6 +17848,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17045,6 +17886,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17071,6 +17913,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17108,6 +17951,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17134,6 +17978,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17171,6 +18016,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17197,6 +18043,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17245,6 +18092,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17271,6 +18119,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17308,6 +18157,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17334,6 +18184,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17371,6 +18222,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17397,6 +18249,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17434,6 +18287,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17460,6 +18314,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17497,6 +18352,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17523,6 +18379,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17560,6 +18417,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17586,6 +18444,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17623,6 +18482,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -17649,6 +18509,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -17950,6 +18811,29 @@ targets:
   - linux
   - posix
   - mac
+- name: server_call_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/server_call_test.cc
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: server_call_tracer_factory_test
   gtest: true
   build: test
@@ -18027,6 +18911,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18053,6 +18938,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -18176,6 +19062,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18202,6 +19089,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -18305,6 +19193,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18331,6 +19220,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -18368,6 +19258,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18394,6 +19285,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -18446,6 +19338,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18472,6 +19365,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -18509,6 +19403,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18535,6 +19430,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -18586,6 +19482,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18612,6 +19509,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -18941,6 +19839,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -18967,6 +19866,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -19303,6 +20203,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -19329,6 +20230,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -19563,6 +20465,7 @@ targets:
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
   - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/test_suite/transport_test.h
   src:
@@ -19575,6 +20478,7 @@ targets:
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/call/yodel/test_main.cc
   - test/core/call/yodel/yodel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/test_suite/call_content.cc
   - test/core/transport/test_suite/call_shapes.cc
@@ -19848,6 +20752,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -19874,6 +20779,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -20065,6 +20971,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -20091,6 +20998,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -20759,6 +21667,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -20785,6 +21694,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc
@@ -20822,6 +21732,7 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - src/core/lib/promise/wait_set.h
   - src/core/lib/transport/promise_endpoint.h
+  - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
   - test/core/end2end/end2end_tests.h
   - test/core/end2end/fixtures/h2_oauth2_common.h
@@ -20848,6 +21759,7 @@ targets:
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/settings_metadata.cc
   - src/core/lib/transport/promise_endpoint.cc
+  - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/end2end_test_main.cc
   - test/core/end2end/end2end_test_suites.cc

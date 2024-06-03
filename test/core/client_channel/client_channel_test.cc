@@ -40,7 +40,6 @@ std::string TestTarget() {
 }  // namespace
 
 class ClientChannelTest : public YodelTest {
- public:
  protected:
   using YodelTest::YodelTest;
 
@@ -89,8 +88,7 @@ class ClientChannelTest : public YodelTest {
  private:
   class TestConnector final : public SubchannelConnector {
    public:
-    void Connect(const Args& args, Result* result,
-                 grpc_closure* notify) override {
+    void Connect(const Args&, Result*, grpc_closure* notify) override {
       CHECK_EQ(notify_, nullptr);
       notify_ = notify;
     }
@@ -116,8 +114,7 @@ class ClientChannelTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(
-          unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack());
+      handlers_.push(unstarted_call_handler.StartWithEmptyFilterStack());
     }
 
     absl::optional<CallHandler> PopHandler() {
@@ -165,7 +162,7 @@ class ClientChannelTest : public YodelTest {
     }
 
     ~TestResolver() override {
-      CHECK(test_->resolver_ == this);
+      CHECK_EQ(test_->resolver_, this);
       test_->resolver_ = nullptr;
     }
 
@@ -208,7 +205,7 @@ class ClientChannelTest : public YodelTest {
     }
 
     absl::string_view scheme() const override { return "test"; }
-    bool IsValidUri(const URI& uri) const override { return true; }
+    bool IsValidUri(const URI&) const override { return true; }
 
    private:
     ClientChannelTest* const test_;
@@ -257,9 +254,8 @@ CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 
 CLIENT_CHANNEL_TEST(StartCall) {
   auto& channel = InitChannel(ChannelArgs());
-  auto call =
-      MakeCallPair(MakeClientInitialMetadata(), channel.event_engine(),
-                   channel.call_arena_allocator()->MakeArena(), nullptr);
+  auto call = MakeCallPair(MakeClientInitialMetadata(), channel.event_engine(),
+                           channel.call_arena_allocator()->MakeArena());
   channel.StartCall(std::move(call.handler));
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
@@ -271,5 +267,10 @@ CLIENT_CHANNEL_TEST(StartCall) {
                });
   WaitForAllPendingWork();
 }
+
+// TODO(ctiller, roth): MANY more test cases
+// - Resolver returns an error for the initial result, then returns a valid
+// result.
+// - Resolver returns a service config (various permutations).
 
 }  // namespace grpc_core

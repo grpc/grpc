@@ -32,8 +32,8 @@ namespace {
 
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -42,7 +42,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})

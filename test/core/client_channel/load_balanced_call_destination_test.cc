@@ -51,7 +51,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
       ClientMetadataHandle client_initial_metadata) {
     return MakeCallPair(std::move(client_initial_metadata),
                         event_engine().get(),
-                        call_arena_allocator_->MakeArena(), nullptr);
+                        call_arena_allocator_->MakeArena());
   }
 
   CallHandler TickUntilCallStarted() {
@@ -75,8 +75,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(
-          unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack());
+      handlers_.push(unstarted_call_handler.StartWithEmptyFilterStack());
     }
 
     absl::optional<CallHandler> PopHandler() {
@@ -99,20 +98,19 @@ class LoadBalancedCallDestinationTest : public YodelTest {
         : call_destination_(std::move(call_destination)) {}
 
     void WatchConnectivityState(
-        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override {
+        std::unique_ptr<ConnectivityStateWatcherInterface>) override {
       Crash("not implemented");
     }
     void CancelConnectivityStateWatch(
-        ConnectivityStateWatcherInterface* watcher) override {
+        ConnectivityStateWatcherInterface*) override {
       Crash("not implemented");
     }
     void RequestConnection() override { Crash("not implemented"); }
     void ResetBackoff() override { Crash("not implemented"); }
-    void AddDataWatcher(
-        std::unique_ptr<DataWatcherInterface> watcher) override {
+    void AddDataWatcher(std::unique_ptr<DataWatcherInterface>) override {
       Crash("not implemented");
     }
-    void CancelDataWatcher(DataWatcherInterface* watcher) override {
+    void CancelDataWatcher(DataWatcherInterface*) override {
       Crash("not implemented");
     }
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
@@ -184,7 +182,7 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
                });
   auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
   EXPECT_CALL(*mock_picker, Pick)
-      .WillOnce([this](LoadBalancingPolicy::PickArgs args) {
+      .WillOnce([this](LoadBalancingPolicy::PickArgs) {
         return LoadBalancingPolicy::PickResult::Complete{subchannel()};
       });
   picker().Set(mock_picker);
@@ -196,5 +194,38 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
                });
   WaitForAllPendingWork();
 }
+
+LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
+  auto call = MakeCall(MakeClientInitialMetadata());
+  SpawnTestSeq(
+      call.initiator, "initiator",
+      [this, handler = std::move(call.handler),
+       initiator = call.initiator]() mutable {
+        destination_under_test().StartCall(handler);
+        return initiator.PullServerTrailingMetadata();
+      },
+      [](ServerMetadataHandle md) {
+        EXPECT_EQ(md->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN),
+                  GRPC_STATUS_UNAVAILABLE);
+        return Empty{};
+      });
+  auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
+  std::atomic<bool> queued_once{false};
+  EXPECT_CALL(*mock_picker, Pick)
+      .WillOnce([&queued_once](LoadBalancingPolicy::PickArgs) {
+        queued_once.store(true, std::memory_order_relaxed);
+        return LoadBalancingPolicy::PickResult::Queue{};
+      });
+  picker().Set(mock_picker);
+  TickUntil<Empty>([&queued_once]() -> Poll<Empty> {
+    if (queued_once.load(std::memory_order_relaxed)) return Empty{};
+    return Pending();
+  });
+  picker().Set(nullptr);
+  WaitForAllPendingWork();
+}
+
+// TODO(roth, ctiller): more tests
+// - tests for the picker returning queue, fail, and drop results.
 
 }  // namespace grpc_core

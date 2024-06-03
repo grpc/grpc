@@ -30,7 +30,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/validation_errors.h"
@@ -55,8 +54,7 @@ class MessageSizeParsedConfig : public ServiceConfigParser::ParsedConfig {
       : max_send_size_(max_send_size), max_recv_size_(max_recv_size) {}
 
   static const MessageSizeParsedConfig* GetFromCallContext(
-      const grpc_call_context_element* context,
-      size_t service_config_parser_index);
+      Arena* arena, size_t service_config_parser_index);
 
   static MessageSizeParsedConfig GetFromChannelArgs(const ChannelArgs& args);
 

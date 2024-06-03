@@ -30,7 +30,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
@@ -214,13 +213,21 @@ class ServerCallTracerFactory {
 // Convenience functions to add call tracers to a call context. Allows setting
 // multiple call tracers to a single call. It is only valid to add client call
 // tracers before the client_channel filter sees the send_initial_metadata op.
-void AddClientCallTracerToContext(grpc_call_context_element* call_context,
-                                  ClientCallTracer* tracer);
+void AddClientCallTracerToContext(Arena* arena, ClientCallTracer* tracer);
 
 // TODO(yashykt): We want server call tracers to be registered through the
 // ServerCallTracerFactory, which has yet to be made into a list.
-void AddServerCallTracerToContext(grpc_call_context_element* call_context,
-                                  ServerCallTracer* tracer);
+void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer);
+
+template <>
+struct ArenaContextType<CallTracerInterface> {
+  static void Destroy(CallTracerAnnotationInterface*) {}
+};
+
+template <>
+struct ArenaContextType<CallTracerAnnotationInterface> {
+  static void Destroy(CallTracerAnnotationInterface*) {}
+};
 
 template <>
 struct ContextSubclass<ClientCallTracer::CallAttemptTracer> {

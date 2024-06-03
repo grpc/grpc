@@ -38,7 +38,6 @@ const absl::string_view kDefaultAuthority = "test-authority";
 }  // namespace
 
 class ConnectedSubchannelTest : public YodelTest {
- public:
  protected:
   using YodelTest::YodelTest;
 
@@ -70,7 +69,7 @@ class ConnectedSubchannelTest : public YodelTest {
       ClientMetadataHandle client_initial_metadata) {
     return MakeCallPair(std::move(client_initial_metadata),
                         event_engine().get(),
-                        SimpleArenaAllocator()->MakeArena(), nullptr);
+                        SimpleArenaAllocator()->MakeArena());
   }
 
   CallHandler TickUntilCallStarted() {
@@ -96,15 +95,15 @@ class ConnectedSubchannelTest : public YodelTest {
     ClientTransport* client_transport() override { return this; }
     ServerTransport* server_transport() override { return nullptr; }
     absl::string_view GetTransportName() const override { return "test"; }
-    void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override {}
-    void SetPollsetSet(grpc_stream* stream,
-                       grpc_pollset_set* pollset_set) override {}
+    void SetPollset(grpc_stream*, grpc_pollset*) override {}
+    void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
     void PerformOp(grpc_transport_op* op) override {
       LOG(INFO) << "PerformOp: " << grpc_transport_op_string(op);
       if (op->start_connectivity_watch != nullptr) {
         state_tracker_.AddWatcher(op->start_connectivity_watch_state,
                                   std::move(op->start_connectivity_watch));
       }
+      ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
     }
 
     void StartCall(CallHandler call_handler) override {
@@ -127,7 +126,7 @@ class ConnectedSubchannelTest : public YodelTest {
       ExecCtx::Run(DEBUG_LOCATION, notify, absl::OkStatus());
     }
 
-    void Shutdown(grpc_error_handle error) override {}
+    void Shutdown(grpc_error_handle) override {}
 
    private:
     ConnectedSubchannelTest* const test_;

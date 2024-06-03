@@ -19,6 +19,7 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
@@ -38,7 +39,8 @@ class LbMetadata : public LoadBalancingPolicy::MetadataInterface {
   void Add(absl::string_view key, absl::string_view value) override {
     if (batch_ == nullptr) return;
     // Gross, egregious hack to support legacy grpclb behavior.
-    // TODO(ctiller): Use a promise context for this once that plumbing is done.
+    // TODO(ctiller): Use a promise context for this once that plumbing is
+    // done.
     if (key == GrpcLbClientStatsMetadata::key()) {
       batch_->Set(
           GrpcLbClientStatsMetadata(),
@@ -121,9 +123,7 @@ class LbCallState : public ClientChannelLbCallState {
   }
 
   ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
-    auto* legacy_context = GetContext<grpc_call_context_element>();
-    return static_cast<ClientCallTracer::CallAttemptTracer*>(
-        legacy_context[GRPC_CONTEXT_CALL_TRACER].value);
+    return GetContext<ClientCallTracer::CallAttemptTracer>();
   }
 };
 
@@ -153,14 +153,14 @@ T HandlePickResult(
   }
   auto* drop_pick =
       absl::get_if<LoadBalancingPolicy::PickResult::Drop>(&result->result);
-  GPR_ASSERT(drop_pick != nullptr);
+  CHECK(drop_pick != nullptr);
   return drop_func(drop_pick);
 }
 
 // Does an LB pick for a call.  Returns one of the following things:
 // - Continue{}, meaning to queue the pick
 // - a non-OK status, meaning to fail the call
-// - a connected subchannel, meaning that the pick is complete
+// - a call destination, meaning that the pick is complete
 // When the pick is complete, pushes client_initial_metadata onto
 // call_initiator.  Also adds the subchannel call tracker (if any) to
 // context.
@@ -172,7 +172,7 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
       unstarted_handler.UnprocessedClientInitialMetadata();
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = client_initial_metadata.get_pointer(HttpPathMetadata());
-  GPR_ASSERT(path != nullptr);
+  CHECK(path != nullptr);
   pick_args.path = path->as_string_view();
   LbCallState lb_call_state;
   pick_args.call_state = &lb_call_state;
@@ -192,14 +192,14 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
                   GetContext<Activity>()->DebugTag().c_str(),
                   complete_pick->subchannel.get());
         }
-        GPR_ASSERT(complete_pick->subchannel != nullptr);
-        // Grab a ref to the connected subchannel while we're still
+        CHECK(complete_pick->subchannel != nullptr);
+        // Grab a ref to the call destination while we're still
         // holding the data plane mutex.
         auto call_destination =
             DownCast<SubchannelInterfaceWithCallDestination*>(
                 complete_pick->subchannel.get())
                 ->call_destination();
-        // If the subchannel has no connected subchannel (e.g., if the
+        // If the subchannel has no call destination (e.g., if the
         // subchannel has moved out of state READY but the LB policy hasn't
         // yet seen that change and given us a new picker), then just
         // queue the pick.  We'll try again as soon as we get a new picker.
@@ -282,33 +282,37 @@ void LoadBalancedCallDestination::StartCall(
       "lb_pick", [unstarted_handler, picker = picker_]() mutable {
         return Map(
             // Wait for the LB picker.
-            CheckDelayed(Loop(
-                [last_picker =
-                     RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>(),
-                 unstarted_handler, picker]() mutable {
-                  return Map(
-                      picker.Next(last_picker),
-                      [unstarted_handler, &last_picker](
-                          RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-                              picker) mutable {
-                        last_picker = std::move(picker);
-                        // Returns 3 possible things:
-                        // - Continue to queue the pick
-                        // - non-OK status to fail the pick
-                        // - a connected subchannel to complete the pick
-                        return PickSubchannel(*last_picker, unstarted_handler);
-                      });
-                })),
+            CheckDelayed(Loop([last_picker = RefCountedPtr<
+                                   LoadBalancingPolicy::SubchannelPicker>(),
+                               unstarted_handler, picker]() mutable {
+              return Map(
+                  picker.Next(last_picker),
+                  [unstarted_handler, &last_picker](
+                      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+                          picker) mutable
+                  -> LoopCtl<
+                      absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> {
+                    if (picker == nullptr) {
+                      return absl::UnavailableError("Channel shutting down");
+                    }
+                    last_picker = std::move(picker);
+                    // Returns 3 possible things:
+                    // - Continue to queue the pick
+                    // - non-OK status to fail the pick
+                    // - a connected subchannel to complete the pick
+                    return PickSubchannel(*last_picker, unstarted_handler);
+                  });
+            })),
             // Create call stack on the connected subchannel.
-            [unstarted_handler = std::move(unstarted_handler)](
+            [unstarted_handler](
                 std::tuple<
                     absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>,
                     bool>
                     pick_result) {
-              auto& connected_subchannel = std::get<0>(pick_result);
+              auto& call_destination = std::get<0>(pick_result);
               const bool was_queued = std::get<1>(pick_result);
-              if (!connected_subchannel.ok()) {
-                return connected_subchannel.status();
+              if (!call_destination.ok()) {
+                return call_destination.status();
               }
               // LB pick is done, so indicate that we've committed.
               auto* on_commit = MaybeGetContext<LbOnCommit>();
@@ -324,9 +328,9 @@ void LoadBalancedCallDestination::StartCall(
                 }
               }
               // Delegate to connected subchannel.
-              // FIXME: need to insert LbCallTracingFilter at the top of the
-              // stack
-              (*connected_subchannel)->StartCall(unstarted_handler);
+              // TODO(ctiller): need to insert LbCallTracingFilter at the top of
+              // the stack
+              (*call_destination)->StartCall(unstarted_handler);
               return absl::OkStatus();
             });
       });

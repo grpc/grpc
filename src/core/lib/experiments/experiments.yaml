@@ -54,12 +54,6 @@
   owner: alishananda@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: chaotic_good
-  description:
-    If set, enable the chaotic good load transport (this is mostly here for testing)
-  expiry: 2024/09/09
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
 - name: client_privacy
   description:
     If set, client privacy
@@ -114,6 +108,14 @@
   owner: yashkt@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: max_pings_wo_data_throttle
+  description:
+    Experiment to throttle pings to a period of 1 min when
+    GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
+    completely blocking).
+  expiry: 2024/12/31
+  owner: yashkt@google.com
+  test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever

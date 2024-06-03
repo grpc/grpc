@@ -23,6 +23,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/latch.h"

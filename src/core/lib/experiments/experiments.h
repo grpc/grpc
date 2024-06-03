@@ -60,7 +60,6 @@ namespace grpc_core {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 inline bool IsEventEngineDnsEnabled() { return false; }
@@ -70,6 +69,7 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -93,10 +93,8 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
-inline bool IsEventEngineClientEnabled() { return true; }
+inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
 inline bool IsEventEngineDnsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_LISTENER
@@ -106,6 +104,7 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -129,7 +128,6 @@ inline bool IsWorkSerializerDispatchEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_STATUS_OVERRIDE_ON_CANCELLATION
 inline bool IsCallStatusOverrideOnCancellationEnabled() { return true; }
 inline bool IsCanaryClientPrivacyEnabled() { return false; }
-inline bool IsChaoticGoodEnabled() { return false; }
 inline bool IsClientPrivacyEnabled() { return false; }
 inline bool IsEventEngineClientEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_DNS
@@ -141,6 +139,7 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsHttp2StatsFixEnabled() { return true; }
 inline bool IsKeepaliveFixEnabled() { return false; }
 inline bool IsKeepaliveServerFixEnabled() { return false; }
+inline bool IsMaxPingsWoDataThrottleEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
@@ -166,7 +165,6 @@ inline bool IsWorkSerializerDispatchEnabled() { return true; }
 enum ExperimentIds {
   kExperimentIdCallStatusOverrideOnCancellation,
   kExperimentIdCanaryClientPrivacy,
-  kExperimentIdChaoticGood,
   kExperimentIdClientPrivacy,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -175,6 +173,7 @@ enum ExperimentIds {
   kExperimentIdHttp2StatsFix,
   kExperimentIdKeepaliveFix,
   kExperimentIdKeepaliveServerFix,
+  kExperimentIdMaxPingsWoDataThrottle,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdPeerStateBasedFraming,
@@ -198,10 +197,6 @@ inline bool IsCallStatusOverrideOnCancellationEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CANARY_CLIENT_PRIVACY
 inline bool IsCanaryClientPrivacyEnabled() {
   return IsExperimentEnabled(kExperimentIdCanaryClientPrivacy);
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD
-inline bool IsChaoticGoodEnabled() {
-  return IsExperimentEnabled(kExperimentIdChaoticGood);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CLIENT_PRIVACY
 inline bool IsClientPrivacyEnabled() {
@@ -234,6 +229,10 @@ inline bool IsKeepaliveFixEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_SERVER_FIX
 inline bool IsKeepaliveServerFixEnabled() {
   return IsExperimentEnabled(kExperimentIdKeepaliveServerFix);
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
+inline bool IsMaxPingsWoDataThrottleEnabled() {
+  return IsExperimentEnabled(kExperimentIdMaxPingsWoDataThrottle);
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
 inline bool IsMonitoringExperimentEnabled() {

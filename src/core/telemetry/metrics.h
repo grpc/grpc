@@ -30,7 +30,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -329,6 +328,9 @@ class StatsPlugin {
   // Removes a callback previously added via AddCallback().  The stats
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
+  // Returns true if instrument \a handle is enabled.
+  virtual bool IsInstrumentEnabled(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) = 0;
 
   // Gets a ClientCallTracer associated with this stats plugin which can be used
   // in a call.
@@ -424,6 +426,17 @@ class GlobalStatsPluginRegistry {
                                       optional_values);
       }
     }
+    // Returns true if any of the stats plugins in the group have enabled \a
+    // handle.
+    bool IsInstrumentEnabled(
+        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+      for (auto& state : plugins_state_) {
+        if (state.plugin->IsInstrumentEnabled(handle)) {
+          return true;
+        }
+      }
+      return false;
+    }
 
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
@@ -450,10 +463,10 @@ class GlobalStatsPluginRegistry {
     // Adds all available client call tracers associated with the stats plugins
     // within the group to \a call_context.
     void AddClientCallTracers(const Slice& path, bool registered_method,
-                              grpc_call_context_element* call_context);
+                              Arena* arena);
     // Adds all available server call tracers associated with the stats plugins
     // within the group to \a call_context.
-    void AddServerCallTracers(grpc_call_context_element* call_context);
+    void AddServerCallTracers(Arena* arena);
 
    private:
     friend class RegisteredMetricCallback;

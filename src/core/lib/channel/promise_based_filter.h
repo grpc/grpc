@@ -46,7 +46,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
 #include "src/core/lib/gprpp/debug_location.h"
@@ -346,56 +345,45 @@ auto MapResult(const NoInterceptor*, Promise x, void*) {
 }
 
 template <typename Promise, typename Derived>
-auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
+auto MapResult(absl::Status (Derived::Call::* fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return OnCancel(
-      Map(std::move(x),
-          [call_data](ServerMetadataHandle md) {
-            auto status = call_data->call.OnServerTrailingMetadata(*md);
-            if (!status.ok()) {
-              return ServerMetadataFromStatus(status);
-            }
-            return md;
-          }),
-      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
-      // valid for the cancellation function requiring us to capture it here.
-      // This ought to be easy to fix once client side promises are completely
-      // rolled out.
-      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
-        grpc_metadata_batch b;
-        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
-        b.Set(GrpcCallWasCancelled(), true);
-        promise_detail::Context<grpc_call_context_element> context(ctx);
-        call_data->call.OnServerTrailingMetadata(b).IgnoreError();
-      });
+  return OnCancel(Map(std::move(x),
+                      [call_data](ServerMetadataHandle md) {
+                        auto status =
+                            call_data->call.OnServerTrailingMetadata(*md);
+                        if (!status.ok()) {
+                          return ServerMetadataFromStatus(status);
+                        }
+                        return md;
+                      }),
+                  [call_data]() {
+                    grpc_metadata_batch b;
+                    b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+                    b.Set(GrpcCallWasCancelled(), true);
+                    call_data->call.OnServerTrailingMetadata(b).IgnoreError();
+                  });
 }
 
 template <typename Promise, typename Derived>
-auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
+auto MapResult(void (Derived::Call::* fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return OnCancel(
-      Map(std::move(x),
-          [call_data](ServerMetadataHandle md) {
-            call_data->call.OnServerTrailingMetadata(*md);
-            return md;
-          }),
-      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
-      // valid for the cancellation function requiring us to capture it here.
-      // This ought to be easy to fix once client side promises are completely
-      // rolled out.
-      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
-        grpc_metadata_batch b;
-        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
-        b.Set(GrpcCallWasCancelled(), true);
-        promise_detail::Context<grpc_call_context_element> context(ctx);
-        call_data->call.OnServerTrailingMetadata(b);
-      });
+  return OnCancel(Map(std::move(x),
+                      [call_data](ServerMetadataHandle md) {
+                        call_data->call.OnServerTrailingMetadata(*md);
+                        return md;
+                      }),
+                  [call_data]() {
+                    grpc_metadata_batch b;
+                    b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+                    b.Set(GrpcCallWasCancelled(), true);
+                    call_data->call.OnServerTrailingMetadata(b);
+                  });
 }
 
 template <typename Promise, typename Derived>
-auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
+auto MapResult(void (Derived::Call::* fn)(ServerMetadata&, Derived*), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(
@@ -404,15 +392,10 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
             call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
             return md;
           }),
-      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
-      // valid for the cancellation function requiring us to capture it here.
-      // This ought to be easy to fix once client side promises are completely
-      // rolled out.
-      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+      [call_data]() {
         grpc_metadata_batch b;
         b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
         b.Set(GrpcCallWasCancelled(), true);
-        promise_detail::Context<grpc_call_context_element> context(ctx);
         call_data->call.OnServerTrailingMetadata(b, call_data->channel);
       });
 }
@@ -530,7 +513,7 @@ auto RunCall(Interceptor interceptor, CallArgs call_args,
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    void (Derived::Call::*fn)(const Message&),
+    void (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -541,7 +524,7 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -555,7 +538,7 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -570,7 +553,7 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    MessageHandle (Derived::Call::* fn)(MessageHandle, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -581,7 +564,8 @@ inline auto InterceptClientToServerMessageHandler(
 
 template <typename Derived>
 inline auto InterceptClientToServerMessageHandler(
-    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    absl::StatusOr<MessageHandle> (Derived::Call::* fn)(MessageHandle,
+                                                        Derived*),
     FilterCallData<Derived>* call_data, const CallArgs&) {
   DCHECK(fn == &Derived::Call::OnClientToServerMessage);
   return [call_data](MessageHandle msg) -> absl::optional<MessageHandle> {
@@ -625,7 +609,7 @@ inline void InterceptServerInitialMetadata(const NoInterceptor*, void*,
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    void (Derived::Call::*fn)(ServerMetadata&),
+    void (Derived::Call::* fn)(ServerMetadata&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -637,7 +621,7 @@ inline void InterceptServerInitialMetadata(
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    absl::Status (Derived::Call::*fn)(ServerMetadata&),
+    absl::Status (Derived::Call::* fn)(ServerMetadata&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -654,7 +638,7 @@ inline void InterceptServerInitialMetadata(
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    void (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    void (Derived::Call::* fn)(ServerMetadata&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -666,7 +650,7 @@ inline void InterceptServerInitialMetadata(
 
 template <typename Derived>
 inline void InterceptServerInitialMetadata(
-    absl::Status (Derived::Call::*fn)(ServerMetadata&, Derived*),
+    absl::Status (Derived::Call::* fn)(ServerMetadata&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerInitialMetadata);
   call_args.server_initial_metadata->InterceptAndMap(
@@ -687,7 +671,7 @@ inline void InterceptServerToClientMessage(const NoInterceptor*, void*,
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    void (Derived::Call::*fn)(const Message&),
+    void (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -699,7 +683,7 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -714,7 +698,7 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    ServerMetadataHandle (Derived::Call::*fn)(const Message&, Derived*),
+    ServerMetadataHandle (Derived::Call::* fn)(const Message&, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -730,7 +714,7 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    MessageHandle (Derived::Call::*fn)(MessageHandle, Derived*),
+    MessageHandle (Derived::Call::* fn)(MessageHandle, Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -742,7 +726,8 @@ inline void InterceptServerToClientMessage(
 
 template <typename Derived>
 inline void InterceptServerToClientMessage(
-    absl::StatusOr<MessageHandle> (Derived::Call::*fn)(MessageHandle, Derived*),
+    absl::StatusOr<MessageHandle> (Derived::Call::* fn)(MessageHandle,
+                                                        Derived*),
     FilterCallData<Derived>* call_data, const CallArgs& call_args) {
   DCHECK(fn == &Derived::Call::OnServerToClientMessage);
   call_args.server_to_client_messages->InterceptAndMap(
@@ -759,7 +744,7 @@ inline void InterceptServerToClientMessage(
 inline void InterceptFinalize(const NoInterceptor*, void*, void*) {}
 
 template <class Call>
-inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
+inline void InterceptFinalize(void (Call::* fn)(const grpc_call_final_info*),
                               void*, Call* call) {
   DCHECK(fn == &Call::OnFinalize);
   GetContext<CallFinalization>()->Add(
@@ -770,7 +755,7 @@ inline void InterceptFinalize(void (Call::*fn)(const grpc_call_final_info*),
 
 template <class Derived>
 inline void InterceptFinalize(
-    void (Derived::Call::*fn)(const grpc_call_final_info*, Derived*),
+    void (Derived::Call::* fn)(const grpc_call_final_info*, Derived*),
     Derived* channel, typename Derived::Call* call) {
   DCHECK(fn == &Derived::Call::OnFinalize);
   GetContext<CallFinalization>()->Add(
@@ -957,21 +942,17 @@ class BaseCallData : public Activity, private Wakeable {
 
   virtual void StartBatch(grpc_transport_stream_op_batch* batch) = 0;
 
-  Call* call() { return static_cast<Call*>(context_[GRPC_CONTEXT_CALL].value); }
+  Call* call() { return arena_->GetContext<Call>(); }
 
  protected:
-  class ScopedContext
-      : public promise_detail::Context<Arena>,
-        public promise_detail::Context<grpc_call_context_element>,
-        public promise_detail::Context<grpc_polling_entity>,
-        public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine> {
+  class ScopedContext : public promise_detail::Context<Arena>,
+                        public promise_detail::Context<grpc_polling_entity>,
+                        public promise_detail::Context<CallFinalization>,
+                        public promise_detail::Context<
+                            grpc_event_engine::experimental::EventEngine> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
-          promise_detail::Context<grpc_call_context_element>(
-              call_data->context_),
           promise_detail::Context<grpc_polling_entity>(
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
@@ -1322,7 +1303,6 @@ class BaseCallData : public Activity, private Wakeable {
   CallCombiner* const call_combiner_;
   const Timestamp deadline_;
   CallFinalization finalization_;
-  grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;

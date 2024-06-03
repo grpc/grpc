@@ -28,10 +28,8 @@
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/gprpp/single_set_ptr.h"
-#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
@@ -39,85 +37,8 @@
 
 namespace grpc_core {
 
-class SubchannelInterfaceWithCallDestination : public SubchannelInterface {
- public:
-  using SubchannelInterface::SubchannelInterface;
-  // Obtain the call destination for this subchannel.
-  virtual RefCountedPtr<UnstartedCallDestination> call_destination() = 0;
-};
-
 class ClientChannel : public Channel {
  public:
-  // This class is a wrapper for Subchannel that hides details of the
-  // channel's implementation (such as the connected subchannel) from the
-  // LB policy API.
-  //
-  // Note that no synchronization is needed here, because even if the
-  // underlying subchannel is shared between channels, this wrapper will only
-  // be used within one channel, so it will always be synchronized by the
-  // control plane work_serializer.
-  class SubchannelWrapper : public SubchannelInterfaceWithCallDestination {
-   public:
-    SubchannelWrapper(WeakRefCountedPtr<ClientChannel> client_channel,
-                      RefCountedPtr<Subchannel> subchannel);
-    ~SubchannelWrapper() override;
-
-    void Orphaned() override;
-    void WatchConnectivityState(
-        std::unique_ptr<ConnectivityStateWatcherInterface> watcher) override
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
-    void CancelConnectivityStateWatch(
-        ConnectivityStateWatcherInterface* watcher) override
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
-
-    RefCountedPtr<UnstartedCallDestination> call_destination() override {
-      return subchannel_->connected_subchannel()->unstarted_call_destination();
-    }
-
-    void RequestConnection() override { subchannel_->RequestConnection(); }
-
-    void ResetBackoff() override { subchannel_->ResetBackoff(); }
-
-    void AddDataWatcher(std::unique_ptr<DataWatcherInterface> watcher) override
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
-    void CancelDataWatcher(DataWatcherInterface* watcher) override
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
-    void ThrottleKeepaliveTime(int new_keepalive_time);
-
-   private:
-    class WatcherWrapper;
-
-    // A heterogenous lookup comparator for data watchers that allows
-    // unique_ptr keys to be looked up as raw pointers.
-    struct DataWatcherLessThan {
-      using is_transparent = void;
-      bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
-                      const std::unique_ptr<DataWatcherInterface>& p2) const {
-        return p1 < p2;
-      }
-      bool operator()(const std::unique_ptr<DataWatcherInterface>& p1,
-                      const DataWatcherInterface* p2) const {
-        return p1.get() < p2;
-      }
-      bool operator()(const DataWatcherInterface* p1,
-                      const std::unique_ptr<DataWatcherInterface>& p2) const {
-        return p1 < p2.get();
-      }
-    };
-
-    WeakRefCountedPtr<ClientChannel> client_channel_;
-    RefCountedPtr<Subchannel> subchannel_;
-    // Maps from the address of the watcher passed to us by the LB policy
-    // to the address of the WrapperWatcher that we passed to the underlying
-    // subchannel.  This is needed so that when the LB policy calls
-    // CancelConnectivityStateWatch() with its watcher, we know the
-    // corresponding WrapperWatcher to cancel on the underlying subchannel.
-    std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_
-        ABSL_GUARDED_BY(*client_channel_->work_serializer_);
-    std::set<std::unique_ptr<DataWatcherInterface>, DataWatcherLessThan>
-        data_watchers_ ABSL_GUARDED_BY(*client_channel_->work_serializer_);
-  };
-
   using PickerObservable =
       Observable<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>;
 
@@ -131,6 +52,9 @@ class ClientChannel : public Channel {
 
     virtual RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
         PickerObservable) = 0;
+
+   protected:
+    ~CallDestinationFactory() = default;
   };
 
   static absl::StatusOr<RefCountedPtr<Channel>> Create(
@@ -159,7 +83,7 @@ class ClientChannel : public Channel {
     return event_engine_.get();
   }
 
-  // FIXME: should we support lame channels somehow?
+  // TODO(ctiller): lame channels
   bool IsLame() const override { return false; }
 
   bool SupportsConnectivityWatcher() const override { return true; }
@@ -198,8 +122,9 @@ class ClientChannel : public Channel {
   }
 
  private:
-  class ResolverResultHandler;
   class ClientChannelControlHelper;
+  class ResolverResultHandler;
+  class SubchannelWrapper;
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   void DestroyResolverAndLbPolicyLocked()
@@ -254,7 +179,6 @@ class ClientChannel : public Channel {
   ClientChannelFactory* const client_channel_factory_;
   const std::string default_authority_;
   channelz::ChannelNode* const channelz_node_;
-  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
 
   //

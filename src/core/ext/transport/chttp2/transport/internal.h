@@ -466,7 +466,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
   uint32_t max_header_list_size_soft_limit = 0;
-  grpc_core::ContextList* cl = nullptr;
+  grpc_core::ContextList* context_list = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
   /// The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
@@ -545,12 +545,12 @@ typedef enum {
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
-                     const void* server_data);
+                     const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
-  void* context = nullptr;
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
+  grpc_core::Arena* const arena;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
@@ -643,7 +643,7 @@ struct grpc_chttp2_stream {
   int64_t write_counter = 0;
 
   /// Only set when enabled.
-  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
 
   /// Only set when enabled.
   std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;

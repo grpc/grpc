@@ -90,7 +90,6 @@ BaseCallData::BaseCallData(
       arena_(args->arena),
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
-      context_(args->context),
       server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
               ? arena_->New<Pipe<ServerMetadataHandle>>(arena_)
