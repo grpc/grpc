@@ -74,7 +74,6 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
@@ -1336,7 +1335,6 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_transport_stream_op_batch_payload* op_payload = op->payload;
   grpc_chttp2_transport* t = s->t.get();
 
-  s->context = op->payload->context;
   s->traced = op->is_traced;
   s->call_tracer = CallTracerIfSampled(s);
   s->tcp_tracer = TcpTracerIfSampled(s);

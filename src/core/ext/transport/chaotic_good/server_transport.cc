@@ -242,7 +242,7 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
     auto call = MakeCallPair(std::move(fragment_frame.headers),
-                             event_engine_.get(), std::move(arena), nullptr);
+                             event_engine_.get(), std::move(arena));
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {

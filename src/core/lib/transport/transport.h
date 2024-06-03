@@ -39,7 +39,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -319,9 +318,6 @@ struct grpc_transport_stream_op_batch {
 };
 
 struct grpc_transport_stream_op_batch_payload {
-  explicit grpc_transport_stream_op_batch_payload(
-      grpc_call_context_element* context)
-      : context(context) {}
   struct {
     grpc_metadata_batch* send_initial_metadata = nullptr;
   } send_initial_metadata;
@@ -411,9 +407,6 @@ struct grpc_transport_stream_op_batch_payload {
     // initial metadata.
     bool tarpit = false;
   } cancel_stream;
-
-  // Indexes correspond to grpc_context_index enum values
-  grpc_call_context_element* context;
 };
 
 /// Transport op: a set of operations to perform on a transport as a whole

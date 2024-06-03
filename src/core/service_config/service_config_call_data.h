@@ -24,7 +24,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_parser.h"

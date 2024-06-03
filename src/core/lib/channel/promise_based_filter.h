@@ -46,7 +46,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -355,49 +354,38 @@ template <typename Promise, typename Derived>
 auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return OnCancel(
-      Map(std::move(x),
-          [call_data](ServerMetadataHandle md) {
-            auto status = call_data->call.OnServerTrailingMetadata(*md);
-            if (!status.ok()) {
-              return ServerMetadataFromStatus(status);
-            }
-            return md;
-          }),
-      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
-      // valid for the cancellation function requiring us to capture it here.
-      // This ought to be easy to fix once client side promises are completely
-      // rolled out.
-      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
-        grpc_metadata_batch b;
-        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
-        b.Set(GrpcCallWasCancelled(), true);
-        promise_detail::Context<grpc_call_context_element> context(ctx);
-        call_data->call.OnServerTrailingMetadata(b).IgnoreError();
-      });
+  return OnCancel(Map(std::move(x),
+                      [call_data](ServerMetadataHandle md) {
+                        auto status =
+                            call_data->call.OnServerTrailingMetadata(*md);
+                        if (!status.ok()) {
+                          return ServerMetadataFromStatus(status);
+                        }
+                        return md;
+                      }),
+                  [call_data]() {
+                    grpc_metadata_batch b;
+                    b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+                    b.Set(GrpcCallWasCancelled(), true);
+                    call_data->call.OnServerTrailingMetadata(b).IgnoreError();
+                  });
 }
 
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
   DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
-  return OnCancel(
-      Map(std::move(x),
-          [call_data](ServerMetadataHandle md) {
-            call_data->call.OnServerTrailingMetadata(*md);
-            return md;
-          }),
-      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
-      // valid for the cancellation function requiring us to capture it here.
-      // This ought to be easy to fix once client side promises are completely
-      // rolled out.
-      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
-        grpc_metadata_batch b;
-        b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
-        b.Set(GrpcCallWasCancelled(), true);
-        promise_detail::Context<grpc_call_context_element> context(ctx);
-        call_data->call.OnServerTrailingMetadata(b);
-      });
+  return OnCancel(Map(std::move(x),
+                      [call_data](ServerMetadataHandle md) {
+                        call_data->call.OnServerTrailingMetadata(*md);
+                        return md;
+                      }),
+                  [call_data]() {
+                    grpc_metadata_batch b;
+                    b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
+                    b.Set(GrpcCallWasCancelled(), true);
+                    call_data->call.OnServerTrailingMetadata(b);
+                  });
 }
 
 template <typename Promise, typename Derived>
@@ -410,15 +398,10 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
             call_data->call.OnServerTrailingMetadata(*md, call_data->channel);
             return md;
           }),
-      // TODO(yashykt/ctiller): GetContext<grpc_call_context_element> is not
-      // valid for the cancellation function requiring us to capture it here.
-      // This ought to be easy to fix once client side promises are completely
-      // rolled out.
-      [call_data, ctx = GetContext<grpc_call_context_element>()]() {
+      [call_data]() {
         grpc_metadata_batch b;
         b.Set(GrpcStatusMetadata(), GRPC_STATUS_CANCELLED);
         b.Set(GrpcCallWasCancelled(), true);
-        promise_detail::Context<grpc_call_context_element> context(ctx);
         call_data->call.OnServerTrailingMetadata(b, call_data->channel);
       });
 }
@@ -1362,19 +1345,15 @@ class BaseCallData : public Activity, private Wakeable {
   virtual void StartBatch(grpc_transport_stream_op_batch* batch) = 0;
 
  protected:
-  class ScopedContext
-      : public promise_detail::Context<Arena>,
-        public promise_detail::Context<grpc_call_context_element>,
-        public promise_detail::Context<grpc_polling_entity>,
-        public promise_detail::Context<CallFinalization>,
-        public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine>,
-        public promise_detail::Context<CallContext> {
+  class ScopedContext : public promise_detail::Context<Arena>,
+                        public promise_detail::Context<grpc_polling_entity>,
+                        public promise_detail::Context<CallFinalization>,
+                        public promise_detail::Context<
+                            grpc_event_engine::experimental::EventEngine>,
+                        public promise_detail::Context<CallContext> {
    public:
     explicit ScopedContext(BaseCallData* call_data)
         : promise_detail::Context<Arena>(call_data->arena_),
-          promise_detail::Context<grpc_call_context_element>(
-              call_data->context_),
           promise_detail::Context<grpc_polling_entity>(
               call_data->pollent_.load(std::memory_order_acquire)),
           promise_detail::Context<CallFinalization>(&call_data->finalization_),
@@ -1727,7 +1706,6 @@ class BaseCallData : public Activity, private Wakeable {
   const Timestamp deadline_;
   CallFinalization finalization_;
   CallContext* call_context_ = nullptr;
-  grpc_call_context_element* const context_;
   std::atomic<grpc_polling_entity*> pollent_{nullptr};
   Pipe<ServerMetadataHandle>* const server_initial_metadata_pipe_;
   SendMessage* const send_message_;

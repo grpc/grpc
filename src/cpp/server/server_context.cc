@@ -56,7 +56,6 @@
 #include <grpcpp/support/server_interceptor.h>
 #include <grpcpp/support/string_ref.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/util/crash.h"

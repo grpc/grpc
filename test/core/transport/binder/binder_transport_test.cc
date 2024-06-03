@@ -379,7 +379,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadata) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
   const Metadata kInitialMetadata = kDefaultMetadata;
   MakeSendInitialMetadata send_initial_metadata(kInitialMetadata, "", &op);
@@ -399,7 +399,7 @@ TEST_F(BinderTransportTest, PerformSendInitialMetadataMethodRef) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
   const Metadata kInitialMetadata = kDefaultMetadata;
   const std::string kMethodRef = kDefaultMethodRef;
@@ -422,7 +422,7 @@ TEST_F(BinderTransportTest, PerformSendMessage) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   const std::string kMessage = kDefaultMessage;
@@ -444,7 +444,7 @@ TEST_F(BinderTransportTest, PerformSendTrailingMetadata) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
   // The wireformat guarantees that suffix metadata will always be empty.
   // TODO(waynetu): Check whether gRPC can internally add extra trailing
@@ -467,7 +467,7 @@ TEST_F(BinderTransportTest, PerformSendAll) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   const Metadata kInitialMetadata = kDefaultMetadata;
@@ -502,7 +502,7 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadata) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   MakeRecvInitialMetadata recv_initial_metadata(&op);
@@ -523,7 +523,7 @@ TEST_F(BinderTransportTest, PerformRecvInitialMetadataWithMethodRef) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   MakeRecvInitialMetadata recv_initial_metadata(&op);
@@ -545,7 +545,7 @@ TEST_F(BinderTransportTest, PerformRecvMessage) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   MakeRecvMessage recv_message(&op);
@@ -565,7 +565,7 @@ TEST_F(BinderTransportTest, PerformRecvTrailingMetadata) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   MakeRecvTrailingMetadata recv_trailing_metadata(&op);
@@ -587,7 +587,7 @@ TEST_F(BinderTransportTest, PerformRecvAll) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   MakeRecvInitialMetadata recv_initial_metadata(&op);
@@ -623,7 +623,7 @@ TEST_F(BinderTransportTest, PerformAllOps) {
   grpc_core::ExecCtx exec_ctx;
   grpc_binder_stream* gbs = InitNewBinderStream();
   grpc_transport_stream_op_batch op{};
-  grpc_transport_stream_op_batch_payload payload(nullptr);
+  grpc_transport_stream_op_batch_payload payload;
   op.payload = &payload;
 
   const Metadata kSendInitialMetadata = kDefaultMetadata;
@@ -706,13 +706,13 @@ TEST_F(BinderTransportTest, WireWriterRpcCallErrorPropagates) {
 
   const Metadata kInitialMetadata = {};
   grpc_transport_stream_op_batch op1{};
-  grpc_transport_stream_op_batch_payload payload1(nullptr);
+  grpc_transport_stream_op_batch_payload payload1;
   op1.payload = &payload1;
   MakeSendInitialMetadata send_initial_metadata1(kInitialMetadata, "", &op1);
   op1.on_complete = mock_on_complete1.GetGrpcClosure();
 
   grpc_transport_stream_op_batch op2{};
-  grpc_transport_stream_op_batch_payload payload2(nullptr);
+  grpc_transport_stream_op_batch_payload payload2;
   op2.payload = &payload2;
   MakeSendInitialMetadata send_initial_metadata2(kInitialMetadata, "", &op2);
   op2.on_complete = mock_on_complete2.GetGrpcClosure();

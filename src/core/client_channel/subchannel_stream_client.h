@@ -33,7 +33,6 @@
 #include <grpc/status.h>
 
 #include "src/core/client_channel/subchannel.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -148,7 +147,6 @@ class SubchannelStreamClient final
 
     RefCountedPtr<Arena> arena_;
     CallCombiner call_combiner_;
-    grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
     // The streaming call to the backend. Always non-null.
     // Refs are tracked manually; when the last ref is released, the

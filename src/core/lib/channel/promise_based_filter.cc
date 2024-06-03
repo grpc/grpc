@@ -93,7 +93,6 @@ BaseCallData::BaseCallData(
       call_context_(flags & kFilterExaminesCallContext
                         ? arena_->New<CallContext>(nullptr)
                         : nullptr),
-      context_(args->context),
       server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
               ? arena_->New<Pipe<ServerMetadataHandle>>(arena_)

@@ -35,7 +35,6 @@
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -109,7 +108,6 @@ class SubchannelCall final {
     gpr_cycle_counter start_time;
     Timestamp deadline;
     Arena* arena;
-    grpc_call_context_element* context;
     CallCombiner* call_combiner;
   };
   static RefCountedPtr<SubchannelCall> Create(Args args,

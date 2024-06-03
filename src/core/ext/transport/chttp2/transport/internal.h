@@ -548,7 +548,6 @@ struct grpc_chttp2_stream {
                      const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
-  void* context = nullptr;
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
   grpc_core::Arena* const arena;
