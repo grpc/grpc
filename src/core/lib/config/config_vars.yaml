@@ -126,7 +126,7 @@
     ECDHE-ECDSA-AES256-GCM-SHA384:\
     ECDHE-RSA-AES128-GCM-SHA256:\
     ECDHE-RSA-AES256-GCM-SHA384"
-- name: grpc_disable_vlog
+- name: disable_vlog
   type: bool
   default: false
   description: 

@@ -176,7 +176,7 @@ void gpr_log_verbosity_init() {
                              min_severity_to_print_stacktrace);
   }
   gpr_to_absl_verbosity_setting_init();
-  if (grpc_core::ConfigVars::Get().GrpcDisableVlog()) {
+  if (grpc_core::ConfigVars::Get().DisableVlog()) {
     disable_vlog_for_grpc();
   }
 }

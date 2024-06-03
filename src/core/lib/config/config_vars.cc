@@ -75,7 +75,7 @@ ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
           "A colon separated list of cipher suites to use with OpenSSL");
-ABSL_FLAG(absl::optional<bool>, grpc_grpc_disable_vlog, {},
+ABSL_FLAG(absl::optional<bool>, grpc_disable_vlog, {},
           "Disable absl vlog for in \042*grpc*/*\042 folder. For other folders "
           "it will remain unchanged. A good use case for this is if you want "
           "to enable VLOG for other parts of the code but not for grpc.");
@@ -115,7 +115,7 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       experiments_(LoadConfig(FLAGS_grpc_experiments, "GRPC_EXPERIMENTS",
                               overrides.experiments, "")),
       trace_(LoadConfig(FLAGS_grpc_trace, "GRPC_TRACE", overrides.trace, "")),
-      override_grpc_disable_vlog_(overrides.grpc_disable_vlog),
+      override_disable_vlog_(overrides.disable_vlog),
       override_system_ssl_roots_dir_(overrides.system_ssl_roots_dir),
       override_default_ssl_roots_file_path_(
           overrides.default_ssl_roots_file_path) {}
@@ -132,9 +132,9 @@ std::string ConfigVars::DefaultSslRootsFilePath() const {
                     override_default_ssl_roots_file_path_, "");
 }
 
-bool ConfigVars::GrpcDisableVlog() const {
-  return LoadConfig(FLAGS_grpc_grpc_disable_vlog, "GRPC_GRPC_DISABLE_VLOG",
-                    override_grpc_disable_vlog_, false);
+bool ConfigVars::DisableVlog() const {
+  return LoadConfig(FLAGS_grpc_disable_vlog, "GRPC_DISABLE_VLOG",
+                    override_disable_vlog_, false);
 }
 
 std::string ConfigVars::ToString() const {
@@ -154,7 +154,7 @@ std::string ConfigVars::ToString() const {
       absl::CEscape(DefaultSslRootsFilePath()), "\"",
       ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
       ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
-      ", grpc_disable_vlog: ", GrpcDisableVlog() ? "true" : "false");
+      ", disable_vlog: ", DisableVlog() ? "true" : "false");
 }
 
 }  // namespace grpc_core
