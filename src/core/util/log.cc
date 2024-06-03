@@ -76,16 +76,16 @@ int gpr_should_log(gpr_log_severity severity) {
              : 0;
 }
 
+void absl_disable_debug() {}
+
 void gpr_to_absl_verbosity_setting_init(void) {
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
-  VLOG(3) << "Log verbosity: " << verbosity;
+  DVLOG(2) << "Log verbosity: " << verbosity;
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
-    LOG(WARNING)
-        << "Not suitable for production systems. Prefer WARNING or ERROR";
+    LOG(WARNING) << "Not suitable for production. Prefer WARNING or ERROR.";
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
-    LOG(WARNING)
-        << "Not suitable for production systems. Prefer WARNING or ERROR";
+    LOG(ERROR) << "Not suitable for production. Prefer WARNING or ERROR.";
     absl::SetVLogLevel("*grpc*/*", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
