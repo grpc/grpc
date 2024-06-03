@@ -127,7 +127,6 @@ static void on_connect(void* vargs, grpc_endpoint* tcp,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   struct ServerThreadArgs* args = static_cast<struct ServerThreadArgs*>(vargs);
-  grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE("Connected"));
   grpc_endpoint_destroy(tcp);
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick",

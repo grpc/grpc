@@ -232,7 +232,8 @@ void HttpRequest::Orphan() {
           GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     }
     if (own_endpoint_ && ep_ != nullptr) {
-      grpc_endpoint_shutdown(ep_, GRPC_ERROR_CREATE("HTTP request cancelled"));
+      grpc_endpoint_destroy(ep_);
+      ep_ = nullptr;
     }
   }
   Unref();
