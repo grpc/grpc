@@ -15,6 +15,7 @@
 #include "src/core/lib/transport/call_filters.h"
 
 #include "absl/log/check.h"
+#include "metadata_batch.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -209,10 +210,7 @@ void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
     constructor.call_init(Offset(call_data_, constructor.call_offset),
                           constructor.channel_data);
   }
-  client_initial_metadata_state_.Start();
-  client_to_server_message_state_.Start();
-  server_initial_metadata_state_.Start();
-  server_to_client_message_state_.Start();
+  call_state_.Start();
 }
 
 void CallFilters::Finalize(const grpc_call_final_info* final_info) {
@@ -230,9 +228,10 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
             "Cancelling due to failed pipe operation: %s",
             DebugString().c_str());
   }
-  PushServerTrailingMetadata(
-      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation")));
-  server_trailing_metadata_waiter_.Wake();
+  auto status =
+      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
+  status->Set(GrpcCallWasCancelled(), true);
+  PushServerTrailingMetadata(std::move(status));
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
@@ -243,27 +242,16 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
             md->DebugString().c_str(), DebugString().c_str());
   }
   CHECK(md != nullptr);
-  if (cancelled_.is_set()) return;
-  cancelled_.Set(md->get(GrpcCallWasCancelled()).value_or(false));
-  server_trailing_metadata_ = std::move(md);
-  client_initial_metadata_state_.CloseWithError();
-  server_initial_metadata_state_.CloseSending();
-  client_to_server_message_state_.CloseWithError();
-  server_to_client_message_state_.CloseSending();
-  server_trailing_metadata_waiter_.Wake();
+  if (call_state_.PushServerTrailingMetadata(
+          md->get(GrpcCallWasCancelled()).value_or(false))) {
+    server_trailing_metadata_ = std::move(md);
+  }
 }
 
 std::string CallFilters::DebugString() const {
   std::vector<std::string> components = {
       absl::StrFormat("this:%p", this),
-      absl::StrCat("client_initial_metadata:",
-                   client_initial_metadata_state_.DebugString()),
-      ServerInitialMetadataPromises::DebugString("server_initial_metadata",
-                                                 this),
-      ClientToServerMessagePromises::DebugString("client_to_server_message",
-                                                 this),
-      ServerToClientMessagePromises::DebugString("server_to_client_message",
-                                                 this),
+      absl::StrCat("state:", call_state_.DebugString()),
       absl::StrCat("server_trailing_metadata:",
                    server_trailing_metadata_ == nullptr
                        ? "not-set"
@@ -320,18 +308,19 @@ void CallState::Start() {
   server_to_client_pull_waiter_.Wake();
 }
 
-StatusFlag CallState::BeginPushClientToServerMessage() {
+void CallState::BeginPushClientToServerMessage() {
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
       client_to_server_push_state_ = ClientToServerPushState::kPushedMessage;
       client_to_server_pull_waiter_.Wake();
-      return Success{};
+      return;
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
       Crash("Only one push allowed to be outstanding");
     case ClientToServerPushState::kPushedHalfClose:
+      Crash("Already half-closed");
     case ClientToServerPushState::kFinished:
-      return Failure{};
+      return;
   }
   Crash("unreachable");
 }
@@ -361,7 +350,8 @@ void CallState::ClientToServerHalfClose() {
       break;
     case ClientToServerPushState::kPushedHalfClose:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      // swallow the dupe, it does no harm
+      Crash(absl::StrCat("ClientToServerHalfClose called twice (current state=",
+                         client_to_server_push_state_, ")"));
       break;
     case ClientToServerPushState::kFinished:
       break;
@@ -421,205 +411,134 @@ Poll<StatusFlag> CallState::PollPullClientToServerMessageAvailable() {
   Crash("unreachable");
 }
 
-}  // namespace filters_detail
-
-///////////////////////////////////////////////////////////////////////////////
-// CallFilters::PipeState
-
-void filters_detail::PipeState::Start() {
-  DCHECK(!started_);
-  started_ = true;
-  wait_recv_.Wake();
+void CallState::PushServerInitialMetadata() {
+  CHECK(!pushed_server_initial_metadata_);
+  if (pushed_server_trailing_metadata_) return;
+  pushed_server_initial_metadata_ = true;
+  server_to_client_pull_waiter_.Wake();
 }
 
-void filters_detail::PipeState::CloseWithError() {
-  if (state_ == ValueState::kClosed) return;
-  state_ = ValueState::kError;
-  wait_recv_.Wake();
-  wait_send_.Wake();
+void CallState::BeginPushServerToClientMessage() {
+  CHECK_EQ(server_to_client_message_push_state_,
+           ServerToClientMessagePushState::kIdle);
+  if (pushed_server_trailing_metadata_) return;
+  server_to_client_message_push_state_ =
+      ServerToClientMessagePushState::kPushed;
+  server_to_client_pull_waiter_.Wake();
 }
 
-Poll<bool> filters_detail::PipeState::PollClosed() {
-  switch (state_) {
-    case ValueState::kIdle:
-    case ValueState::kWaiting:
-    case ValueState::kQueued:
-    case ValueState::kReady:
-    case ValueState::kProcessing:
-      return wait_recv_.pending();
-    case ValueState::kClosed:
-      return false;
-    case ValueState::kError:
-      return true;
-  }
-  GPR_UNREACHABLE_CODE(return Pending{});
-}
-
-void filters_detail::PipeState::CloseSending() {
-  switch (state_) {
-    case ValueState::kIdle:
-      state_ = ValueState::kClosed;
-      break;
-    case ValueState::kWaiting:
-      state_ = ValueState::kClosed;
-      wait_recv_.Wake();
-      break;
-    case ValueState::kClosed:
-    case ValueState::kError:
-      break;
-    case ValueState::kQueued:
-    case ValueState::kReady:
-    case ValueState::kProcessing:
-      Crash("Only one push allowed to be outstanding");
-      break;
-  }
-}
-
-void filters_detail::PipeState::BeginPush() {
-  switch (state_) {
-    case ValueState::kIdle:
-      state_ = ValueState::kQueued;
-      break;
-    case ValueState::kWaiting:
-      state_ = ValueState::kReady;
-      wait_recv_.Wake();
-      break;
-    case ValueState::kClosed:
-    case ValueState::kError:
-      break;
-    case ValueState::kQueued:
-    case ValueState::kReady:
-    case ValueState::kProcessing:
-      Crash("Only one push allowed to be outstanding");
-      break;
-  }
-}
-
-void filters_detail::PipeState::DropPush() {
-  switch (state_) {
-    case ValueState::kQueued:
-    case ValueState::kReady:
-    case ValueState::kProcessing:
-    case ValueState::kWaiting:
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-        gpr_log(GPR_INFO, "%p drop push in state %s", this,
-                DebugString().c_str());
-      }
-      state_ = ValueState::kError;
-      wait_recv_.Wake();
-      break;
-    case ValueState::kIdle:
-    case ValueState::kClosed:
-    case ValueState::kError:
-      break;
-  }
-}
-
-void filters_detail::PipeState::DropPull() {
-  switch (state_) {
-    case ValueState::kQueued:
-    case ValueState::kReady:
-    case ValueState::kProcessing:
-    case ValueState::kWaiting:
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-        gpr_log(GPR_INFO, "%p drop pull in state %s", this,
-                DebugString().c_str());
-      }
-      state_ = ValueState::kError;
-      wait_send_.Wake();
-      break;
-    case ValueState::kIdle:
-    case ValueState::kClosed:
-    case ValueState::kError:
-      break;
-  }
-}
-
-Poll<StatusFlag> filters_detail::PipeState::PollPush() {
-  switch (state_) {
-    // Read completed and new read started => we see waiting here
-    case ValueState::kWaiting:
-      state_ = ValueState::kReady;
-      wait_recv_.Wake();
-      return wait_send_.pending();
-    case ValueState::kIdle:
-    case ValueState::kClosed:
+Poll<StatusFlag> CallState::PollPushServerToClientMessage() {
+  switch (server_to_client_message_push_state_) {
+    case ServerToClientMessagePushState::kIdle:
       return Success{};
-    case ValueState::kQueued:
-    case ValueState::kReady:
-    case ValueState::kProcessing:
-      return wait_send_.pending();
-    case ValueState::kError:
+    case ServerToClientMessagePushState::kPushed:
+      return Pending{};
+    case ServerToClientMessagePushState::kFailed:
       return Failure{};
   }
-  GPR_UNREACHABLE_CODE(return Pending{});
 }
 
-Poll<ValueOrFailure<bool>> filters_detail::PipeState::PollPull() {
-  switch (state_) {
-    case ValueState::kWaiting:
-      return wait_recv_.pending();
-    case ValueState::kIdle:
-      state_ = ValueState::kWaiting;
-      return wait_recv_.pending();
-    case ValueState::kReady:
-    case ValueState::kQueued:
-      if (!started_) return wait_recv_.pending();
-      state_ = ValueState::kProcessing;
-      return true;
-    case ValueState::kProcessing:
-      Crash("Only one pull allowed to be outstanding");
-    case ValueState::kClosed:
+bool CallState::PushServerTrailingMetadata(bool cancel) {
+  if (pushed_server_trailing_metadata_) return false;
+  pushed_server_trailing_metadata_ = true;
+  if (cancel) {
+    server_to_client_message_push_state_ =
+        ServerToClientMessagePushState::kFailed;
+    pushed_server_initial_metadata_ = true;
+    client_to_server_push_state_ = ClientToServerPushState::kFinished;
+  }
+  server_to_client_pull_waiter_.Wake();
+  return true;
+}
+
+Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+      return Pending{};
+    case ServerToClientPullState::kStarted:
+      if (pushed_server_initial_metadata_) {
+        server_to_client_pull_state_ =
+            ServerToClientPullState::kProcessingServerInitialMetadata;
+        return true;
+      }
+      if (pushed_server_trailing_metadata_) return false;
+      return Pending{};
+    case ServerToClientPullState::kTerminated:
       return false;
-    case ValueState::kError:
+    default:
+      Crash(absl::StrCat(
+          "PollPullServerInitialMetadataAvailable called in invalid state ",
+          server_to_client_pull_state_));
+  }
+}
+
+void CallState::FinishPullServerInitialMetadata() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+      server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kTerminated:
+      break;
+    default:
+      Crash(absl::StrCat(
+          "FinishPullServerInitialMetadata called in invalid state ",
+          server_to_client_pull_state_));
+      break;
+  }
+}
+
+void CallState::BeginPullServerToClientMessage() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kIdle:
+      server_to_client_pull_state_ = ServerToClientPullState::kReading;
+      break;
+    case ServerToClientPullState::kTerminated:
+      break;
+    default:
+      Crash(absl::StrCat(
+          "BeginPullServerToClientMessage called in invalid state ",
+          server_to_client_pull_state_));
+  }
+}
+
+Poll<StatusFlag> CallState::PollPullServerToClientMessageAvailable() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kReading:
+      break;
+    case ServerToClientPullState::kTerminated:
+      return Failure{};
+    default:
+      Crash(absl::StrCat(
+          "PollPullServerToClientMessageAvailable called in invalid state ",
+          server_to_client_pull_state_));
+  }
+  switch (server_to_client_message_push_state_) {
+    case ServerToClientMessagePushState::kIdle:
+      return Pending{};
+    case ServerToClientMessagePushState::kPushed:
+      server_to_client_pull_state_ =
+          ServerToClientPullState::kProcessingServerToClientMessage;
+      return Success{};
+    case ServerToClientMessagePushState::kFailed:
       return Failure{};
   }
-  GPR_UNREACHABLE_CODE(return Pending{});
+  Crash("unreachable");
 }
 
-void filters_detail::PipeState::AckPull() {
-  switch (state_) {
-    case ValueState::kProcessing:
-      state_ = ValueState::kIdle;
-      wait_send_.Wake();
-      break;
-    case ValueState::kWaiting:
-    case ValueState::kIdle:
-    case ValueState::kQueued:
-    case ValueState::kReady:
-    case ValueState::kClosed:
-      Crash("AckPullValue called in invalid state");
-    case ValueState::kError:
-      break;
-  }
+void CallState::WaitingForServerToClientMessageAck() {
+  CHECK_EQ(server_to_client_pull_state_,
+           ServerToClientPullState::kProcessingServerToClientMessage);
+  server_to_client_pull_state_ =
+      ServerToClientPullState::kWaitingForServerToClientMessageAck;
 }
 
-std::string filters_detail::PipeState::DebugString() const {
-  const char* state_str = "<<invalid-value>>";
-  switch (state_) {
-    case ValueState::kIdle:
-      state_str = "Idle";
-      break;
-    case ValueState::kWaiting:
-      state_str = "Waiting";
-      break;
-    case ValueState::kQueued:
-      state_str = "Queued";
-      break;
-    case ValueState::kReady:
-      state_str = "Ready";
-      break;
-    case ValueState::kProcessing:
-      state_str = "Processing";
-      break;
-    case ValueState::kClosed:
-      state_str = "Closed";
-      break;
-    case ValueState::kError:
-      state_str = "Error";
-      break;
-  }
-  return absl::StrCat(state_str, started_ ? "" : " (not started)");
+void CallState::AckServerToClientMessage() {
+  CHECK_EQ(server_to_client_pull_state_,
+           ServerToClientPullState::kWaitingForServerToClientMessageAck);
+  server_to_client_pull_state_ = ServerToClientPullState::kIdle;
+  server_to_client_pull_waiter_.Wake();
 }
 
+}  // namespace filters_detail
 }  // namespace grpc_core
