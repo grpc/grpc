@@ -344,13 +344,14 @@ auto ChaoticGoodServerTransport::TransportReadLoop(
 
 auto ChaoticGoodServerTransport::OnTransportActivityDone(
     absl::string_view activity) {
-  return [this, activity](absl::Status status) {
+  return [self = RefAsSubclass<ChaoticGoodServerTransport>(),
+          activity](absl::Status status) {
     if (grpc_chaotic_good_trace.enabled()) {
       gpr_log(GPR_INFO,
               "CHAOTIC_GOOD: OnTransportActivityDone: activity=%s status=%s",
               std::string(activity).c_str(), status.ToString().c_str());
     }
-    AbortWithError();
+    self->AbortWithError();
   };
 }
 
