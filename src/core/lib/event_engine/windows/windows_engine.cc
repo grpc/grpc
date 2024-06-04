@@ -395,12 +395,7 @@ void WindowsEventEngine::OnDeadlineTimerFired(
     auto cb = connection_state->TakeCallback();
     connection_state.reset();
     cb(absl::DeadlineExceededError("Connection timed out"));
-    return;
   }
-  GRPC_EVENT_ENGINE_TRACE(
-      "Could not cancel connection from deadline timer. The connection "
-      "callback will be called. Handle: %s",
-      HandleToString<ConnectionHandle>(connection_state->connection_handle()));
 }
 
 EventEngine::ConnectionHandle WindowsEventEngine::Connect(
