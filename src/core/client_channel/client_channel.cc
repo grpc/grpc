@@ -721,8 +721,7 @@ void ClientChannel::AddConnectivityWatcher(
   //      [self = RefAsSubclass<ClientChannel>(), initial_state,
   //       watcher = std::move(watcher)]()
   //            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-  //        self->state_tracker_.AddWatcher(initial_state,
-  //        std::move(watcher));
+  //        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
   //      },
   //      DEBUG_LOCATION);
 }
