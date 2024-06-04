@@ -638,7 +638,7 @@ ClientChannel::ClientChannel(
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
       resolver_data_for_calls_(ResolverDataForCalls{}),
-      picker_(nullptr),
+      picker_(NoPicker{false}),
       call_destination_(
           call_destination_factory->CreateCallDestination(picker_)),
       work_serializer_(std::make_shared<WorkSerializer>(event_engine_)),
@@ -897,7 +897,7 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
                 lb_policy_.get());
       }
       lb_policy_.reset();
-      picker_.Set(nullptr);
+      picker_.Set(NoPicker{true});
     }
   }
 }

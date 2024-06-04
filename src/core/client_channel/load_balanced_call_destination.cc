@@ -282,25 +282,25 @@ void LoadBalancedCallDestination::StartCall(
       "lb_pick", [unstarted_handler, picker = picker_]() mutable {
         return Map(
             // Wait for the LB picker.
-            CheckDelayed(Loop([last_picker = RefCountedPtr<
-                                   LoadBalancingPolicy::SubchannelPicker>(),
+            CheckDelayed(Loop([last_picker = ClientChannel::Picker(
+                                   ClientChannel::NoPicker{false}),
                                unstarted_handler, picker]() mutable {
               return Map(
                   picker.Next(last_picker),
-                  [unstarted_handler, &last_picker](
-                      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-                          picker) mutable
+                  [unstarted_handler,
+                   &last_picker](ClientChannel::Picker picker) mutable
                   -> LoopCtl<
                       absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> {
-                    if (picker == nullptr) {
-                      return absl::UnavailableError("Channel shutting down");
+                    if (auto* active_picker = absl::get_if<RefCountedPtr<
+                            LoadBalancingPolicy::SubchannelPicker>>(&picker)) {
+                      auto& picker_ref = **active_picker;
+                      last_picker = std::move(*active_picker);
+                      return PickSubchannel(picker_ref, unstarted_handler);
                     }
-                    last_picker = std::move(picker);
-                    // Returns 3 possible things:
-                    // - Continue to queue the pick
-                    // - non-OK status to fail the pick
-                    // - a connected subchannel to complete the pick
-                    return PickSubchannel(*last_picker, unstarted_handler);
+                    const auto& no_picker =
+                        absl::get<ClientChannel::NoPicker>(picker);
+                    CHECK(no_picker.channel_closed);
+                    return absl::UnavailableError("Channel shutting down");
                   });
             })),
             // Create call stack on the connected subchannel.

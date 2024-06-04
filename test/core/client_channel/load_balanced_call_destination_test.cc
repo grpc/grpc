@@ -125,7 +125,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   void Shutdown() override {
     channel_.reset();
-    picker_ = ClientChannel::PickerObservable(nullptr);
+    picker_ = ClientChannel::PickerObservable(ClientChannel::NoPicker{true});
     call_destination_.reset();
     destination_under_test_.reset();
     call_arena_allocator_.reset();
@@ -133,7 +133,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   }
 
   RefCountedPtr<ClientChannel> channel_;
-  ClientChannel::PickerObservable picker_{nullptr};
+  ClientChannel::PickerObservable picker_{ClientChannel::NoPicker{false}};
   RefCountedPtr<TestCallDestination> call_destination_ =
       MakeRefCounted<TestCallDestination>();
   RefCountedPtr<LoadBalancedCallDestination> destination_under_test_ =
@@ -221,7 +221,7 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
     if (queued_once.load(std::memory_order_relaxed)) return Empty{};
     return Pending();
   });
-  picker().Set(nullptr);
+  picker().Set(ClientChannel::NoPicker{true});
   WaitForAllPendingWork();
 }
 

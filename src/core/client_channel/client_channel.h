@@ -39,8 +39,17 @@ namespace grpc_core {
 
 class ClientChannel : public Channel {
  public:
-  using PickerObservable =
-      Observable<RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>;
+  struct NoPicker {
+    bool channel_closed;
+    bool operator==(const NoPicker& other) const {
+      return channel_closed == other.channel_closed;
+    }
+    bool operator!=(const NoPicker& other) const { return !(*this == other); }
+  };
+  using Picker =
+      absl::variant<NoPicker,
+                    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>>;
+  using PickerObservable = Observable<Picker>;
 
   class CallDestinationFactory {
    public:
