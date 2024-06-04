@@ -125,7 +125,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
 
   void Shutdown() override {
     channel_.reset();
-    picker_ = ClientChannel::PickerObservable(ClientChannel::NoPicker{true});
+    picker_ = ClientChannel::PickerObservable(nullptr);
     call_destination_.reset();
     destination_under_test_.reset();
     call_arena_allocator_.reset();
@@ -133,7 +133,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   }
 
   RefCountedPtr<ClientChannel> channel_;
-  ClientChannel::PickerObservable picker_{ClientChannel::NoPicker{false}};
+  ClientChannel::PickerObservable picker_{nullptr};
   RefCountedPtr<TestCallDestination> call_destination_ =
       MakeRefCounted<TestCallDestination>();
   RefCountedPtr<LoadBalancedCallDestination> destination_under_test_ =
@@ -196,7 +196,10 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
 }
 
 LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
+  // Create a call.
   auto call = MakeCall(MakeClientInitialMetadata());
+  // Client side part of the call: wait for status and expect that it's
+  // UNAVAILABLE
   SpawnTestSeq(
       call.initiator, "initiator",
       [this, handler = std::move(call.handler),
@@ -209,6 +212,8 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
                   GRPC_STATUS_UNAVAILABLE);
         return Empty{};
       });
+  // Set a picker and wait for at least one pick attempt to prove the call has
+  // made it to the picker.
   auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
   std::atomic<bool> queued_once{false};
   EXPECT_CALL(*mock_picker, Pick)
@@ -221,6 +226,8 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
     if (queued_once.load(std::memory_order_relaxed)) return Empty{};
     return Pending();
   });
+  // Now set the drop picker (as the client channel does at shutdown) which
+  // should trigger Unavailable to be seen by the client side part of the call.
   picker().Set(MakeRefCounted<LoadBalancingPolicy::DropPicker>(
       absl::UnavailableError("Channel destroyed")));
   WaitForAllPendingWork();

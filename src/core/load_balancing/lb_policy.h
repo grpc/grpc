@@ -462,7 +462,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     explicit DropPicker(absl::Status status) : status_(status) {}
 
     PickResult Pick(PickArgs /*args*/) override {
-      Crash("x");
       return PickResult::Drop(status_);
     }
 

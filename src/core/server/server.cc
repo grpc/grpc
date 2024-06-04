@@ -988,7 +988,7 @@ grpc_error_handle Server::SetupTransport(
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
-    CHECK(channel.value() != nullptr);
+    CHECK(*channel != nullptr);
     auto* channel_stack = (*channel)->channel_stack();
     CHECK(channel_stack != nullptr);
     ChannelData* chand = static_cast<ChannelData*>(
