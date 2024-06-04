@@ -258,6 +258,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void PerformOp(grpc_transport_op* op) override;
 
   grpc_endpoint* ep;
+  grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
+
   grpc_core::Slice peer_string;
 
   grpc_core::MemoryOwner memory_owner;
@@ -267,6 +269,14 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
   absl::BitGen bitgen;
+
+  // On the client side, when the transport is first created, the
+  // endpoint will already have been added to this pollset_set, and it
+  // needs to stay there until the notify_on_receive_settings callback
+  // is invoked.  After that, the polling will be coordinated via the
+  // bind_pollset_set transport op, sent by the subchannel when it
+  // starts a connectivity watch.
+  grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
 
   grpc_closure* notify_on_receive_settings = nullptr;
   grpc_closure* notify_on_close = nullptr;
@@ -466,7 +476,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
   uint32_t max_header_list_size_soft_limit = 0;
-  grpc_core::ContextList* cl = nullptr;
+  grpc_core::ContextList* context_list = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
   /// The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
@@ -545,12 +555,12 @@ typedef enum {
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
-                     const void* server_data);
+                     const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
-  void* context = nullptr;
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
+  grpc_core::Arena* const arena;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
@@ -643,7 +653,7 @@ struct grpc_chttp2_stream {
   int64_t write_counter = 0;
 
   /// Only set when enabled.
-  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
 
   /// Only set when enabled.
   std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;

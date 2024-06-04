@@ -289,7 +289,6 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
         if (args->endpoint != nullptr) {
-          grpc_endpoint_shutdown(args->endpoint, error);
           grpc_endpoint_destroy(args->endpoint);
         }
       }
@@ -333,7 +332,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
                          status);
           }
         },
-        self->arena_.get(), self->event_engine_.get());
+        self->arena_, self->event_engine_.get());
     MutexLock lock(&self->mu_);
     if (!self->is_shutdown_) {
       self->connect_activity_ = std::move(activity);

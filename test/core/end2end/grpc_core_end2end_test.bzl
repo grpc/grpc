@@ -63,7 +63,6 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
             "//:grpc_security_base",
             "//:grpc_trace",
             "//:grpc_unsecure",
-            "//:legacy_context",
             "//:orphanable",
             "//:promise",
             "//:ref_counted_ptr",

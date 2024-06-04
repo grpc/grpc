@@ -80,6 +80,7 @@ grpc_cc_library(
         "lib/event_engine/extensions/can_track_errors.h",
         "lib/event_engine/extensions/chaotic_good_extension.h",
         "lib/event_engine/extensions/supports_fd.h",
+        "lib/event_engine/extensions/tcp_trace.h",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -90,6 +91,7 @@ grpc_cc_library(
         ":memory_quota",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:tcp_tracer",
     ],
 )
 
@@ -163,7 +165,6 @@ grpc_cc_library(
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
-        "//:legacy_context",
     ],
 )
 
@@ -684,6 +685,8 @@ grpc_cc_library(
         "lib/promise/cancel_callback.h",
     ],
     deps = [
+        "arena",
+        "context",
         "promise_like",
         "//:gpr_platform",
     ],
@@ -1214,6 +1217,7 @@ grpc_cc_library(
     public_hdrs = ["lib/gprpp/dual_ref_counted.h"],
     deps = [
         "down_cast",
+        "ref_counted",
         "//:debug_location",
         "//:gpr",
         "//:orphanable",
@@ -1465,6 +1469,7 @@ grpc_cc_library(
         "context",
         "event_engine_memory_allocator",
         "memory_quota",
+        "resource_quota",
         "//:gpr",
     ],
 )
@@ -1611,6 +1616,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
         "absl/status",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     visibility = ["@grpc:alt_grpc_base_legacy"],
@@ -2189,6 +2195,9 @@ grpc_cc_library(
     ],
     hdrs = [
         "lib/event_engine/posix_engine/internal_errqueue.h",
+    ],
+    external_deps = [
+        "absl/log:log",
     ],
     deps = [
         "iomgr_port",
@@ -3130,7 +3139,6 @@ grpc_cc_library(
         "unique_type_name",
         "useful",
         "//:gpr_platform",
-        "//:legacy_context",
         "//:ref_counted_ptr",
     ],
 )
@@ -3223,13 +3231,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "arena",
+        "call_destination",
         "grpc_service_config",
         "lb_policy",
         "unique_type_name",
         "//:call_tracer",
-        "//:gpr_public_hdrs",
-        "//:grpc_base",
-        "//:legacy_context",
+        "//:gpr",
     ],
 )
 
@@ -3449,7 +3456,6 @@ grpc_cc_library(
         "//:gpr_public_hdrs",
         "//:grpc_base",
         "//:grpc_service_config_impl",
-        "//:legacy_context",
         "//:ref_counted_ptr",
     ],
 )
@@ -3701,7 +3707,6 @@ grpc_cc_library(
         "status_helper",
         "//:gpr",
         "//:grpc_base",
-        "//:legacy_context",
         "//:promise",
         "//:ref_counted_ptr",
     ],
@@ -4362,10 +4367,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "httpcli_ssl_credentials",
     srcs = [
-        "lib/http/httpcli_security_connector.cc",
+        "util/http_client/httpcli_security_connector.cc",
     ],
     hdrs = [
-        "lib/http/httpcli_ssl_credentials.h",
+        "util/http_client/httpcli_ssl_credentials.h",
     ],
     external_deps = [
         "absl/log:log",
@@ -4708,7 +4713,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
-        "//:legacy_context",
     ],
 )
 
@@ -4753,7 +4757,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:grpc_trace",
-        "//:legacy_context",
     ],
 )
 
@@ -4795,7 +4798,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_security_base",
-        "//:legacy_context",
         "//:promise",
     ],
 )
@@ -4841,7 +4843,6 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",
-        "//:legacy_context",
     ],
 )
 
@@ -4968,6 +4969,7 @@ grpc_cc_library(
         "ext/filters/backend_metrics/backend_metric_provider.h",
     ],
     language = "c++",
+    deps = ["arena"],
 )
 
 grpc_cc_library(
@@ -6283,7 +6285,6 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:grpc_trace",
-        "//:legacy_context",
         "//:xds_orca_upb",
     ],
 )
@@ -6606,7 +6607,6 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:grpc_service_config_impl",
         "//:grpc_trace",
-        "//:legacy_context",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:uri_parser",
@@ -7123,10 +7123,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gcp_metadata_query",
     srcs = [
-        "ext/gcp/metadata_query.cc",
+        "util/gcp_metadata_query.cc",
     ],
     hdrs = [
-        "ext/gcp/metadata_query.h",
+        "util/gcp_metadata_query.h",
     ],
     external_deps = [
         "absl/functional:any_invocable",
@@ -7218,7 +7218,6 @@ grpc_cc_library(
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
-        "//:legacy_context",
         "//:uri_parser",
     ],
 )
@@ -7436,12 +7435,10 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_filters.h",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         "call_final_info",
+        "dump_args",
         "latch",
         "map",
         "message",
@@ -7547,25 +7544,23 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_spine.h",
     ],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-    ],
+    external_deps = ["absl/log:check"],
     deps = [
         "1999",
         "call_arena_allocator",
         "call_filters",
+        "dual_ref_counted",
         "for_each",
         "if",
         "latch",
         "message",
         "metadata",
         "pipe",
+        "prioritized_race",
         "promise_status",
         "status_flag",
         "try_seq",
         "//:gpr",
-        "//:legacy_context",
         "//:promise",
     ],
 )
@@ -7836,7 +7831,6 @@ grpc_cc_library(
         "time",
         "//:call_tracer",
         "//:gpr",
-        "//:legacy_context",
     ],
 )
 

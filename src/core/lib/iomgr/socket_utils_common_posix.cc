@@ -45,6 +45,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/alloc.h>
@@ -462,15 +463,9 @@ int grpc_ipv6_loopback_available(void) {
   return g_ipv6_loopback_available;
 }
 
-static grpc_error_handle error_for_fd(int fd,
-                                      const grpc_resolved_address* addr) {
+static grpc_error_handle error_for_fd(int fd) {
   if (fd >= 0) return absl::OkStatus();
-  auto addr_str = grpc_sockaddr_to_string(addr, false);
-  grpc_error_handle err = grpc_error_set_str(
-      GRPC_OS_ERROR(errno, "socket"),
-      grpc_core::StatusStrProperty::kTargetAddress,
-      addr_str.ok() ? addr_str.value() : addr_str.status().ToString());
-  return err;
+  return GRPC_OS_ERROR(errno, "socket");
 }
 
 grpc_error_handle grpc_create_dualstack_socket(
@@ -521,7 +516,7 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
     // If this isn't an IPv4 address, then return whatever we've got.
     if (!grpc_sockaddr_is_v4mapped(resolved_addr, nullptr)) {
       *dsmode = GRPC_DSMODE_IPV6;
-      return error_for_fd(*newfd, resolved_addr);
+      return error_for_fd(*newfd);
     }
     // Fall back to AF_INET.
     if (*newfd >= 0) {
@@ -531,7 +526,7 @@ grpc_error_handle grpc_create_dualstack_socket_using_factory(
   }
   *dsmode = family == AF_INET ? GRPC_DSMODE_IPV4 : GRPC_DSMODE_NONE;
   *newfd = create_socket(factory, family, type, protocol);
-  return error_for_fd(*newfd, resolved_addr);
+  return error_for_fd(*newfd);
 }
 
 #endif

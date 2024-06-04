@@ -305,8 +305,10 @@ void Party::AddParticipants(Participant** participants, size_t count) {
     for (size_t i = 0; i < count; i++) {
       if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
         gpr_log(GPR_INFO,
-                "Party %p                 AddParticipant: %s @ %" PRIdPTR,
-                &sync_, std::string(participants[i]->name()).c_str(), slots[i]);
+                "Party %p                 AddParticipant: %s @ %" PRIdPTR
+                " [participant=%p]",
+                &sync_, std::string(participants[i]->name()).c_str(), slots[i],
+                participants[i]);
       }
       participants_[slots[i]].store(participants[i], std::memory_order_release);
     }

@@ -77,14 +77,10 @@ const auto kMaxConnectionAgeJitter = 0.1;
     }                                                                   \
   } while (0)
 
-namespace {
-
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
       .value_or(kDefaultIdleTimeout);
 }
-
-}  // namespace
 
 struct LegacyMaxAgeFilter::Config {
   Duration max_connection_age;

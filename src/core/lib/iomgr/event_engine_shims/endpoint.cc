@@ -344,29 +344,17 @@ void EndpointAddToPollsetSet(grpc_endpoint* /* ep */,
                              grpc_pollset_set* /* pollset */) {}
 void EndpointDeleteFromPollsetSet(grpc_endpoint* /* ep */,
                                   grpc_pollset_set* /* pollset */) {}
-/// After shutdown, all endpoint operations except destroy are no-op,
-/// and will return some kind of sane default (empty strings, nullptrs, etc).
-/// It is the caller's responsibility to ensure that calls to EndpointShutdown
-/// are synchronized.
-void EndpointShutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  auto* eeep =
-      reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
-          ep);
-  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->wrapper,
-            why.ToString().c_str());
-  }
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Shutdown:%s", eeep->wrapper,
-                          why.ToString().c_str());
-  eeep->wrapper->TriggerShutdown(nullptr);
-}
 
-// Attempts to free the underlying data structures.
+/// Attempts to free the underlying data structures.
+/// After destruction, no new endpoint operations may be started.
+/// It is the caller's responsibility to ensure that calls to EndpointDestroy
+/// are synchronized.
 void EndpointDestroy(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
   GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Destroy", eeep->wrapper);
+  eeep->wrapper->TriggerShutdown(nullptr);
   eeep->wrapper->Unref();
 }
 
@@ -404,7 +392,6 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     EndpointAddToPollset,
     EndpointAddToPollsetSet,
     EndpointDeleteFromPollsetSet,
-    EndpointShutdown,
     EndpointDestroy,
     EndpointGetPeerAddress,
     EndpointGetLocalAddress,

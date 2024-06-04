@@ -23,6 +23,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/latch.h"
@@ -1944,11 +1945,7 @@ inline auto CallFilters::PullServerToClientMessage() {
 }
 
 inline auto CallFilters::PullServerTrailingMetadata() {
-  return Map(PullServerTrailingMetadataPromise(this),
-             [this](ServerMetadataHandle h) {
-               cancelled_.Set(h->get(GrpcCallWasCancelled()).value_or(false));
-               return h;
-             });
+  return PullServerTrailingMetadataPromise(this);
 }
 
 inline auto CallFilters::WasCancelled() { return cancelled_.Wait(); }

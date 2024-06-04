@@ -146,10 +146,9 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
                 frame_limits);
           } else {
             // Stream not found, skip the frame.
-            auto arena = MakeScopedArena(1024, &allocator_);
-            deserialize_status =
-                transport->DeserializeFrame(frame_header, std::move(buffers),
-                                            arena.get(), frame, frame_limits);
+            deserialize_status = transport->DeserializeFrame(
+                frame_header, std::move(buffers),
+                SimpleArenaAllocator()->MakeArena().get(), frame, frame_limits);
           }
           return If(
               deserialize_status.ok() && call_handler.has_value(),

@@ -43,7 +43,6 @@ struct grpc_endpoint_vtable {
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
-  void (*shutdown)(grpc_endpoint* ep, grpc_error_handle why);
   void (*destroy)(grpc_endpoint* ep);
   absl::string_view (*get_peer)(grpc_endpoint* ep);
   absl::string_view (*get_local_address)(grpc_endpoint* ep);
@@ -86,7 +85,6 @@ void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 // Causes any pending and future read/write callbacks to run immediately with
 // success==0
-void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why);
 void grpc_endpoint_destroy(grpc_endpoint* ep);
 
 // Add an endpoint to a pollset or pollset_set, so that when the pollset is

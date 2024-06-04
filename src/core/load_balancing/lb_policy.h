@@ -482,6 +482,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   ChannelArgs channel_args_;
 };
 
+template <>
+struct ArenaContextType<LoadBalancingPolicy::SubchannelCallTrackerInterface> {
+  static void Destroy(LoadBalancingPolicy::SubchannelCallTrackerInterface*) {}
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H

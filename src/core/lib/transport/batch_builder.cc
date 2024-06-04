@@ -153,8 +153,7 @@ ServerMetadataHandle BatchBuilder::CompleteSendServerTrailingMetadata(
 BatchBuilder::Batch* BatchBuilder::MakeCancel(
     grpc_stream_refcount* stream_refcount, absl::Status status) {
   auto* arena = GetContext<Arena>();
-  auto* payload =
-      arena->NewPooled<grpc_transport_stream_op_batch_payload>(nullptr);
+  auto* payload = arena->NewPooled<grpc_transport_stream_op_batch_payload>();
   auto* batch = arena->NewPooled<Batch>(payload, stream_refcount);
   batch->batch.cancel_stream = true;
   payload->cancel_stream.cancel_error = std::move(status);

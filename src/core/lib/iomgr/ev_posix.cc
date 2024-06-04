@@ -334,4 +334,8 @@ void grpc_shutdown_background_closure(void) {
   g_event_engine->shutdown_background_closure();
 }
 
+#else  // GRPC_POSIX_SOCKET_EV
+
+const char* grpc_get_poll_strategy_name() { return ""; }
+
 #endif  // GRPC_POSIX_SOCKET_EV
