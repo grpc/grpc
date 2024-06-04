@@ -39,8 +39,7 @@ class LbMetadata : public LoadBalancingPolicy::MetadataInterface {
   void Add(absl::string_view key, absl::string_view value) override {
     if (batch_ == nullptr) return;
     // Gross, egregious hack to support legacy grpclb behavior.
-    // TODO(ctiller): Use a promise context for this once that plumbing is
-    // done.
+    // TODO(ctiller): Use a promise context for this once that plumbing is done.
     if (key == GrpcLbClientStatsMetadata::key()) {
       batch_->Set(
           GrpcLbClientStatsMetadata(),
