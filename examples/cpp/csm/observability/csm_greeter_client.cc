@@ -36,9 +36,11 @@
 #include <grpcpp/support/string_ref.h>
 
 #ifdef BAZEL_BUILD
+#include "examples/cpp/csm/observability/util.h"
 #include "examples/protos/helloworld.grpc.pb.h"
 #else
 #include "helloworld.grpc.pb.h"
+#include "util.h"
 #endif
 
 ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
@@ -57,21 +59,17 @@ class GreeterClient {
  public:
   GreeterClient(std::shared_ptr<Channel> channel)
       : stub_(Greeter::NewStub(channel)) {}
-
   // Assembles the client's payload, sends it and presents the response back
   // from the server.
   void SayHello() {
     // Data we are sending to the server.
     HelloRequest request;
     request.set_name("world");
-
     // Container for the data we expect from the server.
     HelloReply reply;
-
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
-
     // The actual RPC.
     std::mutex mu;
     std::condition_variable cv;
@@ -105,6 +103,10 @@ absl::StatusOr<grpc::CsmObservability> InitializeObservability() {
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
+  // The default histogram boundaries are not granular enough for RPCs. Override
+  // the "grpc.client.attempt.duration" view as recommended by
+  // https://github.com/grpc/proposal/blob/master/A66-otel-stats.md.
+  AddLatencyView(meter_provider.get(), "grpc.client.attempt.duration", "s");
   meter_provider->AddMetricReader(std::move(prometheus_exporter));
   return grpc::CsmObservabilityBuilder()
       .SetMeterProvider(std::move(meter_provider))

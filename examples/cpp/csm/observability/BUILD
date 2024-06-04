@@ -14,11 +14,23 @@
 
 licenses(["notice"])
 
+cc_library(
+    name = "util",
+    srcs = ["util.cc"],
+    hdrs = ["util.h"],
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "@io_opentelemetry_cpp//sdk/src/metrics",
+    ],
+)
+
 cc_binary(
     name = "csm_greeter_client",
     srcs = ["csm_greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
+        "util",
         "//:grpc++",
         "//:grpcpp_csm_observability",
         "//examples/protos:helloworld_cc_grpc",
@@ -34,6 +46,7 @@ cc_binary(
     srcs = ["csm_greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
+        "util",
         "//:grpc++",
         "//:grpc++_reflection",
         "//:grpcpp_admin",
