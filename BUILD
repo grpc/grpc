@@ -4823,6 +4823,8 @@ grpc_cc_library(
         "//src/core:connectivity_state",
         "//src/core:error",
         "//src/core:error_utils",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
         "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
         "//src/core:http2_errors",
