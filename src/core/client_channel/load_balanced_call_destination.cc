@@ -282,25 +282,19 @@ void LoadBalancedCallDestination::StartCall(
       "lb_pick", [unstarted_handler, picker = picker_]() mutable {
         return Map(
             // Wait for the LB picker.
-            CheckDelayed(Loop([last_picker = ClientChannel::Picker(
-                                   ClientChannel::NoPicker{false}),
+            CheckDelayed(Loop([last_picker = RefCountedPtr<
+                                   LoadBalancingPolicy::SubchannelPicker>(),
                                unstarted_handler, picker]() mutable {
               return Map(
                   picker.Next(last_picker),
-                  [unstarted_handler,
-                   &last_picker](ClientChannel::Picker picker) mutable
+                  [unstarted_handler, &last_picker](
+                      RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+                          picker) mutable
                   -> LoopCtl<
                       absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> {
-                    if (auto* active_picker = absl::get_if<RefCountedPtr<
-                            LoadBalancingPolicy::SubchannelPicker>>(&picker)) {
-                      auto& picker_ref = **active_picker;
-                      last_picker = std::move(*active_picker);
-                      return PickSubchannel(picker_ref, unstarted_handler);
-                    }
-                    const auto& no_picker =
-                        absl::get<ClientChannel::NoPicker>(picker);
-                    CHECK(no_picker.channel_closed);
-                    return absl::UnavailableError("Channel shutting down");
+                    CHECK_NE(picker.get(), nullptr);
+                    last_picker = std::move(picker);
+                    return PickSubchannel(*last_picker, unstarted_handler);
                   });
             })),
             // Create call stack on the connected subchannel.

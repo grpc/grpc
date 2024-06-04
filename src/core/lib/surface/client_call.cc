@@ -339,7 +339,6 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                                         out_trailing_metadata]() {
       return Map(
           started_call_initiator_.PullServerTrailingMetadata(),
-
           [this, out_status, out_status_details, out_error_string,
            out_trailing_metadata](
               ServerMetadataHandle server_trailing_metadata) {

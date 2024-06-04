@@ -221,7 +221,8 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
     if (queued_once.load(std::memory_order_relaxed)) return Empty{};
     return Pending();
   });
-  picker().Set(ClientChannel::NoPicker{true});
+  picker().Set(MakeRefCounted<LoadBalancingPolicy::DropPicker>(
+      absl::UnavailableError("Channel destroyed")));
   WaitForAllPendingWork();
 }
 
