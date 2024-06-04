@@ -100,7 +100,7 @@ class BasicSeqIter {
           cur_ = next;
           state_.~State();
           Construct(&state_,
-                    Traits::template CallSeqFactory(f_, *cur_, std::move(arg)));
+                    Traits::CallSeqFactory(f_, *cur_, std::move(arg)));
           return PollNonEmpty();
         });
   }
