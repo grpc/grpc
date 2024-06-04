@@ -67,8 +67,6 @@ class ClientCall final
              RefCountedPtr<Arena> arena,
              RefCountedPtr<UnstartedCallDestination> destination);
 
-  ~ClientCall() override;
-
   void CancelWithError(grpc_error_handle error) override;
   bool is_trailers_only() const override { return is_trailers_only_; }
   absl::string_view GetServerAuthority() const override {
@@ -126,8 +124,6 @@ class ClientCall final
   template <typename Batch>
   void ScheduleCommittedBatch(Batch batch);
   void StartCall(const grpc_op& send_initial_metadata_op);
-  StatusFlag FinishRecvMessage(
-      ValueOrFailure<absl::optional<MessageHandle>> result);
 
   std::string DebugTag() { return absl::StrFormat("CLIENT_CALL[%p]: ", this); }
 

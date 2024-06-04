@@ -149,6 +149,9 @@ inline bool AreInitialMetadataFlagsValid(uint32_t flags) {
   return !(flags & invalid_positions);
 }
 
+// One batch operation
+// Wrapper around promise steps to perform once of the batch operations for the
+// legacy grpc surface api.
 template <typename SetupResult, grpc_op_type kOp>
 class OpHandlerImpl {
  public:
@@ -237,6 +240,11 @@ class OpHandlerImpl {
   };
 };
 
+template <grpc_op_type op_type, typename PromiseFactory>
+auto OpHandler(PromiseFactory setup) {
+  return OpHandlerImpl<PromiseFactory, op_type>(std::move(setup));
+}
+
 class BatchOpIndex {
  public:
   BatchOpIndex(const grpc_op* ops, size_t nops) : ops_(ops) {
@@ -247,11 +255,10 @@ class BatchOpIndex {
 
   // 1. Check if op_type is in the batch
   // 2. If it is, run the setup function in the context of the API call (NOT in
-  // the call party).
+  //    the call party).
   // 3. This setup function returns a promise factory which we'll then run *in*
-  // the party to do initial setup,
-  //    and have it return the promise that we'll ultimately poll on til
-  //    completion.
+  //    the party to do initial setup, and have it return the promise that we'll
+  //    ultimately poll on til completion.
   // Once we express our surface API in terms of core internal types this whole
   // dance will go away.
   template <grpc_op_type op_type, typename SetupFn>
@@ -372,11 +379,6 @@ auto FallibleBatch(FalliblePart fallible_part, bool is_notify_tag_closure,
             [](void*, grpc_cq_completion* completion) { delete completion; },
             nullptr, new grpc_cq_completion);
       });
-}
-
-template <grpc_op_type op_type, typename PromiseFactory>
-auto OpHandler(PromiseFactory setup) {
-  return OpHandlerImpl<PromiseFactory, op_type>(std::move(setup));
 }
 
 template <typename F>

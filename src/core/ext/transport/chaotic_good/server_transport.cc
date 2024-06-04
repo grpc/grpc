@@ -288,7 +288,6 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                  &transport](std::tuple<FrameHeader, BufferPair> frame_bytes) {
         const auto& frame_header = std::get<0>(frame_bytes);
         auto& buffers = std::get<1>(frame_bytes);
-        LOG(INFO) << "ReadOneFrame: " << frame_header.ToString();
         return Switch(
             frame_header.type,
             Case(FrameType::kSettings,

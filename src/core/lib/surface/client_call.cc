@@ -127,8 +127,6 @@ ClientCall::ClientCall(
   }
 }
 
-ClientCall::~ClientCall() {}
-
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
