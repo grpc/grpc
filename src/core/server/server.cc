@@ -806,7 +806,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
     ValueOrFailure<ClientMetadataHandle> md) {
   if (!md.ok()) {
-    return absl::InternalError("Missing metadata");
+    return absl::InternalError("Error reading metadata");
   }
   if (!md.value()->get_pointer(HttpPathMetadata())) {
     return absl::InternalError("Missing :path header");

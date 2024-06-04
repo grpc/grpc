@@ -78,24 +78,27 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
             frame.ToString().c_str());
   }
-  return TrySeq(If(
-                    frame.message.has_value(),
-                    [&call_initiator, &frame]() mutable {
-                      return call_initiator.PushMessage(
-                          std::move(frame.message->message));
-                    },
-                    []() -> StatusFlag { return Success{}; }),
-                [this, call_initiator, end_of_stream = frame.end_of_stream,
-                 stream_id]() mutable -> StatusFlag {
-                  if (end_of_stream) {
-                    call_initiator.FinishSends();
-                    // We have received end_of_stream. It is now safe to remove
-                    // the call from the stream map.
-                    MutexLock lock(&mu_);
-                    stream_map_.erase(stream_id);
-                  }
-                  return Success{};
-                });
+  return Seq(If(
+                 frame.message.has_value(),
+                 [&call_initiator, &frame]() mutable {
+                   return call_initiator.PushMessage(
+                       std::move(frame.message->message));
+                 },
+                 []() -> StatusFlag { return Success{}; }),
+             [this, call_initiator, end_of_stream = frame.end_of_stream,
+              stream_id](StatusFlag status) mutable -> StatusFlag {
+               if (!status.ok() && grpc_chaotic_good_trace.enabled()) {
+                 gpr_log(GPR_INFO, "CHAOTIC_GOOD: Failed PushFragmentIntoCall");
+               }
+               if (end_of_stream || !status.ok()) {
+                 call_initiator.FinishSends();
+                 // We have received end_of_stream. It is now safe to remove
+                 // the call from the stream map.
+                 MutexLock lock(&mu_);
+                 stream_map_.erase(stream_id);
+               }
+               return Success{};
+             });
 }
 
 auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
@@ -285,6 +288,7 @@ auto ChaoticGoodServerTransport::ReadOneFrame(ChaoticGoodTransport& transport) {
                  &transport](std::tuple<FrameHeader, BufferPair> frame_bytes) {
         const auto& frame_header = std::get<0>(frame_bytes);
         auto& buffers = std::get<1>(frame_bytes);
+        LOG(INFO) << "ReadOneFrame: " << frame_header.ToString();
         return Switch(
             frame_header.type,
             Case(FrameType::kSettings,
