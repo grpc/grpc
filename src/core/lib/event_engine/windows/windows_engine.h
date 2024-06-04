@@ -146,7 +146,7 @@ class WindowsEventEngine : public EventEngine,
     }
     const EventEngine::TaskHandle& timer_handle() { return timer_handle_; }
 
-    grpc_core::Mutex& mu() { return mu_; }
+    grpc_core::Mutex& mu() ABSL_LOCK_RETURNED(mu_) { return mu_; }
 
    private:
     // Required for the custom operator<< overload to see the private
@@ -250,18 +250,18 @@ class WindowsEventEngine : public EventEngine,
   // CancelConnect, called from within the deadline timer.
   // Timer cancellation is not possible.
   bool CancelConnectFromDeadlineTimer(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu());
 
   // Completes the connection cancellation logic after checking handle
   // validity and optionally cancelling deadline timers.
   bool CancelConnectInternalStateLocked(ConnectionState* connection_state)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state->mu());
 
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
   grpc_core::Mutex task_mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(task_mu_);
-  grpc_core::Mutex connection_mu_ ABSL_ACQUIRED_AFTER(ConnectionState::mu_);
+  grpc_core::Mutex connection_mu_;
   grpc_core::CondVar connection_cv_;
   ConnectionHandleSet known_connection_handles_ ABSL_GUARDED_BY(connection_mu_);
   std::atomic<intptr_t> aba_token_{0};
