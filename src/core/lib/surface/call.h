@@ -240,7 +240,7 @@ class Call : public CppImplOf<Call, grpc_call>,
 
 template <>
 struct ArenaContextType<Call> {
-  static void Destroy(Call* call) {}
+  static void Destroy(Call*) {}
 };
 
 }  // namespace grpc_core
