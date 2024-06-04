@@ -58,7 +58,10 @@ def get_proto_root(workspace_root):
     Returns:
       The directory relative to which generated include paths should be.
     """
-    if workspace_root:
+
+    # When sibling repository layout is enabled (workspace_root = "../<repo>"), the output root
+    # should be just the genfiles directory, which already includes the repo name.
+    if workspace_root and not workspace_root.startswith("../"):
         return "/{}".format(workspace_root)
     else:
         return ""
@@ -87,7 +90,7 @@ def proto_path_to_generated_filename(proto_path, fmt_str):
     """
     return fmt_str.format(_strip_proto_extension(proto_path))
 
-def get_include_directory(source_file):
+def get_include_directory(source_file, is_sibling_layout = False):
     """Returns the include directory path for the source_file.
 
     All of the include statements within the given source_file are calculated
@@ -98,6 +101,7 @@ def get_include_directory(source_file):
 
     Args:
       source_file: A proto file.
+      is_sibling_layout: If `--experimental_sibling_repository_layout` is enabled.
 
     Returns:
       The include directory path for the source_file.
@@ -113,7 +117,10 @@ def get_include_directory(source_file):
     if not source_file.is_source and directory.startswith(source_file.root.path):
         prefix_len = len(source_file.root.path) + 1
 
-    if directory.startswith("external", prefix_len):
+    # This path is hit when proto targets are built as @grpc//:xxx
+    # instead of //:xxx.
+    # For that we have 2 cases: --experimental_sibling_repository_layout ("..") or not ("external")
+    if directory.startswith(".." if is_sibling_layout else "external", prefix_len):
         external_separator = directory.find("/", prefix_len)
         repository_separator = directory.find("/", external_separator + 1)
         return directory[:repository_separator]
@@ -302,14 +309,14 @@ def get_out_dir(protos, context):
     Returns:
         The value of --<lang>_out= argument.
     """
-    at_least_one_virtual = 0
+    at_least_one_virtual = False
     for proto in protos:
         if is_in_virtual_imports(proto):
             at_least_one_virtual = True
         elif at_least_one_virtual:
             fail("Proto sources must be either all virtual imports or all real")
     if at_least_one_virtual:
-        out_dir = get_include_directory(protos[0])
+        out_dir = get_include_directory(protos[0], is_sibling_repository_layout(context))
         ws_root = protos[0].owner.workspace_root
         prefix = "/" + _make_prefix(protos[0].owner) + _VIRTUAL_IMPORTS[1:]
 
@@ -339,3 +346,7 @@ def is_in_virtual_imports(source_file, virtual_folder = _VIRTUAL_IMPORTS):
         True if source_file is located under _virtual_imports, False otherwise.
     """
     return not source_file.is_source and virtual_folder in source_file.path
+
+def is_sibling_repository_layout(ctx):
+    config = ctx.configuration
+    return hasattr(config, "is_sibling_repository_layout") and config.is_sibling_repository_layout()
