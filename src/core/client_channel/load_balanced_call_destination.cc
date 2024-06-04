@@ -333,7 +333,7 @@ void LoadBalancedCallDestination::StartCall(
 }
 
 void RegisterLoadBalancedCallDestination(CoreConfiguration::Builder* builder) {
-  class LoadBalancedCallDestinationFactory
+  class LoadBalancedCallDestinationFactory final
       : public ClientChannel::CallDestinationFactory {
    public:
     RefCountedPtr<UnstartedCallDestination> CreateCallDestination(

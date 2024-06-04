@@ -60,6 +60,8 @@ class ClientCallTest : public YodelTest {
     Duration timeout_ = Duration::Infinity();
     grpc_compression_options compression_options_ = {
         1,
+        {0, GRPC_COMPRESS_LEVEL_NONE},
+        {0, GRPC_COMPRESS_NONE},
     };
   };
 

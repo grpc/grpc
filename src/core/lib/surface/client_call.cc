@@ -102,9 +102,8 @@ grpc_call_error ValidateClientBatch(const grpc_op* ops, size_t nops) {
 }  // namespace
 
 ClientCall::ClientCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, Slice path, absl::optional<Slice> authority,
-    bool registered_method, Timestamp deadline,
+    grpc_call*, uint32_t, grpc_completion_queue* cq, Slice path,
+    absl::optional<Slice> authority, bool registered_method, Timestamp deadline,
     grpc_compression_options compression_options,
     grpc_event_engine::experimental::EventEngine* event_engine,
     RefCountedPtr<Arena> arena,
@@ -287,7 +286,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
       });
   auto send_close_from_client =
       op_index.OpHandler<GRPC_OP_SEND_CLOSE_FROM_CLIENT>(
-          [this](const grpc_op& op) {
+          [this](const grpc_op&) {
             return [this]() {
               started_call_initiator_.FinishSends();
               return Success{};
