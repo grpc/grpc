@@ -273,9 +273,7 @@ void CFStreamDestroy(grpc_endpoint* ep) {
   CFReadStreamClose(ep_impl->read_stream);
   CFWriteStreamClose(ep_impl->write_stream);
   ep_impl->stream_sync->Shutdown(absl::UnavailableError("endpoint shutdown"));
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy DONE", ep_impl);
-  }
+  GRPC_TRACE_VLOG(tcp, 2) << "CFStream endpoint:" << ep_impl << " destroy DONE";
   EP_UNREF(ep_impl, "destroy");
 }
 
