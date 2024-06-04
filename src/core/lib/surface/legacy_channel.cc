@@ -201,7 +201,7 @@ bool LegacyChannel::SupportsConnectivityWatcher() const {
 // A fire-and-forget object to handle external connectivity state watches.
 class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
  public:
-  StateWatcher(RefCountedPtr<LegacyChannel> channel, grpc_completion_queue* cq,
+  StateWatcher(WeakRefCountedPtr<LegacyChannel> channel, grpc_completion_queue* cq,
                void* tag, grpc_connectivity_state last_observed_state,
                Timestamp deadline)
       : channel_(std::move(channel)),
@@ -310,7 +310,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
     self->WeakUnref();
   }
 
-  RefCountedPtr<LegacyChannel> channel_;
+  WeakRefCountedPtr<LegacyChannel> channel_;
   grpc_completion_queue* cq_;
   void* tag_;
 
@@ -330,7 +330,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
 void LegacyChannel::WatchConnectivityState(
     grpc_connectivity_state last_observed_state, Timestamp deadline,
     grpc_completion_queue* cq, void* tag) {
-  new StateWatcher(RefAsSubclass<LegacyChannel>(), cq, tag, last_observed_state,
+  new StateWatcher(WeakRefAsSubclass<LegacyChannel>(), cq, tag, last_observed_state,
                    deadline);
 }
 
