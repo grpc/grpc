@@ -45,7 +45,8 @@ typedef struct test_fixture {
   grpc_channel* (*create_channel)(const char* addr);
 } test_fixture;
 
-class NumExternalConnectivityWatchersTest : public ::testing::TestWithParam<test_fixture> {};
+class NumExternalConnectivityWatchersTest
+    : public ::testing::TestWithParam<test_fixture> {};
 
 static size_t next_tag = 1;
 
@@ -201,7 +202,8 @@ TEST_P(NumExternalConnectivityWatchersTest, ChannelShutdownBeforeTimeout) {
   run_channel_shutdown_before_timeout_test(&GetParam());
 }
 
-INSTANTIATE_TEST_SUITE_P(NumExternalConnectivityWatchersTest, NumExternalConnectivityWatchersTest,
+INSTANTIATE_TEST_SUITE_P(NumExternalConnectivityWatchersTest,
+                         NumExternalConnectivityWatchersTest,
                          ::testing::Values(insecure_test, secure_test));
 
 int main(int argc, char** argv) {
