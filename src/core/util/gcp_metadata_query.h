@@ -14,29 +14,29 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_GCP_METADATA_QUERY_H
-#define GRPC_SRC_CORE_EXT_GCP_METADATA_QUERY_H
+#ifndef GRPC_SRC_CORE_UTIL_GCP_METADATA_QUERY_H
+#define GRPC_SRC_CORE_UTIL_GCP_METADATA_QUERY_H
+
+#include <grpc/support/port_platform.h>
 
 #include <string>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/httpcli.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "src/core/util/http_client/parser.h"
 
 namespace grpc_core {
 
 // Fetches the value of an attribute from the MetadataServer on a GCP
 // environment.
-class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
+class GcpMetadataQuery : public InternallyRefCounted<GcpMetadataQuery> {
  public:
   static constexpr const char kZoneAttribute[] =
       "/computeMetadata/v1/instance/zone";
@@ -49,7 +49,7 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
   static constexpr const char kIPv6Attribute[] =
       "/computeMetadata/v1/instance/network-interfaces/0/ipv6s";
 
-  MetadataQuery(
+  GcpMetadataQuery(
       std::string attribute, grpc_polling_entity* pollent,
       absl::AnyInvocable<void(std::string /* attribute */,
                               absl::StatusOr<std::string> /* result */)>
@@ -58,7 +58,7 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
 
   // Alternative ctor allows overriding the metadata server address, mainly
   // to inject fakes in tests
-  MetadataQuery(
+  GcpMetadataQuery(
       std::string metadata_server_name, std::string attribute,
       grpc_polling_entity* pollent,
       absl::AnyInvocable<void(std::string /* attribute */,
@@ -66,7 +66,7 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
           callback,
       Duration timeout);
 
-  ~MetadataQuery() override;
+  ~GcpMetadataQuery() override;
 
   void Orphan() override;
 
@@ -84,4 +84,4 @@ class MetadataQuery : public InternallyRefCounted<MetadataQuery> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_GCP_METADATA_QUERY_H
+#endif  // GRPC_SRC_CORE_UTIL_GCP_METADATA_QUERY_H

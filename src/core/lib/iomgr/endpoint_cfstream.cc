@@ -106,12 +106,9 @@ static void CFStreamUnref(CFStreamEndpoint* ep) {
 static void CFStreamRef(CFStreamEndpoint* ep) { gpr_ref(&ep->refcount); }
 #endif
 
-static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error,
-                                               CFStreamEndpoint* ep) {
-  return grpc_error_set_str(
-      grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kRpcStatus,
-                         GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kTargetAddress, ep->peer_string);
+static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error) {
+  return grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kRpcStatus,
+                            GRPC_STATUS_UNAVAILABLE);
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
@@ -170,7 +167,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     CFErrorRef stream_error = CFReadStreamCopyError(ep->read_stream);
     if (stream_error != nullptr) {
       error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"), ep);
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"));
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("Read error");
@@ -179,8 +176,7 @@ static void ReadAction(void* arg, grpc_error_handle error) {
     EP_UNREF(ep, "read");
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref(ep->read_slices);
-    CallReadCb(ep,
-               CFStreamAnnotateError(GRPC_ERROR_CREATE("Socket closed"), ep));
+    CallReadCb(ep, CFStreamAnnotateError(GRPC_ERROR_CREATE("Socket closed")));
     EP_UNREF(ep, "read");
   } else {
     if (read_size < static_cast<CFIndex>(len)) {
@@ -209,7 +205,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
     CFErrorRef stream_error = CFWriteStreamCopyError(ep->write_stream);
     if (stream_error != nullptr) {
       error = CFStreamAnnotateError(
-          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write failed."), ep);
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Write failed"));
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE("write failed.");
@@ -274,25 +270,16 @@ static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
   ep_impl->stream_sync->NotifyOnWrite(&ep_impl->write_action);
 }
 
-void CFStreamShutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown (%s)", ep_impl,
-            grpc_core::StatusToString(why).c_str());
-  }
-  CFReadStreamClose(ep_impl->read_stream);
-  CFWriteStreamClose(ep_impl->write_stream);
-  ep_impl->stream_sync->Shutdown(why);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%s)", ep_impl,
-            grpc_core::StatusToString(why).c_str());
-  }
-}
-
 void CFStreamDestroy(grpc_endpoint* ep) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy", ep_impl);
+  }
+  CFReadStreamClose(ep_impl->read_stream);
+  CFWriteStreamClose(ep_impl->write_stream);
+  ep_impl->stream_sync->Shutdown(absl::UnavailableError("endpoint shutdown"));
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy DONE", ep_impl);
   }
   EP_UNREF(ep_impl, "destroy");
 }
@@ -322,7 +309,6 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamAddToPollset,
                                             CFStreamAddToPollsetSet,
                                             CFStreamDeleteFromPollsetSet,
-                                            CFStreamShutdown,
                                             CFStreamDestroy,
                                             CFStreamGetPeer,
                                             CFStreamGetLocalAddress,

@@ -59,7 +59,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -84,7 +83,6 @@ struct grpc_channel_element_args {
 struct grpc_call_element_args {
   grpc_call_stack* call_stack;
   const void* server_transport_data;
-  grpc_call_context_element* context;
   const grpc_slice& path;
   gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
   grpc_core::Timestamp deadline;
@@ -230,6 +228,7 @@ struct grpc_channel_stack {
   // full C++-ification for now.
   void IncrementRefCount();
   void Unref();
+  void Unref(const grpc_core::DebugLocation& location, const char* reason);
   grpc_core::RefCountedPtr<grpc_channel_stack> Ref() {
     IncrementRefCount();
     return grpc_core::RefCountedPtr<grpc_channel_stack>(this);
@@ -343,6 +342,11 @@ inline void grpc_channel_stack::IncrementRefCount() {
 
 inline void grpc_channel_stack::Unref() {
   GRPC_CHANNEL_STACK_UNREF(this, "smart_pointer");
+}
+
+inline void grpc_channel_stack::Unref(const grpc_core::DebugLocation&,
+                                      const char* reason) {
+  GRPC_CHANNEL_STACK_UNREF(this, reason);
 }
 
 inline void grpc_call_stack::IncrementRefCount() {

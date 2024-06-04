@@ -59,7 +59,6 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/call_finalization.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -161,8 +160,8 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
           "Census tracing propagation requested without Census context "
           "propagation");
     }
-    ContextSet(GRPC_CONTEXT_TRACING, parent->ContextGet(GRPC_CONTEXT_TRACING),
-               nullptr);
+    arena()->SetContext<census_context>(
+        parent->arena()->GetContext<census_context>());
   } else if (propagation_mask & GRPC_PROPAGATE_CENSUS_STATS_CONTEXT) {
     return absl::UnknownError(
         "Census context propagation requested without Census tracing "
@@ -380,15 +379,15 @@ void Call::Run() {
 
 class ChannelBasedCall : public Call {
  protected:
-  ChannelBasedCall(Arena* arena, bool is_client, Timestamp send_deadline,
-                   RefCountedPtr<Channel> channel)
+  ChannelBasedCall(RefCountedPtr<Arena> arena, bool is_client,
+                   Timestamp send_deadline, RefCountedPtr<Channel> channel)
       : Call(is_client, send_deadline, channel->event_engine()),
-        arena_(arena),
+        arena_(std::move(arena)),
         channel_(std::move(channel)) {
-    DCHECK_NE(arena_, nullptr);
+    DCHECK_NE(arena_.get(), nullptr);
   }
 
-  Arena* arena() final { return arena_; }
+  Arena* arena() final { return arena_.get(); }
 
   char* GetPeer() final {
     Slice peer_slice = GetPeerString();
@@ -415,18 +414,17 @@ class ChannelBasedCall : public Call {
 
   void DeleteThis() {
     RefCountedPtr<Channel> channel = std::move(channel_);
-    Arena* arena = arena_;
+    RefCountedPtr<Arena> arena = arena_;
     this->~ChannelBasedCall();
-    channel->DestroyArena(arena);
   }
 
   Channel* channel() const { return channel_.get(); }
 
   // Non-virtual arena accessor -- needed by PipeBasedCall
-  Arena* GetArena() { return arena_; }
+  Arena* GetArena() { return arena_.get(); }
 
  private:
-  Arena* const arena_;
+  const RefCountedPtr<Arena> arena_;
   RefCountedPtr<Channel> channel_;
 };
 
@@ -437,11 +435,6 @@ class ChannelBasedCall : public Call {
 class FilterStackCall final : public ChannelBasedCall {
  public:
   ~FilterStackCall() override {
-    for (int i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-      if (context_[i].destroy) {
-        context_[i].destroy(context_[i].value);
-      }
-    }
     gpr_free(static_cast<void*>(const_cast<char*>(final_info_.error_string)));
   }
 
@@ -480,12 +473,6 @@ class FilterStackCall final : public ChannelBasedCall {
   }
   void InternalUnref(const char* reason) override {
     GRPC_CALL_STACK_UNREF(call_stack(), reason);
-  }
-
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void* value)) override;
-  void* ContextGet(grpc_context_index elem) const override {
-    return context_[elem].value;
   }
 
   bool is_trailers_only() const override {
@@ -597,12 +584,12 @@ class FilterStackCall final : public ChannelBasedCall {
     void FinishBatch(grpc_error_handle error);
   };
 
-  FilterStackCall(Arena* arena, const grpc_call_create_args& args)
-      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+  FilterStackCall(RefCountedPtr<Arena> arena, const grpc_call_create_args& args)
+      : ChannelBasedCall(std::move(arena),
+                         args.server_transport_data == nullptr,
                          args.send_deadline, args.channel->Ref()),
-        cq_(args.cq),
-        stream_op_payload_(context_) {
-    context_[GRPC_CONTEXT_CALL].value = this;
+        cq_(args.cq) {
+    GetArena()->SetContext<Call>(this);
   }
 
   static void ReleaseCall(void* call, grpc_error_handle);
@@ -659,9 +646,6 @@ class FilterStackCall final : public ChannelBasedCall {
   // Call data useful used for reporting. Only valid after the call has
   // completed
   grpc_call_final_info final_info_;
-
-  // Contexts for various subsystems (security, tracing, ...).
-  grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
   SliceBuffer send_slice_buffer_;
   absl::optional<SliceBuffer> receiving_slice_buffer_;
@@ -732,7 +716,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(FilterStackCall)) +
       channel_stack->call_stack_size;
 
-  Arena* arena = channel->CreateArena();
+  RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   DCHECK(FromC(call->c_ptr()) == call);
   DCHECK(FromCallStack(call->call_stack()) == call);
@@ -755,7 +739,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         GrpcRegisteredMethod(), reinterpret_cast<void*>(static_cast<uintptr_t>(
                                     args->registered_method)));
     channel_stack->stats_plugin_group->AddClientCallTracers(
-        Slice(CSliceRef(path)), args->registered_method, call->context_);
+        Slice(CSliceRef(path)), args->registered_method, call->GetArena());
   } else {
     global_stats().IncrementServerCallsCreated();
     call->final_op_.server.cancelled = nullptr;
@@ -771,19 +755,18 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         args->server->server_call_tracer_factory() != nullptr) {
       auto* server_call_tracer =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
-              arena, args->server->channel_args());
+              arena.get(), args->server->channel_args());
       if (server_call_tracer != nullptr) {
         // Note that we are setting both
         // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
         // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
         // promise-based world, we would just a single tracer object for each
         // stack (call, subchannel_call, server_call.)
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE,
-                         server_call_tracer, nullptr);
-        call->ContextSet(GRPC_CONTEXT_CALL_TRACER, server_call_tracer, nullptr);
+        arena->SetContext<CallTracerAnnotationInterface>(server_call_tracer);
+        arena->SetContext<CallTracerInterface>(server_call_tracer);
       }
     }
-    channel_stack->stats_plugin_group->AddServerCallTracers(call->context_);
+    channel_stack->stats_plugin_group->AddServerCallTracers(arena.get());
   }
 
   Call* parent = Call::FromC(args->parent);
@@ -793,10 +776,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
   // initial refcount dropped by grpc_call_unref
   grpc_call_element_args call_args = {
-      call->call_stack(), args->server_transport_data,
-      call->context_,     path,
-      call->start_time(), call->send_deadline(),
-      call->arena(),      &call->call_combiner_};
+      call->call_stack(),   args->server_transport_data, path,
+      call->start_time(),   call->send_deadline(),       call->arena(),
+      &call->call_combiner_};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
@@ -1230,8 +1212,7 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = static_cast<CallTracerAnnotationInterface*>(
-      ContextGet(GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
+  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }
@@ -1862,15 +1843,6 @@ done_with_error:
   goto done;
 }
 
-void FilterStackCall::ContextSet(grpc_context_index elem, void* value,
-                                 void (*destroy)(void*)) {
-  if (context_[elem].destroy) {
-    context_[elem].destroy(context_[elem].value);
-  }
-  context_[elem].value = value;
-  context_[elem].destroy = destroy;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Metadata validation helpers
 
@@ -1906,10 +1878,12 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
  public:
   using Call::arena;
 
-  BasicPromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+  BasicPromiseBasedCall(RefCountedPtr<Arena> arena,
+                        uint32_t initial_external_refs,
                         uint32_t initial_internal_refs,
                         const grpc_call_create_args& args)
-      : ChannelBasedCall(arena, args.server_transport_data == nullptr,
+      : ChannelBasedCall(std::move(arena),
+                         args.server_transport_data == nullptr,
                          args.send_deadline, args.channel->Ref()),
         Party(initial_internal_refs),
         external_refs_(initial_external_refs),
@@ -1917,16 +1891,11 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
     if (args.cq != nullptr) {
       GRPC_CQ_INTERNAL_REF(args.cq, "bind");
     }
-    context_[GRPC_CONTEXT_CALL].value = this;
+    GetArena()->SetContext<Call>(this);
   }
 
   ~BasicPromiseBasedCall() override {
     if (cq_) GRPC_CQ_INTERNAL_UNREF(cq_, "bind");
-    for (int i = 0; i < GRPC_CONTEXT_COUNT; i++) {
-      if (context_[i].destroy) {
-        context_[i].destroy(context_[i].value);
-      }
-    }
   }
 
   virtual void OrphanCall() = 0;
@@ -1972,19 +1941,6 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
         [](Empty) {});
   }
 
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void*)) final {
-    if (context_[elem].destroy != nullptr) {
-      context_[elem].destroy(context_[elem].value);
-    }
-    context_[elem].value = value;
-    context_[elem].destroy = destroy;
-  }
-
-  void* ContextGet(grpc_context_index elem) const final {
-    return context_[elem].value;
-  }
-
   // Accept the stats from the context (call once we have proof the transport is
   // done with them).
   void AcceptTransportStatsFromContext() {
@@ -2000,22 +1956,17 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
   }
 
  protected:
-  class ScopedContext
-      : public ScopedActivity,
-        public promise_detail::Context<Arena>,
-        public promise_detail::Context<grpc_call_context_element>,
-        public promise_detail::Context<CallContext>,
-        public promise_detail::Context<CallFinalization> {
+  class ScopedContext : public ScopedActivity,
+                        public promise_detail::Context<Arena>,
+                        public promise_detail::Context<CallContext>,
+                        public promise_detail::Context<CallFinalization> {
    public:
     explicit ScopedContext(BasicPromiseBasedCall* call)
         : ScopedActivity(call),
           promise_detail::Context<Arena>(call->arena()),
-          promise_detail::Context<grpc_call_context_element>(call->context_),
           promise_detail::Context<CallContext>(&call->call_context_),
           promise_detail::Context<CallFinalization>(&call->finalization_) {}
   };
-
-  grpc_call_context_element* context() { return context_; }
 
   grpc_completion_queue* cq() { return cq_; }
 
@@ -2057,8 +2008,6 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
   std::atomic<size_t> external_refs_;
   CallFinalization finalization_;
   CallContext call_context_{this};
-  // Contexts for various subsystems (security, tracing, ...).
-  grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
   grpc_call_stats final_stats_{};
   Slice final_message_;
   grpc_status_code final_status_ = GRPC_STATUS_UNKNOWN;
@@ -2067,7 +2016,7 @@ class BasicPromiseBasedCall : public ChannelBasedCall, public Party {
 
 class PromiseBasedCall : public BasicPromiseBasedCall {
  public:
-  PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+  PromiseBasedCall(RefCountedPtr<Arena> arena, uint32_t initial_external_refs,
                    const grpc_call_create_args& args);
 
   bool Completed() final { return finished_.IsSet(); }
@@ -2341,24 +2290,24 @@ class PromiseBasedCall : public BasicPromiseBasedCall {
   // Waiter for when sends_queued_ becomes 0.
   IntraActivityWaiter waiting_for_queued_sends_;
   grpc_byte_buffer** recv_message_ = nullptr;
-  grpc_transport_stream_op_batch_payload batch_payload_{context()};
+  grpc_transport_stream_op_batch_payload batch_payload_{};
 };
 
 template <typename T>
 grpc_error_handle MakePromiseBasedCall(grpc_call_create_args* args,
                                        grpc_call** out_call) {
   Channel* channel = args->channel.get();
-
-  auto* arena = channel->CreateArena();
+  auto arena = channel->call_arena_allocator()->MakeArena();
   PromiseBasedCall* call = arena->New<T>(arena, args);
   *out_call = call->c_ptr();
   DCHECK(Call::FromC(*out_call) == call);
   return absl::OkStatus();
 }
 
-PromiseBasedCall::PromiseBasedCall(Arena* arena, uint32_t initial_external_refs,
+PromiseBasedCall::PromiseBasedCall(RefCountedPtr<Arena> arena,
+                                   uint32_t initial_external_refs,
                                    const grpc_call_create_args& args)
-    : BasicPromiseBasedCall(arena, initial_external_refs,
+    : BasicPromiseBasedCall(std::move(arena), initial_external_refs,
                             initial_external_refs != 0 ? 1 : 0, args) {}
 
 static void CToMetadata(grpc_metadata* metadata, size_t count,
@@ -2591,8 +2540,9 @@ void PublishMetadataArray(grpc_metadata_batch* md, grpc_metadata_array* array,
 #ifdef GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_CLIENT_CALL
 class ClientPromiseBasedCall final : public PromiseBasedCall {
  public:
-  ClientPromiseBasedCall(Arena* arena, grpc_call_create_args* args)
-      : PromiseBasedCall(arena, 1, *args),
+  ClientPromiseBasedCall(RefCountedPtr<Arena> arena,
+                         grpc_call_create_args* args)
+      : PromiseBasedCall(std::move(arena), 1, *args),
         polling_entity_(
             args->cq != nullptr
                 ? grpc_polling_entity_create_from_pollset(
@@ -2609,7 +2559,7 @@ class ClientPromiseBasedCall final : public PromiseBasedCall {
     }
     ScopedContext context(this);
     args->channel->channel_stack()->stats_plugin_group->AddClientCallTracers(
-        *args->path, args->registered_method, this->context());
+        *args->path, args->registered_method, GetArena());
     send_initial_metadata_ = Arena::MakePooled<ClientMetadata>();
     send_initial_metadata_->Set(HttpPathMetadata(), std::move(*args->path));
     if (args->authority.has_value()) {
@@ -3172,8 +3122,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         client_initial_metadata_stored_(std::move(client_initial_metadata)),
         cq_(cq),
         server_(server) {
-    call_handler_.legacy_context()[GRPC_CONTEXT_CALL].value =
-        static_cast<Call*>(this);
+    call_handler_.arena()->SetContext<Call>(this);
     global_stats().IncrementServerCallsCreated();
   }
 
@@ -3210,16 +3159,6 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   void Orphaned() override {
     // TODO(ctiller): only when we're not already finished
     CancelWithError(absl::CancelledError());
-  }
-
-  void ContextSet(grpc_context_index elem, void* value,
-                  void (*destroy)(void*)) override {
-    call_handler_.legacy_context()[elem] =
-        grpc_call_context_element{value, destroy};
-  }
-
-  void* ContextGet(grpc_context_index elem) const override {
-    return call_handler_.legacy_context()[elem].value;
   }
 
   void SetCompletionQueue(grpc_completion_queue*) override {
@@ -3750,13 +3689,17 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
   return grpc_core::Call::FromC(call)->StartBatch(ops, nops, closure, true);
 }
 
-void grpc_call_context_set(grpc_call* call, grpc_context_index elem,
-                           void* value, void (*destroy)(void* value)) {
-  return grpc_core::Call::FromC(call)->ContextSet(elem, value, destroy);
+void grpc_call_tracer_set(grpc_call* call,
+                          grpc_core::ClientCallTracer* tracer) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
 }
 
-void* grpc_call_context_get(grpc_call* call, grpc_context_index elem) {
-  return grpc_core::Call::FromC(call)->ContextGet(elem);
+void* grpc_call_tracer_get(grpc_call* call) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  auto* call_tracer =
+      arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+  return call_tracer;
 }
 
 uint8_t grpc_call_is_client(grpc_call* call) {

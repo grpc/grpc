@@ -58,12 +58,10 @@ void TransportTest::ServerCallDestination::StartCall(
 }
 
 absl::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {
-  if (!handlers_.empty()) {
-    auto handler = std::move(handlers_.front());
-    handlers_.pop();
-    return handler;
-  }
-  return absl::nullopt;
+  if (handlers_.empty()) return absl::nullopt;
+  auto handler = std::move(handlers_.front());
+  handlers_.pop();
+  return handler;
 }
 
 }  // namespace grpc_core

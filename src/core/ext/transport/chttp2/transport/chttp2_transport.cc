@@ -74,7 +74,7 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -82,9 +82,9 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
@@ -108,12 +108,9 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/http_client/parser.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
-
-#ifdef GRPC_POSIX_SOCKET_TCP
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -227,14 +224,13 @@ namespace {
 
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
-  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
+    grpc_chttp2_stream* s) {
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_tracer = static_cast<grpc_core::CallTracerInterface*>(
-      static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-          .value);
+  auto* call_tracer =
+      s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
     return nullptr;
   }
@@ -243,13 +239,11 @@ grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
 
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_attempt_tracer = static_cast<grpc_core::CallTracerInterface*>(
-      static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER]
-          .value);
+  auto* call_attempt_tracer =
+      s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
     return nullptr;
   }
@@ -384,17 +378,17 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
     channelz_socket.reset();
   }
 
-  grpc_endpoint_destroy(ep);
+  if (ep != nullptr) grpc_endpoint_destroy(ep);
 
   grpc_slice_buffer_destroy(&qbuf);
 
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
-  if (cl != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(cl, nullptr, error);
+  if (context_list != nullptr) {
+    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
   }
-  cl = nullptr;
+  context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
@@ -617,7 +611,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           &memory_owner),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
       is_client(is_client) {
-  cl = new grpc_core::ContextList();
+  context_list = new grpc_core::ContextList();
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
         GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -753,9 +747,21 @@ static void close_transport_locked(grpc_chttp2_transport* t,
       GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:close");
     }
     CHECK(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
-    grpc_endpoint_shutdown(t->ep, error);
+    if (t->interested_parties_until_recv_settings != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(
+          t->ep, t->interested_parties_until_recv_settings);
+      t->interested_parties_until_recv_settings = nullptr;
+    }
+    grpc_core::MutexLock lock(&t->ep_destroy_mu);
+    grpc_endpoint_destroy(t->ep);
+    t->ep = nullptr;
   }
   if (t->notify_on_receive_settings != nullptr) {
+    if (t->interested_parties_until_recv_settings != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(
+          t->ep, t->interested_parties_until_recv_settings);
+      t->interested_parties_until_recv_settings = nullptr;
+    }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
                             error);
     t->notify_on_receive_settings = nullptr;
@@ -784,7 +790,8 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s) {
 
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
-                                       const void* server_data)
+                                       const void* server_data,
+                                       grpc_core::Arena* arena)
     : t(t->Ref()),
       refcount([refcount]() {
 // We reserve one 'active stream' that's dropped when the stream is
@@ -798,6 +805,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 #endif
         return refcount;
       }()),
+      arena(arena),
       flow_control(&t->flow_control) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
@@ -855,8 +863,8 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 void grpc_chttp2_transport::InitStream(grpc_stream* gs,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
-                                       grpc_core::Arena*) {
-  new (gs) grpc_chttp2_stream(this, refcount, server_data);
+                                       grpc_core::Arena* arena) {
+  new (gs) grpc_chttp2_stream(this, refcount, server_data, arena);
 }
 
 static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
@@ -1015,13 +1023,13 @@ static void write_action_begin_locked(
 }
 
 static void write_action(grpc_chttp2_transport* t) {
-  void* cl = t->cl;
-  if (!t->cl->empty()) {
+  void* cl = t->context_list;
+  if (!t->context_list->empty()) {
     // Transfer the ownership of the context list to the endpoint and create and
     // associate a new context list with the transport.
     // The old context list is stored in the cl local variable which is passed
     // to the endpoint. Its upto the endpoint to manage its lifetime.
-    t->cl = new grpc_core::ContextList();
+    t->context_list = new grpc_core::ContextList();
   } else {
     // t->cl is Empty. There is nothing to trace in this endpoint_write. set cl
     // to nullptr.
@@ -1123,19 +1131,16 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
-  t->goaway_error = grpc_error_set_str(
+  t->goaway_error = grpc_error_set_int(
       grpc_error_set_int(
-          grpc_error_set_int(
-              grpc_core::StatusCreate(
-                  absl::StatusCode::kUnavailable,
-                  absl::StrFormat(
-                      "GOAWAY received; Error code: %u; Debug Text: %s",
-                      goaway_error, goaway_text),
-                  DEBUG_LOCATION, {}),
-              grpc_core::StatusIntProperty::kHttp2Error,
-              static_cast<intptr_t>(goaway_error)),
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kRawBytes, goaway_text);
+          grpc_core::StatusCreate(
+              absl::StatusCode::kUnavailable,
+              absl::StrFormat("GOAWAY received; Error code: %u; Debug Text: %s",
+                              goaway_error, goaway_text),
+              DEBUG_LOCATION, {}),
+          grpc_core::StatusIntProperty::kHttp2Error,
+          static_cast<intptr_t>(goaway_error)),
+      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "transport %p got goaway with last stream id %d", t,
@@ -1293,12 +1298,10 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     if (cl_err.ok()) {
       cl_err = GRPC_ERROR_CREATE(absl::StrCat(
           "Error in HTTP transport completing operation: ", desc,
-          " write_state=", write_state_name(t->write_state), " refs=",
-          closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
-          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT));
-      cl_err = grpc_error_set_str(cl_err,
-                                  grpc_core::StatusStrProperty::kTargetAddress,
-                                  std::string(t->peer_string.as_string_view()));
+          " write_state=", write_state_name(t->write_state),
+          " refs=", closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT,
+          " flags=", closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT,
+          " peer_address=", t->peer_string.as_string_view()));
     }
     cl_err = grpc_error_add_child(cl_err, error);
     closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);
@@ -1342,7 +1345,6 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_transport_stream_op_batch_payload* op_payload = op->payload;
   grpc_chttp2_transport* t = s->t.get();
 
-  s->context = op->payload->context;
   s->traced = op->is_traced;
   s->call_tracer = CallTracerIfSampled(s);
   s->tcp_tracer = TcpTracerIfSampled(s);
@@ -1376,7 +1378,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    if (s->call_tracer) {
+    if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                     gpr_now(GPR_CLOCK_REALTIME))
@@ -2613,9 +2615,9 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   if (parse_error.ok() &&
       (parse_error = grpc_http_parser_eof(&parser)) == absl::OkStatus()) {
     error = grpc_error_set_int(
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
-            grpc_core::StatusIntProperty::kHttpStatus, response.status),
+        GRPC_ERROR_CREATE(
+            absl::StrCat("Trying to connect an http1.x server (HTTP status ",
+                         response.status, ")")),
         grpc_core::StatusIntProperty::kRpcStatus,
         grpc_http2_status_to_grpc_status(response.status));
   }
@@ -3005,12 +3007,22 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
 
 void grpc_chttp2_transport::SetPollset(grpc_stream* /*gs*/,
                                        grpc_pollset* pollset) {
-  grpc_endpoint_add_to_pollset(ep, pollset);
+  // We don't want the overhead of acquiring the mutex unless we're
+  // using the "poll" polling engine, which is the only one that
+  // actually uses pollsets.
+  if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
+  grpc_core::MutexLock lock(&ep_destroy_mu);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset(ep, pollset);
 }
 
 void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
                                           grpc_pollset_set* pollset_set) {
-  grpc_endpoint_add_to_pollset_set(ep, pollset_set);
+  // We don't want the overhead of acquiring the mutex unless we're
+  // using the "poll" polling engine, which is the only one that
+  // actually uses pollsets.
+  if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
+  grpc_core::MutexLock lock(&ep_destroy_mu);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset_set(ep, pollset_set);
 }
 
 //
@@ -3196,7 +3208,9 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close) {
+    grpc_closure* notify_on_receive_settings,
+    grpc_pollset_set* interested_parties_until_recv_settings,
+    grpc_closure* notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
@@ -3205,9 +3219,15 @@ void grpc_chttp2_transport_start_reading(
   auto* tp = t.get();
   tp->combiner->Run(
       grpc_core::NewClosure([t = std::move(t), notify_on_receive_settings,
+                             interested_parties_until_recv_settings,
                              notify_on_close](grpc_error_handle) mutable {
         if (!t->closed_with_error.ok()) {
           if (notify_on_receive_settings != nullptr) {
+            if (t->ep != nullptr &&
+                interested_parties_until_recv_settings != nullptr) {
+              grpc_endpoint_delete_from_pollset_set(
+                  t->ep, interested_parties_until_recv_settings);
+            }
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
                                     t->closed_with_error);
           }
@@ -3217,6 +3237,8 @@ void grpc_chttp2_transport_start_reading(
           }
           return;
         }
+        t->interested_parties_until_recv_settings =
+            interested_parties_until_recv_settings;
         t->notify_on_receive_settings = notify_on_receive_settings;
         t->notify_on_close = notify_on_close;
         read_action_locked(std::move(t), absl::OkStatus());
