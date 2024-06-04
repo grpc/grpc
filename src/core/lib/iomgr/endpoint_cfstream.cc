@@ -270,25 +270,16 @@ static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
   ep_impl->stream_sync->NotifyOnWrite(&ep_impl->write_action);
 }
 
-void CFStreamShutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown (%s)", ep_impl,
-            grpc_core::StatusToString(why).c_str());
-  }
-  CFReadStreamClose(ep_impl->read_stream);
-  CFWriteStreamClose(ep_impl->write_stream);
-  ep_impl->stream_sync->Shutdown(why);
-  if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CFStream endpoint:%p shutdown DONE (%s)", ep_impl,
-            grpc_core::StatusToString(why).c_str());
-  }
-}
-
 void CFStreamDestroy(grpc_endpoint* ep) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy", ep_impl);
+  }
+  CFReadStreamClose(ep_impl->read_stream);
+  CFWriteStreamClose(ep_impl->write_stream);
+  ep_impl->stream_sync->Shutdown(absl::UnavailableError("endpoint shutdown"));
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "CFStream endpoint:%p destroy DONE", ep_impl);
   }
   EP_UNREF(ep_impl, "destroy");
 }
@@ -318,7 +309,6 @@ static const grpc_endpoint_vtable vtable = {CFStreamRead,
                                             CFStreamAddToPollset,
                                             CFStreamAddToPollsetSet,
                                             CFStreamDeleteFromPollsetSet,
-                                            CFStreamShutdown,
                                             CFStreamDestroy,
                                             CFStreamGetPeer,
                                             CFStreamGetLocalAddress,

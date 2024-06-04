@@ -4797,6 +4797,7 @@ grpc_cc_library(
         "chttp2_context_list_entry",
         "chttp2_legacy_frame",
         "chttp2_varint",
+        "config_vars",
         "debug_location",
         "exec_ctx",
         "gpr",
