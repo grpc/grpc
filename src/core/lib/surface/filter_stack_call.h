@@ -15,6 +15,21 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <atomic>
+#include <cstdint>
+#include <string>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -29,15 +44,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <atomic>
-#include <cstdint>
-#include <string>
-#include <vector>
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -48,7 +54,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -56,10 +61,6 @@
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/alloc.h"
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -217,12 +218,10 @@ class FilterStackCall final : public Call {
     bool completed_batch_step(PendingOp op) {
       auto mask = PendingOpMask(op);
       auto r = ops_pending_.fetch_sub(mask, std::memory_order_acq_rel);
-      if (grpc_call_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "BATCH:%p COMPLETE:%s REMAINING:%s (tag:%p)", this,
-                PendingOpString(mask).c_str(),
-                PendingOpString(r & ~mask).c_str(),
-                completion_data_.notify_tag.tag);
-      }
+      GRPC_TRACE_VLOG(call, 2)
+          << "BATCH:" << this << " COMPLETE:" << PendingOpString(mask)
+          << " REMAINING:" << PendingOpString(r & ~mask)
+          << " (tag:" << completion_data_.notify_tag.tag << ")";
       CHECK_NE((r & mask), 0);
       return r == mask;
     }
