@@ -10,11 +10,22 @@ that gets printed to stderr.
 
 ## GRPC_VERBOSITY
 
-This is present only for backward compatibility. If you dont already use this, the recommendation dont start using it. Prefer setting absl log level and verbosity directly as needed.
+<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION" -->
+This has been deprecated and will not work anymore.
+If anyone wants to debug, we need to set verbose logs using absl.
+<!-- END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
-`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO`, `ERROR` and `NONE`). 
-`DEBUG` is recommended for debugging in local, testing or staging systems. `DEBUG` is not recommeded for production usage. 
-`ERROR` is recomeded for production systems.
+<!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
+  gRPC logging verbosity - one of:
+  - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too, so it can be used when you want to debug a specific issue. 
+  - INFO - log INFO, WARNING, ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
+  - ERROR - log ERROR and FATAL messages. This is recommended for production systems.
+  - NONE - won't log any.
+  GRPC_VERBOSITY will set verbosity of absl logging. 
+  - If the external application sets some other verbosity, then whatever is set later will be honoured. 
+  - If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured.
+  - If nothing is set by the external application also, the default set by absl will be honoured.
+<!-- END_OPEN_SOURCE_DOCUMENTATION -->
 
 ## GRPC_TRACE
 
