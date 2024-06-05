@@ -528,6 +528,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc",
+        "//:grpc++",
         "//src/core:examine_stack",
         "//src/core:metrics",
     ],

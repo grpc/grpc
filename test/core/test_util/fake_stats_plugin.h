@@ -29,6 +29,8 @@
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 
+#include <grpcpp/support/channel_arguments.h>
+
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -201,7 +203,8 @@ std::string MakeLabelString(
     absl::Span<const absl::string_view> optional_label_keys,
     absl::Span<const absl::string_view> optional_values);
 
-class FakeStatsPlugin : public StatsPlugin {
+class FakeStatsPlugin : public StatsPlugin,
+                        public std::enable_shared_from_this<FakeStatsPlugin> {
  public:
   class ScopeConfig : public StatsPlugin::ScopeConfig {};
 
@@ -450,6 +453,24 @@ class FakeStatsPlugin : public StatsPlugin {
     return iter->second.GetValue(label_values, optional_values);
   }
 
+  void AddToChannelArguments(grpc::ChannelArguments* args) {
+    const grpc_channel_args c_args = args->c_channel_args();
+    auto* stats_plugin_list = grpc_channel_args_find_pointer<
+        std::shared_ptr<std::vector<std::shared_ptr<grpc_core::StatsPlugin>>>>(
+        &c_args, GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      (*stats_plugin_list)->emplace_back(shared_from_this());
+    } else {
+      auto stats_plugin_list = std::make_shared<
+          std::vector<std::shared_ptr<grpc_core::StatsPlugin>>>();
+      args->SetPointerWithVtable(GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS,
+                                 &stats_plugin_list,
+                                 grpc_core::ChannelArgTypeTraits<
+                                     decltype(stats_plugin_list)>::VTable());
+      stats_plugin_list->emplace_back(shared_from_this());
+    }
+  }
+
  private:
   class Reporter : public CallbackMetricReporter {
    public:
@@ -656,6 +677,11 @@ class FakeStatsPluginBuilder {
     return f;
   }
 
+  std::shared_ptr<FakeStatsPlugin> Build() {
+    return std::make_shared<FakeStatsPlugin>(std::move(channel_filter_),
+                                             use_disabled_by_default_metrics_);
+  }
+
  private:
   absl::AnyInvocable<bool(
       const experimental::StatsPluginChannelScope& /*scope*/) const>
@@ -693,6 +719,94 @@ class GlobalStatsPluginRegistryTestPeer {
     MutexLock lock(&*GlobalStatsPluginRegistry::mutex_);
     GlobalStatsPluginRegistry::plugins_->clear();
   }
+};
+
+class FakeStatsPluginsGroup {
+ public:
+  void Add(std::shared_ptr<FakeStatsPlugin> fake_stats_plugin) {
+    fake_stats_plugins_.emplace_back(std::move(fake_stats_plugin));
+  }
+
+  std::vector<absl::optional<uint64_t>> GetUInt64CounterValue(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) const {
+    std::vector<absl::optional<uint64_t>> result;
+    result.reserve(fake_stats_plugins_.size());
+    for (auto& plugin : fake_stats_plugins_) {
+      result.emplace_back(
+          plugin->GetUInt64CounterValue(handle, label_values, optional_values));
+    }
+    return result;
+  }
+  std::vector<absl::optional<double>> GetDoubleCounterValue(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) const {
+    std::vector<absl::optional<double>> result;
+    result.reserve(fake_stats_plugins_.size());
+    for (auto& plugin : fake_stats_plugins_) {
+      result.emplace_back(
+          plugin->GetDoubleCounterValue(handle, label_values, optional_values));
+    }
+    return result;
+  }
+  std::vector<absl::optional<std::vector<uint64_t>>> GetUInt64HistogramValue(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) const {
+    std::vector<absl::optional<std::vector<uint64_t>>> result;
+    result.reserve(fake_stats_plugins_.size());
+    for (auto& plugin : fake_stats_plugins_) {
+      result.emplace_back(plugin->GetUInt64HistogramValue(handle, label_values,
+                                                          optional_values));
+    }
+    return result;
+  }
+  std::vector<absl::optional<std::vector<double>>> GetDoubleHistogramValue(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) const {
+    std::vector<absl::optional<std::vector<double>>> result;
+    result.reserve(fake_stats_plugins_.size());
+    for (auto& plugin : fake_stats_plugins_) {
+      result.emplace_back(plugin->GetDoubleHistogramValue(handle, label_values,
+                                                          optional_values));
+    }
+    return result;
+  }
+  void TriggerCallbacks() {
+    for (auto& plugin : fake_stats_plugins_) {
+      plugin->TriggerCallbacks();
+    }
+  }
+  std::vector<absl::optional<int64_t>> GetInt64CallbackGaugeValue(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) const {
+    std::vector<absl::optional<int64_t>> result;
+    result.reserve(fake_stats_plugins_.size());
+    for (auto& plugin : fake_stats_plugins_) {
+      result.emplace_back(plugin->GetInt64CallbackGaugeValue(
+          handle, label_values, optional_values));
+    }
+    return result;
+  }
+  std::vector<absl::optional<double>> GetDoubleCallbackGaugeValue(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle,
+      absl::Span<const absl::string_view> label_values,
+      absl::Span<const absl::string_view> optional_values) const {
+    std::vector<absl::optional<double>> result;
+    result.reserve(fake_stats_plugins_.size());
+    for (auto& plugin : fake_stats_plugins_) {
+      result.emplace_back(plugin->GetDoubleCallbackGaugeValue(
+          handle, label_values, optional_values));
+    }
+    return result;
+  }
+
+ private:
+  std::vector<std::shared_ptr<FakeStatsPlugin>> fake_stats_plugins_;
 };
 
 }  // namespace grpc_core
