@@ -48,7 +48,7 @@ class WinSocket {
     // be set.
     void SetReady();
     // Set WSA error results for a completed op.
-    void SetError(int wsa_error);
+    void SetError(int wsa_error, absl::string_view context);
     // Set an OverlappedResult. Useful when WSARecv returns immediately.
     void SetResult(OverlappedResult result);
     // Set error results for a completed op.

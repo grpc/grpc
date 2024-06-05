@@ -132,14 +132,18 @@ class WindowsEventEngine : public EventEngine,
     // after an endpoint has been created. Callers must guarantee that the
     // deadline timer callback will not be run.
     std::unique_ptr<WindowsEndpoint> FinishConnectingAndMakeEndpoint(
-        ThreadPool* thread_pool);
+        ThreadPool* thread_pool) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     // Release all refs to the on-connect callback.
-    void AbortOnConnect();
+    void AbortOnConnect() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
     // Release all refs to the deadline timer callback.
-    void AbortDeadlineTimer();
+    void AbortDeadlineTimer() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-    WinSocket* socket() { return socket_.get(); }
+    // TODO(hork): this is unsafe. Whatever needs the socket should likely
+    // delegate responsibility to this object.
+    WinSocket* socket() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+      return socket_.get();
+    }
 
     const EventEngine::ConnectionHandle& connection_handle() {
       return connection_handle_;
@@ -152,7 +156,8 @@ class WindowsEventEngine : public EventEngine,
     // Required for the custom operator<< overload to see the private
     // ConnectionState internal state.
     friend std::ostream& operator<<(std::ostream& out,
-                                    const ConnectionState& connection_state);
+                                    const ConnectionState& connection_state)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(connection_state.mu_);
 
     // Stateful closure for the endpoint's on-connect callback.
     //
@@ -166,7 +171,7 @@ class WindowsEventEngine : public EventEngine,
 
       // Runs the WindowsEventEngine's OnConnectCompleted if the deadline timer
       // hasn't fired first.
-      void Run();
+      void Run() override;
 
      private:
       WindowsEventEngine* engine_;
@@ -185,7 +190,7 @@ class WindowsEventEngine : public EventEngine,
 
       // Runs the WindowsEventEngine's OnDeadlineTimerFired if the deadline
       // timer hasn't fired first.
-      void Run();
+      void Run() override;
 
      private:
       WindowsEventEngine* engine_;
