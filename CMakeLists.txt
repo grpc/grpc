@@ -966,6 +966,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx call_host_override_test)
   add_dependencies(buildtests_cxx call_tracer_test)
+  add_dependencies(buildtests_cxx call_utils_test)
   add_dependencies(buildtests_cxx cancel_after_accept_test)
   add_dependencies(buildtests_cxx cancel_after_client_done_test)
   add_dependencies(buildtests_cxx cancel_after_invoke_test)
@@ -1000,6 +1001,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx cli_call_test)
   add_dependencies(buildtests_cxx client_auth_filter_test)
   add_dependencies(buildtests_cxx client_authority_filter_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx client_call_test)
+  endif()
   add_dependencies(buildtests_cxx client_callback_end2end_test)
   add_dependencies(buildtests_cxx client_channel_service_config_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
@@ -1381,6 +1385,9 @@ if(gRPC_BUILD_TESTS)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx server_call_test)
   endif()
   add_dependencies(buildtests_cxx server_call_tracer_factory_test)
   add_dependencies(buildtests_cxx server_chttp2_test)
@@ -2475,22 +2482,24 @@ add_library(grpc
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_utils.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
+  src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/surface/wait_for_cq_end_op.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
@@ -3234,22 +3243,24 @@ add_library(grpc_unsecure
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_utils.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_create.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
+  src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/legacy_channel.cc
   src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/surface/wait_for_cq_end_op.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
@@ -5354,19 +5365,21 @@ add_library(grpc_authorization_provider
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_utils.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
+  src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/surface/wait_for_cq_end_op.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
@@ -7538,6 +7551,7 @@ add_executable(bad_ping_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8014,6 +8028,7 @@ add_executable(binary_metadata_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8456,6 +8471,7 @@ add_executable(call_creds_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8665,6 +8681,7 @@ add_executable(call_host_override_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8761,6 +8778,310 @@ target_link_libraries(call_tracer_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(call_utils_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/handshaker/handshaker_registry.cc
+  src/core/handshaker/proxy_mapper_registry.cc
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/backoff/backoff.cc
+  src/core/lib/channel/channel_args.cc
+  src/core/lib/channel/channel_args_preconditioning.cc
+  src/core/lib/channel/channel_stack.cc
+  src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_stack_builder_impl.cc
+  src/core/lib/channel/channel_stack_trace.cc
+  src/core/lib/channel/connected_channel.cc
+  src/core/lib/channel/promise_based_filter.cc
+  src/core/lib/channel/status_util.cc
+  src/core/lib/compression/compression.cc
+  src/core/lib/compression/compression_internal.cc
+  src/core/lib/compression/message_compress.cc
+  src/core/lib/config/core_configuration.cc
+  src/core/lib/debug/event_log.cc
+  src/core/lib/debug/trace.cc
+  src/core/lib/event_engine/ares_resolver.cc
+  src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
+  src/core/lib/event_engine/channel_args_endpoint_config.cc
+  src/core/lib/event_engine/default_event_engine.cc
+  src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/forkable.cc
+  src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
+  src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  src/core/lib/event_engine/posix_engine/posix_engine.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/posix_engine/timer.cc
+  src/core/lib/event_engine/posix_engine/timer_heap.cc
+  src/core/lib/event_engine/posix_engine/timer_manager.cc
+  src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/shim.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/event_engine/tcp_socket_utils.cc
+  src/core/lib/event_engine/thread_pool/thread_count.cc
+  src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
+  src/core/lib/event_engine/time_util.cc
+  src/core/lib/event_engine/trace.cc
+  src/core/lib/event_engine/utils.cc
+  src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
+  src/core/lib/event_engine/windows/iocp.cc
+  src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
+  src/core/lib/event_engine/windows/win_socket.cc
+  src/core/lib/event_engine/windows/windows_endpoint.cc
+  src/core/lib/event_engine/windows/windows_engine.cc
+  src/core/lib/event_engine/windows/windows_listener.cc
+  src/core/lib/event_engine/work_queue/basic_work_queue.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/load_file.cc
+  src/core/lib/gprpp/per_cpu.cc
+  src/core/lib/gprpp/ref_counted_string.cc
+  src/core/lib/gprpp/status_helper.cc
+  src/core/lib/gprpp/time.cc
+  src/core/lib/gprpp/time_averaged_stats.cc
+  src/core/lib/gprpp/validation_errors.cc
+  src/core/lib/gprpp/work_serializer.cc
+  src/core/lib/iomgr/buffer_list.cc
+  src/core/lib/iomgr/call_combiner.cc
+  src/core/lib/iomgr/cfstream_handle.cc
+  src/core/lib/iomgr/closure.cc
+  src/core/lib/iomgr/combiner.cc
+  src/core/lib/iomgr/dualstack_socket_posix.cc
+  src/core/lib/iomgr/endpoint.cc
+  src/core/lib/iomgr/endpoint_cfstream.cc
+  src/core/lib/iomgr/endpoint_pair_posix.cc
+  src/core/lib/iomgr/endpoint_pair_windows.cc
+  src/core/lib/iomgr/error.cc
+  src/core/lib/iomgr/error_cfstream.cc
+  src/core/lib/iomgr/ev_apple.cc
+  src/core/lib/iomgr/ev_epoll1_linux.cc
+  src/core/lib/iomgr/ev_poll_posix.cc
+  src/core/lib/iomgr/ev_posix.cc
+  src/core/lib/iomgr/ev_windows.cc
+  src/core/lib/iomgr/event_engine_shims/closure.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/tcp_client.cc
+  src/core/lib/iomgr/exec_ctx.cc
+  src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/fork_posix.cc
+  src/core/lib/iomgr/fork_windows.cc
+  src/core/lib/iomgr/gethostname_fallback.cc
+  src/core/lib/iomgr/gethostname_host_name_max.cc
+  src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
+  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
+  src/core/lib/iomgr/internal_errqueue.cc
+  src/core/lib/iomgr/iocp_windows.cc
+  src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/iomgr_posix.cc
+  src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  src/core/lib/iomgr/iomgr_windows.cc
+  src/core/lib/iomgr/lockfree_event.cc
+  src/core/lib/iomgr/polling_entity.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_windows.cc
+  src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_posix.cc
+  src/core/lib/iomgr/resolve_address_windows.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_factory_posix.cc
+  src/core/lib/iomgr/socket_mutator.cc
+  src/core/lib/iomgr/socket_utils_common_posix.cc
+  src/core/lib/iomgr/socket_utils_linux.cc
+  src/core/lib/iomgr/socket_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
+  src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/systemd_utils.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_cfstream.cc
+  src/core/lib/iomgr/tcp_client_posix.cc
+  src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_posix.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  src/core/lib/iomgr/tcp_server_windows.cc
+  src/core/lib/iomgr/tcp_windows.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_generic.cc
+  src/core/lib/iomgr/timer_heap.cc
+  src/core/lib/iomgr/timer_manager.cc
+  src/core/lib/iomgr/unix_sockets_posix.cc
+  src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  src/core/lib/iomgr/vsock.cc
+  src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  src/core/lib/iomgr/wakeup_fd_pipe.cc
+  src/core/lib/iomgr/wakeup_fd_posix.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/party.cc
+  src/core/lib/promise/trace.cc
+  src/core/lib/resource_quota/api.cc
+  src/core/lib/resource_quota/arena.cc
+  src/core/lib/resource_quota/connection_quota.cc
+  src/core/lib/resource_quota/memory_quota.cc
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/thread_quota.cc
+  src/core/lib/resource_quota/trace.cc
+  src/core/lib/security/certificate_provider/certificate_provider_registry.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/lib/slice/percent_encoding.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_refcount.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/api_trace.cc
+  src/core/lib/surface/byte_buffer.cc
+  src/core/lib/surface/byte_buffer_reader.cc
+  src/core/lib/surface/call.cc
+  src/core/lib/surface/call_details.cc
+  src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_utils.cc
+  src/core/lib/surface/channel.cc
+  src/core/lib/surface/channel_init.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/client_call.cc
+  src/core/lib/surface/completion_queue.cc
+  src/core/lib/surface/completion_queue_factory.cc
+  src/core/lib/surface/event_string.cc
+  src/core/lib/surface/filter_stack_call.cc
+  src/core/lib/surface/init_internally.cc
+  src/core/lib/surface/lame_client.cc
+  src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server_call.cc
+  src/core/lib/surface/validate_metadata.cc
+  src/core/lib/surface/version.cc
+  src/core/lib/transport/call_arena_allocator.cc
+  src/core/lib/transport/call_filters.cc
+  src/core/lib/transport/call_final_info.cc
+  src/core/lib/transport/call_spine.cc
+  src/core/lib/transport/connectivity_state.cc
+  src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/interception_chain.cc
+  src/core/lib/transport/message.cc
+  src/core/lib/transport/metadata.cc
+  src/core/lib/transport/metadata_batch.cc
+  src/core/lib/transport/parsed_metadata.cc
+  src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/timeout_encoding.cc
+  src/core/lib/transport/transport.cc
+  src/core/lib/transport/transport_op_string.cc
+  src/core/lib/uri/uri_parser.cc
+  src/core/load_balancing/lb_policy.cc
+  src/core/load_balancing/lb_policy_registry.cc
+  src/core/resolver/endpoint_addresses.cc
+  src/core/resolver/resolver.cc
+  src/core/resolver/resolver_registry.cc
+  src/core/service_config/service_config_parser.cc
+  src/core/telemetry/call_tracer.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/metrics.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/util/json/json_writer.cc
+  test/core/call/call_utils_test.cc
+  third_party/upb/upb/mini_descriptor/build_enum.c
+  third_party/upb/upb/mini_descriptor/decode.c
+  third_party/upb/upb/mini_descriptor/internal/base92.c
+  third_party/upb/upb/mini_descriptor/internal/encode.c
+  third_party/upb/upb/mini_descriptor/link.c
+  third_party/upb/upb/wire/decode.c
+  third_party/upb/upb/wire/encode.c
+  third_party/upb/upb/wire/eps_copy_input_stream.c
+  third_party/upb/upb/wire/internal/decode_fast.c
+  third_party/upb/upb/wire/reader.c
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_utils_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(call_utils_test PUBLIC cxx_std_14)
+target_include_directories(call_utils_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(call_utils_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  utf8_range_lib
+  upb_message_lib
+  ${_gRPC_ZLIB_LIBRARIES}
+  absl::config
+  absl::no_destructor
+  absl::cleanup
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::span
+  absl::utility
+  ${_gRPC_CARES_LIBRARIES}
+  gpr
+  ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(cancel_after_accept_test
   src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
@@ -8771,6 +9092,7 @@ add_executable(cancel_after_accept_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8834,6 +9156,7 @@ add_executable(cancel_after_client_done_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8897,6 +9220,7 @@ add_executable(cancel_after_invoke_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -8960,6 +9284,7 @@ add_executable(cancel_after_round_trip_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -9070,6 +9395,7 @@ add_executable(cancel_before_invoke_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -9217,6 +9543,7 @@ add_executable(cancel_in_a_vacuum_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -9280,6 +9607,7 @@ add_executable(cancel_with_status_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -10481,6 +10809,61 @@ target_link_libraries(client_authority_filter_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(client_call_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/batch_builder.cc
+    test/core/call/client_call_test.cc
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
+    test/core/end2end/cq_verifier.cc
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(client_call_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(client_call_test PUBLIC cxx_std_14)
+  target_include_directories(client_call_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(client_call_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(client_callback_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
@@ -10594,6 +10977,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
     test/core/client_channel/client_channel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )
   if(WIN32 AND MSVC)
@@ -10935,6 +11319,7 @@ add_executable(client_streaming_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -11274,6 +11659,7 @@ add_executable(compressed_payload_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -11420,6 +11806,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
     test/core/client_channel/connected_subchannel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )
   if(WIN32 AND MSVC)
@@ -11611,6 +11998,7 @@ add_executable(connectivity_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -12040,6 +12428,7 @@ add_executable(default_host_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -12248,6 +12637,7 @@ add_executable(disappearing_server_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -12603,6 +12993,7 @@ add_executable(empty_batch_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -13983,6 +14374,7 @@ add_executable(filter_causes_close_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -14046,6 +14438,7 @@ add_executable(filter_init_fails_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -14159,6 +14552,7 @@ add_executable(filtered_metadata_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -14944,6 +15338,7 @@ add_executable(graceful_server_shutdown_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -15310,6 +15705,7 @@ add_executable(grpc_authz_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -16312,6 +16708,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_cert_test
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/data/client_certs.cc
   test/core/end2end/data/server1_cert.cc
@@ -16701,6 +17098,7 @@ add_executable(high_initial_seqno_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -17010,6 +17408,7 @@ add_executable(hpack_size_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -17166,6 +17565,7 @@ add_executable(http2_stats_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -17621,6 +18021,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
@@ -18005,19 +18406,21 @@ add_executable(interception_chain_test
   src/core/lib/surface/call.cc
   src/core/lib/surface/call_details.cc
   src/core/lib/surface/call_log_batch.cc
+  src/core/lib/surface/call_utils.cc
   src/core/lib/surface/channel.cc
   src/core/lib/surface/channel_init.cc
   src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/surface/client_call.cc
   src/core/lib/surface/completion_queue.cc
   src/core/lib/surface/completion_queue_factory.cc
   src/core/lib/surface/event_string.cc
+  src/core/lib/surface/filter_stack_call.cc
   src/core/lib/surface/init_internally.cc
   src/core/lib/surface/lame_client.cc
   src/core/lib/surface/metadata_array.cc
+  src/core/lib/surface/server_call.cc
   src/core/lib/surface/validate_metadata.cc
   src/core/lib/surface/version.cc
-  src/core/lib/surface/wait_for_cq_end_op.cc
-  src/core/lib/transport/batch_builder.cc
   src/core/lib/transport/call_arena_allocator.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
@@ -18359,6 +18762,7 @@ add_executable(invoke_large_request_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18748,6 +19152,7 @@ add_executable(keepalive_timeout_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -18854,6 +19259,7 @@ add_executable(large_metadata_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -19055,6 +19461,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
     test/core/client_channel/load_balanced_call_destination_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   )
   if(WIN32 AND MSVC)
@@ -19577,6 +19984,7 @@ add_executable(max_concurrent_streams_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -19640,6 +20048,7 @@ add_executable(max_connection_age_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -19703,6 +20112,7 @@ add_executable(max_connection_idle_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -19766,6 +20176,7 @@ add_executable(max_message_length_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -20448,6 +20859,7 @@ add_executable(negative_deadline_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -20543,6 +20955,7 @@ add_executable(no_logging_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -20606,6 +21019,7 @@ add_executable(no_op_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -21535,6 +21949,7 @@ add_executable(payload_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -21908,6 +22323,7 @@ add_executable(ping_pong_streaming_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -22022,6 +22438,7 @@ add_executable(ping_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23016,6 +23433,7 @@ add_executable(proxy_auth_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23592,6 +24010,7 @@ add_executable(registered_call_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23699,6 +24118,7 @@ add_executable(request_with_flags_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -23762,6 +24182,7 @@ add_executable(request_with_payload_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24096,6 +24517,7 @@ add_executable(resource_quota_server_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24201,6 +24623,7 @@ add_executable(retry_cancel_after_first_attempt_starts_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24264,6 +24687,7 @@ add_executable(retry_cancel_during_delay_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24327,6 +24751,7 @@ add_executable(retry_cancel_with_multiple_send_batches_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24390,6 +24815,7 @@ add_executable(retry_cancellation_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24453,6 +24879,7 @@ add_executable(retry_disabled_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24516,6 +24943,7 @@ add_executable(retry_exceeds_buffer_size_in_delay_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24579,6 +25007,7 @@ add_executable(retry_exceeds_buffer_size_in_initial_batch_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24642,6 +25071,7 @@ add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24705,6 +25135,7 @@ add_executable(retry_lb_drop_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24768,6 +25199,7 @@ add_executable(retry_lb_fail_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24831,6 +25263,7 @@ add_executable(retry_non_retriable_status_before_trailers_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24894,6 +25327,7 @@ add_executable(retry_non_retriable_status_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -24957,6 +25391,7 @@ add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25020,6 +25455,7 @@ add_executable(retry_per_attempt_recv_timeout_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25083,6 +25519,7 @@ add_executable(retry_recv_initial_metadata_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25146,6 +25583,7 @@ add_executable(retry_recv_message_replay_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25209,6 +25647,7 @@ add_executable(retry_recv_message_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25272,6 +25711,7 @@ add_executable(retry_recv_trailing_metadata_error_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25335,6 +25775,7 @@ add_executable(retry_send_initial_metadata_refs_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25398,6 +25839,7 @@ add_executable(retry_send_op_fails_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25461,6 +25903,7 @@ add_executable(retry_send_recv_batch_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25524,6 +25967,7 @@ add_executable(retry_server_pushback_delay_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25587,6 +26031,7 @@ add_executable(retry_server_pushback_disabled_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25692,6 +26137,7 @@ add_executable(retry_streaming_after_commit_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25755,6 +26201,7 @@ add_executable(retry_streaming_succeeds_before_replay_finished_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25818,6 +26265,7 @@ add_executable(retry_streaming_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25881,6 +26329,7 @@ add_executable(retry_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -25986,6 +26435,7 @@ add_executable(retry_throttled_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26049,6 +26499,7 @@ add_executable(retry_too_many_attempts_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26112,6 +26563,7 @@ add_executable(retry_transparent_goaway_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26175,6 +26627,7 @@ add_executable(retry_transparent_max_concurrent_streams_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26238,6 +26691,7 @@ add_executable(retry_transparent_not_sent_on_wire_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26301,6 +26755,7 @@ add_executable(retry_unref_before_finish_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -26364,6 +26819,7 @@ add_executable(retry_unref_before_recv_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -27111,6 +27567,61 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 endif()
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(server_call_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/batch_builder.cc
+    test/core/call/server_call_test.cc
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
+    test/core/end2end/cq_verifier.cc
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(server_call_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(server_call_test PUBLIC cxx_std_14)
+  target_include_directories(server_call_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(server_call_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(server_call_tracer_factory_test
   test/core/channel/server_call_tracer_factory_test.cc
@@ -27350,6 +27861,7 @@ add_executable(server_finishes_request_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -27634,6 +28146,7 @@ add_executable(server_streaming_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -27896,6 +28409,7 @@ add_executable(shutdown_finishes_calls_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -27959,6 +28473,7 @@ add_executable(shutdown_finishes_tags_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -28085,6 +28600,7 @@ add_executable(simple_delayed_request_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -28148,6 +28664,7 @@ add_executable(simple_metadata_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -28255,6 +28772,7 @@ add_executable(simple_request_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -29181,6 +29699,7 @@ add_executable(streaming_error_response_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -29955,6 +30474,7 @@ add_executable(test_core_end2end_channelz_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -30448,6 +30968,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     src/core/lib/transport/promise_endpoint.cc
     test/core/call/yodel/test_main.cc
     test/core/call/yodel/yodel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/test_suite/call_content.cc
     test/core/transport/test_suite/call_shapes.cc
@@ -31215,6 +31736,7 @@ add_executable(timeout_before_request_call_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -31719,6 +32241,7 @@ add_executable(trailing_metadata_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -32961,6 +33484,7 @@ add_executable(write_buffering_at_end_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc
@@ -33024,6 +33548,7 @@ add_executable(write_buffering_test
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/settings_metadata.cc
   src/core/lib/transport/promise_endpoint.cc
+  test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
   test/core/end2end/end2end_test_main.cc
   test/core/end2end/end2end_test_suites.cc

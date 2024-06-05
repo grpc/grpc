@@ -30,9 +30,9 @@ namespace {
 
 CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({{"key1", "val1"}, {"key2", "val2"}})
       .SendMessage("hello world")
@@ -43,13 +43,13 @@ CORE_END2END_TEST(CoreEnd2endTest, SimpleMetadata) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102)
       .SendInitialMetadata({{"key3", "val3"}, {"key4", "val4"}})
       .RecvMessage(client_message);
   Expect(102, true);
   Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage("hello you")
