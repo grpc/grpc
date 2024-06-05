@@ -54,7 +54,9 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   auto WriteFrame(const FrameInterface& frame) {
-    auto buffers = frame.Serialize(&encoder_);
+    bool saw_encoding_errors;
+    auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
+    // ignore encoding errors: they will be logged separately already
     if (grpc_chaotic_good_trace.enabled()) {
       gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
               ResolvedAddressToString(control_endpoint_.GetPeerAddress())

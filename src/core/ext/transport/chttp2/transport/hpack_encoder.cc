@@ -378,7 +378,8 @@ void Compressor<HttpSchemeMetadata, HttpSchemeCompressor>::EncodeWith(
       encoder->EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      Crash("invalid http scheme encoding");
+      LOG(ERROR) << "Not encoding bad http scheme";
+      encoder->NoteEncodingError();
       break;
   }
 }
@@ -435,7 +436,8 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
           Slice::FromStaticString(":method"), Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      Crash("invalid http method encoding");
+      LOG(ERROR) << "Not encoding bad http method";
+      encoder->NoteEncodingError();
       break;
   }
 }
