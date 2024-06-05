@@ -20,6 +20,8 @@
 
 #include "rb_channel_args.h"
 
+#include <assert.h>
+
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
 
@@ -160,7 +162,7 @@ void grpc_rb_hash_convert_to_channel_args(VALUE src_hash,
 }
 
 void grpc_rb_channel_args_destroy(grpc_channel_args* args) {
-  GPR_ASSERT(args != NULL);
+  assert(args != NULL);
   if (args->args == NULL) return;
   for (int i = 0; i < args->num_args; i++) {
     // the key was created with gpr_strdup

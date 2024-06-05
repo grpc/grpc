@@ -20,6 +20,8 @@
 
 #include "rb_call.h"
 
+#include <assert.h>
+
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"
 #include "rb_completion_queue.h"
@@ -437,7 +439,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                  tmp_str);
         return ST_STOP;
       }
-      GPR_ASSERT(md_ary->count < md_ary->capacity);
+      assert(md_ary->count < md_ary->capacity);
       md_ary->metadata[md_ary->count].key = key_slice;
       md_ary->metadata[md_ary->count].value = value_slice;
       md_ary->count += 1;
@@ -453,7 +455,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                tmp_str);
       return ST_STOP;
     }
-    GPR_ASSERT(md_ary->count < md_ary->capacity);
+    assert(md_ary->count < md_ary->capacity);
     md_ary->metadata[md_ary->count].key = key_slice;
     md_ary->metadata[md_ary->count].value = value_slice;
     md_ary->count += 1;
