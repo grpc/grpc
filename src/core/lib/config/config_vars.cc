@@ -26,7 +26,7 @@
 #include "src/core/lib/config/load_config.h"
 
 #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
-#define GPR_DEFAULT_LOG_VERBOSITY_STRING "UNKNOWN"
+#define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
 #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
@@ -75,10 +75,6 @@ ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
           "A colon separated list of cipher suites to use with OpenSSL");
-ABSL_FLAG(absl::optional<bool>, grpc_disable_vlog, {},
-          "Disable absl VLOG for in *grpc*/* folder. For other folders it will "
-          "remain unchanged. A good use case for this is if you want to enable "
-          "VLOG for other parts of the code but not for grpc.");
 
 namespace grpc_core {
 
@@ -115,7 +111,6 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       experiments_(LoadConfig(FLAGS_grpc_experiments, "GRPC_EXPERIMENTS",
                               overrides.experiments, "")),
       trace_(LoadConfig(FLAGS_grpc_trace, "GRPC_TRACE", overrides.trace, "")),
-      override_disable_vlog_(overrides.disable_vlog),
       override_system_ssl_roots_dir_(overrides.system_ssl_roots_dir),
       override_default_ssl_roots_file_path_(
           overrides.default_ssl_roots_file_path) {}
@@ -130,11 +125,6 @@ std::string ConfigVars::DefaultSslRootsFilePath() const {
   return LoadConfig(FLAGS_grpc_default_ssl_roots_file_path,
                     "GRPC_DEFAULT_SSL_ROOTS_FILE_PATH",
                     override_default_ssl_roots_file_path_, "");
-}
-
-bool ConfigVars::DisableVlog() const {
-  return LoadConfig(FLAGS_grpc_disable_vlog, "GRPC_DISABLE_VLOG",
-                    override_disable_vlog_, false);
 }
 
 std::string ConfigVars::ToString() const {
@@ -153,8 +143,7 @@ std::string ConfigVars::ToString() const {
       "\"", ", default_ssl_roots_file_path: ", "\"",
       absl::CEscape(DefaultSslRootsFilePath()), "\"",
       ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
-      ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
-      ", disable_vlog: ", DisableVlog() ? "true" : "false");
+      ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"");
 }
 
 }  // namespace grpc_core

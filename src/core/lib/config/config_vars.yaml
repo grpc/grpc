@@ -66,7 +66,7 @@
   type: string
   prelude: |
     #ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
-    #define GPR_DEFAULT_LOG_VERBOSITY_STRING "UNKNOWN"
+    #define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
     #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
   default: $GPR_DEFAULT_LOG_VERBOSITY_STRING
   description:
@@ -126,11 +126,3 @@
     ECDHE-ECDSA-AES256-GCM-SHA384:\
     ECDHE-RSA-AES128-GCM-SHA256:\
     ECDHE-RSA-AES256-GCM-SHA384"
-- name: disable_vlog
-  type: bool
-  default: false
-  description: 
-    Disable absl VLOG for in *grpc*/* folder. For other folders it will
-    remain unchanged. A good use case for this is if you want to enable
-    VLOG for other parts of the code but not for grpc.
-  force-load-on-access: true
