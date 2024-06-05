@@ -644,10 +644,9 @@ struct ContextSubclass<Party> {
 template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-    gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
-            party_->DebugTag().c_str(), this, std::string(name).c_str());
-  }
+  GRPC_TRACE_LOG(promise_primitives, INFO)
+      << party_->DebugTag() << "[bulk_spawn] On " << this << " queue " << name
+      << " (" << sizeof(ParticipantImpl<Factory, OnComplete>) << " bytes)";
   participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete));
 }

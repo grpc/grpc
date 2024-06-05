@@ -86,7 +86,7 @@ class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
  public:
-  virtual Arena* arena() = 0;
+  Arena* arena() { return arena_.get(); }
   bool is_client() const { return is_client_; }
 
   virtual bool Completed() = 0;
@@ -112,10 +112,7 @@ class Call : public CppImplOf<Call, grpc_call>,
     return deadline_;
   }
 
-  grpc_compression_algorithm test_only_compression_algorithm() {
-    return incoming_compression_algorithm_;
-  }
-  uint32_t test_only_message_flags() { return test_only_last_message_flags_; }
+  virtual uint32_t test_only_message_flags() = 0;
   CompressionAlgorithmSet encodings_accepted_by_peer() {
     return encodings_accepted_by_peer_;
   }
@@ -125,13 +122,19 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual grpc_call_stack* call_stack() = 0;
 
   // Return the EventEngine used for this call's async execution.
-  virtual grpc_event_engine::experimental::EventEngine* event_engine()
-      const = 0;
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
+    return event_engine_;
+  }
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() final;
 
   gpr_cycle_counter start_time() const { return start_time_; }
+
+  void set_traced(bool traced) { traced_ = traced; }
+  bool traced() const { return traced_; }
+
+  virtual grpc_compression_algorithm incoming_compression_algorithm() = 0;
 
  protected:
   // The maximum number of concurrent batches possible.
@@ -160,11 +163,8 @@ class Call : public CppImplOf<Call, grpc_call>,
     Call* sibling_prev = nullptr;
   };
 
-  Call(bool is_client, Timestamp send_deadline,
-       grpc_event_engine::experimental::EventEngine* event_engine)
-      : send_deadline_(send_deadline),
-        is_client_(is_client),
-        event_engine_(event_engine) {}
+  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
+       grpc_event_engine::experimental::EventEngine* event_engine);
   ~Call() override = default;
 
   ParentCall* GetOrCreateParentCall();
@@ -200,12 +200,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   // internal headers against external modification.
   void PrepareOutgoingInitialMetadata(const grpc_op& op,
                                       grpc_metadata_batch& md);
-  void NoteLastMessageFlags(uint32_t flags) {
-    test_only_last_message_flags_ = flags;
-  }
-  grpc_compression_algorithm incoming_compression_algorithm() const {
-    return incoming_compression_algorithm_;
-  }
 
   void HandleCompressionAlgorithmDisabled(
       grpc_compression_algorithm compression_algorithm) GPR_ATTRIBUTE_NOINLINE;
@@ -214,20 +208,22 @@ class Call : public CppImplOf<Call, grpc_call>,
 
   virtual grpc_compression_options compression_options() = 0;
 
+  virtual void SetIncomingCompressionAlgorithm(
+      grpc_compression_algorithm algorithm) = 0;
+
  private:
+  const RefCountedPtr<Arena> arena_;
   std::atomic<ParentCall*> parent_call_{nullptr};
   ChildCall* child_ = nullptr;
   Timestamp send_deadline_;
   const bool is_client_;
   // flag indicating that cancellation is inherited
   bool cancellation_is_inherited_ = false;
-  // Compression algorithm for *incoming* data
-  grpc_compression_algorithm incoming_compression_algorithm_ =
-      GRPC_COMPRESS_NONE;
+  // Is this call traced?
+  bool traced_ = false;
   // Supported encodings (compression algorithms), a bitset.
   // Always support no compression.
   CompressionAlgorithmSet encodings_accepted_by_peer_{GRPC_COMPRESS_NONE};
-  uint32_t test_only_last_message_flags_ = 0;
   // Peer name is protected by a mutex because it can be accessed by the
   // application at the same moment as it is being set by the completion
   // of the recv_initial_metadata op.  The mutex should be mostly uncontended.
@@ -246,66 +242,6 @@ template <>
 struct ArenaContextType<Call> {
   static void Destroy(Call*) {}
 };
-
-class BasicPromiseBasedCall;
-class ServerPromiseBasedCall;
-
-// TODO(ctiller): move more call things into this type
-class CallContext {
- public:
-  explicit CallContext(BasicPromiseBasedCall* call) : call_(call) {}
-
-  // Run some action in the call activity context. This is needed to adapt some
-  // legacy systems to promises, and will likely disappear once that conversion
-  // is complete.
-  void RunInContext(absl::AnyInvocable<void()> fn);
-
-  // TODO(ctiller): remove this once transport APIs are promise based
-  void IncrementRefCount(const char* reason = "call_context");
-
-  // TODO(ctiller): remove this once transport APIs are promise based
-  void Unref(const char* reason = "call_context");
-
-  RefCountedPtr<CallContext> Ref() {
-    IncrementRefCount();
-    return RefCountedPtr<CallContext>(this);
-  }
-
-  grpc_call_stats* call_stats() { return &call_stats_; }
-  gpr_atm* peer_string_atm_ptr();
-  gpr_cycle_counter call_start_time() { return start_time_; }
-
-  void set_traced(bool traced) { traced_ = traced; }
-  bool traced() const { return traced_; }
-
-  // TEMPORARY HACK
-  // Create a call spine object for this call.
-  // Said object should only be created once.
-  // Allows interop between the v2 call stack and the v3 (which is required by
-  // transports).
-  RefCountedPtr<CallSpineInterface> MakeCallSpine(CallArgs call_args);
-  grpc_call* c_call();
-
- private:
-  friend class PromiseBasedCall;
-  // Call final info.
-  grpc_call_stats call_stats_;
-  // TODO(ctiller): remove this once transport APIs are promise based and we
-  // don't need refcounting here.
-  BasicPromiseBasedCall* const call_;
-  gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
-  // Is this call traced?
-  bool traced_ = false;
-};
-
-template <>
-struct ContextType<CallContext> {};
-
-// TODO(ctiller): remove once call-v3 finalized
-grpc_call* MakeServerCall(CallHandler call_handler,
-                          ClientMetadataHandle client_initial_metadata,
-                          ServerInterface* server, grpc_completion_queue* cq,
-                          grpc_metadata_array* publish_initial_metadata);
 
 }  // namespace grpc_core
 
@@ -348,11 +284,6 @@ void* grpc_call_tracer_get(grpc_call* call);
   } while (0)
 
 uint8_t grpc_call_is_client(grpc_call* call);
-
-// Get the estimated memory size for a call BESIDES the call stack. Combined
-// with the size of the call stack, it helps estimate the arena size for the
-// initial call.
-size_t grpc_call_get_initial_size_estimate();
 
 // Return an appropriate compression algorithm for the requested compression \a
 // level in the context of \a call.

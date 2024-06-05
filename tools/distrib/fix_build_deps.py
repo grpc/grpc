@@ -399,6 +399,7 @@ for dirname in [
     "src/cpp/ext/csm",
     "src/cpp/ext/otel",
     "test/core/backoff",
+    "test/core/call",
     "test/core/call/yodel",
     "test/core/client_channel",
     "test/core/experiments",

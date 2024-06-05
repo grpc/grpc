@@ -250,8 +250,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     MutexLock lock(m);
     // List the channel stack type (since we'll be repeatedly printing graphs in
     // this loop).
-    gpr_log(GPR_INFO,
-            "ORDERED CHANNEL STACK %s:", grpc_channel_stack_type_string(type));
+    LOG(INFO) << "ORDERED CHANNEL STACK "
+              << grpc_channel_stack_type_string(type) << ":";
     // First build up a map of filter -> file:line: strings, because it helps
     // the readability of this log to get later fields aligned vertically.
     std::map<const grpc_channel_filter*, std::string> loc_strs;

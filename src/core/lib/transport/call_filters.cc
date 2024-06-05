@@ -230,8 +230,8 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
             "Cancelling due to failed pipe operation: %s",
             DebugString().c_str());
   }
-  server_trailing_metadata_ =
-      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation"));
+  PushServerTrailingMetadata(
+      ServerMetadataFromStatus(absl::CancelledError("Failed pipe operation")));
   server_trailing_metadata_waiter_.Wake();
 }
 

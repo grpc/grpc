@@ -244,6 +244,8 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
+    ss.dependency 'abseil/log/absl_check', abseil_version
+    ss.dependency 'abseil/log/absl_log', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
     ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
@@ -1174,20 +1176,22 @@ Pod::Spec.new do |s|
                       'src/core/lib/surface/api_trace.h',
                       'src/core/lib/surface/call.h',
                       'src/core/lib/surface/call_test_only.h',
+                      'src/core/lib/surface/call_utils.h',
                       'src/core/lib/surface/channel.h',
                       'src/core/lib/surface/channel_create.h',
                       'src/core/lib/surface/channel_init.h',
                       'src/core/lib/surface/channel_stack_type.h',
+                      'src/core/lib/surface/client_call.h',
                       'src/core/lib/surface/completion_queue.h',
                       'src/core/lib/surface/completion_queue_factory.h',
                       'src/core/lib/surface/event_string.h',
+                      'src/core/lib/surface/filter_stack_call.h',
                       'src/core/lib/surface/init.h',
                       'src/core/lib/surface/init_internally.h',
                       'src/core/lib/surface/lame_client.h',
                       'src/core/lib/surface/legacy_channel.h',
+                      'src/core/lib/surface/server_call.h',
                       'src/core/lib/surface/validate_metadata.h',
-                      'src/core/lib/surface/wait_for_cq_end_op.h',
-                      'src/core/lib/transport/batch_builder.h',
                       'src/core/lib/transport/bdp_estimator.h',
                       'src/core/lib/transport/call_arena_allocator.h',
                       'src/core/lib/transport/call_destination.h',
@@ -2445,20 +2449,22 @@ Pod::Spec.new do |s|
                               'src/core/lib/surface/api_trace.h',
                               'src/core/lib/surface/call.h',
                               'src/core/lib/surface/call_test_only.h',
+                              'src/core/lib/surface/call_utils.h',
                               'src/core/lib/surface/channel.h',
                               'src/core/lib/surface/channel_create.h',
                               'src/core/lib/surface/channel_init.h',
                               'src/core/lib/surface/channel_stack_type.h',
+                              'src/core/lib/surface/client_call.h',
                               'src/core/lib/surface/completion_queue.h',
                               'src/core/lib/surface/completion_queue_factory.h',
                               'src/core/lib/surface/event_string.h',
+                              'src/core/lib/surface/filter_stack_call.h',
                               'src/core/lib/surface/init.h',
                               'src/core/lib/surface/init_internally.h',
                               'src/core/lib/surface/lame_client.h',
                               'src/core/lib/surface/legacy_channel.h',
+                              'src/core/lib/surface/server_call.h',
                               'src/core/lib/surface/validate_metadata.h',
-                              'src/core/lib/surface/wait_for_cq_end_op.h',
-                              'src/core/lib/transport/batch_builder.h',
                               'src/core/lib/transport/bdp_estimator.h',
                               'src/core/lib/transport/call_arena_allocator.h',
                               'src/core/lib/transport/call_destination.h',
