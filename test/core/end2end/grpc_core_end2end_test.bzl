@@ -111,7 +111,7 @@ def grpc_core_end2end_test(name, shard_count = 10, tags = []):
             "end2end_test_main",
             "%s_library" % name,
         ],
-        tags = ["core_end2end_test"] + tags,
+        tags = ["core_end2end_test", "thready_tsan"] + tags,
     )
 
     grpc_proto_fuzzer(
