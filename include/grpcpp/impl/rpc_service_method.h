@@ -25,8 +25,8 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 #include <grpcpp/impl/rpc_method.h>
 #include <grpcpp/support/byte_buffer.h>
@@ -77,7 +77,7 @@ class MethodHandler {
   // retained by the handler. Returns nullptr if deserialization failed.
   virtual void* Deserialize(grpc_call* /*call*/, grpc_byte_buffer* req,
                             Status* /*status*/, void** /*handler_data*/) {
-    CHECK_EQ(req, nullptr);
+    ABSL_CHECK_EQ(req, nullptr);
     return nullptr;
   }
 };
@@ -116,12 +116,12 @@ class RpcServiceMethod : public RpcMethod {
       // this is not an error condition, as it allows users to declare a server
       // like WithRawMethod_foo<AsyncService>. However since it
       // overwrites behavior, it should be logged.
-      LOG(INFO) << "You are marking method " << name() << " as '"
-                << TypeToString(api_type_)
-                << "', even though it was previously marked '"
-                << TypeToString(type)
-                << "'. This behavior will overwrite the original behavior. If "
-                   "you expected this then ignore this message.";
+      ABSL_LOG(INFO)
+          << "You are marking method " << name() << " as '"
+          << TypeToString(api_type_)
+          << "', even though it was previously marked '" << TypeToString(type)
+          << "'. This behavior will overwrite the original behavior. If "
+             "you expected this then ignore this message.";
     }
     api_type_ = type;
   }
