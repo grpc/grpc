@@ -72,17 +72,18 @@ WindowsEventEngine::ConnectionState::ConnectionState(
     std::unique_ptr<WinSocket> socket, EventEngine::ResolvedAddress address,
     MemoryAllocator allocator,
     EventEngine::OnConnectCallback on_connect_user_callback)
-    : engine_(std::move(engine)),
-      socket_(std::move(socket)),
+    : socket_(std::move(socket)),
       address_(address),
       allocator_(std::move(allocator)),
-      on_connect_user_callback_(std::move(on_connect_user_callback)) {
+      on_connect_user_callback_(std::move(on_connect_user_callback)),
+      engine_(std::move(engine)) {
   CHECK(socket_ != nullptr);
   connection_handle_ = ConnectionHandle{reinterpret_cast<intptr_t>(this),
                                         engine_->aba_token_.fetch_add(1)};
 }
 
 void WindowsEventEngine::ConnectionState::Start(Duration timeout) {
+  grpc_core::MutexLock lock(&mu_);
   on_connected_cb_ =
       std::make_unique<OnConnectedCallback>(engine_.get(), shared_from_this());
   socket_->NotifyOnWrite(on_connected_cb_.get());
