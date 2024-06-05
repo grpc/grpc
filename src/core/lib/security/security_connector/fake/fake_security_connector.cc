@@ -166,8 +166,8 @@ class grpc_fake_channel_security_connector final
     gpr_string_split(expected_targets_->c_str(), ";", &lbs_and_backends,
                      &lbs_and_backends_size);
     if (lbs_and_backends_size > 2 || lbs_and_backends_size == 0) {
-      LOG(ERROR) << "Invalid expected targets arg value: '" << expected_targets_
-                 << "'";
+      LOG(ERROR) << "Invalid expected targets arg value: '"
+                 << expected_targets_->c_str() << "'";
       goto done;
     }
     if (is_lb_channel_) {
