@@ -125,6 +125,10 @@ static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
 }
 
 void gpr_to_absl_verbosity_setting_init(void) {
+// This is enabled in Github only.
+// This ifndef is converted to ifdef internally by copybara.
+// Internally grpc verbosity is managed using absl settings.
+#ifndef GRPC_VERBOSITY_MACRO
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
   DVLOG(2) << "Log verbosity: " << verbosity;
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
@@ -148,6 +152,7 @@ void gpr_to_absl_verbosity_setting_init(void) {
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
+#endif  // GRPC_VERBOSITY_MACRO
 }
 
 void gpr_log_verbosity_init() {
