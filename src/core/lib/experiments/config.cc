@@ -29,6 +29,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
