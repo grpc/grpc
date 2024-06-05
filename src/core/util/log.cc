@@ -136,9 +136,10 @@ void gpr_to_absl_verbosity_setting_init(void) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
-    LOG(WARNING) << "Not suitable for production. Prefer WARNING or ERROR. "
-                  "However if you see this message in a debug environmenmt or "
-                  "test environmenmt it is safe to ignore this message.";
+    LOG(WARNING)
+        << "Not suitable for production. Prefer WARNING or ERROR. "
+           "However if you see this message in a debug environmenmt or "
+           "test environmenmt it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
