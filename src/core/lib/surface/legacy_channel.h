@@ -65,7 +65,7 @@ class LegacyChannel final : public Channel {
                         absl::optional<Slice> authority, Timestamp deadline,
                         bool registered_method) override;
 
-  void StartCall(UnstartedCallHandler unstarted_handler) override {
+  void StartCall(UnstartedCallHandler) override {
     Crash("StartCall() not supported on LegacyChannel");
   }
 

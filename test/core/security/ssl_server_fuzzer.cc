@@ -108,6 +108,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       handshake_mgr->Shutdown(
           absl::DeadlineExceededError("handshake did not fail as expected"));
     }
+
     sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);
     grpc_core::ExecCtx::Get()->Flush();

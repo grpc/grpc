@@ -74,6 +74,9 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -83,6 +86,8 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
@@ -109,10 +114,6 @@
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
-
-#ifdef GRPC_POSIX_SOCKET_TCP
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -380,7 +381,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
     channelz_socket.reset();
   }
 
-  grpc_endpoint_destroy(ep);
+  if (ep != nullptr) grpc_endpoint_destroy(ep);
 
   grpc_slice_buffer_destroy(&qbuf);
 
@@ -587,6 +588,9 @@ static void init_keepalive_pings_if_enabled_locked(
   }
 }
 
+using grpc_event_engine::experimental::QueryExtension;
+using grpc_event_engine::experimental::TcpTraceExtension;
+
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
     bool is_client)
@@ -614,6 +618,17 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
       is_client(is_client) {
   context_list = new grpc_core::ContextList();
+
+  if (channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false) &&
+      grpc_event_engine::experimental::grpc_is_event_engine_endpoint(ep)) {
+    auto epte = QueryExtension<TcpTraceExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep));
+    if (epte != nullptr) {
+      epte->InitializeAndReturnTcpTracer();
+    }
+  }
+
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
         GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -749,9 +764,21 @@ static void close_transport_locked(grpc_chttp2_transport* t,
       GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:close");
     }
     CHECK(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
-    grpc_endpoint_shutdown(t->ep, error);
+    if (t->interested_parties_until_recv_settings != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(
+          t->ep, t->interested_parties_until_recv_settings);
+      t->interested_parties_until_recv_settings = nullptr;
+    }
+    grpc_core::MutexLock lock(&t->ep_destroy_mu);
+    grpc_endpoint_destroy(t->ep);
+    t->ep = nullptr;
   }
   if (t->notify_on_receive_settings != nullptr) {
+    if (t->interested_parties_until_recv_settings != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(
+          t->ep, t->interested_parties_until_recv_settings);
+      t->interested_parties_until_recv_settings = nullptr;
+    }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
                             error);
     t->notify_on_receive_settings = nullptr;
@@ -2997,12 +3024,22 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
 
 void grpc_chttp2_transport::SetPollset(grpc_stream* /*gs*/,
                                        grpc_pollset* pollset) {
-  grpc_endpoint_add_to_pollset(ep, pollset);
+  // We don't want the overhead of acquiring the mutex unless we're
+  // using the "poll" polling engine, which is the only one that
+  // actually uses pollsets.
+  if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
+  grpc_core::MutexLock lock(&ep_destroy_mu);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset(ep, pollset);
 }
 
 void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
                                           grpc_pollset_set* pollset_set) {
-  grpc_endpoint_add_to_pollset_set(ep, pollset_set);
+  // We don't want the overhead of acquiring the mutex unless we're
+  // using the "poll" polling engine, which is the only one that
+  // actually uses pollsets.
+  if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
+  grpc_core::MutexLock lock(&ep_destroy_mu);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset_set(ep, pollset_set);
 }
 
 //
@@ -3188,7 +3225,9 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close) {
+    grpc_closure* notify_on_receive_settings,
+    grpc_pollset_set* interested_parties_until_recv_settings,
+    grpc_closure* notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
@@ -3197,9 +3236,15 @@ void grpc_chttp2_transport_start_reading(
   auto* tp = t.get();
   tp->combiner->Run(
       grpc_core::NewClosure([t = std::move(t), notify_on_receive_settings,
+                             interested_parties_until_recv_settings,
                              notify_on_close](grpc_error_handle) mutable {
         if (!t->closed_with_error.ok()) {
           if (notify_on_receive_settings != nullptr) {
+            if (t->ep != nullptr &&
+                interested_parties_until_recv_settings != nullptr) {
+              grpc_endpoint_delete_from_pollset_set(
+                  t->ep, interested_parties_until_recv_settings);
+            }
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
                                     t->closed_with_error);
           }
@@ -3209,6 +3254,8 @@ void grpc_chttp2_transport_start_reading(
           }
           return;
         }
+        t->interested_parties_until_recv_settings =
+            interested_parties_until_recv_settings;
         t->notify_on_receive_settings = notify_on_receive_settings;
         t->notify_on_close = notify_on_close;
         read_action_locked(std::move(t), absl::OkStatus());

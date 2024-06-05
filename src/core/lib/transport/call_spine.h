@@ -107,8 +107,9 @@ class CallSpine final : public Party {
   }
 
   auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
+    bool has_md = md.has_value();
     return If(
-        md.has_value(),
+        has_md,
         [this, md = std::move(md)]() mutable {
           return call_filters().PushServerInitialMetadata(std::move(*md));
         },

@@ -160,7 +160,7 @@ class ClientChannel::SubchannelWrapper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
 
   RefCountedPtr<UnstartedCallDestination> call_destination() override {
-    return subchannel_->connected_subchannel()->unstarted_call_destination();
+    return subchannel_->call_destination();
   }
 
   void RequestConnection() override { subchannel_->RequestConnection(); }
@@ -721,8 +721,7 @@ void ClientChannel::AddConnectivityWatcher(
   //      [self = RefAsSubclass<ClientChannel>(), initial_state,
   //       watcher = std::move(watcher)]()
   //            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-  //        self->state_tracker_.AddWatcher(initial_state,
-  //        std::move(watcher));
+  //        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
   //      },
   //      DEBUG_LOCATION);
 }
@@ -790,8 +789,7 @@ void ClientChannel::Ping(grpc_completion_queue*, void*) {
 grpc_call* ClientChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
-    Slice path, absl::optional<Slice> authority, Timestamp deadline,
-    bool registered_method) {
+    Slice path, absl::optional<Slice> authority, Timestamp deadline, bool) {
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
                         compression_options(), event_engine_.get(),
@@ -897,7 +895,8 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
                 lb_policy_.get());
       }
       lb_policy_.reset();
-      picker_.Set(nullptr);
+      picker_.Set(MakeRefCounted<LoadBalancingPolicy::DropPicker>(
+          absl::UnavailableError("Channel shutdown")));
     }
   }
 }

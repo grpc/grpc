@@ -113,11 +113,6 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error_handle error) {
       // a shutdown call while this callback was sitting on the ExecCtx
       // with no error.
       if (args_.endpoint != nullptr) {
-        // TODO(roth): It is currently necessary to shutdown endpoints
-        // before destroying then, even when we know that there are no
-        // pending read/write callbacks.  This should be fixed, at which
-        // point this can be removed.
-        grpc_endpoint_shutdown(args_.endpoint, error);
         grpc_endpoint_destroy(args_.endpoint);
         args_.endpoint = nullptr;
       }

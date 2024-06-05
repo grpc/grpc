@@ -94,6 +94,8 @@ class ServerCallTest : public YodelTest {
     grpc_compression_options compression_options() const override {
       return {
           1,
+          {0, GRPC_COMPRESS_LEVEL_NONE},
+          {0, GRPC_COMPRESS_NONE},
       };
     }
 

@@ -806,7 +806,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
     ValueOrFailure<ClientMetadataHandle> md) {
   if (!md.ok()) {
-    return absl::InternalError("Missing metadata");
+    return absl::InternalError("Error reading metadata");
   }
   if (!md.value()->get_pointer(HttpPathMetadata())) {
     return absl::InternalError("Missing :path header");
@@ -988,7 +988,7 @@ grpc_error_handle Server::SetupTransport(
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
-    CHECK(channel.value() != nullptr);
+    CHECK(*channel != nullptr);
     auto* channel_stack = (*channel)->channel_stack();
     CHECK(channel_stack != nullptr);
     ChannelData* chand = static_cast<ChannelData*>(
