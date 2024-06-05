@@ -53,7 +53,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -102,7 +101,6 @@ OpenCensusClientFilter::MakeCallPromise(
       grpc_core::HttpPathMetadata());
   auto* arena = grpc_core::GetContext<grpc_core::Arena>();
   auto* tracer = arena->ManagedNew<OpenCensusCallTracer>(
-      grpc_core::GetContext<grpc_call_context_element>(),
       path != nullptr ? path->Ref() : grpc_core::Slice(),
       grpc_core::GetContext<grpc_core::Arena>(),
       OpenCensusTracingEnabled() && tracing_enabled_);
@@ -304,11 +302,10 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::StartNewTcpTrace() {
 // OpenCensusCallTracer
 //
 
-OpenCensusCallTracer::OpenCensusCallTracer(
-    grpc_call_context_element* call_context, grpc_core::Slice path,
-    grpc_core::Arena* arena, bool tracing_enabled)
-    : call_context_(call_context),
-      path_(std::move(path)),
+OpenCensusCallTracer::OpenCensusCallTracer(grpc_core::Slice path,
+                                           grpc_core::Arena* arena,
+                                           bool tracing_enabled)
+    : path_(std::move(path)),
       method_(GetMethod(path_)),
       arena_(arena),
       tracing_enabled_(tracing_enabled) {

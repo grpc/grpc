@@ -344,8 +344,6 @@ grpc_core_end2end_test(name = "empty_batch")
 
 grpc_core_end2end_test(name = "filter_causes_close")
 
-grpc_core_end2end_test(name = "filter_context")
-
 grpc_core_end2end_test(name = "filter_init_fails")
 
 grpc_core_end2end_test(name = "filtered_metadata")

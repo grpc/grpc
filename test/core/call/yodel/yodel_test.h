@@ -363,7 +363,7 @@ class YodelTest : public ::testing::Test {
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
     return MakeCallPair(std::move(client_initial_metadata),
                         state_->event_engine.get(),
-                        state_->call_arena_allocator->MakeArena(), nullptr);
+                        state_->call_arena_allocator->MakeArena());
   }
 
   void WaitForAllPendingWork();

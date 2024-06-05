@@ -32,7 +32,6 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 
@@ -157,11 +156,10 @@ std::atomic<size_t> g_reported_dump_count{0};
 void DumpSignalHandler(int /* sig */) {
   const auto trace = grpc_core::GetCurrentStackTrace();
   if (!trace.has_value()) {
-    gpr_log(GPR_ERROR, "DumpStack::%" PRIdPTR ": Stack trace not available",
-            gpr_thd_currentid());
+    LOG(ERROR) << "DumpStack::" << gpr_thd_currentid()
+               << ": Stack trace not available";
   } else {
-    gpr_log(GPR_ERROR, "DumpStack::%" PRIdPTR ": %s", gpr_thd_currentid(),
-            trace->c_str());
+    LOG(ERROR) << "DumpStack::" << gpr_thd_currentid() << ": " << trace.value();
   }
   g_reported_dump_count.fetch_add(1);
   grpc_core::Thread::Kill(gpr_thd_currentid());
@@ -351,10 +349,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::UntrackThread(
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::DumpStacksAndCrash() {
   grpc_core::MutexLock lock(&thd_set_mu_);
-  gpr_log(GPR_ERROR,
-          "Pool did not quiesce in time, gRPC will not shut down cleanly. "
-          "Dumping all %zu thread stacks.",
-          thds_.size());
+  LOG(ERROR) << "Pool did not quiesce in time, gRPC will not shut down "
+                "cleanly. Dumping all "
+             << thds_.size() << " thread stacks.";
   for (const auto tid : thds_) {
     grpc_core::Thread::Signal(tid, kDumpStackSignal);
   }

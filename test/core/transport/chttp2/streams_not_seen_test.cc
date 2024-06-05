@@ -231,6 +231,8 @@ class StreamsNotSeenTest : public ::testing::Test {
     TrailingMetadataRecordingFilter::reset_state();
     grpc_slice_buffer_init(&read_buffer_);
     GRPC_CLOSURE_INIT(&on_read_done_, OnReadDone, this, nullptr);
+    GRPC_CLOSURE_INIT(&on_read_done_scheduler_, OnReadDoneScheduler, this,
+                      nullptr);
     // Start the test tcp server
     port_ = grpc_pick_unused_port_or_die();
     test_tcp_server_init(&server_, OnConnect, this);
@@ -282,11 +284,10 @@ class StreamsNotSeenTest : public ::testing::Test {
     } while (ev.type != GRPC_QUEUE_SHUTDOWN);
     grpc_completion_queue_destroy(cq_);
     grpc_channel_destroy(channel_);
-    grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Test Shutdown"));
+    if (tcp_ != nullptr) grpc_endpoint_destroy(tcp_);
     ExecCtx::Get()->Flush();
     CHECK(read_end_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
-    grpc_endpoint_destroy(tcp_);
     shutdown_ = true;
     server_poll_thread_->join();
     test_tcp_server_destroy(&server_);
@@ -357,8 +358,13 @@ class StreamsNotSeenTest : public ::testing::Test {
     Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+    {
+      MutexLock lock(&tcp_destroy_mu_);
+      if (tcp_ != nullptr) {
+        grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
+                            /*max_frame_size=*/INT_MAX);
+      }
+    }
     ExecCtx::Get()->Flush();
     CHECK(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -381,13 +387,30 @@ class StreamsNotSeenTest : public ::testing::Test {
         }
         self->read_cv_.SignalAll();
       }
-      grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
-      grpc_endpoint_read(self->tcp_, &self->read_buffer_, &self->on_read_done_,
-                         false, /*min_progress_size=*/1);
-    } else {
-      grpc_slice_buffer_destroy(&self->read_buffer_);
-      self->read_end_notification_.Notify();
+      MutexLock lock(&self->tcp_destroy_mu_);
+      if (self->tcp_ != nullptr) {
+        grpc_slice_buffer_reset_and_unref(&self->read_buffer_);
+        grpc_endpoint_read(self->tcp_, &self->read_buffer_,
+                           &self->on_read_done_scheduler_, false,
+                           /*min_progress_size=*/1);
+        return;
+      }
     }
+    grpc_slice_buffer_destroy(&self->read_buffer_);
+    self->read_end_notification_.Notify();
+  }
+
+  // Async hop for OnReadDone(), in case grpc_endpoint_read() invokes
+  // the callback synchronously while holding the lock.
+  static void OnReadDoneScheduler(void* arg, grpc_error_handle error) {
+    StreamsNotSeenTest* self = static_cast<StreamsNotSeenTest*>(arg);
+    ExecCtx::Run(DEBUG_LOCATION, &self->on_read_done_, std::move(error));
+  }
+
+  void CloseServerConnection() {
+    MutexLock lock(&tcp_destroy_mu_);
+    grpc_endpoint_destroy(tcp_);
+    tcp_ = nullptr;
   }
 
   // Waits for \a bytes to show up in read_bytes_
@@ -416,11 +439,14 @@ class StreamsNotSeenTest : public ::testing::Test {
   int port_;
   test_tcp_server server_;
   std::unique_ptr<std::thread> server_poll_thread_;
+  // Guards destroying tcp_, so that we know not to start the next read/write.
+  Mutex tcp_destroy_mu_;
   grpc_endpoint* tcp_ = nullptr;
   Notification connect_notification_;
   grpc_slice_buffer read_buffer_;
   grpc_closure on_write_done_;
   grpc_closure on_read_done_;
+  grpc_closure on_read_done_scheduler_;
   Notification read_end_notification_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_channel* channel_ = nullptr;
@@ -543,7 +569,7 @@ TEST_F(StreamsNotSeenTest, TransportDestroyed) {
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();
   // Shutdown the server endpoint
-  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
+  CloseServerConnection();
   memset(ops, 0, sizeof(ops));
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -768,7 +794,7 @@ TEST_F(ZeroConcurrencyTest, TransportDestroyed) {
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), Tag(101),
                                 nullptr);
-  grpc_endpoint_shutdown(tcp_, GRPC_ERROR_CREATE("Server shutdown"));
+  CloseServerConnection();
   CHECK_EQ(error, GRPC_CALL_OK);
   cqv_->Expect(Tag(101), true);
   cqv_->Verify();

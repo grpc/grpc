@@ -46,10 +46,6 @@ void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
   ep->vtable->delete_from_pollset_set(ep, pollset_set);
 }
 
-void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  ep->vtable->shutdown(ep, why);
-}
-
 void grpc_endpoint_destroy(grpc_endpoint* ep) { ep->vtable->destroy(ep); }
 
 absl::string_view grpc_endpoint_get_peer(grpc_endpoint* ep) {

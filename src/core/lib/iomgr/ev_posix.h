@@ -19,6 +19,10 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
 #define GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_POSIX_SOCKET_EV
+
 #include <poll.h>
 
 #include <grpc/support/port_platform.h>
@@ -98,9 +102,6 @@ void grpc_register_event_engine_factory(const grpc_event_engine_vtable* vtable,
 
 void grpc_event_engine_init(void);
 void grpc_event_engine_shutdown(void);
-
-// Return the name of the poll strategy
-const char* grpc_get_poll_strategy_name();
 
 // Returns true if polling engine can track errors separately, false otherwise.
 // If this is true, fd can be created with track_err set. After this, error
@@ -206,5 +207,10 @@ void grpc_shutdown_background_closure();
 // override to allow tests to hook poll() usage
 typedef int (*grpc_poll_function_type)(struct pollfd*, nfds_t, int);
 extern grpc_poll_function_type grpc_poll_function;
+
+#endif  // GRPC_POSIX_SOCKET_EV
+
+// Return the name of the poll strategy
+const char* grpc_get_poll_strategy_name();
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_EV_POSIX_H

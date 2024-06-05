@@ -80,8 +80,7 @@ class HttpConnectHandshaker : public Handshaker {
   Mutex mu_;
 
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  // Endpoint and read buffer to destroy after a shutdown.
-  grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
+  // Read buffer to destroy after a shutdown.
   grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
 
   // State saved while performing the handshake.
@@ -97,9 +96,6 @@ class HttpConnectHandshaker : public Handshaker {
 };
 
 HttpConnectHandshaker::~HttpConnectHandshaker() {
-  if (endpoint_to_destroy_ != nullptr) {
-    grpc_endpoint_destroy(endpoint_to_destroy_);
-  }
   if (read_buffer_to_destroy_ != nullptr) {
     grpc_slice_buffer_destroy(read_buffer_to_destroy_);
     gpr_free(read_buffer_to_destroy_);
@@ -112,8 +108,6 @@ HttpConnectHandshaker::~HttpConnectHandshaker() {
 // Set args fields to nullptr, saving the endpoint and read buffer for
 // later destruction.
 void HttpConnectHandshaker::CleanupArgsForFailureLocked() {
-  endpoint_to_destroy_ = args_->endpoint;
-  args_->endpoint = nullptr;
   read_buffer_to_destroy_ = args_->read_buffer;
   args_->read_buffer = nullptr;
   args_->args = ChannelArgs();
@@ -129,13 +123,10 @@ void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
     error = GRPC_ERROR_CREATE("Handshaker shutdown");
   }
   if (!is_shutdown_) {
-    // TODO(ctiller): It is currently necessary to shutdown endpoints
-    // before destroying them, even if we know that there are no
-    // pending read/write callbacks.  This should be fixed, at which
-    // point this can be removed.
-    grpc_endpoint_shutdown(args_->endpoint, error);
     // Not shutting down, so the handshake failed.  Clean up before
     // invoking the callback.
+    grpc_endpoint_destroy(args_->endpoint);
+    args_->endpoint = nullptr;
     CleanupArgsForFailureLocked();
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
@@ -276,12 +267,13 @@ done:
 // Public handshaker methods
 //
 
-void HttpConnectHandshaker::Shutdown(grpc_error_handle why) {
+void HttpConnectHandshaker::Shutdown(grpc_error_handle /*why*/) {
   {
     MutexLock lock(&mu_);
     if (!is_shutdown_) {
       is_shutdown_ = true;
-      grpc_endpoint_shutdown(args_->endpoint, why);
+      grpc_endpoint_destroy(args_->endpoint);
+      args_->endpoint = nullptr;
       CleanupArgsForFailureLocked();
     }
   }
