@@ -57,7 +57,8 @@ namespace grpc_core {
 
 class ClientCall final
     : public Call,
-      public DualRefCounted<ClientCall, NonPolymorphicRefCount, UnrefCallDestroy> {
+      public DualRefCounted<ClientCall, NonPolymorphicRefCount,
+                            UnrefCallDestroy> {
  public:
   ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
              grpc_completion_queue* cq, Slice path,
