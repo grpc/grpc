@@ -140,7 +140,13 @@ some configuration as environment variables that can be set.
   export GRPC_TRACE=all,-pending_tags
 
 * GRPC_VERBOSITY
-  This is present only for backward compatibility. If you dont already use this, the recommendation dont start using it. Prefer setting absl log level and verbosity directly as needed.
+<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION"
+GRPC_VERBOSITY has been disabled for internal and will not work anymore.
+If anyone wants to debug, we need to set verbose logs using absl.
+END_GOOGLE_INTERNAL_DOCUMENTATION -->
+
+<!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
+`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO` and `ERROR`). If this environment variable is unset, only `ERROR` logs will be printed.
   gRPC logging verbosity - one of:
   - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too, so it can be used when you want to debug a specific issue. 
   - INFO - log INFO, WARNING, ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.
@@ -150,6 +156,7 @@ some configuration as environment variables that can be set.
   - If the external application sets some other verbosity, then whatever is set later will be honoured. 
   - If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured.
   - If nothing is set by the external application also, the default set by absl will be honoured.
+<!-- END_OPEN_SOURCE_DOCUMENTATION -->
 
 * GRPC_STACKTRACE_MINLOGLEVEL
   Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.
