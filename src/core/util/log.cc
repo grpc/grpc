@@ -128,6 +128,7 @@ void gpr_to_absl_verbosity_setting_init(void) {
 // This is enabled in Github only.
 // This ifndef is converted to ifdef internally by copybara.
 // Internally grpc verbosity is managed using absl settings.
+// So internally we avoid setting it like this.
 #ifndef GRPC_VERBOSITY_MACRO
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
   DVLOG(2) << "Log verbosity: " << verbosity;
