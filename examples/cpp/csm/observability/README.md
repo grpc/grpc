@@ -1,6 +1,6 @@
 # gRPC C++ CSM Hello World Example
 
-This CSM example builds on the [Hello World Example](https://github.com/grpc/grpc/tree/master/examples/cpp/helloworld) and changes the gRPC client and server to accept configuration from an xDS control plane and test CSM observability.
+This CSM example builds on the [Hello World Example](https://github.com/grpc/grpc/tree/master/examples/cpp/helloworld) and changes the gRPC client and server to test CSM observability.
 
 ## Configuration
 
