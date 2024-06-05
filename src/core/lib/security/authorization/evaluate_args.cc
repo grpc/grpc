@@ -47,18 +47,17 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   absl::string_view host_view;
   absl::string_view port_view;
   if (!SplitHostPort(uri->path(), &host_view, &port_view)) {
-    VLOG(2) "Failed to split " << uri->path() << " into host and port.";
+    VLOG(2) << "Failed to split " << uri->path() << " into host and port.";
     return address;
   }
   if (!absl::SimpleAtoi(port_view, &address.port)) {
-    VLOG(2) "Port " << port_view << " is out of range or null.";
+    VLOG(2) << "Port " << port_view << " is out of range or null.";
   }
   address.address_str = std::string(host_view);
   auto resolved_address = StringToSockaddr(uri->path());
   if (!resolved_address.ok()) {
-    VLOG(2)
-    "Address \"" << uri->path()
-                 << "\" is not IPv4/IPv6. Error: " << resolved_address.status();
+    VLOG(2) << "Address \"" << uri->path()
+            << "\" is not IPv4/IPv6. Error: " << resolved_address.status();
     memset(&address.address, 0, sizeof(address.address));
   } else {
     address.address = *resolved_address;
