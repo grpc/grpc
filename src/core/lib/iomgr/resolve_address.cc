@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 const char* kDefaultSecurePort = "https";

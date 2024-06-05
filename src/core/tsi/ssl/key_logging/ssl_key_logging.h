@@ -27,9 +27,9 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
 
 namespace tsi {
 

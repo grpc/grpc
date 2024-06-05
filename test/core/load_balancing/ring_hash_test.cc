@@ -34,11 +34,11 @@
 #include <grpc/grpc.h>
 #include <grpc/support/json.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/xxhash_inline.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/xxhash_inline.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/test_config.h"
 

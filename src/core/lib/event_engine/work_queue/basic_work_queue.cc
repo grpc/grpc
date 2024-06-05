@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/common_closures.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_event_engine {
 namespace experimental {

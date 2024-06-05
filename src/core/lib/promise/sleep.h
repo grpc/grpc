@@ -23,9 +23,9 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

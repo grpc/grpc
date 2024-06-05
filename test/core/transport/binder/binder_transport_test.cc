@@ -32,8 +32,8 @@
 #include <grpcpp/security/binder_security_policy.h>
 
 #include "src/core/ext/transport/binder/transport/binder_stream.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/mock_objects.h"
 

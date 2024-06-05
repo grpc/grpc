@@ -17,8 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/transport/call_spine.h"
+#include "src/core/util/orphanable.h"
 
 namespace grpc_core {
 

@@ -20,7 +20,7 @@
 #include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h"
-#include "src/core/lib/gprpp/no_destruct.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -23,11 +23,11 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);

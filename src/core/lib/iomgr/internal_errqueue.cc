@@ -28,7 +28,7 @@
 #include <string.h>
 #include <sys/utsname.h>
 
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_core {
 

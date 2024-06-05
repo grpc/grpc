@@ -28,8 +28,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace channelz {

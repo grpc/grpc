@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

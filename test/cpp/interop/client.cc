@@ -28,7 +28,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"

@@ -29,7 +29,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 #include "src/proto/grpc/testing/messages.pb.h"

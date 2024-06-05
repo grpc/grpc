@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/notification.h"
 
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;

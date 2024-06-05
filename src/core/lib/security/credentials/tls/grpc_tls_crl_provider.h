@@ -39,9 +39,9 @@
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/directory_reader.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/directory_reader.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace experimental {

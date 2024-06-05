@@ -20,10 +20,10 @@
 
 #include <grpc/event_engine/memory_allocator.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
 
 namespace grpc_core {

@@ -25,9 +25,9 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"

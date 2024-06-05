@@ -31,8 +31,8 @@
 #import <grpc/support/alloc.h>
 
 #import "src/core/lib/channel/channel_args.h"
-#import "src/core/lib/gprpp/env.h"
-#import "src/core/lib/gprpp/host_port.h"
+#import "src/core/util/env.h"
+#import "src/core/util/host_port.h"
 #import "src/core/util/string.h"
 #import "src/core/util/tmpfile.h"
 #import "test/core/end2end/data/ssl_test_data.h"

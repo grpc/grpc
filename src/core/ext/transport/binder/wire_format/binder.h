@@ -26,7 +26,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder_constants.h"
-#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/util/orphanable.h"
 
 namespace grpc_binder {
 

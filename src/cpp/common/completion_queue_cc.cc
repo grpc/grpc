@@ -29,8 +29,8 @@
 #include <grpcpp/impl/completion_queue_tag.h>
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 
 namespace grpc {

@@ -41,7 +41,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -53,6 +52,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/http_client/format_request.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 

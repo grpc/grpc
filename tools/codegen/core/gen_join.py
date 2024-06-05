@@ -111,10 +111,10 @@ front_matter = """
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 
-#include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/util/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 #include <tuple>
 #include <type_traits>
 #include <utility>

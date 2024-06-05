@@ -28,7 +28,7 @@
 
 #include <grpcpp/create_channel.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"
 

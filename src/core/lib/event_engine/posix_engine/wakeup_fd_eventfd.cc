@@ -18,8 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
 
 #ifdef GRPC_LINUX_EVENTFD
 
@@ -31,7 +31,7 @@
 #endif
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -103,7 +103,7 @@ EventFdWakeupFd::CreateEventFdWakeupFd() {
 
 #else  //  GRPC_LINUX_EVENTFD
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 absl::Status EventFdWakeupFd::Init() { grpc_core::Crash("unimplemented"); }
 

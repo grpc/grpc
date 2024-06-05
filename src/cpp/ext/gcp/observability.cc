@@ -47,8 +47,8 @@
 #include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/ext/filters/logging/logging_filter.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "src/cpp/client/client_stats_interceptor.h"
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"

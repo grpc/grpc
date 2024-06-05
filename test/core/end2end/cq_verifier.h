@@ -34,8 +34,8 @@
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 

@@ -32,7 +32,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/util/memory.h"
 
 // Returns a pointer to the first slice in the slice buffer without giving
 // ownership to or a reference count on that slice.

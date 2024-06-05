@@ -36,7 +36,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

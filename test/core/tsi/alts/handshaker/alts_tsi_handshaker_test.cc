@@ -28,12 +28,12 @@
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/util/thd.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"

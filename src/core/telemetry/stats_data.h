@@ -26,8 +26,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/telemetry/histogram_view.h"
+#include "src/core/util/per_cpu.h"
 
 namespace grpc_core {
 class HistogramCollector_100000_20;

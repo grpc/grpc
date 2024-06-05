@@ -19,7 +19,7 @@
 
 #include "absl/types/optional.h"
 
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "test/cpp/end2end/counted_service.h"

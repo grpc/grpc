@@ -26,8 +26,8 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_event_engine {

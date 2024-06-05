@@ -27,11 +27,11 @@
 
 #include "src/core/client_channel/connector.h"
 #include "src/core/handshaker/handshaker.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

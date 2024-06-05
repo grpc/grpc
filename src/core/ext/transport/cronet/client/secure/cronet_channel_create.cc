@@ -28,12 +28,12 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
     void* engine, const char* target, const grpc_channel_args* args,

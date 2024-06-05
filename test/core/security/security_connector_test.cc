@@ -31,13 +31,13 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"

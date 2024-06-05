@@ -30,7 +30,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
+#include "src/core/util/unique_type_name.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

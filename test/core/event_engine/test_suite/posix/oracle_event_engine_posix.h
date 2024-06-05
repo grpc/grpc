@@ -30,10 +30,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 
 namespace grpc_event_engine {

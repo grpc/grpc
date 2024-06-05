@@ -27,9 +27,9 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -53,8 +53,8 @@
 #include "absl/status/status.h"
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/strerror.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS

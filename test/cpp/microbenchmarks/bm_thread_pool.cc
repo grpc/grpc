@@ -27,8 +27,8 @@
 
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"

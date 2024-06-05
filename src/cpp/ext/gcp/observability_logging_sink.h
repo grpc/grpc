@@ -35,7 +35,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/logging/logging_sink.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 #include "src/cpp/ext/gcp/observability_config.h"
 

@@ -35,8 +35,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client_stats.h"
 

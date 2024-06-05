@@ -34,7 +34,7 @@
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_event_engine {

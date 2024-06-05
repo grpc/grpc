@@ -26,9 +26,9 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/http2_errors.h"
+#include "src/core/util/time.h"
 
 /// A utility function to get the status code and message to be returned
 /// to the application.  If not set in the top-level message, looks

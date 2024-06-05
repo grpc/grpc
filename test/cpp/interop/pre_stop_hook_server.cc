@@ -24,7 +24,7 @@
 
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 
 namespace grpc {

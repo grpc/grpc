@@ -24,7 +24,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/match.h"
 
 // How many pings do we allow to be inflight at any given time?
 // In older versions of gRPC this was implicitly 1.

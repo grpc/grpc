@@ -28,8 +28,8 @@
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/notification.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace grpc_event_engine {

@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
     grpc_pollset_set* pollset_set) {

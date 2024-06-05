@@ -32,7 +32,7 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {

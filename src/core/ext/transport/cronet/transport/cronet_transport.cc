@@ -47,9 +47,6 @@
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/cronet/transport/cronet_status.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -61,6 +58,9 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/status_helper.h"
 
 // IWYU pragma: no_include <type_traits>
 

@@ -38,7 +38,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 

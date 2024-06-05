@@ -46,10 +46,10 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"

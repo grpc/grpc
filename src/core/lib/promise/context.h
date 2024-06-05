@@ -23,7 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/down_cast.h"
+#include "src/core/util/down_cast.h"
 
 namespace grpc_core {
 

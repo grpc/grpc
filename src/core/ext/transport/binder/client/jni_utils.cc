@@ -23,7 +23,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 #if defined(ANDROID) || defined(__ANDROID__)
 

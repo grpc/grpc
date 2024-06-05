@@ -24,7 +24,7 @@
 
 #include <grpcpp/client_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"

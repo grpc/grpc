@@ -23,7 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_binder {
 

@@ -30,7 +30,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/util/memory.h"
 #include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 namespace grpc_core {

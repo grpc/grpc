@@ -31,7 +31,7 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/byte_buffer.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc {
 namespace testing {

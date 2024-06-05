@@ -30,7 +30,7 @@
 
 #include <cstddef>
 
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -28,8 +28,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder_android.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_binder {
 namespace {

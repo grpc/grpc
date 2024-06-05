@@ -34,7 +34,7 @@
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 struct iovec;
 

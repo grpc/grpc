@@ -58,9 +58,9 @@
 #include <grpc/grpc_security.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/tls_utils.h"
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"

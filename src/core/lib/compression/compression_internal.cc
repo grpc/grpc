@@ -34,9 +34,9 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_string.h"
 
 namespace grpc_core {
 

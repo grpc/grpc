@@ -31,9 +31,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"

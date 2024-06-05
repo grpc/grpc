@@ -37,12 +37,12 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 
 static void test_grpc_parse_ipv6_parity_with_getaddrinfo(

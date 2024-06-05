@@ -29,7 +29,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/config.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

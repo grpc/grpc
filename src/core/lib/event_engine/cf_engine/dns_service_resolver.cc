@@ -27,7 +27,7 @@
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/trace.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/util/host_port.h"
 
 namespace grpc_event_engine {
 namespace experimental {

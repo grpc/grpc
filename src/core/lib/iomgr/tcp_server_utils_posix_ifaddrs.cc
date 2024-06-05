@@ -37,10 +37,10 @@
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
+#include "src/core/util/crash.h"
 
 // Return the listener in s with address addr or NULL.
 static grpc_tcp_listener* find_listener_with_addr(grpc_tcp_server* s,
