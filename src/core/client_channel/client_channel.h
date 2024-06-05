@@ -57,7 +57,7 @@ class ClientChannel : public Channel {
     ~CallDestinationFactory() = default;
   };
 
-  static absl::StatusOr<OrphanablePtr<Channel>> Create(
+  static absl::StatusOr<RefCountedPtr<Channel>> Create(
       std::string target, ChannelArgs channel_args);
 
   // Do not instantiate directly -- use Create() instead.
@@ -69,7 +69,7 @@ class ClientChannel : public Channel {
 
   ~ClientChannel() override;
 
-  void Orphan() override;
+  void Orphaned() override;
 
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,
@@ -77,7 +77,7 @@ class ClientChannel : public Channel {
                         Slice path, absl::optional<Slice> authority,
                         Timestamp deadline, bool registered_method) override;
 
-  CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
+  void StartCall(UnstartedCallHandler unstarted_handler) override;
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return event_engine_.get();

@@ -46,7 +46,7 @@ class ClientChannelTest : public YodelTest {
   ClientChannel& InitChannel(const ChannelArgs& args) {
     auto channel = ClientChannel::Create(TestTarget(), CompleteArgs(args));
     CHECK_OK(channel);
-    channel_ = OrphanablePtr<ClientChannel>(
+    channel_ = RefCountedPtr<ClientChannel>(
         DownCast<ClientChannel*>(channel->release()));
     return *channel_;
   }
@@ -114,8 +114,7 @@ class ClientChannelTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(
-          unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack());
+      handlers_.push(unstarted_call_handler.StartWithEmptyFilterStack());
     }
 
     absl::optional<CallHandler> PopHandler() {
@@ -217,6 +216,7 @@ class ClientChannelTest : public YodelTest {
         .SetObject(&client_channel_factory_)
         .SetObject(ResourceQuota::Default())
         .SetObject(std::static_pointer_cast<EventEngine>(event_engine()))
+        .SetIfUnset(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true)
         // TODO(ctiller): remove once v3 supports retries?
         .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, 0);
   }
@@ -233,9 +233,10 @@ class ClientChannelTest : public YodelTest {
     ExecCtx exec_ctx;
     channel_.reset();
     picker_.reset();
+    call_destination_.reset();
   }
 
-  OrphanablePtr<ClientChannel> channel_;
+  RefCountedPtr<ClientChannel> channel_;
   absl::optional<ClientChannel::PickerObservable> picker_;
   TestCallDestinationFactory call_destination_factory_{this};
   TestClientChannelFactory client_channel_factory_;
@@ -251,26 +252,19 @@ class ClientChannelTest : public YodelTest {
 
 CLIENT_CHANNEL_TEST(NoOp) { InitChannel(ChannelArgs()); }
 
-CLIENT_CHANNEL_TEST(CreateCall) {
-  auto& channel = InitChannel(ChannelArgs());
-  auto call_initiator = channel.CreateCall(MakeClientInitialMetadata());
-  SpawnTestSeq(call_initiator, "cancel", [call_initiator]() mutable {
-    call_initiator.Cancel();
-    return Empty{};
-  });
-  WaitForAllPendingWork();
-}
-
 CLIENT_CHANNEL_TEST(StartCall) {
   auto& channel = InitChannel(ChannelArgs());
-  auto call_initiator = channel.CreateCall(MakeClientInitialMetadata());
+  auto call = MakeCallPair(MakeClientInitialMetadata(), channel.event_engine(),
+                           channel.call_arena_allocator()->MakeArena());
+  channel.StartCall(std::move(call.handler));
   QueueNameResolutionResult(
       MakeSuccessfulResolutionResult("ipv4:127.0.0.1:1234"));
   auto call_handler = TickUntilCallStarted();
-  SpawnTestSeq(call_initiator, "cancel", [call_initiator]() mutable {
-    call_initiator.Cancel();
-    return Empty{};
-  });
+  SpawnTestSeq(call.initiator, "cancel",
+               [call_initiator = call.initiator]() mutable {
+                 call_initiator.Cancel();
+                 return Empty{};
+               });
   WaitForAllPendingWork();
 }
 

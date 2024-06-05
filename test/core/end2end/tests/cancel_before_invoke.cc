@@ -29,9 +29,9 @@ namespace grpc_core {
 CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke6) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .SendInitialMetadata({})
@@ -47,8 +47,8 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke6) {
 CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke5) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .SendInitialMetadata({})
@@ -63,7 +63,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke5) {
 CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke4) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .SendInitialMetadata({})
@@ -77,7 +77,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke4) {
 CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke3) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .SendInitialMetadata({})
@@ -90,7 +90,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke3) {
 CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke2) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status).SendInitialMetadata({});
   Expect(1, AnyStatus());
   Step();
@@ -100,7 +100,7 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke2) {
 CORE_END2END_TEST(CoreEnd2endTest, CancelBeforeInvoke1) {
   auto c = NewClientCall("/service/method").Create();
   c.Cancel();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status);
   Expect(1, AnyStatus());
   Step();
