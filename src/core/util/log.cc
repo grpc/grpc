@@ -124,8 +124,6 @@ static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
   return error_value;
 }
 
-void disable_vlog_for_grpc() { absl::SetVLogLevel("*grpc*/*", -1); }
-
 void gpr_to_absl_verbosity_setting_init(void) {
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
   DVLOG(2) << "Log verbosity: " << verbosity;
@@ -136,10 +134,9 @@ void gpr_to_absl_verbosity_setting_init(void) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
-    LOG(WARNING)
-        << "Not suitable for production. Prefer WARNING or ERROR. "
-           "However if you see this message in a debug environmenmt or "
-           "test environmenmt it is safe to ignore this message.";
+    LOG(WARNING) << "Not suitable for production. Prefer WARNING or ERROR. "
+                    "However if you see this message in a debug environmenmt "
+                    "or test environmenmt it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
@@ -148,8 +145,6 @@ void gpr_to_absl_verbosity_setting_init(void) {
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-  } else if (absl::EqualsIgnoreCase(verbosity, "UNKNOWN")) {
-    // No op
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
@@ -181,9 +176,6 @@ void gpr_log_verbosity_init() {
                              min_severity_to_print_stacktrace);
   }
   gpr_to_absl_verbosity_setting_init();
-  if (grpc_core::ConfigVars::Get().DisableVlog()) {
-    disable_vlog_for_grpc();
-  }
 }
 
 void gpr_set_log_function(gpr_log_func f) {
