@@ -176,7 +176,9 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
 }
 
 auto ChaoticGoodClientTransport::OnTransportActivityDone() {
-  return [this](absl::Status) { AbortWithError(); };
+  return [self = RefAsSubclass<ChaoticGoodClientTransport>()](absl::Status) {
+    self->AbortWithError();
+  };
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
