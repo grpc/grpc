@@ -3950,6 +3950,8 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/log:absl_check
+  - absl/log:absl_log
   - grpc
   - protobuf
   baselib: true
@@ -4323,6 +4325,8 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/log:absl_check
+  - absl/log:absl_log
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -6239,6 +6243,8 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -9084,6 +9090,8 @@ targets:
   - test/core/transport/binder/mock_objects.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -9574,6 +9582,8 @@ targets:
   - test/core/transport/binder/end2end/fake_binder_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20291,6 +20301,8 @@ targets:
   - test/core/transport/binder/transport_stream_receiver_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20669,6 +20681,8 @@ targets:
   - test/core/transport/binder/wire_reader_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20778,6 +20792,8 @@ targets:
   - test/core/transport/binder/wire_writer_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -21062,6 +21078,8 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -21155,6 +21173,8 @@ targets:
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -21499,6 +21519,8 @@ targets:
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - gtest
+  - absl/log:absl_check
+  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
