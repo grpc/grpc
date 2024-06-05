@@ -27,6 +27,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/types/optional.h"
+#include "examples/cpp/otel/util.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -35,65 +36,11 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/string_ref.h>
 
-#ifdef BAZEL_BUILD
-#include "examples/cpp/csm/observability/util.h"
-#include "examples/protos/helloworld.grpc.pb.h"
-#else
-#include "helloworld.grpc.pb.h"
-#include "util.h"
-#endif
-
 ABSL_FLAG(std::string, target, "xds:///helloworld:50051", "Target string");
-ABSL_FLAG(uint, delay_s, 1, "Delay between requests");
-
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
+ABSL_FLAG(std::string, prometheus_endpoint, "localhost:9464",
+          "Prometheus exporter endpoint");
 
 namespace {
-
-class GreeterClient {
- public:
-  GreeterClient(std::shared_ptr<Channel> channel)
-      : stub_(Greeter::NewStub(channel)) {}
-  // Assembles the client's payload, sends it and presents the response back
-  // from the server.
-  void SayHello() {
-    // Data we are sending to the server.
-    HelloRequest request;
-    request.set_name("world");
-    // Container for the data we expect from the server.
-    HelloReply reply;
-    // Context for the client. It could be used to convey extra information to
-    // the server and/or tweak certain RPC behaviors.
-    ClientContext context;
-    // The actual RPC.
-    std::mutex mu;
-    std::condition_variable cv;
-    absl::optional<Status> status;
-    std::unique_lock<std::mutex> lock(mu);
-    stub_->async()->SayHello(&context, &request, &reply, [&](Status s) {
-      std::lock_guard<std::mutex> lock(mu);
-      status = std::move(s);
-      cv.notify_one();
-    });
-    while (!status.has_value()) {
-      cv.wait(lock);
-    }
-    if (!status->ok()) {
-      std::cout << "RPC failed" << status->error_code() << ": "
-                << status->error_message() << std::endl;
-      return;
-    }
-    std::cout << "Greeter received: " << reply.message() << std::endl;
-  }
-
- private:
-  std::unique_ptr<Greeter::Stub> stub_;
-};
 
 absl::StatusOr<grpc::CsmObservability> InitializeObservability() {
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
@@ -124,12 +71,9 @@ int main(int argc, char** argv) {
               << observability.status().ToString() << std::endl;
     return static_cast<int>(observability.status().code());
   }
-  GreeterClient greeter(grpc::CreateChannel(
-      absl::GetFlag(FLAGS_target), grpc::InsecureChannelCredentials()));
-  while (true) {
-    greeter.SayHello();
-    std::this_thread::sleep_for(
-        std::chrono::seconds(absl::GetFlag(FLAGS_delay_s)));
-  }
+
+  // Continuously send RPCs every second.
+  RunClient(absl::GetFlag(FLAGS_target));
+
   return 0;
 }

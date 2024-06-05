@@ -24,6 +24,7 @@
 #include "absl/flags/parse.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
+#include "examples/cpp/otel/util.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -35,71 +36,9 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/iomgr/gethostname.h"
-
-#ifdef BAZEL_BUILD
-#include "examples/cpp/csm/observability/util.h"
-#include "examples/protos/helloworld.grpc.pb.h"
-#else
-#include "helloworld.grpc.pb.h"
-#include "util.h"
-#endif
-
 ABSL_FLAG(int32_t, port, 50051, "Server port for service.");
-
-using grpc::CallbackServerContext;
-using grpc::Server;
-using grpc::ServerBuilder;
-using grpc::ServerUnaryReactor;
-using grpc::Status;
-using helloworld::Greeter;
-using helloworld::HelloReply;
-using helloworld::HelloRequest;
-
-// Logic and data behind the server's behavior.
-class GreeterServiceImpl final : public Greeter::CallbackService {
-  ServerUnaryReactor* SayHello(CallbackServerContext* context,
-                               const HelloRequest* request,
-                               HelloReply* reply) override {
-    std::string prefix("Hello from ");
-    prefix += my_name + " ";
-    reply->set_message(prefix + request->name());
-
-    ServerUnaryReactor* reactor = context->DefaultReactor();
-    reactor->Finish(Status::OK);
-    return reactor;
-  }
-
- public:
-  GreeterServiceImpl(const std::string& my_hostname) : my_name(my_hostname) {}
-
- private:
-  const std::string my_name;
-};
-
-void RunServer(const char* hostname) {
-  grpc::EnableDefaultHealthCheckService(true);
-  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
-  int port = absl::GetFlag(FLAGS_port);
-  grpc::XdsServerBuilder xds_builder;
-  std::unique_ptr<Server> xds_enabled_server;
-
-  std::string my_hostname(hostname);
-  GreeterServiceImpl service(my_hostname);
-  // Register "service" as the instance through which we'll communicate with
-  // clients. In this case it corresponds to an *synchronous* service.
-  xds_builder.RegisterService(&service);
-  // Listen on the given address with XdsServerCredentials and a fallback of
-  // InsecureServerCredentials
-  xds_builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
-                               grpc::InsecureServerCredentials());
-  xds_enabled_server = xds_builder.BuildAndStart();
-  LOG(INFO) << "Server starting on 0.0.0.0:" << port;
-
-  // Wait for the server to shutdown. Note that some other thread must be
-  // responsible for shutting down the server for this call to ever return.
-  xds_enabled_server->Wait();
-}
+ABSL_FLAG(std::string, prometheus_endpoint, "localhost:9464",
+          "Prometheus exporter endpoint");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
@@ -123,11 +62,6 @@ int main(int argc, char** argv) {
               << observability.status().ToString() << std::endl;
     return static_cast<int>(observability.status().code());
   }
-  const char* hostname = grpc_gethostname();
-  if (hostname == nullptr) {
-    std::cout << "Failed to get hostname, terminating" << std::endl;
-    return 1;
-  }
-  RunServer(hostname);
+  RunServer(absl::GetFlag(FLAGS_port));
   return 0;
 }

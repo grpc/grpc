@@ -6,11 +6,12 @@ This CSM example builds on the [Hello World Example](https://github.com/grpc/grp
 
 The client takes the following command-line arguments -
 * target - By default, the client tries to connect to the xDS "xds:///helloworld:50051" and gRPC would use xDS to resolve this target and connect to the server backend. This can be overridden to change the target.
-* delay_s - delay (in seconds) between the RPCs. Default value is 1
+* prometheus_endpoint - Endpoint used for prometheus. Default value is localhost:9464
 
 
 The server takes the following command-line arguments -
 * port - Port on which the Hello World service is run. Defaults to 50051.
+* prometheus_endpoint - Endpoint used for prometheus. Default value is localhost:9464
 
 ## Building
 
