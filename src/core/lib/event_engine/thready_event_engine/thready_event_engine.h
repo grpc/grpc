@@ -79,7 +79,7 @@ class ThreadyEventEngine final : public EventEngine {
    public:
     ThreadyDNSResolver(std::unique_ptr<DNSResolver> impl,
                        std::shared_ptr<ThreadyEventEngine> engine)
-        : impl_(std::move(impl)), engine_(engine) {}
+        : impl_(std::move(impl)), engine_(std::move(engine)) {}
     void LookupHostname(LookupHostnameCallback on_resolve,
                         absl::string_view name,
                         absl::string_view default_port) override;
