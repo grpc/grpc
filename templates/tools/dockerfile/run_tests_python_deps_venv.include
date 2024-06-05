@@ -4,6 +4,9 @@
 # Basic python dependencies to be able to run tools/run_tests python scripts
 # These dependencies are not sufficient to build gRPC Python, gRPC Python
 # deps are defined elsewhere (e.g. python_deps.include)
+# This template is similar to run_tests_python_deps.include but installs the
+# dependencies in a python virtual environment. This is required from pip 23.0
+# onwards as installation of system-wide packages is blocked by default.
 RUN apt-get update && apt-get install -y ${'\\'}
   python3 ${'\\'}
   python3-pip ${'\\'}
@@ -16,9 +19,10 @@ RUN apt-get update && apt-get install -y ${'\\'}
 ENV PYTHON_ENV="/opt/venv/grpc-interop"
 RUN python3 -m venv "$PYTHON_ENV"
 RUN echo "source $PYTHON_ENV/bin/activate" >> ~/.bashrc
+
 # Use bash explicitly as /bin/sh doesn't support the "source" command.
 # use pinned version of pip to avoid sudden breakages
-# TODO(jtattermusch): currently six is needed for tools/run_tests scripts
+# TODO(#36814): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
 RUN /bin/bash -c "source $PYTHON_ENV/bin/activate && \
   python3 -m pip install --upgrade pip==19.3.1 && \
