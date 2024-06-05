@@ -20,6 +20,8 @@
 
 #include "rb_call.h"
 
+#include <assert.h>
+
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"
 #include "rb_completion_queue.h"
