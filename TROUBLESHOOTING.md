@@ -9,8 +9,8 @@ that gets printed to stderr.
 
 ## GRPC_VERBOSITY
 
-<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION"
-GRPC_VERBOSITY has been disabled for internal and will not work anymore.
+<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION
+GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
 If anyone wants to debug, we need to set verbose logs using absl.
 END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
@@ -20,8 +20,8 @@ END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
 ## GRPC_TRACE
 
-<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION"
-GRPC_VERBOSITY has been disabled for internal and will not work anymore.
+<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION
+GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
 If anyone wants to debug, we need to set verbose logs using absl.
 END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
