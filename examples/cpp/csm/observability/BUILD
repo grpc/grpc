@@ -14,31 +14,15 @@
 
 licenses(["notice"])
 
-package(
-    default_visibility = ["//examples/cpp:__subpackages__"],
-)
-
-cc_library(
-    name = "util",
-    srcs = ["util.cc"],
-    hdrs = ["util.h"],
-    defines = ["BAZEL_BUILD"],
-    deps = [
-        "//:grpc++",
-        "//:grpc++_reflection",
-        "//examples/protos:helloworld_cc_grpc",
-        "@io_opentelemetry_cpp//sdk/src/metrics",
-    ],
-)
-
 cc_binary(
-    name = "greeter_callback_client",
-    srcs = ["greeter_callback_client.cc"],
+    name = "csm_greeter_client",
+    srcs = ["csm_greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        "util",
         "//:grpc++",
-        "//:grpcpp_otel_plugin",
+        "//:grpcpp_csm_observability",
+        "//examples/cpp/otel:util",
+        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@io_opentelemetry_cpp//exporters/prometheus:prometheus_exporter",
@@ -47,16 +31,19 @@ cc_binary(
 )
 
 cc_binary(
-    name = "greeter_callback_server",
-    srcs = ["greeter_callback_server.cc"],
+    name = "csm_greeter_server",
+    srcs = ["csm_greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
-        "util",
         "//:grpc++",
-        "//:grpcpp_otel_plugin",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
+        "//:grpcpp_csm_observability",
+        "//examples/cpp/otel:util",
+        "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/log",
         "@io_opentelemetry_cpp//exporters/prometheus:prometheus_exporter",
         "@io_opentelemetry_cpp//sdk/src/metrics",
     ],

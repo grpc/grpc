@@ -57,7 +57,8 @@ namespace grpc_core {
 
 class ClientCall final
     : public Call,
-      public DualRefCounted<ClientCall, NonPolymorphicRefCount, UnrefCallDtor> {
+      public DualRefCounted<ClientCall, NonPolymorphicRefCount,
+                            UnrefCallDestroy> {
  public:
   ClientCall(grpc_call* parent_call, uint32_t propagation_mask,
              grpc_completion_queue* cq, Slice path,
@@ -111,6 +112,11 @@ class ClientCall final
 
   uint32_t test_only_message_flags() override {
     return message_receiver_.last_message_flags();
+  }
+
+  void Destroy() {
+    auto arena = this->arena()->Ref();
+    this->~ClientCall();
   }
 
  private:
