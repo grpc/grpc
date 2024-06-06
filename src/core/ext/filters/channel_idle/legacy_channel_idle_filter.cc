@@ -78,14 +78,10 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
     }                                                                   \
   } while (0)
 
-namespace {
-
 Duration GetClientIdleTimeout(const ChannelArgs& args) {
   return args.GetDurationFromIntMillis(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS)
       .value_or(kDefaultIdleTimeout);
 }
-
-}  // namespace
 
 struct LegacyMaxAgeFilter::Config {
   Duration max_connection_age;
@@ -307,15 +303,13 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
-  if (!IsChaoticGoodEnabled()) {
-    builder->channel_init()
-        ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-        .ExcludeFromMinimalStack()
-        .If([](const ChannelArgs& channel_args) {
-          return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
-              .enable();
-        });
-  }
+  builder->channel_init()
+      ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
+            .enable();
+      });
 }
 
 LegacyMaxAgeFilter::LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,

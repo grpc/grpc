@@ -30,9 +30,7 @@
 namespace grpc_core {
 
 TEST(CallFinalizationTest, Works) {
-  auto memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   std::string evidence;
   TestContext<Arena> context(arena.get());
   CallFinalization finalization;

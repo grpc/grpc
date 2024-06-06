@@ -28,7 +28,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -149,8 +148,7 @@ absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
     return absl::UnavailableError(StatusToString(call_config.status()));
   }
   auto* service_config_call_data =
-      GetContext<Arena>()->New<ServiceConfigCallData>(
-          GetContext<Arena>(), GetContext<grpc_call_context_element>());
+      GetContext<Arena>()->New<ServiceConfigCallData>(GetContext<Arena>());
   service_config_call_data->SetServiceConfig(
       std::move(call_config->service_config), call_config->method_configs);
   return absl::OkStatus();

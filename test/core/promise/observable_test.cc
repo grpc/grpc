@@ -140,6 +140,16 @@ TEST(ObservableTest, MultipleActivitiesWakeUp) {
   EXPECT_THAT(next2(), IsReady(2));
 }
 
+TEST(ObservableTest, NoDeadlockOnDestruction) {
+  StrictMock<MockActivity> activity;
+  Observable<int> observable(1);
+  activity.Activate();
+  {
+    auto next = observable.Next(1);
+    EXPECT_THAT(next(), IsPending());
+  }
+}
+
 class ThreadWakeupScheduler {
  public:
   template <typename ActivityType>

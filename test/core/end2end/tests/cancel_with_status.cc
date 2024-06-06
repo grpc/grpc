@@ -33,7 +33,7 @@ namespace {
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1).RecvStatusOnClient(server_status);
   char* dynamic_string = gpr_strdup("xyz");
   c.CancelWithStatus(GRPC_STATUS_UNIMPLEMENTED, dynamic_string);
@@ -48,8 +48,8 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus1) {
 
 CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus2) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata);
@@ -71,8 +71,8 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus3) {
   // shutdown, the test would not timeout and fail.
   InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata)
@@ -95,8 +95,8 @@ CORE_END2END_TEST(CoreEnd2endTest, CancelWithStatus4) {
   // shutdown, the test would not timeout and fail.
   InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .RecvInitialMetadata(server_initial_metadata)

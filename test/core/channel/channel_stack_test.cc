@@ -82,8 +82,6 @@ static void free_call(void* arg, grpc_error_handle /*error*/) {
 TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_channel_filter filter = {
       call_func,
-      nullptr,
-      nullptr,
       channel_func,
       sizeof(int),
       call_init_func,
@@ -125,7 +123,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_call_element_args args = {
       call_stack,                         // call_stack
       nullptr,                            // server_transport_data
-      nullptr,                            // context
       path,                               // path
       gpr_get_cycle_counter(),            // start_time
       grpc_core::Timestamp::InfFuture(),  // deadline

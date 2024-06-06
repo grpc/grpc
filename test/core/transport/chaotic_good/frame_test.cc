@@ -50,7 +50,7 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   MemoryAllocator allocator = MakeResourceQuota("test-quota")
                                   ->memory_quota()
                                   ->CreateMemoryAllocator("test-allocator");
-  ScopedArenaPtr arena = MakeScopedArena(1024, &allocator);
+  RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
   auto deser =
       output.Deserialize(&hpack_parser, header.value(), absl::BitGenRef(bitgen),
                          arena.get(), std::move(serialized), TestFrameLimits());

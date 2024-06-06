@@ -49,7 +49,6 @@ static void finish_connection() {
 static void must_succeed(void* arg, grpc_error_handle error) {
   CHECK(g_connecting != nullptr);
   CHECK(error.ok());
-  grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE("must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
   g_connecting = nullptr;
   finish_connection();

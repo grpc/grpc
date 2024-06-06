@@ -38,7 +38,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -203,11 +202,7 @@ ServerAuthFilter::Call::Call(ServerAuthFilter* filter) {
       grpc_server_security_context_create(GetContext<Arena>());
   server_ctx->auth_context =
       filter->auth_context_->Ref(DEBUG_LOCATION, "server_auth_filter");
-  grpc_call_context_element& context =
-      GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY];
-  if (context.value != nullptr) context.destroy(context.value);
-  context.value = server_ctx;
-  context.destroy = grpc_server_security_context_destroy;
+  SetContext<SecurityContext>(server_ctx);
 }
 
 ServerAuthFilter::ServerAuthFilter(

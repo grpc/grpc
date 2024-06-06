@@ -36,8 +36,8 @@ namespace {
 // writing, and expects to get the status after the messages.
 void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .RecvInitialMetadata(server_initial_metadata)
@@ -61,7 +61,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
     test.Step();
   }
   // Server sends status
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(104)
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
       .RecvCloseOnServer(client_close);
@@ -75,7 +75,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
   // Client keeps reading messages till it gets the status
   int num_messages_received = 0;
   while (true) {
-    CoreEnd2endTest::IncomingMessage server_message;
+    IncomingMessage server_message;
     c.NewBatch(102).RecvMessage(server_message);
     test.Expect(1, CqVerifier::Maybe{&seen_status});
     test.Expect(102, true);

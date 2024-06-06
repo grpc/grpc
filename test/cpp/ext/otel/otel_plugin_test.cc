@@ -39,6 +39,7 @@
 
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
@@ -1281,7 +1282,17 @@ TEST_F(OpenTelemetryPluginOptionEnd2EndTest,
   EXPECT_EQ(absl::get<std::string>(server_attributes.at("key5")), "value5");
 }
 
-using OpenTelemetryPluginNPCMetricsTest = OpenTelemetryPluginEnd2EndTest;
+class OpenTelemetryPluginNPCMetricsTest
+    : public OpenTelemetryPluginEnd2EndTest {
+ protected:
+  void TearDown() override {
+    // We are tearing down OpenTelemetryPluginEnd2EndTest first to ensure that
+    // gRPC has shutdown before we reset the instruments registry.
+    OpenTelemetryPluginEnd2EndTest::TearDown();
+    grpc_core::GlobalInstrumentsRegistryTestPeer::
+        ResetGlobalInstrumentsRegistry();
+  }
+};
 
 TEST_F(OpenTelemetryPluginNPCMetricsTest, RecordUInt64Counter) {
   constexpr absl::string_view kMetricName = "uint64_counter";
@@ -1675,6 +1686,28 @@ TEST_F(OpenTelemetryPluginNPCMetricsTest,
               HistogramResultEq(::testing::DoubleEq(kSum),
                                 ::testing::DoubleEq(kMin),
                                 ::testing::DoubleEq(kMax), kCount))))));
+}
+
+TEST_F(OpenTelemetryPluginNPCMetricsTest, InstrumentsEnabledTest) {
+  constexpr absl::string_view kDoubleHistogramMetricName =
+      "yet_another_yet_another_double_histogram";
+  constexpr absl::string_view kUnit64CounterMetricName = "uint64_counter";
+  auto histogram_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterDoubleHistogram(
+          kDoubleHistogramMetricName, "A simple double histogram.", "unit",
+          /*enable_by_default=*/false)
+          .Build();
+  auto counter_handle =
+      grpc_core::GlobalInstrumentsRegistry::RegisterUInt64Counter(
+          kUnit64CounterMetricName, "A simple unit64 counter.", "unit",
+          /*enable_by_default=*/false)
+          .Build();
+  Init(std::move(Options().set_metric_names({kDoubleHistogramMetricName})));
+  auto stats_plugins =
+      grpc_core::GlobalStatsPluginRegistry::GetStatsPluginsForServer(
+          grpc_core::ChannelArgs());
+  EXPECT_TRUE(stats_plugins.IsInstrumentEnabled(histogram_handle));
+  EXPECT_FALSE(stats_plugins.IsInstrumentEnabled(counter_handle));
 }
 
 using OpenTelemetryPluginCallbackMetricsTest = OpenTelemetryPluginEnd2EndTest;

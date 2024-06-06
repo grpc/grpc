@@ -43,6 +43,7 @@ import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
 from grpc import _interceptor  # pytype: disable=pyi-error
+from grpc import _observability  # pytype: disable=pyi-error
 from grpc._cython import cygrpc
 from grpc._typing import ArityAgnosticMethodHandler
 from grpc._typing import ChannelArgumentType
@@ -1403,9 +1404,17 @@ def _validate_generic_rpc_handlers(
 def _augment_options(
     base_options: Sequence[ChannelArgumentType],
     compression: Optional[grpc.Compression],
+    xds: bool,
 ) -> Sequence[ChannelArgumentType]:
     compression_option = _compression.create_channel_option(compression)
-    return tuple(base_options) + compression_option
+    maybe_server_call_tracer_factory_option = (
+        _observability.create_server_call_tracer_factory_option(xds)
+    )
+    return (
+        tuple(base_options)
+        + compression_option
+        + maybe_server_call_tracer_factory_option
+    )
 
 
 class _Server(grpc.Server):
@@ -1423,7 +1432,7 @@ class _Server(grpc.Server):
         xds: bool,
     ):
         completion_queue = cygrpc.CompletionQueue()
-        server = cygrpc.Server(_augment_options(options, compression), xds)
+        server = cygrpc.Server(_augment_options(options, compression, xds), xds)
         server.register_completion_queue(completion_queue)
         self._state = _ServerState(
             completion_queue,

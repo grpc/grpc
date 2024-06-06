@@ -40,8 +40,11 @@
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // Forward declaration to avoid dependency loop.
@@ -52,7 +55,7 @@ namespace grpc_core {
 // Forward declaration to avoid dependency loop.
 class Transport;
 
-class Channel : public RefCounted<Channel>,
+class Channel : public UnstartedCallDestination,
                 public CppImplOf<Channel, grpc_channel> {
  public:
   struct RegisteredCall {
@@ -65,11 +68,6 @@ class Channel : public RefCounted<Channel>,
 
     ~RegisteredCall();
   };
-
-  virtual void Orphan() = 0;
-
-  virtual Arena* CreateArena() = 0;
-  virtual void DestroyArena(Arena* arena) = 0;
 
   virtual bool IsLame() const = 0;
 
@@ -129,6 +127,10 @@ class Channel : public RefCounted<Channel>,
   virtual bool is_client() const { return true; }
   virtual bool is_promising() const { return true; }
 
+  CallArenaAllocator* call_arena_allocator() const {
+    return call_arena_allocator_.get();
+  }
+
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
 
@@ -143,6 +145,7 @@ class Channel : public RefCounted<Channel>,
   // the C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       registration_table_ ABSL_GUARDED_BY(mu_);
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
 };
 
 }  // namespace grpc_core
@@ -150,7 +153,7 @@ class Channel : public RefCounted<Channel>,
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
 /// is safe to use from within core.
 inline void grpc_channel_destroy_internal(grpc_channel* channel) {
-  grpc_core::Channel::FromC(channel)->Orphan();
+  grpc_core::Channel::FromC(channel)->Unref();
 }
 
 // Return the channel's compression options.

@@ -65,7 +65,12 @@ Channel::RegisteredCall::~RegisteredCall() {}
 Channel::Channel(std::string target, const ChannelArgs& channel_args)
     : target_(std::move(target)),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
-      compression_options_(CompressionOptionsFromChannelArgs(channel_args)) {}
+      compression_options_(CompressionOptionsFromChannelArgs(channel_args)),
+      call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
+          channel_args.GetObject<ResourceQuota>()
+              ->memory_quota()
+              ->CreateMemoryOwner(),
+          1024)) {}
 
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {

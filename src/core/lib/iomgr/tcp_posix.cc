@@ -762,27 +762,15 @@ static void finish_estimate(grpc_tcp* tcp) {
 
 static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
                                             grpc_tcp* tcp) {
-  return grpc_error_set_str(
-      grpc_error_set_int(
-          grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd,
-                             tcp->fd),
-          // All tcp errors are marked with UNAVAILABLE so that application may
-          // choose to retry.
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kTargetAddress, tcp->peer_string);
+  return grpc_error_set_int(
+      grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd, tcp->fd),
+      // All tcp errors are marked with UNAVAILABLE so that application may
+      // choose to retry.
+      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
 static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error_handle error);
-
-static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  ZerocopyDisableAndWaitForRemaining(tcp);
-  grpc_fd_shutdown(tcp->em_fd, why);
-  tcp->read_mu.Lock();
-  tcp->memory_owner.Reset();
-  tcp->read_mu.Unlock();
-}
 
 static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
@@ -821,10 +809,11 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
+  gpr_log(GPR_INFO, "IOMGR endpoint shutdown");
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  grpc_slice_buffer_reset_and_unref(&tcp->last_read_buffer);
+  ZerocopyDisableAndWaitForRemaining(tcp);
+  grpc_fd_shutdown(tcp->em_fd, absl::UnavailableError("endpoint shutdown"));
   if (grpc_event_engine_can_track_errors()) {
-    ZerocopyDisableAndWaitForRemaining(tcp);
     gpr_atm_no_barrier_store(&tcp->stop_error_notification, true);
     grpc_fd_set_error(tcp->em_fd);
   }
@@ -1668,10 +1657,6 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
       if (saved_errno == EAGAIN || saved_errno == ENOBUFS) {
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
-      } else if (saved_errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
-        tcp_shutdown_buffer_list(tcp);
-        return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         tcp_shutdown_buffer_list(tcp);
@@ -1782,11 +1767,6 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
           grpc_slice_buffer_remove_first(tcp->outgoing_buffer);
         }
         return false;
-      } else if (saved_errno == EPIPE) {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
-        grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
-        tcp_shutdown_buffer_list(tcp);
-        return true;
       } else {
         *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
         grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
@@ -1977,7 +1957,6 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_add_to_pollset,
                                             tcp_add_to_pollset_set,
                                             tcp_delete_from_pollset_set,
-                                            tcp_shutdown,
                                             tcp_destroy,
                                             tcp_get_peer,
                                             tcp_get_local_address,

@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/http/parser.h"
+#include "src/core/util/http_client/parser.h"
 
 #include <stdarg.h>
 #include <string.h>

@@ -106,6 +106,7 @@ struct Measurement {
   MeasurementType type;
   MeasurementValue value;
   bool registered_method;
+  bool include_exchange_labels;
 };
 
 struct Annotation {

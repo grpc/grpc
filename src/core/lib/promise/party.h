@@ -379,6 +379,11 @@ class Party : public Activity, private Wakeable {
   // The on_complete callback will be called with the result of the promise if
   // it completes.
   // A maximum of sixteen promises can be spawned onto a party.
+  // promise_factory called to create the promise with the party lock taken;
+  // after the promise is created the factory is destroyed.
+  // This means that pointers or references to factory members will be
+  // invalidated after the promise is created - so the promise should not retain
+  // any of these.
   template <typename Factory, typename OnComplete>
   void Spawn(absl::string_view name, Factory promise_factory,
              OnComplete on_complete);
@@ -642,8 +647,9 @@ template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
   if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
-            party_->DebugTag().c_str(), this, std::string(name).c_str());
+    gpr_log(GPR_INFO, "%s[bulk_spawn] On %p queue %s (%" PRIdPTR " bytes)",
+            party_->DebugTag().c_str(), this, std::string(name).c_str(),
+            sizeof(ParticipantImpl<Factory, OnComplete>));
   }
   participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete));

@@ -177,14 +177,15 @@ class Client {
       LOG(INFO) << "client read " << read_buffer.length << " bytes";
       grpc_slice_buffer_reset_and_unref(&read_buffer);
     }
-    grpc_endpoint_shutdown(endpoint_, GRPC_ERROR_CREATE("shutdown"));
+    grpc_endpoint_destroy(endpoint_);
+    endpoint_ = nullptr;
     grpc_slice_buffer_destroy(&read_buffer);
     return retval;
   }
 
   void Shutdown() {
     ExecCtx exec_ctx;
-    grpc_endpoint_destroy(endpoint_);
+    if (endpoint_ != nullptr) grpc_endpoint_destroy(endpoint_);
     grpc_pollset_shutdown(pollset_,
                           GRPC_CLOSURE_CREATE(&Client::PollsetDestroy, pollset_,
                                               grpc_schedule_on_exec_ctx));

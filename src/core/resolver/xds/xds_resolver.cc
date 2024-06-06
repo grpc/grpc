@@ -53,7 +53,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/config/core_configuration.h"
@@ -854,10 +853,7 @@ const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
 void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata&) {
   auto* service_config_call_data =
-      static_cast<ClientChannelServiceConfigCallData*>(
-          GetContext<grpc_call_context_element>()
-              [GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                  .value);
+      GetContext<ClientChannelServiceConfigCallData>();
   CHECK_NE(service_config_call_data, nullptr);
   auto* route_state_attribute = static_cast<XdsRouteStateAttributeImpl*>(
       service_config_call_data->GetCallAttribute<XdsRouteStateAttribute>());

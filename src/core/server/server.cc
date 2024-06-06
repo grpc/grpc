@@ -74,11 +74,12 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
+#include "src/core/lib/surface/call_utils.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/legacy_channel.h"
-#include "src/core/lib/surface/wait_for_cq_end_op.h"
+#include "src/core/lib/surface/server_call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/interception_chain.h"
@@ -770,10 +771,6 @@ class Server::TransportConnectivityWatcher
 
 const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::StartTransportStreamOpBatch,
-    nullptr,
-    [](grpc_channel_element*, CallSpineInterface*) {
-      // TODO(ctiller): remove the server filter when call-v3 is finalized
-    },
     grpc_channel_next_op,
     sizeof(Server::CallData),
     Server::CallData::InitCallElement,
@@ -809,7 +806,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
 absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
     ValueOrFailure<ClientMetadataHandle> md) {
   if (!md.ok()) {
-    return absl::InternalError("Missing metadata");
+    return absl::InternalError("Error reading metadata");
   }
   if (!md.value()->get_pointer(HttpPathMetadata())) {
     return absl::InternalError("Missing :path header");
@@ -986,14 +983,16 @@ grpc_error_handle Server::SetupTransport(
     ++connections_open_;
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
-    absl::StatusOr<OrphanablePtr<Channel>> channel = LegacyChannel::Create(
+    absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
+    CHECK(*channel != nullptr);
+    auto* channel_stack = (*channel)->channel_stack();
+    CHECK(channel_stack != nullptr);
     ChannelData* chand = static_cast<ChannelData*>(
-        grpc_channel_stack_element((*channel)->channel_stack(), 0)
-            ->channel_data);
+        grpc_channel_stack_element(channel_stack, 0)->channel_data);
     // Set up CQs.
     size_t cq_idx;
     for (cq_idx = 0; cq_idx < cqs_.size(); cq_idx++) {
@@ -1135,7 +1134,7 @@ std::vector<RefCountedPtr<Channel>> Server::GetChannelsLocked() const {
   std::vector<RefCountedPtr<Channel>> channels;
   channels.reserve(channels_.size());
   for (const ChannelData* chand : channels_) {
-    channels.push_back(chand->channel()->Ref());
+    channels.push_back(chand->channel()->RefAsSubclass<Channel>());
   }
   return channels;
 }
@@ -1342,7 +1341,7 @@ class Server::ChannelData::ConnectivityWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit ConnectivityWatcher(ChannelData* chand)
-      : chand_(chand), channel_(chand_->channel_->Ref()) {}
+      : chand_(chand), channel_(chand_->channel_->RefAsSubclass<Channel>()) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -1379,7 +1378,7 @@ Server::ChannelData::~ChannelData() {
 }
 
 void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
-                                        OrphanablePtr<Channel> channel,
+                                        RefCountedPtr<Channel> channel,
                                         size_t cq_idx, Transport* transport,
                                         intptr_t channelz_socket_uuid) {
   server_ = std::move(server);
@@ -1451,7 +1450,7 @@ void Server::ChannelData::AcceptStream(void* arg, Transport* /*transport*/,
   auto* chand = static_cast<Server::ChannelData*>(arg);
   // create a call
   grpc_call_create_args args;
-  args.channel = chand->channel_->Ref();
+  args.channel = chand->channel_->RefAsSubclass<Channel>();
   args.server = chand->server_.get();
   args.parent = nullptr;
   args.propagation_mask = 0;

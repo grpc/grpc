@@ -32,7 +32,6 @@
 #include "src/core/client_channel/retry_throttle.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
@@ -120,7 +119,6 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) ? "CallAttempt"
                                                            : nullptr),
       calld_(calld),
-      batch_payload_(calld->call_context_),
       started_send_initial_metadata_(false),
       completed_send_initial_metadata_(false),
       started_send_trailing_metadata_(false),
@@ -137,9 +135,8 @@ RetryFilter::LegacyCallData::CallAttempt::CallAttempt(
         lb_call_committed_ = true;
         if (calld_->retry_committed_) {
           auto* service_config_call_data =
-              static_cast<ClientChannelServiceConfigCallData*>(
-                  calld_->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-                      .value);
+              DownCast<ClientChannelServiceConfigCallData*>(
+                  calld_->arena_->GetContext<ServiceConfigCallData>());
           service_config_call_data->Commit();
         }
       },
@@ -1545,7 +1542,7 @@ RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
                                             const grpc_call_element_args& args)
     : chand_(chand),
       retry_throttle_data_(chand->retry_throttle_data()),
-      retry_policy_(chand->GetRetryPolicy(args.context)),
+      retry_policy_(chand->GetRetryPolicy(args.arena)),
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(retry_policy_ == nullptr
@@ -1563,7 +1560,6 @@ RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
       arena_(args.arena),
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
-      call_context_(args.context),
       call_stack_destruction_barrier_(
           arena_->New<CallStackDestructionBarrier>()),
       pending_send_initial_metadata_(false),
@@ -1685,8 +1681,8 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
       }
       PendingBatchClear(pending);
       auto* service_config_call_data =
-          static_cast<ClientChannelServiceConfigCallData*>(
-              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+          DownCast<ClientChannelServiceConfigCallData*>(
+              arena_->GetContext<ServiceConfigCallData>());
       committed_call_ = CreateLoadBalancedCall(
           [service_config_call_data]() { service_config_call_data->Commit(); },
           /*is_transparent_retry=*/false);
@@ -1715,9 +1711,9 @@ void RetryFilter::LegacyCallData::StartTransportStreamOpBatch(
 OrphanablePtr<ClientChannelFilter::FilterBasedLoadBalancedCall>
 RetryFilter::LegacyCallData::CreateLoadBalancedCall(
     absl::AnyInvocable<void()> on_commit, bool is_transparent_retry) {
-  grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
-                                 path_,        /*start_time=*/0, deadline_,
-                                 arena_,       call_combiner_};
+  grpc_call_element_args args = {owning_call_,     nullptr,   path_,
+                                 /*start_time=*/0, deadline_, arena_,
+                                 call_combiner_};
   return chand_->client_channel()->CreateLoadBalancedCall(
       args, pollent_,
       // This callback holds a ref to the CallStackDestructionBarrier
@@ -1976,8 +1972,8 @@ void RetryFilter::LegacyCallData::RetryCommit(CallAttempt* call_attempt) {
     // problem anymore.
     if (call_attempt->lb_call_committed()) {
       auto* service_config_call_data =
-          static_cast<ClientChannelServiceConfigCallData*>(
-              call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+          DownCast<ClientChannelServiceConfigCallData*>(
+              arena_->GetContext<ServiceConfigCallData>());
       service_config_call_data->Commit();
     }
     // Free cached send ops.

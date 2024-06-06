@@ -24,6 +24,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "metadata_exchange.h"
 #include "python_observability_context.h"
 
 #include <grpc/support/time.h>
@@ -60,7 +61,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordSendCompressedMessage(
         const grpc_core::SliceBuffer& /*send_compressed_message*/) override {}
     void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /*recv_initial_metadata*/) override {}
+        grpc_metadata_batch* /*recv_initial_metadata*/) override;
     void RecordReceivedMessage(
         const grpc_core::SliceBuffer& /*recv_message*/) override;
     void RecordReceivedDecompressedMessage(
@@ -73,9 +74,8 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
     std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
-    void SetOptionalLabel(OptionalLabelKey /*key*/,
-                          grpc_core::RefCountedStringValue /*value*/) override {
-    }
+    void SetOptionalLabel(OptionalLabelKey key,
+                          grpc_core::RefCountedStringValue value) override;
 
    private:
     // Maximum size of trace context is sent on the wire.
@@ -91,13 +91,19 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     uint64_t sent_message_count_ = 0;
     // End status code
     absl::StatusCode status_code_;
+    // Avoid std::map to avoid per-call allocations.
+    std::array<grpc_core::RefCountedStringValue,
+               static_cast<size_t>(OptionalLabelKey::kSize)>
+        optional_labels_array_;
+    std::vector<Label> labels_from_peer_;
+    bool is_trailers_only_ = false;
   };
 
-  explicit PythonOpenCensusCallTracer(const char* method, const char* target,
-                                      const char* trace_id,
-                                      const char* parent_span_id,
-                                      bool tracing_enabled,
-                                      bool registered_method);
+  explicit PythonOpenCensusCallTracer(
+      const char* method, const char* target, const char* trace_id,
+      const char* parent_span_id, const char* identifier,
+      const std::vector<Label>& exchange_labels, bool tracing_enabled,
+      bool add_csm_optional_labels, bool registered_method);
   ~PythonOpenCensusCallTracer() override;
 
   std::string TraceId() override {
@@ -128,8 +134,11 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
   absl::string_view target_;
   PythonCensusContext context_;
   bool tracing_enabled_;
-  const bool registered_method_;
+  bool add_csm_optional_labels_;
   mutable grpc_core::Mutex mu_;
+  PythonLabelsInjector labels_injector_;
+  std::string identifier_;
+  const bool registered_method_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Transparent retries per call

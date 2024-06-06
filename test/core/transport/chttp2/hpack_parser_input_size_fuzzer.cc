@@ -82,9 +82,7 @@ bool IsStreamError(const absl::Status& status) {
 
 absl::StatusOr<std::string> TestVector(grpc_slice_split_mode mode,
                                        Slice input) {
-  MemoryAllocator memory_allocator = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  auto arena = MakeScopedArena(1024, &memory_allocator);
+  auto arena = SimpleArenaAllocator()->MakeArena();
   ExecCtx exec_ctx;
   grpc_slice* slices;
   size_t nslices;

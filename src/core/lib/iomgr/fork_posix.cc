@@ -28,9 +28,10 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -60,24 +61,21 @@ void grpc_prefork() {
   }
   grpc_core::ExecCtx exec_ctx;
   if (!grpc_core::Fork::Enabled()) {
-    gpr_log(GPR_ERROR,
-            "Fork support not enabled; try running with the "
-            "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
+    LOG(ERROR) << "Fork support not enabled; try running with the "
+                  "environment variable GRPC_ENABLE_FORK_SUPPORT=1";
     return;
   }
   const char* poll_strategy_name = grpc_get_poll_strategy_name();
   if (poll_strategy_name == nullptr ||
       (strcmp(poll_strategy_name, "epoll1") != 0 &&
        strcmp(poll_strategy_name, "poll") != 0)) {
-    gpr_log(GPR_INFO,
-            "Fork support is only compatible with the epoll1 and poll polling "
-            "strategies");
+    LOG(INFO) << "Fork support is only compatible with the epoll1 and poll "
+                 "polling strategies";
     return;
   }
   if (!grpc_core::Fork::BlockExecCtx()) {
-    gpr_log(GPR_INFO,
-            "Other threads are currently calling into gRPC, skipping fork() "
-            "handlers");
+    LOG(INFO) << "Other threads are currently calling into gRPC, skipping "
+                 "fork() handlers";
     return;
   }
   grpc_timer_manager_set_threading(false);

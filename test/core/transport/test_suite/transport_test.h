@@ -42,7 +42,7 @@ class TransportTest : public YodelTest {
   TransportTest(const TransportFixture& fixture,
                 const fuzzing_event_engine::Actions& actions,
                 absl::BitGenRef rng)
-      : YodelTest(actions, rng), transport_pair_(fixture(event_engine())) {}
+      : YodelTest(actions, rng), fixture_(std::move(fixture)) {}
 
   void SetServerCallDestination();
   CallInitiator CreateCall(ClientMetadataHandle client_initial_metadata);
@@ -60,6 +60,8 @@ class TransportTest : public YodelTest {
     std::queue<CallHandler> handlers_;
   };
 
+  void InitTest() override { transport_pair_ = fixture_(event_engine()); }
+
   void Shutdown() override {
     transport_pair_.client.reset();
     transport_pair_.server.reset();
@@ -67,6 +69,7 @@ class TransportTest : public YodelTest {
 
   RefCountedPtr<ServerCallDestination> server_call_destination_ =
       MakeRefCounted<ServerCallDestination>();
+  const TransportFixture& fixture_;
   ClientAndServerTransportPair transport_pair_;
 };
 

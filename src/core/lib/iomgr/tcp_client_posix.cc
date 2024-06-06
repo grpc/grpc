@@ -199,8 +199,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (!error.ok()) {
-    error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kOsError,
-                               "Timeout occurred");
+    error = grpc_core::AddMessagePrefix("Timeout occurred", error);
     goto finish;
   }
 
@@ -281,8 +280,6 @@ finish:
         absl::StrCat("Failed to connect to remote host: ", str);
     error = grpc_error_set_str(
         error, grpc_core::StatusStrProperty::kDescription, description);
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kTargetAddress, addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -347,7 +344,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     return 0;
   }
 
-  std::string name = absl::StrCat("tcp-client:", addr_uri.value());
+  std::string name = absl::StrCat("tcp-client:", *addr_uri);
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
   int64_t connection_id = 0;
   if (connect_errno == EWOULDBLOCK || connect_errno == EINPROGRESS) {
@@ -358,7 +355,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (err >= 0) {
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
-    *ep = grpc_tcp_client_create_from_fd(fdobj, options, addr_uri.value());
+    *ep = grpc_tcp_client_create_from_fd(fdobj, options, *addr_uri);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
@@ -366,8 +363,6 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     grpc_error_handle error = GRPC_OS_ERROR(connect_errno, "connect");
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kTargetAddress, addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;

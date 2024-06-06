@@ -460,11 +460,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       if (error.ok() && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
-        // TODO(ctiller): It is currently necessary to shutdown endpoints
-        // before destroying them, even if we know that there are no
-        // pending read/write callbacks.  This should be fixed, at which
-        // point this can be removed.
-        grpc_endpoint_shutdown(args->endpoint, absl::OkStatus());
         grpc_endpoint_destroy(args->endpoint);
         grpc_slice_buffer_destroy(args->read_buffer);
         gpr_free(args->read_buffer);
@@ -517,7 +512,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           }
           grpc_chttp2_transport_start_reading(
               transport.get(), args->read_buffer, &self->on_receive_settings_,
-              on_close);
+              nullptr, on_close);
           self->timer_handle_ = self->connection_->event_engine_->RunAfter(
               self->deadline_ - Timestamp::Now(),
               [self = self->Ref()]() mutable {
@@ -645,7 +640,6 @@ void Chttp2ServerListener::ActiveConnection::Start(
       // owning Chttp2ServerListener and all associated ActiveConnections have
       // been orphaned. The generated endpoints need to be shutdown here to
       // ensure the tcp connections are closed appropriately.
-      grpc_endpoint_shutdown(endpoint, absl::OkStatus());
       grpc_endpoint_destroy(endpoint);
       return;
     }
@@ -856,36 +850,30 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     MutexLock lock(&self->mu_);
     connection_manager = self->connection_manager_;
   }
-  auto endpoint_cleanup = [&](grpc_error_handle error) {
-    grpc_endpoint_shutdown(tcp, error);
+  auto endpoint_cleanup = [&]() {
     grpc_endpoint_destroy(tcp);
     gpr_free(acceptor);
   };
   if (!self->connection_quota_->AllowIncomingConnection(
           self->memory_quota_, grpc_endpoint_get_peer(tcp))) {
-    grpc_error_handle error = GRPC_ERROR_CREATE(
-        "Rejected incoming connection because configured connection quota "
-        "limits have been exceeded.");
-    endpoint_cleanup(error);
+    endpoint_cleanup();
     return;
   }
   if (self->config_fetcher_ != nullptr) {
     if (connection_manager == nullptr) {
-      grpc_error_handle error = GRPC_ERROR_CREATE(
-          "No ConnectionManager configured. Closing connection.");
-      endpoint_cleanup(error);
+      endpoint_cleanup();
       return;
     }
     absl::StatusOr<ChannelArgs> args_result =
         connection_manager->UpdateChannelArgsForConnection(args, tcp);
     if (!args_result.ok()) {
-      endpoint_cleanup(GRPC_ERROR_CREATE(args_result.status().ToString()));
+      endpoint_cleanup();
       return;
     }
     grpc_error_handle error;
     args = self->args_modifier_(*args_result, &error);
     if (!error.ok()) {
-      endpoint_cleanup(error);
+      endpoint_cleanup();
       return;
     }
   }
@@ -915,7 +903,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     }
   }
   if (connection != nullptr) {
-    endpoint_cleanup(absl::OkStatus());
+    endpoint_cleanup();
   } else {
     connection_ref->Start(std::move(listener_ref), tcp, args);
   }
@@ -1177,16 +1165,17 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
       grpc_fd_create(fd, name.c_str(), true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(server_args),
       name);
+  for (grpc_pollset* pollset : core_server->pollsets()) {
+    grpc_endpoint_add_to_pollset(server_endpoint, pollset);
+  }
   grpc_core::Transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false  // is_client
   );
   grpc_error_handle error =
       core_server->SetupTransport(transport, nullptr, server_args, nullptr);
   if (error.ok()) {
-    for (grpc_pollset* pollset : core_server->pollsets()) {
-      grpc_endpoint_add_to_pollset(server_endpoint, pollset);
-    }
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                        nullptr);
   } else {
     LOG(ERROR) << "Failed to create channel: "
                << grpc_core::StatusToString(error);

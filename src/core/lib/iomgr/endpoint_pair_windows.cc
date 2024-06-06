@@ -26,8 +26,7 @@
 #include <string.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -67,13 +66,13 @@ static void create_sockets(SOCKET sv[2]) {
   closesocket(lst_sock);
   grpc_error_handle error = grpc_tcp_prepare_socket(cli_sock);
   if (!error.ok()) {
-    gpr_log(GPR_INFO, "Prepare cli_sock failed with error: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(INFO) << "Prepare cli_sock failed with error: "
+              << grpc_core::StatusToString(error);
   }
   error = grpc_tcp_prepare_socket(svr_sock);
   if (!error.ok()) {
-    gpr_log(GPR_INFO, "Prepare svr_sock failed with error: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(INFO) << "Prepare svr_sock failed with error: "
+              << grpc_core::StatusToString(error);
   }
 
   sv[1] = cli_sock;

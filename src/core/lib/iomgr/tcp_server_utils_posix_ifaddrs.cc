@@ -35,7 +35,6 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -151,14 +150,14 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     if (!addr_str.ok()) {
       return GRPC_ERROR_CREATE(addr_str.status().ToString());
     }
-    gpr_log(GPR_DEBUG,
-            "Adding local addr from interface %s flags 0x%x to server: %s",
-            ifa_name, ifa_it->ifa_flags, addr_str->c_str());
+    VLOG(2) << absl::StrFormat(
+        "Adding local addr from interface %s flags 0x%x to server: %s",
+        ifa_name, ifa_it->ifa_flags, addr_str->c_str());
     // We could have multiple interfaces with the same address (e.g., bonding),
     // so look for duplicates.
     if (find_listener_with_addr(s, &addr) != nullptr) {
-      gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s",
-              addr_str->c_str(), ifa_name);
+      VLOG(2) << "Skipping duplicate addr " << *addr_str << " on interface "
+              << ifa_name;
       continue;
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,

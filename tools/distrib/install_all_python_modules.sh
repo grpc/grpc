@@ -28,7 +28,7 @@ set -e
 BASEDIR=$(dirname "$0")
 BASEDIR=$(realpath "$BASEDIR")/../..
 
-PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_tests"
+PACKAGES="grpcio_channelz  grpcio_csds  grpcio_admin grpcio_health_checking  grpcio_reflection  grpcio_status  grpcio_testing grpcio_csm_observability grpcio_tests"
 
 (cd "$BASEDIR";
   pip install --upgrade "cython<3.0.0rc1";

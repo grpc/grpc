@@ -111,7 +111,7 @@ MATCHER(StatusCodeEq, "") {
 class EventEngineDNSTest : public EventEngineTest {
  protected:
   static void SetUpTestSuite() {
-#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
+#if !GRPC_IOS_EVENT_ENGINE_CLIENT
     std::string test_records_path = kDNSTestRecordGroupsYamlPath;
     std::string dns_server_path = kDNSServerRelPath;
     std::string dns_resolver_path = kDNSResolverRelPath;
@@ -182,7 +182,7 @@ class EventEngineDNSTest : public EventEngineTest {
   }
 
   static void TearDownTestSuite() {
-#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
+#if !GRPC_IOS_EVENT_ENGINE_CLIENT
     dns_server_.server_process->Interrupt();
     dns_server_.server_process->Join();
     delete dns_server_.server_process;
@@ -233,7 +233,7 @@ class EventEngineDNSTest : public EventEngineTest {
 EventEngineDNSTest::DNSServer EventEngineDNSTest::dns_server_;
 
 // TODO(hork): implement XFAIL for resolvers that don't support TXT or SRV
-#ifndef GRPC_IOS_EVENT_ENGINE_CLIENT
+#if !GRPC_IOS_EVENT_ENGINE_CLIENT
 
 TEST_F(EventEngineDNSTest, QueryNXHostname) {
   SKIP_TEST_FOR_NATIVE_DNS_RESOLVER();
@@ -434,7 +434,7 @@ TEST_F(EventEngineDNSTest, LocalHost) {
   auto dns_resolver = CreateDNSResolverWithoutSpecifyingServer();
   dns_resolver->LookupHostname(
       [this](auto result) {
-#ifdef GRPC_IOS_EVENT_ENGINE_CLIENT
+#if GRPC_IOS_EVENT_ENGINE_CLIENT
         EXPECT_SUCCESS();
 #else
         EXPECT_TRUE(result.ok());

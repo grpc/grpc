@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/http/httpcli.h"
+#include "src/core/util/http_client/httpcli.h"
 
 #include <string.h>
 #include <sys/socket.h>

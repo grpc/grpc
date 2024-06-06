@@ -43,8 +43,6 @@ bool squelch = true;
 // Turning this on will fail the leak check.
 bool leak_check = false;
 
-static void discard_write(grpc_slice /*slice*/) {}
-
 static void dont_log(gpr_log_func_args* /*args*/) {}
 
 struct handshake_state {
@@ -110,6 +108,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       handshake_mgr->Shutdown(
           absl::DeadlineExceededError("handshake did not fail as expected"));
     }
+
     sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);
     grpc_core::ExecCtx::Get()->Flush();

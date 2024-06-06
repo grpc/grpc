@@ -1,0 +1,4 @@
+graft src/python/grpcio_csm_observability/grpc_csm_observability.egg-info
+graft grpc_csm_observability
+include grpc_version.py
+include README.rst

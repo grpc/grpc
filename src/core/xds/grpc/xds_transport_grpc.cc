@@ -253,12 +253,12 @@ class GrpcXdsTransportFactory::GrpcXdsTransport::StateWatcher final
 
 namespace {
 
-OrphanablePtr<Channel> CreateXdsChannel(
+RefCountedPtr<Channel> CreateXdsChannel(
     const ChannelArgs& args, const GrpcXdsBootstrap::GrpcXdsServer& server) {
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());
-  return OrphanablePtr<Channel>(Channel::FromC(grpc_channel_create(
+  return RefCountedPtr<Channel>(Channel::FromC(grpc_channel_create(
       server.server_uri().c_str(), channel_creds.get(), args.ToC().get())));
 }
 

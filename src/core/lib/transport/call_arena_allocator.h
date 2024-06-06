@@ -28,7 +28,7 @@
 
 namespace grpc_core {
 
-class CallSizeEstimator {
+class CallSizeEstimator final {
  public:
   explicit CallSizeEstimator(size_t initial_estimate)
       : call_size_estimate_(initial_estimate) {}
@@ -52,19 +52,21 @@ class CallSizeEstimator {
   std::atomic<size_t> call_size_estimate_;
 };
 
-class CallArenaAllocator : public RefCounted<CallArenaAllocator> {
+class CallArenaAllocator final : public ArenaFactory {
  public:
   CallArenaAllocator(MemoryAllocator allocator, size_t initial_size)
-      : allocator_(std::move(allocator)), call_size_estimator_(initial_size) {}
+      : ArenaFactory(std::move(allocator)),
+        call_size_estimator_(initial_size) {}
 
-  Arena* MakeArena() {
-    return Arena::Create(call_size_estimator_.CallSizeEstimate(), &allocator_);
+  RefCountedPtr<Arena> MakeArena() override {
+    return Arena::Create(call_size_estimator_.CallSizeEstimate(), Ref());
   }
 
-  void Destroy(Arena* arena) { arena->Destroy(); }
+  void FinalizeArena(Arena* arena) override {
+    call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
+  }
 
  private:
-  MemoryAllocator allocator_;
   CallSizeEstimator call_size_estimator_;
 };
 

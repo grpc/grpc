@@ -26,17 +26,17 @@ check_key () {
     build=$(grep "^$key =" < $buildfile | awk -F\" '{print $2}')
     yaml=$(grep "^ *${key}:" < $yamlfile | head -1 | awk '{print $2}')
 
-    if [ x"$build" = x ] ; then
+    if [ "$build" = "" ] ; then
         echo "$key not defined in $buildfile"
         status=1
     fi
 
-    if [ x"$yaml" = x ] ; then
+    if [ "$yaml" = "" ] ; then
         echo "$key not defined in $yamlfile"
         status=1
     fi
 
-    if [ x"$build" != x"$yaml" ] ; then
+    if [ "$build" != "$yaml" ] ; then
         echo "$key mismatch between $buildfile ($build) and $yamlfile ($yaml)"
         status=1
     fi

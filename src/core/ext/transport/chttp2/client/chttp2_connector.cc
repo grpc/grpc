@@ -96,12 +96,6 @@ void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
 }
 }  // namespace
 
-Chttp2Connector::~Chttp2Connector() {
-  if (endpoint_ != nullptr) {
-    grpc_endpoint_destroy(endpoint_);
-  }
-}
-
 void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
   {
@@ -110,7 +104,6 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     args_ = args;
     result_ = result;
     notify_ = notify;
-    CHECK_EQ(endpoint_, nullptr);
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
   absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
@@ -153,11 +146,6 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         // We were shut down after handshaking completed successfully, so
         // destroy the endpoint here.
         if (args->endpoint != nullptr) {
-          // TODO(ctiller): It is currently necessary to shutdown endpoints
-          // before destroying them, even if we know that there are no
-          // pending read/write callbacks.  This should be fixed, at which
-          // point this can be removed.
-          grpc_endpoint_shutdown(args->endpoint, error);
           grpc_endpoint_destroy(args->endpoint);
           grpc_slice_buffer_destroy(args->read_buffer);
           gpr_free(args->read_buffer);
@@ -172,13 +160,12 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
       self->result_->socket_node =
           grpc_chttp2_transport_get_socket_node(self->result_->transport);
       self->result_->channel_args = args->args;
-      self->endpoint_ = args->endpoint;
       self->Ref().release();  // Ref held by OnReceiveSettings()
       GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings, self,
                         grpc_schedule_on_exec_ctx);
-      grpc_chttp2_transport_start_reading(self->result_->transport,
-                                          args->read_buffer,
-                                          &self->on_receive_settings_, nullptr);
+      grpc_chttp2_transport_start_reading(
+          self->result_->transport, args->read_buffer,
+          &self->on_receive_settings_, self->args_.interested_parties, nullptr);
       self->timer_handle_ = self->event_engine_->RunAfter(
           self->args_.deadline - Timestamp::Now(),
           [self = self->RefAsSubclass<Chttp2Connector>()] {
@@ -203,8 +190,6 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
   {
     MutexLock lock(&self->mu_);
     if (!self->notify_error_.has_value()) {
-      grpc_endpoint_delete_from_pollset_set(self->endpoint_,
-                                            self->args_.interested_parties);
       if (!error.ok()) {
         // Transport got an error while waiting on SETTINGS frame.
         self->result_->Reset();
@@ -233,7 +218,6 @@ void Chttp2Connector::OnTimeout() {
   if (!notify_error_.has_value()) {
     // The transport did not receive the settings frame in time. Destroy the
     // transport.
-    grpc_endpoint_delete_from_pollset_set(endpoint_, args_.interested_parties);
     result_->Reset();
     MaybeNotify(GRPC_ERROR_CREATE(
         "connection attempt timed out before receiving SETTINGS frame"));
@@ -248,9 +232,6 @@ void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
   if (notify_error_.has_value()) {
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());
     // Clear state for a new Connect().
-    // Clear out the endpoint_, since it is the responsibility of
-    // the transport to shut it down.
-    endpoint_ = nullptr;
     notify_error_.reset();
   } else {
     notify_error_ = error;
@@ -309,7 +290,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-absl::StatusOr<OrphanablePtr<Channel>> CreateChannel(const char* target,
+absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
                                                      const ChannelArgs& args) {
   if (target == nullptr) {
     LOG(ERROR) << "cannot create channel with NULL target name";
@@ -409,7 +390,8 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
   auto channel = grpc_core::ChannelCreate(
       target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   if (channel.ok()) {
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
+                                        nullptr);
     grpc_core::ExecCtx::Get()->Flush();
     return channel->release()->c_ptr();
   } else {

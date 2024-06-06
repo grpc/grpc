@@ -125,8 +125,7 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                       .get_pointer(HttpPathMetadata())
                       ->as_string_view(),
                   "/demo.Service/Step");
-        auto handler =
-            unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack();
+        auto handler = unstarted_call_handler.StartWithEmptyFilterStack();
         handler.SpawnInfallible("test-io", [&on_done, handler]() mutable {
           return Seq(
               handler.PullClientInitialMetadata(),

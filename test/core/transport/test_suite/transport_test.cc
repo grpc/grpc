@@ -34,7 +34,7 @@ CallInitiator TransportTest::CreateCall(
   call.handler.SpawnInfallible(
       "start-call", [this, handler = call.handler]() mutable {
         transport_pair_.client->client_transport()->StartCall(
-            handler.V2HackToStartCallWithoutACallFilterStack());
+            handler.StartWithEmptyFilterStack());
         return Empty{};
       });
   return std::move(call.initiator);
@@ -54,16 +54,14 @@ CallHandler TransportTest::TickUntilServerCall() {
 
 void TransportTest::ServerCallDestination::StartCall(
     UnstartedCallHandler handler) {
-  handlers_.push(handler.V2HackToStartCallWithoutACallFilterStack());
+  handlers_.push(handler.StartWithEmptyFilterStack());
 }
 
 absl::optional<CallHandler> TransportTest::ServerCallDestination::PopHandler() {
-  if (!handlers_.empty()) {
-    auto handler = std::move(handlers_.front());
-    handlers_.pop();
-    return handler;
-  }
-  return absl::nullopt;
+  if (handlers_.empty()) return absl::nullopt;
+  auto handler = std::move(handlers_.front());
+  handlers_.pop();
+  return handler;
 }
 
 }  // namespace grpc_core

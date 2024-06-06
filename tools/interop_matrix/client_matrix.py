@@ -132,8 +132,8 @@ LANG_RELEASE_MATRIX = {
             ("v1.60.0", ReleaseInfo()),
             ("v1.61.0", ReleaseInfo()),
             ("v1.62.0", ReleaseInfo()),
-            ("v1.63.0", ReleaseInfo()),
-            ("v1.64.0", ReleaseInfo()),
+            ("v1.63.1", ReleaseInfo()),
+            ("v1.64.1", ReleaseInfo()),
         ]
     ),
     "go": OrderedDict(
@@ -791,7 +791,7 @@ LANG_RELEASE_MATRIX = {
                 ),
             ),
             (
-                "v1.64.0",
+                "v1.64.1",
                 ReleaseInfo(
                     runtimes=["python"], testcases_file="python__master"
                 ),

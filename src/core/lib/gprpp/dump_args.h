@@ -36,15 +36,15 @@ class DumpArgs {
   template <typename... Args>
   explicit DumpArgs(const char* arg_string, const Args&... args)
       : arg_string_(arg_string) {
-    do_these_things(
-        {AddDumper([a = &args](std::ostream& os) { os << *a; })...});
+    do_these_things({AddDumper(&args)...});
   }
 
   friend std::ostream& operator<<(std::ostream& out, const DumpArgs& args);
 
  private:
-  int AddDumper(absl::AnyInvocable<void(std::ostream&) const> dumper) {
-    arg_dumpers_.push_back(std::move(dumper));
+  template <typename T>
+  int AddDumper(T* p) {
+    arg_dumpers_.push_back([p](std::ostream& os) { os << *p; });
     return 0;
   }
 

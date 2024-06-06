@@ -29,6 +29,7 @@ CC_FILES=[
     'grpc_root/src/core/lib/gprpp/posix/env.cc',
     'grpc_root/src/core/lib/gprpp/posix/stat.cc',
     'grpc_root/src/core/lib/gprpp/posix/thd.cc',
+    'grpc_root/src/core/lib/gprpp/ref_counted_string.cc',
     'grpc_root/src/core/lib/gprpp/strerror.cc',
     'grpc_root/src/core/lib/gprpp/tchar.cc',
     'grpc_root/src/core/lib/gprpp/time_util.cc',

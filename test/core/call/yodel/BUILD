@@ -41,8 +41,10 @@ grpc_cc_library(
     ],
     visibility = ["//test:__subpackages__"],
     deps = [
+        "//:config",
         "//:debug_location",
         "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:iomgr_timer",
         "//:promise",
         "//src/core:call_arena_allocator",
@@ -51,6 +53,7 @@ grpc_cc_library(
         "//src/core:metadata",
         "//src/core:promise_factory",
         "//src/core:resource_quota",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],

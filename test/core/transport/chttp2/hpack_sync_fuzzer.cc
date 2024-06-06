@@ -117,10 +117,6 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 
   // STAGE 2: Decode the buffer (encode_output) into a list of headers
   HPackParser parser;
-  auto memory_allocator =
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-          "test-allocator");
-  auto arena = MakeScopedArena(1024, &memory_allocator);
   ExecCtx exec_ctx;
   grpc_metadata_batch read_metadata;
   parser.BeginFrame(

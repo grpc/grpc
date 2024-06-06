@@ -104,6 +104,7 @@ let package = Package(
         "src/crypto/dh_extra/dh_asn1.c",
         "src/crypto/dh_extra/params.c",
         "src/crypto/digest_extra/digest_extra.c",
+        "src/crypto/dilithium/dilithium.c",
         "src/crypto/dsa/dsa.c",
         "src/crypto/dsa/dsa_asn1.c",
         "src/crypto/ec_extra/ec_asn1.c",
