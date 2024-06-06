@@ -363,7 +363,7 @@ class YodelTest : public ::testing::Test {
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
     return MakeCallPair(std::move(client_initial_metadata),
                         state_->event_engine.get(),
-                        state_->call_arena_allocator->MakeArena(), nullptr);
+                        state_->call_arena_allocator->MakeArena());
   }
 
   void WaitForAllPendingWork();
@@ -390,7 +390,6 @@ class YodelTest : public ::testing::Test {
  private:
   class WatchDog;
   struct State {
-    grpc::testing::TestGrpcScope grpc_scope;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine;
     RefCountedPtr<CallArenaAllocator> call_arena_allocator;

@@ -78,24 +78,27 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
             frame.ToString().c_str());
   }
-  return TrySeq(If(
-                    frame.message.has_value(),
-                    [&call_initiator, &frame]() mutable {
-                      return call_initiator.PushMessage(
-                          std::move(frame.message->message));
-                    },
-                    []() -> StatusFlag { return Success{}; }),
-                [this, call_initiator, end_of_stream = frame.end_of_stream,
-                 stream_id]() mutable -> StatusFlag {
-                  if (end_of_stream) {
-                    call_initiator.FinishSends();
-                    // We have received end_of_stream. It is now safe to remove
-                    // the call from the stream map.
-                    MutexLock lock(&mu_);
-                    stream_map_.erase(stream_id);
-                  }
-                  return Success{};
-                });
+  return Seq(If(
+                 frame.message.has_value(),
+                 [&call_initiator, &frame]() mutable {
+                   return call_initiator.PushMessage(
+                       std::move(frame.message->message));
+                 },
+                 []() -> StatusFlag { return Success{}; }),
+             [this, call_initiator, end_of_stream = frame.end_of_stream,
+              stream_id](StatusFlag status) mutable -> StatusFlag {
+               if (!status.ok() && grpc_chaotic_good_trace.enabled()) {
+                 gpr_log(GPR_INFO, "CHAOTIC_GOOD: Failed PushFragmentIntoCall");
+               }
+               if (end_of_stream || !status.ok()) {
+                 call_initiator.FinishSends();
+                 // We have received end_of_stream. It is now safe to remove
+                 // the call from the stream map.
+                 MutexLock lock(&mu_);
+                 stream_map_.erase(stream_id);
+               }
+               return Success{};
+             });
 }
 
 auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
@@ -242,7 +245,7 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
     auto call = MakeCallPair(std::move(fragment_frame.headers),
-                             event_engine_.get(), std::move(arena), nullptr);
+                             event_engine_.get(), std::move(arena));
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {
@@ -340,13 +343,14 @@ auto ChaoticGoodServerTransport::TransportReadLoop(
 
 auto ChaoticGoodServerTransport::OnTransportActivityDone(
     absl::string_view activity) {
-  return [this, activity](absl::Status status) {
+  return [self = RefAsSubclass<ChaoticGoodServerTransport>(),
+          activity](absl::Status status) {
     if (grpc_chaotic_good_trace.enabled()) {
       gpr_log(GPR_INFO,
               "CHAOTIC_GOOD: OnTransportActivityDone: activity=%s status=%s",
               std::string(activity).c_str(), status.ToString().c_str());
     }
-    AbortWithError();
+    self->AbortWithError();
   };
 }
 

@@ -245,6 +245,15 @@ struct UnrefCallDtor {
   }
 };
 
+// Call the Destroy method on the object. This is useful when the object
+// needs precise control of how it's deallocated.
+struct UnrefCallDestroy {
+  template <typename T>
+  void operator()(T* p) const {
+    p->Destroy();
+  }
+};
+
 // A base class for reference-counted objects.
 // New objects should be created via new and start with a refcount of 1.
 // When the refcount reaches 0, executes the specified UnrefBehavior.

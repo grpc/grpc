@@ -258,6 +258,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void PerformOp(grpc_transport_op* op) override;
 
   grpc_endpoint* ep;
+  grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
+
   grpc_core::Slice peer_string;
 
   grpc_core::MemoryOwner memory_owner;
@@ -267,6 +269,14 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
   absl::BitGen bitgen;
+
+  // On the client side, when the transport is first created, the
+  // endpoint will already have been added to this pollset_set, and it
+  // needs to stay there until the notify_on_receive_settings callback
+  // is invoked.  After that, the polling will be coordinated via the
+  // bind_pollset_set transport op, sent by the subchannel when it
+  // starts a connectivity watch.
+  grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
 
   grpc_closure* notify_on_receive_settings = nullptr;
   grpc_closure* notify_on_close = nullptr;
@@ -548,7 +558,6 @@ struct grpc_chttp2_stream {
                      const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
-  void* context = nullptr;
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
   grpc_core::Arena* const arena;

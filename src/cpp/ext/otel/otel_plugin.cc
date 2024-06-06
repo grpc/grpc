@@ -251,9 +251,8 @@ OpenTelemetryPlugin::CallbackMetricReporter::CallbackMetricReporter(
   for (const auto& handle : key->metrics()) {
     const auto& descriptor =
         grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-    GPR_ASSERT(
-        descriptor.instrument_type ==
-        grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+    CHECK(descriptor.instrument_type ==
+          grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
     switch (descriptor.value_type) {
       case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
         auto& callback_gauge_state =
@@ -700,7 +699,7 @@ void OpenTelemetryPlugin::AddCallback(
     for (const auto& handle : callback->metrics()) {
       const auto& descriptor =
           grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-      GPR_ASSERT(
+      CHECK(
           descriptor.instrument_type ==
           grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
       switch (descriptor.value_type) {
@@ -776,7 +775,7 @@ void OpenTelemetryPlugin::RemoveCallback(
     for (const auto& handle : callback->metrics()) {
       const auto& descriptor =
           grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-      GPR_ASSERT(
+      CHECK(
           descriptor.instrument_type ==
           grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
       switch (descriptor.value_type) {
@@ -914,7 +913,7 @@ grpc_core::ServerCallTracer* OpenTelemetryPlugin::GetServerCallTracer(
 }
 
 bool OpenTelemetryPlugin::IsInstrumentEnabled(
-    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) {
+    grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const {
   return !absl::holds_alternative<Disabled>(
       instruments_data_.at(handle.index).instrument);
 }

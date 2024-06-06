@@ -76,24 +76,9 @@ const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
-const char* const description_promise_based_client_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_client_call = "{}";
-const uint8_t required_experiments_promise_based_client_call[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
-const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -131,12 +116,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
-const uint8_t required_experiments_call_v3[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -175,16 +154,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
-    {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call,
-     required_experiments_promise_based_client_call, 2, false, true},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 1, false, false},
+     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
+     false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -210,8 +183,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, false},
 };
 
 }  // namespace grpc_core
@@ -270,24 +241,9 @@ const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
-const char* const description_promise_based_client_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_client_call = "{}";
-const uint8_t required_experiments_promise_based_client_call[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
-const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -325,12 +281,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
-const uint8_t required_experiments_call_v3[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -369,16 +319,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
-    {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call,
-     required_experiments_promise_based_client_call, 2, false, true},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 1, false, false},
+     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
+     false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -404,8 +348,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, false, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, false},
 };
 
 }  // namespace grpc_core
@@ -464,24 +406,9 @@ const char* const additional_constraints_peer_state_based_framing = "{}";
 const char* const description_pick_first_new =
     "New pick_first impl with memory reduction.";
 const char* const additional_constraints_pick_first_new = "{}";
-const char* const description_promise_based_client_call =
-    "If set, use the new gRPC promise based call code when it's appropriate "
-    "(ie when all filters in a stack are promise based)";
-const char* const additional_constraints_promise_based_client_call = "{}";
-const uint8_t required_experiments_promise_based_client_call[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_chaotic_good =
-    "If set, enable the chaotic good load transport (this is mostly here for "
-    "testing)";
-const char* const additional_constraints_chaotic_good = "{}";
-const uint8_t required_experiments_chaotic_good[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_promise_based_inproc_transport =
     "Use promises for the in-process transport.";
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
-const uint8_t required_experiments_promise_based_inproc_transport[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdPromiseBasedClientCall)};
 const char* const description_rstpit =
     "On RST_STREAM on a server, reduce MAX_CONCURRENT_STREAMS for a short "
     "duration";
@@ -519,12 +446,6 @@ const char* const description_work_serializer_dispatch =
 const char* const additional_constraints_work_serializer_dispatch = "{}";
 const uint8_t required_experiments_work_serializer_dispatch[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient)};
-const char* const description_call_v3 = "Promise-based call version 3.";
-const char* const additional_constraints_call_v3 = "{}";
-const uint8_t required_experiments_call_v3[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
-    static_cast<uint8_t>(grpc_core::kExperimentIdWorkSerializerDispatch)};
 }  // namespace
 
 namespace grpc_core {
@@ -563,16 +484,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_peer_state_based_framing, nullptr, 0, false, true},
     {"pick_first_new", description_pick_first_new,
      additional_constraints_pick_first_new, nullptr, 0, true, true},
-    {"promise_based_client_call", description_promise_based_client_call,
-     additional_constraints_promise_based_client_call,
-     required_experiments_promise_based_client_call, 2, false, true},
-    {"chaotic_good", description_chaotic_good,
-     additional_constraints_chaotic_good, required_experiments_chaotic_good, 1,
-     false, true},
     {"promise_based_inproc_transport",
      description_promise_based_inproc_transport,
-     additional_constraints_promise_based_inproc_transport,
-     required_experiments_promise_based_inproc_transport, 1, false, false},
+     additional_constraints_promise_based_inproc_transport, nullptr, 0, false,
+     false},
     {"rstpit", description_rstpit, additional_constraints_rstpit, nullptr, 0,
      false, true},
     {"schedule_cancellation_over_write",
@@ -598,8 +513,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"work_serializer_dispatch", description_work_serializer_dispatch,
      additional_constraints_work_serializer_dispatch,
      required_experiments_work_serializer_dispatch, 1, true, true},
-    {"call_v3", description_call_v3, additional_constraints_call_v3,
-     required_experiments_call_v3, 3, false, false},
 };
 
 }  // namespace grpc_core

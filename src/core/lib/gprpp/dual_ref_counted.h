@@ -339,6 +339,7 @@ class DualRefCounted : public Impl {
       LOG(INFO) << trace_ << ":" << this << " weak_ref " << weak_refs << " -> "
                 << weak_refs + 1 << "; (refs=" << strong_refs << ")";
     }
+    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
 #else
     refs_.fetch_add(MakeRefPair(0, 1), std::memory_order_relaxed);
 #endif
@@ -355,6 +356,7 @@ class DualRefCounted : public Impl {
                 << location.line() << " weak_ref " << weak_refs << " -> "
                 << weak_refs + 1 << " (refs=" << strong_refs << ") " << reason;
     }
+    if (strong_refs == 0) CHECK_NE(weak_refs, 0u);
 #else
     // Use conditionally-important parameters
     (void)location;

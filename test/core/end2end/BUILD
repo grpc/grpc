@@ -147,6 +147,7 @@ grpc_cc_library(
         "//src/core:no_destruct",
         "//src/core:slice",
         "//src/core:time",
+        "//test/core/call:batch_builder",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -343,8 +344,6 @@ grpc_core_end2end_test(name = "disappearing_server")
 grpc_core_end2end_test(name = "empty_batch")
 
 grpc_core_end2end_test(name = "filter_causes_close")
-
-grpc_core_end2end_test(name = "filter_context")
 
 grpc_core_end2end_test(name = "filter_init_fails")
 

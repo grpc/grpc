@@ -20,7 +20,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/if.h"
@@ -41,13 +40,23 @@ namespace grpc_core {
 // The common middle part of a call - a reference is held by each of
 // CallInitiator and CallHandler - which provide interfaces that are appropriate
 // for each side of a call.
-// The spine will ultimately host the pipes, filters, and context for one part
-// of a call: ie top-half client channel, sub channel call, server call.
-// TODO(ctiller): eventually drop this when we don't need to reference into
-// legacy promise calls anymore
-class CallSpineInterface {
+// Hosts context, call filters, and the arena.
+class CallSpine final : public Party {
  public:
-  virtual ~CallSpineInterface() = default;
+  static RefCountedPtr<CallSpine> Create(
+      ClientMetadataHandle client_initial_metadata,
+      grpc_event_engine::experimental::EventEngine* event_engine,
+      RefCountedPtr<Arena> arena) {
+    Arena* arena_ptr = arena.get();
+    return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
+        std::move(client_initial_metadata), event_engine, std::move(arena)));
+  }
+
+  ~CallSpine() override {}
+
+  CallFilters& call_filters() { return call_filters_; }
+  Arena* arena() { return arena_.get(); }
+
   // Add a callback to be called when server trailing metadata is received.
   void OnDone(absl::AnyInvocable<void()> fn) {
     if (on_done_ == nullptr) {
@@ -62,38 +71,70 @@ class CallSpineInterface {
   void CallOnDone() {
     if (on_done_ != nullptr) std::exchange(on_done_, nullptr)();
   }
-  virtual Party& party() = 0;
-  virtual Arena* arena() = 0;
-  virtual void IncrementRefCount() = 0;
-  virtual void Unref() = 0;
 
-  virtual Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
-  PullServerInitialMetadata() = 0;
-  virtual Promise<ServerMetadataHandle> PullServerTrailingMetadata() = 0;
-  virtual Promise<StatusFlag> PushClientToServerMessage(
-      MessageHandle message) = 0;
-  virtual Promise<ValueOrFailure<absl::optional<MessageHandle>>>
-  PullClientToServerMessage() = 0;
-  virtual Promise<StatusFlag> PushServerToClientMessage(
-      MessageHandle message) = 0;
-  virtual Promise<ValueOrFailure<absl::optional<MessageHandle>>>
-  PullServerToClientMessage() = 0;
-  virtual void PushServerTrailingMetadata(ServerMetadataHandle md) = 0;
-  virtual void FinishSends() = 0;
-  virtual Promise<ValueOrFailure<ClientMetadataHandle>>
-  PullClientInitialMetadata() = 0;
-  virtual Promise<StatusFlag> PushServerInitialMetadata(
-      absl::optional<ServerMetadataHandle> md) = 0;
-  virtual Promise<bool> WasCancelled() = 0;
-  virtual ClientMetadata& UnprocessedClientInitialMetadata() = 0;
-  virtual void V2HackToStartCallWithoutACallFilterStack() = 0;
+  auto PullServerInitialMetadata() {
+    return call_filters().PullServerInitialMetadata();
+  }
+
+  auto PullServerTrailingMetadata() {
+    return call_filters().PullServerTrailingMetadata();
+  }
+
+  auto PushClientToServerMessage(MessageHandle message) {
+    return call_filters().PushClientToServerMessage(std::move(message));
+  }
+
+  auto PullClientToServerMessage() {
+    return call_filters().PullClientToServerMessage();
+  }
+
+  auto PushServerToClientMessage(MessageHandle message) {
+    return call_filters().PushServerToClientMessage(std::move(message));
+  }
+
+  auto PullServerToClientMessage() {
+    return call_filters().PullServerToClientMessage();
+  }
+
+  void PushServerTrailingMetadata(ServerMetadataHandle md) {
+    call_filters().PushServerTrailingMetadata(std::move(md));
+  }
+
+  void FinishSends() { call_filters().FinishClientToServerSends(); }
+
+  auto PullClientInitialMetadata() {
+    return call_filters().PullClientInitialMetadata();
+  }
+
+  auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
+    bool has_md = md.has_value();
+    return If(
+        has_md,
+        [this, md = std::move(md)]() mutable {
+          return call_filters().PushServerInitialMetadata(std::move(*md));
+        },
+        [this]() {
+          call_filters().NoServerInitialMetadata();
+          return Immediate<StatusFlag>(Success{});
+        });
+  }
+
+  auto WasCancelled() { return call_filters().WasCancelled(); }
+
+  ClientMetadata& UnprocessedClientInitialMetadata() {
+    return *call_filters().unprocessed_client_initial_metadata();
+  }
+
+  grpc_event_engine::experimental::EventEngine* event_engine() const override {
+    return event_engine_;
+  }
 
   // Wrap a promise so that if it returns failure it automatically cancels
   // the rest of the call.
   // The resulting (returned) promise will resolve to Empty.
   template <typename Promise>
   auto CancelIfFails(Promise promise) {
-    DCHECK(GetContext<Activity>() == &party());
+    DCHECK(GetContext<Activity>() == this);
     using P = promise_detail::PromiseLike<Promise>;
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
@@ -108,7 +149,7 @@ class CallSpineInterface {
   // that detail.
   template <typename PromiseFactory>
   void SpawnInfallible(absl::string_view name, PromiseFactory promise_factory) {
-    party().Spawn(name, std::move(promise_factory), [](Empty) {});
+    Spawn(name, std::move(promise_factory), [](Empty) {});
   }
 
   // Spawn a promise that returns some status-like type; if the status
@@ -124,18 +165,17 @@ class CallSpineInterface {
         std::is_same<bool,
                      decltype(IsStatusOk(std::declval<ResultType>()))>::value,
         "SpawnGuarded promise must return a status-like object");
-    party().Spawn(
-        name, std::move(promise_factory), [this, whence](ResultType r) {
-          if (!IsStatusOk(r)) {
-            if (grpc_trace_promise_primitives.enabled()) {
-              gpr_log(GPR_INFO, "SpawnGuarded sees failure: %s (source: %s:%d)",
-                      r.ToString().c_str(), whence.file(), whence.line());
-            }
-            auto status = StatusCast<ServerMetadataHandle>(std::move(r));
-            status->Set(GrpcCallWasCancelled(), true);
-            PushServerTrailingMetadata(std::move(status));
-          }
-        });
+    Spawn(name, std::move(promise_factory), [this, whence](ResultType r) {
+      if (!IsStatusOk(r)) {
+        if (grpc_trace_promise_primitives.enabled()) {
+          gpr_log(GPR_INFO, "SpawnGuarded sees failure: %s (source: %s:%d)",
+                  r.ToString().c_str(), whence.file(), whence.line());
+        }
+        auto status = StatusCast<ServerMetadataHandle>(std::move(r));
+        status->Set(GrpcCallWasCancelled(), true);
+        PushServerTrailingMetadata(std::move(status));
+      }
+    });
   }
 
   // Wrap a promise so that if the call completes that promise is cancelled.
@@ -156,266 +196,25 @@ class CallSpineInterface {
   }
 
  private:
-  absl::AnyInvocable<void()> on_done_{nullptr};
-};
-
-// Implementation of CallSpine atop the v2 Pipe based arrangement.
-// This implementation will go away in favor of an implementation atop
-// CallFilters by the time v3 lands.
-class PipeBasedCallSpine : public CallSpineInterface {
- public:
-  virtual Pipe<ClientMetadataHandle>& client_initial_metadata() = 0;
-  virtual Pipe<ServerMetadataHandle>& server_initial_metadata() = 0;
-  virtual Pipe<MessageHandle>& client_to_server_messages() = 0;
-  virtual Pipe<MessageHandle>& server_to_client_messages() = 0;
-  virtual Latch<ServerMetadataHandle>& cancel_latch() = 0;
-  virtual Latch<bool>& was_cancelled_latch() = 0;
-
-  Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
-  PullServerInitialMetadata() final {
-    DCHECK(GetContext<Activity>() == &party());
-    return Map(server_initial_metadata().receiver.Next(),
-               [](NextResult<ServerMetadataHandle> md)
-                   -> ValueOrFailure<absl::optional<ServerMetadataHandle>> {
-                 if (!md.has_value()) {
-                   if (md.cancelled()) return Failure{};
-                   return absl::optional<ServerMetadataHandle>();
-                 }
-                 return absl::optional<ServerMetadataHandle>(std::move(*md));
-               });
-  }
-
-  Promise<ServerMetadataHandle> PullServerTrailingMetadata() final {
-    DCHECK(GetContext<Activity>() == &party());
-    return cancel_latch().Wait();
-  }
-
-  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
-  PullServerToClientMessage() final {
-    DCHECK(GetContext<Activity>() == &party());
-    return Map(server_to_client_messages().receiver.Next(), MapNextMessage);
-  }
-
-  Promise<StatusFlag> PushClientToServerMessage(MessageHandle message) final {
-    DCHECK(GetContext<Activity>() == &party());
-    return Map(client_to_server_messages().sender.Push(std::move(message)),
-               [](bool r) { return StatusFlag(r); });
-  }
-
-  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
-  PullClientToServerMessage() final {
-    DCHECK(GetContext<Activity>() == &party());
-    return Map(client_to_server_messages().receiver.Next(), MapNextMessage);
-  }
-
-  Promise<StatusFlag> PushServerToClientMessage(MessageHandle message) final {
-    DCHECK(GetContext<Activity>() == &party());
-    return Map(server_to_client_messages().sender.Push(std::move(message)),
-               [](bool r) { return StatusFlag(r); });
-  }
-
-  void FinishSends() final {
-    DCHECK(GetContext<Activity>() == &party());
-    client_to_server_messages().sender.Close();
-  }
-
-  void PushServerTrailingMetadata(ServerMetadataHandle metadata) final {
-    DCHECK(GetContext<Activity>() == &party());
-    auto& c = cancel_latch();
-    if (c.is_set()) return;
-    const bool was_cancelled =
-        metadata->get(GrpcCallWasCancelled()).value_or(false);
-    c.Set(std::move(metadata));
-    CallOnDone();
-    was_cancelled_latch().Set(was_cancelled);
-    client_initial_metadata().sender.CloseWithError();
-    server_initial_metadata().sender.Close();
-    client_to_server_messages().sender.CloseWithError();
-    server_to_client_messages().sender.Close();
-  }
-
-  Promise<bool> WasCancelled() final {
-    DCHECK(GetContext<Activity>() == &party());
-    return was_cancelled_latch().Wait();
-  }
-
-  Promise<ValueOrFailure<ClientMetadataHandle>> PullClientInitialMetadata()
-      final {
-    DCHECK(GetContext<Activity>() == &party());
-    return Map(client_initial_metadata().receiver.Next(),
-               [](NextResult<ClientMetadataHandle> md)
-                   -> ValueOrFailure<ClientMetadataHandle> {
-                 if (!md.has_value()) return Failure{};
-                 return std::move(*md);
-               });
-  }
-
-  Promise<StatusFlag> PushServerInitialMetadata(
-      absl::optional<ServerMetadataHandle> md) final {
-    DCHECK(GetContext<Activity>() == &party());
-    return If(
-        md.has_value(),
-        [&md, this]() {
-          return Map(server_initial_metadata().sender.Push(std::move(*md)),
-                     [](bool ok) { return StatusFlag(ok); });
-        },
-        [this]() {
-          server_initial_metadata().sender.Close();
-          return []() -> StatusFlag { return Success{}; };
-        });
-  }
-
- private:
-  static ValueOrFailure<absl::optional<MessageHandle>> MapNextMessage(
-      NextResult<MessageHandle> r) {
-    if (!r.has_value()) {
-      if (r.cancelled()) return Failure{};
-      return absl::optional<MessageHandle>();
-    }
-    return absl::optional<MessageHandle>(std::move(*r));
-  }
-};
-
-class CallSpine final : public CallSpineInterface, public Party {
- public:
-  static RefCountedPtr<CallSpine> Create(
-      ClientMetadataHandle client_initial_metadata,
-      grpc_event_engine::experimental::EventEngine* event_engine,
-      RefCountedPtr<Arena> arena, grpc_call_context_element* legacy_context) {
-    auto* arena_ptr = arena.get();
-    return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
-        std::move(client_initial_metadata), event_engine, std::move(arena),
-        legacy_context));
-  }
-
-  ~CallSpine() override {
-    if (legacy_context_is_owned_) {
-      for (size_t i = 0; i < GRPC_CONTEXT_COUNT; i++) {
-        grpc_call_context_element& elem = legacy_context_[i];
-        if (elem.destroy != nullptr) elem.destroy(elem.value);
-      }
-    }
-  }
-
-  CallFilters& call_filters() { return call_filters_; }
-
-  Party& party() override { return *this; }
-
-  Arena* arena() override { return arena_.get(); }
-
-  void IncrementRefCount() override { Party::IncrementRefCount(); }
-
-  void Unref() override { Party::Unref(); }
-
-  Promise<ValueOrFailure<absl::optional<ServerMetadataHandle>>>
-  PullServerInitialMetadata() override {
-    return call_filters().PullServerInitialMetadata();
-  }
-
-  Promise<ServerMetadataHandle> PullServerTrailingMetadata() override {
-    return call_filters().PullServerTrailingMetadata();
-  }
-
-  Promise<StatusFlag> PushClientToServerMessage(
-      MessageHandle message) override {
-    return call_filters().PushClientToServerMessage(std::move(message));
-  }
-
-  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
-  PullClientToServerMessage() override {
-    return call_filters().PullClientToServerMessage();
-  }
-
-  Promise<StatusFlag> PushServerToClientMessage(
-      MessageHandle message) override {
-    return call_filters().PushServerToClientMessage(std::move(message));
-  }
-
-  Promise<ValueOrFailure<absl::optional<MessageHandle>>>
-  PullServerToClientMessage() override {
-    return call_filters().PullServerToClientMessage();
-  }
-
-  void PushServerTrailingMetadata(ServerMetadataHandle md) override {
-    call_filters().PushServerTrailingMetadata(std::move(md));
-  }
-
-  void FinishSends() override { call_filters().FinishClientToServerSends(); }
-
-  Promise<ValueOrFailure<ClientMetadataHandle>> PullClientInitialMetadata()
-      override {
-    return call_filters().PullClientInitialMetadata();
-  }
-
-  Promise<StatusFlag> PushServerInitialMetadata(
-      absl::optional<ServerMetadataHandle> md) override {
-    if (md.has_value()) {
-      return call_filters().PushServerInitialMetadata(std::move(*md));
-    } else {
-      call_filters().NoServerInitialMetadata();
-      return Immediate<StatusFlag>(Success{});
-    }
-  }
-
-  Promise<bool> WasCancelled() override {
-    return call_filters().WasCancelled();
-  }
-
-  ClientMetadata& UnprocessedClientInitialMetadata() override {
-    return *call_filters().unprocessed_client_initial_metadata();
-  }
-
-  // TODO(ctiller): re-evaluate legacy context apis
-  grpc_call_context_element& legacy_context(grpc_context_index index) const {
-    return legacy_context_[index];
-  }
-
-  grpc_call_context_element* legacy_context() { return legacy_context_; }
-
-  grpc_event_engine::experimental::EventEngine* event_engine() const override {
-    return event_engine_;
-  }
-
-  void V2HackToStartCallWithoutACallFilterStack() override {
-    CallFilters::StackBuilder empty_stack_builder;
-    call_filters().SetStack(empty_stack_builder.Build());
-  }
-
- private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
             grpc_event_engine::experimental::EventEngine* event_engine,
-            RefCountedPtr<Arena> arena,
-            grpc_call_context_element* legacy_context)
+            RefCountedPtr<Arena> arena)
       : Party(1),
         arena_(std::move(arena)),
         call_filters_(std::move(client_initial_metadata)),
-        event_engine_(event_engine) {
-    if (legacy_context == nullptr) {
-      legacy_context_ = static_cast<grpc_call_context_element*>(arena_->Alloc(
-          sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT));
-      memset(legacy_context_, 0,
-             sizeof(grpc_call_context_element) * GRPC_CONTEXT_COUNT);
-      legacy_context_is_owned_ = true;
-    } else {
-      legacy_context_ = legacy_context;
-      legacy_context_is_owned_ = false;
-    }
-  }
+        event_engine_(event_engine) {}
 
-  class ScopedContext
-      : public ScopedActivity,
-        public promise_detail::Context<Arena>,
-        public promise_detail::Context<
-            grpc_event_engine::experimental::EventEngine>,
-        public promise_detail::Context<grpc_call_context_element> {
+  class ScopedContext : public ScopedActivity,
+                        public promise_detail::Context<Arena>,
+                        public promise_detail::Context<
+                            grpc_event_engine::experimental::EventEngine> {
    public:
     explicit ScopedContext(CallSpine* spine)
         : ScopedActivity(spine),
           Context<Arena>(spine->arena_.get()),
           Context<grpc_event_engine::experimental::EventEngine>(
-              spine->event_engine()),
-          Context<grpc_call_context_element>(spine->legacy_context_) {}
+              spine->event_engine()) {}
   };
 
   bool RunParty() override {
@@ -438,15 +237,13 @@ class CallSpine final : public CallSpineInterface, public Party {
   CallFilters call_filters_;
   // Event engine associated with this call
   grpc_event_engine::experimental::EventEngine* const event_engine_;
-  // Legacy context
-  // TODO(ctiller): remove
-  grpc_call_context_element* legacy_context_;
-  bool legacy_context_is_owned_;
+  absl::AnyInvocable<void()> on_done_{nullptr};
 };
 
 class CallInitiator {
  public:
-  explicit CallInitiator(RefCountedPtr<CallSpineInterface> spine)
+  CallInitiator() = default;
+  explicit CallInitiator(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
   template <typename Promise>
@@ -470,8 +267,9 @@ class CallInitiator {
     return spine_->PullServerTrailingMetadata();
   }
 
-  void Cancel() {
-    auto status = ServerMetadataFromStatus(absl::CancelledError());
+  void Cancel(absl::Status error = absl::CancelledError()) {
+    CHECK(!error.ok());
+    auto status = ServerMetadataFromStatus(error);
     status->Set(GrpcCallWasCancelled(), true);
     spine_->PushServerTrailingMetadata(std::move(status));
   }
@@ -496,18 +294,22 @@ class CallInitiator {
 
   template <typename PromiseFactory>
   auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
-    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+    return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
   Arena* arena() { return spine_->arena(); }
 
+  grpc_event_engine::experimental::EventEngine* event_engine() const {
+    return spine_->event_engine();
+  }
+
  private:
-  RefCountedPtr<CallSpineInterface> spine_;
+  RefCountedPtr<CallSpine> spine_;
 };
 
 class CallHandler {
  public:
-  explicit CallHandler(RefCountedPtr<CallSpineInterface> spine)
+  explicit CallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
   auto PullClientInitialMetadata() {
@@ -556,31 +358,22 @@ class CallHandler {
 
   template <typename PromiseFactory>
   auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
-    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+    return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
   Arena* arena() { return spine_->arena(); }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return DownCast<CallSpine*>(spine_.get())->event_engine();
-  }
-
-  // TODO(ctiller): re-evaluate this API
-  const grpc_call_context_element* legacy_context() const {
-    return DownCast<CallSpine*>(spine_.get())->legacy_context();
-  }
-
-  grpc_call_context_element* legacy_context() {
-    return DownCast<CallSpine*>(spine_.get())->legacy_context();
+    return spine_->event_engine();
   }
 
  private:
-  RefCountedPtr<CallSpineInterface> spine_;
+  RefCountedPtr<CallSpine> spine_;
 };
 
 class UnstartedCallHandler {
  public:
-  explicit UnstartedCallHandler(RefCountedPtr<CallSpineInterface> spine)
+  explicit UnstartedCallHandler(RefCountedPtr<CallSpine> spine)
       : spine_(std::move(spine)) {}
 
   void PushServerTrailingMetadata(ServerMetadataHandle status) {
@@ -613,29 +406,28 @@ class UnstartedCallHandler {
 
   template <typename PromiseFactory>
   auto SpawnWaitable(absl::string_view name, PromiseFactory promise_factory) {
-    return spine_->party().SpawnWaitable(name, std::move(promise_factory));
+    return spine_->SpawnWaitable(name, std::move(promise_factory));
   }
 
   ClientMetadata& UnprocessedClientInitialMetadata() {
     return spine_->UnprocessedClientInitialMetadata();
   }
 
-  CallHandler V2HackToStartCallWithoutACallFilterStack() {
-    spine_->V2HackToStartCallWithoutACallFilterStack();
-    return CallHandler(std::move(spine_));
+  // Helper for the very common situation in tests where we want to start a call
+  // with an empty filter stack.
+  CallHandler StartWithEmptyFilterStack() {
+    return StartCall(CallFilters::StackBuilder().Build());
   }
 
   CallHandler StartCall(RefCountedPtr<CallFilters::Stack> call_filters) {
-    DownCast<CallSpine*>(spine_.get())
-        ->call_filters()
-        .SetStack(std::move(call_filters));
+    spine_->call_filters().SetStack(std::move(call_filters));
     return CallHandler(std::move(spine_));
   }
 
   Arena* arena() { return spine_->arena(); }
 
  private:
-  RefCountedPtr<CallSpineInterface> spine_;
+  RefCountedPtr<CallSpine> spine_;
 };
 
 struct CallInitiatorAndHandler {
@@ -646,7 +438,7 @@ struct CallInitiatorAndHandler {
 CallInitiatorAndHandler MakeCallPair(
     ClientMetadataHandle client_initial_metadata,
     grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena, grpc_call_context_element* legacy_context);
+    RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {

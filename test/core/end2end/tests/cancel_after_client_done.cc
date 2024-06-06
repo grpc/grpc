@@ -36,9 +36,9 @@ void CancelAfterClientDone(
   auto c = test.NewClientCall("/service/method")
                .Timeout(Duration::Seconds(5))
                .Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .RecvStatusOnClient(server_status)
       .SendInitialMetadata({})
@@ -49,8 +49,8 @@ void CancelAfterClientDone(
   auto s = test.RequestCall(2);
   test.Expect(2, true);
   test.Step();
-  CoreEnd2endTest::IncomingMessage client_message;
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingMessage client_message;
+  IncomingCloseOnServer client_close;
   s.NewBatch(3)
       .RecvMessage(client_message)
       .SendInitialMetadata({})

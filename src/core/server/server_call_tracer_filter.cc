@@ -29,7 +29,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/arena_promise.h"
@@ -103,7 +102,6 @@ ServerCallTracerFilter::Create(const ChannelArgs& /*args*/,
 }  // namespace
 
 void RegisterServerCallTracerFilter(CoreConfiguration::Builder* builder) {
-  if (IsChaoticGoodEnabled()) return;
   builder->channel_init()->RegisterFilter<ServerCallTracerFilter>(
       GRPC_SERVER_CHANNEL);
 }

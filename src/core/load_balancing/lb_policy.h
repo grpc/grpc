@@ -456,6 +456,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     absl::Status status_;
   };
 
+  // A picker that returns PickResult::Drop for all picks.
+  class DropPicker final : public SubchannelPicker {
+   public:
+    explicit DropPicker(absl::Status status) : status_(status) {}
+
+    PickResult Pick(PickArgs /*args*/) override {
+      return PickResult::Drop(status_);
+    }
+
+   private:
+    absl::Status status_;
+  };
+
  protected:
   std::shared_ptr<WorkSerializer> work_serializer() const {
     return work_serializer_;

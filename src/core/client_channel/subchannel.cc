@@ -157,36 +157,6 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
            channel_stack_->call_stack_size;
   }
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) override {
-    // If not using channelz, we just need to call the channel stack.
-    if (channelz_subchannel() == nullptr) {
-      return channel_stack_->MakeClientCallPromise(std::move(call_args));
-    }
-    // Otherwise, we need to wrap the channel stack promise with code that
-    // handles the channelz updates.
-    return OnCancel(
-        Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
-            [self = Ref()](ServerMetadataHandle metadata) {
-              channelz::SubchannelNode* channelz_subchannel =
-                  self->channelz_subchannel();
-              CHECK(channelz_subchannel != nullptr);
-              if (metadata->get(GrpcStatusMetadata())
-                      .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
-                channelz_subchannel->RecordCallFailed();
-              } else {
-                channelz_subchannel->RecordCallSucceeded();
-              }
-              return metadata;
-            }),
-        [self = Ref()]() {
-          channelz::SubchannelNode* channelz_subchannel =
-              self->channelz_subchannel();
-          CHECK(channelz_subchannel != nullptr);
-          channelz_subchannel->RecordCallFailed();
-        });
-  }
-
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->send_ping.on_initiate = on_initiate;
@@ -252,10 +222,6 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
 
   size_t GetInitialCallSizeEstimate() const override { return 0; }
 
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs) override {
-    Crash("legacy MakeCallPromise() method called in call v3 impl");
-  }
-
   void Ping(grpc_closure*, grpc_closure*) override {
     Crash("legacy ping method called in call v3 impl");
   }
@@ -285,7 +251,6 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   const grpc_call_element_args call_args = {
       callstk,              // call_stack
       nullptr,              // server_transport_data
-      args.context,         // context
       args.path.c_slice(),  // path
       args.start_time,      // start_time
       args.deadline,        // deadline
@@ -870,8 +835,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = std::move(connecting_result_.socket_node);
-  if (connecting_result_.transport->filter_stack_transport() != nullptr ||
-      IsChaoticGoodEnabled()) {
+  if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.
     ChannelStackBuilderImpl builder(
