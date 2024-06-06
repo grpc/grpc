@@ -45,6 +45,7 @@ class OpenTelemetryPluginOption {
   virtual ~OpenTelemetryPluginOption() = default;
 };
 
+namespace experimental {
 /// EXPERIMENTAL API
 class OpenTelemetryPlugin {
  public:
@@ -57,6 +58,7 @@ class OpenTelemetryPlugin {
   /// to create the server through \a builder.
   virtual void AddToServerBuilder(grpc::ServerBuilder* builder) = 0;
 };
+}  // namespace experimental
 
 /// The most common way to use this API is -
 ///
@@ -161,8 +163,8 @@ class OpenTelemetryPluginBuilder {
   /// Builds an open telemetry plugin, returns the plugin object when succeeded
   /// or an error status when failed. Must be called no more than once and must
   /// not be called if BuildAndRegisterGlobal() is called.
-  GRPC_MUST_USE_RESULT absl::StatusOr<std::shared_ptr<OpenTelemetryPlugin>>
-  Build();
+  GRPC_MUST_USE_RESULT
+  absl::StatusOr<std::shared_ptr<experimental::OpenTelemetryPlugin>> Build();
 
  private:
   std::unique_ptr<internal::OpenTelemetryPluginBuilderImpl> impl_;
