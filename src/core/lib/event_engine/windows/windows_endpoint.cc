@@ -104,7 +104,9 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
     // Data or some error was returned immediately.
     socket->read_info()->SetResult(
         {/*wsa_error=*/wsa_error, /*bytes_read=*/bytes_read,
-         /*error_status=*/GRPC_WSA_ERROR(wsa_error, "WSARecv")});
+         /*error_status=*/wsa_error == 0
+             ? absl::OkStatus()
+             : GRPC_WSA_ERROR(wsa_error, "WSARecv")});
     thread_pool->Run(&handle_read_event);
     return;
   }

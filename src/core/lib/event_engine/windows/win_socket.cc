@@ -169,10 +169,11 @@ void WinSocket::OpState::GetOverlappedResult(SOCKET sock) {
   BOOL success =
       WSAGetOverlappedResult(sock, &overlapped_, &bytes, FALSE, &flags);
   auto wsa_error = success ? 0 : WSAGetLastError();
-  result_ =
-      OverlappedResult{/*wsa_error=*/wsa_error,
-                       /*bytes_transferred=*/bytes,
-                       GRPC_WSA_ERROR(wsa_error, "WSAGetOverlappedResult")};
+  result_ = OverlappedResult{
+      /*wsa_error=*/wsa_error,
+      /*bytes_transferred=*/bytes,
+      wsa_error == 0 ? absl::OkStatus()
+                     : GRPC_WSA_ERROR(wsa_error, "WSAGetOverlappedResult")};
 }
 
 bool WinSocket::IsShutdown() { return is_shutdown_.load(); }
