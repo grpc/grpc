@@ -220,6 +220,24 @@ config_setting(
     values = {"cpu": "x64_windows_msvc"},
 )
 
+platform(
+    name = "x64_windows-clang-cl",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+        "@bazel_tools//tools/cpp:clang-cl",
+    ],
+)
+
+config_setting(
+    name = "windows_clang",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+        "@bazel_tools//tools/cpp:clang-cl",
+    ],
+)
+
 config_setting(
     name = "mac",
     values = {"cpu": "darwin"},
@@ -238,6 +256,11 @@ config_setting(
 config_setting(
     name = "use_strict_warning",
     values = {"define": "use_strict_warning=true"},
+)
+
+config_setting(
+    name = "use_strict_warning_windows",
+    values = {"define": "use_strict_warning_windows=true"},
 )
 
 python_config_settings()

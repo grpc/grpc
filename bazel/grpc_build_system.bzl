@@ -45,6 +45,7 @@ def if_not_windows(a):
     return select({
         "//:windows": [],
         "//:windows_msvc": [],
+        "//:windows_clang": [],
         "//conditions:default": a,
     })
 
@@ -52,6 +53,7 @@ def if_windows(a):
     return select({
         "//:windows": a,
         "//:windows_msvc": a,
+        "//:windows_clang": a,
         "//conditions:default": [],
     })
 

@@ -2732,6 +2732,7 @@ grpc_cc_library(
         {
             "//:windows": ["windows_event_engine"],
             "//:windows_msvc": ["windows_event_engine"],
+            "//:windows_clang": ["windows_event_engine"],
             "//:windows_other": ["windows_event_engine"],
             "//:mac": [
                 "posix_event_engine",
