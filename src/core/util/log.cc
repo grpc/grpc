@@ -151,5 +151,18 @@ void gpr_log_verbosity_init() {
 }
 
 void gpr_set_log_function(gpr_log_func f) {
+/*
+This code will be a noop in Github Open Source.
+This was done because about 60% of gRPC files are directly using absl LOG().
+While the other 40% files use gpr_log. gpr_log will either send the logs to absl
+LOG() or if custom log function is set, that will be called. If we dont prevent
+the custom log sink from being used, We will end up in a weird state where half
+the logs go via absl and the other half go via the custom log sink. Hence
+disabling this code. This function will be deleted in a few weeks from
+everywhere. However, multiple cleanup tasks are left before gpr_set_log_function
+is deleted internally.
+*/
+#ifdef GRPC_INTERNAL_ONLY_CODE
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
+#endif  // GRPC_INTERNAL_ONLY_CODE
 }
