@@ -1188,6 +1188,7 @@ grpc_cc_library(
         "status_flag",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
