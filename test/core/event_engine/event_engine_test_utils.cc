@@ -80,7 +80,7 @@ std::string GetNextSendMessage() {
 }
 
 void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
-  WaitForSingleOwnerWithTimeout(std::move(engine), std::chrono::minutes::max());
+  WaitForSingleOwnerWithTimeout(std::move(engine), std::chrono::hours{24});
 }
 
 void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
