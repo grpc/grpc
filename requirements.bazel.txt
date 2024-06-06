@@ -1,7 +1,7 @@
 # GRPC Python setup requirements
 coverage==4.5.4
 cython==3.0.0
-protobuf>=5.26.1,<6.0dev
+protobuf>=5.27.1,<6.0dev
 wheel==0.38.1
 oauth2client==4.1.0
 requests==2.25.1
