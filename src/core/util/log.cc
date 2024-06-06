@@ -150,8 +150,8 @@ void gpr_log_verbosity_init() {
   }
 }
 
-#ifdef GRPC_INTERNAL_ONLY_CODE
+#ifdef GRPC_DISABLE_IN_OPEN_SOURCE
 void gpr_set_log_function(gpr_log_func f) {
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
 }
-#endif  // GRPC_INTERNAL_ONLY_CODE
+#endif  // GRPC_DISABLE_IN_OPEN_SOURCE

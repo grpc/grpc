@@ -93,9 +93,9 @@ disabling this code. This function will be deleted in a few weeks from
 everywhere. However, multiple cleanup tasks are left before gpr_set_log_function
 is deleted internally.
 */
-#ifdef GRPC_INTERNAL_ONLY_CODE
+#ifdef GRPC_DISABLE_IN_OPEN_SOURCE
 GPRAPI void gpr_set_log_function(gpr_log_func func);
-#endif  // GRPC_INTERNAL_ONLY_CODE
+#endif  // GRPC_DISABLE_IN_OPEN_SOURCE
 
 GPRAPI void gpr_assertion_failed(const char* filename, int line,
                                  const char* message) GPR_ATTRIBUTE_NORETURN;
