@@ -419,7 +419,7 @@ class Channel(_base_channel.Channel):
             # Locate ones created by `aio.Call`.
             frame = stack[0]
             candidate = frame.f_locals.get("self")
-            if candidate:
+            if candidate is not None:
                 if isinstance(candidate, _base_call.Call):
                     if hasattr(candidate, "_channel"):
                         # For intercepted Call object
