@@ -1024,6 +1024,7 @@ grpc_cc_library(
         "activity",
         "poll",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
