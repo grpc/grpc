@@ -132,8 +132,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   struct TaskHandle {
     intptr_t keys[2];
     static const GRPC_DLL TaskHandle kInvalid;
-    friend bool operator==(const TaskHandle& lhs, const TaskHandle& rhs);
-    friend bool operator!=(const TaskHandle& lhs, const TaskHandle& rhs);
   };
   /// A handle to a cancellable connection attempt.
   ///
@@ -141,10 +139,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   struct ConnectionHandle {
     intptr_t keys[2];
     static const GRPC_DLL ConnectionHandle kInvalid;
-    friend bool operator==(const ConnectionHandle& lhs,
-                           const ConnectionHandle& rhs);
-    friend bool operator!=(const ConnectionHandle& lhs,
-                           const ConnectionHandle& rhs);
   };
   /// Thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
@@ -495,6 +489,19 @@ void SetEventEngineFactory(
 void EventEngineFactoryReset();
 /// Create an EventEngine using the default factory.
 std::unique_ptr<EventEngine> CreateEventEngine();
+
+bool operator==(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+bool operator!=(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::TaskHandle& handle);
+bool operator==(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+bool operator!=(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::ConnectionHandle& handle);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

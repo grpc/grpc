@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM silkeh/clang:17-bullseye
+FROM silkeh/clang:17-bookworm
 
 #=================
 # Basic C core dependencies

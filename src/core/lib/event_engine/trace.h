@@ -21,17 +21,17 @@
 
 #define GRPC_EVENT_ENGINE_TRACE(format, ...)                   \
   if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {                 \
-    gpr_log(GPR_DEBUG, "(event_engine) " format, __VA_ARGS__); \
+    gpr_log(GPR_ERROR, "(event_engine) " format, __VA_ARGS__); \
   }
 
 #define GRPC_EVENT_ENGINE_ENDPOINT_TRACE(format, ...)                   \
   if (GRPC_TRACE_FLAG_ENABLED(event_engine_endpoint)) {                 \
-    gpr_log(GPR_DEBUG, "(event_engine endpoint) " format, __VA_ARGS__); \
+    gpr_log(GPR_ERROR, "(event_engine endpoint) " format, __VA_ARGS__); \
   }
 
 #define GRPC_EVENT_ENGINE_POLLER_TRACE(format, ...)                   \
   if (GRPC_TRACE_FLAG_ENABLED(event_engine_poller)) {                 \
-    gpr_log(GPR_DEBUG, "(event_engine poller) " format, __VA_ARGS__); \
+    gpr_log(GPR_ERROR, "(event_engine poller) " format, __VA_ARGS__); \
   }
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_TRACE_H
