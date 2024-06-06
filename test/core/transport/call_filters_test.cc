@@ -1164,137 +1164,6 @@ TEST(InfallibleOperationExecutor, InstantTwo) {
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
-// PipeState
-
-namespace filters_detail {
-
-TEST(PipeStateTest, NoOp) { PipeState(); }
-
-TEST(PipeStateTest, OnePull) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  // initially: not started, should only see pending from pulls
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  // start it, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.Start();
-  Mock::VerifyAndClearExpectations(&activity);
-  // should still see pending! nothing's been pushed
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  // begin a push, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.BeginPush();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  // push should be pending though!
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // ack the pull, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.AckPull();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
-  ps.DropPush();
-  ps.DropPull();
-  EXPECT_FALSE(ps.holds_error());
-}
-
-TEST(PipeStateTest, StartThenPull) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  ps.Start();
-  // pull is pending! nothing's been pushed
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  // begin a push, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.BeginPush();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  // push should be pending though!
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // ack the pull, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.AckPull();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
-  ps.DropPush();
-  ps.DropPull();
-  EXPECT_FALSE(ps.holds_error());
-}
-
-TEST(PipeStateTest, PushFirst) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  // start immediately, and push immediately
-  ps.Start();
-  ps.BeginPush();
-  // push should be pending
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // pull should immediately see a value
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  // push should still be pending though!
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // ack the pull, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.AckPull();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
-  ps.DropPush();
-  ps.DropPull();
-  EXPECT_FALSE(ps.holds_error());
-}
-
-TEST(PipeStateTest, DropPushing) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  ps.BeginPush();
-  ps.DropPush();
-  EXPECT_TRUE(ps.holds_error());
-  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
-  ps.BeginPush();
-  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
-  ps.DropPush();
-}
-
-TEST(PipeStateTest, DropPulling) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  ps.DropPull();
-  EXPECT_TRUE(ps.holds_error());
-  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
-  ps.DropPull();
-  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
-}
-
-TEST(PipeStateTest, DropProcessing) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  ps.Start();
-  ps.BeginPush();
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  ps.DropPull();
-  EXPECT_TRUE(ps.holds_error());
-  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
-  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
-}
-
-}  // namespace filters_detail
-
-///////////////////////////////////////////////////////////////////////////////
 // CallFilters
 
 TEST(CallFiltersTest, CanBuildStack) {
@@ -1375,16 +1244,12 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push should be done
   EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
   // Push server initial metadata
-  auto push_server_initial_metadata =
-      filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
-  EXPECT_THAT(push_server_initial_metadata(), IsPending());
+  filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
   auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
   // Pull server initial metadata, expect a wakeup
   EXPECT_CALL(activity, WakeupRequested());
   EXPECT_THAT(pull_server_initial_metadata(), IsReady());
   Mock::VerifyAndClearExpectations(&activity);
-  // Push should be done
-  EXPECT_THAT(push_server_initial_metadata(), IsReady(Success{}));
   // Push server to client message
   auto push_server_to_client_message = filters.PushServerToClientMessage(
       Arena::MakePooled<Message>(SliceBuffer(), 0));

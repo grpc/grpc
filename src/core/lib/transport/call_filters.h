@@ -17,6 +17,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <ostream>
 #include <type_traits>
 
 #include "absl/log/check.h"
@@ -26,10 +27,13 @@
 #include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
@@ -1238,6 +1242,27 @@ class CallState {
     // Request has finished
     kTerminated,
   };
+  static const char* ClientToServerPullStateString(
+      ClientToServerPullState state) {
+    switch (state) {
+      case ClientToServerPullState::kBegin:
+        return "Begin";
+      case ClientToServerPullState::kIdle:
+        return "Idle";
+      case ClientToServerPullState::kReading:
+        return "Reading";
+      case ClientToServerPullState::kProcessingClientToServerMessage:
+        return "ProcessingClientToServerMessage";
+      case ClientToServerPullState::kWaitingForClientToServerMessageAck:
+        return "WaitingForClientToServerMessageAck";
+      case ClientToServerPullState::kTerminated:
+        return "Terminated";
+    }
+  }
+  friend std::ostream& operator<<(std::ostream& out,
+                                  ClientToServerPullState state) {
+    return out << ClientToServerPullStateString(state);
+  }
   enum class ClientToServerPushState : uint8_t {
     kIdle,
     kPushedMessage,
@@ -1245,6 +1270,25 @@ class CallState {
     kPushedMessageAndHalfClosed,
     kFinished,
   };
+  static const char* ClientToServerPushStateString(
+      ClientToServerPushState state) {
+    switch (state) {
+      case ClientToServerPushState::kIdle:
+        return "Idle";
+      case ClientToServerPushState::kPushedMessage:
+        return "PushedMessage";
+      case ClientToServerPushState::kPushedHalfClose:
+        return "PushedHalfClose";
+      case ClientToServerPushState::kPushedMessageAndHalfClosed:
+        return "PushedMessageAndHalfClosed";
+      case ClientToServerPushState::kFinished:
+        return "Finished";
+    }
+  }
+  friend std::ostream& operator<<(std::ostream& out,
+                                  ClientToServerPushState state) {
+    return out << ClientToServerPushStateString(state);
+  }
   enum class ServerToClientPullState : uint8_t {
     // Not yet started: cannot read
     kUnstarted,
@@ -1263,11 +1307,53 @@ class CallState {
     kProcessingServerTrailingMetadata,
     kTerminated,
   };
+  static const char* ServerToClientPullStateString(
+      ServerToClientPullState state) {
+    switch (state) {
+      case ServerToClientPullState::kUnstarted:
+        return "Unstarted";
+      case ServerToClientPullState::kStarted:
+        return "Started";
+      case ServerToClientPullState::kProcessingServerInitialMetadata:
+        return "ProcessingServerInitialMetadata";
+      case ServerToClientPullState::kIdle:
+        return "Idle";
+      case ServerToClientPullState::kReading:
+        return "Reading";
+      case ServerToClientPullState::kProcessingServerToClientMessage:
+        return "ProcessingServerToClientMessage";
+      case ServerToClientPullState::kWaitingForServerToClientMessageAck:
+        return "WaitingForServerToClientMessageAck";
+      case ServerToClientPullState::kProcessingServerTrailingMetadata:
+        return "ProcessingServerTrailingMetadata";
+      case ServerToClientPullState::kTerminated:
+        return "Terminated";
+    }
+  }
+  friend std::ostream& operator<<(std::ostream& out,
+                                  ServerToClientPullState state) {
+    return out << ServerToClientPullStateString(state);
+  }
   enum class ServerToClientMessagePushState : uint8_t {
     kIdle,
     kPushed,
     kFailed,
   };
+  static const char* ServerToClientMessagePushStateString(
+      ServerToClientMessagePushState state) {
+    switch (state) {
+      case ServerToClientMessagePushState::kIdle:
+        return "Idle";
+      case ServerToClientMessagePushState::kPushed:
+        return "Pushed";
+      case ServerToClientMessagePushState::kFailed:
+        return "Failed";
+    }
+  }
+  friend std::ostream& operator<<(std::ostream& out,
+                                  ServerToClientMessagePushState state) {
+    return out << ServerToClientMessagePushStateString(state);
+  }
   ClientToServerPullState client_to_server_pull_state_ : 3;
   ClientToServerPushState client_to_server_push_state_ : 3;
   ServerToClientPullState server_to_client_pull_state_ : 4;
@@ -1452,35 +1538,122 @@ class CallFilters {
 
   // Access client initial metadata before it's processed
   ClientMetadata* unprocessed_client_initial_metadata() {
-    return client_initial_metadata_.get();
+    return push_client_initial_metadata_.get();
   }
 
+ private:
+  template <typename Output, typename Input>
+  Poll<ValueOrFailure<Output>> FinishStep(
+      Poll<filters_detail::ResultOr<Input>> p) {
+    auto* r = p.value_if_ready();
+    if (r == nullptr) return Pending{};
+    if (r->ok != nullptr) {
+      return ValueOrFailure<Output>{std::move(r->ok)};
+    }
+    PushServerTrailingMetadata(std::move(r->error));
+    return Failure{};
+  }
+
+  template <typename Output, typename Input,
+            filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
+                filters_detail::StackData::* layout)>
+  auto RunExecutor(Input value) {
+    return [this, executor = filters_detail::OperationExecutor<Input>(),
+            value = std::move(value), started = false]() mutable {
+      if (!started) {
+        started = true;
+        return FinishStep<Output>(executor.Start(&(stack_->data_.*layout),
+                                                 std::move(value), call_data_));
+      }
+      return FinishStep<Output>(executor.Step(call_data_));
+    };
+  }
+
+ public:
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
-  GRPC_MUST_USE_RESULT auto PullClientInitialMetadata();
+  GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
+    return RunExecutor<ClientMetadataHandle, ClientMetadataHandle,
+                       &filters_detail::StackData::client_initial_metadata>(
+        std::move(push_client_initial_metadata_));
+  }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
   void PushServerInitialMetadata(ServerMetadataHandle md) {
     call_state_.PushServerInitialMetadata();
-    server_initial_metadata_push_ = std::move(md);
+    push_server_initial_metadata_ = std::move(md);
   }
   // Client: Fetch server initial metadata
   // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>
-  GRPC_MUST_USE_RESULT auto PullServerInitialMetadata();
+  GRPC_MUST_USE_RESULT auto PullServerInitialMetadata() {
+    return Seq(
+        [this]() {
+          return call_state_.PollPullServerInitialMetadataAvailable();
+        },
+        [this](bool has_server_initial_metadata) {
+          return If(
+              has_server_initial_metadata,
+              [this]() {
+                return Map(
+                    RunExecutor<
+                        absl::optional<ServerMetadataHandle>,
+                        ServerMetadataHandle,
+                        &filters_detail::StackData::server_initial_metadata>(
+                        std::move(push_server_initial_metadata_)),
+                    [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
+                      if (r.ok()) return std::move(*r);
+                      return absl::optional<ServerMetadataHandle>{};
+                    });
+              },
+              []() {
+                return Immediate(absl::optional<ServerMetadataHandle>{});
+              });
+        });
+  }
   // Client: Push client to server message
   // Returns a promise that resolves to a StatusFlag indicating success
-  GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message);
+  GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message) {
+    call_state_.BeginPushClientToServerMessage();
+    push_client_to_server_message_ = std::move(message);
+    return [this]() { return call_state_.PollPushClientToServerMessage(); };
+  }
   // Client: Indicate that no more messages will be sent
   void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
   // Server: Fetch client to server message
   // Returns a promise that resolves to ValueOrFailure<MessageHandle>
-  GRPC_MUST_USE_RESULT auto PullClientToServerMessage();
+  GRPC_MUST_USE_RESULT auto PullClientToServerMessage() {
+    return TrySeq(
+        [this]() {
+          return call_state_.PollPullClientToServerMessageAvailable();
+        },
+        [this]() {
+          return RunExecutor<
+              MessageHandle, MessageHandle,
+              &filters_detail::StackData::client_to_server_messages>(
+              std::move(push_server_to_client_message_));
+        });
+  }
   // Server: Push server to client message
   // Returns a promise that resolves to a StatusFlag indicating success
-  GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message);
+  GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message) {
+    call_state_.BeginPushServerToClientMessage();
+    push_server_to_client_message_ = std::move(message);
+    return [this]() { return call_state_.PollPushServerToClientMessage(); };
+  }
   // Server: Fetch server to client message
   // Returns a promise that resolves to ValueOrFailure<MessageHandle>
-  GRPC_MUST_USE_RESULT auto PullServerToClientMessage();
+  GRPC_MUST_USE_RESULT auto PullServerToClientMessage() {
+    return TrySeq(
+        [this]() {
+          return call_state_.PollPullServerToClientMessageAvailable();
+        },
+        [this]() {
+          return RunExecutor<
+              MessageHandle, MessageHandle,
+              &filters_detail::StackData::server_to_client_messages>(
+              std::move(push_server_to_client_message_));
+        });
+  }
   // Server: Indicate end of response
   // Closes the request entirely - no messages can be sent/received
   // If no server initial metadata has been sent, implies
@@ -1488,7 +1661,11 @@ class CallFilters {
   void PushServerTrailingMetadata(ServerMetadataHandle md);
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
-  GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata();
+  GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
+    return Map(
+        [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
+        [this](Empty) { return std::move(push_server_trailing_metadata_); });
+  }
   // Server: Wait for server trailing metadata to have been sent
   // Returns a promise that resolves to a StatusFlag indicating whether the
   // request was cancelled or not -- failure to send trailing metadata is
@@ -1501,331 +1678,6 @@ class CallFilters {
   std::string DebugString() const;
 
  private:
-  /*
-   template <
-       filters_detail::Layout<filters_detail::FallibleOperator<MessageHandle>>(
-           filters_detail::StackData::* layout_ptr),
-       void*(CallFilters::* push_ptr),
-       void (filters_detail::CallState::* begin_push)(),
-       Poll<StatusFlag> (filters_detail::CallState::* poll_push)()>
-   struct MessagePromises {
-     class Push {
-      public:
-       Push(CallFilters* filters, MessageHandle value)
-           : filters_(filters), value_(std::move(value)) {
-         CHECK(value_ != nullptr);
-         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-           gpr_log(GPR_INFO, "BeginPush[%p|%p]: %s", &call_state(), this,
-                   call_state().DebugString().c_str());
-         }
-         CHECK_EQ(push_slot(), nullptr);
-         BeginPush();
-         push_slot() = this;
-       }
-       ~Push() {
-         if (filters_ != nullptr) {
-           if (value_ != nullptr) {
-             call_state().DropPush();
-           }
-           CHECK(push_slot() == this);
-           push_slot() = nullptr;
-         }
-       }
-
-       Push(const Push&) = delete;
-       Push& operator=(const Push&) = delete;
-       Push(Push&& other) noexcept
-           : filters_(std::exchange(other.filters_, nullptr)),
-             value_(std::move(other.value_)) {
-         if (filters_ != nullptr) {
-           DCHECK(push_slot() == &other);
-           push_slot() = this;
-         }
-       }
-       Push& operator=(Push&&) = delete;
-
-       Poll<StatusFlag> operator()() {
-         if (value_ == nullptr) {
-           CHECK_EQ(filters_, nullptr);
-           if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-             gpr_log(GPR_INFO, "Push[|%p]: already done", this);
-           }
-           return Success{};
-         }
-         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-           gpr_log(GPR_INFO, "Push[%p|%p]: %s", &call_state(), this,
-                   call_state().DebugString().c_str());
-         }
-         auto r = PollPush();
-         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-           if (r.pending()) {
-             gpr_log(GPR_INFO, "Push[%p|%p]: pending; %s", &call_state(), this,
-                     call_state().DebugString().c_str());
-           } else if (r.value().ok()) {
-             gpr_log(GPR_INFO, "Push[%p|%p]: success; %s", &call_state(), this,
-                     call_state().DebugString().c_str());
-           } else {
-             gpr_log(GPR_INFO, "Push[%p|%p]: failure; %s", &call_state(), this,
-                     call_state().DebugString().c_str());
-           }
-         }
-         if (r.ready()) {
-           push_slot() = nullptr;
-           filters_ = nullptr;
-         }
-         return r;
-       }
-
-       MessageHandle TakeValue() {
-         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-           gpr_log(GPR_INFO, "Push[%p|%p]: take value; %s", &call_state(), this,
-                   call_state().DebugString().c_str());
-         }
-         CHECK(value_ != nullptr);
-         CHECK(filters_ != nullptr);
-         push_slot() = nullptr;
-         filters_ = nullptr;
-         return std::move(value_);
-       }
-
-       absl::string_view DebugString() const {
-         return value_ != nullptr ? " (not pulled)" : "";
-       }
-
-      private:
-       void*& push_slot() { return filters_->*push_ptr; }
-       filters_detail::CallState& call_state() { return filters_->call_state_; }
-       void BeginPush() { (call_state().*begin_push)(); }
-       Poll<StatusFlag> PollPush() { return (call_state().*poll_push)(); }
-
-       CallFilters* filters_;
-       MessageHandle value_;
-     };
-
-     class Pull {
-      public:
-       explicit Pull(CallFilters* filters) : filters_(filters) {}
-       ~Pull() {
-         if (filters_ != nullptr) {
-           // call_state().DropPull();
-         }
-       }
-
-       Pull(const Pull&) = delete;
-       Pull& operator=(const Pull&) = delete;
-       Pull(Pull&& other) noexcept
-           : filters_(std::exchange(other.filters_, nullptr)),
-             executor_(std::move(other.executor_)) {}
-       Pull& operator=(Pull&&) = delete;
-
-       Poll<ValueOrFailure<absl::optional<MessageHandle>>> operator()() {
-         CHECK(filters_ != nullptr);
-         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-           gpr_log(GPR_INFO, "PullMessage[%p|%p]: %s executor:%d",
-   &call_state(), this, call_state().DebugString().c_str(),
-                   executor_.IsRunning());
-         }
-         if (executor_.IsRunning()) {
-           auto c = call_state().PollClosed();
-           if (c.ready() && c.value()) {
-             filters_->CancelDueToFailedPipeOperation();
-             return Failure{};
-           }
-           return FinishOperationExecutor(executor_.Step(filters_->call_data_));
-         }
-         auto p = call_state().PollPull();
-         auto* r = p.value_if_ready();
-         if (r == nullptr) {
-           if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-             gpr_log(GPR_INFO, "PullMessage[%p] pending: %s executor:%d",
-                     &call_state(), call_state().DebugString().c_str(),
-                     executor_.IsRunning());
-           }
-           return Pending{};
-         }
-         if (!r->ok()) {
-           filters_->CancelDueToFailedPipeOperation();
-           return Failure{};
-         }
-         if (!**r) {
-           if (half_close_layout_ptr != nullptr) {
-             filters_detail::RunHalfClose(
-                 filters_->stack_->data_.*half_close_layout_ptr,
-                 filters_->call_data_);
-           }
-           return absl::nullopt;
-         }
-         CHECK(filters_ != nullptr);
-         return FinishOperationExecutor(executor_.Start(
-             layout(), push()->TakeValue(), filters_->call_data_));
-       }
-
-      private:
-       filters_detail::CallState& call_state() { return filters_->call_state_; }
-       Push* push() { return static_cast<Push*>(filters_->*push_ptr); }
-       const filters_detail::Layout<filters_detail::FallibleOperator<Message>>*
-       layout() {
-         return &(filters_->stack_->data_.*layout_ptr);
-       }
-
-       Poll<ValueOrFailure<absl::optional<MessageHandle>>>
-       FinishOperationExecutor(Poll<filters_detail::ResultOr<MessageHandle>> p)
-   { auto* r = p.value_if_ready(); if (r == nullptr) return Pending{};
-         DCHECK(!executor_.IsRunning());
-         if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-           gpr_log(GPR_INFO, "PullMessage[%p|%p] executor done: %s", &state(),
-                   this, state().DebugString().c_str());
-         }
-         state().AckPull();
-         if (r->ok != nullptr) return std::move(r->ok);
-         filters_->PushServerTrailingMetadata(std::move(r->error));
-         return Failure{};
-       }
-
-       CallFilters* filters_;
-       filters_detail::OperationExecutor<MessageHandle> executor_;
-     };
-   };
-   */
-
-  template <typename T, typename GetValuePromise, typename Finish>
-  class PullPromise {
-   public:
-    explicit PullPromise(CallFilters* filters, GetValuePromise get_value,
-                         Finish finish)
-        : filters_(filters),
-          get_value_(std::move(get_value)),
-          finish_(std::move(finish)) {}
-
-    PullPromise(const PullPromise&) = delete;
-    PullPromise& operator=(const PullPromise&) = delete;
-    PullPromise(PullPromise&& other) noexcept
-        : filters_(std::exchange(other.filters_, nullptr)),
-          executor_(std::move(other.executor_)) {}
-    PullPromise& operator=(PullPromise&&) = delete;
-
-    auto operator()() {
-      if (executor_.IsRunning()) {
-        return FinishOperationExecutor(executor_.Step(filters_->call_data_));
-      }
-      auto p = get_value_(filters_);
-      auto* r = p.value_if_ready();
-      if (r == nullptr) return Pending{};
-      return StartExecutor(std::move(*r));
-    }
-
-   private:
-    filters_detail::CallState& call_state() { return filters_->call_state_; }
-
-    Poll<ValueOrFailure<T>> StartExecutor(T input) {
-      return FinishOperationExecutor(
-          executor_.Start(&filters_->stack_->data_.client_initial_metadata,
-                          std::move(input), filters_->call_data_));
-    }
-
-    Poll<ValueOrFailure<absl::optional<T>>> StartExecutor(
-        absl::optional<T> input) {
-      if (!input.has_value()) {
-        finish_(filters_, absl::nullopt);
-      }
-      return StartExecutor(std::move(*input));
-    }
-
-    Poll<ValueOrFailure<T>> FinishOperationExecutor(
-        Poll<filters_detail::ResultOr<T>> p) {
-      auto* r = p.value_if_ready();
-      if (r == nullptr) return Pending{};
-      DCHECK(!executor_.IsRunning());
-      const bool success = r->ok != nullptr;
-      finish_(filters_, success);
-      if (success) return std::move(r->ok);
-      filters_->PushServerTrailingMetadata(std::move(r->error));
-      return Failure{};
-    }
-
-    CallFilters* filters_;
-    filters_detail::OperationExecutor<T> executor_;
-    GPR_NO_UNIQUE_ADDRESS GetValuePromise get_value_;
-    GPR_NO_UNIQUE_ADDRESS Finish finish_;
-  };
-
-  template <typename T, typename GetValuePromise, typename Finish>
-  auto MakePullPromise(GetValuePromise get_value, Finish finish) {
-    return PullPromise<T, GetValuePromise, Finish>(this, std::move(get_value),
-                                                   std::move(finish));
-  }
-
-  class PullServerTrailingMetadataPromise {
-   public:
-    explicit PullServerTrailingMetadataPromise(CallFilters* filters)
-        : filters_(filters) {}
-
-    PullServerTrailingMetadataPromise(
-        const PullServerTrailingMetadataPromise&) = delete;
-    PullServerTrailingMetadataPromise& operator=(
-        const PullServerTrailingMetadataPromise&) = delete;
-    PullServerTrailingMetadataPromise(
-        PullServerTrailingMetadataPromise&& other) noexcept
-        : filters_(std::exchange(other.filters_, nullptr)),
-          executor_(std::move(other.executor_)) {}
-    PullServerTrailingMetadataPromise& operator=(
-        PullServerTrailingMetadataPromise&&) = delete;
-
-    Poll<ServerMetadataHandle> operator()() {
-      if (executor_.IsRunning()) {
-        auto r = executor_.Step(filters_->call_data_);
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-          if (r.pending()) {
-            gpr_log(GPR_INFO,
-                    "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
-                    GetContext<Activity>()->DebugTag().c_str(), filters_);
-          } else {
-            gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
-                    GetContext<Activity>()->DebugTag().c_str(), filters_,
-                    r.value()->DebugString().c_str());
-          }
-        }
-        return r;
-      }
-      if (call_state().PollServerTrailingMetadataAvailable().pending()) {
-        return Pending{};
-      }
-      // If no stack has been set, we can just return the result of the call
-      if (filters_->stack_ == nullptr) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-          gpr_log(GPR_INFO,
-                  "%s PullServerTrailingMetadata[%p]: Ready(no-stack): %s",
-                  GetContext<Activity>()->DebugTag().c_str(), filters_,
-                  filters_->server_trailing_metadata_->DebugString().c_str());
-        }
-        return std::move(filters_->server_trailing_metadata_);
-      }
-      // Otherwise we need to process it through all the filters.
-      auto r = executor_.Start(
-          &filters_->stack_->data_.server_trailing_metadata,
-          std::move(filters_->server_trailing_metadata_), filters_->call_data_);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
-        if (r.pending()) {
-          gpr_log(GPR_INFO,
-                  "%s PullServerTrailingMetadata[%p]: Pending(but executing)",
-                  GetContext<Activity>()->DebugTag().c_str(), filters_);
-        } else {
-          gpr_log(GPR_INFO, "%s PullServerTrailingMetadata[%p]: Ready: %s",
-                  GetContext<Activity>()->DebugTag().c_str(), filters_,
-                  r.value()->DebugString().c_str());
-        }
-      }
-      return r;
-    }
-
-   private:
-    filters_detail::CallState& call_state() { return filters_->call_state_; }
-    CallFilters* filters_;
-    // TODO(ctiller): consider forcing all server trailing metadata handlers to
-    // be immediate, removing the need for an executor here.
-    filters_detail::InfallibleOperationExecutor<ServerMetadataHandle> executor_;
-  };
-
   void CancelDueToFailedPipeOperation(SourceLocation but_where = {});
 
   RefCountedPtr<Stack> stack_;
@@ -1833,76 +1685,12 @@ class CallFilters {
   filters_detail::CallState call_state_;
 
   void* call_data_;
-  ClientMetadataHandle client_initial_metadata_;
-  ServerMetadataHandle server_initial_metadata_push_;
-
-  // The following void*'s are pointers to a `Push` object (from above).
-  // They are used to track the current push operation for each pipe.
-  // It would be lovely for them to be typed pointers, but that would require
-  // a recursive type definition since the location of this field needs to be
-  // a template argument to the `Push` object itself.
-  void* client_to_server_message_push_ = nullptr;
-  void* server_to_client_message_push_ = nullptr;
-
-  ServerMetadataHandle server_trailing_metadata_;
+  ClientMetadataHandle push_client_initial_metadata_;
+  ServerMetadataHandle push_server_initial_metadata_;
+  MessageHandle push_client_to_server_message_;
+  MessageHandle push_server_to_client_message_;
+  ServerMetadataHandle push_server_trailing_metadata_;
 };
-
-inline auto CallFilters::PullClientInitialMetadata() {
-  return MakePullPromise<ClientMetadataHandle>(
-      [](CallFilters* filters) {
-        CHECK(filters->client_initial_metadata_ != nullptr);
-        return std::move(filters->client_initial_metadata_);
-      },
-      [](CallFilters* filters, bool success) {
-        filters->call_state_.FinishPullClientInitialMetadata();
-      });
-}
-
-inline auto CallFilters::PullServerInitialMetadata() {
-  return MakePullPromise<ServerMetadataHandle>(
-      [](CallFilters* filters) -> Poll<absl::optional<ServerMetadataHandle>> {
-        auto p = filters->call_state_.PollPullServerInitialMetadataAvailable();
-        auto* r = p.value_if_ready();
-        if (r == nullptr) return Pending{};
-        if (!*r) return absl::nullopt;
-        return std::move(filters->server_initial_metadata_push_);
-      },
-      [](CallFilters* filters, absl::optional<bool> result) {
-        filters->call_state_.FinishPullServerInitialMetadata();
-      });
-}
-
-inline auto CallFilters::PushClientToServerMessage(MessageHandle message) {
-  CHECK(message != nullptr);
-  // Lambda acts as a firewall to protect member functions of p from being
-  // called.
-  return [p = ClientToServerMessagePushPromise{
-              this, std::move(message)}]() mutable { return p(); };
-}
-
-inline auto CallFilters::PullClientToServerMessage() {
-  return ClientToServerMessagePromises::PullMessage<
-      &filters_detail::StackData::client_to_server_half_close>{this};
-}
-
-inline auto CallFilters::PushServerToClientMessage(MessageHandle message) {
-  CHECK(message != nullptr);
-  // Lambda acts as a firewall to protect member functions of p from being
-  // called.
-  return [p = ServerToClientMessagePush{this, std::move(message)}]() mutable {
-    return p();
-  };
-}
-
-inline auto CallFilters::PullServerToClientMessage() {
-  return ServerToClientMessagePromises::PullMessage<nullptr>{this};
-}
-
-inline auto CallFilters::PullServerTrailingMetadata() {
-  return PullServerTrailingMetadataPromise(this);
-}
-
-inline auto CallFilters::WasCancelled() { return cancelled_.Wait(); }
 
 }  // namespace grpc_core
 

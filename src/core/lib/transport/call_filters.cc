@@ -15,7 +15,6 @@
 #include "src/core/lib/transport/call_filters.h"
 
 #include "absl/log/check.h"
-#include "metadata_batch.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -186,7 +185,7 @@ char g_empty_call_data;
 CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
     : stack_(nullptr),
       call_data_(nullptr),
-      client_initial_metadata_(std::move(client_initial_metadata)) {}
+      push_client_initial_metadata_(std::move(client_initial_metadata)) {}
 
 CallFilters::~CallFilters() {
   if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
@@ -222,7 +221,7 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 
 void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
-  if (server_trailing_metadata_ == nullptr) return;
+  if (push_server_trailing_metadata_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
     gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
             "Cancelling due to failed pipe operation: %s",
@@ -244,7 +243,7 @@ void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   CHECK(md != nullptr);
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {
-    server_trailing_metadata_ = std::move(md);
+    push_server_trailing_metadata_ = std::move(md);
   }
 }
 
@@ -253,9 +252,9 @@ std::string CallFilters::DebugString() const {
       absl::StrFormat("this:%p", this),
       absl::StrCat("state:", call_state_.DebugString()),
       absl::StrCat("server_trailing_metadata:",
-                   server_trailing_metadata_ == nullptr
+                   push_server_trailing_metadata_ == nullptr
                        ? "not-set"
-                       : server_trailing_metadata_->DebugString())};
+                       : push_server_trailing_metadata_->DebugString())};
   return absl::StrCat("CallFilters{", absl::StrJoin(components, ", "), "}");
 };
 
@@ -302,8 +301,7 @@ CallState::CallState()
 
 void CallState::Start() {
   CHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kUnstarted);
-  server_to_client_pull_state_ =
-      ServerToClientPullState::kWaitingForServerInitialMetadata;
+  server_to_client_pull_state_ = ServerToClientPullState::kStarted;
   client_to_server_pull_waiter_.Wake();
   server_to_client_pull_waiter_.Wake();
 }
