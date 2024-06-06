@@ -144,7 +144,10 @@ class FilterStackCall final : public Call {
     return channel_->compression_options();
   }
 
-  void DeleteThis() { this->~FilterStackCall(); }
+  void DeleteThis() {
+    auto arena = this->arena()->Ref();
+    this->~FilterStackCall();
+  }
 
   Channel* channel() const { return channel_.get(); }
 

@@ -216,6 +216,7 @@ pip_install_dir "$ROOT/src/python/grpcio_admin"
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
+# shellcheck disable=SC2261
 pip_install coverage==7.2.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
             googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0 \
