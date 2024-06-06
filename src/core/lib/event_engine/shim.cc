@@ -30,7 +30,7 @@ bool UseEventEngineClient() {
   return grpc_core::IsEventEngineClientEnabled();
 #elif defined(GPR_WINDOWS) && !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   return grpc_core::IsEventEngineClientEnabled();
-#elif defined(GRPC_IOS_EVENT_ENGINE_CLIENT)
+#elif GRPC_IOS_EVENT_ENGINE_CLIENT
   return true;
 #else
   return false;
