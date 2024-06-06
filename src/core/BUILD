@@ -1044,6 +1044,7 @@ grpc_cc_library(
         "poll",
         "wait_set",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
