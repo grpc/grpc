@@ -110,6 +110,7 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     # TODO(hork): clean up EE offenses
     "-Wno-missing-field-initializers",
     "-Wno-non-virtual-dtor",
+    "-Wno-thread-safety-reference-return",
 
     # TODO(ctiller): offense: dump_args. signed to unsigned
     "-Wno-sign-conversion",
@@ -145,9 +146,11 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     "-Wno-suggest-override",
     "-Wno-documentation",
     "-Wno-documentation-unknown-command",
+    "-Wno-unsafe-buffer-usage",
 
     ### possibly bad warnings for this codebase
     "-Wno-covered-switch-default",
+    "-Wno-switch-default",
     "-Wno-switch-enum",
     "-Wno-c99-extensions",
     "-Wno-unused-private-field",  # GRPC_UNUSED does not appear to work for private fields

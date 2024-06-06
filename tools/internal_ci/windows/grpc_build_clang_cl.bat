@@ -30,8 +30,9 @@ call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 @rem Install clang-cl
 echo "!TIME!: Installing llvm"
-choco install -y llvm
+choco install -y llvm --version=18.1.6
 set BAZEL_LLVM="C:\Program Files\LLVM"
+clang-cl --version
 
 @rem Install bazel
 @rem Side effect of the tools/bazel script is that it downloads the correct version of bazel binary.
