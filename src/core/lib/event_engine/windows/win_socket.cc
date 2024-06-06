@@ -97,7 +97,7 @@ void WinSocket::Shutdown(const grpc_core::DebugLocation& location,
 
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
   if (IsShutdown()) {
-    info.SetError(WSAESHUTDOWN, "NotifyOnReady");
+    info.SetResult(WSAESHUTDOWN, 0, "NotifyOnReady");
     thread_pool_->Run(closure);
     return;
   };
@@ -136,14 +136,13 @@ void WinSocket::OpState::SetReady() {
   win_socket_->thread_pool_->Run(closure);
 }
 
-void WinSocket::OpState::SetError(int wsa_error, absl::string_view context) {
-  result_ =
-      OverlappedResult{/*wsa_error=*/wsa_error, /*bytes_transferred=*/0,
-                       /*error_status=*/GRPC_WSA_ERROR(wsa_error, context)};
-}
-
-void WinSocket::OpState::SetResult(OverlappedResult result) {
-  result_ = result;
+void WinSocket::OpState::SetResult(int wsa_error, DWORD bytes,
+                                   absl::string_view context) {
+  bytes = wsa_error == 0 ? bytes : 0;
+  result_ = OverlappedResult{
+      /*wsa_error=*/wsa_error, /*bytes_transferred=*/bytes,
+      /*error_status=*/wsa_error == 0 ? absl::OkStatus()
+                                      : GRPC_WSA_ERROR(wsa_error, context)};
 }
 
 void WinSocket::OpState::SetErrorStatus(absl::Status error_status) {
@@ -157,11 +156,7 @@ void WinSocket::OpState::GetOverlappedResult() {
 
 void WinSocket::OpState::GetOverlappedResult(SOCKET sock) {
   if (win_socket_->IsShutdown()) {
-    result_ = OverlappedResult{
-        /*wsa_error=*/WSA_OPERATION_ABORTED,
-        /*bytes_transferred=*/0,
-        /*error_status=*/
-        GRPC_WSA_ERROR(WSA_OPERATION_ABORTED, "GetOverlappedResult")};
+    SetResult(WSA_OPERATION_ABORTED, 0, "GetOverlappedResult");
     return;
   }
   DWORD flags = 0;
@@ -169,11 +164,7 @@ void WinSocket::OpState::GetOverlappedResult(SOCKET sock) {
   BOOL success =
       WSAGetOverlappedResult(sock, &overlapped_, &bytes, FALSE, &flags);
   auto wsa_error = success ? 0 : WSAGetLastError();
-  result_ = OverlappedResult{
-      /*wsa_error=*/wsa_error,
-      /*bytes_transferred=*/bytes,
-      wsa_error == 0 ? absl::OkStatus()
-                     : GRPC_WSA_ERROR(wsa_error, "WSAGetOverlappedResult")};
+  SetResult(wsa_error, bytes, "WSAGetOverlappedResult");
 }
 
 bool WinSocket::IsShutdown() { return is_shutdown_.load(); }
