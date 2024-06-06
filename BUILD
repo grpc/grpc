@@ -24,6 +24,7 @@ load(
     "grpc_upb_proto_library",
     "grpc_upb_proto_reflection_library",
     "python_config_settings",
+    "grpc_clang_cl_settings",
 )
 
 licenses(["reciprocal"])
@@ -89,6 +90,8 @@ platform(
         "@platforms//cpu:armv7",
     ],
 )
+
+grpc_clang_cl_settings()
 
 config_setting(
     name = "grpc_no_rls_flag",
@@ -218,24 +221,6 @@ config_setting(
 config_setting(
     name = "windows_msvc",
     values = {"cpu": "x64_windows_msvc"},
-)
-
-platform(
-    name = "x64_windows-clang-cl",
-    constraint_values = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:windows",
-        "@bazel_tools//tools/cpp:clang-cl",
-    ],
-)
-
-config_setting(
-    name = "windows_clang",
-    constraint_values = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:windows",
-        "@bazel_tools//tools/cpp:clang-cl",
-    ],
 )
 
 config_setting(
