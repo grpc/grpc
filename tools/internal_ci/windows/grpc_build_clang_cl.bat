@@ -25,17 +25,23 @@ endlocal
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
+echo "!TIME!: Preparing for the Windows build"
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 @rem Install clang-cl
+echo "!TIME!: Installing llvm"
 choco install -y llvm
 set BAZEL_LLVM="C:\Program Files\LLVM"
 
 @rem Install bazel
 @rem Side effect of the tools/bazel script is that it downloads the correct version of bazel binary.
+echo "!TIME!: Installing bazel"
 mkdir C:\bazel
 bash -c "tools/bazel --version && cp tools/bazel-*.exe /c/bazel/bazel.exe"
 set PATH=C:\bazel;%PATH%
 bazel --version
 
-bazel --config=clang-cl --config=windows_opt build --build_tag_filters=-no_windows :all src/core:all
+echo "!TIME!: Running the bazel build"
+bazel build --config=clang-cl --config=windows_opt --build_tag_filters=-no_windows :all src/core:all
+
+echo "!TIME!: Job Finished"
