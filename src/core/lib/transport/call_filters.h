@@ -1200,11 +1200,10 @@ class CallState {
   Poll<StatusFlag> PollPushClientToServerMessage();
   void ClientToServerHalfClose();
   // PULL: client -> server
+  void BeginPullClientInitialMetadata();
   void FinishPullClientInitialMetadata();
-  void BeginPullClientToServerMessage();
   Poll<StatusFlag> PollPullClientToServerMessageAvailable();
-  void WaitingForClientToServerMessageAck();
-  void AckClientToServerMessage();
+  void FinishPullClientToServerMessage();
   // PUSH: server -> client
   void PushServerInitialMetadata();
   void BeginPushServerToClientMessage();
@@ -1213,33 +1212,26 @@ class CallState {
   // PULL: server -> client
   Poll<bool> PollPullServerInitialMetadataAvailable();
   void FinishPullServerInitialMetadata();
-  void BeginPullServerToClientMessage();
   Poll<StatusFlag> PollPullServerToClientMessageAvailable();
-  void WaitingForServerToClientMessageAck();
-  void AckServerToClientMessage();
+  void FinishPullServerToClientMessage();
   Poll<Empty> PollServerTrailingMetadataAvailable();
+  void FinishPullServerTrailingMetadata();
   // Debug
   std::string DebugString() const;
 
  private:
   enum class ClientToServerPullState : uint8_t {
     // Ready to read: client initial metadata is there, but not yet processed
-    // Next state: kIdle or kTerminated
     kBegin,
+    // Processing client initial metadata
+    kProcessingClientInitialMetadata,
     // Main call loop: not reading
-    // Next state: kReading or kProcessingClientToServerMessage, or kTerminated
     kIdle,
     // Main call loop: reading but no message available
-    // Next state: kProcessingClientToServerMessage or kTerminated
     kReading,
     // Main call loop: processing one message
-    // Next state: kWaitingForClientToServerMessageAck or kTerminated
     kProcessingClientToServerMessage,
-    // Main call loop: waiting for the ack that a message has been processed
-    // Next state: kIdle or kTerminated
-    kWaitingForClientToServerMessageAck,
     // Client initial metadata has been processed
-    // Request has finished
     kTerminated,
   };
   static const char* ClientToServerPullStateString(
@@ -1247,14 +1239,14 @@ class CallState {
     switch (state) {
       case ClientToServerPullState::kBegin:
         return "Begin";
+      case ClientToServerPullState::kProcessingClientInitialMetadata:
+        return "ProcessingClientInitialMetadata";
       case ClientToServerPullState::kIdle:
         return "Idle";
       case ClientToServerPullState::kReading:
         return "Reading";
       case ClientToServerPullState::kProcessingClientToServerMessage:
         return "ProcessingClientToServerMessage";
-      case ClientToServerPullState::kWaitingForClientToServerMessageAck:
-        return "WaitingForClientToServerMessageAck";
       case ClientToServerPullState::kTerminated:
         return "Terminated";
     }
@@ -1301,8 +1293,6 @@ class CallState {
     kReading,
     // Main call loop: processing one message
     kProcessingServerToClientMessage,
-    // Main call loop: waiting for the ack that a message has been processed
-    kWaitingForServerToClientMessageAck,
     // Processing server trailing metadata
     kProcessingServerTrailingMetadata,
     kTerminated,
@@ -1322,8 +1312,6 @@ class CallState {
         return "Reading";
       case ServerToClientPullState::kProcessingServerToClientMessage:
         return "ProcessingServerToClientMessage";
-      case ServerToClientPullState::kWaitingForServerToClientMessageAck:
-        return "WaitingForServerToClientMessageAck";
       case ServerToClientPullState::kProcessingServerTrailingMetadata:
         return "ProcessingServerTrailingMetadata";
       case ServerToClientPullState::kTerminated:
@@ -1542,11 +1530,13 @@ class CallFilters {
   }
 
  private:
-  template <typename Output, typename Input>
+  template <typename Output, void (filters_detail::CallState::* on_done)(),
+            typename Input>
   Poll<ValueOrFailure<Output>> FinishStep(
       Poll<filters_detail::ResultOr<Input>> p) {
     auto* r = p.value_if_ready();
     if (r == nullptr) return Pending{};
+    (call_state_.*on_done)();
     if (r->ok != nullptr) {
       return ValueOrFailure<Output>{std::move(r->ok)};
     }
@@ -1556,16 +1546,17 @@ class CallFilters {
 
   template <typename Output, typename Input,
             filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
-                filters_detail::StackData::* layout)>
+                filters_detail::StackData::* layout),
+            void (filters_detail::CallState::* on_done)()>
   auto RunExecutor(Input value) {
     return [this, executor = filters_detail::OperationExecutor<Input>(),
             value = std::move(value), started = false]() mutable {
       if (!started) {
         started = true;
-        return FinishStep<Output>(executor.Start(&(stack_->data_.*layout),
-                                                 std::move(value), call_data_));
+        return FinishStep<Output, on_done>(executor.Start(
+            &(stack_->data_.*layout), std::move(value), call_data_));
       }
-      return FinishStep<Output>(executor.Step(call_data_));
+      return FinishStep<Output, on_done>(executor.Step(call_data_));
     };
   }
 
@@ -1573,8 +1564,11 @@ class CallFilters {
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
-    return RunExecutor<ClientMetadataHandle, ClientMetadataHandle,
-                       &filters_detail::StackData::client_initial_metadata>(
+    call_state_.BeginPullClientInitialMetadata();
+    return RunExecutor<
+        ClientMetadataHandle, ClientMetadataHandle,
+        &filters_detail::StackData::client_initial_metadata,
+        &filters_detail::CallState::FinishPullClientInitialMetadata>(
         std::move(push_client_initial_metadata_));
   }
   // Server: Push server initial metadata
@@ -1598,7 +1592,9 @@ class CallFilters {
                     RunExecutor<
                         absl::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
-                        &filters_detail::StackData::server_initial_metadata>(
+                        &filters_detail::StackData::server_initial_metadata,
+                        &filters_detail::CallState::
+                            FinishPullServerInitialMetadata>(
                         std::move(push_server_initial_metadata_)),
                     [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
@@ -1629,7 +1625,8 @@ class CallFilters {
         [this]() {
           return RunExecutor<
               MessageHandle, MessageHandle,
-              &filters_detail::StackData::client_to_server_messages>(
+              &filters_detail::StackData::client_to_server_messages,
+              &filters_detail::CallState::FinishPullClientToServerMessage>(
               std::move(push_server_to_client_message_));
         });
   }
@@ -1650,7 +1647,8 @@ class CallFilters {
         [this]() {
           return RunExecutor<
               MessageHandle, MessageHandle,
-              &filters_detail::StackData::server_to_client_messages>(
+              &filters_detail::StackData::server_to_client_messages,
+              &filters_detail::CallState::FinishPullServerToClientMessage>(
               std::move(push_server_to_client_message_));
         });
   }

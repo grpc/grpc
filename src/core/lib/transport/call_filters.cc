@@ -297,13 +297,28 @@ namespace filters_detail {
 CallState::CallState()
     : client_to_server_pull_state_(ClientToServerPullState::kBegin),
       client_to_server_push_state_(ClientToServerPushState::kIdle),
-      server_to_client_pull_state_(ServerToClientPullState::kUnstarted) {}
+      server_to_client_pull_state_(ServerToClientPullState::kUnstarted),
+      pushed_server_initial_metadata_(false),
+      server_to_client_message_push_state_(
+          ServerToClientMessagePushState::kIdle),
+      pushed_server_trailing_metadata_(false) {}
 
 void CallState::Start() {
-  CHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kUnstarted);
-  server_to_client_pull_state_ = ServerToClientPullState::kStarted;
-  client_to_server_pull_waiter_.Wake();
-  server_to_client_pull_waiter_.Wake();
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+      server_to_client_pull_state_ = ServerToClientPullState::kStarted;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      Crash("Start called twice");
+    case ServerToClientPullState::kTerminated:
+      break;
+  }
 }
 
 void CallState::BeginPushClientToServerMessage() {
@@ -311,16 +326,17 @@ void CallState::BeginPushClientToServerMessage() {
     case ClientToServerPushState::kIdle:
       client_to_server_push_state_ = ClientToServerPushState::kPushedMessage;
       client_to_server_pull_waiter_.Wake();
-      return;
+      break;
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      Crash("Only one push allowed to be outstanding");
+      Crash("PushClientToServerMessage called twice concurrently");
+      break;
     case ClientToServerPushState::kPushedHalfClose:
-      Crash("Already half-closed");
+      Crash("PushClientToServerMessage called after half-close");
+      break;
     case ClientToServerPushState::kFinished:
-      return;
+      break;
   }
-  Crash("unreachable");
 }
 
 Poll<StatusFlag> CallState::PollPushClientToServerMessage() {
@@ -348,10 +364,26 @@ void CallState::ClientToServerHalfClose() {
       break;
     case ClientToServerPushState::kPushedHalfClose:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      Crash(absl::StrCat("ClientToServerHalfClose called twice (current state=",
-                         client_to_server_push_state_, ")"));
+      Crash("ClientToServerHalfClose called twice");
       break;
     case ClientToServerPushState::kFinished:
+      break;
+  }
+}
+
+void CallState::BeginPullClientInitialMetadata() {
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+      client_to_server_pull_state_ =
+          ClientToServerPullState::kProcessingClientInitialMetadata;
+      break;
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+    case ClientToServerPullState::kIdle:
+    case ClientToServerPullState::kReading:
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      Crash("BeginPullClientInitialMetadata called twice");
+      break;
+    case ClientToServerPullState::kTerminated:
       break;
   }
 }
@@ -359,183 +391,93 @@ void CallState::ClientToServerHalfClose() {
 void CallState::FinishPullClientInitialMetadata() {
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
+      Crash("FinishPullClientInitialMetadata called before Begin");
+      break;
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
       client_to_server_pull_state_ = ClientToServerPullState::kIdle;
       client_to_server_pull_waiter_.Wake();
       break;
-    case ClientToServerPullState::kTerminated:
-      break;
-    default:
-      Crash(absl::StrCat(
-          "FinishPullClientInitialMetadata called in invalid state ",
-          client_to_server_pull_state_));
-  }
-}
-
-void CallState::BeginPullClientToServerMessage() {
-  switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kIdle:
-      client_to_server_pull_state_ = ClientToServerPullState::kReading;
+    case ClientToServerPullState::kReading:
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      Crash("Out of order FinishPullClientInitialMetadata");
       break;
     case ClientToServerPullState::kTerminated:
       break;
-    default:
-      Crash(absl::StrCat(
-          "BeginPullClientToServerMessage called in invalid state ",
-          client_to_server_pull_state_));
   }
 }
 
 Poll<StatusFlag> CallState::PollPullClientToServerMessageAvailable() {
   switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+      return Pending{};
+    case ClientToServerPullState::kIdle:
+      client_to_server_pull_state_ = ClientToServerPullState::kReading;
+      ABSL_FALLTHROUGH_INTENDED;
     case ClientToServerPullState::kReading:
+      break;
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      Crash(
+          "PollPullClientToServerMessageAvailable called while processing a "
+          "message");
       break;
     case ClientToServerPullState::kTerminated:
       return Failure{};
-    default:
-      Crash(absl::StrCat(
-          "PollPullClientToServerMessageAvailable called in invalid state ",
-          client_to_server_pull_state_));
   }
+  DCHECK_EQ(client_to_server_pull_state_, ClientToServerPullState::kReading);
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
       return Pending{};
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      client_to_server_pull_state_ =
+          ClientToServerPullState::kProcessingClientToServerMessage;
       return Success{};
     case ClientToServerPushState::kPushedHalfClose:
+      return Success{};
     case ClientToServerPushState::kFinished:
-      return Failure{};
-  }
-  Crash("unreachable");
-}
-
-void CallState::PushServerInitialMetadata() {
-  CHECK(!pushed_server_initial_metadata_);
-  if (pushed_server_trailing_metadata_) return;
-  pushed_server_initial_metadata_ = true;
-  server_to_client_pull_waiter_.Wake();
-}
-
-void CallState::BeginPushServerToClientMessage() {
-  CHECK_EQ(server_to_client_message_push_state_,
-           ServerToClientMessagePushState::kIdle);
-  if (pushed_server_trailing_metadata_) return;
-  server_to_client_message_push_state_ =
-      ServerToClientMessagePushState::kPushed;
-  server_to_client_pull_waiter_.Wake();
-}
-
-Poll<StatusFlag> CallState::PollPushServerToClientMessage() {
-  switch (server_to_client_message_push_state_) {
-    case ServerToClientMessagePushState::kIdle:
-      return Success{};
-    case ServerToClientMessagePushState::kPushed:
-      return Pending{};
-    case ServerToClientMessagePushState::kFailed:
+      client_to_server_pull_state_ = ClientToServerPullState::kTerminated;
       return Failure{};
   }
 }
 
-bool CallState::PushServerTrailingMetadata(bool cancel) {
-  if (pushed_server_trailing_metadata_) return false;
-  pushed_server_trailing_metadata_ = true;
-  if (cancel) {
-    server_to_client_message_push_state_ =
-        ServerToClientMessagePushState::kFailed;
-    pushed_server_initial_metadata_ = true;
-    client_to_server_push_state_ = ClientToServerPushState::kFinished;
-  }
-  server_to_client_pull_waiter_.Wake();
-  return true;
-}
-
-Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
-  switch (server_to_client_pull_state_) {
-    case ServerToClientPullState::kUnstarted:
-      return Pending{};
-    case ServerToClientPullState::kStarted:
-      if (pushed_server_initial_metadata_) {
-        server_to_client_pull_state_ =
-            ServerToClientPullState::kProcessingServerInitialMetadata;
-        return true;
-      }
-      if (pushed_server_trailing_metadata_) return false;
-      return Pending{};
-    case ServerToClientPullState::kTerminated:
-      return false;
-    default:
-      Crash(absl::StrCat(
-          "PollPullServerInitialMetadataAvailable called in invalid state ",
-          server_to_client_pull_state_));
-  }
-}
-
-void CallState::FinishPullServerInitialMetadata() {
-  switch (server_to_client_pull_state_) {
-    case ServerToClientPullState::kProcessingServerInitialMetadata:
-      server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
-      server_to_client_pull_waiter_.Wake();
+void CallState::FinishPullClientToServerMessage() {
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+      Crash("FinishPullClientToServerMessage called before Begin");
       break;
-    case ServerToClientPullState::kTerminated:
+    case ClientToServerPullState::kIdle:
+      Crash("FinishPullClientToServerMessage called twice");
       break;
-    default:
-      Crash(absl::StrCat(
-          "FinishPullServerInitialMetadata called in invalid state ",
-          server_to_client_pull_state_));
+    case ClientToServerPullState::kReading:
+      Crash(
+          "FinishPullClientToServerMessage called before "
+          "PollPullClientToServerMessageAvailable");
+      break;
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      client_to_server_pull_state_ = ClientToServerPullState::kIdle;
+      client_to_server_pull_waiter_.Wake();
+      break;
+    case ClientToServerPullState::kTerminated:
       break;
   }
-}
-
-void CallState::BeginPullServerToClientMessage() {
-  switch (server_to_client_pull_state_) {
-    case ServerToClientPullState::kIdle:
-      server_to_client_pull_state_ = ServerToClientPullState::kReading;
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kPushedMessage:
+      client_to_server_push_state_ = ClientToServerPushState::kIdle;
+      client_to_server_push_waiter_.Wake();
       break;
-    case ServerToClientPullState::kTerminated:
+    case ClientToServerPushState::kIdle:
+    case ClientToServerPushState::kPushedHalfClose:
+      Crash("FinishPullClientToServerMessage called without a message");
       break;
-    default:
-      Crash(absl::StrCat(
-          "BeginPullServerToClientMessage called in invalid state ",
-          server_to_client_pull_state_));
-  }
-}
-
-Poll<StatusFlag> CallState::PollPullServerToClientMessageAvailable() {
-  switch (server_to_client_pull_state_) {
-    case ServerToClientPullState::kReading:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
       break;
-    case ServerToClientPullState::kTerminated:
-      return Failure{};
-    default:
-      Crash(absl::StrCat(
-          "PollPullServerToClientMessageAvailable called in invalid state ",
-          server_to_client_pull_state_));
+    case ClientToServerPushState::kFinished:
+      break;
   }
-  switch (server_to_client_message_push_state_) {
-    case ServerToClientMessagePushState::kIdle:
-      return Pending{};
-    case ServerToClientMessagePushState::kPushed:
-      server_to_client_pull_state_ =
-          ServerToClientPullState::kProcessingServerToClientMessage;
-      return Success{};
-    case ServerToClientMessagePushState::kFailed:
-      return Failure{};
-  }
-  Crash("unreachable");
-}
-
-void CallState::WaitingForServerToClientMessageAck() {
-  CHECK_EQ(server_to_client_pull_state_,
-           ServerToClientPullState::kProcessingServerToClientMessage);
-  server_to_client_pull_state_ =
-      ServerToClientPullState::kWaitingForServerToClientMessageAck;
-}
-
-void CallState::AckServerToClientMessage() {
-  CHECK_EQ(server_to_client_pull_state_,
-           ServerToClientPullState::kWaitingForServerToClientMessageAck);
-  server_to_client_pull_state_ = ServerToClientPullState::kIdle;
-  server_to_client_pull_waiter_.Wake();
 }
 
 }  // namespace filters_detail
