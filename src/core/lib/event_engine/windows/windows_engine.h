@@ -120,11 +120,11 @@ class WindowsEventEngine : public EventEngine,
     //
     // This cannot be done in the constructor since shared_from_this is required
     // for the callbacks to hold a ref to this object.
-    void Start(Duration timeout);
+    void Start(Duration timeout) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     // Returns the user's callback and resets it to nullptr to ensure it only
     // runs once.
-    OnConnectCallback TakeCallback() ABSL_LOCKS_EXCLUDED(mu_);
+    OnConnectCallback TakeCallback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     // Create an Endpoint, transfering held object ownership to the endpoint.
     //
