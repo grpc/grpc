@@ -36,8 +36,8 @@ namespace {
 bool SimpleRequestBody(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata(
           {}, GRPC_INITIAL_METADATA_WAIT_FOR_READY |
@@ -67,7 +67,7 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
   EXPECT_TRUE(saw_request_at_server);
   EXPECT_NE(s.GetPeer(), absl::nullopt);
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})

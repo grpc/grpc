@@ -18,6 +18,7 @@
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
 
@@ -289,6 +290,7 @@ void LoadBalancedCallDestination::StartCall(
                       [unstarted_handler, &last_picker](
                           RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
                               picker) mutable {
+                        CHECK_NE(picker.get(), nullptr);
                         last_picker = std::move(picker);
                         // Returns 3 possible things:
                         // - Continue to queue the pick
@@ -328,6 +330,22 @@ void LoadBalancedCallDestination::StartCall(
               return absl::OkStatus();
             });
       });
+}
+
+void RegisterLoadBalancedCallDestination(CoreConfiguration::Builder* builder) {
+  class LoadBalancedCallDestinationFactory final
+      : public ClientChannel::CallDestinationFactory {
+   public:
+    RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
+        ClientChannel::PickerObservable picker) override {
+      return MakeRefCounted<LoadBalancedCallDestination>(std::move(picker));
+    }
+  };
+
+  builder->channel_args_preconditioning()->RegisterStage([](ChannelArgs args) {
+    return args.SetObject(
+        NoDestructSingleton<LoadBalancedCallDestinationFactory>::Get());
+  });
 }
 
 }  // namespace grpc_core

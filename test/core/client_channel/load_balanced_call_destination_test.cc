@@ -75,8 +75,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
   class TestCallDestination final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
-      handlers_.push(
-          unstarted_call_handler.V2HackToStartCallWithoutACallFilterStack());
+      handlers_.push(unstarted_call_handler.StartWithEmptyFilterStack());
     }
 
     absl::optional<CallHandler> PopHandler() {
@@ -133,7 +132,7 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     subchannel_.reset();
   }
 
-  OrphanablePtr<ClientChannel> channel_;
+  RefCountedPtr<ClientChannel> channel_;
   ClientChannel::PickerObservable picker_{nullptr};
   RefCountedPtr<TestCallDestination> call_destination_ =
       MakeRefCounted<TestCallDestination>();
@@ -193,6 +192,44 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
                  call_initiator.Cancel();
                  return Empty{};
                });
+  WaitForAllPendingWork();
+}
+
+LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
+  // Create a call.
+  auto call = MakeCall(MakeClientInitialMetadata());
+  // Client side part of the call: wait for status and expect that it's
+  // UNAVAILABLE
+  SpawnTestSeq(
+      call.initiator, "initiator",
+      [this, handler = std::move(call.handler),
+       initiator = call.initiator]() mutable {
+        destination_under_test().StartCall(handler);
+        return initiator.PullServerTrailingMetadata();
+      },
+      [](ServerMetadataHandle md) {
+        EXPECT_EQ(md->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN),
+                  GRPC_STATUS_UNAVAILABLE);
+        return Empty{};
+      });
+  // Set a picker and wait for at least one pick attempt to prove the call has
+  // made it to the picker.
+  auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
+  std::atomic<bool> queued_once{false};
+  EXPECT_CALL(*mock_picker, Pick)
+      .WillOnce([&queued_once](LoadBalancingPolicy::PickArgs) {
+        queued_once.store(true, std::memory_order_relaxed);
+        return LoadBalancingPolicy::PickResult::Queue{};
+      });
+  picker().Set(mock_picker);
+  TickUntil<Empty>([&queued_once]() -> Poll<Empty> {
+    if (queued_once.load(std::memory_order_relaxed)) return Empty{};
+    return Pending();
+  });
+  // Now set the drop picker (as the client channel does at shutdown) which
+  // should trigger Unavailable to be seen by the client side part of the call.
+  picker().Set(MakeRefCounted<LoadBalancingPolicy::DropPicker>(
+      absl::UnavailableError("Channel destroyed")));
   WaitForAllPendingWork();
 }
 

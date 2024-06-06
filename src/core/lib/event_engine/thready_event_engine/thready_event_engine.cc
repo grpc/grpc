@@ -85,7 +85,9 @@ bool ThreadyEventEngine::IsWorkerThread() {
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 ThreadyEventEngine::GetDNSResolver(
     const DNSResolver::ResolverOptions& options) {
-  return std::make_unique<ThreadyDNSResolver>(*impl_->GetDNSResolver(options));
+  return std::make_unique<ThreadyDNSResolver>(
+      *impl_->GetDNSResolver(options),
+      std::static_pointer_cast<ThreadyEventEngine>(shared_from_this()));
 }
 
 void ThreadyEventEngine::Run(Closure* closure) {
@@ -116,10 +118,10 @@ void ThreadyEventEngine::ThreadyDNSResolver::LookupHostname(
     LookupHostnameCallback on_resolve, absl::string_view name,
     absl::string_view default_port) {
   return impl_->LookupHostname(
-      [this, on_resolve = std::move(on_resolve)](
+      [engine = engine_, on_resolve = std::move(on_resolve)](
           absl::StatusOr<std::vector<ResolvedAddress>> addresses) mutable {
-        engine_->Asynchronously([on_resolve = std::move(on_resolve),
-                                 addresses = std::move(addresses)]() mutable {
+        engine->Asynchronously([on_resolve = std::move(on_resolve),
+                                addresses = std::move(addresses)]() mutable {
           on_resolve(std::move(addresses));
         });
       },
@@ -129,13 +131,12 @@ void ThreadyEventEngine::ThreadyDNSResolver::LookupHostname(
 void ThreadyEventEngine::ThreadyDNSResolver::LookupSRV(
     LookupSRVCallback on_resolve, absl::string_view name) {
   return impl_->LookupSRV(
-      [this, on_resolve = std::move(on_resolve)](
+      [engine = engine_, on_resolve = std::move(on_resolve)](
           absl::StatusOr<std::vector<SRVRecord>> records) mutable {
-        return engine_->Asynchronously(
-            [on_resolve = std::move(on_resolve),
-             records = std::move(records)]() mutable {
-              on_resolve(std::move(records));
-            });
+        return engine->Asynchronously([on_resolve = std::move(on_resolve),
+                                       records = std::move(records)]() mutable {
+          on_resolve(std::move(records));
+        });
       },
       name);
 }
@@ -143,10 +144,10 @@ void ThreadyEventEngine::ThreadyDNSResolver::LookupSRV(
 void ThreadyEventEngine::ThreadyDNSResolver::LookupTXT(
     LookupTXTCallback on_resolve, absl::string_view name) {
   return impl_->LookupTXT(
-      [this, on_resolve = std::move(on_resolve)](
+      [engine = engine_, on_resolve = std::move(on_resolve)](
           absl::StatusOr<std::vector<std::string>> record) mutable {
-        return engine_->Asynchronously([on_resolve = std::move(on_resolve),
-                                        record = std::move(record)]() mutable {
+        return engine->Asynchronously([on_resolve = std::move(on_resolve),
+                                       record = std::move(record)]() mutable {
           on_resolve(std::move(record));
         });
       },

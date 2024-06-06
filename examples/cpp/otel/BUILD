@@ -15,7 +15,7 @@
 licenses(["notice"])
 
 package(
-    default_visibility = ["//examples/cpp/otel:__subpackages__"],
+    default_visibility = ["//examples/cpp:__subpackages__"],
 )
 
 cc_library(
