@@ -61,7 +61,7 @@ constexpr char kServerKeyPath[] = "credentials/localhost.key";
 
 std::string LoadStringFromFile(std::string path) {
 #ifdef BAZEL_BUILD
-    path = "examples/cpp/auth/" + path;
+  path = "examples/cpp/auth/" + path;
 #endif
   std::ifstream file(path);
   if (!file.is_open()) {
@@ -79,12 +79,12 @@ void RunServer(uint16_t port) {
   ServerBuilder builder;
   // Load SSL credentials and build a SSL credential options
   grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
-      LoadStringFromFile(kServerKeyPath),
-      LoadStringFromFile(kServerCertPath)};
+      LoadStringFromFile(kServerKeyPath), LoadStringFromFile(kServerCertPath)};
   grpc::SslServerCredentialsOptions ssl_options;
   ssl_options.pem_key_cert_pairs.emplace_back(key_cert_pair);
   // Listen on the given address with SSL credentials
-  builder.AddListeningPort(server_address, grpc::SslServerCredentials(ssl_options));
+  builder.AddListeningPort(server_address,
+                           grpc::SslServerCredentials(ssl_options));
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.
   builder.RegisterService(&service);

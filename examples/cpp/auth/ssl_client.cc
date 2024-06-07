@@ -24,7 +24,6 @@
 #include <sstream>
 #include <string>
 
-
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 
@@ -100,7 +99,7 @@ constexpr char kRootCertificate[] = "credentials/root.crt";
 
 std::string LoadStringFromFile(std::string path) {
 #ifdef BAZEL_BUILD
-    path = "examples/cpp/auth/" + path;
+  path = "examples/cpp/auth/" + path;
 #endif
   std::ifstream file(path);
   if (!file.is_open()) {
