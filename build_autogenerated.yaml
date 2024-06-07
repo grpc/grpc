@@ -13601,17 +13601,6 @@ targets:
   - linux
   - posix
   uses_polling: false
-- name: log_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/util/log_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
-  uses_polling: false
 - name: log_too_many_open_files_test
   gtest: true
   build: test

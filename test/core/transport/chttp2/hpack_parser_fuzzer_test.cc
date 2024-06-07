@@ -50,10 +50,10 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    gpr_disable_all_logs();
+  }
   grpc_core::ProtoBitGen proto_bit_src(msg.random_numbers());
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
