@@ -54,7 +54,7 @@ class Verifier {
     }
     grpc_tracer_set_enabled("all", 0);
     gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-    gpr_set_log_function(DispatchLog);
+    // gpr_set_log_function(DispatchLog);
   }
   ~Verifier() {
     gpr_set_log_function(gpr_default_log);

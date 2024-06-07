@@ -597,7 +597,7 @@ PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
     apply_ini_settings(TSRMLS_C);
     if (GRPC_G(log_filename)) {
-      gpr_set_log_function(custom_logger);
+      // gpr_set_log_function(custom_logger);
     }
     grpc_init();
     register_fork_handlers();
