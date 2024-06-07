@@ -97,8 +97,12 @@ ABSL_FLAG(std::string, test_cases, "",
           " 70% of the time");
 
 ABSL_FLAG(
-    int32_t, log_level, GPR_LOG_SEVERITY_INFO,
+    int32_t, absl_min_log_level, absl::LogSeverityAtLeast::kInfo,
     "Severity level of messages that should be logged by absl::SetVLogLevel");
+
+ABSL_FLAG(int32_t, absl_vlog_level, -1,
+          "Severity level of messages that should be logged. Set using "
+          "absl::SetVLogLevel");
 
 ABSL_FLAG(bool, do_not_abort_on_transient_failures, true,
           "If set to 'true', abort() is not called in case of transient "
@@ -124,7 +128,9 @@ using grpc::testing::transport_security;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
 
-static int log_level = 2;
+static int absl_vlog_level = -1;
+static absl::LogSeverityAtLeast absl_min_log_level =
+    absl::LogSeverityAtLeast::kInfo;
 
 TestCaseType GetTestTypeFromName(const std::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
@@ -201,7 +207,7 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
             << absl::GetFlag(FLAGS_num_channels_per_server);
   LOG(INFO) << "num_stubs_per_channel: "
             << absl::GetFlag(FLAGS_num_stubs_per_channel);
-  LOG(INFO) << "log_level: " << absl::GetFlag(FLAGS_log_level);
+  LOG(INFO) << "absl_vlog_level: " << absl::GetFlag(FLAGS_absl_vlog_level);
   LOG(INFO) << "do_not_abort_on_transient_failures: "
             << (absl::GetFlag(FLAGS_do_not_abort_on_transient_failures)
                     ? "true"
@@ -221,14 +227,23 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
   }
 }
 
+void SetLogLevels() {
+  absl_vlog_level = absl::GetFlag(FLAGS_absl_vlog_level);
+  CHECK_LT(-1, absl_vlog_level);
+  CHECK_LT(absl_vlog_level, (INT_MAX - 1));
+  absl::SetVLogLevel("*grpc*/*", absl_vlog_level);
+
+  absl_min_log_level = static_cast<absl::LogSeverityAtLeast>(
+      absl::GetFlag(FLAGS_absl_min_log_level));
+  CHECK_LT(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
+  CHECK_LT(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
+  absl::SetMinLogLevel(absl_min_log_level);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  log_level = absl::GetFlag(FLAGS_log_level);
-  CHECK(-1 <= log_level && log_level <= (INT_MAX - 1));
-  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
-  absl::SetVLogLevel("*grpc*/*", log_level);
-
+  SetLogLevels();
   srand(time(nullptr));
 
   // Parse the server addresses
