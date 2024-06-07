@@ -16,6 +16,8 @@
 // is % allowed in string
 //
 
+#include <limits.h>
+
 #include <memory>
 #include <string>
 #include <thread>
@@ -92,6 +94,10 @@ ABSL_FLAG(std::string, test_cases, "",
           " The above will execute 'empty_unary', 20% of the time,"
           " 'large_unary', 10% of the time and 'empty_stream' the remaining"
           " 70% of the time");
+
+ABSL_FLAG(
+    int32_t, log_level, GPR_LOG_SEVERITY_INFO,
+    "Severity level of messages that should be logged by absl::SetVLogLevel");
 
 ABSL_FLAG(bool, do_not_abort_on_transient_failures, true,
           "If set to 'true', abort() is not called in case of transient "
@@ -218,8 +224,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   log_level = absl::GetFlag(FLAGS_log_level);
-  CHECK(-1 <= log_level && log_level <= 10);
-
+  CHECK(-1 <= log_level && log_level <= (INT_MIN - 1));
   absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   absl::SetVLogLevel("*grpc*/*", log_level);
 
