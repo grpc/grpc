@@ -203,17 +203,15 @@ TEST_F(CrlProviderTest, StaticCrlProviderLookupIssuerNotFound) {
 }
 
 TEST_F(CrlProviderTest, StaticCrlProviderDenyUndeterminedDefault) {
-  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath.data())};
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
-      experimental::CreateStaticCrlProvider(crl_strings);
+      experimental::CreateStaticCrlProvider({});
   ASSERT_TRUE(provider.ok()) << provider.status();
   EXPECT_FALSE((*provider)->DenyUndetermined());
 }
 
 TEST_F(CrlProviderTest, StaticCrlProviderDenyUndeterminedTrue) {
-  std::vector<std::string> crl_strings = {GetFileContents(kCrlPath.data())};
   absl::StatusOr<std::shared_ptr<CrlProvider>> provider =
-      experimental::CreateStaticCrlProvider(crl_strings, true);
+      experimental::CreateStaticCrlProvider({}, true);
   ASSERT_TRUE(provider.ok()) << provider.status();
   EXPECT_TRUE((*provider)->DenyUndetermined());
 }
