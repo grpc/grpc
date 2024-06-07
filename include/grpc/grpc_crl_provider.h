@@ -64,7 +64,8 @@ class CrlProvider {
   virtual std::shared_ptr<Crl> GetCrl(
       const CertificateInfo& certificate_info) = 0;
   // Returns whether a revocation status of `Undetermined` should be treated as
-  // `Revoked` or `Unrevoked`. Defaults to treating it as `Unrevoked`.
+  // `Revoked` (deny connections) or `Unrevoked` (allowing connections).
+  // Defaults to treating it as `Unrevoked`.
   bool DenyUndetermined() { return deny_undetermined_; };
 
  protected:
