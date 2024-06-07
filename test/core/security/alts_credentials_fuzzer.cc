@@ -42,8 +42,6 @@ using grpc_core::testing::input_stream;
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 // Add a random number of target service accounts to client options.
 static void read_target_service_accounts(
     input_stream* inp, grpc_alts_credentials_options* options) {
@@ -65,7 +63,8 @@ static void read_target_service_accounts(
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+    absl::SetVLogLevel("*grpc*/*", -1);
   }
   input_stream inp = {data, data + size};
   grpc_init();

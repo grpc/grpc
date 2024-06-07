@@ -93,12 +93,6 @@ ABSL_FLAG(std::string, test_cases, "",
           " 'large_unary', 10% of the time and 'empty_stream' the remaining"
           " 70% of the time");
 
-ABSL_FLAG(int32_t, log_level, GPR_LOG_SEVERITY_INFO,
-          "Severity level of messages that should be logged. Any messages "
-          "greater than or equal to the level set here will be logged. "
-          "The choices are: 0 (GPR_LOG_SEVERITY_DEBUG), 1 "
-          "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR)");
-
 ABSL_FLAG(bool, do_not_abort_on_transient_failures, true,
           "If set to 'true', abort() is not called in case of transient "
           "failures like temporary connection failures.");
@@ -123,15 +117,7 @@ using grpc::testing::transport_security;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
 
-static int log_level = GPR_LOG_SEVERITY_DEBUG;
-
-// A simple wrapper to grp_default_log() function. This only logs messages at or
-// above the current log level (set in 'log_level' variable)
-void TestLogFunction(gpr_log_func_args* args) {
-  if (args->severity >= log_level) {
-    gpr_default_log(args);
-  }
-}
+static int log_level = 2;
 
 TestCaseType GetTestTypeFromName(const std::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
@@ -231,17 +217,11 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  if (absl::GetFlag(FLAGS_log_level) > GPR_LOG_SEVERITY_ERROR ||
-      absl::GetFlag(FLAGS_log_level) < GPR_LOG_SEVERITY_DEBUG) {
-    LOG(ERROR) << "log_level should be an integer between "
-               << GPR_LOG_SEVERITY_DEBUG << " and " << GPR_LOG_SEVERITY_ERROR;
-    return 1;
-  }
-
-  // Change the default log function to TestLogFunction which respects the
-  // log_level setting.
   log_level = absl::GetFlag(FLAGS_log_level);
-  gpr_set_log_function(TestLogFunction);
+  CHECK(-1 <= log_level && log_level <= 10);
+
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  absl::SetVLogLevel("*grpc*/*", log_level);
 
   srand(time(nullptr));
 

@@ -43,8 +43,6 @@ bool squelch = true;
 // Turning this on will fail the leak check.
 bool leak_check = false;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 struct handshake_state {
   grpc_core::Notification done_signal;
 };
@@ -60,7 +58,10 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+    absl::SetVLogLevel("*grpc*/*", -1);
+  }
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

@@ -35,10 +35,11 @@ bool leak_check = true;
 
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
-static void dont_log(gpr_log_func_args*) {}
-
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+    absl::SetVLogLevel("*grpc*/*", -1);
+  }
   grpc_init();
   {
     // Copied and modified from grpc/test/core/end2end/fuzzers/client_fuzzer.cc

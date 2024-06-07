@@ -52,8 +52,6 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 namespace grpc_core {
 namespace {
 
@@ -170,7 +168,10 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const hpack_sync_fuzzer::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+    absl::SetVLogLevel("*grpc*/*", -1);
+  }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::FuzzOneInput(msg);

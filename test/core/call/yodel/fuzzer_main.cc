@@ -33,7 +33,6 @@
 #include "test/core/test_util/proto_bit_gen.h"
 
 bool squelch = true;
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   static const grpc_core::NoDestruct<
@@ -43,7 +42,8 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   const int test_id = msg.test_id() % tests->size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+    absl::SetVLogLevel("*grpc*/*", -1);
   }
 
   grpc_core::ConfigVars::Overrides overrides =

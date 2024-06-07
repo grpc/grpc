@@ -50,7 +50,6 @@
 #include "test/core/test_util/fuzzing_channel_args.h"
 
 bool squelch = true;
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace {
 
@@ -254,7 +253,10 @@ grpc_core::ResolverArgs ConstructResolverArgs(
 }  // namespace
 
 DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+    absl::SetVLogLevel("*grpc*/*", -1);
+  }
   bool done_resolving = false;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
