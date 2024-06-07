@@ -63,6 +63,8 @@ class CrlProvider {
   // Get the CRL associated with a certificate. Read-only.
   virtual std::shared_ptr<Crl> GetCrl(
       const CertificateInfo& certificate_info) = 0;
+  // Returns whether a revocation status of `Undetermined` should be treated as
+  // `Revoked` or `Unrevoked`. Defaults to treating it as `Unrevoked`.
   bool DenyUndetermined() { return deny_undetermined_; };
 
  protected:
