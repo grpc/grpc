@@ -78,6 +78,14 @@ TEST(DirectoryReloaderCrlProviderTestNoFixture, Construction) {
   auto provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(
       kCrlDirectoryPath, std::chrono::seconds(60), nullptr);
   ASSERT_TRUE(provider.ok()) << provider.status();
+  EXPECT_FALSE((*provider)->DenyUndetermined());
+}
+
+TEST(DirectoryReloaderCrlProviderTestNoFixture, DenyUndeterminedTrue) {
+  auto provider = grpc_core::experimental::CreateDirectoryReloaderCrlProvider(
+      kCrlDirectoryPath, std::chrono::seconds(60), nullptr, true);
+  ASSERT_TRUE(provider.ok()) << provider.status();
+  EXPECT_TRUE((*provider)->DenyUndetermined());
 }
 
 class CrlProviderTest : public ::testing::Test {

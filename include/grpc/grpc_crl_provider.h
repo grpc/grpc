@@ -63,10 +63,14 @@ class CrlProvider {
   // Get the CRL associated with a certificate. Read-only.
   virtual std::shared_ptr<Crl> GetCrl(
       const CertificateInfo& certificate_info) = 0;
+  bool DenyUndetermined() { return deny_undetermined_; };
+
+ protected:
+  bool deny_undetermined_ = false;
 };
 
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
-    absl::Span<const std::string> crls);
+    absl::Span<const std::string> crls, bool deny_undetermined = false);
 
 // Creates a CRL Provider that periodically and asynchronously reloads a
 // directory. The refresh_duration minimum is 60 seconds. The
@@ -77,7 +81,8 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
 // your monitoring and alerting setup.
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
-    std::function<void(absl::Status)> reload_error_callback);
+    std::function<void(absl::Status)> reload_error_callback,
+    bool deny_undetermined = false);
 
 }  // namespace experimental
 }  // namespace grpc_core
