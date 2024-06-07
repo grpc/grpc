@@ -57,7 +57,7 @@ class Verifier {
     // gpr_set_log_function(DispatchLog);
   }
   ~Verifier() {
-    gpr_set_log_function(gpr_default_log);
+    // gpr_set_log_function(gpr_default_log);
     saved_trace_flags_.Restore();
     gpr_set_log_verbosity(saved_severity_);
   }

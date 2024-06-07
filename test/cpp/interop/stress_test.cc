@@ -26,6 +26,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/globals.h"
 #include "absl/log/log.h"
 
 #include <grpc/support/time.h>
@@ -224,7 +225,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
   log_level = absl::GetFlag(FLAGS_log_level);
-  CHECK(-1 <= log_level && log_level <= (INT_MIN - 1));
+  CHECK(-1 <= log_level && log_level <= (INT_MAX - 1));
   absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   absl::SetVLogLevel("*grpc*/*", log_level);
 
