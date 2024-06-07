@@ -68,9 +68,7 @@ class CrlProvider {
   // Not finding a CRL is a specific behavior. Per RFC5280, not having a CRL to
   // check for a given certificate means that we cannot know for certain if the
   // status is Revoked or Unrevoked and instead is Undetermined. How a user
-  // handles an Undetermined CRL is up to them. We use absl::IsNotFound as an
-  // analogue for not finding the Crl from the provider, thus the certificate in
-  // question is Undetermined.
+  // handles an Undetermined CRL is up to them.
   // Defaults to treating it as `Unrevoked`.
   bool DenyUndetermined() { return deny_undetermined_; };
 
