@@ -130,8 +130,9 @@ class YodelTest::WatchDog {
  private:
   YodelTest* const test_;
   grpc_event_engine::experimental::EventEngine::TaskHandle const timer_{
-      test_->state_->event_engine->RunAfter(Duration::Minutes(5),
-                                            [this]() { test_->Timeout(); })};
+      test_->state_->event_engine->RunAfter(
+          g_yodel_fuzzing ? Duration::Hours(24) : Duration::Minutes(5),
+          [this]() { test_->Timeout(); })};
 };
 
 ///////////////////////////////////////////////////////////////////////////////
