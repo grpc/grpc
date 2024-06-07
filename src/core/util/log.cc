@@ -185,7 +185,7 @@ void gpr_log_verbosity_init() {
 }
 
 void gpr_set_log_function(gpr_log_func f) {
-  LOG(DFATAL)
+  LOG(ERROR)
       << "This function is in the process of being deprecated. Your "
          "gpr_log_func will not work as expected. This is because only few "
          "instances of gpr_log remain in our code base. All instances of "

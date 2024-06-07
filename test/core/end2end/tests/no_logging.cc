@@ -54,30 +54,10 @@ class Verifier {
     }
     grpc_tracer_set_enabled("all", 0);
     gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-    EXPECT_DFATAL(
-        gpr_set_log_function(DispatchLog),
-        "This function is in the process of being deprecated. Your "
-        "gpr_log_func will not work as expected. This is because only few "
-        "instances of gpr_log remain in our code base. All instances of "
-        "gpr_log will log via this custom function. Many of the gpr_log "
-        "statements have been converted to ABSL_LOG statements. These will "
-        "log to the default absl log sink. The gpr_set_log_function function "
-        "will be deleted in the next gRPC release. We strongly advice against "
-        "using this function. You may create a new absl LogSink with similar "
-        "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ");
+    gpr_set_log_function(DispatchLog);
   }
   ~Verifier() {
-    EXPECT_DFATAL(
-        gpr_set_log_function(gpr_default_log),
-        "This function is in the process of being deprecated. Your "
-        "gpr_log_func will not work as expected. This is because only few "
-        "instances of gpr_log remain in our code base. All instances of "
-        "gpr_log will log via this custom function. Many of the gpr_log "
-        "statements have been converted to ABSL_LOG statements. These will "
-        "log to the default absl log sink. The gpr_set_log_function function "
-        "will be deleted in the next gRPC release. We strongly advice against "
-        "using this function. You may create a new absl LogSink with similar "
-        "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ");
+    gpr_set_log_function(gpr_default_log);
     saved_trace_flags_.Restore();
     gpr_set_log_verbosity(saved_severity_);
   }
