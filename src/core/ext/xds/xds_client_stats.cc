@@ -106,23 +106,25 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
       eds_service_name_(eds_service_name),
       name_(std::move(name)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] created locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, std::string(lrs_server_).c_str(),
-            std::string(cluster_name_).c_str(),
-            std::string(eds_service_name_).c_str(),
-            name_->human_readable_string().c_str());
+    gpr_log(
+        GPR_INFO,
+        "[xds_client %p] created locality stats %p for {%s, %s, %s, %s}",
+        xds_client_.get(), this, std::string(lrs_server_).c_str(),
+        std::string(cluster_name_).c_str(),
+        std::string(eds_service_name_).c_str(),
+        name_ == nullptr ? "<none>" : name_->human_readable_string().c_str());
   }
 }
 
 XdsClusterLocalityStats::~XdsClusterLocalityStats() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] destroying locality stats %p for {%s, %s, %s, %s}",
-            xds_client_.get(), this, std::string(lrs_server_).c_str(),
-            std::string(cluster_name_).c_str(),
-            std::string(eds_service_name_).c_str(),
-            name_->human_readable_string().c_str());
+    gpr_log(
+        GPR_INFO,
+        "[xds_client %p] destroying locality stats %p for {%s, %s, %s, %s}",
+        xds_client_.get(), this, std::string(lrs_server_).c_str(),
+        std::string(cluster_name_).c_str(),
+        std::string(eds_service_name_).c_str(),
+        name_ == nullptr ? "<none>" : name_->human_readable_string().c_str());
   }
   xds_client_->RemoveClusterLocalityStats(lrs_server_, cluster_name_,
                                           eds_service_name_, name_, this);
