@@ -190,4 +190,7 @@ void gpr_set_log_function(gpr_log_func f) {
 }
 #endif  // GRPC_DISABLE_IN_OPEN_SOURCE
 
-void gpr_disable_all_logs() { gpr_disable_all_logs(); }
+void gpr_disable_all_logs() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  absl::SetVLogLevel("*grpc*/*", -1);
+}
