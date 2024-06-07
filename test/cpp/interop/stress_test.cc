@@ -99,7 +99,7 @@ ABSL_FLAG(std::string, test_cases, "",
 ABSL_FLAG(
     int32_t, absl_min_log_level,
     static_cast<int32_t>(absl::LogSeverityAtLeast::kInfo),
-    "Severity level of messages that should be logged by absl::SetVLogLevel");
+    "Severity level of messages that should be logged by absl::SetMinLogLevel");
 
 ABSL_FLAG(int32_t, absl_vlog_level, -1,
           "Severity level of messages that should be logged. Set using "
