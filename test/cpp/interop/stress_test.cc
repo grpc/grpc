@@ -208,6 +208,8 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
   LOG(INFO) << "num_stubs_per_channel: "
             << absl::GetFlag(FLAGS_num_stubs_per_channel);
   LOG(INFO) << "absl_vlog_level: " << absl::GetFlag(FLAGS_absl_vlog_level);
+  LOG(INFO) << "absl_min_log_level: "
+            << absl::GetFlag(FLAGS_absl_min_log_level);
   LOG(INFO) << "do_not_abort_on_transient_failures: "
             << (absl::GetFlag(FLAGS_do_not_abort_on_transient_failures)
                     ? "true"
@@ -229,14 +231,14 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
 
 void SetLogLevels() {
   absl_vlog_level = absl::GetFlag(FLAGS_absl_vlog_level);
-  CHECK_LT(-1, absl_vlog_level);
-  CHECK_LT(absl_vlog_level, (INT_MAX - 1));
+  CHECK_LE(-1, absl_vlog_level);
+  CHECK_LE(absl_vlog_level, (INT_MAX - 1));
   absl::SetVLogLevel("*grpc*/*", absl_vlog_level);
 
   absl_min_log_level = static_cast<absl::LogSeverityAtLeast>(
       absl::GetFlag(FLAGS_absl_min_log_level));
-  CHECK_LT(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
-  CHECK_LT(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
+  CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
+  CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
   absl::SetMinLogLevel(absl_min_log_level);
 }
 
