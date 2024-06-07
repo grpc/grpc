@@ -97,7 +97,7 @@ ABSL_FLAG(std::string, test_cases, "",
           " 70% of the time");
 
 ABSL_FLAG(
-    int32_t, absl_min_log_level, absl::LogSeverityAtLeast::kInfo,
+    int32_t, absl_min_log_level, static_cast<int32_t>(absl::LogSeverityAtLeast::kInfo),
     "Severity level of messages that should be logged by absl::SetVLogLevel");
 
 ABSL_FLAG(int32_t, absl_vlog_level, -1,
