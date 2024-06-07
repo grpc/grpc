@@ -65,7 +65,7 @@ class CrlProvider {
       const CertificateInfo& certificate_info) = 0;
   // Returns whether a revocation status of `Undetermined` should be treated as
   // `Revoked` (deny connections) or `Unrevoked` (allowing connections).
-  // Not finding a CRL is a specific behavior. Per RFC5280, not having a CRL to
+  // Per RFC5280, not having a CRL to
   // check for a given certificate means that we cannot know for certain if the
   // status is Revoked or Unrevoked and instead is Undetermined. How a user
   // handles an Undetermined CRL is up to them.
@@ -88,6 +88,7 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateStaticCrlProvider(
 // your monitoring and alerting setup.
 absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
+    // TODO(gtcooke94) std::function to absl::AnyInvocable
     std::function<void(absl::Status)> reload_error_callback,
     bool deny_undetermined = false);
 
