@@ -35,7 +35,8 @@ EXPERIMENT_ENABLES = {
     "pick_first_new": "pick_first_new",
     "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
     "promise_based_server_call": "promise_based_server_call",
-    "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
+    # Disabling in 1.64.x due to a compiler error. See https://github.com/grpc/grpc/pull/36839
+    #"chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call,promise_based_server_call",
     "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport,promise_based_server_call",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
@@ -146,7 +147,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "chaotic_good",
+                #"chaotic_good",
                 "event_engine_client",
                 "promise_based_client_call",
                 "promise_based_server_call",
