@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+platform(
+    name = "x86_64",
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:x86_64",
+    ],
+)
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_run_tests_matrix.sh"
-timeout_mins: 60
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+platform(
+    name = "arm64-v8a",
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:arm64",
+    ],
+)
 
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests linux clang-tidy --inner_jobs 32 -j 1 --internal_ci --bq_result_table aggregate_results"
-}
+platform(
+    name = "armeabi-v7a",
+    constraint_values = [
+        "@platforms//os:android",
+        "@platforms//cpu:armv7",
+    ],
+)

@@ -45,6 +45,7 @@ def if_not_windows(a):
     return select({
         "//:windows": [],
         "//:windows_msvc": [],
+        "//:windows_clang": [],
         "//conditions:default": a,
     })
 
@@ -52,6 +53,7 @@ def if_windows(a):
     return select({
         "//:windows": a,
         "//:windows_msvc": a,
+        "//:windows_clang": a,
         "//conditions:default": [],
     })
 
@@ -801,4 +803,23 @@ def python_config_settings():
     native.config_setting(
         name = "python3",
         flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    )
+
+# buildifier: disable=unnamed-macro
+def grpc_clang_cl_settings():
+    native.platform(
+        name = "x64_windows-clang-cl",
+        constraint_values = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:windows",
+            "@bazel_tools//tools/cpp:clang-cl",
+        ],
+    )
+    native.config_setting(
+        name = "windows_clang",
+        constraint_values = [
+            "@platforms//cpu:x86_64",
+            "@platforms//os:windows",
+            "@bazel_tools//tools/cpp:clang-cl",
+        ],
     )

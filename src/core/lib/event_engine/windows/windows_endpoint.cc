@@ -102,8 +102,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   int wsa_error = status == 0 ? 0 : WSAGetLastError();
   if (wsa_error != WSAEWOULDBLOCK) {
     // Data or some error was returned immediately.
-    socket->read_info()->SetResult(
-        {/*wsa_error=*/wsa_error, /*bytes_read=*/bytes_read});
+    socket->read_info()->SetResult(wsa_error, bytes_read, "WSARecv");
     thread_pool->Run(&handle_read_event);
     return;
   }
@@ -120,9 +119,8 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
   if (wsa_error != 0 && wsa_error != WSA_IO_PENDING) {
     // The async read attempt returned an error immediately.
     socket->UnregisterReadCallback();
-    socket->read_info()->SetErrorStatus(GRPC_WSA_ERROR(
-        wsa_error,
-        absl::StrFormat("WindowsEndpont::%p Read failed", this).c_str()));
+    socket->read_info()->SetResult(
+        wsa_error, 0, absl::StrFormat("WindowsEndpont::%p Read failed", this));
     thread_pool->Run(&handle_read_event);
   }
 }
@@ -220,8 +218,7 @@ bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
     int wsa_error = WSAGetLastError();
     if (wsa_error != WSA_IO_PENDING) {
       io_state_->socket->UnregisterWriteCallback();
-      io_state_->socket->write_info()->SetErrorStatus(
-          GRPC_WSA_ERROR(wsa_error, "WSASend"));
+      io_state_->socket->write_info()->SetResult(wsa_error, 0, "WSASend");
       io_state_->thread_pool->Run(&io_state_->handle_write_event);
     }
   }
