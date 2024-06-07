@@ -19,6 +19,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
@@ -66,29 +67,7 @@ bool_flag(
     build_setting_default = False,
 )
 
-platform(
-    name = "android_x86_64",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:x86_64",
-    ],
-)
-
-platform(
-    name = "android_arm64",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:arm64",
-    ],
-)
-
-platform(
-    name = "android_armv7",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:armv7",
-    ],
-)
+grpc_clang_cl_settings()
 
 config_setting(
     name = "grpc_no_rls_flag",
@@ -238,6 +217,11 @@ config_setting(
 config_setting(
     name = "use_strict_warning",
     values = {"define": "use_strict_warning=true"},
+)
+
+config_setting(
+    name = "use_strict_warning_windows",
+    values = {"define": "use_strict_warning_windows=true"},
 )
 
 python_config_settings()

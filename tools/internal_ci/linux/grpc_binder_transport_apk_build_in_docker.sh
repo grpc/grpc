@@ -26,7 +26,7 @@ bazel_binder_example_app/bazel_wrapper \
   --bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc \
   build \
   --extra_toolchains=@androidndk//:all \
-  --android_platforms=//:android_x86_64,//:android_armv7,//:android_arm64 \
+  --android_platforms=//bazel/platforms/android:x86_64,//bazel/platforms/android:armeabi-v7a,//bazel/platforms/android:arm64-v8a \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleclient:app \
   //examples/android/binder/java/io/grpc/binder/cpp/exampleserver:app
 
