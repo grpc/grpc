@@ -222,6 +222,7 @@ def grpc_deps():
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
+                "@com_github_grpc_grpc//third_party:protobuf.10007.patch",
             ],
             patch_args = ["-p1"],
         )
