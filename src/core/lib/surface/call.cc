@@ -3732,8 +3732,7 @@ class MaybeOpImpl {
 
   MaybeOpImpl(const MaybeOpImpl&) = delete;
   MaybeOpImpl& operator=(const MaybeOpImpl&) = delete;
-  MaybeOpImpl(MaybeOpImpl&& other) noexcept
-      : state_(MoveState(other.state_)), op_(other.op_) {}
+  MaybeOpImpl(MaybeOpImpl&& /*other*/) noexcept { Crash("not implemented"); }
   MaybeOpImpl& operator=(MaybeOpImpl&& other) noexcept {
     op_ = other.op_;
     if (absl::holds_alternative<Dismissed>(state_)) {
