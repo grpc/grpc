@@ -1325,7 +1325,7 @@ class CallState {
   enum class ServerToClientMessagePushState : uint8_t {
     kIdle,
     kPushed,
-    kFailed,
+    kFinished,
   };
   static const char* ServerToClientMessagePushStateString(
       ServerToClientMessagePushState state) {
@@ -1334,8 +1334,8 @@ class CallState {
         return "Idle";
       case ServerToClientMessagePushState::kPushed:
         return "Pushed";
-      case ServerToClientMessagePushState::kFailed:
-        return "Failed";
+      case ServerToClientMessagePushState::kFinished:
+        return "Finished";
     }
   }
   friend std::ostream& operator<<(std::ostream& out,

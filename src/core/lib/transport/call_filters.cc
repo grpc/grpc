@@ -325,7 +325,7 @@ void CallState::BeginPushClientToServerMessage() {
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
       client_to_server_push_state_ = ClientToServerPushState::kPushedMessage;
-      client_to_server_pull_waiter_.Wake();
+      client_to_server_push_waiter_.Wake();
       break;
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
@@ -346,7 +346,7 @@ Poll<StatusFlag> CallState::PollPushClientToServerMessage() {
       return Success{};
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      return Pending{};
+      return client_to_server_push_waiter_.pending();
     case ClientToServerPushState::kFinished:
       return Failure{};
   }
@@ -356,7 +356,7 @@ void CallState::ClientToServerHalfClose() {
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
       client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
-      client_to_server_pull_waiter_.Wake();
+      client_to_server_push_waiter_.Wake();
       break;
     case ClientToServerPushState::kPushedMessage:
       client_to_server_push_state_ =
@@ -411,7 +411,7 @@ Poll<StatusFlag> CallState::PollPullClientToServerMessageAvailable() {
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
     case ClientToServerPullState::kProcessingClientInitialMetadata:
-      return Pending{};
+      return client_to_server_pull_waiter_.pending();
     case ClientToServerPullState::kIdle:
       client_to_server_pull_state_ = ClientToServerPullState::kReading;
       ABSL_FALLTHROUGH_INTENDED;
@@ -428,7 +428,7 @@ Poll<StatusFlag> CallState::PollPullClientToServerMessageAvailable() {
   DCHECK_EQ(client_to_server_pull_state_, ClientToServerPullState::kReading);
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
-      return Pending{};
+      return client_to_server_push_waiter_.pending();
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
       client_to_server_pull_state_ =
@@ -479,6 +479,77 @@ void CallState::FinishPullClientToServerMessage() {
       break;
   }
 }
+
+void CallState::PushServerInitialMetadata() {
+  CHECK(!pushed_server_initial_metadata_);
+  pushed_server_initial_metadata_ = true;
+  client_to_server_push_waiter_.Wake();
+}
+
+void CallState::BeginPushServerToClientMessage() {
+  switch (server_to_client_message_push_state_) {
+    case ServerToClientMessagePushState::kIdle:
+      server_to_client_message_push_state_ =
+          ServerToClientMessagePushState::kPushed;
+      server_to_client_push_waiter_.Wake();
+      break;
+    case ServerToClientMessagePushState::kPushed:
+      Crash("BeginPushServerToClientMessage called twice concurrently");
+      break;
+    case ServerToClientMessagePushState::kFinished:
+      break;
+  }
+}
+
+Poll<StatusFlag> CallState::PollPushServerToClientMessage() {
+  switch (server_to_client_message_push_state_) {
+    case ServerToClientMessagePushState::kIdle:
+      return Success{};
+    case ServerToClientMessagePushState::kPushed:
+      return server_to_client_push_waiter_.pending();
+    case ServerToClientMessagePushState::kFinished:
+      return Failure{};
+  }
+}
+
+bool CallState::PushServerTrailingMetadata(bool cancel) {
+  if (pushed_server_trailing_metadata_) return false;
+  pushed_server_trailing_metadata_ = true;
+  pushed_server_initial_metadata_ = true;
+  switch (server_to_client_message_push_state_) {
+    case ServerToClientMessagePushState::kIdle:
+      server_to_client_message_push_state_ =
+          ServerToClientMessagePushState::kFinished;
+      server_to_client_push_waiter_.Wake();
+      break;
+    case ServerToClientMessagePushState::kPushed:
+      if (cancel) {
+        server_to_client_message_push_state_ =
+            ServerToClientMessagePushState::kFinished;
+        server_to_client_push_waiter_.Wake();
+      }
+      break;
+    case ServerToClientMessagePushState::kFinished:
+      break;
+  }
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      client_to_server_push_state_ = ClientToServerPushState::kFinished;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      client_to_server_push_state_ = ClientToServerPushState::kFinished;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kPushedHalfClose:
+    case ClientToServerPushState::kFinished:
+      break;
+  }
+  return true;
+}
+
+static_assert(sizeof(CallState) <= 16, "CallState too large");
 
 }  // namespace filters_detail
 }  // namespace grpc_core
