@@ -52,8 +52,7 @@ bool leak_check = true;
 
 DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
   if (squelch) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   grpc_core::ProtoBitGen proto_bit_src(msg.random_numbers());
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());

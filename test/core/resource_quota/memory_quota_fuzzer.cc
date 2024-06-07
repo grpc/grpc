@@ -189,8 +189,7 @@ class Fuzzer {
 
 DEFINE_PROTO_FUZZER(const memory_quota_fuzzer::Msg& msg) {
   if (squelch) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();

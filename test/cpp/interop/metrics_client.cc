@@ -88,8 +88,7 @@ bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-  absl::SetVLogLevel("*grpc*/*", -1);
+  gpr_disable_all_logs();
 
   std::shared_ptr<grpc::Channel> channel(
       grpc::CreateChannel(absl::GetFlag(FLAGS_metrics_server_address),

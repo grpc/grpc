@@ -95,8 +95,7 @@ void RunServerFuzzer(
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
         server_setup) {
   if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   static const int once = []() {
     ForceEnableExperiment("event_engine_client", true);

@@ -59,8 +59,7 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   grpc_init();
   {

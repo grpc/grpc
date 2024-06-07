@@ -63,8 +63,7 @@ static void read_target_service_accounts(
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   input_stream inp = {data, data + size};
   grpc_init();

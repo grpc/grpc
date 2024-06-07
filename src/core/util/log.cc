@@ -189,3 +189,5 @@ void gpr_set_log_function(gpr_log_func f) {
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
 }
 #endif  // GRPC_DISABLE_IN_OPEN_SOURCE
+
+void gpr_disable_all_logs() { gpr_disable_all_logs(); }

@@ -99,8 +99,7 @@ class ClientFuzzer final : public BasicFuzzer {
 
 DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   if (msg.network_input().size() != 1) return;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());

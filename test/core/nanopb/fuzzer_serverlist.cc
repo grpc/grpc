@@ -29,8 +29,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* /*data*/,
                                       size_t /*size*/) {
   grpc_init();
   if (squelch) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
 
   // TODO(veblush): Convert this to upb.

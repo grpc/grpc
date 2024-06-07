@@ -42,8 +42,7 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   const int test_id = msg.test_id() % tests->size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
 
   grpc_core::ConfigVars::Overrides overrides =

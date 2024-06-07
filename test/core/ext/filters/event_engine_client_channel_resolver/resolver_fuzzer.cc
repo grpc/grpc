@@ -254,8 +254,7 @@ grpc_core::ResolverArgs ConstructResolverArgs(
 
 DEFINE_PROTO_FUZZER(const event_engine_client_channel_resolver::Msg& msg) {
   if (squelch) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   bool done_resolving = false;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());

@@ -37,8 +37,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
   if (squelch) {
-    absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-    absl::SetVLogLevel("*grpc*/*", -1);
+    gpr_disable_all_logs();
   }
   grpc_init();
   {

@@ -69,6 +69,8 @@ GPRAPI void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print);
 
 GPRAPI void gpr_log_verbosity_init(void);
 
+GPRAPI void gpr_disable_all_logs(void);
+
 /** Log overrides: applications can use this API to intercept logging calls
    and use their own implementations */
 
