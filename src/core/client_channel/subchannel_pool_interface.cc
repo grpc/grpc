@@ -36,8 +36,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_subchannel_pool_trace(false, "subchannel_pool");
-
 SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
                              const ChannelArgs& args)
     : address_(address), args_(args) {}

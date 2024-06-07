@@ -64,7 +64,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
@@ -95,7 +94,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -143,7 +141,6 @@ static bool g_default_server_keepalive_permit_without_calls = false;
 #define GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS "grpc.http.tarpit_max_duration_ms"
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
 
 // forward declarations of various callbacks that we'll build closures around
 static void write_action_begin_locked(
@@ -827,10 +824,9 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
-    if (grpc_http_trace.enabled()) {
-      VLOG(2) << "HTTP:" << t << "/" << this << " creating accept stream " << id
-              << " [from " << server_data << "]";
-    }
+    GRPC_TRACE_VLOG(http, 2)
+        << "HTTP:" << t << "/" << this << " creating accept stream " << id
+        << " [from " << server_data << "]";
     *t->accepting_stream = this;
     t->stream_map.emplace(id, this);
     post_destructive_reclaimer(t);
@@ -1061,10 +1057,9 @@ static void write_action(grpc_chttp2_transport* t) {
   if (max_frame_size == 0) {
     max_frame_size = INT_MAX;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
-              << t->outbuf.Length() << " bytes";
-  }
+  GRPC_TRACE_LOG(http2_ping, INFO)
+      << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
+      << t->outbuf.Length() << " bytes";
   t->write_size_policy.BeginWrite(t->outbuf.Length());
   grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
@@ -1075,10 +1070,8 @@ static void write_action(grpc_chttp2_transport* t) {
 static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
                              grpc_error_handle error) {
   auto* tp = t.get();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t.get()
-              << "]: Finish write";
-  }
+  GRPC_TRACE_LOG(http2_ping, INFO) << (t->is_client ? "CLIENT" : "SERVER")
+                                   << "[" << t.get() << "]: Finish write";
   tp->combiner->Run(grpc_core::InitTransportClosure<write_action_end_locked>(
                         std::move(t), &tp->write_action_end_locked),
                     error);
@@ -1295,7 +1288,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(
         GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
@@ -1365,7 +1358,7 @@ static void perform_stream_op_locked(void* stream_op,
   s->traced = op->is_traced;
   s->call_tracer = CallTracerIfSampled(s);
   s->tcp_tracer = TcpTracerIfSampled(s);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO,
             "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
             op, grpc_transport_stream_op_batch_string(op, false).c_str(),
@@ -1632,7 +1625,7 @@ void grpc_chttp2_transport::PerformStreamOp(
     }
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "perform_stream_op[s=%p; op=%p]: %s", s, op,
             grpc_transport_stream_op_batch_string(op, false).c_str());
   }
@@ -1976,7 +1969,7 @@ static void perform_transport_op_locked(void* stream_op,
 }
 
 void grpc_chttp2_transport::PerformOp(grpc_transport_op* op) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", this,
             grpc_transport_op_string(op).c_str());
   }
@@ -2029,7 +2022,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
   // Lambda is immediately invoked as a big scoped section that can be
   // exited out of at any point by returning.
   [&]() {
-    if (grpc_http_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(http)) {
       gpr_log(GPR_DEBUG,
               "maybe_complete_recv_message %p final_metadata_requested=%d "
               "seen_error=%d",
@@ -2045,7 +2038,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
           int64_t min_progress_size;
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
-          if (grpc_http_trace.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(http)) {
             gpr_log(GPR_DEBUG, "Deframe data frame: %s",
                     grpc_core::PollToString(r, [](absl::Status r) {
                       return r.ToString();
@@ -2101,7 +2094,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
   grpc_chttp2_maybe_complete_recv_message(t, s);
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_DEBUG,
             "maybe_complete_recv_trailing_metadata cli=%d s=%p closure=%p "
             "read_closed=%d "
@@ -2312,7 +2305,7 @@ grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s, int close_reads,
     int close_writes, grpc_error_handle error) {
   grpc_chttp2_transport::RemovedStreamHandle rsh;
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(
         GPR_DEBUG, "MARK_STREAM_CLOSED: t=%p s=%p(id=%d) %s [%s]", t, s, s->id,
         (close_reads && close_writes)
@@ -2743,8 +2736,8 @@ static void read_action_locked(
   // got an incoming read, cancel any pending keepalive timers
   t->keepalive_incoming_data_wanted = false;
   if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(http2_ping) ||
+        GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
       gpr_log(GPR_INFO,
               "%s[%p]: Clear keepalive timer because data was received",
               t->is_client ? "CLIENT" : "SERVER", t.get());
@@ -2797,7 +2790,7 @@ static void start_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void start_bdp_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "%s: Start BDP ping err=%s",
             std::string(t->peer_string.as_string_view()).c_str(),
             grpc_core::StatusToString(error).c_str());
@@ -2824,7 +2817,7 @@ static void finish_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void finish_bdp_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s",
             std::string(t->peer_string.as_string_view()).c_str(),
             grpc_core::StatusToString(error).c_str());
@@ -2968,8 +2961,8 @@ static void finish_keepalive_ping_locked(
     grpc_error_handle error) {
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error.ok()) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(http) ||
+          GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
         gpr_log(GPR_INFO, "%s: Finish keepalive ping",
                 std::string(t->peer_string.as_string_view()).c_str());
       }
@@ -2990,8 +2983,8 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
       t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
     // Cancel succeeds, resets the keepalive ping timer. Note that we don't
     // need to Ref or Unref here since we still hold the Ref.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(http) ||
+        GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
       gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
               std::string(t->peer_string.as_string_view()).c_str());
     }
@@ -3090,7 +3083,7 @@ static void benign_reclaimer_locked(
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
       gpr_log(GPR_INFO, "HTTP2: %s - send goaway to free memory",
               std::string(t->peer_string.as_string_view()).c_str());
     }
@@ -3099,7 +3092,7 @@ static void benign_reclaimer_locked(
                                    grpc_core::StatusIntProperty::kHttp2Error,
                                    GRPC_HTTP2_ENHANCE_YOUR_CALM),
                 /*immediate_disconnect_hint=*/true);
-  } else if (error.ok() && GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+  } else if (error.ok() && GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
     gpr_log(GPR_INFO,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
@@ -3119,7 +3112,7 @@ static void destructive_reclaimer_locked(
   if (error.ok() && !t->stream_map.empty()) {
     // As stream_map is a hash map, this selects effectively a random stream.
     grpc_chttp2_stream* s = t->stream_map.begin()->second;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
       gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d",
               std::string(t->peer_string.as_string_view()).c_str(), s->id);
     }

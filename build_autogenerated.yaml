@@ -284,7 +284,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
-  - src/core/ext/transport/chttp2/transport/http_trace.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -801,7 +800,6 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
@@ -810,6 +808,8 @@ libs:
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/event_log.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
@@ -884,6 +884,7 @@ libs:
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -1002,7 +1003,6 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
@@ -1012,7 +1012,6 @@ libs:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
@@ -1077,7 +1076,6 @@ libs:
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
-  - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_create.h
@@ -1160,7 +1158,6 @@ libs:
   - src/core/resolver/server_address.h
   - src/core/resolver/xds/xds_dependency_manager.h
   - src/core/resolver/xds/xds_resolver_attributes.h
-  - src/core/resolver/xds/xds_resolver_trace.h
   - src/core/server/server.h
   - src/core/server/server_call_tracer_filter.h
   - src/core/server/server_config_selector.h
@@ -1310,7 +1307,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
-  - src/core/ext/transport/chttp2/transport/http_trace.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -1321,7 +1317,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
-  - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c
@@ -1659,7 +1654,6 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -1669,6 +1663,7 @@ libs:
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -1706,7 +1701,6 @@ libs:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
-  - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
@@ -1719,6 +1713,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/posix/directory_reader.cc
@@ -1746,7 +1741,6 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
-  - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -1811,7 +1805,6 @@ libs:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -1819,7 +1812,6 @@ libs:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
@@ -1885,9 +1877,7 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -1978,7 +1968,6 @@ libs:
   - src/core/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/resolver/xds/xds_dependency_manager.cc
   - src/core/resolver/xds/xds_resolver.cc
-  - src/core/resolver/xds/xds_resolver_trace.cc
   - src/core/server/server.cc
   - src/core/server/server_call_tracer_filter.cc
   - src/core/server/server_config_selector_filter.cc
@@ -2276,7 +2265,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
-  - src/core/ext/transport/chttp2/transport/http_trace.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
@@ -2349,7 +2337,6 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
@@ -2358,6 +2345,8 @@ libs:
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/event_log.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
@@ -2431,6 +2420,7 @@ libs:
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -2547,7 +2537,6 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/sleep.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
@@ -2557,7 +2546,6 @@ libs:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
@@ -2591,7 +2579,6 @@ libs:
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
-  - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_create.h
@@ -2771,7 +2758,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
-  - src/core/ext/transport/chttp2/transport/http_trace.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
@@ -2782,7 +2768,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/transport/chttp2/transport/writing.cc
-  - src/core/ext/transport/inproc/inproc_plugin.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
   - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
@@ -2822,7 +2807,6 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -2832,6 +2816,7 @@ libs:
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -2869,7 +2854,6 @@ libs:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
-  - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
@@ -2882,6 +2866,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -2907,7 +2892,6 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
-  - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -2971,7 +2955,6 @@ libs:
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -2979,7 +2962,6 @@ libs:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -3011,9 +2993,7 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -4450,7 +4430,6 @@ libs:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
@@ -4459,6 +4438,8 @@ libs:
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/event_log.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
@@ -4532,6 +4513,7 @@ libs:
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -4646,7 +4628,6 @@ libs:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
@@ -4655,7 +4636,6 @@ libs:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
@@ -4692,7 +4672,6 @@ libs:
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
-  - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
@@ -4799,7 +4778,6 @@ libs:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -4809,6 +4787,7 @@ libs:
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -4846,7 +4825,6 @@ libs:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
-  - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
@@ -4859,6 +4837,7 @@ libs:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -4883,7 +4862,6 @@ libs:
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
-  - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -4947,7 +4925,6 @@ libs:
   - src/core/lib/matchers/matchers.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -4955,7 +4932,6 @@ libs:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/authorization/audit_logging.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
@@ -4990,9 +4966,7 @@ libs:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -5254,10 +5228,13 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -5274,17 +5251,18 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/wait_set.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - test/core/promise/activity_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -5409,7 +5387,10 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/all_ok.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
@@ -5417,13 +5398,14 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
-  - src/core/lib/promise/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/promise/all_ok_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -5872,7 +5854,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6100,7 +6081,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6367,7 +6347,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6406,6 +6385,8 @@ targets:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -6416,6 +6397,7 @@ targets:
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -6450,14 +6432,12 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -6507,9 +6487,11 @@ targets:
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/ref_counted_string.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -6520,20 +6502,16 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_filters.cc
   - src/core/lib/transport/call_final_info.cc
@@ -6561,6 +6539,7 @@ targets:
   - upb_message_lib
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6619,7 +6598,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -6691,7 +6669,6 @@ targets:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
@@ -6700,6 +6677,8 @@ targets:
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/event_log.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
@@ -6773,6 +6752,7 @@ targets:
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -6886,7 +6866,6 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
@@ -6895,7 +6874,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/certificate_provider/certificate_provider_factory.h
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -6910,7 +6888,6 @@ targets:
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
-  - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
@@ -7009,7 +6986,6 @@ targets:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -7019,6 +6995,7 @@ targets:
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -7056,7 +7033,6 @@ targets:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
-  - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
@@ -7069,6 +7045,7 @@ targets:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -7093,7 +7070,6 @@ targets:
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
-  - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -7156,7 +7132,6 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -7164,7 +7139,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
@@ -7176,9 +7150,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -7297,7 +7269,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7362,7 +7333,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7427,7 +7397,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7492,7 +7461,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7574,7 +7542,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7610,6 +7577,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -7617,6 +7586,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -7643,14 +7613,12 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -7680,8 +7648,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -7691,17 +7661,14 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/cancel_callback_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -7719,6 +7686,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7764,7 +7732,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -7829,7 +7796,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8429,6 +8395,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -8437,6 +8405,7 @@ targets:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -8462,14 +8431,12 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -8499,8 +8466,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -8510,17 +8479,14 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/gprpp/chunked_vector_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -8538,6 +8504,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8816,7 +8783,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -8992,7 +8958,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9156,7 +9121,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9327,7 +9291,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9429,7 +9392,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -9581,7 +9543,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -10018,12 +9979,15 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -10072,8 +10036,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -10085,7 +10051,6 @@ targets:
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -10103,6 +10068,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -10370,7 +10336,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -10435,7 +10400,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -10518,7 +10482,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -10574,6 +10537,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -10581,6 +10546,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -10606,13 +10572,11 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
@@ -10648,8 +10612,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -10659,17 +10625,14 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - test/core/transport/chttp2/flow_control_test.cc
@@ -10688,6 +10651,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10705,6 +10669,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -10712,6 +10678,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -10745,7 +10712,6 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -10753,7 +10719,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -10784,8 +10749,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -10795,17 +10762,14 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/for_each_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -10823,6 +10787,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -10850,13 +10815,19 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/forkable.h
+  - src/core/lib/gprpp/glob.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/forkable.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/event_engine/forkable_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/status:statusor
   - gpr
 - name: format_request_test
@@ -10912,6 +10883,9 @@ targets:
   headers:
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
@@ -10921,13 +10895,15 @@ targets:
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
   - absl/types:span
@@ -10990,6 +10966,17 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: glob_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/gprpp/glob_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: goaway_server_test
   gtest: true
   build: test
@@ -11053,7 +11040,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -11250,7 +11236,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -11811,7 +11796,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -12007,7 +11991,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -12096,7 +12079,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -12330,9 +12312,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -12346,16 +12331,17 @@ targets:
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -12394,7 +12380,6 @@ targets:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_stack_builder_impl.h
-  - src/core/lib/channel/channel_stack_trace.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/promise_based_filter.h
   - src/core/lib/channel/status_util.h
@@ -12403,6 +12388,8 @@ targets:
   - src/core/lib/config/core_configuration.h
   - src/core/lib/debug/event_log.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
@@ -12476,6 +12463,7 @@ targets:
   - src/core/lib/gprpp/down_cast.h
   - src/core/lib/gprpp/dual_ref_counted.h
   - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/if_list.h
   - src/core/lib/gprpp/load_file.h
   - src/core/lib/gprpp/manual_constructor.h
@@ -12589,7 +12577,6 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
@@ -12598,7 +12585,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/security/certificate_provider/certificate_provider_factory.h
   - src/core/lib/security/certificate_provider/certificate_provider_registry.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -12613,7 +12599,6 @@ targets:
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
-  - src/core/lib/surface/call_trace.h
   - src/core/lib/surface/call_utils.h
   - src/core/lib/surface/channel.h
   - src/core/lib/surface/channel_init.h
@@ -12713,7 +12698,6 @@ targets:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_stack_builder_impl.cc
-  - src/core/lib/channel/channel_stack_trace.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/promise_based_filter.cc
   - src/core/lib/channel/status_util.cc
@@ -12723,6 +12707,7 @@ targets:
   - src/core/lib/config/core_configuration.cc
   - src/core/lib/debug/event_log.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -12760,7 +12745,6 @@ targets:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   - src/core/lib/event_engine/time_util.cc
-  - src/core/lib/event_engine/trace.cc
   - src/core/lib/event_engine/utils.cc
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   - src/core/lib/event_engine/windows/iocp.cc
@@ -12773,6 +12757,7 @@ targets:
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
   - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/load_file.cc
   - src/core/lib/gprpp/per_cpu.cc
   - src/core/lib/gprpp/ref_counted_string.cc
@@ -12797,7 +12782,6 @@ targets:
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_poll_posix.cc
   - src/core/lib/iomgr/ev_posix.cc
-  - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -12860,7 +12844,6 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -12868,7 +12851,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
@@ -12880,9 +12862,7 @@ targets:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
   - src/core/lib/surface/call.cc
@@ -12973,6 +12953,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -12980,6 +12962,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -13006,14 +12989,12 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -13044,8 +13025,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -13055,17 +13038,14 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/interceptor_list_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -13083,6 +13063,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13178,7 +13159,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13242,19 +13222,23 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
-  - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
-  - src/core/lib/promise/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/promise/join_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13380,7 +13364,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13457,7 +13440,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13489,10 +13471,13 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -13509,16 +13494,17 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - test/core/promise/latch_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -13636,6 +13622,9 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -13643,13 +13632,14 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
-  - src/core/lib/promise/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/promise/loop_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13664,6 +13654,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
@@ -13671,6 +13663,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -13704,7 +13697,6 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -13712,7 +13704,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
   - src/core/lib/resource_quota/thread_quota.h
-  - src/core/lib/resource_quota/trace.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
@@ -13743,8 +13734,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -13754,17 +13747,14 @@ targets:
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
-  - src/core/lib/resource_quota/trace.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/promise/map_pipe_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -13782,6 +13772,7 @@ targets:
   - utf8_range_lib
   - upb_message_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13880,7 +13871,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -13945,7 +13935,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14010,7 +13999,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14075,7 +14063,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14360,7 +14347,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14437,7 +14423,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14502,7 +14487,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14874,7 +14858,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -14922,9 +14905,12 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/status_helper.h
   - src/core/lib/gprpp/time.h
@@ -14964,8 +14950,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
   - src/core/lib/iomgr/closure.cc
@@ -14977,7 +14965,6 @@ targets:
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/resource_quota/periodic_update_test.cc
   - third_party/upb/upb/mini_descriptor/build_enum.c
@@ -14994,6 +14981,7 @@ targets:
   - gtest
   - utf8_range_lib
   - upb_message_lib
+  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
@@ -15131,7 +15119,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15226,7 +15213,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15505,10 +15491,13 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -15526,16 +15515,17 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/promise_mutex.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/trace.cc
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -15648,7 +15638,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15907,7 +15896,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -15986,7 +15974,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16051,7 +16038,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16264,7 +16250,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16340,7 +16325,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16405,7 +16389,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16470,7 +16453,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16535,7 +16517,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16600,7 +16581,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16665,7 +16645,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16730,7 +16709,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16795,7 +16773,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16860,7 +16837,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16925,7 +16901,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -16990,7 +16965,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17055,7 +17029,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17120,7 +17093,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17185,7 +17157,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17250,7 +17221,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17315,7 +17285,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17380,7 +17349,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17445,7 +17413,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17510,7 +17477,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17575,7 +17541,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17640,7 +17605,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17705,7 +17669,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17770,7 +17733,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17846,7 +17808,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17911,7 +17872,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -17976,7 +17936,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18041,7 +18000,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18117,7 +18075,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18182,7 +18139,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18247,7 +18203,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18312,7 +18267,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18377,7 +18331,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18442,7 +18395,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18507,7 +18459,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -18696,19 +18647,23 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/seq.h
-  - src/core/lib/promise/trace.h
   src:
   - src/core/lib/debug/trace.cc
-  - src/core/lib/promise/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/promise/seq_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -18940,7 +18895,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19091,7 +19045,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19222,7 +19175,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19287,7 +19239,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19367,7 +19318,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19432,7 +19382,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19511,7 +19460,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -19568,18 +19516,23 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/slice/slice.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/slice/slice_string_helpers_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
   - gpr
@@ -19868,7 +19821,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -20232,7 +20184,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -20305,9 +20256,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolved_address.h
   - src/core/lib/slice/slice.h
@@ -20317,17 +20271,19 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   src:
   - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/resolved_address.cc
   - src/core/lib/event_engine/slice.cc
   - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_refcount.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
   - absl/utility:utility
@@ -20481,7 +20437,6 @@ targets:
   - test/core/transport/test_suite/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
@@ -20568,7 +20523,6 @@ targets:
   - src/core/lib/transport/promise_endpoint.h
   - src/cpp/ext/chaotic_good.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -20781,7 +20735,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -20946,6 +20899,17 @@ targets:
   - gtest
   - grpc++_test_config
   - grpc++_test_util
+- name: trace_flags_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/telemetry/trace_flags_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: traced_buffer_list_test
   gtest: true
   build: test
@@ -21000,7 +20964,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -21161,21 +21124,25 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/gprpp/bitset.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_join.h
   src:
   - src/core/lib/debug/trace.cc
-  - src/core/lib/promise/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/promise/try_join_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/utility:utility
@@ -21198,6 +21165,9 @@ targets:
   language: c++
   headers:
   - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
@@ -21205,14 +21175,15 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/trace.h
   - src/core/lib/promise/try_seq.h
   src:
   - src/core/lib/debug/trace.cc
-  - src/core/lib/promise/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/glob.cc
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -21702,7 +21673,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc
@@ -21767,7 +21737,6 @@ targets:
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/test_lb_policies.h
   src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/frame.cc

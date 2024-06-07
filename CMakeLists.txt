@@ -1117,6 +1117,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx fuzzing_event_engine_unittest)
   add_dependencies(buildtests_cxx generic_end2end_test)
+  add_dependencies(buildtests_cxx glob_test)
   add_dependencies(buildtests_cxx goaway_server_test)
   add_dependencies(buildtests_cxx google_c2p_resolver_test)
   add_dependencies(buildtests_cxx graceful_server_shutdown_test)
@@ -1513,6 +1514,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx tls_key_export_test)
   add_dependencies(buildtests_cxx tls_security_connector_test)
   add_dependencies(buildtests_cxx too_many_pings_test)
+  add_dependencies(buildtests_cxx trace_flags_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx traced_buffer_list_test)
   endif()
@@ -1900,7 +1902,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
@@ -1911,7 +1912,6 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
-  src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
   src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c
@@ -2249,7 +2249,6 @@ add_library(grpc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
@@ -2259,6 +2258,7 @@ add_library(grpc
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -2296,7 +2296,6 @@ add_library(grpc
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
@@ -2309,6 +2308,7 @@ add_library(grpc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/posix/directory_reader.cc
@@ -2336,7 +2336,6 @@ add_library(grpc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -2401,7 +2400,6 @@ add_library(grpc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -2409,7 +2407,6 @@ add_library(grpc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
@@ -2475,9 +2472,7 @@ add_library(grpc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -2568,7 +2563,6 @@ add_library(grpc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
-  src/core/resolver/xds/xds_resolver_trace.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/server/server_config_selector_filter.cc
@@ -2996,7 +2990,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/http_trace.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
@@ -3007,7 +3000,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
-  src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
   src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
@@ -3047,7 +3039,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
@@ -3057,6 +3048,7 @@ add_library(grpc_unsecure
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -3094,7 +3086,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
@@ -3107,6 +3098,7 @@ add_library(grpc_unsecure
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -3132,7 +3124,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -3196,7 +3187,6 @@ add_library(grpc_unsecure
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -3204,7 +3194,6 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_server_authz_filter.cc
@@ -3236,9 +3225,7 @@ add_library(grpc_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -5171,7 +5158,6 @@ add_library(grpc_authorization_provider
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
@@ -5181,6 +5167,7 @@ add_library(grpc_authorization_provider
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -5218,7 +5205,6 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
@@ -5231,6 +5217,7 @@ add_library(grpc_authorization_provider
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -5255,7 +5242,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -5319,7 +5305,6 @@ add_library(grpc_authorization_provider
   src/core/lib/matchers/matchers.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -5327,7 +5312,6 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
@@ -5362,9 +5346,7 @@ add_library(grpc_authorization_provider
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -6025,8 +6007,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -6061,6 +6044,7 @@ target_link_libraries(activity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -6298,7 +6282,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(all_ok_test
   src/core/lib/debug/trace.cc
-  src/core/lib/promise/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   test/core/promise/all_ok_test.cc
 )
 if(WIN32 AND MSVC)
@@ -6332,6 +6317,7 @@ target_include_directories(all_ok_test
 target_link_libraries(all_ok_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   absl::utility
@@ -7547,7 +7533,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(bad_ping_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -8024,7 +8009,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(binary_metadata_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -8469,7 +8453,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_creds_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -8539,9 +8522,11 @@ add_executable(call_filters_test
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -8552,20 +8537,16 @@ add_executable(call_filters_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/call_filters.cc
   src/core/lib/transport/call_final_info.cc
@@ -8623,6 +8604,7 @@ target_link_libraries(call_filters_test
   upb_message_lib
   absl::config
   absl::no_destructor
+  absl::flat_hash_map
   absl::inlined_vector
   absl::function_ref
   absl::hash
@@ -8679,7 +8661,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(call_host_override_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -8804,7 +8785,6 @@ add_executable(call_utils_test
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
@@ -8814,6 +8794,7 @@ add_executable(call_utils_test
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -8851,7 +8832,6 @@ add_executable(call_utils_test
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
@@ -8864,6 +8844,7 @@ add_executable(call_utils_test
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -8888,7 +8869,6 @@ add_executable(call_utils_test
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -8951,7 +8931,6 @@ add_executable(call_utils_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -8959,7 +8938,6 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
   src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
@@ -8971,9 +8949,7 @@ add_executable(call_utils_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -9090,7 +9066,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_accept_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -9154,7 +9129,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_client_done_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -9218,7 +9192,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_invoke_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -9282,7 +9255,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_after_round_trip_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -9393,7 +9365,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_before_invoke_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -9460,8 +9431,10 @@ add_executable(cancel_callback_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -9471,17 +9444,14 @@ add_executable(cancel_callback_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/cancel_callback_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -9529,6 +9499,7 @@ target_link_libraries(cancel_callback_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -9541,7 +9512,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_in_a_vacuum_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -9605,7 +9575,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_with_status_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -10569,8 +10538,10 @@ add_executable(chunked_vector_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -10580,17 +10551,14 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -10638,6 +10606,7 @@ target_link_libraries(chunked_vector_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11317,7 +11286,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_streaming_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -11657,7 +11625,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(compressed_payload_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -11996,7 +11963,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(connectivity_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -12426,7 +12392,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(default_host_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -12635,7 +12600,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(disappearing_server_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -12991,7 +12955,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(empty_batch_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -13883,8 +13846,10 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -13896,7 +13861,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -13944,6 +13908,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -14376,7 +14341,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_causes_close_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -14440,7 +14404,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filter_init_fails_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -14554,7 +14517,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(filtered_metadata_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -14684,8 +14646,10 @@ add_executable(flow_control_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14695,17 +14659,14 @@ add_executable(flow_control_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   test/core/transport/chttp2/flow_control_test.cc
@@ -14754,6 +14715,7 @@ target_link_libraries(flow_control_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14770,8 +14732,10 @@ add_executable(for_each_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14781,17 +14745,14 @@ add_executable(for_each_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/for_each_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -14839,6 +14800,7 @@ target_link_libraries(for_each_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -14896,7 +14858,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(forkable_test
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/forkable.cc
+  src/core/lib/gprpp/glob.cc
   test/core/event_engine/forkable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -14930,6 +14894,7 @@ target_include_directories(forkable_test
 target_link_libraries(forkable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::statusor
   gpr
 )
@@ -15039,9 +15004,10 @@ if(gRPC_BUILD_TESTS)
 add_executable(frame_test
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/transport/chttp2/frame_test.cc
 )
@@ -15076,6 +15042,7 @@ target_include_directories(frame_test
 target_link_libraries(frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::hash
   absl::statusor
   absl::span
@@ -15252,6 +15219,48 @@ target_link_libraries(generic_end2end_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(glob_test
+  test/core/gprpp/glob_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(glob_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(glob_test PUBLIC cxx_std_14)
+target_include_directories(glob_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(glob_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(goaway_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/goaway_server_test.cc
@@ -15340,7 +15349,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(graceful_server_shutdown_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -15707,7 +15715,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_authz_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -17100,7 +17107,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(high_initial_seqno_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -17410,7 +17416,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(hpack_size_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -17567,7 +17572,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_stats_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -18177,8 +18181,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18213,6 +18218,7 @@ target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -18242,7 +18248,6 @@ add_executable(interception_chain_test
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_stack_builder_impl.cc
-  src/core/lib/channel/channel_stack_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/promise_based_filter.cc
   src/core/lib/channel/status_util.cc
@@ -18252,6 +18257,7 @@ add_executable(interception_chain_test
   src/core/lib/config/core_configuration.cc
   src/core/lib/debug/event_log.cc
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
@@ -18289,7 +18295,6 @@ add_executable(interception_chain_test
   src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
   src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
   src/core/lib/event_engine/time_util.cc
-  src/core/lib/event_engine/trace.cc
   src/core/lib/event_engine/utils.cc
   src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
   src/core/lib/event_engine/windows/iocp.cc
@@ -18302,6 +18307,7 @@ add_executable(interception_chain_test
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/load_file.cc
   src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
@@ -18326,7 +18332,6 @@ add_executable(interception_chain_test
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_poll_posix.cc
   src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
@@ -18389,7 +18394,6 @@ add_executable(interception_chain_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -18397,7 +18401,6 @@ add_executable(interception_chain_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/security/certificate_provider/certificate_provider_registry.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
   src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
@@ -18409,9 +18412,7 @@ add_executable(interception_chain_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
   src/core/lib/surface/byte_buffer.cc
   src/core/lib/surface/byte_buffer_reader.cc
   src/core/lib/surface/call.cc
@@ -18531,8 +18532,10 @@ add_executable(interceptor_list_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -18542,17 +18545,14 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/interceptor_list_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -18600,6 +18600,7 @@ target_link_libraries(interceptor_list_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -18764,7 +18765,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(invoke_large_request_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -18924,7 +18924,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(join_test
   src/core/lib/debug/trace.cc
-  src/core/lib/promise/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   test/core/promise/join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18958,6 +18959,7 @@ target_include_directories(join_test
 target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
@@ -19154,7 +19156,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(keepalive_timeout_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -19261,7 +19262,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(large_metadata_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -19326,8 +19326,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(latch_test
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19362,6 +19363,7 @@ target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -19691,7 +19693,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
   src/core/lib/debug/trace.cc
-  src/core/lib/promise/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   test/core/promise/loop_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19725,6 +19728,7 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
@@ -19738,8 +19742,10 @@ add_executable(map_pipe_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -19749,17 +19755,14 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
-  src/core/lib/resource_quota/trace.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/promise/map_pipe_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -19807,6 +19810,7 @@ target_link_libraries(map_pipe_test
   utf8_range_lib
   upb_message_lib
   absl::config
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -19944,7 +19948,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_concurrent_streams_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -20008,7 +20011,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_connection_age_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -20072,7 +20074,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_connection_idle_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -20136,7 +20137,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(max_message_length_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -20819,7 +20819,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(negative_deadline_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -20915,7 +20914,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(no_logging_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -20979,7 +20977,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(no_op_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -21909,7 +21906,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(payload_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -22018,8 +22014,10 @@ add_executable(periodic_update_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -22031,7 +22029,6 @@ add_executable(periodic_update_test
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/resource_quota/periodic_update_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
@@ -22078,6 +22075,7 @@ target_link_libraries(periodic_update_test
   gtest
   utf8_range_lib
   upb_message_lib
+  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::statusor
@@ -22283,7 +22281,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ping_pong_streaming_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -22398,7 +22395,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(ping_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -23108,8 +23104,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(promise_mutex_test
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/trace.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23144,6 +23141,7 @@ target_link_libraries(promise_mutex_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -23393,7 +23391,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(proxy_auth_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -23970,7 +23967,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(registered_call_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24078,7 +24074,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(request_with_flags_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24142,7 +24137,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(request_with_payload_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24477,7 +24471,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(resource_quota_server_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24583,7 +24576,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancel_after_first_attempt_starts_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24647,7 +24639,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancel_during_delay_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24711,7 +24702,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancel_with_multiple_send_batches_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24775,7 +24765,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_cancellation_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24839,7 +24828,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_disabled_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24903,7 +24891,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_exceeds_buffer_size_in_delay_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -24967,7 +24954,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_exceeds_buffer_size_in_initial_batch_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25031,7 +25017,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_exceeds_buffer_size_in_subsequent_batch_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25095,7 +25080,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_lb_drop_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25159,7 +25143,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_lb_fail_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25223,7 +25206,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_non_retriable_status_before_trailers_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25287,7 +25269,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_non_retriable_status_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25351,7 +25332,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_per_attempt_recv_timeout_on_last_attempt_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25415,7 +25395,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_per_attempt_recv_timeout_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25479,7 +25458,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_initial_metadata_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25543,7 +25521,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_message_replay_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25607,7 +25584,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_message_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25671,7 +25647,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_recv_trailing_metadata_error_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25735,7 +25710,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_send_initial_metadata_refs_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25799,7 +25773,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_send_op_fails_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25863,7 +25836,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_send_recv_batch_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25927,7 +25899,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_server_pushback_delay_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -25991,7 +25962,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_server_pushback_disabled_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26097,7 +26067,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_streaming_after_commit_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26161,7 +26130,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_streaming_succeeds_before_replay_finished_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26225,7 +26193,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_streaming_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26289,7 +26256,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26395,7 +26361,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_throttled_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26459,7 +26424,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_too_many_attempts_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26523,7 +26487,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_transparent_goaway_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26587,7 +26550,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_transparent_max_concurrent_streams_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26651,7 +26613,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_transparent_not_sent_on_wire_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26715,7 +26676,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_unref_before_finish_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -26779,7 +26739,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(retry_unref_before_recv_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -27245,7 +27204,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
   src/core/lib/debug/trace.cc
-  src/core/lib/promise/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   test/core/promise/seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -27279,6 +27239,7 @@ target_include_directories(seq_test
 target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
@@ -27821,7 +27782,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_finishes_request_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -28106,7 +28066,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(server_streaming_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -28369,7 +28328,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(shutdown_finishes_calls_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -28433,7 +28391,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(shutdown_finishes_tags_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -28560,7 +28517,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(simple_delayed_request_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -28624,7 +28580,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(simple_metadata_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -28732,7 +28687,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(simple_request_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -28880,8 +28834,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(slice_string_helpers_test
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/slice/slice_string_helpers_test.cc
 )
@@ -28916,6 +28871,7 @@ target_include_directories(slice_string_helpers_test
 target_link_libraries(slice_string_helpers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::hash
   absl::statusor
   gpr
@@ -29659,7 +29615,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(streaming_error_response_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -30434,7 +30389,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_end2end_channelz_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -30591,13 +30545,14 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(test_core_event_engine_slice_buffer_test
   src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice.cc
   src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_refcount.cc
   src/core/lib/slice/slice_string_helpers.cc
   test/core/event_engine/slice_buffer_test.cc
 )
@@ -30632,6 +30587,7 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::hash
   absl::statusor
   absl::utility
@@ -30929,7 +30885,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
     src/core/ext/transport/chaotic_good/client_transport.cc
     src/core/ext/transport/chaotic_good/frame.cc
     src/core/ext/transport/chaotic_good/frame_header.cc
@@ -31135,7 +31090,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(test_cpp_ext_chaotic_good_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -31696,7 +31650,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(timeout_before_request_call_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -32155,6 +32108,48 @@ target_link_libraries(too_many_pings_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(trace_flags_test
+  test/core/telemetry/trace_flags_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(trace_flags_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(trace_flags_test PUBLIC cxx_std_14)
+target_include_directories(trace_flags_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(trace_flags_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(traced_buffer_list_test
@@ -32201,7 +32196,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(trailing_metadata_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -32459,7 +32453,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(try_join_test
   src/core/lib/debug/trace.cc
-  src/core/lib/promise/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   test/core/promise/try_join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32493,6 +32488,7 @@ target_include_directories(try_join_test
 target_link_libraries(try_join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   absl::utility
@@ -32547,7 +32543,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
   src/core/lib/debug/trace.cc
-  src/core/lib/promise/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/glob.cc
   test/core/promise/try_seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -32581,6 +32578,7 @@ target_include_directories(try_seq_test
 target_link_libraries(try_seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
   gpr
@@ -33450,7 +33448,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_buffering_at_end_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
@@ -33514,7 +33511,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(write_buffering_test
-  src/core/ext/transport/chaotic_good/chaotic_good_transport.cc
   src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   src/core/ext/transport/chaotic_good/client_transport.cc
   src/core/ext/transport/chaotic_good/frame.cc
