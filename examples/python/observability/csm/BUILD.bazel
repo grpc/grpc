@@ -19,11 +19,11 @@ py_binary(
     srcs = ["csm_greeter_client.py"],
     python_version = "PY3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         requirement("opentelemetry-exporter-prometheus"),
     ],
 )
