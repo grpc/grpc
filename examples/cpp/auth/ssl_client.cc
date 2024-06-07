@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2021 gRPC authors.
+ * Copyright 2024 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,9 +118,10 @@ int main(int argc, char** argv) {
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
   std::string target_str = absl::GetFlag(FLAGS_target);
-  // We indicate that the channel isn't authenticated (use of
+  // Build a SSL options for the channel
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = LoadStringFromFile(kRootCertificate);
+  // Create a channel with SSL credentials
   GreeterClient greeter(
       grpc::CreateChannel(target_str, grpc::SslCredentials(ssl_options)));
   std::string user("world");

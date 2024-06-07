@@ -15,8 +15,8 @@
 licenses(["notice"])
 
 cc_binary(
-    name = "tls_client",
-    srcs = ["tls_client.cc"],
+    name = "ssl_client",
+    srcs = ["ssl_client.cc"],
     defines = ["BAZEL_BUILD"],
     data = [
         "credentials/root.crt",
@@ -30,8 +30,8 @@ cc_binary(
 )
 
 cc_binary(
-    name = "tls_server",
-    srcs = ["tls_server.cc"],
+    name = "ssl_server",
+    srcs = ["ssl_server.cc"],
     defines = ["BAZEL_BUILD"],
     data = [
         "credentials/localhost.crt",

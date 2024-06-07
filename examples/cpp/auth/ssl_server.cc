@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -77,12 +77,13 @@ void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   GreeterServiceImpl service;
   ServerBuilder builder;
-  // Listen on the given address with a SSL authentication mechanism.
+  // Load SSL credentials and build a SSL credential options
   grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
       LoadStringFromFile(kServerKeyPath),
       LoadStringFromFile(kServerCertPath)};
   grpc::SslServerCredentialsOptions ssl_options;
   ssl_options.pem_key_cert_pairs.emplace_back(key_cert_pair);
+  // Listen on the given address with SSL credentials
   builder.AddListeningPort(server_address, grpc::SslServerCredentials(ssl_options));
   // Register "service" as the instance through which we'll communicate with
   // clients. In this case it corresponds to an *synchronous* service.

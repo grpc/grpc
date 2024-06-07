@@ -1,4 +1,4 @@
-# Copyright 2023 the gRPC authors.
+# Copyright 2024 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -58,7 +58,7 @@ target_link_libraries(hw_grpc_proto
 
 # Targets greeter_(client|server)
 foreach(_target
-  tls_client tls_server)
+  ssl_client ssl_server)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
     hw_grpc_proto
