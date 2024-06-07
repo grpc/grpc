@@ -443,13 +443,10 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     GetConnectionDeadline() {
-  if (connection_->args().Contains(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)) {
-    return Timestamp::Now() +
-           connection_->args()
-               .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
-               .value();
-  }
-  return Timestamp::Now() + kConnectionDeadline;
+  return Timestamp::Now() +
+         connection_->args()
+             .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
+             .value_or(kConnectionDeadline);
 }
 
 void ChaoticGoodServerListener::Orphan() {
