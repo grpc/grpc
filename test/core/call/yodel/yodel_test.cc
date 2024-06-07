@@ -27,6 +27,8 @@
 
 namespace grpc_core {
 
+bool g_yodel_fuzzing;
+
 namespace yodel_detail {
 
 TestRegistry* TestRegistry::root_ = nullptr;
