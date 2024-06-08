@@ -364,7 +364,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
   // Log everything from the driver
-  gpr_set_absl_verbosity_debug();
+  grpc_set_absl_verbosity_debug();
 
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;

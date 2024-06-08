@@ -47,7 +47,7 @@ void grpc_test_init(int* argc, char** argv);
 bool grpc_wait_until_shutdown(int64_t time_s);
 
 // Sets absl verbosity via SetMinLogLevel and SetVLogLevel
-void gpr_set_absl_verbosity_debug(void);
+void grpc_set_absl_verbosity_debug(void);
 
 namespace grpc {
 namespace testing {

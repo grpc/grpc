@@ -137,7 +137,7 @@ void grpc_test_init(int* argc, char** argv) {
   srand(seed());
 }
 
-void gpr_set_absl_verbosity_debug() {
+void grpc_set_absl_verbosity_debug() {
   absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   absl::SetVLogLevel("*grpc*/*", 2);
 }
