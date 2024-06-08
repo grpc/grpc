@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/absl_vlog_is_on.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "envoy/config/core/v3/base.upb.h"
@@ -130,8 +131,7 @@ void PopulateMetadataValue(google_protobuf_Value* value_pb, const Json& value,
 void MaybeLogDiscoveryRequest(
     const XdsApiContext& context,
     const envoy_service_discovery_v3_DiscoveryRequest* request) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
-      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(context.def_pool);
     char buf[10240];
@@ -262,8 +262,7 @@ namespace {
 void MaybeLogDiscoveryResponse(
     const XdsApiContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
-      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_service_discovery_v3_DiscoveryResponse_getmsgdef(
             context.def_pool);
@@ -351,8 +350,7 @@ namespace {
 void MaybeLogLrsRequest(
     const XdsApiContext& context,
     const envoy_service_load_stats_v3_LoadStatsRequest* request) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
-      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_service_load_stats_v3_LoadStatsRequest_getmsgdef(
             context.def_pool);
@@ -513,8 +511,7 @@ namespace {
 void MaybeLogLrsResponse(
     const XdsApiContext& context,
     const envoy_service_load_stats_v3_LoadStatsResponse* response) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
-      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_service_load_stats_v3_LoadStatsResponse_getmsgdef(
             context.def_pool);

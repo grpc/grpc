@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/absl_vlog_is_on.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -123,7 +124,7 @@ class EventEngineEndpointWrapper {
       size_t i;
       gpr_log(GPR_INFO, "TCP: %p READ error=%s", eeep_->wrapper,
               status.ToString().c_str());
-      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < pending_read_buffer_->count; i++) {
           char* dump = grpc_dump_slice(pending_read_buffer_->slices[i],
                                        GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -154,7 +155,7 @@ class EventEngineEndpointWrapper {
       size_t i;
       gpr_log(GPR_INFO, "TCP: %p WRITE (peer=%s)", this,
               std::string(PeerAddress()).c_str());
-      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      if (ABSL_VLOG_IS_ON(2)) {
         for (i = 0; i < slices->count; i++) {
           char* dump =
               grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
