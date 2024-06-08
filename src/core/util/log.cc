@@ -194,9 +194,8 @@ void gpr_disable_all_logs() {
 }
 
 void gpr_set_absl_verbosity_debug() {
-  LOG(WARNING)
-      << "This will be very noisy and extremely unsuitable for production "
-         "systems. Use with caution in stating systems." absl::SetMinLogLevel(
-             absl::LogSeverityAtLeast::kInfo);
+  LOG(WARNING) << "This is noisy and extremely unsuitable for production "
+                  "systems. Use with caution in staging systems.";
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   absl::SetVLogLevel("*grpc*/*", 2);
 }
