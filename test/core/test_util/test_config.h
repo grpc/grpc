@@ -43,7 +43,7 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 void grpc_test_init(int* argc, char** argv);
 
 // Disable all absl logs via SetMinLogLevel and SetVLogLevel
-void gpr_disable_all_logs(void);
+void grpc_disable_all_absl_logs(void);
 
 // Wait until gRPC is fully shut down.
 // Returns if grpc is shutdown
