@@ -756,9 +756,6 @@ extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 typedef void(*gpr_disable_all_logs_type)(void);
 extern gpr_disable_all_logs_type gpr_disable_all_logs_import;
 #define gpr_disable_all_logs gpr_disable_all_logs_import
-typedef void(*gpr_set_absl_verbosity_debug_type)(void);
-extern gpr_set_absl_verbosity_debug_type gpr_set_absl_verbosity_debug_import;
-#define gpr_set_absl_verbosity_debug gpr_set_absl_verbosity_debug_import
 typedef void(*gpr_set_log_function_type)(gpr_log_func func);
 extern gpr_set_log_function_type gpr_set_log_function_import;
 #define gpr_set_log_function gpr_set_log_function_import
