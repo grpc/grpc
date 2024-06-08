@@ -156,7 +156,7 @@ namespace {
 void MaybeLogClusterLoadAssignment(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
@@ -497,14 +497,14 @@ XdsResourceType::DecodeResult XdsEndpointResourceType::Decode(
       envoy_config_endpoint_v3_ClusterLoadAssignment_cluster_name(resource));
   auto eds_resource = EdsResourceParse(context, resource);
   if (!eds_resource.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid ClusterLoadAssignment %s: %s",
               context.client, result.name->c_str(),
               eds_resource.status().ToString().c_str());
     }
     result.resource = eds_resource.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed ClusterLoadAssignment %s: %s",
               context.client, result.name->c_str(),
               (*eds_resource)->ToString().c_str());

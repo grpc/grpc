@@ -704,7 +704,7 @@ XdsRouteConfigResource::RetryPolicy RetryPolicyParse(
     } else if (code == "unavailable") {
       retry_policy.retry_on.Add(GRPC_STATUS_UNAVAILABLE);
     } else {
-      if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+      if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
         gpr_log(GPR_INFO, "Unsupported retry_on policy %s.",
                 std::string(code).c_str());
       }
@@ -1143,7 +1143,7 @@ namespace {
 void MaybeLogRouteConfiguration(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
@@ -1179,13 +1179,13 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
     absl::Status status =
         errors.status(absl::StatusCode::kInvalidArgument,
                       "errors validating RouteConfiguration resource");
-    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
               context.client, result.name->c_str(), status.ToString().c_str());
     }
     result.resource = std::move(status);
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed RouteConfiguration %s: %s",
               context.client, result.name->c_str(),
               rds_update->ToString().c_str());

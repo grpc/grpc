@@ -167,10 +167,9 @@ class CallSpine final : public Party {
         "SpawnGuarded promise must return a status-like object");
     Spawn(name, std::move(promise_factory), [this, whence](ResultType r) {
       if (!IsStatusOk(r)) {
-        if (grpc_trace_promise_primitives.enabled()) {
-          gpr_log(GPR_INFO, "SpawnGuarded sees failure: %s (source: %s:%d)",
-                  r.ToString().c_str(), whence.file(), whence.line());
-        }
+        GRPC_TRACE_LOG(promise_primitives, INFO)
+            << "SpawnGuarded sees failure: " << r
+            << " (source: " << whence.file() << ":" << whence.line() << ")";
         auto status = StatusCast<ServerMetadataHandle>(std::move(r));
         status->Set(GrpcCallWasCancelled(), true);
         PushServerTrailingMetadata(std::move(status));

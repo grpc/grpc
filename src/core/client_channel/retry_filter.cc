@@ -89,8 +89,6 @@ using grpc_core::internal::RetryMethodConfig;
 using grpc_core::internal::RetryServiceConfigParser;
 using grpc_event_engine::experimental::EventEngine;
 
-grpc_core::TraceFlag grpc_retry_trace(false, "retry");
-
 namespace grpc_core {
 
 //
