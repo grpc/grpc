@@ -120,7 +120,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/debugging:failure_signal_handler",
         "absl/log:check",
-        "absl/log:globals",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",

@@ -22,7 +22,6 @@
 #include <stdlib.h>
 
 #include "absl/debugging/failure_signal_handler.h"
-#include "absl/log/globals.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
