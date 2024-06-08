@@ -150,6 +150,11 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
   return true;
 }
 
+void gpr_disable_all_logs() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  absl::SetVLogLevel("*grpc*/*", -1);
+}
+
 namespace grpc {
 namespace testing {
 
