@@ -40,8 +40,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 
-extern grpc_core::TraceFlag grpc_trace_channel;
-
 namespace grpc_core {
 namespace promise_filter_detail {
 
@@ -90,9 +88,6 @@ BaseCallData::BaseCallData(
       arena_(args->arena),
       call_combiner_(args->call_combiner),
       deadline_(args->deadline),
-      call_context_(flags & kFilterExaminesCallContext
-                        ? arena_->New<CallContext>(nullptr)
-                        : nullptr),
       server_initial_metadata_pipe_(
           flags & kFilterExaminesServerInitialMetadata
               ? arena_->New<Pipe<ServerMetadataHandle>>(arena_)
@@ -215,7 +210,7 @@ void BaseCallData::CapturedBatch::ResumeWith(Flusher* releaser) {
   uintptr_t& refcnt = *RefCountField(batch);
   if (refcnt == 0) {
     // refcnt==0 ==> cancelled
-    if (grpc_trace_channel.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
       gpr_log(GPR_INFO, "%sRESUME BATCH REQUEST CANCELLED",
               releaser->call()->DebugTag().c_str());
     }
@@ -271,7 +266,7 @@ BaseCallData::Flusher::~Flusher() {
     auto* batch = static_cast<grpc_transport_stream_op_batch*>(p);
     BaseCallData* call =
         static_cast<BaseCallData*>(batch->handler_private.extra_arg);
-    if (grpc_trace_channel.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
       gpr_log(GPR_INFO, "FLUSHER:forward batch via closure: %s",
               grpc_transport_stream_op_batch_string(batch, false).c_str());
     }
@@ -280,10 +275,10 @@ BaseCallData::Flusher::~Flusher() {
   };
   for (size_t i = 1; i < release_.size(); i++) {
     auto* batch = release_[i];
-    if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+    if (call_->call() != nullptr && call_->call()->traced()) {
       batch->is_traced = true;
     }
-    if (grpc_trace_channel.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
       gpr_log(
           GPR_INFO, "FLUSHER:queue batch to forward in closure: %s",
           grpc_transport_stream_op_batch_string(release_[i], false).c_str());
@@ -296,11 +291,11 @@ BaseCallData::Flusher::~Flusher() {
                        "flusher_batch");
   }
   call_closures_.RunClosuresWithoutYielding(call_->call_combiner());
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "FLUSHER:forward batch: %s",
             grpc_transport_stream_op_batch_string(release_[0], false).c_str());
   }
-  if (call_->call_context_ != nullptr && call_->call_context_->traced()) {
+  if (call_->call() != nullptr && call_->call()->traced()) {
     release_[0]->is_traced = true;
   }
   grpc_call_next_op(call_->elem(), release_[0]);
@@ -337,7 +332,7 @@ const char* BaseCallData::SendMessage::StateString(State state) {
 }
 
 void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s SendMessage.StartOp st=%s", base_->LogTag().c_str(),
             StateString(state_));
   }
@@ -365,7 +360,7 @@ void BaseCallData::SendMessage::StartOp(CapturedBatch batch) {
 
 template <typename T>
 void BaseCallData::SendMessage::GotPipe(T* pipe_end) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s SendMessage.GotPipe st=%s", base_->LogTag().c_str(),
             StateString(state_));
   }
@@ -413,7 +408,7 @@ bool BaseCallData::SendMessage::IsIdle() const {
 
 void BaseCallData::SendMessage::OnComplete(absl::Status status) {
   Flusher flusher(base_);
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s SendMessage.OnComplete st=%s status=%s",
             base_->LogTag().c_str(), StateString(state_),
             status.ToString().c_str());
@@ -444,7 +439,7 @@ void BaseCallData::SendMessage::OnComplete(absl::Status status) {
 
 void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
                                      Flusher* flusher) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s SendMessage.Done st=%s md=%s",
             base_->LogTag().c_str(), StateString(state_),
             metadata.DebugString().c_str());
@@ -487,7 +482,7 @@ void BaseCallData::SendMessage::Done(const ServerMetadata& metadata,
 
 void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
                                                    bool allow_push_to_pipe) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s SendMessage.WakeInsideCombiner st=%s%s",
             base_->LogTag().c_str(), StateString(state_),
             state_ == State::kBatchCompleted
@@ -521,7 +516,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       CHECK(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = r_push.value_if_ready()) {
-        if (grpc_trace_channel.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
           gpr_log(GPR_INFO,
                   "%s SendMessage.WakeInsideCombiner push complete, result=%s",
                   base_->LogTag().c_str(), *p ? "true" : "false");
@@ -535,7 +530,7 @@ void BaseCallData::SendMessage::WakeInsideCombiner(Flusher* flusher,
       CHECK(next_.has_value());
       auto r_next = (*next_)();
       if (auto* p = r_next.value_if_ready()) {
-        if (grpc_trace_channel.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
           gpr_log(GPR_INFO,
                   "%s SendMessage.WakeInsideCombiner next complete, "
                   "result.has_value=%s",
@@ -620,7 +615,7 @@ const char* BaseCallData::ReceiveMessage::StateString(State state) {
 }
 
 void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s ReceiveMessage.StartOp st=%s",
             base_->LogTag().c_str(), StateString(state_));
   }
@@ -661,7 +656,7 @@ void BaseCallData::ReceiveMessage::StartOp(CapturedBatch& batch) {
 
 template <typename T>
 void BaseCallData::ReceiveMessage::GotPipe(T* pipe_end) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s ReceiveMessage.GotPipe st=%s",
             base_->LogTag().c_str(), StateString(state_));
   }
@@ -697,7 +692,7 @@ void BaseCallData::ReceiveMessage::GotPipe(T* pipe_end) {
 }
 
 void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s ReceiveMessage.OnComplete st=%s status=%s",
             base_->LogTag().c_str(), StateString(state_),
             status.ToString().c_str());
@@ -738,7 +733,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
 
 void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
                                         Flusher* flusher) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s ReceiveMessage.Done st=%s md=%s",
             base_->LogTag().c_str(), StateString(state_),
             metadata.DebugString().c_str());
@@ -797,7 +792,7 @@ void BaseCallData::ReceiveMessage::Done(const ServerMetadata& metadata,
 
 void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
                                                       bool allow_push_to_pipe) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO,
             "%s ReceiveMessage.WakeInsideCombiner st=%s push?=%s next?=%s "
             "allow_push_to_pipe=%s",
@@ -859,7 +854,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
       CHECK(push_.has_value());
       auto r_push = (*push_)();
       if (auto* p = r_push.value_if_ready()) {
-        if (grpc_trace_channel.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
           gpr_log(GPR_INFO,
                   "%s ReceiveMessage.WakeInsideCombiner push complete: %s",
                   base_->LogTag().c_str(), *p ? "true" : "false");
@@ -890,7 +885,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
               p->cancelled() ? absl::CancelledError() : absl::OkStatus(),
               "recv_message");
         }
-        if (grpc_trace_channel.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
           gpr_log(GPR_INFO,
                   "%s ReceiveMessage.WakeInsideCombiner next complete: %s "
                   "new_state=%s",
@@ -909,7 +904,7 @@ void BaseCallData::ReceiveMessage::WakeInsideCombiner(Flusher* flusher,
     case State::kPulledFromPipe: {
       CHECK(push_.has_value());
       if ((*push_)().ready()) {
-        if (grpc_trace_channel.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
           gpr_log(GPR_INFO,
                   "%s ReceiveMessage.WakeInsideCombiner push complete",
                   base_->LogTag().c_str());
@@ -1025,7 +1020,7 @@ class ClientCallData::PollContext {
 
   void Run() {
     DCHECK(HasContext<Arena>());
-    if (grpc_trace_channel.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
       gpr_log(GPR_INFO, "%s ClientCallData.PollContext.Run %s",
               self_->LogTag().c_str(), self_->DebugString().c_str());
     }
@@ -1109,7 +1104,7 @@ class ClientCallData::PollContext {
       case SendInitialState::kForwarded: {
         // Poll the promise once since we're waiting for it.
         Poll<ServerMetadataHandle> poll = self_->promise_();
-        if (grpc_trace_channel.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
           gpr_log(GPR_INFO, "%s ClientCallData.PollContext.Run: poll=%s; %s",
                   self_->LogTag().c_str(),
                   PollToString(poll,
@@ -1389,7 +1384,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   CapturedBatch batch(b);
   Flusher flusher(this);
 
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s StartBatch %s", LogTag().c_str(),
             DebugString().c_str());
   }
@@ -1513,7 +1508,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 
 // Handle cancellation.
 void ClientCallData::Cancel(grpc_error_handle error, Flusher* flusher) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s Cancel error=%s", LogTag().c_str(),
             error.ToString().c_str());
   }
@@ -1593,7 +1588,7 @@ void ClientCallData::StartPromise(Flusher* flusher) {
 }
 
 void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO,
             "%s ClientCallData.RecvInitialMetadataReady %s error:%s md:%s",
             LogTag().c_str(), DebugString().c_str(), error.ToString().c_str(),
@@ -1677,7 +1672,7 @@ void ClientCallData::HookRecvTrailingMetadata(CapturedBatch batch) {
 //   - return a wrapper around PollTrailingMetadata as the promise.
 ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
     CallArgs call_args) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s ClientCallData.MakeNextPromise %s", LogTag().c_str(),
             DebugString().c_str());
   }
@@ -1740,7 +1735,7 @@ ArenaPromise<ServerMetadataHandle> ClientCallData::MakeNextPromise(
 // All polls: await receiving the trailing metadata, then return it to the
 // application.
 Poll<ServerMetadataHandle> ClientCallData::PollTrailingMetadata() {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s ClientCallData.PollTrailingMetadata %s",
             LogTag().c_str(), DebugString().c_str());
   }
@@ -1791,7 +1786,7 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO,
             "%s ClientCallData.RecvTrailingMetadataReady "
             "recv_trailing_state=%s error=%s md=%s",
@@ -2006,7 +2001,7 @@ ServerCallData::ServerCallData(grpc_call_element* elem,
 }
 
 ServerCallData::~ServerCallData() {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s ~ServerCallData %s", LogTag().c_str(),
             DebugString().c_str());
   }
@@ -2034,7 +2029,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   Flusher flusher(this);
   bool wake = false;
 
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s StartBatch: %s", LogTag().c_str(),
             DebugString().c_str());
   }
@@ -2168,7 +2163,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
 // Handle cancellation.
 void ServerCallData::Completed(grpc_error_handle error,
                                bool tarpit_cancellation, Flusher* flusher) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(
         GPR_DEBUG,
         "%sServerCallData::Completed: send_trailing_state=%s "
@@ -2294,7 +2289,7 @@ ArenaPromise<ServerMetadataHandle> ServerCallData::MakeNextPromise(
 // All polls: await sending the trailing metadata, then foward it down the
 // stack.
 Poll<ServerMetadataHandle> ServerCallData::PollTrailingMetadata() {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s PollTrailingMetadata: %s", LogTag().c_str(),
             StateString(send_trailing_state_));
   }
@@ -2325,7 +2320,7 @@ void ServerCallData::RecvTrailingMetadataReadyCallback(
 }
 
 void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s: RecvTrailingMetadataReady error=%s md=%s",
             LogTag().c_str(), error.ToString().c_str(),
             recv_trailing_metadata_->DebugString().c_str());
@@ -2345,7 +2340,7 @@ void ServerCallData::RecvInitialMetadataReadyCallback(void* arg,
 
 void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
   Flusher flusher(this);
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s: RecvInitialMetadataReady %s", LogTag().c_str(),
             error.ToString().c_str());
   }
@@ -2410,7 +2405,7 @@ std::string ServerCallData::DebugString() const {
 // Wakeup and poll the promise if appropriate.
 void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   PollContext poll_ctx(this, flusher);
-  if (grpc_trace_channel.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel)) {
     gpr_log(GPR_INFO, "%s: WakeInsideCombiner %s", LogTag().c_str(),
             DebugString().c_str());
   }
@@ -2433,12 +2428,12 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
     }
     if (send_initial_metadata_->metadata_push_.has_value()) {
       if ((*send_initial_metadata_->metadata_push_)().ready()) {
-        if (grpc_trace_channel.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(channel)) {
           gpr_log(GPR_INFO, "%s: WakeInsideCombiner: metadata_push done",
                   LogTag().c_str());
         }
         send_initial_metadata_->metadata_push_.reset();
-      } else if (grpc_trace_channel.enabled()) {
+      } else if (GRPC_TRACE_FLAG_ENABLED(channel)) {
         gpr_log(GPR_INFO, "%s: WakeInsideCombiner: metadata_push pending",
                 LogTag().c_str());
       }
@@ -2456,7 +2451,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
         flusher,
         send_initial_metadata_ == nullptr ||
             send_initial_metadata_->state == SendInitialMetadata::kForwarded);
-    if (grpc_trace_channel.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
       gpr_log(GPR_DEBUG,
               "%s: After send_message WakeInsideCombiner %s is_idle=%s "
               "is_forwarded=%s",
@@ -2485,7 +2480,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
   if (promise_.has_value()) {
     Poll<ServerMetadataHandle> poll;
     poll = promise_();
-    if (grpc_trace_channel.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(channel)) {
       gpr_log(
           GPR_INFO,
           "%s: WakeInsideCombiner poll=%s; send_initial_metadata=%s "
@@ -2505,7 +2500,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
             SendInitialMetadata::kQueuedAndPushedToPipe) {
       CHECK(send_initial_metadata_->metadata_next_.has_value());
       auto p = (*send_initial_metadata_->metadata_next_)();
-      if (grpc_trace_channel.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(channel)) {
         gpr_log(GPR_INFO,
                 "%s: WakeInsideCombiner send_initial_metadata poll=%s",
                 LogTag().c_str(),

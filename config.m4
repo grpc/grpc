@@ -99,7 +99,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
-    src/core/ext/transport/chttp2/transport/http_trace.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
@@ -110,7 +109,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
-    src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/transport/inproc/legacy_inproc_transport.cc \
     src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c \
@@ -448,7 +446,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_stack_builder_impl.cc \
-    src/core/lib/channel/channel_stack_trace.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/promise_based_filter.cc \
     src/core/lib/channel/status_util.cc \
@@ -461,6 +458,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/config/load_config.cc \
     src/core/lib/debug/event_log.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
@@ -499,7 +497,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc \
     src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc \
     src/core/lib/event_engine/time_util.cc \
-    src/core/lib/event_engine/trace.cc \
     src/core/lib/event_engine/utils.cc \
     src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc \
     src/core/lib/event_engine/windows/iocp.cc \
@@ -515,6 +512,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/dump_args.cc \
     src/core/lib/gprpp/examine_stack.cc \
     src/core/lib/gprpp/fork.cc \
+    src/core/lib/gprpp/glob.cc \
     src/core/lib/gprpp/host_port.cc \
     src/core/lib/gprpp/linux/env.cc \
     src/core/lib/gprpp/load_file.cc \
@@ -554,7 +552,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
-    src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/event_engine_shims/closure.cc \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
@@ -619,7 +616,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/promise/activity.cc \
     src/core/lib/promise/party.cc \
     src/core/lib/promise/sleep.cc \
-    src/core/lib/promise/trace.cc \
     src/core/lib/resource_quota/api.cc \
     src/core/lib/resource_quota/arena.cc \
     src/core/lib/resource_quota/connection_quota.cc \
@@ -627,7 +623,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
-    src/core/lib/resource_quota/trace.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -693,30 +688,30 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \
     src/core/lib/slice/slice_buffer.cc \
-    src/core/lib/slice/slice_refcount.cc \
     src/core/lib/slice/slice_string_helpers.cc \
-    src/core/lib/surface/api_trace.cc \
     src/core/lib/surface/byte_buffer.cc \
     src/core/lib/surface/byte_buffer_reader.cc \
     src/core/lib/surface/call.cc \
     src/core/lib/surface/call_details.cc \
     src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/call_utils.cc \
     src/core/lib/surface/channel.cc \
     src/core/lib/surface/channel_create.cc \
     src/core/lib/surface/channel_init.cc \
     src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/client_call.cc \
     src/core/lib/surface/completion_queue.cc \
     src/core/lib/surface/completion_queue_factory.cc \
     src/core/lib/surface/event_string.cc \
+    src/core/lib/surface/filter_stack_call.cc \
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_internally.cc \
     src/core/lib/surface/lame_client.cc \
     src/core/lib/surface/legacy_channel.cc \
     src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server_call.cc \
     src/core/lib/surface/validate_metadata.cc \
     src/core/lib/surface/version.cc \
-    src/core/lib/surface/wait_for_cq_end_op.cc \
-    src/core/lib/transport/batch_builder.cc \
     src/core/lib/transport/bdp_estimator.cc \
     src/core/lib/transport/call_arena_allocator.cc \
     src/core/lib/transport/call_filters.cc \
@@ -784,7 +779,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
-    src/core/resolver/xds/xds_resolver_trace.cc \
     src/core/server/server.cc \
     src/core/server/server_call_tracer_filter.cc \
     src/core/server/server_config_selector_filter.cc \

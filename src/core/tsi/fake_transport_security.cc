@@ -640,7 +640,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
     if (next_message_to_send > TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
       next_message_to_send = TSI_FAKE_HANDSHAKE_MESSAGE_MAX;
     }
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tsi)) {
       gpr_log(GPR_INFO, "%s prepared %s.",
               impl->is_client ? "Client" : "Server",
               tsi_fake_handshake_message_to_string(impl->next_message_to_send));
@@ -653,9 +653,7 @@ static tsi_result fake_handshaker_get_bytes_to_send_to_peer(
   if (!impl->is_client &&
       impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     // We're done.
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      LOG(INFO) << "Server is done.";
-    }
+    GRPC_TRACE_LOG(tsi, INFO) << "Server is done.";
     impl->result = TSI_OK;
   } else {
     impl->needs_incoming_message = 1;
@@ -694,17 +692,15 @@ static tsi_result fake_handshaker_process_bytes_from_peer(
             tsi_fake_handshake_message_to_string(received_msg),
             tsi_fake_handshake_message_to_string(expected_msg));
   }
-  if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-    LOG(INFO) << (impl->is_client ? "Client" : "Server") << " received "
-              << tsi_fake_handshake_message_to_string(received_msg);
-  }
+  GRPC_TRACE_LOG(tsi, INFO)
+      << (impl->is_client ? "Client" : "Server") << " received "
+      << tsi_fake_handshake_message_to_string(received_msg);
   tsi_fake_frame_reset(&impl->incoming_frame, 0 /* needs_draining */);
   impl->needs_incoming_message = 0;
   if (impl->next_message_to_send == TSI_FAKE_HANDSHAKE_MESSAGE_MAX) {
     // We're done.
-    if (GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
-      LOG(INFO) << (impl->is_client ? "Client" : "Server") << " is done.";
-    }
+    GRPC_TRACE_LOG(tsi, INFO)
+        << (impl->is_client ? "Client" : "Server") << " is done.";
     impl->result = TSI_OK;
   }
   return TSI_OK;

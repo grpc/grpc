@@ -55,8 +55,6 @@
 
 namespace grpc_core {
 
-extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
-
 /// Interface for load balancing policies.
 ///
 /// The following concepts are used here:
@@ -450,6 +448,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     PickResult Pick(PickArgs /*args*/) override {
       return PickResult::Fail(status_);
+    }
+
+   private:
+    absl::Status status_;
+  };
+
+  // A picker that returns PickResult::Drop for all picks.
+  class DropPicker final : public SubchannelPicker {
+   public:
+    explicit DropPicker(absl::Status status) : status_(status) {}
+
+    PickResult Pick(PickArgs /*args*/) override {
+      return PickResult::Drop(status_);
     }
 
    private:

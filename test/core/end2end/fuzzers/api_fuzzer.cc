@@ -78,8 +78,6 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 ////////////////////////////////////////////////////////////////////////////////
 // dns resolution
 
@@ -506,7 +504,7 @@ using grpc_core::testing::ApiFuzzer;
 
 DEFINE_PROTO_FUZZER(const api_fuzzer::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    gpr_disable_all_logs();
   }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();

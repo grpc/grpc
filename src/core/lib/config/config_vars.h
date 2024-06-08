@@ -79,7 +79,7 @@ class GPR_DLL ConfigVars {
   // A comma separated list of tracers that provide additional insight into how
   // gRPC C core is processing requests via debug logs.
   absl::string_view Trace() const { return trace_; }
-  // Default gRPC logging verbosity
+  // Logging verbosity.
   absl::string_view Verbosity() const { return verbosity_; }
   // Messages logged at the same or higher level than this will print stacktrace
   absl::string_view StacktraceMinloglevel() const {

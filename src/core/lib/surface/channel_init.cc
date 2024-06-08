@@ -36,7 +36,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -241,7 +240,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     post_processor_functions.emplace_back(std::move(post_processors[i]));
   }
   // Log out the graph we built if that's been requested.
-  if (grpc_trace_channel_stack.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     // It can happen that multiple threads attempt to construct a core config at
     // once.
     // This is benign - the first one wins and others are discarded.
@@ -251,8 +250,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     MutexLock lock(m);
     // List the channel stack type (since we'll be repeatedly printing graphs in
     // this loop).
-    gpr_log(GPR_INFO,
-            "ORDERED CHANNEL STACK %s:", grpc_channel_stack_type_string(type));
+    LOG(INFO) << "ORDERED CHANNEL STACK "
+              << grpc_channel_stack_type_string(type) << ":";
     // First build up a map of filter -> file:line: strings, because it helps
     // the readability of this log to get later fields aligned vertically.
     std::map<const grpc_channel_filter*, std::string> loc_strs;

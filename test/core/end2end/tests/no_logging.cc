@@ -113,8 +113,8 @@ std::atomic<gpr_log_func> Verifier::g_log_func_(gpr_default_log);
 void SimpleRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -125,7 +125,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
   test.Step();
   EXPECT_NE(c.GetPeer(), absl::nullopt);
   EXPECT_NE(s.GetPeer(), absl::nullopt);
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_UNIMPLEMENTED, "xyz", {})
@@ -140,6 +140,9 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+// This test makes sure that we dont get spammy logs when making an rpc
+// especially when rpcs are successful.
+
 // TODO(hork): remove when the listener flake is identified
 #ifdef GPR_WINDOWS
   if (IsEventEngineListenerEnabled()) {

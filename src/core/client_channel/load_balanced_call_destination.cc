@@ -18,16 +18,11 @@
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/channel/status_util.h"
+#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
-
-// Defined in legacy client channel filter.
-// TODO(roth): Move these here when we remove the legacy filter.
-extern TraceFlag grpc_client_channel_trace;
-extern TraceFlag grpc_client_channel_call_trace;
-extern TraceFlag grpc_client_channel_lb_call_trace;
 
 namespace {
 
@@ -184,12 +179,10 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
       // CompletePick
       [&](LoadBalancingPolicy::PickResult::Complete* complete_pick)
           -> LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-          gpr_log(GPR_INFO,
-                  "client_channel: %sLB pick succeeded: subchannel=%p",
-                  GetContext<Activity>()->DebugTag().c_str(),
-                  complete_pick->subchannel.get());
-        }
+        GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+            << "client_channel: " << GetContext<Activity>()->DebugTag()
+            << " pick succeeded: subchannel="
+            << complete_pick->subchannel.get();
         CHECK(complete_pick->subchannel != nullptr);
         // Grab a ref to the call destination while we're still
         // holding the data plane mutex.
@@ -202,12 +195,10 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
         // yet seen that change and given us a new picker), then just
         // queue the pick.  We'll try again as soon as we get a new picker.
         if (call_destination == nullptr) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-            gpr_log(GPR_INFO,
-                    "client_channel: %ssubchannel returned by LB picker "
-                    "has no connected subchannel; queueing pick",
-                    GetContext<Activity>()->DebugTag().c_str());
-          }
+          GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+              << "client_channel: " << GetContext<Activity>()->DebugTag()
+              << " returned by LB picker has no connected subchannel; queueing "
+                 "pick";
           return Continue{};
         }
         // If the LB policy returned a call tracker, inform it that the
@@ -222,20 +213,17 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
       },
       // QueuePick
       [&](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-          gpr_log(GPR_INFO, "client_channel: %sLB pick queued",
-                  GetContext<Activity>()->DebugTag().c_str());
-        }
+        GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+            << "client_channel: " << GetContext<Activity>()->DebugTag()
+            << " pick queued";
         return Continue{};
       },
       // FailPick
       [&](LoadBalancingPolicy::PickResult::Fail* fail_pick)
           -> LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-          gpr_log(GPR_INFO, "client_channel: %sLB pick failed: %s",
-                  GetContext<Activity>()->DebugTag().c_str(),
-                  fail_pick->status.ToString().c_str());
-        }
+        GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+            << "client_channel: " << GetContext<Activity>()->DebugTag()
+            << " pick failed: " << fail_pick->status;
         // If wait_for_ready is false, then the error indicates the RPC
         // attempt's final status.
         if (!unstarted_handler.UnprocessedClientInitialMetadata()
@@ -251,11 +239,9 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
       // DropPick
       [&](LoadBalancingPolicy::PickResult::Drop* drop_pick)
           -> LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_lb_call_trace)) {
-          gpr_log(GPR_INFO, "client_channel: %sLB pick dropped: %s",
-                  GetContext<Activity>()->DebugTag().c_str(),
-                  drop_pick->status.ToString().c_str());
-        }
+        GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+            << "client_channel: " << GetContext<Activity>()->DebugTag()
+            << " pick dropped: " << drop_pick->status;
         return grpc_error_set_int(MaybeRewriteIllegalStatusCode(
                                       std::move(drop_pick->status), "LB drop"),
                                   StatusIntProperty::kLbPolicyDrop, 1);
@@ -289,6 +275,7 @@ void LoadBalancedCallDestination::StartCall(
                       [unstarted_handler, &last_picker](
                           RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
                               picker) mutable {
+                        CHECK_NE(picker.get(), nullptr);
                         last_picker = std::move(picker);
                         // Returns 3 possible things:
                         // - Continue to queue the pick
@@ -328,6 +315,22 @@ void LoadBalancedCallDestination::StartCall(
               return absl::OkStatus();
             });
       });
+}
+
+void RegisterLoadBalancedCallDestination(CoreConfiguration::Builder* builder) {
+  class LoadBalancedCallDestinationFactory final
+      : public ClientChannel::CallDestinationFactory {
+   public:
+    RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
+        ClientChannel::PickerObservable picker) override {
+      return MakeRefCounted<LoadBalancedCallDestination>(std::move(picker));
+    }
+  };
+
+  builder->channel_args_preconditioning()->RegisterStage([](ChannelArgs args) {
+    return args.SetObject(
+        NoDestructSingleton<LoadBalancedCallDestinationFactory>::Get());
+  });
 }
 
 }  // namespace grpc_core

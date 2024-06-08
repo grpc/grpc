@@ -313,7 +313,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         },
         EventEngineWakeupScheduler(self->event_engine_),
         [self](absl::Status status) {
-          if (grpc_chaotic_good_trace.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
             gpr_log(GPR_INFO, "ChaoticGoodConnector::OnHandshakeDone: %s",
                     status.ToString().c_str());
           }
@@ -376,13 +376,14 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .SetObject(
-              grpc_core::NoDestructSingleton<
-                  grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get()),
+          .SetObject(grpc_core::NoDestructSingleton<
+                     grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get())
+          .Set(GRPC_ARG_USE_V3_STACK, true),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
   }
+  LOG(ERROR) << "Failed to create chaotic good client channel: " << r.status();
   error = absl_status_to_grpc_error(r.status());
   intptr_t integer;
   grpc_status_code status = GRPC_STATUS_INTERNAL;
@@ -391,6 +392,6 @@ grpc_channel* grpc_chaotic_good_channel_create(const char* target,
     status = static_cast<grpc_status_code>(integer);
   }
   channel = grpc_lame_client_channel_create(
-      target, status, "Failed to create secure client channel");
+      target, status, "Failed to create chaotic good client channel");
   return channel;
 }
