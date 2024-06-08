@@ -44,9 +44,6 @@ using grpc::testing::EmptyMessage;
 using grpc::testing::GaugeResponse;
 using grpc::testing::MetricsService;
 
-// Do not log anything
-void BlackholeLogger(gpr_log_func_args* /*args*/) {}
-
 // Prints the values of all Gauges (unless total_only is set to 'true' in which
 // case this only prints the sum of all gauge values).
 bool PrintMetrics(std::unique_ptr<MetricsService::Stub> stub, bool total_only,
@@ -93,7 +90,7 @@ int main(int argc, char** argv) {
   // The output of metrics client is in some cases programmatically parsed (for
   // example by the stress test framework). So, we do not want any of the log
   // from the grpc library appearing on stdout.
-  gpr_set_log_function(BlackholeLogger);
+  gpr_disable_all_logs();
 
   std::shared_ptr<grpc::Channel> channel(
       grpc::CreateChannel(absl::GetFlag(FLAGS_metrics_server_address),

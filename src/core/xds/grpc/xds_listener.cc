@@ -285,7 +285,7 @@ void MaybeLogHttpConnectionManager(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_config) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
@@ -1091,7 +1091,7 @@ absl::StatusOr<std::shared_ptr<const XdsListenerResource>> LdsResourceParse(
 
 void MaybeLogListener(const XdsResourceType::DecodeContext& context,
                       const envoy_config_listener_v3_Listener* listener) {
-  if (GRPC_TRACE_FLAG_ENABLED(*context.tracer) &&
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
       gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
     const upb_MessageDef* msg_type =
         envoy_config_listener_v3_Listener_getmsgdef(context.symtab);
@@ -1122,14 +1122,14 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
       UpbStringToStdString(envoy_config_listener_v3_Listener_name(resource));
   auto listener = LdsResourceParse(context, resource);
   if (!listener.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
       gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
               context.client, result.name->c_str(),
               listener.status().ToString().c_str());
     }
     result.resource = listener.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
       gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
               context.client, result.name->c_str(),
               (*listener)->ToString().c_str());

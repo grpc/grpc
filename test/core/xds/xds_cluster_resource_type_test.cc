@@ -78,9 +78,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-TraceFlag xds_cluster_resource_type_test_trace(
-    true, "xds_cluster_resource_type_test");
-
 class XdsClusterTest : public ::testing::Test {
  protected:
   XdsClusterTest()

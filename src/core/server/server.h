@@ -80,8 +80,6 @@ namespace experimental {
 class PassiveListenerImpl;
 }  // namespace experimental
 
-extern TraceFlag grpc_server_channel_trace;
-
 class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
                public CppImplOf<Server, grpc_server> {

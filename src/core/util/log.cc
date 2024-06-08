@@ -185,5 +185,20 @@ void gpr_log_verbosity_init() {
 }
 
 void gpr_set_log_function(gpr_log_func f) {
+  LOG(ERROR)
+      << "This function is in the process of being deprecated. Your "
+         "gpr_log_func will not work as expected. This is because only few "
+         "instances of gpr_log remain in our code base. All instances of "
+         "gpr_log will log via this custom function. Many of the gpr_log "
+         "statements have been converted to ABSL_LOG statements. These will "
+         "log to the default absl log sink. The gpr_set_log_function function "
+         "will be deleted in the next gRPC release. We strongly advice against "
+         "using this function. You may create a new absl LogSink with similar "
+         "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
+}
+
+void gpr_disable_all_logs() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  absl::SetVLogLevel("*grpc*/*", -1);
 }

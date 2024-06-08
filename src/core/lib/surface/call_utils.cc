@@ -123,11 +123,9 @@ const char* GrpcOpTypeName(grpc_op_type op) {
 // WaitForCqEndOp
 
 Poll<Empty> WaitForCqEndOp::operator()() {
-  if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_INFO, "%sWaitForCqEndOp[%p] %s",
-            Activity::current()->DebugTag().c_str(), this,
-            StateString(state_).c_str());
-  }
+  GRPC_TRACE_LOG(promise_primitives, INFO)
+      << Activity::current()->DebugTag() << "WaitForCqEndOp[" << this << "] "
+      << StateString(state_);
   if (auto* n = absl::get_if<NotStarted>(&state_)) {
     if (n->is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(n->tag),
@@ -178,23 +176,17 @@ std::string WaitForCqEndOp::StateString(const State& state) {
 StatusFlag MessageReceiver::FinishRecvMessage(
     ValueOrFailure<absl::optional<MessageHandle>> result) {
   if (!result.ok()) {
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "%s[call] RecvMessage: outstanding_recv "
-              "finishes: received end-of-stream with error",
-              Activity::current()->DebugTag().c_str());
-    }
+    GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
+                               << "[call] RecvMessage: outstanding_recv "
+                                  "finishes: received end-of-stream with error";
     *recv_message_ = nullptr;
     recv_message_ = nullptr;
     return Failure{};
   }
   if (!result->has_value()) {
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "%s[call] RecvMessage: outstanding_recv "
-              "finishes: received end-of-stream",
-              Activity::current()->DebugTag().c_str());
-    }
+    GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
+                               << "[call] RecvMessage: outstanding_recv "
+                                  "finishes: received end-of-stream";
     *recv_message_ = nullptr;
     recv_message_ = nullptr;
     return Success{};
@@ -210,13 +202,11 @@ StatusFlag MessageReceiver::FinishRecvMessage(
   }
   grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
                               &(*recv_message_)->data.raw.slice_buffer);
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "%s[call] RecvMessage: outstanding_recv "
-            "finishes: received %" PRIdPTR " byte message",
-            Activity::current()->DebugTag().c_str(),
-            (*recv_message_)->data.raw.slice_buffer.length);
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << Activity::current()->DebugTag()
+      << "[call] RecvMessage: outstanding_recv "
+         "finishes: received "
+      << (*recv_message_)->data.raw.slice_buffer.length << " byte message";
   recv_message_ = nullptr;
   return Success{};
 }
