@@ -246,6 +246,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/log/absl_check', abseil_version
     ss.dependency 'abseil/log/absl_log', abseil_version
+    ss.dependency 'abseil/log/absl_vlog_is_on', abseil_version
     ss.dependency 'abseil/log/check', abseil_version
     ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version

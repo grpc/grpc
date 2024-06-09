@@ -1634,7 +1634,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
-        "absl/log:absl_vlog_is_on,
+        "absl/log:absl_vlog_is_on",
         "absl/log:check",
         "absl/log:log",
         "absl/status",
