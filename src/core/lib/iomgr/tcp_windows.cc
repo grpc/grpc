@@ -206,8 +206,8 @@ static void on_read(void* tcpp, grpc_error_handle error) {
           for (i = 0; i < tcp->read_slices->count; i++) {
             char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                          GPR_DUMP_HEX | GPR_DUMP_ASCII);
-            LOG(INFO) << "READ " << tcp << " (peer=" << tcp->peer_string
-                      << "): " << dump;
+            VLOG(2) << "READ " << tcp << " (peer=" << tcp->peer_string
+                    << "): " << dump;
             gpr_free(dump);
           }
         }
@@ -355,8 +355,8 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     for (i = 0; i < slices->count; i++) {
       char* data =
           grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      LOG(INFO) << "WRITE " << tcp << " (peer=" << tcp->peer_string
-                << "): " << data;
+      VLOG(2) << "WRITE " << tcp << " (peer=" << tcp->peer_string
+              << "): " << data;
       gpr_free(data);
     }
   }
