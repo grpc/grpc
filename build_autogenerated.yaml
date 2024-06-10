@@ -2058,7 +2058,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:absl_vlog_is_on
+  - absl/log:vlog_is_on
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -3121,7 +3121,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:absl_vlog_is_on
+  - absl/log:vlog_is_on
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -5044,7 +5044,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:absl_vlog_is_on
+  - absl/log:vlog_is_on
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -7226,7 +7226,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:absl_vlog_is_on
+  - absl/log:vlog_is_on
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span
@@ -12939,7 +12939,7 @@ targets:
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/log:absl_vlog_is_on
+  - absl/log:vlog_is_on
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/types:span

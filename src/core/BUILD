@@ -5123,7 +5123,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/cleanup",
         "absl/functional:bind_front",
-        "absl/log:absl_vlog_is_on",
+        "absl/log:vlog_is_on",
         "absl/log:check",
         "absl/log:log",
         "absl/memory",

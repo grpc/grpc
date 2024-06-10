@@ -24,8 +24,8 @@
 
 #import <CoreFoundation/CoreFoundation.h>
 
-#include "absl/log/absl_vlog_is_on.h"
 #include "absl/log/check.h"
+#include "absl/log/vlog_is_on.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -111,7 +111,7 @@ static grpc_error_handle CFStreamAnnotateError(grpc_error_handle src_error) {
 }
 
 static void CallReadCb(CFStreamEndpoint* ep, grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp) && VLOG_IS_ON(2)) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p call_read_cb %p %p:%p", ep,
             ep->read_cb, ep->read_cb->cb, ep->read_cb->cb_arg);
     size_t i;
@@ -222,7 +222,7 @@ static void WriteAction(void* arg, grpc_error_handle error) {
       EP_UNREF(ep, "write");
     }
 
-    if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp) && VLOG_IS_ON(2)) {
       grpc_slice trace_slice = grpc_slice_sub(slice, 0, write_size);
       char* dump = grpc_dump_slice(trace_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", ep, ep->peer_string.c_str(),
