@@ -289,6 +289,14 @@ class StatsPlugin {
   // configure the ServerCallTracer in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
+  // Gets a scope config for the client channel specified by \a scope. Note that
+  // the stats plugin should have been enabled for the channel.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& scope) const = 0;
+  // Gets a scope config for the server specified by \a args. Note that the
+  // stats plugin should have been enabled for the server.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const ChannelArgs& args) const = 0;
 
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with

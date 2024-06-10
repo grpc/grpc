@@ -270,6 +270,14 @@ class FakeStatsPlugin : public StatsPlugin {
       const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
   }
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& /*scope*/) const override {
+    return nullptr;
+  }
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const ChannelArgs& /*args*/) const override {
+    return nullptr;
+  }
 
   void AddCounter(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle, uint64_t value,
