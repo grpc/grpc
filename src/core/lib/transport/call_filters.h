@@ -1554,6 +1554,7 @@ class CallFilters {
                 filters_detail::StackData::* layout),
             void (filters_detail::CallState::* on_done)()>
   auto RunExecutor(Input value) {
+    DCHECK_NE(value.get(), nullptr);
     return [this, executor = filters_detail::OperationExecutor<Input>(),
             value = std::move(value), started = false]() mutable {
       if (!started) {
