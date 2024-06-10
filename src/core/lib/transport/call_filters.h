@@ -1550,17 +1550,18 @@ class CallFilters {
   }
 
   template <typename Output, typename Input,
+            Input(CallFilters::* input_location),
             filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
                 filters_detail::StackData::* layout),
             void (filters_detail::CallState::* on_done)()>
-  auto RunExecutor(Input value) {
-    DCHECK_NE(value.get(), nullptr);
-    return [this, executor = filters_detail::OperationExecutor<Input>(),
-            value = std::move(value), started = false]() mutable {
-      if (!started) {
-        started = true;
-        return FinishStep<Output, on_done>(executor.Start(
-            &(stack_->data_.*layout), std::move(value), call_data_));
+  auto RunExecutor() {
+    DCHECK_NE((this->*input_location).get(), nullptr);
+    return [this,
+            executor = filters_detail::OperationExecutor<Input>()]() mutable {
+      if ((this->*input_location) != nullptr) {
+        return FinishStep<Output, on_done>(
+            executor.Start(&(stack_->data_.*layout),
+                           std::move(this->*input_location), call_data_));
       }
       return FinishStep<Output, on_done>(executor.Step(call_data_));
     };
@@ -1573,9 +1574,9 @@ class CallFilters {
     call_state_.BeginPullClientInitialMetadata();
     return RunExecutor<
         ClientMetadataHandle, ClientMetadataHandle,
+        &CallFilters::push_client_initial_metadata_,
         &filters_detail::StackData::client_initial_metadata,
-        &filters_detail::CallState::FinishPullClientInitialMetadata>(
-        std::move(push_client_initial_metadata_));
+        &filters_detail::CallState::FinishPullClientInitialMetadata>();
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
@@ -1598,10 +1599,10 @@ class CallFilters {
                     RunExecutor<
                         absl::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
+                        &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
                         &filters_detail::CallState::
-                            FinishPullServerInitialMetadata>(
-                        std::move(push_server_initial_metadata_)),
+                            FinishPullServerInitialMetadata>(),
                     [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
                       return absl::optional<ServerMetadataHandle>{};
@@ -1616,6 +1617,8 @@ class CallFilters {
   // Returns a promise that resolves to a StatusFlag indicating success
   GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message) {
     call_state_.BeginPushClientToServerMessage();
+    DCHECK_NE(message.get(), nullptr);
+    DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
     push_client_to_server_message_ = std::move(message);
     return [this]() { return call_state_.PollPushClientToServerMessage(); };
   }
@@ -1631,9 +1634,9 @@ class CallFilters {
         [this]() {
           return RunExecutor<
               MessageHandle, MessageHandle,
+              &CallFilters::push_client_to_server_message_,
               &filters_detail::StackData::client_to_server_messages,
-              &filters_detail::CallState::FinishPullClientToServerMessage>(
-              std::move(push_server_to_client_message_));
+              &filters_detail::CallState::FinishPullClientToServerMessage>();
         });
   }
   // Server: Push server to client message
@@ -1653,9 +1656,9 @@ class CallFilters {
         [this]() {
           return RunExecutor<
               MessageHandle, MessageHandle,
+              &CallFilters::push_server_to_client_message_,
               &filters_detail::StackData::server_to_client_messages,
-              &filters_detail::CallState::FinishPullServerToClientMessage>(
-              std::move(push_server_to_client_message_));
+              &filters_detail::CallState::FinishPullServerToClientMessage>();
         });
   }
   // Server: Indicate end of response
@@ -1666,9 +1669,25 @@ class CallFilters {
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
-    return Map(
+    return Seq(
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
-        [this](Empty) { return std::move(push_server_trailing_metadata_); });
+        [this](Empty) {
+          return [this, executor = filters_detail::InfallibleOperationExecutor<
+                            ServerMetadataHandle>()]() mutable
+                 -> Poll<ServerMetadataHandle> {
+            if (push_server_trailing_metadata_ != nullptr) {
+              // If no stack has been set, we can just return the result of the
+              // call
+              if (stack_ == nullptr) {
+                return std::move(push_server_trailing_metadata_);
+              }
+              return executor.Start(&(stack_->data_.server_trailing_metadata),
+                                    std::move(push_server_trailing_metadata_),
+                                    call_data_);
+            }
+            return executor.Step(call_data_);
+          };
+        });
   }
   // Server: Wait for server trailing metadata to have been sent
   // Returns a promise that resolves to a StatusFlag indicating whether the

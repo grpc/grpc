@@ -1246,8 +1246,7 @@ TEST(CallFiltersTest, UnaryCall) {
   // Push server initial metadata
   filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
   auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
-  // Pull server initial metadata, expect a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
+  // Pull server initial metadata
   EXPECT_THAT(pull_server_initial_metadata(), IsReady());
   Mock::VerifyAndClearExpectations(&activity);
   // Push server to client message
@@ -1282,5 +1281,6 @@ TEST(CallFiltersTest, UnaryCall) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_tracer_init();
   return RUN_ALL_TESTS();
 }

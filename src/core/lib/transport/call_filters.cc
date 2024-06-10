@@ -305,7 +305,7 @@ CallState::CallState()
 
 void CallState::Start() {
   GRPC_TRACE_LOG(call, INFO)
-      << "[call_state] Start"
+      << "[call_state] Start: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
@@ -325,6 +325,9 @@ void CallState::Start() {
 }
 
 void CallState::BeginPushClientToServerMessage() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] BeginPushClientToServerMessage: "
+      << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
       client_to_server_push_state_ = ClientToServerPushState::kPushedMessage;
@@ -343,6 +346,9 @@ void CallState::BeginPushClientToServerMessage() {
 }
 
 Poll<StatusFlag> CallState::PollPushClientToServerMessage() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PollPushClientToServerMessage: "
+      << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
     case ClientToServerPushState::kPushedHalfClose:
@@ -356,6 +362,9 @@ Poll<StatusFlag> CallState::PollPushClientToServerMessage() {
 }
 
 void CallState::ClientToServerHalfClose() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] ClientToServerHalfClose: "
+      << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
   switch (client_to_server_push_state_) {
     case ClientToServerPushState::kIdle:
       client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
@@ -375,6 +384,9 @@ void CallState::ClientToServerHalfClose() {
 }
 
 void CallState::BeginPullClientInitialMetadata() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] BeginPullClientInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
       client_to_server_pull_state_ =
@@ -392,6 +404,9 @@ void CallState::BeginPullClientInitialMetadata() {
 }
 
 void CallState::FinishPullClientInitialMetadata() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] FinishPullClientInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
       Crash("FinishPullClientInitialMetadata called before Begin");
@@ -411,6 +426,10 @@ void CallState::FinishPullClientInitialMetadata() {
 }
 
 Poll<StatusFlag> CallState::PollPullClientToServerMessageAvailable() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PollPullClientToServerMessageAvailable: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_,
+                        client_to_server_push_state_);
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
     case ClientToServerPullState::kProcessingClientInitialMetadata:
@@ -446,6 +465,10 @@ Poll<StatusFlag> CallState::PollPullClientToServerMessageAvailable() {
 }
 
 void CallState::FinishPullClientToServerMessage() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] FinishPullClientToServerMessage: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_,
+                        client_to_server_push_state_);
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
     case ClientToServerPullState::kProcessingClientInitialMetadata:
@@ -484,12 +507,18 @@ void CallState::FinishPullClientToServerMessage() {
 }
 
 void CallState::PushServerInitialMetadata() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PushServerInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, pushed_server_initial_metadata_);
   CHECK(!pushed_server_initial_metadata_);
   pushed_server_initial_metadata_ = true;
   client_to_server_push_waiter_.Wake();
 }
 
 void CallState::BeginPushServerToClientMessage() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] BeginPushServerToClientMessage: "
+      << GRPC_DUMP_ARGS(this, server_to_client_message_push_state_);
   switch (server_to_client_message_push_state_) {
     case ServerToClientMessagePushState::kIdle:
       server_to_client_message_push_state_ =
@@ -505,6 +534,9 @@ void CallState::BeginPushServerToClientMessage() {
 }
 
 Poll<StatusFlag> CallState::PollPushServerToClientMessage() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PollPushServerToClientMessage: "
+      << GRPC_DUMP_ARGS(this, server_to_client_message_push_state_);
   switch (server_to_client_message_push_state_) {
     case ServerToClientMessagePushState::kIdle:
       return Success{};
@@ -516,6 +548,9 @@ Poll<StatusFlag> CallState::PollPushServerToClientMessage() {
 }
 
 bool CallState::PushServerTrailingMetadata(bool cancel) {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PushServerTrailingMetadata: "
+      << GRPC_DUMP_ARGS(this, pushed_server_trailing_metadata_);
   if (pushed_server_trailing_metadata_) return false;
   pushed_server_trailing_metadata_ = true;
   pushed_server_initial_metadata_ = true;
@@ -553,6 +588,9 @@ bool CallState::PushServerTrailingMetadata(bool cancel) {
 }
 
 Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PollPullServerInitialMetadataAvailable: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
       return server_to_client_pull_waiter_.pending();
@@ -577,6 +615,9 @@ Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
 }
 
 void CallState::FinishPullServerInitialMetadata() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] FinishPullServerInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
       Crash("FinishPullServerInitialMetadata called before Start");
@@ -600,6 +641,10 @@ void CallState::FinishPullServerInitialMetadata() {
 }
 
 Poll<StatusFlag> CallState::PollPullServerToClientMessageAvailable() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PollPullServerToClientMessageAvailable: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
+                        server_to_client_message_push_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
     case ServerToClientPullState::kStarted:
@@ -640,6 +685,9 @@ Poll<StatusFlag> CallState::PollPullServerToClientMessageAvailable() {
 }
 
 void CallState::FinishPullServerToClientMessage() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] FinishPullServerToClientMessage: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
     case ServerToClientPullState::kStarted:
@@ -681,13 +729,16 @@ void CallState::FinishPullServerToClientMessage() {
 }
 
 Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] PollServerTrailingMetadataAvailable: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
-    case ServerToClientPullState::kUnstarted:
-    case ServerToClientPullState::kStarted:
     case ServerToClientPullState::kProcessingServerInitialMetadata:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
       return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kUnstarted:
     case ServerToClientPullState::kIdle:
       if (pushed_server_trailing_metadata_) {
         server_to_client_pull_state_ =
