@@ -222,7 +222,7 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (push_server_trailing_metadata_ == nullptr) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
             "Cancelling due to failed pipe operation: %s",
             DebugString().c_str());
@@ -235,7 +235,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   CHECK(md != nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
             GetContext<Activity>()->DebugTag().c_str(), this,
             md->DebugString().c_str(), DebugString().c_str());
@@ -304,6 +304,9 @@ CallState::CallState()
       pushed_server_trailing_metadata_(false) {}
 
 void CallState::Start() {
+  GRPC_TRACE_LOG(call, INFO)
+      << "[call_state] Start"
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
       server_to_client_pull_state_ = ServerToClientPullState::kStarted;

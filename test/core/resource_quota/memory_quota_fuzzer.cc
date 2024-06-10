@@ -187,10 +187,10 @@ class Fuzzer {
 }  // namespace testing
 }  // namespace grpc_core
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 DEFINE_PROTO_FUZZER(const memory_quota_fuzzer::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    gpr_disable_all_logs();
+  }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   gpr_log_verbosity_init();

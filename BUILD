@@ -19,6 +19,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
+    "grpc_clang_cl_settings",
     "grpc_filegroup",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
@@ -66,29 +67,7 @@ bool_flag(
     build_setting_default = False,
 )
 
-platform(
-    name = "android_x86_64",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:x86_64",
-    ],
-)
-
-platform(
-    name = "android_arm64",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:arm64",
-    ],
-)
-
-platform(
-    name = "android_armv7",
-    constraint_values = [
-        "@platforms//os:android",
-        "@platforms//cpu:armv7",
-    ],
-)
+grpc_clang_cl_settings()
 
 config_setting(
     name = "grpc_no_rls_flag",
@@ -238,6 +217,11 @@ config_setting(
 config_setting(
     name = "use_strict_warning",
     values = {"define": "use_strict_warning=true"},
+)
+
+config_setting(
+    name = "use_strict_warning_windows",
+    values = {"define": "use_strict_warning_windows=true"},
 )
 
 python_config_settings()
@@ -1425,17 +1409,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "call_trace",
-    hdrs = [
-        "//src/core:lib/surface/call_trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "dynamic_annotations",
     hdrs = [
         "//src/core:lib/iomgr/dynamic_annotations.h",
@@ -1503,9 +1476,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "api_trace",
-    srcs = [
-        "//src/core:lib/surface/api_trace.cc",
-    ],
     hdrs = [
         "//src/core:lib/surface/api_trace.h",
     ],
@@ -1552,7 +1522,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/ev_epoll1_linux.cc",
         "//src/core:lib/iomgr/ev_poll_posix.cc",
         "//src/core:lib/iomgr/ev_posix.cc",
-        "//src/core:lib/iomgr/ev_windows.cc",
         "//src/core:lib/iomgr/fork_posix.cc",
         "//src/core:lib/iomgr/fork_windows.cc",
         "//src/core:lib/iomgr/gethostname_fallback.cc",
@@ -1730,7 +1699,6 @@ grpc_cc_library(
         "//src/core:posix_event_engine_endpoint",
         "//src/core:resolved_address",
         "//src/core:resource_quota",
-        "//src/core:resource_quota_trace",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_cast",
@@ -2066,7 +2034,6 @@ grpc_cc_library(
     deps = [
         "api_trace",
         "call_combiner",
-        "call_trace",
         "call_tracer",
         "channel",
         "channel_arg_names",
@@ -2103,7 +2070,6 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_init",
-        "//src/core:channel_stack_trace",
         "//src/core:channel_stack_type",
         "//src/core:closure",
         "//src/core:compression",
@@ -2133,7 +2099,6 @@ grpc_cc_library(
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:promise_status",
-        "//src/core:promise_trace",
         "//src/core:race",
         "//src/core:ref_counted",
         "//src/core:seq",
@@ -2329,7 +2294,6 @@ grpc_cc_library(
     visibility = ["@grpc:public"],
     deps = [
         "api_trace",
-        "call_trace",
         "channel_arg_names",
         "channelz",
         "config",
@@ -2365,7 +2329,6 @@ grpc_cc_library(
         "//src/core:poll",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
-        "//src/core:resource_quota_trace",
         "//src/core:seq",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -3023,11 +2986,19 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_trace",
-    srcs = ["//src/core:lib/debug/trace.cc"],
-    hdrs = ["//src/core:lib/debug/trace.h"],
+    srcs = [
+        "//src/core:lib/debug/trace.cc",
+        "//src/core:lib/debug/trace_flags.cc",
+    ],
+    hdrs = [
+        "//src/core:lib/debug/trace.h",
+        "//src/core:lib/debug/trace_flags.h",
+        "//src/core:lib/debug/trace_impl.h",
+    ],
     external_deps = [
-        "absl/log:log",
+        "absl/log",
         "absl/strings",
+        "absl/container:flat_hash_map",
     ],
     language = "c++",
     visibility = ["@grpc:trace"],
@@ -3035,6 +3006,8 @@ grpc_cc_library(
         "config_vars",
         "gpr",
         "grpc_public_hdrs",
+        "//src/core:glob",
+        "//src/core:no_destruct",
     ],
 )
 
@@ -4331,7 +4304,6 @@ grpc_cc_library(
     language = "c++",
     visibility = ["@grpc:http"],
     deps = [
-        "call_trace",
         "call_tracer",
         "channel_arg_names",
         "config",
@@ -4549,20 +4521,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "http_trace",
-    srcs = [
-        "//src/core:ext/transport/chttp2/transport/http_trace.cc",
-    ],
-    hdrs = [
-        "//src/core:ext/transport/chttp2/transport/http_trace.h",
-    ],
-    deps = [
-        "gpr_platform",
-        "grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "hpack_parser_table",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/hpack_parser_table.cc",
@@ -4582,7 +4540,6 @@ grpc_cc_library(
         "gpr_platform",
         "grpc_trace",
         "hpack_parse_result",
-        "http_trace",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
@@ -4685,7 +4642,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
-        "http_trace",
         "//src/core:hpack_constants",
         "//src/core:hpack_encoder_table",
         "//src/core:metadata_batch",
@@ -4818,7 +4774,6 @@ grpc_cc_library(
         "hpack_encoder",
         "hpack_parser",
         "hpack_parser_table",
-        "http_trace",
         "httpcli",
         "iomgr",
         "iomgr_buffer_list",
@@ -4855,7 +4810,6 @@ grpc_cc_library(
         "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
-        "//src/core:resource_quota_trace",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",

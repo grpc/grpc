@@ -35,8 +35,6 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 namespace grpc_core {
 namespace testing {
 
@@ -97,7 +95,7 @@ void RunServerFuzzer(
     absl::FunctionRef<void(grpc_server*, int, const ChannelArgs&)>
         server_setup) {
   if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    gpr_disable_all_logs();
   }
   static const int once = []() {
     ForceEnableExperiment("event_engine_client", true);
