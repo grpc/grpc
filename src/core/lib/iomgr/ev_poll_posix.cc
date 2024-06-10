@@ -333,7 +333,7 @@ static void fork_fd_list_add_wakeup_fd(grpc_cached_wakeup_fd* fd) {
 #define UNREF_BY(fd, n, reason) unref_by(fd, n, reason, __FILE__, __LINE__)
 static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                    int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
+  if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
     gpr_log(GPR_DEBUG,
             "FD %d %p   ref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
             fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
@@ -358,7 +358,7 @@ static void ref_by(grpc_fd* fd, int n) {
 #ifndef NDEBUG
 static void unref_by(grpc_fd* fd, int n, const char* reason, const char* file,
                      int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_fd_refcount)) {
+  if (GRPC_TRACE_FLAG_ENABLED(fd_refcount)) {
     gpr_log(GPR_DEBUG,
             "FD %d %p unref %d %" PRIdPTR " -> %" PRIdPTR " [%s; %s:%d]",
             fd->fd, fd, n, gpr_atm_no_barrier_load(&fd->refst),
@@ -593,9 +593,8 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
 }
 
 static void fd_notify_on_error(grpc_fd* /*fd*/, grpc_closure* closure) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-    LOG(ERROR) << "Polling engine does not support tracking errors.";
-  }
+  GRPC_TRACE_LOG(polling, ERROR)
+      << "Polling engine does not support tracking errors.";
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::CancelledError());
 }
 
@@ -612,9 +611,8 @@ static void fd_set_writable(grpc_fd* fd) {
 }
 
 static void fd_set_error(grpc_fd* /*fd*/) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-    LOG(ERROR) << "Polling engine does not support tracking errors.";
-  }
+  GRPC_TRACE_LOG(polling, ERROR)
+      << "Polling engine does not support tracking errors.";
 }
 
 static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
@@ -1031,7 +1029,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
       r = grpc_poll_function(pfds, pfd_count, timeout);
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(polling)) {
         gpr_log(GPR_INFO, "%p poll=%d", pollset, r);
       }
 
@@ -1055,7 +1053,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
         }
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
+          if (GRPC_TRACE_FLAG_ENABLED(polling)) {
             gpr_log(GPR_INFO, "%p: got_wakeup", pollset);
           }
           work_combine_error(
@@ -1069,7 +1067,7 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
             }
             fd_end_poll(&watchers[i], 0, 0);
           } else {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(polling)) {
               gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
                       pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
                       (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);

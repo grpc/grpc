@@ -206,6 +206,8 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
         "absl/log:check",
+        "absl/log:globals",
+        "absl/log:log",
     ],
     deps = [
         ":client_helper_lib",

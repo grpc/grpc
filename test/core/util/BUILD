@@ -61,23 +61,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "log_test",
-    srcs = ["log_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-        "gtest",
-    ],
-    language = "C++",
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "spinlock_test",
     srcs = ["spinlock_test.cc"],
     external_deps = ["gtest"],

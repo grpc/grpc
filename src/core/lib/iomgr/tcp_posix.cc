@@ -71,7 +71,6 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/telemetry/stats.h"
@@ -108,8 +107,6 @@ typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 #else
 typedef size_t msg_iovlen_type;
 #endif
-
-extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace grpc_core {
 
@@ -621,7 +618,7 @@ static void tcp_drop_uncovered_then_handle_write(void* arg /* grpc_tcp */,
 
 static void done_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   backup_poller* p = static_cast<backup_poller*>(bp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p destroy", p);
   }
   grpc_pollset_destroy(BACKUP_POLLER_POLLSET(p));
@@ -630,7 +627,7 @@ static void done_poller(void* bp, grpc_error_handle /*error_ignored*/) {
 
 static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   backup_poller* p = static_cast<backup_poller*>(bp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p run", p);
   }
   gpr_mu_lock(p->pollset_mu);
@@ -647,7 +644,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
     g_backup_poller = nullptr;
     g_uncovered_notifications_pending = 0;
     g_backup_poller_mu->Unlock();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p shutdown", p);
     }
     grpc_pollset_shutdown(BACKUP_POLLER_POLLSET(p),
@@ -655,7 +652,7 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
                                             grpc_schedule_on_exec_ctx));
   } else {
     g_backup_poller_mu->Unlock();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p reschedule", p);
     }
     grpc_core::Executor::Run(&p->run_poller, absl::OkStatus(),
@@ -672,7 +669,7 @@ static void drop_uncovered(grpc_tcp* /*tcp*/) {
   old_count = g_uncovered_notifications_pending--;
   g_backup_poller_mu->Unlock();
   CHECK_GT(old_count, 1);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p uncover cnt %d->%d", p, old_count,
             old_count - 1);
   }
@@ -696,7 +693,7 @@ static void cover_self(grpc_tcp* tcp) {
     g_backup_poller = p;
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     g_backup_poller_mu->Unlock();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p create", p);
     }
     grpc_core::Executor::Run(
@@ -708,7 +705,7 @@ static void cover_self(grpc_tcp* tcp) {
     p = g_backup_poller;
     g_backup_poller_mu->Unlock();
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p add %p cnt %d->%d", p, tcp,
             old_count - 1, old_count);
   }
@@ -716,14 +713,14 @@ static void cover_self(grpc_tcp* tcp) {
 }
 
 static void notify_on_read(grpc_tcp* tcp) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_read", tcp);
   }
   grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_done_closure);
 }
 
 static void notify_on_write(grpc_tcp* tcp) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_write", tcp);
   }
   if (!grpc_event_engine_run_in_background()) {
@@ -734,7 +731,7 @@ static void notify_on_write(grpc_tcp* tcp) {
 
 static void tcp_drop_uncovered_then_handle_write(void* arg,
                                                  grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg,
             grpc_core::StatusToString(error).c_str());
   }
@@ -825,7 +822,7 @@ static void tcp_destroy(grpc_endpoint* ep) {
 
 static void perform_reclamation(grpc_tcp* tcp)
     ABSL_LOCKS_EXCLUDED(tcp->read_mu) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
     LOG(INFO) << "TCP: benign reclamation to free memory";
   }
   tcp->read_mu.Lock();
@@ -855,12 +852,12 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
 static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
   grpc_closure* cb = tcp->read_cb;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
     gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
             tcp->peer_string.c_str(), grpc_core::StatusToString(error).c_str());
-    if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    if (ABSL_VLOG_IS_ON(2)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -920,7 +917,7 @@ static void update_rcvlowat(grpc_tcp* tcp)
 #define MAX_READ_IOVEC 64
 static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     ABSL_EXCLUSIVE_LOCKS_REQUIRED(tcp->read_mu) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
   }
   struct msghdr msg;
@@ -1133,7 +1130,7 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
             grpc_core::StatusToString(error).c_str());
   }
@@ -1283,7 +1280,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
         LOG(ERROR) << "Failed to set timestamping options on the socket.";
       }
       return false;
@@ -1369,7 +1366,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
   cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       LOG(ERROR) << "Received timestamp without extended error";
     }
     return cmsg;
@@ -1381,7 +1378,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     opt_stats = next_cmsg;
     next_cmsg = CMSG_NXTHDR(msg, opt_stats);
     if (next_cmsg == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
         LOG(ERROR) << "Received timestamp without extended error";
       }
       return opt_stats;
@@ -1391,7 +1388,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
       !(next_cmsg->cmsg_type == IP_RECVERR ||
         next_cmsg->cmsg_type == IPV6_RECVERR)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       LOG(ERROR) << "Unexpected control message";
     }
     return cmsg;
@@ -1474,7 +1471,7 @@ static bool process_errors(grpc_tcp* tcp) {
       } else {
         // Got a control message that is not a timestamp or zerocopy. Don't know
         // how to handle this.
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
           gpr_log(GPR_INFO,
                   "unknown control message cmsg_level:%d cmsg_type:%d",
                   cmsg->cmsg_level, cmsg->cmsg_type);
@@ -1491,7 +1488,7 @@ static bool process_errors(grpc_tcp* tcp) {
 static void tcp_handle_error(void* arg /* grpc_tcp */,
                              grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp,
             grpc_core::StatusToString(error).c_str());
   }
@@ -1822,7 +1819,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
           ? tcp_flush_zerocopy(tcp, tcp->current_zerocopy_send, &error)
           : tcp_flush(tcp, &error);
   if (!flush_result) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       LOG(INFO) << "write: delayed";
     }
     notify_on_write(tcp);
@@ -1832,9 +1829,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
     tcp->current_zerocopy_send = nullptr;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      LOG(INFO) << "write: " << grpc_core::StatusToString(error);
-    }
+    GRPC_TRACE_LOG(tcp, INFO) << "write: " << grpc_core::StatusToString(error);
     // No need to take a ref on error since tcp_flush provides a ref.
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
     TCP_UNREF(tcp, "write");
@@ -1849,12 +1844,12 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
 
   grpc_core::EventLog::Append("tcp-write-outstanding", buf->length);
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
       gpr_log(GPR_INFO, "WRITE %p (peer=%s)", tcp, tcp->peer_string.c_str());
-      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      if (ABSL_VLOG_IS_ON(2)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
         VLOG(2) << "WRITE DATA: " << data;
@@ -1895,14 +1890,12 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
     tcp->current_zerocopy_send = zerocopy_send_record;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       LOG(INFO) << "write: delayed";
     }
     notify_on_write(tcp);
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      LOG(INFO) << "write: " << grpc_core::StatusToString(error);
-    }
+    GRPC_TRACE_LOG(tcp, INFO) << "write: " << grpc_core::StatusToString(error);
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
   }
 }
@@ -2014,8 +2007,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
 #endif
   }
   // paired with unref in grpc_tcp_destroy
-  new (&tcp->refcount) grpc_core::RefCount(
-      1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr);
+  new (&tcp->refcount)
+      grpc_core::RefCount(1, GRPC_TRACE_FLAG_ENABLED(tcp) ? "tcp" : nullptr);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);

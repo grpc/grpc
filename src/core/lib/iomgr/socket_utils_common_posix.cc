@@ -349,7 +349,6 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
   // Use conditionally-important parameter to avoid warning
   (void)fd;
   (void)is_client;
-  extern grpc_core::TraceFlag grpc_tcp_trace;
   if (g_socket_supports_tcp_user_timeout.load() >= 0) {
     bool enable;
     int timeout;
@@ -387,7 +386,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
         }
       }
       if (g_socket_supports_tcp_user_timeout.load() > 0) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
           gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
                   timeout);
         }
@@ -412,9 +411,8 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
       }
     }
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      LOG(INFO) << "TCP_USER_TIMEOUT not supported for this platform";
-    }
+    GRPC_TRACE_LOG(tcp, INFO)
+        << "TCP_USER_TIMEOUT not supported for this platform";
   }
   return absl::OkStatus();
 }

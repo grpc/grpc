@@ -49,8 +49,6 @@ bool leak_check = true;
 
 static void discard_write(grpc_slice /*slice*/) {}
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 namespace grpc_core {
 namespace testing {
 
@@ -101,7 +99,7 @@ class ClientFuzzer final : public BasicFuzzer {
 
 DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    gpr_disable_all_logs();
   }
   if (msg.network_input().size() != 1) return;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());

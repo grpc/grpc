@@ -69,11 +69,9 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   Poll<Result> PollOnce() {
 % for i in range(0,n):
     if (!ready.is_set(${i})) {
-      if (grpc_trace_promise_primitives.enabled()) {
-        VLOG(2) << "join[" << this << "]: begin poll joint ${i+1}/${n}";
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2) << "join[" << this << "]: begin poll joint ${i+1}/${n}";
       auto poll = promise${i}();
-      if (grpc_trace_promise_primitives.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         auto* p = poll.value_if_ready();
         VLOG(2) << "join[" << this << "]: joint ${i+1}/${n} "
                 << (p != nullptr ? (Traits::IsOk(*p)? "ready" : "early-error") : "pending");
@@ -87,7 +85,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (grpc_trace_promise_primitives.enabled()) {
+    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       VLOG(2) << "join[" << this << "]: joint ${i+1}/${n} already ready";
     }
 % endfor
@@ -111,6 +109,7 @@ front_matter = """
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
@@ -118,7 +117,6 @@ front_matter = """
 #include <tuple>
 #include <type_traits>
 #include <utility>
-#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 namespace promise_detail {

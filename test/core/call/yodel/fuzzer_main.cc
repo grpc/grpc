@@ -33,9 +33,9 @@
 #include "test/core/test_util/proto_bit_gen.h"
 
 bool squelch = true;
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
+  grpc_core::g_yodel_fuzzing = true;
   static const grpc_core::NoDestruct<
       std::vector<grpc_core::yodel_detail::TestRegistry::Test>>
       tests{grpc_core::yodel_detail::TestRegistry::AllTests()};
@@ -43,7 +43,7 @@ DEFINE_PROTO_FUZZER(const transport_test_suite::Msg& msg) {
   const int test_id = msg.test_id() % tests->size();
 
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    gpr_disable_all_logs();
   }
 
   grpc_core::ConfigVars::Overrides overrides =
