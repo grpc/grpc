@@ -41,8 +41,8 @@ class PollPoller : public PosixEventPoller,
  public:
   explicit PollPoller(Scheduler* scheduler);
   PollPoller(Scheduler* scheduler, bool use_phony_poll);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
-                            bool track_err) override;
+  std::unique_ptr<EventHandle> CreateHandle(int fd, absl::string_view name,
+                                            bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
       absl::FunctionRef<void()> schedule_poll_again) override;
@@ -57,6 +57,8 @@ class PollPoller : public PosixEventPoller,
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
+  void RegisterEventHandleRef(EventHandleRef* ref) override;
+  void DeregisterEventHandleRef(EventHandleRef* ref) override;
 
   void Close();
 
@@ -83,6 +85,7 @@ class PollPoller : public PosixEventPoller,
   PollEventHandle* poll_handles_list_head_ ABSL_GUARDED_BY(mu_) = nullptr;
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_ ABSL_GUARDED_BY(mu_);
+  EventHandleRefList event_handles_for_fork_;
 };
 
 // Return an instance of a poll based poller tied to the specified scheduler.

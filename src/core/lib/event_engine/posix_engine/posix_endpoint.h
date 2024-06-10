@@ -468,7 +468,7 @@ class TcpZerocopySendCtx {
 class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
  public:
   PosixEndpointImpl(
-      EventHandle* handle, PosixEngineClosure* on_done,
+      std::unique_ptr<EventHandle> handle, PosixEngineClosure* on_done,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       grpc_event_engine::experimental::MemoryAllocator&& allocator,
       const PosixTcpOptions& options);
@@ -598,7 +598,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   int min_progress_size_ = 1;
   TracedBufferList traced_buffers_;
   // The handle is owned by the PosixEndpointImpl object.
-  EventHandle* handle_;
+  EventHandleRef handle_;
   PosixEventPoller* poller_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
@@ -606,12 +606,13 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
 class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint(
-      EventHandle* handle, PosixEngineClosure* on_shutdown,
+      std::unique_ptr<EventHandle> handle, PosixEngineClosure* on_shutdown,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       grpc_event_engine::experimental::MemoryAllocator&& allocator,
       const PosixTcpOptions& options)
-      : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
-                                    std::move(allocator), options)) {}
+      : impl_(new PosixEndpointImpl(std::move(handle), on_shutdown,
+                                    std::move(engine), std::move(allocator),
+                                    options)) {}
 
   bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
@@ -718,7 +719,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
 // the EventEngine is alive for the lifetime of the endpoint. The ownership
 // of the EventHandle is transferred to the endpoint.
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
-    EventHandle* handle, PosixEngineClosure* on_shutdown,
+    std::unique_ptr<EventHandle> handle, PosixEngineClosure* on_shutdown,
     std::shared_ptr<EventEngine> engine,
     grpc_event_engine::experimental::MemoryAllocator&& allocator,
     const PosixTcpOptions& options);

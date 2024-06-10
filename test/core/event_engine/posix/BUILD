@@ -217,6 +217,36 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "poller_fork_test",
+    srcs = ["poller_fork_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    language = "C++",
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        # "//src/core:channel_args",
+        # "//src/core:common_event_engine_closures",
+        # "//src/core:event_engine_poller",
+        "//src/core:posix_event_engine",
+        # "//src/core:posix_event_engine_closure",
+        # "//src/core:posix_event_engine_endpoint",
+        # "//src/core:posix_event_engine_event_poller",
+        # "//src/core:posix_event_engine_poller_posix_default",
+        # "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/posix:posix_engine_test_utils",
+        # "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "posix_engine_listener_utils_test",
     srcs = ["posix_engine_listener_utils_test.cc"],
     external_deps = [

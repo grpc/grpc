@@ -45,11 +45,11 @@ namespace experimental {
 class Epoll1EventHandle;
 
 // Definition of epoll1 based poller.
-class Epoll1Poller : public PosixEventPoller {
+class Epoll1Poller final : public PosixEventPoller {
  public:
   explicit Epoll1Poller(Scheduler* scheduler);
-  EventHandle* CreateHandle(int fd, absl::string_view name,
-                            bool track_err) override;
+  std::unique_ptr<EventHandle> CreateHandle(int fd, absl::string_view name,
+                                            bool track_err) override;
   Poller::WorkResult Work(
       grpc_event_engine::experimental::EventEngine::Duration timeout,
       absl::FunctionRef<void()> schedule_poll_again) override;
@@ -70,6 +70,9 @@ class Epoll1Poller : public PosixEventPoller {
   void PrepareFork() override;
   void PostforkParent() override;
   void PostforkChild() override;
+
+  void RegisterEventHandleRef(EventHandleRef* ref) override;
+  void DeregisterEventHandleRef(EventHandleRef* ref) override;
 
   void Close();
 
@@ -122,9 +125,11 @@ class Epoll1Poller : public PosixEventPoller {
   // A singleton epoll set
   EpollSet g_epoll_set_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
-  std::list<EventHandle*> free_epoll1_handles_list_ ABSL_GUARDED_BY(mu_);
+  std::list<std::unique_ptr<Epoll1EventHandle>> free_epoll1_handles_list_
+      ABSL_GUARDED_BY(mu_);
   std::unique_ptr<WakeupFd> wakeup_fd_;
   bool closed_;
+  EventHandleRefList event_handles_for_fork_;
 };
 
 // Return an instance of a epoll1 based poller tied to the specified event
