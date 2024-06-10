@@ -491,6 +491,7 @@ grpc_cc_test(
         "//:promise",
         "//src/core:activity",
         "//src/core:mpsc",
+        "poll_matcher",
     ],
 )
 

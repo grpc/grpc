@@ -86,7 +86,7 @@ class Center : public RefCounted<Center<T>> {
     if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
-    const uint64_t batch = queue_.size() < max_queued_ ? batch_ : batch_ + 1;
+    const uint64_t batch = queue_.size() <= max_queued_ ? batch_ : batch_ + 1;
     lock.Release();
     receive_waker.Wakeup();
     return batch;
@@ -145,6 +145,7 @@ class MpscSender {
       if (batch == 0) {
         batch = center->Send(std::move(t));
         CHECK_NE(batch, 0);
+        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
       }
       auto p = center->PollReceiveBatch(batch);
       if (p.pending()) return Pending{};

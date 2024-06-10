@@ -252,6 +252,12 @@ std::string PollToString(
   return t_to_string(poll.value());
 }
 
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Poll<T>& poll) {
+  if (poll.pending()) return os << "<<pending>>";
+  return os << poll.value();
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_POLL_H
