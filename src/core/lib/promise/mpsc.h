@@ -25,6 +25,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -86,7 +87,9 @@ class Center : public RefCounted<Center<T>> {
     if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
-    const uint64_t batch = queue_.size() < max_queued_ ? batch_ : batch_ + 1;
+    LOG(INFO) << "Send: queue_.size()=" << queue_.size()
+              << " max_queued_=" << max_queued_ << " batch_=" << batch_;
+    const uint64_t batch = queue_.size() <= max_queued_ ? batch_ : batch_ + 1;
     lock.Release();
     receive_waker.Wakeup();
     return batch;
@@ -95,6 +98,7 @@ class Center : public RefCounted<Center<T>> {
   // Poll until a particular batch number is received.
   Poll<Empty> PollReceiveBatch(uint64_t batch) {
     ReleasableMutexLock lock(&mu_);
+    LOG(INFO) << "PollReceiveBatch: batch_=" << batch_ << " batch=" << batch;
     if (batch_ >= batch) return Empty{};
     send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
     return Pending{};
@@ -145,6 +149,7 @@ class MpscSender {
       if (batch == 0) {
         batch = center->Send(std::move(t));
         CHECK_NE(batch, 0);
+        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
       }
       auto p = center->PollReceiveBatch(batch);
       if (p.pending()) return Pending{};
