@@ -73,6 +73,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
+#include "absl/log/globals.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -1162,13 +1163,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   upb::Arena arena;
   if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
       (response.type == response.INITIAL && seen_initial_response_)) {
-    if (gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
+    if (absl::MinLogLevel() <= absl::LogSeverityAtLeast::kError) {
       char* response_slice_str =
           grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-      gpr_log(GPR_ERROR,
-              "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
-              "Ignoring.",
-              grpclb_policy(), this, response_slice_str);
+      LOG(ERROR) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
+                 << ": Invalid LB response received: '" << response_slice_str
+                 << "'. Ignoring.";
       gpr_free(response_slice_str);
     }
   } else {
