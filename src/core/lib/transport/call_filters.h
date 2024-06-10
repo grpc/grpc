@@ -1219,6 +1219,11 @@ class CallState {
   // Debug
   std::string DebugString() const;
 
+  friend std::ostream& operator<<(std::ostream& out,
+                                  const CallState& call_state) {
+    return out << call_state.DebugString();
+  }
+
  private:
   enum class ClientToServerPullState : uint8_t {
     // Ready to read: client initial metadata is there, but not yet processed

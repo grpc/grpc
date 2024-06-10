@@ -549,6 +549,176 @@ bool CallState::PushServerTrailingMetadata(bool cancel) {
   return true;
 }
 
+Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStarted:
+      if (pushed_server_initial_metadata_) {
+        server_to_client_pull_state_ =
+            ServerToClientPullState::kProcessingServerInitialMetadata;
+        return true;
+      }
+      return server_to_client_push_waiter_.pending();
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      Crash("PollPullServerInitialMetadataAvailable called twice");
+      break;
+    case ServerToClientPullState::kTerminated:
+      return false;
+  }
+  Crash("PollPullServerInitialMetadataAvailable fell through");
+}
+
+void CallState::FinishPullServerInitialMetadata() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+      Crash("FinishPullServerInitialMetadata called before Start");
+      break;
+    case ServerToClientPullState::kStarted:
+      Crash("FinishPullServerInitialMetadata called before metadata available");
+      break;
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+      server_to_client_pull_state_ = ServerToClientPullState::kIdle;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      Crash("Out of order FinishPullServerInitialMetadata");
+      break;
+    case ServerToClientPullState::kTerminated:
+      break;
+  }
+}
+
+Poll<StatusFlag> CallState::PollPullServerToClientMessageAvailable() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kIdle:
+      server_to_client_pull_state_ = ServerToClientPullState::kReading;
+      ABSL_FALLTHROUGH_INTENDED;
+    case ServerToClientPullState::kReading:
+      break;
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      Crash(
+          "PollPullServerToClientMessageAvailable called while processing a "
+          "message");
+      break;
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      Crash(
+          "PollPullServerToClientMessageAvailable called while processing "
+          "trailing metadata");
+      break;
+    case ServerToClientPullState::kTerminated:
+      return Failure{};
+  }
+  DCHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kReading);
+  switch (server_to_client_message_push_state_) {
+    case ServerToClientMessagePushState::kIdle:
+      return server_to_client_push_waiter_.pending();
+    case ServerToClientMessagePushState::kPushed:
+      server_to_client_pull_state_ =
+          ServerToClientPullState::kProcessingServerToClientMessage;
+      server_to_client_pull_waiter_.Wake();
+      return Success{};
+    case ServerToClientMessagePushState::kFinished:
+      server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
+      server_to_client_pull_waiter_.Wake();
+      return Failure{};
+  }
+}
+
+void CallState::FinishPullServerToClientMessage() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+      Crash("FinishPullServerToClientMessage called before metadata available");
+      break;
+    case ServerToClientPullState::kIdle:
+      Crash("FinishPullServerToClientMessage called twice");
+      break;
+    case ServerToClientPullState::kReading:
+      Crash(
+          "FinishPullServerToClientMessage called before "
+          "PollPullServerToClientMessageAvailable");
+      break;
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      server_to_client_pull_state_ = ServerToClientPullState::kIdle;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      Crash(
+          "FinishPullServerToClientMessage called while processing trailing "
+          "metadata");
+      break;
+    case ServerToClientPullState::kTerminated:
+      break;
+  }
+  switch (server_to_client_message_push_state_) {
+    case ServerToClientMessagePushState::kPushed:
+      server_to_client_message_push_state_ =
+          ServerToClientMessagePushState::kIdle;
+      server_to_client_push_waiter_.Wake();
+      break;
+    case ServerToClientMessagePushState::kIdle:
+      Crash("FinishPullServerToClientMessage called without a message");
+      break;
+    case ServerToClientMessagePushState::kFinished:
+      break;
+  }
+}
+
+Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kIdle:
+      if (pushed_server_trailing_metadata_) {
+        server_to_client_pull_state_ =
+            ServerToClientPullState::kProcessingServerTrailingMetadata;
+      }
+      return Empty{};
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      Crash("PollServerTrailingMetadataAvailable called twice");
+    case ServerToClientPullState::kTerminated:
+      return Empty{};
+  }
+}
+
+std::string CallState::DebugString() const {
+  return absl::StrCat(
+      "client_to_server_pull_state:", client_to_server_pull_state_,
+      " client_to_server_push_state:", client_to_server_push_state_,
+      " server_to_client_pull_state:", server_to_client_pull_state_,
+      " pushed_server_initial_metadata:",
+      pushed_server_initial_metadata_ ? "true" : "false",
+      " server_to_client_message_push_state:",
+      server_to_client_message_push_state_, " pushed_server_trailing_metadata:",
+      pushed_server_trailing_metadata_ ? "true"
+                                       : "false"
+                                         " client_to_server_push_waiter:",
+      client_to_server_push_waiter_.DebugString(),
+      " server_to_client_push_waiter:",
+      server_to_client_push_waiter_.DebugString(),
+      " client_to_server_pull_waiter:",
+      client_to_server_pull_waiter_.DebugString(),
+      " server_to_client_pull_waiter:",
+      server_to_client_pull_waiter_.DebugString());
+}
+
 static_assert(sizeof(CallState) <= 16, "CallState too large");
 
 }  // namespace filters_detail
