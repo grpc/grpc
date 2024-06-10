@@ -56,11 +56,17 @@ target_link_libraries(hw_grpc_proto
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
 
+# example helper
+add_library(helper
+  "helper.h"
+  "helper.cc")
+
 # Targets greeter_(client|server)
 foreach(_target
   ssl_client ssl_server)
   add_executable(${_target} "${_target}.cc")
   target_link_libraries(${_target}
+    helper
     hw_grpc_proto
     absl::flags
     absl::flags_parse

@@ -12,16 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <fstream>
 #include <iostream>
 #include <memory>
-#include <sstream>
 #include <string>
-#include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_format.h"
+#include "helper.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -56,22 +54,14 @@ class GreeterServiceImpl final : public Greeter::CallbackService {
   }
 };
 
+#ifdef BAZEL_BUILD
+constexpr char kServerCertPath[] =
+    "examples/cpp/auth/credentials/localhost.crt";
+constexpr char kServerKeyPath[] = "examples/cpp/auth/credentials/localhost.key";
+#else
 constexpr char kServerCertPath[] = "credentials/localhost.crt";
 constexpr char kServerKeyPath[] = "credentials/localhost.key";
-
-std::string LoadStringFromFile(std::string path) {
-#ifdef BAZEL_BUILD
-  path = "examples/cpp/auth/" + path;
 #endif
-  std::ifstream file(path);
-  if (!file.is_open()) {
-    std::cout << "Failed to open " << path << std::endl;
-    abort();
-  }
-  std::stringstream sstr;
-  sstr << file.rdbuf();
-  return sstr.str();
-}
 
 void RunServer(uint16_t port) {
   std::string server_address = absl::StrFormat("0.0.0.0:%d", port);

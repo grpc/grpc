@@ -17,15 +17,14 @@
  */
 
 #include <condition_variable>
-#include <fstream>
 #include <iostream>
 #include <memory>
 #include <mutex>
-#include <sstream>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "helper.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -35,7 +34,7 @@
 #include "helloworld.grpc.pb.h"
 #endif
 
-ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
+ABSL_FLAG(uint16_t, port, 50051, "Server port for the service");
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -95,28 +94,19 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
-constexpr char kRootCertificate[] = "credentials/root.crt";
-
-std::string LoadStringFromFile(std::string path) {
 #ifdef BAZEL_BUILD
-  path = "examples/cpp/auth/" + path;
+constexpr char kRootCertificate[] = "examples/cpp/auth/credentials/root.crt";
+#else
+constexpr char kRootCertificate[] = "credentials/root.crt";
 #endif
-  std::ifstream file(path);
-  if (!file.is_open()) {
-    std::cout << "Failed to open " << path << std::endl;
-    abort();
-  }
-  std::stringstream sstr;
-  sstr << file.rdbuf();
-  return sstr.str();
-}
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint specified by
   // the argument "--target=" which is the only expected argument.
-  std::string target_str = absl::GetFlag(FLAGS_target);
+  std::string target_str =
+      absl::StrFormat("localhost:%d", absl::GetFlag(FLAGS_port));
   // Build a SSL options for the channel
   grpc::SslCredentialsOptions ssl_options;
   ssl_options.pem_root_certs = LoadStringFromFile(kRootCertificate);

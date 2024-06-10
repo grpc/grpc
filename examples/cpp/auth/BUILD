@@ -14,14 +14,21 @@
 
 licenses(["notice"])
 
+cc_library(
+    name = "helper",
+    hdrs = ["helper.h"],
+    srcs = ["helper.cc"],
+)
+
 cc_binary(
     name = "ssl_client",
     srcs = ["ssl_client.cc"],
-    defines = ["BAZEL_BUILD"],
     data = [
         "credentials/root.crt",
     ],
+    defines = ["BAZEL_BUILD"],
     deps = [
+        ":helper",
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
@@ -32,12 +39,13 @@ cc_binary(
 cc_binary(
     name = "ssl_server",
     srcs = ["ssl_server.cc"],
-    defines = ["BAZEL_BUILD"],
     data = [
         "credentials/localhost.crt",
-        "credentials/localhost.key"
+        "credentials/localhost.key",
     ],
+    defines = ["BAZEL_BUILD"],
     deps = [
+        ":helper",
         "//:grpc++",
         "//examples/protos:helloworld_cc_grpc",
         "@com_google_absl//absl/flags:flag",
