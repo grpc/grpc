@@ -241,7 +241,7 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
   return absl::OkStatus();
 }
 
-absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
+absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilderImpl::Build() {
   if (meter_provider_ == nullptr) {
     return absl::InvalidArgumentError(
@@ -266,9 +266,8 @@ OpenTelemetryPluginImpl::CallbackMetricReporter::CallbackMetricReporter(
   for (const auto& handle : key->metrics()) {
     const auto& descriptor =
         grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-    GPR_ASSERT(
-        descriptor.instrument_type ==
-        grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+    CHECK(descriptor.instrument_type ==
+          grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
     switch (descriptor.value_type) {
       case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
         auto& callback_gauge_state =
@@ -734,7 +733,7 @@ void OpenTelemetryPluginImpl::AddCallback(
     for (const auto& handle : callback->metrics()) {
       const auto& descriptor =
           grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-      GPR_ASSERT(
+      CHECK(
           descriptor.instrument_type ==
           grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
       switch (descriptor.value_type) {
@@ -810,7 +809,7 @@ void OpenTelemetryPluginImpl::RemoveCallback(
     for (const auto& handle : callback->metrics()) {
       const auto& descriptor =
           grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-      GPR_ASSERT(
+      CHECK(
           descriptor.instrument_type ==
           grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
       switch (descriptor.value_type) {
@@ -1070,7 +1069,7 @@ absl::Status OpenTelemetryPluginBuilder::BuildAndRegisterGlobal() {
   return impl_->BuildAndRegisterGlobal();
 }
 
-absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>>
+absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilder::Build() {
   return impl_->Build();
 }

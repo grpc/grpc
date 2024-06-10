@@ -76,9 +76,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-TraceFlag xds_route_config_resource_type_test_trace(
-    true, "xds_route_config_resource_type_test");
-
 class XdsRouteConfigTest : public ::testing::Test {
  protected:
   XdsRouteConfigTest()

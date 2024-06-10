@@ -98,7 +98,7 @@ ChaoticGoodServerListener::~ChaoticGoodServerListener() {
 
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr) {
-  if (grpc_chaotic_good_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     auto str = grpc_event_engine::experimental::ResolvedAddressToString(addr);
     LOG(INFO) << "CHAOTIC_GOOD: Listen on "
               << (str.ok() ? str->c_str() : str.status().ToString());
@@ -139,9 +139,9 @@ absl::Status ChaoticGoodServerListener::StartListening() {
   CHECK(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
   if (!status.ok()) {
-    LOG(ERROR) << "Start listening failed: " << status.ToString();
-  } else if (grpc_chaotic_good_trace.enabled()) {
-    LOG(INFO) << "CHAOTIC_GOOD: Started listening";
+    LOG(ERROR) << "Start listening failed: " << status;
+  } else {
+    GRPC_TRACE_LOG(chaotic_good, INFO) << "CHAOTIC_GOOD: Started listening";
   }
   return status;
 }
@@ -159,9 +159,7 @@ ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
 }
 
 void ChaoticGoodServerListener::ActiveConnection::Orphan() {
-  if (grpc_chaotic_good_trace.enabled()) {
-    LOG(INFO) << "ActiveConnection::Orphan() " << this;
-  }
+  GRPC_TRACE_LOG(chaotic_good, INFO) << "ActiveConnection::Orphan() " << this;
   if (handshaking_state_ != nullptr) {
     handshaking_state_->Shutdown();
     handshaking_state_.reset();
@@ -299,7 +297,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           },
           [self](PromiseEndpoint ret) -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
-            if (grpc_chaotic_good_trace.enabled()) {
+            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
               gpr_log(
                   GPR_INFO, "%p Data endpoint setup done: shutdown=%s",
                   self->connection_.get(),
@@ -445,19 +443,14 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     GetConnectionDeadline() {
-  if (connection_->args().Contains(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)) {
-    return Timestamp::Now() +
-           connection_->args()
-               .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
-               .value();
-  }
-  return Timestamp::Now() + kConnectionDeadline;
+  return Timestamp::Now() +
+         connection_->args()
+             .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
+             .value_or(kConnectionDeadline);
 }
 
 void ChaoticGoodServerListener::Orphan() {
-  if (grpc_chaotic_good_trace.enabled()) {
-    LOG(INFO) << "ChaoticGoodServerListener::Orphan()";
-  }
+  GRPC_TRACE_LOG(chaotic_good, INFO) << "ChaoticGoodServerListener::Orphan()";
   {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
     MutexLock lock(&mu_);
@@ -483,20 +476,21 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
     return 0;
   }
   int port_num = 0;
+  std::vector<std::pair<std::string, absl::Status>> error_list;
   for (const auto& resolved_addr : resolved_or.value()) {
     auto listener = grpc_core::MakeOrphanable<
         grpc_core::chaotic_good::ChaoticGoodServerListener>(
         core_server, core_server->channel_args());
     const auto ee_addr =
         grpc_event_engine::experimental::CreateResolvedAddress(resolved_addr);
-    gpr_log(GPR_INFO, "BIND: %s",
-            grpc_event_engine::experimental::ResolvedAddressToString(ee_addr)
-                ->c_str());
+    std::string addr_str =
+        *grpc_event_engine::experimental::ResolvedAddressToString(ee_addr);
+    LOG(INFO) << "BIND: " << addr_str;
     auto bind_result = listener->Bind(ee_addr);
     if (!bind_result.ok()) {
-      LOG(ERROR) << "Failed to bind to " << addr << ": "
-                 << bind_result.status().ToString();
-      return 0;
+      error_list.push_back(
+          std::make_pair(std::move(addr_str), bind_result.status()));
+      continue;
     }
     if (port_num == 0) {
       port_num = bind_result.value();
@@ -504,6 +498,17 @@ int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr) {
       CHECK(port_num == bind_result.value());
     }
     core_server->AddListener(std::move(listener));
+  }
+  if (error_list.size() == resolved_or->size()) {
+    LOG(ERROR) << "Failed to bind any address for " << addr;
+    for (const auto& error : error_list) {
+      LOG(ERROR) << "  " << error.first << ": " << error.second;
+    }
+  } else if (!error_list.empty()) {
+    LOG(INFO) << "Failed to bind some addresses for " << addr;
+    for (const auto& error : error_list) {
+      LOG(INFO) << "  " << error.first << ": " << error.second;
+    }
   }
   return port_num;
 }

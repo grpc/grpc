@@ -274,11 +274,11 @@ class FakeStatsPlugin : public StatsPlugin,
     return {true, nullptr};
   }
   std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
-      const experimental::StatsPluginChannelScope& scope) const override {
+      const experimental::StatsPluginChannelScope& /*scope*/) const override {
     return nullptr;
   }
   std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
-      const ChannelArgs& args) const override {
+      const ChannelArgs& /*args*/) const override {
     return nullptr;
   }
 

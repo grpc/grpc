@@ -94,9 +94,6 @@ namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
-TraceFlag grpc_trace_subchannel(false, "subchannel");
-DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
-
 //
 // ConnectedSubchannel
 //
@@ -105,9 +102,8 @@ ConnectedSubchannel::ConnectedSubchannel(
     const ChannelArgs& args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
     : RefCounted<ConnectedSubchannel>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount)
-              ? "ConnectedSubchannel"
-              : nullptr),
+          GRPC_TRACE_FLAG_ENABLED(subchannel_refcount) ? "ConnectedSubchannel"
+                                                       : nullptr),
       args_(args),
       channelz_subchannel_(std::move(channelz_subchannel)) {}
 
@@ -155,36 +151,6 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
   size_t GetInitialCallSizeEstimate() const override {
     return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
            channel_stack_->call_stack_size;
-  }
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args) override {
-    // If not using channelz, we just need to call the channel stack.
-    if (channelz_subchannel() == nullptr) {
-      return channel_stack_->MakeClientCallPromise(std::move(call_args));
-    }
-    // Otherwise, we need to wrap the channel stack promise with code that
-    // handles the channelz updates.
-    return OnCancel(
-        Seq(channel_stack_->MakeClientCallPromise(std::move(call_args)),
-            [self = Ref()](ServerMetadataHandle metadata) {
-              channelz::SubchannelNode* channelz_subchannel =
-                  self->channelz_subchannel();
-              CHECK(channelz_subchannel != nullptr);
-              if (metadata->get(GrpcStatusMetadata())
-                      .value_or(GRPC_STATUS_UNKNOWN) != GRPC_STATUS_OK) {
-                channelz_subchannel->RecordCallFailed();
-              } else {
-                channelz_subchannel->RecordCallSucceeded();
-              }
-              return metadata;
-            }),
-        [self = Ref()]() {
-          channelz::SubchannelNode* channelz_subchannel =
-              self->channelz_subchannel();
-          CHECK(channelz_subchannel != nullptr);
-          channelz_subchannel->RecordCallFailed();
-        });
   }
 
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
@@ -251,10 +217,6 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
   grpc_channel_stack* channel_stack() const override { return nullptr; }
 
   size_t GetInitialCallSizeEstimate() const override { return 0; }
-
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(CallArgs) override {
-    Crash("legacy MakeCallPromise() method called in call v3 impl");
-  }
 
   void Ping(grpc_closure*, grpc_closure*) override {
     Crash("legacy ping method called in call v3 impl");
@@ -455,7 +417,7 @@ class Subchannel::ConnectedSubchannelStateWatcher final
       if (c->connected_subchannel_ == nullptr) return;
       if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
           new_state == GRPC_CHANNEL_SHUTDOWN) {
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
+        if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
           gpr_log(GPR_INFO,
                   "subchannel %p %s: Connected subchannel %p reports %s: %s", c,
                   c->key_.ToString().c_str(), c->connected_subchannel_.get(),
@@ -554,9 +516,9 @@ BackOff::Options ParseArgsForBackoffValues(const ChannelArgs& args,
 Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const ChannelArgs& args)
-    : DualRefCounted<Subchannel>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
-                                                                  : nullptr),
+    : DualRefCounted<Subchannel>(GRPC_TRACE_FLAG_ENABLED(subchannel_refcount)
+                                     ? "Subchannel"
+                                     : nullptr),
       key_(std::move(key)),
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
@@ -640,7 +602,7 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
+    if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
       gpr_log(GPR_INFO, "subchannel %p %s: throttling keepalive time to %d",
               this, key_.ToString().c_str(), new_keepalive_time);
     }
@@ -869,8 +831,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = std::move(connecting_result_.socket_node);
-  if (connecting_result_.transport->filter_stack_transport() != nullptr ||
-      IsChaoticGoodEnabled()) {
+  if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.
     ChannelStackBuilderImpl builder(
@@ -916,7 +877,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   connecting_result_.Reset();
   // Publish.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel)) {
+  if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
     gpr_log(GPR_INFO, "subchannel %p %s: new connected subchannel at %p", this,
             key_.ToString().c_str(), connected_subchannel_.get());
   }

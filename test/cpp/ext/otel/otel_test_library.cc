@@ -244,7 +244,7 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
   return data;
 }
 
-std::pair<std::shared_ptr<grpc::OpenTelemetryPlugin>,
+std::pair<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>,
           std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>>
 OpenTelemetryPluginEnd2EndTest::BuildOpenTelemetryPlugin(
     OpenTelemetryPluginEnd2EndTest::Options options) {

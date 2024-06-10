@@ -67,6 +67,8 @@ extern void RegisterWeightedRoundRobinLbPolicy(
     CoreConfiguration::Builder* builder);
 extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
 extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
+extern void RegisterLoadBalancedCallDestination(
+    CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -119,6 +121,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterSockaddrResolver(builder);
   RegisterFakeResolver(builder);
   RegisterHttpProxyMapper(builder);
+  RegisterLoadBalancedCallDestination(builder);
 #ifdef GPR_SUPPORT_BINDER_TRANSPORT
   RegisterBinderResolver(builder);
 #endif

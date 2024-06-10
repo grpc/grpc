@@ -2002,12 +2002,12 @@ TEST(OpenTelemetryPluginMetricsEnablingDisablingTest, TestEnableDisableAPIs) {
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultipleStatsPluginsPerChannel) {
-  std::shared_ptr<grpc::OpenTelemetryPlugin> plugin1;
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin1;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader1;
   std::tie(plugin1, reader1) = BuildOpenTelemetryPlugin(std::move(
       Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                       kClientAttemptDurationInstrumentName})));
-  std::shared_ptr<grpc::OpenTelemetryPlugin> plugin2;
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin2;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader2;
   std::tie(plugin2, reader2) = BuildOpenTelemetryPlugin(std::move(
       Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
@@ -2093,12 +2093,12 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   //    |                                |
   //    | (global plugin, plugin1)       | (global plugin, plugin1, plugin2)
   //    |                                |
-  std::shared_ptr<grpc::OpenTelemetryPlugin> plugin1;
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin1;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader1;
   std::tie(plugin1, reader1) = BuildOpenTelemetryPlugin(std::move(
       Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                       kClientAttemptDurationInstrumentName})));
-  std::shared_ptr<grpc::OpenTelemetryPlugin> plugin2;
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin2;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader2;
   std::tie(plugin2, reader2) = BuildOpenTelemetryPlugin(std::move(
       Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::
@@ -2195,7 +2195,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest, RegisterMultipleStatsPluginsPerServer) {
-  std::shared_ptr<grpc::OpenTelemetryPlugin> plugin;
+  std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader;
   std::tie(plugin, reader) = BuildOpenTelemetryPlugin(std::move(
       Options().set_metric_names({grpc::OpenTelemetryPluginBuilder::

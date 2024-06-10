@@ -177,7 +177,8 @@ class OpenTelemetryPluginBuilderImpl {
           bool(const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
           channel_scope_filter);
   absl::Status BuildAndRegisterGlobal();
-  absl::StatusOr<std::shared_ptr<grpc::OpenTelemetryPlugin>> Build();
+  absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
+  Build();
 
   const absl::flat_hash_set<std::string>& TestOnlyEnabledMetrics() {
     return metrics_;
@@ -202,7 +203,7 @@ class OpenTelemetryPluginBuilderImpl {
 };
 
 class OpenTelemetryPluginImpl
-    : public grpc::OpenTelemetryPlugin,
+    : public grpc::experimental::OpenTelemetryPlugin,
       public grpc_core::StatsPlugin,
       public std::enable_shared_from_this<OpenTelemetryPluginImpl> {
  public:
@@ -373,7 +374,7 @@ class OpenTelemetryPluginImpl
         : plugin_(std::move(plugin)) {}
     void UpdateArguments(grpc::ChannelArguments* args) override;
     void UpdatePlugins(std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>*
-                           plugins) override {}
+                       /*plugins*/) override {}
 
    private:
     std::shared_ptr<OpenTelemetryPluginImpl> plugin_;

@@ -460,7 +460,7 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
 PosixEventEngine::~PosixEventEngine() {
   {
     grpc_core::MutexLock lock(&mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_event_engine_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(event_engine)) {
       for (auto handle : known_handles_) {
         gpr_log(GPR_ERROR,
                 "(event_engine) PosixEventEngine:%p uncleared "
@@ -559,8 +559,8 @@ PosixEventEngine::GetDNSResolver(
   // configuration.
   if (ShouldUseAresDnsResolver()) {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-    GRPC_EVENT_ENGINE_DNS_TRACE("PosixEventEngine:%p creating AresResolver",
-                                this);
+    GRPC_TRACE_LOG(event_engine_dns, INFO)
+        << "PosixEventEngine::" << this << " creating AresResolver";
     auto ares_resolver = AresResolver::CreateAresResolver(
         options.dns_server,
         std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_->Poller()),
@@ -572,8 +572,8 @@ PosixEventEngine::GetDNSResolver(
         std::move(*ares_resolver));
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   }
-  GRPC_EVENT_ENGINE_DNS_TRACE(
-      "PosixEventEngine:%p creating NativePosixDNSResolver", this);
+  GRPC_TRACE_LOG(event_engine_dns, INFO)
+      << "PosixEventEngine::" << this << " creating NativePosixDNSResolver";
   return std::make_unique<NativePosixDNSResolver>(shared_from_this());
 #endif  // GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 }

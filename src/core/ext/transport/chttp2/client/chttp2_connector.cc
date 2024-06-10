@@ -290,7 +290,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
   }
 };
 
-absl::StatusOr<OrphanablePtr<Channel>> CreateChannel(const char* target,
+absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
                                                      const ChannelArgs& args) {
   if (target == nullptr) {
     LOG(ERROR) << "cannot create channel with NULL target name";
