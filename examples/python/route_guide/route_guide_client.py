@@ -65,7 +65,7 @@ def guide_list_features(stub):
 
 def generate_route(feature_list):
     for _ in range(0, 10):
-        random_feature = feature_list[random.randint(0, len(feature_list) - 1)]
+        random_feature = random.choice(feature_list)
         print("Visiting point %s" % random_feature.location)
         yield random_feature.location
 
