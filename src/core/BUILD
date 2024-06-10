@@ -5125,7 +5125,6 @@ grpc_cc_library(
         "absl/functional:bind_front",
         "absl/log:check",
         "absl/log:log",
-        "absl/log:vlog_is_on",
         "absl/memory",
         "absl/random",
         "absl/status",

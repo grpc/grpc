@@ -23,7 +23,6 @@
 #include <utility>
 
 #include "absl/log/check.h"
-#include "absl/log/vlog_is_on.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -755,7 +754,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
 
 void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
     char buf[10240];

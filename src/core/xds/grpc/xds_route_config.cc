@@ -28,7 +28,6 @@
 #include <vector>
 
 #include "absl/log/check.h"
-#include "absl/log/vlog_is_on.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -1144,7 +1143,7 @@ namespace {
 void MaybeLogRouteConfiguration(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab);
     char buf[10240];

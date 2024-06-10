@@ -249,7 +249,6 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/log/check', abseil_version
     ss.dependency 'abseil/log/globals', abseil_version
     ss.dependency 'abseil/log/log', abseil_version
-    ss.dependency 'abseil/log/vlog_is_on', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
     ss.dependency 'abseil/meta/type_traits', abseil_version
     ss.dependency 'abseil/random/bit_gen_ref', abseil_version
