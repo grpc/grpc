@@ -60,6 +60,7 @@ grpc_cc_binary(
         "//src/core:channel_args",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//src/core:chaotic_good_connector",
     ],
 )
 
@@ -86,6 +87,7 @@ grpc_cc_binary(
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//src/core:chaotic_good_server",
     ],
 )
 
@@ -113,6 +115,7 @@ grpc_cc_binary(
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//:grpcpp_chaotic_good",
     ],
 )
 
@@ -139,6 +142,7 @@ grpc_cc_binary(
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//:grpcpp_chaotic_good",
     ],
 )
 
