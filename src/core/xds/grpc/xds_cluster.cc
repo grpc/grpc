@@ -754,8 +754,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
 
 void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
-      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
     char buf[10240];
