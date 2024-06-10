@@ -30,6 +30,10 @@ def make_route_note(message, latitude, longitude):
         location=route_guide_pb2.Point(latitude=latitude, longitude=longitude),
     )
 
+def format_point(point):
+    # not delegating in point.__str__ because it is an empty string when its
+    # values are zero. In addition, it puts a newline between the fields.
+    return 'latitude: %d, longitude: %d' % (point.latitude, point.longitude)
 
 def guide_get_one_feature(stub, point):
     feature = stub.GetFeature(point)
@@ -38,9 +42,9 @@ def guide_get_one_feature(stub, point):
         return
 
     if feature.name:
-        print("Feature called %s at %s" % (feature.name, feature.location))
+        print("Feature called %r at %s" % (feature.name, format_point(feature.location)))
     else:
-        print("Found no feature at %s" % feature.location)
+        print("Found no feature at %s" % format_point(feature.location))
 
 
 def guide_get_feature(stub):
@@ -60,13 +64,13 @@ def guide_list_features(stub):
     features = stub.ListFeatures(rectangle)
 
     for feature in features:
-        print("Feature called %s at %s" % (feature.name, feature.location))
+        print("Feature called %r at %s" % (feature.name, format_point(feature.location)))
 
 
 def generate_route(feature_list):
     for _ in range(0, 10):
         random_feature = random.choice(feature_list)
-        print("Visiting point %s" % random_feature.location)
+        print("Visiting point %s" % format_point(random_feature.location))
         yield random_feature.location
 
 
@@ -90,7 +94,7 @@ def generate_messages():
         make_route_note("Fifth message", 1, 0),
     ]
     for msg in messages:
-        print("Sending %s at %s" % (msg.message, msg.location))
+        print("Sending %s at %s" % (msg.message, format_point(msg.location)))
         yield msg
 
 
@@ -98,7 +102,7 @@ def guide_route_chat(stub):
     responses = stub.RouteChat(generate_messages())
     for response in responses:
         print(
-            "Received message %s at %s" % (response.message, response.location)
+            "Received message %s at %s" % (response.message, format_point(response.location))
         )
 
 
