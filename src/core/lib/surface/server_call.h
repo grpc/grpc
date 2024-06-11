@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -101,8 +102,9 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
-    // TODO(ctiller): only when we're not already finished
-    CancelWithError(absl::CancelledError());
+    if (!saw_was_cancelled_.load(std::memory_order_relaxed)) {
+      CancelWithError(absl::CancelledError());
+    }
   }
 
   void SetCompletionQueue(grpc_completion_queue*) override {
@@ -155,6 +157,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   ClientMetadataHandle client_initial_metadata_stored_;
   grpc_completion_queue* const cq_;
   ServerInterface* const server_;
+  std::atomic<bool> saw_was_cancelled_{false};
 };
 
 grpc_call* MakeServerCall(CallHandler call_handler,
