@@ -99,8 +99,8 @@ void ServerMetricRecorder::SetMemoryUtilization(double value) {
 void ServerMetricRecorder::SetApplicationUtilization(double value) {
   if (!IsUtilizationWithSoftLimitsValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      gpr_log(GPR_INFO, "[%p] Application utilization rejected: %f", this,
-              value);
+      LOG(INFO) << "[" << this
+                << "] Application utilization rejected: " << value;
     }
     return;
   }
@@ -143,14 +143,14 @@ void ServerMetricRecorder::SetEps(double value) {
 void ServerMetricRecorder::SetNamedUtilization(string_ref name, double value) {
   if (!IsUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      gpr_log(GPR_INFO, "[%p] Named utilization rejected: %f name: %s", this,
-              value, std::string(name.data(), name.size()).c_str());
+      LOG(INFO) << "[" << this << "] Named utilization rejected: " << value
+                << " name: " << std::string(name.data(), name.size());
     }
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] Named utilization set: %f name: %s", this, value,
-            std::string(name.data(), name.size()).c_str());
+    LOG(INFO) << "[" << this << "] Named utilization set: " << value
+              << " name: " << std::string(name.data(), name.size());
   }
   UpdateBackendMetricDataState([name, value](BackendMetricData* data) {
     data->utilization[absl::string_view(name.data(), name.size())] = value;
@@ -160,8 +160,8 @@ void ServerMetricRecorder::SetNamedUtilization(string_ref name, double value) {
 void ServerMetricRecorder::SetAllNamedUtilization(
     std::map<string_ref, double> named_utilization) {
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] All named utilization updated. size: %" PRIuPTR,
-            this, named_utilization.size());
+    LOG(INFO) << "[" << this << "] All named utilization updated. size: "
+              << named_utilization.size();
   }
   UpdateBackendMetricDataState(
       [utilization = std::move(named_utilization)](BackendMetricData* data) {
@@ -213,8 +213,8 @@ void ServerMetricRecorder::ClearEps() {
 
 void ServerMetricRecorder::ClearNamedUtilization(string_ref name) {
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] Named utilization cleared. name: %s", this,
-            std::string(name.data(), name.size()).c_str());
+    LOG(INFO) << "[" << this << "] Named utilization cleared. name: "
+              << std::string(name.data(), name.size());
   }
   UpdateBackendMetricDataState([name](BackendMetricData* data) {
     data->utilization.erase(absl::string_view(name.data(), name.size()));
@@ -235,12 +235,13 @@ ServerMetricRecorder::GetMetricsIfChanged() const {
   }
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
     const auto& data = result->data;
-    gpr_log(GPR_INFO,
-            "[%p] GetMetrics() returned: seq:%" PRIu64
-            " cpu:%f mem:%f app:%f qps:%f eps:%f utilization size: %" PRIuPTR,
-            this, result->sequence_number, data.cpu_utilization,
-            data.mem_utilization, data.application_utilization, data.qps,
-            data.eps, data.utilization.size());
+    LOG(INFO) << "[" << this
+              << "] GetMetrics() returned: seq:" << result->sequence_number
+              << " cpu:" << data.cpu_utilization
+              << " mem:" << data.mem_utilization
+              << " app:" << data.application_utilization << " qps:" << data.qps
+              << " eps:" << data.eps
+              << " utilization size: " << data.utilization.size();
   }
   return result;
 }
@@ -327,8 +328,8 @@ experimental::CallMetricRecorder& BackendMetricState::RecordUtilizationMetric(
     string_ref name, double value) {
   if (!IsUtilizationValid(value)) {
     if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-      gpr_log(GPR_INFO, "[%p] Utilization value rejected: %s %f", this,
-              std::string(name.data(), name.length()).c_str(), value);
+      LOG(INFO) << "[" << this << "] Utilization value rejected: "
+                << std::string(name.data(), name.length()) << " " << value;
     }
     return *this;
   }
@@ -336,8 +337,8 @@ experimental::CallMetricRecorder& BackendMetricState::RecordUtilizationMetric(
   absl::string_view name_sv(name.data(), name.length());
   utilization_[name_sv] = value;
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] Utilization recorded: %s %f", this,
-            std::string(name_sv).c_str(), value);
+    LOG(INFO) << "[" << this << "] Utilization recorded: " << name_sv << " "
+              << value;
   }
   return *this;
 }
@@ -348,8 +349,8 @@ experimental::CallMetricRecorder& BackendMetricState::RecordRequestCostMetric(
   absl::string_view name_sv(name.data(), name.length());
   request_cost_[name_sv] = value;
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] Request cost recorded: %s %f", this,
-            std::string(name_sv).c_str(), value);
+    LOG(INFO) << "[" << this << "] Request cost recorded: " << name_sv << " "
+              << value;
   }
   return *this;
 }
@@ -360,8 +361,8 @@ experimental::CallMetricRecorder& BackendMetricState::RecordNamedMetric(
   absl::string_view name_sv(name.data(), name.length());
   named_metrics_[name_sv] = value;
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] Named metric recorded: %s %f", this,
-            std::string(name_sv).c_str(), value);
+    LOG(INFO) << "[" << this << "] Named metric recorded: " << name_sv << " "
+              << value;
   }
   return *this;
 }
@@ -408,13 +409,13 @@ BackendMetricData BackendMetricState::GetBackendMetricData() {
     }
   }
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO,
-            "[%p] Backend metric data returned: cpu:%f mem:%f qps:%f eps:%f "
-            "utilization size:%" PRIuPTR " request_cost size:%" PRIuPTR
-            "named_metrics size:%" PRIuPTR,
-            this, data.cpu_utilization, data.mem_utilization, data.qps,
-            data.eps, data.utilization.size(), data.request_cost.size(),
-            data.named_metrics.size());
+    LOG(INFO) << "[" << this
+              << "] Backend metric data returned: cpu:" << data.cpu_utilization
+              << " mem:" << data.mem_utilization << " qps:" << data.qps
+              << " eps:" << data.eps
+              << " utilization size:" << data.utilization.size()
+              << " request_cost size:" << data.request_cost.size()
+              << "named_metrics size:" << data.named_metrics.size();
   }
   return data;
 }
