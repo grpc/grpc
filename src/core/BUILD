@@ -3295,9 +3295,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "config_selector",
-    srcs = [
-        "client_channel/config_selector.cc",
-    ],
     hdrs = [
         "client_channel/config_selector.h",
     ],

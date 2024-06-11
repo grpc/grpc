@@ -270,7 +270,10 @@ class XdsResolver final : public Resolver {
                       RefCountedPtr<RouteConfigData> route_config_data);
     ~XdsConfigSelector() override;
 
-    const char* name() const override { return "XdsConfigSelector"; }
+    UniqueTypeName name() const override {
+      static UniqueTypeName::Factory kFactory("XdsConfigSelector");
+      return kFactory.Create();
+    }
 
     bool Equals(const ConfigSelector* other) const override {
       const auto* other_xds = static_cast<const XdsConfigSelector*>(other);
