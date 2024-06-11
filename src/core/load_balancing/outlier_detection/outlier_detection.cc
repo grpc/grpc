@@ -32,7 +32,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -695,7 +694,8 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
           LOG(INFO) << "[outlier_detection_lb " << this
                     << "] counting disabled; disabling "
-                    << "ejection for " << key.ToString();
+                       "ejection for "
+                    << key.ToString();
         }
         it->second->DisableEjection();
       }
@@ -823,8 +823,8 @@ void OutlierDetectionLb::Helper::UpdateState(
   if (parent()->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
     LOG(INFO) << "[outlier_detection_lb " << parent()
-              << "] child connectivity state update: "
-              << "state=" << ConnectivityStateName(state) << " (" << status
+              << "] child connectivity state update: state="
+              << ConnectivityStateName(state) << " (" << status
               << ") picker=" << picker.get();
   }
   // Save the state and picker.
@@ -958,9 +958,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
           LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                    << "] random_key=" << random_key
-                    << " ejected_host_count=" << ejected_host_count
-                    << " current_percent=" << current_percent;
+                    << "] random_key=" << random_key << " ejected_host_count";
         }
         if (random_key < config.success_rate_ejection->enforcement_percentage &&
             (ejected_host_count == 0 ||
@@ -968,8 +966,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-            LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                      << "] ejecting candidate";
+            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
+                    parent_.get());
           }
           candidate.first->Eject(time_now);
           ++ejected_host_count;
@@ -990,9 +988,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     }
     for (auto& candidate : failure_percentage_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-        LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                  << "] checking candidate " << candidate.first
-                  << ": success_rate=" << candidate.second;
+        gpr_log(GPR_INFO,
+                "[outlier_detection_lb %p] checking candidate %p: "
+                "success_rate=%.3f",
+                parent_.get(), candidate.first, candidate.second);
       }
       // Extra check to make sure success rate algorithm didn't already
       // eject this backend.
@@ -1003,10 +1002,11 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
         double current_percent =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-          LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                    << "] random_key=" << random_key
-                    << " ejected_host_count=" << ejected_host_count
-                    << " current_percent=" << current_percent;
+          gpr_log(GPR_INFO,
+                  "[outlier_detection_lb %p] random_key=%d "
+                  "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
+                  parent_.get(), random_key, ejected_host_count,
+                  current_percent);
         }
         if (random_key <
                 config.failure_percentage_ejection->enforcement_percentage &&
@@ -1015,8 +1015,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-            LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                      << "] ejecting candidate";
+            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
+                    parent_.get());
           }
           candidate.first->Eject(time_now);
           ++ejected_host_count;
@@ -1035,9 +1035,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     const bool unejected = endpoint_state->MaybeUneject(
         config.base_ejection_time.millis(), config.max_ejection_time.millis());
     if (unejected && GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-      LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                << "] unejected endpoint " << state.first.ToString() << " ("
-                << endpoint_state << ")";
+      gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected endpoint %s (%p)",
+              parent_.get(), state.first.ToString().c_str(), endpoint_state);
     }
   }
   parent_->ejection_timer_ =
