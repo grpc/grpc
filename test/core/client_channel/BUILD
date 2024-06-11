@@ -59,7 +59,7 @@ grpc_yodel_simple_test(
     srcs = ["load_balanced_call_destination_test.cc"],
     external_deps = [
         "absl/log:log",
-        "gtest"
+        "gtest",
     ],
     deps = [
         "//:grpc_client_channel",
