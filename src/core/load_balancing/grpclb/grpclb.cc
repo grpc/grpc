@@ -1660,9 +1660,9 @@ void GrpcLb::StartBalancerCallLocked() {
   CHECK(lb_calld_ == nullptr);
   lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    LOG(INFO) << "[grpclb %p] Query for backends (lb_channel: " << this
-              << ", lb_calld: " << lb_channel_.get(),
-        lb_calld_.get() << ")";
+    gpr_log(GPR_INFO,
+            "[grpclb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
+            this, lb_channel_.get(), lb_calld_.get());
   }
   lb_calld_->StartQuery();
 }

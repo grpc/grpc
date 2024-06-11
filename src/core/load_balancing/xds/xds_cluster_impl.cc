@@ -616,8 +616,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
     if (drop_stats_ == nullptr) {
       LOG(ERROR)
           << "[xds_cluster_impl_lb " << this
-          << "] Failed to get cluster drop stats for "
-             "LRS server "
+          << "] Failed to get cluster drop stats for LRS server "
           << new_cluster_config.cluster->lrs_load_reporting_server->server_uri()
           << ", cluster " << new_config->cluster_name() << ", EDS service name "
           << new_eds_service_name
@@ -705,8 +704,7 @@ void XdsClusterImplLb::MaybeUpdatePickerLocked() {
     auto drop_picker = MakeRefCounted<Picker>(this, picker_);
     if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
       LOG(INFO) << "[xds_cluster_impl_lb " << this
-                << "] updating connectivity (drop all): "
-                   "state=READY picker="
+                << "] updating connectivity (drop all): state=READY picker="
                 << drop_picker.get();
     }
     channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
@@ -792,8 +790,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
     if (locality_stats == nullptr) {
       LOG(ERROR)
           << "[xds_cluster_impl_lb " << parent()
-          << "] Failed to get locality stats object "
-             "for LRS server "
+          << "] Failed to get locality stats object for LRS server "
           << parent()
                  ->cluster_resource_->lrs_load_reporting_server->server_uri()
           << ", cluster " << parent()->config_->cluster_name()
@@ -820,8 +817,7 @@ void XdsClusterImplLb::Helper::UpdateState(
   if (parent()->shutting_down_) return;
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     LOG(INFO) << "[xds_cluster_impl_lb " << parent()
-              << "] child connectivity state update: "
-                 "state="
+              << "] child connectivity state update: state="
               << ConnectivityStateName(state) << " (" << status
               << ") picker=" << picker.get();
   }

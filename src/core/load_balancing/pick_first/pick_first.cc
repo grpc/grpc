@@ -522,7 +522,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     } else {
       LOG(INFO) << "Pick First " << this
                 << " received update with address error: "
-                << args.addresses.status().ToString().c_str();
+                << args.addresses.status();
     }
   }
   // Set return status based on the address list.
@@ -701,8 +701,8 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::Orphan() {
 
 void PickFirst::SubchannelList::SubchannelData::SubchannelState::Select() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    LOG(INFO) << "[PF " << pick_first_.get()
-              << "]ick First %p selected subchannel " << subchannel_.get();
+    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", pick_first_.get(),
+            subchannel_.get());
   }
   CHECK_NE(subchannel_data_, nullptr);
   pick_first_->UnsetSelectedSubchannel();  // Cancel health watch, if any.
@@ -1480,7 +1480,7 @@ absl::Status OldPickFirst::UpdateLocked(UpdateArgs args) {
     } else {
       LOG(INFO) << "Pick First " << this
                 << " received update with address error: "
-                << args.addresses.status().ToString().c_str();
+                << args.addresses.status();
     }
   }
   // Set return status based on the address list.
@@ -1934,8 +1934,8 @@ void OldPickFirst::SubchannelList::SubchannelData::
   }
   // Cases 1 and 2.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    LOG(INFO) << "[PF " << p << "]ick First %p selected subchannel "
-              << subchannel_.get();
+    gpr_log(GPR_INFO, "Pick First %p selected subchannel %p", p,
+            subchannel_.get());
   }
   p->selected_ = this;
   // If health checking is enabled, start the health watch, but don't

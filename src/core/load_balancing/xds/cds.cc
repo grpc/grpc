@@ -298,7 +298,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
       LOG(INFO) << "[cdslb " << this
                 << "] obtaining dynamic subscription for cluster "
-                << cluster_name_.c_str();
+                << cluster_name_;
     }
     auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
     if (dependency_mgr == nullptr) {
