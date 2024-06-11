@@ -27,14 +27,15 @@
 #include <utility>
 #include <vector>
 
-#include "third_party/absl/base/attributes.h"
-#include "third_party/absl/container/inlined_vector.h"
-#include "third_party/absl/log/check.h"
-#include "third_party/absl/status/status.h"
-#include "third_party/absl/status/statusor.h"
-#include "third_party/absl/strings/str_cat.h"
-#include "third_party/absl/strings/string_view.h"
-#include "third_party/absl/types/optional.h"
+#include "absl/base/attributes.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>

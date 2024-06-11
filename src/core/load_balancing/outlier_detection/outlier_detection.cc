@@ -32,6 +32,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -981,6 +982,11 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
       failure_percentage_ejection_candidates.size() >=
           config.failure_percentage_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
+      gpr_log(GPR_INFO,
+              "[outlier_detection_lb %p] running failure percentage algorithm: "
+              "threshold=%d, enforcement_percentage=%d",
+              parent_.get(), config.failure_percentage_ejection->threshold,
+              config.failure_percentage_ejection->enforcement_percentage);
     }
     for (auto& candidate : failure_percentage_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
