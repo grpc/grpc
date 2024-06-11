@@ -877,10 +877,7 @@ Poll<bool> CallState::PollWasCancelled() {
     case ServerTrailingMetadataState::kNotPushed:
     case ServerTrailingMetadataState::kPushed:
     case ServerTrailingMetadataState::kPushedCancel: {
-      auto r = server_trailing_metadata_waiter_.pending();
-      LOG(INFO) << GRPC_DUMP_ARGS(
-          server_trailing_metadata_waiter_.DebugString());
-      return r;
+      return server_trailing_metadata_waiter_.pending();
     }
     case ServerTrailingMetadataState::kPulled:
       return false;

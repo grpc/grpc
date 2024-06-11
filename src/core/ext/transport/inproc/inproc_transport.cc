@@ -64,7 +64,10 @@ class InprocServerTransport final : public ServerTransport {
                             "accept function set");
   }
 
-  void Orphan() override { Unref(); }
+  void Orphan() override {
+    GRPC_TRACE_LOG(inproc, INFO) << "InprocServerTransport::Orphan(): " << this;
+    Unref();
+  }
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return nullptr; }
@@ -158,7 +161,10 @@ class InprocClientTransport final : public ClientTransport {
                }));
   }
 
-  void Orphan() override { delete this; }
+  void Orphan() override {
+    GRPC_TRACE_LOG(inproc, INFO) << "InprocClientTransport::Orphan(): " << this;
+    Unref();
+  }
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
   ClientTransport* client_transport() override { return this; }
