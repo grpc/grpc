@@ -14,6 +14,8 @@
 
 #include "src/core/lib/transport/call_spine.h"
 
+#include "absl/functional/any_invocable.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/promise/for_each.h"
@@ -21,7 +23,9 @@
 
 namespace grpc_core {
 
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
+void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
+                 absl::AnyInvocable<void(ServerMetadata&)>
+                     on_server_trailing_metadata_from_initiator) {
   // Read messages from handler into initiator.
   call_handler.SpawnGuarded("read_messages", [call_handler,
                                               call_initiator]() mutable {
@@ -68,47 +72,56 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
           return Empty();
         });
       });
-  call_initiator.SpawnInfallible("read_the_things", [call_initiator,
-                                                     call_handler]() mutable {
-    return Seq(
-        call_initiator.CancelIfFails(TrySeq(
-            call_initiator.PullServerInitialMetadata(),
+  call_initiator.SpawnInfallible(
+      "read_the_things",
+      [call_initiator, call_handler,
+       on_server_trailing_metadata_from_initiator =
+           std::move(on_server_trailing_metadata_from_initiator)]() mutable {
+        return Seq(
+            call_initiator.CancelIfFails(TrySeq(
+                call_initiator.PullServerInitialMetadata(),
+                [call_handler, call_initiator](
+                    absl::optional<ServerMetadataHandle> md) mutable {
+                  const bool has_md = md.has_value();
+                  return If(
+                      has_md,
+                      [&call_handler, &call_initiator,
+                       md = std::move(md)]() mutable {
+                        call_handler.SpawnGuarded(
+                            "recv_initial_metadata",
+                            [md = std::move(*md), call_handler]() mutable {
+                              return call_handler.PushServerInitialMetadata(
+                                  std::move(md));
+                            });
+                        return ForEach(
+                            OutgoingMessages(call_initiator),
+                            [call_handler](MessageHandle msg) mutable {
+                              return call_handler.SpawnWaitable(
+                                  "recv_message", [msg = std::move(msg),
+                                                   call_handler]() mutable {
+                                    return call_handler.CancelIfFails(
+                                        call_handler.PushMessage(
+                                            std::move(msg)));
+                                  });
+                            });
+                      },
+                      []() -> StatusFlag { return Success{}; });
+                })),
+            call_initiator.PullServerTrailingMetadata(),
             [call_handler,
-             call_initiator](absl::optional<ServerMetadataHandle> md) mutable {
-              const bool has_md = md.has_value();
-              return If(
-                  has_md,
-                  [&call_handler, &call_initiator,
-                   md = std::move(md)]() mutable {
-                    call_handler.SpawnGuarded(
-                        "recv_initial_metadata",
-                        [md = std::move(*md), call_handler]() mutable {
-                          return call_handler.PushServerInitialMetadata(
-                              std::move(md));
-                        });
-                    return ForEach(
-                        OutgoingMessages(call_initiator),
-                        [call_handler](MessageHandle msg) mutable {
-                          return call_handler.SpawnWaitable(
-                              "recv_message",
-                              [msg = std::move(msg), call_handler]() mutable {
-                                return call_handler.CancelIfFails(
-                                    call_handler.PushMessage(std::move(msg)));
-                              });
-                        });
-                  },
-                  []() -> StatusFlag { return Success{}; });
-            })),
-        call_initiator.PullServerTrailingMetadata(),
-        [call_handler](ServerMetadataHandle md) mutable {
-          call_handler.SpawnInfallible(
-              "recv_trailing", [call_handler, md = std::move(md)]() mutable {
-                call_handler.PushServerTrailingMetadata(std::move(md));
-                return Empty{};
-              });
-          return Empty{};
-        });
-  });
+             on_server_trailing_metadata_from_initiator =
+                 std::move(on_server_trailing_metadata_from_initiator)](
+                ServerMetadataHandle md) mutable {
+              on_server_trailing_metadata_from_initiator(*md);
+              call_handler.SpawnInfallible(
+                  "recv_trailing",
+                  [call_handler, md = std::move(md)]() mutable {
+                    call_handler.PushServerTrailingMetadata(std::move(md));
+                    return Empty{};
+                  });
+              return Empty{};
+            });
+      });
 }
 
 CallInitiatorAndHandler MakeCallPair(

@@ -7010,8 +7010,8 @@ grpc_cc_library(
         "ext/transport/inproc/legacy_inproc_transport.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -7028,6 +7028,7 @@ grpc_cc_library(
         "error",
         "experiments",
         "iomgr_fwd",
+        "metadata",
         "metadata_batch",
         "resource_quota",
         "slice",
@@ -7554,7 +7555,10 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_spine.h",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log:check",
+    ],
     deps = [
         "1999",
         "call_arena_allocator",

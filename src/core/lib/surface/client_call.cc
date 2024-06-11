@@ -338,6 +338,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           [this, out_status, out_status_details, out_error_string,
            out_trailing_metadata](
               ServerMetadataHandle server_trailing_metadata) {
+            ResetDeadline();
             GRPC_TRACE_LOG(call, INFO)
                 << DebugTag() << "RecvStatusOnClient "
                 << server_trailing_metadata->DebugString();

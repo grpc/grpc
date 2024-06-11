@@ -441,7 +441,10 @@ auto OutgoingMessages(CallHalf h) {
 
 // Forward a call from `call_handler` to `call_initiator` (with initial metadata
 // `client_initial_metadata`)
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator);
+void ForwardCall(
+    CallHandler call_handler, CallInitiator call_initiator,
+    absl::AnyInvocable<void(ServerMetadata&)>
+        on_server_trailing_metadata_from_initiator = [](ServerMetadata&) {});
 
 }  // namespace grpc_core
 

@@ -32,6 +32,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_create.h"
+#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 
@@ -149,7 +150,10 @@ class InprocClientTransport final : public ClientTransport {
                    return server_call_initiator.status();
                  }
                  ForwardCall(child_call_handler,
-                             std::move(*server_call_initiator));
+                             std::move(*server_call_initiator),
+                             [](ServerMetadata& md) {
+                               md.Set(GrpcStatusFromWire(), true);
+                             });
                  return absl::OkStatus();
                }));
   }
