@@ -298,12 +298,10 @@ TimerList::TimerCheck(grpc_core::Timestamp* next) {
     return std::vector<experimental::EventEngine::Closure*>();
   }
 
-  if (!checker_mu_.TryLock()) return absl::nullopt;
-  std::vector<experimental::EventEngine::Closure*> run =
-      FindExpiredTimers(now, next);
-  checker_mu_.Unlock();
-
-  return std::move(run);
+  {
+    absl::MutexLock lock(&checker_mu_);
+    return FindExpiredTimers(now, next);
+  }
 }
 
 }  // namespace experimental
