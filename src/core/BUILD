@@ -7825,6 +7825,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log:check",
         "absl/strings",
+        "absl/types:optional",
         "absl/types:span",
     ],
     language = "c++",

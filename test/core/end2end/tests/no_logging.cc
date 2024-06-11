@@ -53,7 +53,7 @@ class Verifier {
           static_cast<gpr_log_severity>(GPR_LOG_SEVERITY_ERROR + 1);
     }
     grpc_tracer_set_enabled("all", 0);
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+    grpc_set_absl_verbosity_debug();
     gpr_set_log_function(DispatchLog);
   }
   ~Verifier() {
