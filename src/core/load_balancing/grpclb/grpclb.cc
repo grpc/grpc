@@ -1554,7 +1554,7 @@ class GrpcLb::NullLbTokenEndpointIterator final
 
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] received update", this);
+    LOG(INFO) << "[grpclb " << this << "] received update";
   }
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config.TakeAsSubclass<GrpcLbConfig>();
@@ -1678,13 +1678,13 @@ void GrpcLb::StartBalancerCallLocked() {
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
   Duration timeout = lb_call_backoff_.NextAttemptTime() - Timestamp::Now();
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
+    LOG(INFO) << "[grpclb " << this << "] Connection to LB server lost...";
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout.millis());
     } else {
-      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active immediately.",
-              this);
+      LOG(INFO) << "[grpclb " << this
+                << "] ... retry_timer_active immediately.";
     }
   }
   lb_call_retry_timer_handle_ =
@@ -1707,7 +1707,7 @@ void GrpcLb::OnBalancerCallRetryTimerLocked() {
   lb_call_retry_timer_handle_.reset();
   if (!shutting_down_ && lb_calld_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-      gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", this);
+      LOG(INFO) << "[grpclb " << this << "] Restarting call to LB server";
     }
     StartBalancerCallLocked();
   }

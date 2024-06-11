@@ -184,19 +184,19 @@ class CdsLb final : public LoadBalancingPolicy {
 
 CdsLb::CdsLb(Args args) : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] created", this);
+    LOG(INFO) << "[cdslb " << this << "] created";
   }
 }
 
 CdsLb::~CdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] destroying cds LB policy", this);
+    LOG(INFO) << "[cdslb " << this << "] destroying cds LB policy";
   }
 }
 
 void CdsLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] shutting down", this);
+    LOG(INFO) << "[cdslb " << this << "] shutting down";
   }
   shutting_down_ = true;
   ResetState();

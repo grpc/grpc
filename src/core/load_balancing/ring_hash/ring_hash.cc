@@ -39,7 +39,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_internal.h"
@@ -601,19 +600,19 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
 
 RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    gpr_log(GPR_INFO, "[RH %p] Created", this);
+    LOG(INFO) << "[RH " << this << "] Created";
   }
 }
 
 RingHash::~RingHash() {
   if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    gpr_log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
+    LOG(INFO) << "[RH " << this << "] Destroying Ring Hash policy";
   }
 }
 
 void RingHash::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    gpr_log(GPR_INFO, "[RH %p] Shutting down", this);
+    LOG(INFO) << "[RH " << this << "] Shutting down";
   }
   shutdown_ = true;
   endpoint_map_.clear();
@@ -629,7 +628,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   // Check address list.
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-      gpr_log(GPR_INFO, "[RH %p] received update", this);
+      LOG(INFO) << "[RH " << this << "] received update";
     }
     // De-dup endpoints, taking weight into account.
     endpoints_.clear();

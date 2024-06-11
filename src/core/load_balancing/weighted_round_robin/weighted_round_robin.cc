@@ -715,7 +715,7 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
 
 WeightedRoundRobin::~WeightedRoundRobin() {
   if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    gpr_log(GPR_INFO, "[WRR %p] Destroying Round Robin policy", this);
+    LOG(INFO) << "[WRR " << this << "] Destroying Round Robin policy";
   }
   CHECK(endpoint_list_ == nullptr);
   CHECK(latest_pending_endpoint_list_ == nullptr);
@@ -723,7 +723,7 @@ WeightedRoundRobin::~WeightedRoundRobin() {
 
 void WeightedRoundRobin::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    gpr_log(GPR_INFO, "[WRR %p] Shutting down", this);
+    LOG(INFO) << "[WRR " << this << "] Shutting down";
   }
   shutdown_ = true;
   endpoint_list_.reset();
@@ -743,7 +743,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   std::shared_ptr<EndpointAddressesIterator> addresses;
   if (args.addresses.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      gpr_log(GPR_INFO, "[WRR %p] received update", this);
+      LOG(INFO) << "[WRR " << this << "] received update";
     }
     // Weed out duplicate endpoints.  Also sort the endpoints so that if
     // the set of endpoints doesn't change, their indexes in the endpoint

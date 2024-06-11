@@ -259,7 +259,7 @@ XdsClusterManagerLb::~XdsClusterManagerLb() {
 
 void XdsClusterManagerLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] shutting down", this);
+    LOG(INFO) << "[xds_cluster_manager_lb " << this << "] shutting down";
   }
   shutting_down_ = true;
   children_.clear();
@@ -276,7 +276,7 @@ void XdsClusterManagerLb::ResetBackoffLocked() {
 absl::Status XdsClusterManagerLb::UpdateLocked(UpdateArgs args) {
   if (shutting_down_) return absl::OkStatus();
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] Received update", this);
+    LOG(INFO) << "[xds_cluster_manager_lb " << this << "] Received update";
   }
   update_in_progress_ = true;
   // Update config.
