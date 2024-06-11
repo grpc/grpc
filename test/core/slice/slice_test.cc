@@ -401,7 +401,12 @@ TEST(SliceTest, ExternalAsOwned) {
   // In ASAN (where we can be sure that it'll crash), go ahead and read the
   // bytes we just deleted.
   if (BuiltUnderAsan()) {
-    ASSERT_DEATH({ VLOG(2) << SumSlice(slice); }, "");
+    ASSERT_DEATH(
+        {
+          size_t sum = SumSlice(slice);
+          VLOG(2) << sum;
+        },
+        "");
   }
   EXPECT_EQ(initial_sum, SumSlice(owned));
 }
