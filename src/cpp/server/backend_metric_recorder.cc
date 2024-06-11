@@ -177,7 +177,7 @@ void ServerMetricRecorder::ClearCpuUtilization() {
   UpdateBackendMetricDataState(
       [](BackendMetricData* data) { data->cpu_utilization = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] CPU utilization cleared.", this);
+    LOG(INFO) << "[" << this << "] CPU utilization cleared.";
   }
 }
 
@@ -185,7 +185,7 @@ void ServerMetricRecorder::ClearMemoryUtilization() {
   UpdateBackendMetricDataState(
       [](BackendMetricData* data) { data->mem_utilization = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] Mem utilization cleared.", this);
+    LOG(INFO) << "[" << this << "] Mem utilization cleared.";
   }
 }
 
@@ -193,21 +193,21 @@ void ServerMetricRecorder::ClearApplicationUtilization() {
   UpdateBackendMetricDataState(
       [](BackendMetricData* data) { data->application_utilization = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] Application utilization cleared.", this);
+    LOG(INFO) << "[" << this << "] Application utilization cleared.";
   }
 }
 
 void ServerMetricRecorder::ClearQps() {
   UpdateBackendMetricDataState([](BackendMetricData* data) { data->qps = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] QPS utilization cleared.", this);
+    LOG(INFO) << "[" << this << "] QPS utilization cleared.";
   }
 }
 
 void ServerMetricRecorder::ClearEps() {
   UpdateBackendMetricDataState([](BackendMetricData* data) { data->eps = -1; });
   if (GRPC_TRACE_FLAG_ENABLED(backend_metric)) {
-    gpr_log(GPR_INFO, "[%p] EPS utilization cleared.", this);
+    LOG(INFO) << "[" << this << "] EPS utilization cleared.";
   }
 }
 
