@@ -1,4 +1,4 @@
-// Copyright 2021 gRPC authors.
+// Copyright 2024 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,8 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/resource_quota/trace.h"
+#ifndef GRPC_SRC_CORE_LIB_GPRPP_GLOB_H
+#define GRPC_SRC_CORE_LIB_GPRPP_GLOB_H
 
-#include <grpc/support/port_platform.h>
+#include "absl/strings/string_view.h"
 
-grpc_core::TraceFlag grpc_resource_quota_trace(false, "resource_quota");
+namespace grpc_core {
+
+// A basic glob matcher based on https://research.swtch.com/glob.
+// This supports `?` (a single wildcard character), and `*` (multiple wildcard
+// characters).
+bool GlobMatch(absl::string_view name, absl::string_view pattern);
+
+}  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_LIB_GPRPP_GLOB_H

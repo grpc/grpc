@@ -26,6 +26,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -51,7 +52,6 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
@@ -146,8 +146,6 @@ struct secure_endpoint {
 };
 }  // namespace
 
-grpc_core::TraceFlag grpc_trace_secure_endpoint(false, "secure_endpoint");
-
 static void destroy(secure_endpoint* ep) { delete ep; }
 
 #ifndef NDEBUG
@@ -157,7 +155,7 @@ static void destroy(secure_endpoint* ep) { delete ep; }
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
+  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -170,7 +168,7 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
 
 static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
+  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -198,7 +196,7 @@ static void maybe_post_reclaimer(secure_endpoint* ep) {
         grpc_core::ReclamationPass::kBenign,
         [ep](absl::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
-            if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+            if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
               gpr_log(GPR_INFO,
                       "secure endpoint: benign reclamation to free memory");
             }
@@ -235,13 +233,12 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint) &&
-      gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
+  if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "READ %p: %s", ep, data);
+      VLOG(2) << "READ " << ep << ": " << data;
       gpr_free(data);
     }
   }
@@ -403,12 +400,11 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
     grpc_slice_buffer_reset_and_unref(&ep->output_buffer);
 
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint) &&
-        gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
+    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
       for (i = 0; i < slices->count; i++) {
         char* data =
             grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        gpr_log(GPR_INFO, "WRITE %p: %s", ep, data);
+        VLOG(2) << "WRITE " << ep << ": " << data;
         gpr_free(data);
       }
     }

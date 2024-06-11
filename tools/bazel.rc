@@ -44,6 +44,12 @@ build:macos --dynamic_mode=off
 build:windows_opt --compilation_mode=opt
 build:windows_dbg --compilation_mode=dbg
 
+build:clang-cl --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-clang-cl
+build:clang-cl --extra_execution_platforms=//:x64_windows-clang-cl
+build:clang-cl --incompatible_enable_cc_toolchain_resolution
+build:clang-cl --define=use_strict_warning_windows=true
+build:clang-cl --compiler=clang-cl
+
 build:asan --strip=never
 build:asan --copt=-fsanitize=address
 build:asan --copt=-O0

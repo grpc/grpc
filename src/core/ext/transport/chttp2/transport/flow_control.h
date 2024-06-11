@@ -41,8 +41,6 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 
-extern grpc_core::TraceFlag grpc_flowctl_trace;
-
 namespace grpc {
 namespace testing {
 class TrickledCHTTP2;  // to make this a friend

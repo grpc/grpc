@@ -25,6 +25,7 @@
 #include <limits.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
@@ -53,8 +54,6 @@
 #else
 #define GRPC_FIONBIO FIONBIO
 #endif
-
-extern grpc_core::TraceFlag grpc_tcp_trace;
 
 grpc_error_handle grpc_tcp_set_non_block(SOCKET sock) {
   int status;
@@ -141,7 +140,7 @@ static void tcp_free(grpc_tcp* tcp) {
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
                       int line) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
@@ -154,7 +153,7 @@ static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
 
 static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
                     int line) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
@@ -181,7 +180,7 @@ static void on_read(void* tcpp, grpc_error_handle error) {
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->read_info;
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p on_read", tcp);
   }
 
@@ -202,19 +201,18 @@ static void on_read(void* tcpp, grpc_error_handle error) {
         }
         CHECK((size_t)info->bytes_transferred == tcp->read_slices->length);
 
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
-            gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
+        if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
           size_t i;
           for (i = 0; i < tcp->read_slices->count; i++) {
             char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                          GPR_DUMP_HEX | GPR_DUMP_ASCII);
-            gpr_log(GPR_INFO, "READ %p (peer=%s): %s", tcp,
-                    tcp->peer_string.c_str(), dump);
+            VLOG(2) << "READ " << tcp << " (peer=" << tcp->peer_string
+                    << "): " << dump;
             gpr_free(dump);
           }
         }
       } else {
-        if (grpc_tcp_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
           gpr_log(GPR_INFO, "TCP:%p unref read_slice", tcp);
         }
         grpc_slice_buffer_reset_and_unref(tcp->read_slices);
@@ -245,7 +243,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   WSABUF buffers[MAX_WSABUF_COUNT];
   size_t i;
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p win_read", tcp);
   }
 
@@ -316,7 +314,7 @@ static void on_write(void* tcpp, grpc_error_handle error) {
   grpc_winsocket_callback_info* info = &handle->write_info;
   grpc_closure* cb;
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "TCP:%p on_write", tcp);
   }
 
@@ -352,14 +350,13 @@ static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   WSABUF* buffers = local_buffers;
   size_t len, async_buffers_offset = 0;
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) &&
-      gpr_should_log(GPR_LOG_SEVERITY_INFO)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp) && ABSL_VLOG_IS_ON(2)) {
     size_t i;
     for (i = 0; i < slices->count; i++) {
       char* data =
           grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_INFO, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string.c_str(),
-              data);
+      VLOG(2) << "WRITE " << tcp << " (peer=" << tcp->peer_string
+              << "): " << data;
       gpr_free(data);
     }
   }

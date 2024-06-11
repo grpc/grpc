@@ -69,13 +69,19 @@ void WinSocket::Shutdown() {
   int status = WSAIoctl(socket_, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid,
                         sizeof(guid), &DisconnectEx, sizeof(DisconnectEx),
                         &ioctl_num_bytes, NULL, NULL);
-
-  if (status == 0) {
-    DisconnectEx(socket_, NULL, 0, 0);
-  } else {
+  if (status != 0) {
     char* utf8_message = gpr_format_message(WSAGetLastError());
     LOG(INFO) << "Unable to retrieve DisconnectEx pointer : " << utf8_message;
     gpr_free(utf8_message);
+  } else if (DisconnectEx(socket_, NULL, 0, 0) == FALSE) {
+    auto last_error = WSAGetLastError();
+    // DisconnectEx may be called when the socket is not connected. Ignore that
+    // error, and log all others.
+    if (last_error != WSAENOTCONN) {
+      char* utf8_message = gpr_format_message(last_error);
+      LOG(INFO) << "DisconnectEx failed: " << utf8_message;
+      gpr_free(utf8_message);
+    }
   }
   closesocket(socket_);
   GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WinSocket::%p socket closed", this);
@@ -91,7 +97,7 @@ void WinSocket::Shutdown(const grpc_core::DebugLocation& location,
 
 void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
   if (IsShutdown()) {
-    info.SetError(WSAESHUTDOWN);
+    info.SetResult(WSAESHUTDOWN, 0, "NotifyOnReady");
     thread_pool_->Run(closure);
     return;
   };
@@ -130,12 +136,13 @@ void WinSocket::OpState::SetReady() {
   win_socket_->thread_pool_->Run(closure);
 }
 
-void WinSocket::OpState::SetError(int wsa_error) {
-  result_ = OverlappedResult{/*wsa_error=*/wsa_error, /*bytes_transferred=*/0};
-}
-
-void WinSocket::OpState::SetResult(OverlappedResult result) {
-  result_ = result;
+void WinSocket::OpState::SetResult(int wsa_error, DWORD bytes,
+                                   absl::string_view context) {
+  bytes = wsa_error == 0 ? bytes : 0;
+  result_ = OverlappedResult{
+      /*wsa_error=*/wsa_error, /*bytes_transferred=*/bytes,
+      /*error_status=*/wsa_error == 0 ? absl::OkStatus()
+                                      : GRPC_WSA_ERROR(wsa_error, context)};
 }
 
 void WinSocket::OpState::SetErrorStatus(absl::Status error_status) {
@@ -149,16 +156,15 @@ void WinSocket::OpState::GetOverlappedResult() {
 
 void WinSocket::OpState::GetOverlappedResult(SOCKET sock) {
   if (win_socket_->IsShutdown()) {
-    result_ = OverlappedResult{/*wsa_error=*/WSA_OPERATION_ABORTED,
-                               /*bytes_transferred=*/0};
+    SetResult(WSA_OPERATION_ABORTED, 0, "GetOverlappedResult");
     return;
   }
   DWORD flags = 0;
   DWORD bytes;
   BOOL success =
       WSAGetOverlappedResult(sock, &overlapped_, &bytes, FALSE, &flags);
-  result_ = OverlappedResult{/*wsa_error=*/success ? 0 : WSAGetLastError(),
-                             /*bytes_transferred=*/bytes};
+  auto wsa_error = success ? 0 : WSAGetLastError();
+  SetResult(wsa_error, bytes, "WSAGetOverlappedResult");
 }
 
 bool WinSocket::IsShutdown() { return is_shutdown_.load(); }

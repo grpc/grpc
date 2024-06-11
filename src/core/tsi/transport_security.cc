@@ -25,10 +25,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-// --- Tracing. ---
-
-grpc_core::TraceFlag tsi_tracing_enabled(false, "tsi");
-
 // --- tsi_result common implementation. ---
 
 const char* tsi_result_to_string(tsi_result result) {

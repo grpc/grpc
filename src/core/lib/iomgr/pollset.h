@@ -26,8 +26,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount;
-
 // A grpc_pollset is a set of file descriptors that a higher level item is
 // interested in. For example:
 //  - a server will typically keep a pollset containing all connected channels,

@@ -330,10 +330,9 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   if (!gpr_atm_rel_cas(&cancelled_with_error_, 0, 1)) {
     return;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
-    gpr_log(GPR_INFO, "CancelWithError %s %s", is_client() ? "CLI" : "SVR",
-            StatusToString(error).c_str());
-  }
+  GRPC_TRACE_LOG(call_error, INFO)
+      << "CancelWithError " << (is_client() ? "CLI" : "SVR") << " "
+      << StatusToString(error);
   ClearPeerString();
   InternalRef("termination");
   ResetDeadline();
@@ -354,10 +353,9 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
 }
 
 void FilterStackCall::SetFinalStatus(grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
-    gpr_log(GPR_INFO, "set_final_status %s %s", is_client() ? "CLI" : "SVR",
-            StatusToString(error).c_str());
-  }
+  GRPC_TRACE_LOG(call_error, INFO)
+      << "set_final_status " << (is_client() ? "CLI" : "SVR") << " "
+      << StatusToString(error);
   ResetDeadline();
   if (is_client()) {
     std::string status_details;
@@ -544,11 +542,10 @@ void FilterStackCall::BatchControl::PostCompletion() {
     }
   }
 
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "tag:%p batch_error=%s op:%s",
-            completion_data_.notify_tag.tag, error.ToString().c_str(),
-            grpc_transport_stream_op_batch_string(&op_, false).c_str());
-  }
+  GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag
+                           << " batch_error=" << error << " op:"
+                           << grpc_transport_stream_op_batch_string(&op_,
+                                                                    false);
 
   if (op_.send_initial_metadata) {
     call->send_initial_metadata_.Clear();
@@ -629,14 +626,12 @@ void FilterStackCall::BatchControl::ProcessDataAfterMetadata() {
 
 void FilterStackCall::BatchControl::ReceivingStreamReady(
     grpc_error_handle error) {
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
-            "tag:%p ReceivingStreamReady error=%s "
-            "receiving_slice_buffer.has_value=%d recv_state=%" PRIdPTR,
-            completion_data_.notify_tag.tag, error.ToString().c_str(),
-            call_->receiving_slice_buffer_.has_value(),
-            gpr_atm_no_barrier_load(&call_->recv_state_));
-  }
+  GRPC_TRACE_VLOG(call, 2) << "tag:" << completion_data_.notify_tag.tag
+                           << " ReceivingStreamReady error=" << error
+                           << " receiving_slice_buffer.has_value="
+                           << call_->receiving_slice_buffer_.has_value()
+                           << " recv_state="
+                           << gpr_atm_no_barrier_load(&call_->recv_state_);
   FilterStackCall* call = call_;
   if (!error.ok()) {
     call->receiving_slice_buffer_.reset();
@@ -1101,12 +1096,10 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     stream_op->on_complete = &bctl->finish_batch_;
   }
 
-  if (grpc_call_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "BATCH:%p START:%s BATCH:%s (tag:%p)", bctl,
-            PendingOpString(pending_ops).c_str(),
-            grpc_transport_stream_op_batch_string(stream_op, false).c_str(),
-            bctl->completion_data_.notify_tag.tag);
-  }
+  GRPC_TRACE_VLOG(call, 2)
+      << "BATCH:" << bctl << " START:" << PendingOpString(pending_ops)
+      << " BATCH:" << grpc_transport_stream_op_batch_string(stream_op, false)
+      << " (tag:" << bctl->completion_data_.notify_tag.tag << ")";
   ExecuteBatch(stream_op, &bctl->start_batch_);
 
 done:

@@ -88,6 +88,4 @@ void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 
 bool grpc_combiner_continue_exec_ctx();
 
-extern grpc_core::DebugOnlyTraceFlag grpc_combiner_trace;
-
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_COMBINER_H

@@ -46,8 +46,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_backend_metric_filter_trace(false, "backend_metric_filter");
-
 const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
 const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
@@ -131,20 +129,20 @@ void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
       gpr_log(GPR_INFO, "[%p] No BackendMetricProvider.", this);
     }
     return;
   }
   absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
   if (serialized.has_value() && !serialized->empty()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
       gpr_log(GPR_INFO, "[%p] Backend metrics serialized. size: %" PRIuPTR,
               this, serialized->size());
     }
     md.Set(EndpointLoadMetricsBinMetadata(),
            Slice::FromCopiedString(std::move(*serialized)));
-  } else if (GRPC_TRACE_FLAG_ENABLED(grpc_backend_metric_filter_trace)) {
+  } else if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
     gpr_log(GPR_INFO, "[%p] No backend metrics.", this);
   }
 }

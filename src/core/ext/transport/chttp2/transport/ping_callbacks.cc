@@ -23,8 +23,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-grpc_core::TraceFlag grpc_ping_trace(false, "http2_ping");
-
 namespace grpc_core {
 
 void Chttp2PingCallbacks::OnPing(Callback on_start, Callback on_ack) {

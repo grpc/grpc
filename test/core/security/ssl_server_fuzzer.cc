@@ -29,6 +29,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/test_util/mock_endpoint.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -42,8 +43,6 @@ bool squelch = true;
 // ssl has an array of global gpr_mu's that are never released.
 // Turning this on will fail the leak check.
 bool leak_check = false;
-
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 struct handshake_state {
   grpc_core::Notification done_signal;
@@ -60,7 +59,9 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

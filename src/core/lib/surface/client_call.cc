@@ -54,7 +54,6 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/telemetry/stats.h"
@@ -145,10 +144,8 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
   cancel_status_.Set(new absl::Status(error));
   auto cur_state = call_state_.load(std::memory_order_acquire);
   while (true) {
-    if (grpc_call_trace.enabled()) {
-      LOG(INFO) << DebugTag() << "CancelWithError "
-                << GRPC_DUMP_ARGS(cur_state, error);
-    }
+    GRPC_TRACE_LOG(call, INFO)
+        << DebugTag() << "CancelWithError " << GRPC_DUMP_ARGS(cur_state, error);
     switch (cur_state) {
       case kCancelled:
         return;
@@ -341,10 +338,9 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           [this, out_status, out_status_details, out_error_string,
            out_trailing_metadata](
               ServerMetadataHandle server_trailing_metadata) {
-            if (grpc_call_trace.enabled()) {
-              LOG(INFO) << DebugTag() << "RecvStatusOnClient "
-                        << server_trailing_metadata->DebugString();
-            }
+            GRPC_TRACE_LOG(call, INFO)
+                << DebugTag() << "RecvStatusOnClient "
+                << server_trailing_metadata->DebugString();
             const auto status =
                 server_trailing_metadata->get(GrpcStatusMetadata())
                     .value_or(GRPC_STATUS_UNKNOWN);

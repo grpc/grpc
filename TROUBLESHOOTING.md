@@ -4,15 +4,26 @@ This guide is for troubleshooting gRPC implementations based on C core library (
 
 ## Enabling extra logging and tracing
 
-Extra logging can be very useful for diagnosing problems. All gRPC implementations based on C core library support
-the `GRPC_VERBOSITY` and `GRPC_TRACE` environment variables that can be used to increase the amount of information
+Extra logging can be very useful for diagnosing problems. It can be used to increase the amount of information
 that gets printed to stderr.
 
 ## GRPC_VERBOSITY
 
-`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO` and `ERROR`). If this environment variable is unset, only `ERROR` logs will be printed.
+<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION
+GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
+If anyone wants to debug, we need to set verbose logs using absl.
+END_GOOGLE_INTERNAL_DOCUMENTATION -->
+
+<!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
+`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO` and `ERROR`). If this environment variable is unset, only `ERROR` logs will be printed. `ERROR` is recomeded for production systems.
+<!-- END_OPEN_SOURCE_DOCUMENTATION -->
 
 ## GRPC_TRACE
+
+<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION
+GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
+If anyone wants to debug, we need to set verbose logs using absl.
+END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
 `GRPC_TRACE` can be used to enable extra logging for some internal gRPC components. Enabling the right traces can be invaluable
 for diagnosing for what is going wrong when things aren't working as intended. Possible values for `GRPC_TRACE` are listed in [Environment Variables Overview](doc/environment_variables.md).

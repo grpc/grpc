@@ -140,6 +140,9 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTest, NoLoggingTest) {
+// This test makes sure that we dont get spammy logs when making an rpc
+// especially when rpcs are successful.
+
 // TODO(hork): remove when the listener flake is identified
 #ifdef GPR_WINDOWS
   if (IsEventEngineListenerEnabled()) {

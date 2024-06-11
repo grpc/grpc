@@ -51,7 +51,6 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
@@ -120,8 +119,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   }
   auto json = grpc_core::JsonParse(string);
   if (!json.ok()) {
-    gpr_log(GPR_ERROR, "JSON parse error: %s",
-            json.status().ToString().c_str());
+    LOG(ERROR) << "JSON parse error: " << json.status();
     return Json();  // JSON null
   }
   return std::move(*json);
@@ -129,7 +127,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
 
 static const char* validate_string_field(const Json& json, const char* key) {
   if (json.type() != Json::Type::kString) {
-    gpr_log(GPR_ERROR, "Invalid %s field", key);
+    LOG(ERROR) << "Invalid " << key << " field";
     return nullptr;
   }
   return json.string().c_str();
@@ -138,7 +136,7 @@ static const char* validate_string_field(const Json& json, const char* key) {
 static gpr_timespec validate_time_field(const Json& json, const char* key) {
   gpr_timespec result = gpr_time_0(GPR_CLOCK_REALTIME);
   if (json.type() != Json::Type::kNumber) {
-    gpr_log(GPR_ERROR, "Invalid %s field", key);
+    LOG(ERROR) << "Invalid " << key << " field";
     return result;
   }
   result.tv_sec = strtol(json.string().c_str(), nullptr, 10);
@@ -335,9 +333,9 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
   // issued.
   if (grpc_jwt_issuer_email_domain(claims->iss) != nullptr &&
       claims->sub != nullptr && strcmp(claims->iss, claims->sub) != 0) {
-    gpr_log(GPR_ERROR,
-            "Email issuer (%s) cannot assert another subject (%s) than itself.",
-            claims->iss, claims->sub);
+    LOG(ERROR) << "Email issuer (" << claims->iss
+               << ") cannot assert another subject (" << claims->sub
+               << ") than itself.";
     return GRPC_JWT_VERIFIER_BAD_SUBJECT;
   }
 
@@ -347,9 +345,9 @@ grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
     audience_ok = claims->aud != nullptr && strcmp(audience, claims->aud) == 0;
   }
   if (!audience_ok) {
-    gpr_log(GPR_ERROR, "Audience mismatch: expected %s and found %s.",
-            audience == nullptr ? "NULL" : audience,
-            claims->aud == nullptr ? "NULL" : claims->aud);
+    LOG(ERROR) << "Audience mismatch: expected "
+               << (audience == nullptr ? "NULL" : audience) << " and found "
+               << (claims->aud == nullptr ? "NULL" : claims->aud);
     return GRPC_JWT_VERIFIER_BAD_AUDIENCE;
   }
   return GRPC_JWT_VERIFIER_OK;
@@ -435,8 +433,7 @@ static Json json_from_http(const grpc_http_response* response) {
     return Json();  // JSON null
   }
   if (response->status != 200) {
-    gpr_log(GPR_ERROR, "Call to http server failed with error %d.",
-            response->status);
+    LOG(ERROR) << "Call to http server failed with error " << response->status;
     return Json();  // JSON null
   }
   auto json = grpc_core::JsonParse(
@@ -535,7 +532,7 @@ static EVP_PKEY* pkey_from_jwk(const Json& json, const char* kty) {
   CHECK(json.type() == Json::Type::kObject);
   CHECK_NE(kty, nullptr);
   if (strcmp(kty, "RSA") != 0) {
-    gpr_log(GPR_ERROR, "Unsupported key type %s.", kty);
+    LOG(ERROR) << "Unsupported key type " << kty;
     goto end;
   }
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
@@ -646,9 +643,8 @@ static EVP_PKEY* find_verification_key(const Json& json, const char* header_alg,
       return pkey_from_jwk(jkey, kty);
     }
   }
-  gpr_log(GPR_ERROR,
-          "Could not find matching key in key set for kid=%s and alg=%s",
-          header_kid, header_alg);
+  LOG(ERROR) << "Could not find matching key in key set for kid=" << header_kid
+             << " and alg=" << header_alg;
   return nullptr;
 }
 
@@ -700,8 +696,8 @@ static void on_keys_retrieved(void* user_data, grpc_error_handle /*error*/) {
   verification_key =
       find_verification_key(json, ctx->header->alg, ctx->header->kid);
   if (verification_key == nullptr) {
-    gpr_log(GPR_ERROR, "Could not find verification key with kid %s.",
-            ctx->header->kid);
+    LOG(ERROR) << "Could not find verification key with kid "
+               << ctx->header->kid;
     status = GRPC_JWT_VERIFIER_KEY_RETRIEVAL_ERROR;
     goto end;
   }
@@ -748,7 +744,7 @@ static void on_openid_config_retrieved(void* user_data,
   jwks_uri = validate_string_field(*cur, "jwks_uri");
   if (jwks_uri == nullptr) goto error;
   if (strstr(jwks_uri, "https://") != jwks_uri) {
-    gpr_log(GPR_ERROR, "Invalid non https jwks_uri: %s.", jwks_uri);
+    LOG(ERROR) << "Invalid non https jwks_uri: " << jwks_uri;
     goto error;
   }
   jwks_uri += 8;

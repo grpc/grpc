@@ -47,12 +47,11 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_sync_fuzzer.pb.h"
 
 bool squelch = true;
 bool leak_check = true;
-
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace grpc_core {
 namespace {
@@ -170,7 +169,9 @@ void FuzzOneInput(const hpack_sync_fuzzer::Msg& msg) {
 }  // namespace grpc_core
 
 DEFINE_PROTO_FUZZER(const hpack_sync_fuzzer::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   grpc_core::FuzzOneInput(msg);

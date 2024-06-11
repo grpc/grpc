@@ -225,7 +225,7 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
 void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
   // We expect something cancelled before now
   if (server_trailing_metadata_ == nullptr) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     gpr_log(but_where.file(), but_where.line(), GPR_LOG_SEVERITY_DEBUG,
             "Cancelling due to failed pipe operation: %s",
             DebugString().c_str());
@@ -237,7 +237,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   CHECK(md != nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
     gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
             GetContext<Activity>()->DebugTag().c_str(), this,
             md->DebugString().c_str(), DebugString().c_str());
@@ -380,7 +380,7 @@ void filters_detail::PipeState::DropPush() {
     case ValueState::kReady:
     case ValueState::kProcessing:
     case ValueState::kWaiting:
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%p drop push in state %s", this,
                 DebugString().c_str());
       }
@@ -400,7 +400,7 @@ void filters_detail::PipeState::DropPull() {
     case ValueState::kReady:
     case ValueState::kProcessing:
     case ValueState::kWaiting:
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_promise_primitives)) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%p drop pull in state %s", this,
                 DebugString().c_str());
       }

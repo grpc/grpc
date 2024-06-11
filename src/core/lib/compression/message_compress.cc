@@ -28,7 +28,6 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice.h"
@@ -63,7 +62,7 @@ static int zlib_body(z_stream* zs, grpc_slice_buffer* input,
       }
       r = flate(zs, flush);
       if (r < 0 && r != Z_BUF_ERROR /* not fatal */) {
-        gpr_log(GPR_INFO, "zlib error (%d)", r);
+        LOG(INFO) << "zlib error (" << r << ")";
         goto error;
       }
     } while (zs->avail_out == 0);

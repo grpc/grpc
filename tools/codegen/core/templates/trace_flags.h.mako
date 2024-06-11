@@ -1,4 +1,4 @@
-// Copyright 2015 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@
 #define GRPC_SRC_CORE_LIB_DEBUG_TRACE_FLAGS_H
 
 #include "src/core/lib/debug/trace_impl.h"
-
 
 namespace grpc_core {
 

@@ -43,12 +43,12 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/test_config.h"
 
 using ::grpc_event_engine::experimental::FuzzingEventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 bool squelch = true;
-static void dont_log(gpr_log_func_args* /*args*/) {}
 
 namespace grpc_core {
 
@@ -92,7 +92,7 @@ void RunEnd2endFuzzer(const core_end2end_test_fuzzer::Msg& msg) {
   const int test_id = msg.test_id() % tests.size();
 
   if (squelch && !GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_set_log_function(dont_log);
+    grpc_disable_all_absl_logs();
   }
 
   // TODO(ctiller): make this per fixture?

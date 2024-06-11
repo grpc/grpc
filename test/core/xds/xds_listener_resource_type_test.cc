@@ -78,9 +78,6 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
-TraceFlag xds_listener_resource_type_test_trace(
-    true, "xds_listener_resource_type_test");
-
 class XdsListenerTest : public ::testing::Test {
  protected:
   XdsListenerTest()

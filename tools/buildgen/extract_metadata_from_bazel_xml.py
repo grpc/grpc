@@ -544,11 +544,11 @@ def update_test_metadata_with_transitive_metadata(
 
         bazel_rule = bazel_rules[_get_bazel_label(lib_name)]
 
-        if "//external:benchmark" in bazel_rule["_TRANSITIVE_DEPS"]:
+        if "//third_party:benchmark" in bazel_rule["_TRANSITIVE_DEPS"]:
             lib_dict["benchmark"] = True
             lib_dict["defaults"] = "benchmark"
 
-        if "//external:gtest" in bazel_rule["_TRANSITIVE_DEPS"]:
+        if "//third_party:gtest" in bazel_rule["_TRANSITIVE_DEPS"]:
             # run_tests.py checks the "gtest" property to see if test should be run via gtest.
             lib_dict["gtest"] = True
             # TODO: this might be incorrect categorization of the test...
@@ -672,7 +672,7 @@ def _patch_grpc_proto_library_rules(bazel_rules):
             and generator_func == "grpc_proto_library"
         ):
             # Add explicit protobuf dependency for internal c++ proto targets.
-            bazel_rule["deps"].append("//external:protobuf")
+            bazel_rule["deps"].append("//third_party:protobuf")
 
 
 def _patch_descriptor_upb_proto_library(bazel_rules):
@@ -1333,8 +1333,8 @@ _BAZEL_DEPS_QUERIES = [
     'deps("//test/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
-    # allow resolving bind() workspace rules to the actual targets they point to
-    'kind(bind, "//external:*")',
+    # allow resolving alias() targets to the actual targets they point to
+    'kind(alias, "//third_party:*")',
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds

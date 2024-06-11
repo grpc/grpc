@@ -46,8 +46,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_metadata_query_trace(false, "metadata_query");
-
 constexpr const char GcpMetadataQuery::kZoneAttribute[];
 constexpr const char GcpMetadataQuery::kClusterNameAttribute[];
 constexpr const char GcpMetadataQuery::kRegionAttribute[];
@@ -102,11 +100,10 @@ void GcpMetadataQuery::Orphan() {
 
 void GcpMetadataQuery::OnDone(void* arg, grpc_error_handle error) {
   auto* self = static_cast<GcpMetadataQuery*>(arg);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
-    gpr_log(GPR_INFO, "MetadataServer Query for %s: HTTP status: %d, error: %s",
-            self->attribute_.c_str(), self->response_.status,
-            StatusToString(error).c_str());
-  }
+  GRPC_TRACE_LOG(metadata_query, INFO)
+      << "MetadataServer Query for " << self->attribute_
+      << ": HTTP status: " << self->response_.status
+      << ", error: " << StatusToString(error);
   absl::StatusOr<std::string> result;
   if (!error.ok()) {
     result = absl::UnavailableError(absl::StrFormat(
@@ -123,9 +120,7 @@ void GcpMetadataQuery::OnDone(void* arg, grpc_error_handle error) {
       result = absl::UnavailableError(
           absl::StrFormat("MetadataServer Could not parse zone: %s",
                           std::string(body).c_str()));
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_metadata_query_trace)) {
-        LOG(INFO) << result.status().ToString();
-      }
+      GRPC_TRACE_LOG(metadata_query, INFO) << result.status();
     } else {
       result = std::string(body.substr(pos + 1));
     }

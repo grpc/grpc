@@ -54,7 +54,20 @@ def grpc_fuzzer(name, corpus, owner = "grpc", srcs = [], tags = [], external_dep
         **kwargs
     )
 
-def grpc_proto_fuzzer(name, corpus, proto, owner = "grpc", proto_deps = [], external_deps = [], srcs = [], tags = [], deps = [], data = [], size = "large", **kwargs):
+def grpc_proto_fuzzer(
+        name,
+        corpus,
+        proto,
+        owner = "grpc",  # @unused
+        proto_deps = [],
+        external_deps = [],
+        srcs = [],
+        tags = [],
+        deps = [],
+        end2end_fuzzer = False,  # @unused
+        data = [],
+        size = "large",
+        **kwargs):
     """Instantiates a protobuf mutator fuzzer test.
 
     Args:
@@ -72,8 +85,11 @@ def grpc_proto_fuzzer(name, corpus, proto, owner = "grpc", proto_deps = [], exte
         size: The size of the test.
         tags: The tags for the test.
         owner: The owning team of the test (for auto-bug-filing).
+        end2end_fuzzer: Flag to enable end2end fuzzers.
+                        This is currently False and ignored
         **kwargs: Other arguments to supply to the test.
     """
+
     CORPUS_DIR = native.package_name() + "/" + corpus
     deps = deps + ["@com_google_libprotobuf_mutator//:libprotobuf_mutator"]
 

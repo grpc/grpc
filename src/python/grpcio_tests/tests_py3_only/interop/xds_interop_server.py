@@ -218,8 +218,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--enable_csm_observability",
         help="Whether to enable CSM Observability",
-        default=False,
-        action="store_true",
+        default="False",
+        type=bool_arg,
     )
     args = parser.parse_args()
     if args.verbose:

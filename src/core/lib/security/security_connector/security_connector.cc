@@ -32,9 +32,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/util/useful.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
-    false, "security_connector_refcount");
-
 grpc_channel_security_connector::grpc_channel_security_connector(
     absl::string_view url_scheme,
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,

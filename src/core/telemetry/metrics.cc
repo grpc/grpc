@@ -17,6 +17,7 @@
 #include <memory>
 
 #include "absl/log/check.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -159,6 +160,19 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
     }
   }
   return group;
+}
+
+absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+GlobalInstrumentsRegistry::FindInstrumentByName(absl::string_view name) {
+  const auto& instruments = GetInstrumentList();
+  for (const auto& descriptor : instruments) {
+    if (descriptor.name == name) {
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle;
+      handle.index = descriptor.index;
+      return handle;
+    }
+  }
+  return absl::nullopt;
 }
 
 }  // namespace grpc_core

@@ -39,12 +39,10 @@
 #include "src/core/lib/gprpp/time_util.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_apple_polling_trace(false, "apple_polling");
-
 #ifndef NDEBUG
-#define GRPC_POLLING_TRACE(format, ...)                    \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_apple_polling_trace)) { \
-    gpr_log(GPR_DEBUG, "(polling) " format, __VA_ARGS__);  \
+#define GRPC_POLLING_TRACE(format, ...)                   \
+  if (GRPC_TRACE_FLAG_ENABLED(apple_polling)) {           \
+    gpr_log(GPR_DEBUG, "(polling) " format, __VA_ARGS__); \
   }
 #else
 #define GRPC_POLLING_TRACE(...)

@@ -38,8 +38,6 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
-extern grpc_core::TraceFlag grpc_tcp_trace;
-
 /// Create a tcp endpoint given a file desciptor and a read slice size.
 /// Takes ownership of \a fd. Takes ownership of the \a slice_allocator.
 grpc_endpoint* grpc_tcp_create(grpc_fd* fd,

@@ -132,6 +132,18 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
       return *this;
     }
 
+    Options& add_per_channel_stats_plugin(
+        std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin) {
+      per_channel_stats_plugins.emplace_back(std::move(plugin));
+      return *this;
+    }
+
+    Options& add_per_server_stats_plugin(
+        std::shared_ptr<grpc::experimental::OpenTelemetryPlugin> plugin) {
+      per_server_stats_plugins.emplace_back(std::move(plugin));
+      return *this;
+    }
+
     std::vector<absl::string_view> metric_names;
     // TODO(yashykt): opentelemetry::sdk::resource::Resource doesn't have a copy
     // assignment operator so wrapping it in a unique_ptr till it is fixed.
@@ -158,6 +170,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
         std::unique_ptr<grpc::internal::InternalOpenTelemetryPluginOption>>
         plugin_options;
     absl::flat_hash_set<absl::string_view> optional_label_keys;
+    std::vector<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
+        per_channel_stats_plugins;
+    std::vector<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
+        per_server_stats_plugins;
   };
 
   class MetricsCollectorThread {
@@ -183,6 +199,11 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     std::thread thread_;
   };
 
+  static std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
+  ConfigureOTBuilder(
+      OpenTelemetryPluginEnd2EndTest::Options options,
+      grpc::internal::OpenTelemetryPluginBuilderImpl* ot_builder);
+
   // Note that we can't use SetUp() here since we want to send in parameters.
   void Init(Options config);
 
@@ -192,6 +213,10 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   void SendRPC();
   void SendGenericRPC();
+
+  std::pair<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>,
+            std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>>
+  BuildOpenTelemetryPlugin(OpenTelemetryPluginEnd2EndTest::Options options);
 
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader>
   BuildAndRegisterOpenTelemetryPlugin(

@@ -54,7 +54,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
@@ -206,17 +205,13 @@ class OpHandlerImpl {
       }
         ABSL_FALLTHROUGH_INTENDED;
       case State::kPromise: {
-        if (grpc_call_trace.enabled()) {
-          gpr_log(GPR_INFO, "%sBeginPoll %s",
-                  Activity::current()->DebugTag().c_str(), OpName());
-        }
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "BeginPoll " << OpName();
         auto r = poll_cast<StatusFlag>(promise_());
-        if (grpc_call_trace.enabled()) {
-          gpr_log(
-              GPR_INFO, "%sEndPoll %s --> %s",
-              Activity::current()->DebugTag().c_str(), OpName(),
-              r.pending() ? "PENDING" : (r.value().ok() ? "OK" : "FAILURE"));
-        }
+        GRPC_TRACE_LOG(call, INFO)
+            << Activity::current()->DebugTag() << "EndPoll " << OpName()
+            << " --> "
+            << (r.pending() ? "PENDING" : (r.value().ok() ? "OK" : "FAILURE"));
         return r;
       }
     }
@@ -387,13 +382,10 @@ class PollBatchLogger {
   PollBatchLogger(void* tag, F f) : tag_(tag), f_(std::move(f)) {}
 
   auto operator()() {
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "Poll batch %p", tag_);
-    }
+    GRPC_TRACE_LOG(call, INFO) << "Poll batch " << tag_;
     auto r = f_();
-    if (grpc_call_trace.enabled()) {
-      gpr_log(GPR_INFO, "Poll batch %p --> %s", tag_, ResultString(r).c_str());
-    }
+    GRPC_TRACE_LOG(call, INFO)
+        << "Poll batch " << tag_ << " --> " << ResultString(r);
     return r;
   }
 

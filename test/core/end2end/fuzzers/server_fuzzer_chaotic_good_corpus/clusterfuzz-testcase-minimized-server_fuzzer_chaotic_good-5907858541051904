@@ -1,0 +1,14 @@
+network_input {
+  input_segments {
+    segments {
+      header {
+      }
+    }
+  }
+}
+channel_args {
+  args {
+    key: "grpc.server_handshake_timeout_ms"
+    str: "65537"
+  }
+}

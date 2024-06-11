@@ -37,6 +37,8 @@ namespace grpc_core {
 
 class YodelTest;
 
+extern bool g_yodel_fuzzing;
+
 namespace yodel_detail {
 
 // Capture the name and location of a test step.

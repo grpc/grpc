@@ -57,7 +57,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;

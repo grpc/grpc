@@ -33,8 +33,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/time.h"
 
-extern grpc_core::TraceFlag grpc_ping_trace;
-
 namespace grpc_core {
 
 class Chttp2PingCallbacks {

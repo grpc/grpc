@@ -56,8 +56,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/string.h"
 
-extern grpc_core::TraceFlag grpc_tcp_trace;
-
 using ::grpc_event_engine::experimental::EndpointConfig;
 
 struct async_connect {
@@ -144,7 +142,7 @@ done:
 static void tc_on_alarm(void* acp, grpc_error_handle error) {
   int done;
   async_connect* ac = static_cast<async_connect*>(acp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
@@ -183,7 +181,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   std::string addr_str = ac->addr_str;
   grpc_fd* fd;
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
@@ -384,7 +382,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
                     grpc_schedule_on_exec_ctx);
   ac->options = options;
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
             ac->addr_str.c_str(), fdobj);
   }

@@ -109,11 +109,6 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 
-grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
-grpc_core::TraceFlag grpc_compression_trace(false, "compression");
-grpc_core::TraceFlag grpc_call_trace(false, "call");
-grpc_core::DebugOnlyTraceFlag grpc_call_refcount_trace(false, "call_refcount");
-
 namespace grpc_core {
 
 // Alias to make this type available in Call implementation without a grpc_core
@@ -312,7 +307,7 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
   // GRPC_COMPRESS_NONE is always set.
   DCHECK(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
   if (GPR_UNLIKELY(!encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       HandleCompressionAlgorithmNotAccepted(compression_algorithm);
     }
   }
@@ -343,7 +338,7 @@ void Call::HandleCompressionAlgorithmDisabled(
 
 void Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_DEBUG, "[call %p] UpdateDeadline from=%s to=%s", this,
             deadline_.ToString().c_str(), deadline.ToString().c_str());
   }
@@ -377,10 +372,9 @@ void Call::ResetDeadline() {
 void Call::Run() {
   ApplicationCallbackExecCtx callback_exec_ctx;
   ExecCtx exec_ctx;
-  if (grpc_call_trace.enabled()) {
-    LOG(INFO) << "call deadline expired "
-              << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
-  }
+  GRPC_TRACE_LOG(call, INFO)
+      << "call deadline expired "
+      << GRPC_DUMP_ARGS(Timestamp::Now(), send_deadline_);
   CancelWithError(grpc_error_set_int(
       absl::DeadlineExceededError("Deadline Exceeded"),
       StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));

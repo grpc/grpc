@@ -70,7 +70,7 @@
     #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
   default: $GPR_DEFAULT_LOG_VERBOSITY_STRING
   description:
-    Default gRPC logging verbosity
+    Logging verbosity.
   fuzz: true
 - name: stacktrace_minloglevel
   type: string

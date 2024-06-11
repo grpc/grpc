@@ -19,6 +19,7 @@
 #include "test/core/test_util/test_config.h"
 
 int main(int argc, char** argv) {
+  grpc_core::g_yodel_fuzzing = false;
   grpc::testing::TestEnvironment env(&argc, argv);
   absl::BitGen bitgen;
   ::testing::InitGoogleTest(&argc, argv);

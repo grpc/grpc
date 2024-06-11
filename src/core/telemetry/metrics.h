@@ -211,6 +211,8 @@ class GlobalInstrumentsRegistry {
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  FindInstrumentByName(absl::string_view name);
 
  private:
   friend class GlobalInstrumentsRegistryTestPeer;
@@ -288,6 +290,14 @@ class StatsPlugin {
   // Returns true and a server-specific ScopeConfig which may then be used to
   // configure the ServerCallTracer in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
+      const ChannelArgs& args) const = 0;
+  // Gets a scope config for the client channel specified by \a scope. Note that
+  // the stats plugin should have been enabled for the channel.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& scope) const = 0;
+  // Gets a scope config for the server specified by \a args. Note that the
+  // stats plugin should have been enabled for the server.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
       const ChannelArgs& args) const = 0;
 
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values

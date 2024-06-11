@@ -22,8 +22,8 @@
 #include <string.h>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -75,8 +75,8 @@ grpc_channel_credentials* grpc_channel_credentials_from_arg(
     const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_ARG_CHANNEL_CREDENTIALS);
+    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+               << GRPC_ARG_CHANNEL_CREDENTIALS;
     return nullptr;
   }
   return static_cast<grpc_channel_credentials*>(arg->value.pointer.p);
@@ -141,8 +141,8 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c) {
 grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {
   if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_SERVER_CREDENTIALS_ARG);
+    LOG(ERROR) << "Invalid type " << arg->type << " for arg "
+               << GRPC_SERVER_CREDENTIALS_ARG;
     return nullptr;
   }
   return static_cast<grpc_server_credentials*>(arg->value.pointer.p);
