@@ -23,12 +23,12 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -64,8 +64,8 @@ std::string GetNamespaceName() {
   auto namespace_name = grpc_core::LoadFile(filename, false);
   if (!namespace_name.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
-      gpr_log(GPR_DEBUG, "Reading file %s failed: %s", filename,
-              grpc_core::StatusToString(namespace_name.status()).c_str());
+      VLOG(2) << "Reading file " << filename << " failed: "
+              << grpc_core::StatusToString(namespace_name.status());
     }
     // Fallback on an environment variable
     return grpc_core::GetEnv("NAMESPACE_NAME").value_or("");
@@ -249,13 +249,12 @@ class EnvironmentAutoDetectHelper
           element.first, &pollent_,
           [this](std::string attribute, absl::StatusOr<std::string> result) {
             if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
-              gpr_log(
-                  GPR_INFO,
-                  "Environment AutoDetect: Attribute: \"%s\" Result: \"%s\"",
-                  attribute.c_str(),
-                  result.ok()
-                      ? result.value().c_str()
-                      : grpc_core::StatusToString(result.status()).c_str());
+              LOG(INFO) << "Environment AutoDetect: Attribute: \"" << attribute
+                        << "\" Result: \""
+                        << (result.ok()
+                                ? result.value()
+                                : grpc_core::StatusToString(result.status()))
+                        << "\"";
             }
             absl::optional<EnvironmentAutoDetect::ResourceType> resource;
             {
@@ -270,9 +269,8 @@ class EnvironmentAutoDetectHelper
                 // assuming a GCE environment, fallback to "global".
                 else if (assuming_gce_) {
                   if (GRPC_TRACE_FLAG_ENABLED(environment_autodetect)) {
-                    gpr_log(GPR_INFO,
-                            "Environment Autodetect: Falling back to global "
-                            "resource type");
+                    LOG(INFO) << "Environment Autodetect: Falling back to "
+                                 "global resource type";
                   }
                   assuming_gce_ = false;
                   resource_.resource_type = "global";
@@ -280,10 +278,9 @@ class EnvironmentAutoDetectHelper
                 attributes_to_fetch_.erase(it);
               } else {
                 // This should not happen
-                gpr_log(GPR_ERROR,
-                        "An unexpected attribute was seen from the "
-                        "MetadataServer: %s",
-                        attribute.c_str());
+                LOG(ERROR) << "An unexpected attribute was seen from the "
+                              "MetadataServer: "
+                           << attribute;
               }
               if (attributes_to_fetch_.empty()) {
                 resource = std::move(resource_);
