@@ -608,19 +608,15 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
   if (server.drop) return false;
   if (GPR_UNLIKELY(server.port >> 16 != 0)) {
     if (log) {
-      gpr_log(GPR_ERROR,
-              "Invalid port '%d' at index %" PRIuPTR
-              " of serverlist. Ignoring.",
-              server.port, idx);
+      LOG(ERROR) << "Invalid port '" << server.port << "' at index " << idx
+                 << " of serverlist. Ignoring.";
     }
     return false;
   }
   if (GPR_UNLIKELY(server.ip_size != 4 && server.ip_size != 16)) {
     if (log) {
-      gpr_log(GPR_ERROR,
-              "Expected IP to be 4 or 16 bytes, got %d at index %" PRIuPTR
-              " of serverlist. Ignoring",
-              server.ip_size, idx);
+      LOG(ERROR) << "Expected IP to be 4 or 16 bytes, got " << server.ip_size
+                 << " at index " << idx << " of serverlist. Ignoring";
     }
     return false;
   }
@@ -671,11 +667,9 @@ class GrpcLb::Serverlist::AddressIterator final
       std::string lb_token(server.load_balance_token, lb_token_length);
       if (lb_token.empty()) {
         auto addr_uri = grpc_sockaddr_to_uri(&addr);
-        gpr_log(GPR_INFO,
-                "Missing LB token for backend address '%s'. The empty token "
-                "will be used instead",
-                addr_uri.ok() ? addr_uri->c_str()
-                              : addr_uri.status().ToString().c_str());
+        LOG(INFO) << "Missing LB token for backend address '"
+                  << (addr_uri.ok() ? *addr_uri : addr_uri.status().ToString())
+                  << "'. The empty token will be used instead";
       }
       // Return address with a channel arg containing LB token and stats object.
       callback(EndpointAddresses(
@@ -1093,9 +1087,8 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lb_call_, &op, 1, &client_load_report_done_closure_);
   if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] lb_calld=%p call_error=%d sending client load report",
-            grpclb_policy_.get(), this, call_error);
+    LOG(ERROR) << "[grpclb " << grpclb_policy_.get() << "] lb_calld=" << this
+               << " call_error=" << call_error << " sending client load report";
     CHECK_EQ(call_error, GRPC_CALL_OK);
   }
 }
@@ -1166,10 +1159,9 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
     if (gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
       char* response_slice_str =
           grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-      gpr_log(GPR_ERROR,
-              "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
-              "Ignoring.",
-              grpclb_policy(), this, response_slice_str);
+      LOG(ERROR) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
+                 << ": Invalid LB response received: '" << response_slice_str
+                 << "'. Ignoring.";
       gpr_free(response_slice_str);
     }
   } else {
@@ -1739,10 +1731,9 @@ void GrpcLb::OnFallbackTimerLocked() {
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
   if (fallback_at_startup_checks_pending_ && !shutting_down_) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] No response from balancer after fallback timeout; "
-            "entering fallback mode",
-            this);
+    LOG(INFO) << "[grpclb " << this
+              << "] No response from balancer after fallback timeout; "
+                 "entering fallback mode";
     fallback_at_startup_checks_pending_ = false;
     CancelBalancerChannelConnectivityWatchLocked();
     fallback_mode_ = true;
