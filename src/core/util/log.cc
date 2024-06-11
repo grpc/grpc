@@ -197,8 +197,3 @@ void gpr_set_log_function(gpr_log_func f) {
          "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
 }
-
-void gpr_disable_all_logs() {
-  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-  absl::SetVLogLevel("*grpc*/*", -1);
-}

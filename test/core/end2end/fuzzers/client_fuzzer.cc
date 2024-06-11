@@ -43,6 +43,7 @@
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/mock_endpoint.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -99,7 +100,7 @@ class ClientFuzzer final : public BasicFuzzer {
 
 DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
   if (squelch && !grpc_core::GetEnv("GRPC_TRACE_FUZZER").has_value()) {
-    gpr_disable_all_logs();
+    grpc_disable_all_absl_logs();
   }
   if (msg.network_input().size() != 1) return;
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());

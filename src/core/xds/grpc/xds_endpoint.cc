@@ -156,8 +156,7 @@ namespace {
 void MaybeLogClusterLoadAssignment(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_endpoint_v3_ClusterLoadAssignment* cla) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) &&
-      gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
             context.symtab);
