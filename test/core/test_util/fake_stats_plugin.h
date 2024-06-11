@@ -456,17 +456,16 @@ class FakeStatsPlugin : public StatsPlugin,
   void AddToChannelArguments(grpc::ChannelArguments* args) {
     const grpc_channel_args c_args = args->c_channel_args();
     auto* stats_plugin_list = grpc_channel_args_find_pointer<
-        std::shared_ptr<std::vector<std::shared_ptr<grpc_core::StatsPlugin>>>>(
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
         &c_args, GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
     if (stats_plugin_list != nullptr) {
       (*stats_plugin_list)->emplace_back(shared_from_this());
     } else {
-      auto stats_plugin_list = std::make_shared<
-          std::vector<std::shared_ptr<grpc_core::StatsPlugin>>>();
-      args->SetPointerWithVtable(GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS,
-                                 &stats_plugin_list,
-                                 grpc_core::ChannelArgTypeTraits<
-                                     decltype(stats_plugin_list)>::VTable());
+      auto stats_plugin_list =
+          std::make_shared<std::vector<std::shared_ptr<StatsPlugin>>>();
+      args->SetPointerWithVtable(
+          GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS, &stats_plugin_list,
+          ChannelArgTypeTraits<decltype(stats_plugin_list)>::VTable());
       stats_plugin_list->emplace_back(shared_from_this());
     }
   }

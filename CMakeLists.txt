@@ -7560,6 +7560,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -7586,6 +7587,7 @@ target_include_directories(bad_ping_test
 target_link_libraries(bad_ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8036,6 +8038,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8062,6 +8065,7 @@ target_include_directories(binary_metadata_test
 target_link_libraries(binary_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8480,6 +8484,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8506,6 +8511,7 @@ target_include_directories(call_creds_test
 target_link_libraries(call_creds_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8688,6 +8694,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8714,6 +8721,7 @@ target_include_directories(call_host_override_test
 target_link_libraries(call_host_override_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -8733,6 +8741,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -8759,6 +8768,7 @@ target_include_directories(call_tracer_test
 target_link_libraries(call_tracer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_test_util
 )
 
@@ -9093,6 +9103,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9119,6 +9130,7 @@ target_include_directories(cancel_after_accept_test
 target_link_libraries(cancel_after_accept_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9156,6 +9168,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9182,6 +9195,7 @@ target_include_directories(cancel_after_client_done_test
 target_link_libraries(cancel_after_client_done_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9219,6 +9233,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9245,6 +9260,7 @@ target_include_directories(cancel_after_invoke_test
 target_link_libraries(cancel_after_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9282,6 +9298,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9308,6 +9325,7 @@ target_include_directories(cancel_after_round_trip_test
 target_link_libraries(cancel_after_round_trip_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9392,6 +9410,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9418,6 +9437,7 @@ target_include_directories(cancel_before_invoke_test
 target_link_libraries(cancel_before_invoke_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9539,6 +9559,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9565,6 +9586,7 @@ target_include_directories(cancel_in_a_vacuum_test
 target_link_libraries(cancel_in_a_vacuum_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -9602,6 +9624,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -9628,6 +9651,7 @@ target_include_directories(cancel_with_status_test
 target_link_libraries(cancel_with_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -11313,6 +11337,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11339,6 +11364,7 @@ target_include_directories(client_streaming_test
 target_link_libraries(client_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -11652,6 +11678,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -11678,6 +11705,7 @@ target_include_directories(compressed_payload_test
 target_link_libraries(compressed_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -11990,6 +12018,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12016,6 +12045,7 @@ target_include_directories(connectivity_test
 target_link_libraries(connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -12419,6 +12449,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12445,6 +12476,7 @@ target_include_directories(default_host_test
 target_link_libraries(default_host_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -12627,6 +12659,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12653,6 +12686,7 @@ target_include_directories(disappearing_server_test
 target_link_libraries(disappearing_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -12982,6 +13016,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -13008,6 +13043,7 @@ target_include_directories(empty_batch_test
 target_link_libraries(empty_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -14368,6 +14404,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14394,6 +14431,7 @@ target_include_directories(filter_causes_close_test
 target_link_libraries(filter_causes_close_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -14431,6 +14469,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14457,6 +14496,7 @@ target_include_directories(filter_init_fails_test
 target_link_libraries(filter_init_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -14544,6 +14584,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -14570,6 +14611,7 @@ target_include_directories(filtered_metadata_test
 target_link_libraries(filtered_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -15376,6 +15418,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15402,6 +15445,7 @@ target_include_directories(graceful_server_shutdown_test
 target_link_libraries(graceful_server_shutdown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -15742,6 +15786,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -15768,6 +15813,7 @@ target_include_directories(grpc_authz_test
 target_link_libraries(grpc_authz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -17134,6 +17180,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17160,6 +17207,7 @@ target_include_directories(high_initial_seqno_test
 target_link_libraries(high_initial_seqno_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -17443,6 +17491,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17469,6 +17518,7 @@ target_include_directories(hpack_size_test
 target_link_libraries(hpack_size_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -17599,6 +17649,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -17625,6 +17676,7 @@ target_include_directories(http2_stats_test
 target_link_libraries(http2_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -18792,6 +18844,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -18818,6 +18871,7 @@ target_include_directories(invoke_large_request_test
 target_link_libraries(invoke_large_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19183,6 +19237,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19209,6 +19264,7 @@ target_include_directories(keepalive_timeout_test
 target_link_libraries(keepalive_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19289,6 +19345,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -19315,6 +19372,7 @@ target_include_directories(large_metadata_test
 target_link_libraries(large_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -19975,6 +20033,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20001,6 +20060,7 @@ target_include_directories(max_concurrent_streams_test
 target_link_libraries(max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20038,6 +20098,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20064,6 +20125,7 @@ target_include_directories(max_connection_age_test
 target_link_libraries(max_connection_age_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20101,6 +20163,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20127,6 +20190,7 @@ target_include_directories(max_connection_idle_test
 target_link_libraries(max_connection_idle_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20164,6 +20228,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20190,6 +20255,7 @@ target_include_directories(max_message_length_test
 target_link_libraries(max_message_length_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20499,6 +20565,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20525,6 +20592,7 @@ target_include_directories(metrics_test
 target_link_libraries(metrics_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_test_util
 )
 
@@ -20846,6 +20914,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20872,6 +20941,7 @@ target_include_directories(negative_deadline_test
 target_link_libraries(negative_deadline_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -20941,6 +21011,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -20967,6 +21038,7 @@ target_include_directories(no_logging_test
 target_link_libraries(no_logging_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -21004,6 +21076,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21030,6 +21103,7 @@ target_include_directories(no_op_test
 target_link_libraries(no_op_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -21933,6 +22007,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -21959,6 +22034,7 @@ target_include_directories(payload_test
 target_link_libraries(payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -22102,6 +22178,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22128,7 +22205,7 @@ target_include_directories(pick_first_test
 target_link_libraries(pick_first_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc++
   grpc_test_util
 )
 
@@ -22308,6 +22385,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22334,6 +22412,7 @@ target_include_directories(ping_pong_streaming_test
 target_link_libraries(ping_pong_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -22422,6 +22501,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -22448,6 +22528,7 @@ target_include_directories(ping_test
 target_link_libraries(ping_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -23418,6 +23499,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -23444,6 +23526,7 @@ target_include_directories(proxy_auth_test
 target_link_libraries(proxy_auth_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -23994,6 +24077,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24020,6 +24104,7 @@ target_include_directories(registered_call_test
 target_link_libraries(registered_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24101,6 +24186,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24127,6 +24213,7 @@ target_include_directories(request_with_flags_test
 target_link_libraries(request_with_flags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24164,6 +24251,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24190,6 +24278,7 @@ target_include_directories(request_with_payload_test
 target_link_libraries(request_with_payload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24498,6 +24587,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24524,6 +24614,7 @@ target_include_directories(resource_quota_server_test
 target_link_libraries(resource_quota_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24603,6 +24694,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24629,6 +24721,7 @@ target_include_directories(retry_cancel_after_first_attempt_starts_test
 target_link_libraries(retry_cancel_after_first_attempt_starts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24666,6 +24759,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24692,6 +24786,7 @@ target_include_directories(retry_cancel_during_delay_test
 target_link_libraries(retry_cancel_during_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24729,6 +24824,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24755,6 +24851,7 @@ target_include_directories(retry_cancel_with_multiple_send_batches_test
 target_link_libraries(retry_cancel_with_multiple_send_batches_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24792,6 +24889,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24818,6 +24916,7 @@ target_include_directories(retry_cancellation_test
 target_link_libraries(retry_cancellation_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24855,6 +24954,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24881,6 +24981,7 @@ target_include_directories(retry_disabled_test
 target_link_libraries(retry_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24918,6 +25019,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -24944,6 +25046,7 @@ target_include_directories(retry_exceeds_buffer_size_in_delay_test
 target_link_libraries(retry_exceeds_buffer_size_in_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -24981,6 +25084,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25007,6 +25111,7 @@ target_include_directories(retry_exceeds_buffer_size_in_initial_batch_test
 target_link_libraries(retry_exceeds_buffer_size_in_initial_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25044,6 +25149,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25070,6 +25176,7 @@ target_include_directories(retry_exceeds_buffer_size_in_subsequent_batch_test
 target_link_libraries(retry_exceeds_buffer_size_in_subsequent_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25107,6 +25214,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25133,6 +25241,7 @@ target_include_directories(retry_lb_drop_test
 target_link_libraries(retry_lb_drop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25170,6 +25279,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25196,6 +25306,7 @@ target_include_directories(retry_lb_fail_test
 target_link_libraries(retry_lb_fail_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25233,6 +25344,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25259,6 +25371,7 @@ target_include_directories(retry_non_retriable_status_before_trailers_test
 target_link_libraries(retry_non_retriable_status_before_trailers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25296,6 +25409,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25322,6 +25436,7 @@ target_include_directories(retry_non_retriable_status_test
 target_link_libraries(retry_non_retriable_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25359,6 +25474,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25385,6 +25501,7 @@ target_include_directories(retry_per_attempt_recv_timeout_on_last_attempt_test
 target_link_libraries(retry_per_attempt_recv_timeout_on_last_attempt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25422,6 +25539,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25448,6 +25566,7 @@ target_include_directories(retry_per_attempt_recv_timeout_test
 target_link_libraries(retry_per_attempt_recv_timeout_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25485,6 +25604,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25511,6 +25631,7 @@ target_include_directories(retry_recv_initial_metadata_test
 target_link_libraries(retry_recv_initial_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25548,6 +25669,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25574,6 +25696,7 @@ target_include_directories(retry_recv_message_replay_test
 target_link_libraries(retry_recv_message_replay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25611,6 +25734,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25637,6 +25761,7 @@ target_include_directories(retry_recv_message_test
 target_link_libraries(retry_recv_message_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25674,6 +25799,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25700,6 +25826,7 @@ target_include_directories(retry_recv_trailing_metadata_error_test
 target_link_libraries(retry_recv_trailing_metadata_error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25737,6 +25864,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25763,6 +25891,7 @@ target_include_directories(retry_send_initial_metadata_refs_test
 target_link_libraries(retry_send_initial_metadata_refs_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25800,6 +25929,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25826,6 +25956,7 @@ target_include_directories(retry_send_op_fails_test
 target_link_libraries(retry_send_op_fails_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25863,6 +25994,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25889,6 +26021,7 @@ target_include_directories(retry_send_recv_batch_test
 target_link_libraries(retry_send_recv_batch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25926,6 +26059,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -25952,6 +26086,7 @@ target_include_directories(retry_server_pushback_delay_test
 target_link_libraries(retry_server_pushback_delay_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -25989,6 +26124,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26015,6 +26151,7 @@ target_include_directories(retry_server_pushback_disabled_test
 target_link_libraries(retry_server_pushback_disabled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26094,6 +26231,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26120,6 +26258,7 @@ target_include_directories(retry_streaming_after_commit_test
 target_link_libraries(retry_streaming_after_commit_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26157,6 +26296,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26183,6 +26323,7 @@ target_include_directories(retry_streaming_succeeds_before_replay_finished_test
 target_link_libraries(retry_streaming_succeeds_before_replay_finished_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26220,6 +26361,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26246,6 +26388,7 @@ target_include_directories(retry_streaming_test
 target_link_libraries(retry_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26283,6 +26426,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26309,6 +26453,7 @@ target_include_directories(retry_test
 target_link_libraries(retry_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26388,6 +26533,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26414,6 +26560,7 @@ target_include_directories(retry_throttled_test
 target_link_libraries(retry_throttled_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26451,6 +26598,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26477,6 +26625,7 @@ target_include_directories(retry_too_many_attempts_test
 target_link_libraries(retry_too_many_attempts_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26514,6 +26663,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26540,6 +26690,7 @@ target_include_directories(retry_transparent_goaway_test
 target_link_libraries(retry_transparent_goaway_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26577,6 +26728,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26603,6 +26755,7 @@ target_include_directories(retry_transparent_max_concurrent_streams_test
 target_link_libraries(retry_transparent_max_concurrent_streams_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26640,6 +26793,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26666,6 +26820,7 @@ target_include_directories(retry_transparent_not_sent_on_wire_test
 target_link_libraries(retry_transparent_not_sent_on_wire_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26703,6 +26858,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26729,6 +26885,7 @@ target_include_directories(retry_unref_before_finish_test
 target_link_libraries(retry_unref_before_finish_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -26766,6 +26923,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -26792,6 +26950,7 @@ target_include_directories(retry_unref_before_recv_test
 target_link_libraries(retry_unref_before_recv_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -27809,6 +27968,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -27835,6 +27995,7 @@ target_include_directories(server_finishes_request_test
 target_link_libraries(server_finishes_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -28093,6 +28254,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28119,6 +28281,7 @@ target_include_directories(server_streaming_test
 target_link_libraries(server_streaming_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -28355,6 +28518,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28381,6 +28545,7 @@ target_include_directories(shutdown_finishes_calls_test
 target_link_libraries(shutdown_finishes_calls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -28418,6 +28583,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28444,6 +28610,7 @@ target_include_directories(shutdown_finishes_tags_test
 target_link_libraries(shutdown_finishes_tags_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -28544,6 +28711,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28570,6 +28738,7 @@ target_include_directories(simple_delayed_request_test
 target_link_libraries(simple_delayed_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -28607,6 +28776,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28633,6 +28803,7 @@ target_include_directories(simple_metadata_test
 target_link_libraries(simple_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -28714,6 +28885,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -28740,6 +28912,7 @@ target_include_directories(simple_request_test
 target_link_libraries(simple_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -29642,6 +29815,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -29668,6 +29842,7 @@ target_include_directories(streaming_error_response_test
 target_link_libraries(streaming_error_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -30416,6 +30591,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -30442,6 +30618,7 @@ target_include_directories(test_core_end2end_channelz_test
 target_link_libraries(test_core_end2end_channelz_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -31677,6 +31854,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31703,6 +31881,7 @@ target_include_directories(timeout_before_request_call_test
 target_link_libraries(timeout_before_request_call_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -32223,6 +32402,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32249,6 +32429,7 @@ target_include_directories(trailing_metadata_test
 target_link_libraries(trailing_metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -32965,6 +33146,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -32991,6 +33173,7 @@ target_include_directories(weighted_round_robin_config_test
 target_link_libraries(weighted_round_robin_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_test_util
 )
 
@@ -33014,6 +33197,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33040,7 +33224,7 @@ target_include_directories(weighted_round_robin_test
 target_link_libraries(weighted_round_robin_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc++
   grpc_test_util
 )
 
@@ -33475,6 +33659,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33501,6 +33686,7 @@ target_include_directories(write_buffering_at_end_test
 target_link_libraries(write_buffering_at_end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
@@ -33538,6 +33724,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -33564,6 +33751,7 @@ target_include_directories(write_buffering_test
 target_link_libraries(write_buffering_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_authorization_provider
   grpc_unsecure
   grpc_test_util
