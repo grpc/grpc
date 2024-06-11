@@ -281,14 +281,14 @@ class XdsResolver final : public Resolver {
 
     absl::Status GetCallConfig(GetCallConfigArgs args) override;
 
-    std::vector<const grpc_channel_filter*> GetFilters() override {
-      return filters_;
-    }
+    void AddFilters(InterceptionChainBuilder& builder) override;
+
+    std::vector<const grpc_channel_filter*> GetFilters() override;
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
     RefCountedPtr<RouteConfigData> route_config_data_;
-    std::vector<const grpc_channel_filter*> filters_;
+    std::vector<const XdsHttpFilterImpl*> filters_;
   };
 
   class XdsRouteStateAttributeImpl final : public XdsRouteStateAttribute {
@@ -641,12 +641,9 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
     CHECK_NE(filter_impl, nullptr);
-    // Add C-core filter to list.
-    if (filter_impl->channel_filter() != nullptr) {
-      filters_.push_back(filter_impl->channel_filter());
-    }
+    // Add filter to list.
+    filters_.push_back(filter_impl);
   }
-  filters_.push_back(&ClusterSelectionFilter::kFilter);
 }
 
 XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
@@ -797,6 +794,26 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
       args.arena->ManagedNew<XdsRouteStateAttributeImpl>(route_config_data_,
                                                          entry));
   return absl::OkStatus();
+}
+
+void XdsResolver::XdsConfigSelector::AddFilters(
+    InterceptionChainBuilder& builder) {
+  for (const XdsHttpFilterImpl* filter : filters_) {
+    filter->AddFilter(builder);
+  }
+  builder.Add<ClusterSelectionFilter>();
+}
+
+std::vector<const grpc_channel_filter*>
+XdsResolver::XdsConfigSelector::GetFilters() {
+  std::vector<const grpc_channel_filter*> filters;
+  for (const XdsHttpFilterImpl* filter : filters_) {
+    if (filter->channel_filter() != nullptr) {
+      filters.push_back(filter->channel_filter());
+    }
+  }
+  filters.push_back(&ClusterSelectionFilter::kFilter);
+  return filters;
 }
 
 //

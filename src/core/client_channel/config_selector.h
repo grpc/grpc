@@ -37,6 +37,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/util/useful.h"
@@ -69,6 +70,8 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   // The channel will call this when the resolver returns a new ConfigSelector
   // to determine what set of dynamic filters will be configured.
+  virtual void AddFilters(InterceptionChainBuilder& /*builder*/) {}
+  // TODO(roth): Remove this once the legacy filter stack goes away.
   virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
 
   // Returns the call config to use for the call, or a status to fail
