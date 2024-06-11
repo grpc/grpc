@@ -178,8 +178,8 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
         if (!p.second && p.first->second != weight) {
           LOG(ERROR) << "INTERNAL ERROR: xds_wrr_locality found different "
                         "weights for locality "
-                     << p.first->first << " (" << p.first->second << " vs "
-                     << weight << "); using first value";
+                     << p.first->first.c_str() << " (" << p.first->second
+                     << " vs " << weight << "); using first value";
         }
       }
     });
