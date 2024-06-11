@@ -602,8 +602,10 @@ bool CallState::PushServerTrailingMetadata(bool cancel) {
       }
       break;
     case ServerToClientPushState::kIdle:
-      server_to_client_push_state_ = ServerToClientPushState::kFinished;
-      server_to_client_push_waiter_.Wake();
+      if (cancel) {
+        server_to_client_push_state_ = ServerToClientPushState::kFinished;
+        server_to_client_push_waiter_.Wake();
+      }
       break;
     case ServerToClientPushState::kFinished:
     case ServerToClientPushState::kTrailersOnly:
@@ -716,7 +718,8 @@ Poll<ValueOrFailure<bool>> CallState::PollPullServerToClientMessageAvailable() {
   GRPC_TRACE_LOG(call, INFO)
       << "[call_state] PollPullServerToClientMessageAvailable: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
-                        server_to_client_push_state_);
+                        server_to_client_push_state_,
+                        server_trailing_metadata_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
     case ServerToClientPullState::kProcessingServerInitialMetadata:
@@ -752,6 +755,7 @@ Poll<ValueOrFailure<bool>> CallState::PollPullServerToClientMessageAvailable() {
           ServerTrailingMetadataState::kNotPushed) {
         return false;
       }
+      server_trailing_metadata_waiter_.pending();
       return server_to_client_push_waiter_.pending();
     case ServerToClientPushState::kTrailersOnly:
       DCHECK_NE(server_trailing_metadata_state_,
@@ -823,12 +827,12 @@ Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
                         server_trailing_metadata_waiter_.DebugString());
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kProcessingServerInitialMetadata:
-    case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kStarted:
     case ServerToClientPullState::kUnstarted:
     case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
       if (server_trailing_metadata_state_ !=
           ServerTrailingMetadataState::kNotPushed) {
         server_to_client_pull_state_ =

@@ -841,7 +841,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
         },
         CoreTestConfiguration{
             "InprocWithPromises",
-            FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
+            FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+                FEATURE_MASK_IS_CALL_V3,
             nullptr,
             [](const ChannelArgs&, const ChannelArgs&) {
               return std::make_unique<InprocFixture>(true);
@@ -998,7 +999,8 @@ std::vector<CoreTestConfiguration> DefaultConfigs() {
       "ChaoticGoodFullStack",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
               FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
-              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING,
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
           nullptr,
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {

@@ -1381,6 +1381,20 @@ TEST(CallStateTest, RecallCancellation) {
   EXPECT_THAT(state.PollWasCancelled(), IsReady(true));
 }
 
+TEST(CallStateTest, ReceiveTrailingMetadataAfterMessageRead) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  state.PushServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(true));
+  state.FinishPullServerInitialMetadata();
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsPending());
+  EXPECT_WAKEUP(activity, state.PushServerTrailingMetadata(false));
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(false));
+  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
+}
+
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
