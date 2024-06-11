@@ -665,7 +665,7 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
   })});
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
     LOG(INFO) << "[cdslb " << this << "] generated config for child policy: "
-              << JsonDump(outlier_detection_policy, /*indent=*/1).c_str();
+              << JsonDump(outlier_detection_policy, /*indent=*/1);
   }
   return outlier_detection_policy;
 }
@@ -698,7 +698,7 @@ Json CdsLb::CreateChildPolicyConfigForAggregateCluster(
   })});
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
     LOG(INFO) << "[cdslb " << this << "] generated config for child policy: "
-              << JsonDump(json, /*indent=*/1).c_str();
+              << JsonDump(json, /*indent=*/1);
   }
   return json;
 }
@@ -717,7 +717,7 @@ void CdsLb::ResetState() {
 void CdsLb::ReportTransientFailure(absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
     LOG(INFO) << "[cdslb " << this
-              << "] reporting TRANSIENT_FAILURE: " << status.ToString().c_str();
+              << "] reporting TRANSIENT_FAILURE: " << status;
   }
   ResetState();
   channel_control_helper()->UpdateState(
