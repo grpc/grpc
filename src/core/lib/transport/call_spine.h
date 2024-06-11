@@ -106,17 +106,8 @@ class CallSpine final : public Party {
     return call_filters().PullClientInitialMetadata();
   }
 
-  auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
-    bool has_md = md.has_value();
-    return If(
-        has_md,
-        [this, md = std::move(md)]() mutable {
-          return call_filters().PushServerInitialMetadata(std::move(*md));
-        },
-        [this]() {
-          call_filters().NoServerInitialMetadata();
-          return Immediate<StatusFlag>(Success{});
-        });
+  StatusFlag PushServerInitialMetadata(ServerMetadataHandle md) {
+    return call_filters().PushServerInitialMetadata(std::move(md));
   }
 
   auto WasCancelled() { return call_filters().WasCancelled(); }
@@ -315,7 +306,7 @@ class CallHandler {
     return spine_->PullClientInitialMetadata();
   }
 
-  auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
+  auto PushServerInitialMetadata(ServerMetadataHandle md) {
     return spine_->PushServerInitialMetadata(std::move(md));
   }
 

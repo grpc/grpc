@@ -1205,7 +1205,7 @@ class CallState {
   Poll<ValueOrFailure<bool>> PollPullClientToServerMessageAvailable();
   void FinishPullClientToServerMessage();
   // PUSH: server -> client
-  void PushServerInitialMetadata();
+  StatusFlag PushServerInitialMetadata();
   void BeginPushServerToClientMessage();
   Poll<StatusFlag> PollPushServerToClientMessage();
   bool PushServerTrailingMetadata(bool cancel);
@@ -1215,7 +1215,8 @@ class CallState {
   Poll<ValueOrFailure<bool>> PollPullServerToClientMessageAvailable();
   void FinishPullServerToClientMessage();
   Poll<Empty> PollServerTrailingMetadataAvailable();
-  void FinishPullServerTrailingMetadata() {}
+  void FinishPullServerTrailingMetadata();
+  Poll<bool> PollWasCancelled();
   // Debug
   std::string DebugString() const;
 
@@ -1225,7 +1226,7 @@ class CallState {
   }
 
  private:
-  enum class ClientToServerPullState : uint8_t {
+  enum class ClientToServerPullState : uint16_t {
     // Ready to read: client initial metadata is there, but not yet processed
     kBegin,
     // Processing client initial metadata
@@ -1260,7 +1261,7 @@ class CallState {
                                   ClientToServerPullState state) {
     return out << ClientToServerPullStateString(state);
   }
-  enum class ClientToServerPushState : uint8_t {
+  enum class ClientToServerPushState : uint16_t {
     kIdle,
     kPushedMessage,
     kPushedHalfClose,
@@ -1286,7 +1287,7 @@ class CallState {
                                   ClientToServerPushState state) {
     return out << ClientToServerPushStateString(state);
   }
-  enum class ServerToClientPullState : uint8_t {
+  enum class ServerToClientPullState : uint16_t {
     // Not yet started: cannot read
     kUnstarted,
     kStarted,
@@ -1327,7 +1328,7 @@ class CallState {
                                   ServerToClientPullState state) {
     return out << ServerToClientPullStateString(state);
   }
-  enum class ServerToClientPushState : uint8_t {
+  enum class ServerToClientPushState : uint16_t {
     kStart,
     kPushedServerInitialMetadata,
     kPushedServerInitialMetadataAndPushedMessage,
@@ -1360,15 +1361,42 @@ class CallState {
                                   ServerToClientPushState state) {
     return out << ServerToClientPushStateString(state);
   }
+  enum class ServerTrailingMetadataState : uint16_t {
+    kNotPushed,
+    kPushed,
+    kPushedCancel,
+    kPulled,
+    kPulledCancel,
+  };
+  static const char* ServerTrailingMetadataStateString(
+      ServerTrailingMetadataState state) {
+    switch (state) {
+      case ServerTrailingMetadataState::kNotPushed:
+        return "NotPushed";
+      case ServerTrailingMetadataState::kPushed:
+        return "Pushed";
+      case ServerTrailingMetadataState::kPushedCancel:
+        return "PushedCancel";
+      case ServerTrailingMetadataState::kPulled:
+        return "Pulled";
+      case ServerTrailingMetadataState::kPulledCancel:
+        return "PulledCancel";
+    }
+  }
+  friend std::ostream& operator<<(std::ostream& out,
+                                  ServerTrailingMetadataState state) {
+    return out << ServerTrailingMetadataStateString(state);
+  }
   ClientToServerPullState client_to_server_pull_state_ : 3;
   ClientToServerPushState client_to_server_push_state_ : 3;
   ServerToClientPullState server_to_client_pull_state_ : 4;
   ServerToClientPushState server_to_client_push_state_ : 3;
-  bool pushed_server_trailing_metadata_ : 1;
+  ServerTrailingMetadataState server_trailing_metadata_state_ : 3;
   IntraActivityWaiter client_to_server_pull_waiter_;
   IntraActivityWaiter server_to_client_pull_waiter_;
   IntraActivityWaiter client_to_server_push_waiter_;
   IntraActivityWaiter server_to_client_push_waiter_;
+  IntraActivityWaiter server_trailing_metadata_waiter_;
 };
 
 template <typename Fn>
@@ -1592,9 +1620,9 @@ class CallFilters {
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
-  void PushServerInitialMetadata(ServerMetadataHandle md) {
-    call_state_.PushServerInitialMetadata();
+  StatusFlag PushServerInitialMetadata(ServerMetadataHandle md) {
     push_server_initial_metadata_ = std::move(md);
+    return call_state_.PushServerInitialMetadata();
   }
   // Client: Fetch server initial metadata
   // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>
@@ -1703,17 +1731,25 @@ class CallFilters {
           return [this, executor = filters_detail::InfallibleOperationExecutor<
                             ServerMetadataHandle>()]() mutable
                  -> Poll<ServerMetadataHandle> {
+            auto finish_step = [this](Poll<ServerMetadataHandle> p)
+                -> Poll<ServerMetadataHandle> {
+              auto* r = p.value_if_ready();
+              if (r == nullptr) return Pending{};
+              call_state_.FinishPullServerTrailingMetadata();
+              return std::move(*r);
+            };
             if (push_server_trailing_metadata_ != nullptr) {
               // If no stack has been set, we can just return the result of the
               // call
               if (stack_ == nullptr) {
+                call_state_.FinishPullServerTrailingMetadata();
                 return std::move(push_server_trailing_metadata_);
               }
-              return executor.Start(&(stack_->data_.server_trailing_metadata),
-                                    std::move(push_server_trailing_metadata_),
-                                    call_data_);
+              return finish_step(executor.Start(
+                  &(stack_->data_.server_trailing_metadata),
+                  std::move(push_server_trailing_metadata_), call_data_));
             }
-            return executor.Step(call_data_);
+            return finish_step(executor.Step(call_data_));
           };
         });
   }
@@ -1722,7 +1758,9 @@ class CallFilters {
   // request was cancelled or not -- failure to send trailing metadata is
   // considered a cancellation, as is actual cancellation -- but not application
   // errors.
-  GRPC_MUST_USE_RESULT auto WasCancelled();
+  GRPC_MUST_USE_RESULT auto WasCancelled() {
+    return [this]() { return call_state_.PollWasCancelled(); };
+  }
   // Client & server: fill in final_info with the final status of the call.
   void Finalize(const grpc_call_final_info* final_info);
 

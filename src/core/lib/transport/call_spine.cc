@@ -53,6 +53,21 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
                  return result;
                });
   });
+  call_handler.SpawnInfallible(
+      "check_cancellation", [call_handler, call_initiator]() mutable {
+        return Map(call_handler.WasCancelled(), [call_initiator =
+                                                     std::move(call_initiator)](
+                                                    bool cancelled) mutable {
+          if (cancelled) {
+            call_initiator.SpawnInfallible("propagate_handler_cancel",
+                                           [call_initiator]() mutable {
+                                             call_initiator.Cancel();
+                                             return Empty();
+                                           });
+          }
+          return Empty();
+        });
+      });
   call_initiator.SpawnInfallible("read_the_things", [call_initiator,
                                                      call_handler]() mutable {
     return Seq(
@@ -61,23 +76,27 @@ void ForwardCall(CallHandler call_handler, CallInitiator call_initiator) {
             [call_handler,
              call_initiator](absl::optional<ServerMetadataHandle> md) mutable {
               const bool has_md = md.has_value();
-              call_handler.SpawnGuarded(
-                  "recv_initial_metadata",
-                  [md = std::move(md), call_handler]() mutable {
-                    return call_handler.PushServerInitialMetadata(
-                        std::move(md));
-                  });
               return If(
                   has_md,
-                  ForEach(OutgoingMessages(call_initiator),
-                          [call_handler](MessageHandle msg) mutable {
-                            return call_handler.SpawnWaitable(
-                                "recv_message",
-                                [msg = std::move(msg), call_handler]() mutable {
-                                  return call_handler.CancelIfFails(
-                                      call_handler.PushMessage(std::move(msg)));
-                                });
-                          }),
+                  [&call_handler, &call_initiator,
+                   md = std::move(md)]() mutable {
+                    call_handler.SpawnGuarded(
+                        "recv_initial_metadata",
+                        [md = std::move(*md), call_handler]() mutable {
+                          return call_handler.PushServerInitialMetadata(
+                              std::move(md));
+                        });
+                    return ForEach(
+                        OutgoingMessages(call_initiator),
+                        [call_handler](MessageHandle msg) mutable {
+                          return call_handler.SpawnWaitable(
+                              "recv_message",
+                              [msg = std::move(msg), call_handler]() mutable {
+                                return call_handler.CancelIfFails(
+                                    call_handler.PushMessage(std::move(msg)));
+                              });
+                        });
+                  },
                   []() -> StatusFlag { return Success{}; });
             })),
         call_initiator.PullServerTrailingMetadata(),

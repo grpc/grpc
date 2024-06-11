@@ -1353,6 +1353,34 @@ TEST(CallStateTest, ReceiveTrailersOnly) {
   state.FinishPullServerTrailingMetadata();
 }
 
+TEST(CallStateTest, RecallNoCancellation) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  state.PushServerTrailingMetadata(false);
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
+  state.FinishPullServerInitialMetadata();
+  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
+  EXPECT_THAT(state.PollWasCancelled(), IsPending());
+  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
+  EXPECT_THAT(state.PollWasCancelled(), IsReady(false));
+}
+
+TEST(CallStateTest, RecallCancellation) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  state.PushServerTrailingMetadata(true);
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
+  state.FinishPullServerInitialMetadata();
+  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
+  EXPECT_THAT(state.PollWasCancelled(), IsPending());
+  EXPECT_WAKEUP(activity, state.FinishPullServerTrailingMetadata());
+  EXPECT_THAT(state.PollWasCancelled(), IsReady(true));
+}
+
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
