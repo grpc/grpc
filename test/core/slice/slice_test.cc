@@ -394,7 +394,7 @@ size_t SumSlice(const Slice& slice) {
 TEST(SliceTest, ExternalAsOwned) {
   auto external_string = std::make_unique<std::string>(RandomString(1024));
   Slice slice = Slice::FromExternalString(*external_string);
-  const auto initial_sum = SumSlice(slice);
+  const size_t initial_sum = SumSlice(slice);
   Slice owned = slice.AsOwned();
   EXPECT_EQ(initial_sum, SumSlice(owned));
   external_string.reset();
