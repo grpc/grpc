@@ -24,6 +24,7 @@
 #include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -158,9 +159,7 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
                                    frame = std::move(frame)]() mutable {
                       return Map(call_handler.CancelIfFails(PushFrameIntoCall(
                                      std::move(frame), call_handler)),
-                                 [](StatusFlag f) {
-                                   return StatusCast<absl::Status>(f);
-                                 });
+                                 [](StatusFlag) { return absl::OkStatus(); });
                     });
               },
               [&deserialize_status]() {
@@ -175,8 +174,14 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
   });
 }
 
-auto ChaoticGoodClientTransport::OnTransportActivityDone() {
-  return [this](absl::Status) { AbortWithError(); };
+auto ChaoticGoodClientTransport::OnTransportActivityDone(
+    absl::string_view what) {
+  return [this, what](absl::Status status) {
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: Client transport " << this << " closed (via " << what
+        << "): " << status;
+    AbortWithError();
+  };
 }
 
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
@@ -194,11 +199,12 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   writer_ = MakeActivity(
       // Continuously write next outgoing frames to promise endpoints.
       TransportWriteLoop(transport), EventEngineWakeupScheduler(event_engine),
-      OnTransportActivityDone());
+      OnTransportActivityDone("write_loop"));
   reader_ = MakeActivity(
       // Continuously read next incoming frames from promise endpoints.
       TransportReadLoop(std::move(transport)),
-      EventEngineWakeupScheduler(event_engine), OnTransportActivityDone());
+      EventEngineWakeupScheduler(event_engine),
+      OnTransportActivityDone("read_loop"));
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
@@ -298,15 +304,19 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
     const uint32_t stream_id = MakeStream(call_handler);
     return Map(CallOutboundLoop(stream_id, call_handler),
                [stream_id, this](absl::Status result) {
-                 if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-                   gpr_log(GPR_INFO, "CHAOTIC_GOOD: Call %d finished with %s",
-                           stream_id, result.ToString().c_str());
-                 }
+                 GRPC_TRACE_LOG(chaotic_good, INFO)
+                     << "CHAOTIC_GOOD: Call " << stream_id << " finished with "
+                     << result.ToString();
                  if (!result.ok()) {
+                   GRPC_TRACE_LOG(chaotic_good, INFO)
+                       << "CHAOTIC_GOOD: Send cancel";
                    CancelFrame frame;
                    frame.stream_id = stream_id;
-                   outgoing_frames_.MakeSender().UnbufferedImmediateSend(
-                       std::move(frame));
+                   if (!outgoing_frames_.MakeSender().UnbufferedImmediateSend(
+                           std::move(frame))) {
+                     GRPC_TRACE_LOG(chaotic_good, INFO)
+                         << "CHAOTIC_GOOD: Send cancel failed";
+                   }
                  }
                  return result;
                });

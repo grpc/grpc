@@ -317,7 +317,7 @@ void CallState::Start() {
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
     case ServerToClientPullState::kProcessingServerTrailingMetadata:
-      Crash("Start called twice");
+      LOG(FATAL) << "Start called twice";
     case ServerToClientPullState::kTerminated:
       break;
   }
@@ -334,10 +334,10 @@ void CallState::BeginPushClientToServerMessage() {
       break;
     case ClientToServerPushState::kPushedMessage:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      Crash("PushClientToServerMessage called twice concurrently");
+      LOG(FATAL) << "PushClientToServerMessage called twice concurrently";
       break;
     case ClientToServerPushState::kPushedHalfClose:
-      Crash("PushClientToServerMessage called after half-close");
+      LOG(FATAL) << "PushClientToServerMessage called after half-close";
       break;
     case ClientToServerPushState::kFinished:
       break;
@@ -375,7 +375,7 @@ void CallState::ClientToServerHalfClose() {
       break;
     case ClientToServerPushState::kPushedHalfClose:
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
-      Crash("ClientToServerHalfClose called twice");
+      LOG(FATAL) << "ClientToServerHalfClose called twice";
       break;
     case ClientToServerPushState::kFinished:
       break;
@@ -395,7 +395,7 @@ void CallState::BeginPullClientInitialMetadata() {
     case ClientToServerPullState::kIdle:
     case ClientToServerPullState::kReading:
     case ClientToServerPullState::kProcessingClientToServerMessage:
-      Crash("BeginPullClientInitialMetadata called twice");
+      LOG(FATAL) << "BeginPullClientInitialMetadata called twice";
       break;
     case ClientToServerPullState::kTerminated:
       break;
@@ -408,7 +408,7 @@ void CallState::FinishPullClientInitialMetadata() {
       << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
-      Crash("FinishPullClientInitialMetadata called before Begin");
+      LOG(FATAL) << "FinishPullClientInitialMetadata called before Begin";
       break;
     case ClientToServerPullState::kProcessingClientInitialMetadata:
       client_to_server_pull_state_ = ClientToServerPullState::kIdle;
@@ -417,7 +417,7 @@ void CallState::FinishPullClientInitialMetadata() {
     case ClientToServerPullState::kIdle:
     case ClientToServerPullState::kReading:
     case ClientToServerPullState::kProcessingClientToServerMessage:
-      Crash("Out of order FinishPullClientInitialMetadata");
+      LOG(FATAL) << "Out of order FinishPullClientInitialMetadata";
       break;
     case ClientToServerPullState::kTerminated:
       break;
@@ -439,9 +439,8 @@ Poll<ValueOrFailure<bool>> CallState::PollPullClientToServerMessageAvailable() {
     case ClientToServerPullState::kReading:
       break;
     case ClientToServerPullState::kProcessingClientToServerMessage:
-      Crash(
-          "PollPullClientToServerMessageAvailable called while processing a "
-          "message");
+      LOG(FATAL) << "PollPullClientToServerMessageAvailable called while "
+                    "processing a message";
       break;
     case ClientToServerPullState::kTerminated:
       return Failure{};
@@ -471,15 +470,14 @@ void CallState::FinishPullClientToServerMessage() {
   switch (client_to_server_pull_state_) {
     case ClientToServerPullState::kBegin:
     case ClientToServerPullState::kProcessingClientInitialMetadata:
-      Crash("FinishPullClientToServerMessage called before Begin");
+      LOG(FATAL) << "FinishPullClientToServerMessage called before Begin";
       break;
     case ClientToServerPullState::kIdle:
-      Crash("FinishPullClientToServerMessage called twice");
+      LOG(FATAL) << "FinishPullClientToServerMessage called twice";
       break;
     case ClientToServerPullState::kReading:
-      Crash(
-          "FinishPullClientToServerMessage called before "
-          "PollPullClientToServerMessageAvailable");
+      LOG(FATAL) << "FinishPullClientToServerMessage called before "
+                    "PollPullClientToServerMessageAvailable";
       break;
     case ClientToServerPullState::kProcessingClientToServerMessage:
       client_to_server_pull_state_ = ClientToServerPullState::kIdle;
@@ -495,7 +493,7 @@ void CallState::FinishPullClientToServerMessage() {
       break;
     case ClientToServerPushState::kIdle:
     case ClientToServerPushState::kPushedHalfClose:
-      Crash("FinishPullClientToServerMessage called without a message");
+      LOG(FATAL) << "FinishPullClientToServerMessage called without a message";
       break;
     case ClientToServerPushState::kPushedMessageAndHalfClosed:
       client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
@@ -540,7 +538,7 @@ void CallState::BeginPushServerToClientMessage() {
       LOG(FATAL) << "BeginPushServerToClientMessage called twice concurrently";
       break;
     case ServerToClientPushState::kTrailersOnly:
-      LOG(FATAL) << "BeginPushServerToClientMessage called after trailers";
+      // Will fail in poll.
       break;
     case ServerToClientPushState::kIdle:
       server_to_client_push_state_ = ServerToClientPushState::kPushedMessage;
@@ -561,8 +559,7 @@ Poll<StatusFlag> CallState::PollPushServerToClientMessage() {
       LOG(FATAL) << "PollPushServerToClientMessage called before "
                  << "PushServerInitialMetadata";
     case ServerToClientPushState::kTrailersOnly:
-      LOG(FATAL) << "PollPushServerToClientMessage called after "
-                    "PushServerTrailingMetadata";
+      return false;
     case ServerToClientPushState::kPushedMessage:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
       return server_to_client_push_waiter_.pending();
