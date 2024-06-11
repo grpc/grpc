@@ -23,7 +23,8 @@
 #include <map>
 #include <memory>
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
@@ -318,7 +319,7 @@ class CallOpSendMessage {
       return;
     }
     if (msg_ != nullptr) {
-      CHECK(serializer_(msg_).ok());
+      ABSL_CHECK(serializer_(msg_).ok());
     }
     serializer_ = nullptr;
     grpc_op* op = &ops[(*nops)++];
@@ -797,7 +798,7 @@ class CallOpClientRecvStatus {
     if (recv_status_ == nullptr || hijacked_) return;
     if (static_cast<StatusCode>(status_code_) == StatusCode::OK) {
       *recv_status_ = Status();
-      DCHECK_EQ(debug_error_string_, nullptr);
+      ABSL_DCHECK_EQ(debug_error_string_, nullptr);
     } else {
       *recv_status_ =
           Status(static_cast<StatusCode>(status_code_),
@@ -974,9 +975,9 @@ class CallOpSet : public CallOpSetInterface,
       // A failure here indicates an API misuse; for example, doing a Write
       // while another Write is already pending on the same RPC or invoking
       // WritesDone multiple times
-      gpr_log(GPR_ERROR, "API misuse of type %s observed",
-              grpc_call_error_to_string(err));
-      CHECK(false);
+      ABSL_LOG(ERROR) << "API misuse of type " << grpc_call_error_to_string(err)
+                      << " observed";
+      ABSL_CHECK(false);
     }
   }
 
@@ -986,8 +987,8 @@ class CallOpSet : public CallOpSetInterface,
     done_intercepting_ = true;
     // The following call_start_batch is internally-generated so no need for an
     // explanatory log on failure.
-    CHECK(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag(),
-                                nullptr) == GRPC_CALL_OK);
+    ABSL_CHECK(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag(),
+                                     nullptr) == GRPC_CALL_OK);
   }
 
  private:
