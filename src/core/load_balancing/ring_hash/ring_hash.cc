@@ -646,7 +646,7 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
             prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
         if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
           LOG(INFO) << "[RH " << this << "] merging duplicate endpoint for "
-                    << key << ", combined weight "
+                    << key.ToString() << ", combined weight "
                     << weight_arg + prev_weight_arg;
         }
         prev_endpoint = EndpointAddresses(
@@ -848,9 +848,9 @@ void RingHash::UpdateAggregatedConnectivityStateLocked(
       if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
         LOG(INFO) << "[RH " << this
                   << "] triggering internal connection attempt for endpoint "
-                  << it->second.get() << " (" << endpoints_[first_idle_index]
-                  << ") (index " << first_idle_index << " of "
-                  << endpoints_.size() << ")";
+                  << it->second.get() << " ("
+                  << endpoints_[first_idle_index].ToString() << ") (index "
+                  << first_idle_index << " of " << endpoints_.size() << ")";
       }
       it->second->RequestConnectionLocked();
     }
