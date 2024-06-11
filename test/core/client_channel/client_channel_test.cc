@@ -325,13 +325,13 @@ class TestConfigSelector : public ConfigSelector {
     builder.Add<TestFilter>();
   }
 
-  absl::Status GetCallConfig(GetCallConfigArgs args) override {
+  absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
     return absl::OkStatus();
   }
 
   // Any instance of this class will behave the same, so all comparisons
   // are true.
-  bool Equals(const ConfigSelector* other) const override { return true; }
+  bool Equals(const ConfigSelector* /*other*/) const override { return true; }
 };
 
 CLIENT_CHANNEL_TEST(ConfigSelectorWithDynamicFilters) {
