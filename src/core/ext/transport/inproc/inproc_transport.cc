@@ -17,6 +17,7 @@
 #include <atomic>
 
 #include "absl/log/check.h"
+#include "absl/status/status.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -26,6 +27,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -84,6 +86,7 @@ class InprocServerTransport final : public ServerTransport {
     if (op->set_accept_stream) {
       Crash("set_accept_stream not supported on inproc transport");
     }
+    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   }
 
   void Disconnect(absl::Status error) {

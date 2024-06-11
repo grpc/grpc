@@ -719,8 +719,13 @@ Poll<ValueOrFailure<bool>> CallState::PollPullServerToClientMessageAvailable() {
                         server_to_client_push_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
-    case ServerToClientPullState::kStarted:
     case ServerToClientPullState::kProcessingServerInitialMetadata:
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStarted:
+      if (server_to_client_push_state_ ==
+          ServerToClientPushState::kTrailersOnly) {
+        return false;
+      }
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kIdle:
       server_to_client_pull_state_ = ServerToClientPullState::kReading;

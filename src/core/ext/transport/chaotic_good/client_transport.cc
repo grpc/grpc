@@ -87,11 +87,11 @@ absl::optional<CallHandler> ChaoticGoodClientTransport::LookupStream(
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(ServerFragmentFrame frame,
                                                    CallHandler call_handler) {
-  auto& headers = frame.headers;
+  const bool has_headers = frame.headers != nullptr;
   auto push = TrySeq(
       If(
-          headers != nullptr,
-          [call_handler, &headers]() mutable {
+          has_headers,
+          [call_handler, headers = std::move(frame.headers)]() mutable {
             return call_handler.PushServerInitialMetadata(std::move(headers));
           },
           []() -> StatusFlag { return Success{}; }),
