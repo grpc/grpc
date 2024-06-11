@@ -317,9 +317,10 @@ void PriorityLb::ExitIdleLocked() {
   if (current_priority_ != UINT32_MAX) {
     const std::string& child_name = config_->priorities()[current_priority_];
     if (GRPC_TRACE_FLAG_ENABLED(priority_lb)) {
-      gpr_log(GPR_INFO,
-              "[priority_lb %p] exiting IDLE for current priority %d child %s",
-              this, current_priority_, child_name.c_str());
+      LOG(INFO) << "[priority_lb " << this
+                << "] exiting IDLE for current priority %d child "
+                << current_priority_,
+          child_name.c_str() << "";
     }
     children_[child_name]->ExitIdleLocked();
   }
@@ -403,8 +404,9 @@ void PriorityLb::ChoosePriorityLocked() {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
     if (GRPC_TRACE_FLAG_ENABLED(priority_lb)) {
-      gpr_log(GPR_INFO, "[priority_lb %p] trying priority %u, child %s", this,
-              priority, child_name.c_str());
+      LOG(INFO) << "[priority_lb " << this << "] trying priority %u, child "
+                << priority,
+          child_name.c_str() << "";
     }
     auto& child = children_[child_name];
     // Create child if needed.
@@ -464,8 +466,9 @@ void PriorityLb::ChoosePriorityLocked() {
     // If the child for the priority does not exist yet, create it.
     const std::string& child_name = config_->priorities()[priority];
     if (GRPC_TRACE_FLAG_ENABLED(priority_lb)) {
-      gpr_log(GPR_INFO, "[priority_lb %p] trying priority %u, child %s", this,
-              priority, child_name.c_str());
+      LOG(INFO) << "[priority_lb " << this << "] trying priority %u, child "
+                << priority,
+          child_name.c_str() << "";
     }
     auto& child = children_[child_name];
     CHECK(child != nullptr);

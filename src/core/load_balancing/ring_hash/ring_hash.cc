@@ -659,8 +659,8 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
     });
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-      gpr_log(GPR_INFO, "[RH %p] received update with addresses error: %s",
-              this, args.addresses.status().ToString().c_str());
+      LOG(INFO) << "[RH " << this << "] received update with addresses error: "
+                << args.addresses.status().ToString().c_str() << "";
     }
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.

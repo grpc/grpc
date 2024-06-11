@@ -1468,10 +1468,9 @@ GrpcLb::GrpcLb(Args args)
               .value_or(Duration::Milliseconds(
                   GRPC_GRPCLB_DEFAULT_SUBCHANNEL_DELETION_DELAY_MS)))) {
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] Will use '%s' as the server name for LB request.",
-            this,
-            std::string(channel_control_helper()->GetAuthority()).c_str());
+    LOG(INFO) << "[grpclb " << this << "] Will use '"
+              << std::string(channel_control_helper()->GetAuthority()).c_str()
+              << "' as the server name for LB request.";
   }
 }
 
@@ -1538,8 +1537,9 @@ class GrpcLb::NullLbTokenEndpointIterator final
       const override {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-        gpr_log(GPR_INFO, "[grpclb %p] fallback address: %s", this,
-                endpoint.ToString().c_str());
+        LOG(INFO) << "[grpclb " << this
+                  << "] fallback address: " << endpoint.ToString().c_str()
+                  << "";
       }
       callback(EndpointAddresses(endpoint.addresses(),
                                  endpoint.args().SetObject(empty_token_)));
@@ -1612,8 +1612,8 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     for (const auto& endpoint : balancer_addresses) {
-      gpr_log(GPR_INFO, "[grpclb %p] balancer address: %s", this,
-              endpoint.ToString().c_str());
+      LOG(INFO) << "[grpclb " << this
+                << "] balancer address: " << endpoint.ToString().c_str() << "";
     }
   }
   absl::Status status;
@@ -1668,9 +1668,9 @@ void GrpcLb::StartBalancerCallLocked() {
   CHECK(lb_calld_ == nullptr);
   lb_calld_ = MakeOrphanable<BalancerCallState>(Ref());
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] Query for backends (lb_channel: %p, lb_calld: %p)",
-            this, lb_channel_.get(), lb_calld_.get());
+    LOG(INFO) << "[grpclb %p] Query for backends (lb_channel: " << this
+              << ", lb_calld: " << lb_channel_.get(),
+        lb_calld_.get() << ")";
   }
   lb_calld_->StartQuery();
 }
@@ -1777,8 +1777,8 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args), &glb_trace);
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Created new child policy handler (%p)", this,
-            lb_policy.get());
+    LOG(INFO) << "[grpclb " << this << "] Created new child policy handler ("
+              << lb_policy.get() << ")";
   }
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created child policy. This will make the child policy progress upon
@@ -1831,8 +1831,8 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   }
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy handler %p", this,
-            child_policy_.get());
+    LOG(INFO) << "[grpclb " << this << "] Updating child policy handler "
+              << child_policy_.get() << "";
   }
   // TODO(roth): If we're in fallback mode and the child policy rejects the
   // update, we should propagate that failure back to the resolver somehow.

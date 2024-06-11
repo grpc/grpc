@@ -2000,8 +2000,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb) &&
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
-    gpr_log(GPR_INFO, "[rlslb %p] updated child policy config: %s", this,
-            JsonDump(config_->child_policy_config()).c_str());
+    LOG(INFO) << "[rlslb " << this << "] updated child policy config: "
+              << JsonDump(config_->child_policy_config()).c_str() << "";
   }
   // Swap out addresses.
   // If the new address list is an error and we have an existing address list,
@@ -2219,8 +2219,8 @@ void RlsLb::UpdatePickerLocked() {
     }
   }
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] reporting state %s", this,
-            ConnectivityStateName(state));
+    LOG(INFO) << "[rlslb " << this << "] reporting state "
+              << ConnectivityStateName(state) << "";
   }
   absl::Status status;
   if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {

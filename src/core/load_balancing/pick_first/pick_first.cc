@@ -463,8 +463,8 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   }
   // Replace subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first) && subchannel_list_ != nullptr) {
-    gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p", this,
-            subchannel_list_.get());
+    LOG(INFO) << "[PF " << this << "] Shutting down previous subchannel list "
+              << subchannel_list_.get() << "";
   }
   subchannel_list_ = MakeOrphanable<SubchannelList>(
       RefAsSubclass<PickFirst>(DEBUG_LOCATION, "SubchannelList"), addresses,
@@ -519,8 +519,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     if (args.addresses.ok()) {
       LOG(INFO) << "Pick First " << this << " received update";
     } else {
-      gpr_log(GPR_INFO, "Pick First %p received update with address error: %s",
-              this, args.addresses.status().ToString().c_str());
+      LOG(INFO) << "Pick First " << this
+                << " received update with address error: "
+                << args.addresses.status().ToString().c_str() << "";
     }
   }
   // Set return status based on the address list.
@@ -1441,9 +1442,9 @@ void OldPickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Replace latest_pending_subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first) &&
       latest_pending_subchannel_list_ != nullptr) {
-    gpr_log(GPR_INFO,
-            "[PF %p] Shutting down previous pending subchannel list %p", this,
-            latest_pending_subchannel_list_.get());
+    LOG(INFO) << "[PF " << this
+              << "] Shutting down previous pending subchannel list "
+              << latest_pending_subchannel_list_.get() << "";
   }
   latest_pending_subchannel_list_ = MakeOrphanable<SubchannelList>(
       RefAsSubclass<OldPickFirst>(), addresses, latest_update_args_.args);
@@ -1464,8 +1465,8 @@ void OldPickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   if (latest_pending_subchannel_list_->size() == 0 || selected_ == nullptr) {
     UnsetSelectedSubchannel();
     if (GRPC_TRACE_FLAG_ENABLED(pick_first) && subchannel_list_ != nullptr) {
-      gpr_log(GPR_INFO, "[PF %p] Shutting down previous subchannel list %p",
-              this, subchannel_list_.get());
+      LOG(INFO) << "[PF " << this << "] Shutting down previous subchannel list "
+                << subchannel_list_.get() << "";
     }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   }
@@ -1476,8 +1477,9 @@ absl::Status OldPickFirst::UpdateLocked(UpdateArgs args) {
     if (args.addresses.ok()) {
       LOG(INFO) << "Pick First " << this << " received update";
     } else {
-      gpr_log(GPR_INFO, "Pick First %p received update with address error: %s",
-              this, args.addresses.status().ToString().c_str());
+      LOG(INFO) << "Pick First " << this
+                << " received update with address error: "
+                << args.addresses.status().ToString().c_str() << "";
     }
   }
   // Set return status based on the address list.

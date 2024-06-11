@@ -369,8 +369,9 @@ void XdsClusterManagerLb::UpdateStateLocked() {
     connectivity_state = GRPC_CHANNEL_TRANSIENT_FAILURE;
   }
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
-    gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] connectivity changed to %s",
-            this, ConnectivityStateName(connectivity_state));
+    LOG(INFO) << "[xds_cluster_manager_lb " << this
+              << "] connectivity changed to "
+              << ConnectivityStateName(connectivity_state) << "";
   }
   ClusterPicker::ClusterMap cluster_map;
   for (const auto& p : config_->cluster_map()) {

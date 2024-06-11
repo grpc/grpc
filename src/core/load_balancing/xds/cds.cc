@@ -281,8 +281,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
   auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] received update: cluster=%s is_dynamic=%d",
-            this, new_config->cluster().c_str(), new_config->is_dynamic());
+    LOG(INFO) << "[cdslb " << this
+              << "] received update: cluster=" << new_config->cluster().c_str(),
+        new_config->is_dynamic() << " is_dynamic=%d";
   }
   CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
@@ -295,9 +296,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-      gpr_log(GPR_INFO,
-              "[cdslb %p] obtaining dynamic subscription for cluster %s", this,
-              cluster_name_.c_str());
+      LOG(INFO) << "[cdslb " << this
+                << "] obtaining dynamic subscription for cluster "
+                << cluster_name_.c_str() << "";
     }
     auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
     if (dependency_mgr == nullptr) {
@@ -663,8 +664,8 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
        Json::FromObject(std::move(outlier_detection_config))},
   })});
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
-            JsonDump(outlier_detection_policy, /*indent=*/1).c_str());
+    LOG(INFO) << "[cdslb " << this << "] generated config for child policy: "
+              << JsonDump(outlier_detection_policy, /*indent=*/1).c_str() << "";
   }
   return outlier_detection_policy;
 }
@@ -696,8 +697,8 @@ Json CdsLb::CreateChildPolicyConfigForAggregateCluster(
        })},
   })});
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
-            JsonDump(json, /*indent=*/1).c_str());
+    LOG(INFO) << "[cdslb " << this << "] generated config for child policy: "
+              << JsonDump(json, /*indent=*/1).c_str() << "";
   }
   return json;
 }
@@ -715,8 +716,9 @@ void CdsLb::ResetState() {
 
 void CdsLb::ReportTransientFailure(absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] reporting TRANSIENT_FAILURE: %s", this,
-            status.ToString().c_str());
+    LOG(INFO) << "[cdslb " << this
+              << "] reporting TRANSIENT_FAILURE: " << status.ToString().c_str()
+              << "";
   }
   ResetState();
   channel_control_helper()->UpdateState(
