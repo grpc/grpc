@@ -428,7 +428,7 @@ PickFirst::PickFirst(Args args)
 
 PickFirst::~PickFirst() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    LOG(INFO) << "Destroying Pick First " << this << "";
+    LOG(INFO) << "Destroying Pick First " << this;
   }
   CHECK(subchannel_list_ == nullptr);
 }
@@ -465,7 +465,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Replace subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first) && subchannel_list_ != nullptr) {
     LOG(INFO) << "[PF " << this << "] Shutting down previous subchannel list "
-              << subchannel_list_.get() << "";
+              << subchannel_list_.get();
   }
   subchannel_list_ = MakeOrphanable<SubchannelList>(
       RefAsSubclass<PickFirst>(DEBUG_LOCATION, "SubchannelList"), addresses,
@@ -522,7 +522,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     } else {
       LOG(INFO) << "Pick First " << this
                 << " received update with address error: "
-                << args.addresses.status().ToString().c_str() << "";
+                << args.addresses.status().ToString().c_str();
     }
   }
   // Set return status based on the address list.
@@ -1401,7 +1401,7 @@ OldPickFirst::OldPickFirst(Args args)
 
 OldPickFirst::~OldPickFirst() {
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    LOG(INFO) << "Destroying Pick First " << this << "";
+    LOG(INFO) << "Destroying Pick First " << this;
   }
   CHECK(subchannel_list_ == nullptr);
   CHECK(latest_pending_subchannel_list_ == nullptr);
@@ -1445,7 +1445,7 @@ void OldPickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
       latest_pending_subchannel_list_ != nullptr) {
     LOG(INFO) << "[PF " << this
               << "] Shutting down previous pending subchannel list "
-              << latest_pending_subchannel_list_.get() << "";
+              << latest_pending_subchannel_list_.get();
   }
   latest_pending_subchannel_list_ = MakeOrphanable<SubchannelList>(
       RefAsSubclass<OldPickFirst>(), addresses, latest_update_args_.args);
@@ -1467,7 +1467,7 @@ void OldPickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     UnsetSelectedSubchannel();
     if (GRPC_TRACE_FLAG_ENABLED(pick_first) && subchannel_list_ != nullptr) {
       LOG(INFO) << "[PF " << this << "] Shutting down previous subchannel list "
-                << subchannel_list_.get() << "";
+                << subchannel_list_.get();
     }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   }
@@ -1480,7 +1480,7 @@ absl::Status OldPickFirst::UpdateLocked(UpdateArgs args) {
     } else {
       LOG(INFO) << "Pick First " << this
                 << " received update with address error: "
-                << args.addresses.status().ToString().c_str() << "";
+                << args.addresses.status().ToString().c_str();
     }
   }
   // Set return status based on the address list.

@@ -1823,7 +1823,7 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     LOG(INFO) << "[grpclb " << this << "] Updating child policy handler "
-              << child_policy_.get() << "";
+              << child_policy_.get();
   }
   // TODO(roth): If we're in fallback mode and the child policy rejects the
   // update, we should propagate that failure back to the resolver somehow.

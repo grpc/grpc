@@ -773,7 +773,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
       LOG(INFO) << "[WRR " << this << "] received update with address error: "
-                << args.addresses.status().ToString() << "";
+                << args.addresses.status().ToString();
     }
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.

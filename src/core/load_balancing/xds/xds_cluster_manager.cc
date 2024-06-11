@@ -372,7 +372,7 @@ void XdsClusterManagerLb::UpdateStateLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_manager_lb)) {
     LOG(INFO) << "[xds_cluster_manager_lb " << this
               << "] connectivity changed to "
-              << ConnectivityStateName(connectivity_state) << "";
+              << ConnectivityStateName(connectivity_state);
   }
   ClusterPicker::ClusterMap cluster_map;
   for (const auto& p : config_->cluster_map()) {
