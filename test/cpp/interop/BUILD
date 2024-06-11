@@ -158,6 +158,7 @@ grpc_cc_binary(
     language = "C++",
     deps = [
         "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:metrics_server_lib",
         "//test/cpp/util:test_config",
     ],
