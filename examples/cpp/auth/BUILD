@@ -16,8 +16,8 @@ licenses(["notice"])
 
 cc_library(
     name = "helper",
-    hdrs = ["helper.h"],
     srcs = ["helper.cc"],
+    hdrs = ["helper.h"],
 )
 
 cc_binary(
