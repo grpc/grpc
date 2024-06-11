@@ -1470,7 +1470,7 @@ GrpcLb::GrpcLb(Args args)
                   GRPC_GRPCLB_DEFAULT_SUBCHANNEL_DELETION_DELAY_MS)))) {
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     LOG(INFO) << "[grpclb " << this << "] Will use '"
-              << std::string(channel_control_helper()->GetAuthority()).c_str()
+              << std::string(channel_control_helper()->GetAuthority())
               << "' as the server name for LB request.";
   }
 }
@@ -1539,8 +1539,7 @@ class GrpcLb::NullLbTokenEndpointIterator final
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       if (GRPC_TRACE_FLAG_ENABLED(glb)) {
         LOG(INFO) << "[grpclb " << this
-                  << "] fallback address: " << endpoint.ToString().c_str()
-                  << "";
+                  << "] fallback address: " << endpoint.ToString();
       }
       callback(EndpointAddresses(endpoint.addresses(),
                                  endpoint.args().SetObject(empty_token_)));
@@ -1614,7 +1613,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     for (const auto& endpoint : balancer_addresses) {
       LOG(INFO) << "[grpclb " << this
-                << "] balancer address: " << endpoint.ToString().c_str() << "";
+                << "] balancer address: " << endpoint.ToString();
     }
   }
   absl::Status status;
