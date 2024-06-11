@@ -966,8 +966,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
-                    parent_.get());
+            LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                      << "] ejecting candidate";
           }
           candidate.first->Eject(time_now);
           ++ejected_host_count;
@@ -980,18 +980,17 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
       failure_percentage_ejection_candidates.size() >=
           config.failure_percentage_ejection->minimum_hosts) {
     if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-      gpr_log(GPR_INFO,
-              "[outlier_detection_lb %p] running failure percentage algorithm: "
-              "threshold=%d, enforcement_percentage=%d",
-              parent_.get(), config.failure_percentage_ejection->threshold,
-              config.failure_percentage_ejection->enforcement_percentage);
+      LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                << "] running failure percentage algorithm: "
+                << "threshold=" << config.failure_percentage_ejection->threshold
+                << ", enforcement_percentage="
+                << config.failure_percentage_ejection->enforcement_percentage;
     }
     for (auto& candidate : failure_percentage_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-        gpr_log(GPR_INFO,
-                "[outlier_detection_lb %p] checking candidate %p: "
-                "success_rate=%.3f",
-                parent_.get(), candidate.first, candidate.second);
+        LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                  << "] checking candidate " << candidate.first
+                  << ": success_rate=" << candidate.second;
       }
       // Extra check to make sure success rate algorithm didn't already
       // eject this backend.
@@ -1002,11 +1001,10 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
         double current_percent =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-          gpr_log(GPR_INFO,
-                  "[outlier_detection_lb %p] random_key=%d "
-                  "ejected_host_count=%" PRIuPTR " current_percent=%.3f",
-                  parent_.get(), random_key, ejected_host_count,
-                  current_percent);
+          LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                    << "] random_key=" << random_key
+                    << " ejected_host_count=" << ejected_host_count
+                    << " current_percent=" << current_percent;
         }
         if (random_key <
                 config.failure_percentage_ejection->enforcement_percentage &&
@@ -1015,8 +1013,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           // Eject and record the timestamp for use when ejecting addresses in
           // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-            gpr_log(GPR_INFO, "[outlier_detection_lb %p] ejecting candidate",
-                    parent_.get());
+            LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                      << "] ejecting candidate";
           }
           candidate.first->Eject(time_now);
           ++ejected_host_count;
@@ -1035,8 +1033,9 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     const bool unejected = endpoint_state->MaybeUneject(
         config.base_ejection_time.millis(), config.max_ejection_time.millis());
     if (unejected && GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-      gpr_log(GPR_INFO, "[outlier_detection_lb %p] unejected endpoint %s (%p)",
-              parent_.get(), state.first.ToString().c_str(), endpoint_state);
+      LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                << "] unejected endpoint " << state.first.ToString() << " ("
+                << endpoint_state << ")";
     }
   }
   parent_->ejection_timer_ =
