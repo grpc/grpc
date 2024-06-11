@@ -66,6 +66,7 @@ class InprocServerTransport final : public ServerTransport {
 
   void Orphan() override {
     GRPC_TRACE_LOG(inproc, INFO) << "InprocServerTransport::Orphan(): " << this;
+    Disconnect(absl::UnavailableError("Server transport closed"));
     Unref();
   }
 
