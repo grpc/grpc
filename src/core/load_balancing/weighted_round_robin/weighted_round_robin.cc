@@ -984,16 +984,16 @@ void WeightedRoundRobin::WrrEndpointList::
   // 3) ALL children are TRANSIENT_FAILURE => policy is TRANSIENT_FAILURE.
   if (num_ready_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      gpr_log(GPR_INFO, "[WRR %p] reporting READY with endpoint list %p", wrr,
-              this);
+      LOG(INFO) << "[WRR " << wrr << "] reporting READY with endpoint list "
+                << this;
     }
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(),
         MakeRefCounted<Picker>(wrr->RefAsSubclass<WeightedRoundRobin>(), this));
   } else if (num_connecting_ > 0) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      gpr_log(GPR_INFO, "[WRR %p] reporting CONNECTING with endpoint list %p",
-              wrr, this);
+      LOG(INFO) << "[WRR " << wrr
+                << "] reporting CONNECTING with endpoint list " << this;
     }
     wrr->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
