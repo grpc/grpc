@@ -629,6 +629,21 @@ TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
             absl::nullopt);
 }
 
+TEST_F(MetricsTest, FindInstrumentByName) {
+  auto uint64_counter_handle =
+      GlobalInstrumentsRegistry::RegisterUInt64Counter(
+          "uint64_counter", "A simple uint64 counter.", "unit", true)
+          .Labels("label_key_1", "label_key_2")
+          .OptionalLabels("optional_label_key_1", "optional_label_key_2")
+          .Build();
+  auto instrument =
+      GlobalInstrumentsRegistry::FindInstrumentByName("uint64_counter");
+  EXPECT_THAT(instrument,
+              ::testing::Optional(::testing::Field(
+                  &GlobalInstrumentsRegistry::GlobalInstrumentHandle::index,
+                  ::testing::Eq(uint64_counter_handle.index))));
+}
+
 using MetricsDeathTest = MetricsTest;
 
 TEST_F(MetricsDeathTest, RegisterTheSameMetricNameWouldCrash) {
