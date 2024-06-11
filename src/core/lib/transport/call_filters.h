@@ -1202,7 +1202,7 @@ class CallState {
   // PULL: client -> server
   void BeginPullClientInitialMetadata();
   void FinishPullClientInitialMetadata();
-  Poll<StatusFlag> PollPullClientToServerMessageAvailable();
+  Poll<ValueOrFailure<bool>> PollPullClientToServerMessageAvailable();
   void FinishPullClientToServerMessage();
   // PUSH: server -> client
   void PushServerInitialMetadata();
@@ -1212,10 +1212,10 @@ class CallState {
   // PULL: server -> client
   Poll<bool> PollPullServerInitialMetadataAvailable();
   void FinishPullServerInitialMetadata();
-  Poll<StatusFlag> PollPullServerToClientMessageAvailable();
+  Poll<ValueOrFailure<bool>> PollPullServerToClientMessageAvailable();
   void FinishPullServerToClientMessage();
   Poll<Empty> PollServerTrailingMetadataAvailable();
-  void FinishPullServerTrailingMetadata();
+  void FinishPullServerTrailingMetadata() {}
   // Debug
   std::string DebugString() const;
 
@@ -1327,31 +1327,43 @@ class CallState {
                                   ServerToClientPullState state) {
     return out << ServerToClientPullStateString(state);
   }
-  enum class ServerToClientMessagePushState : uint8_t {
+  enum class ServerToClientPushState : uint8_t {
+    kStart,
+    kPushedServerInitialMetadata,
+    kPushedServerInitialMetadataAndPushedMessage,
+    kTrailersOnly,
     kIdle,
-    kPushed,
+    kPushedMessage,
     kFinished,
   };
-  static const char* ServerToClientMessagePushStateString(
-      ServerToClientMessagePushState state) {
+  static const char* ServerToClientPushStateString(
+      ServerToClientPushState state) {
     switch (state) {
-      case ServerToClientMessagePushState::kIdle:
+      case ServerToClientPushState::kStart:
+        return "Start";
+      case ServerToClientPushState::kPushedServerInitialMetadata:
+        return "PushedServerInitialMetadata";
+      case ServerToClientPushState::
+          kPushedServerInitialMetadataAndPushedMessage:
+        return "PushedServerInitialMetadataAndPushedMessage";
+      case ServerToClientPushState::kTrailersOnly:
+        return "TrailersOnly";
+      case ServerToClientPushState::kIdle:
         return "Idle";
-      case ServerToClientMessagePushState::kPushed:
-        return "Pushed";
-      case ServerToClientMessagePushState::kFinished:
+      case ServerToClientPushState::kPushedMessage:
+        return "PushedMessage";
+      case ServerToClientPushState::kFinished:
         return "Finished";
     }
   }
   friend std::ostream& operator<<(std::ostream& out,
-                                  ServerToClientMessagePushState state) {
-    return out << ServerToClientMessagePushStateString(state);
+                                  ServerToClientPushState state) {
+    return out << ServerToClientPushStateString(state);
   }
   ClientToServerPullState client_to_server_pull_state_ : 3;
   ClientToServerPushState client_to_server_push_state_ : 3;
   ServerToClientPullState server_to_client_pull_state_ : 4;
-  bool pushed_server_initial_metadata_ : 1;
-  ServerToClientMessagePushState server_to_client_message_push_state_ : 2;
+  ServerToClientPushState server_to_client_push_state_ : 3;
   bool pushed_server_trailing_metadata_ : 1;
   IntraActivityWaiter client_to_server_pull_waiter_;
   IntraActivityWaiter server_to_client_pull_waiter_;
@@ -1631,12 +1643,20 @@ class CallFilters {
         [this]() {
           return call_state_.PollPullClientToServerMessageAvailable();
         },
-        [this]() {
-          return RunExecutor<
-              MessageHandle, MessageHandle,
-              &CallFilters::push_client_to_server_message_,
-              &filters_detail::StackData::client_to_server_messages,
-              &filters_detail::CallState::FinishPullClientToServerMessage>();
+        [this](bool message_available) {
+          return If(
+              message_available,
+              [this]() {
+                return RunExecutor<
+                    absl::optional<MessageHandle>, MessageHandle,
+                    &CallFilters::push_client_to_server_message_,
+                    &filters_detail::StackData::client_to_server_messages,
+                    &filters_detail::CallState::
+                        FinishPullClientToServerMessage>();
+              },
+              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
+                return absl::optional<MessageHandle>();
+              });
         });
   }
   // Server: Push server to client message
@@ -1653,12 +1673,20 @@ class CallFilters {
         [this]() {
           return call_state_.PollPullServerToClientMessageAvailable();
         },
-        [this]() {
-          return RunExecutor<
-              MessageHandle, MessageHandle,
-              &CallFilters::push_server_to_client_message_,
-              &filters_detail::StackData::server_to_client_messages,
-              &filters_detail::CallState::FinishPullServerToClientMessage>();
+        [this](bool message_available) {
+          return If(
+              message_available,
+              [this]() {
+                return RunExecutor<
+                    absl::optional<MessageHandle>, MessageHandle,
+                    &CallFilters::push_server_to_client_message_,
+                    &filters_detail::StackData::server_to_client_messages,
+                    &filters_detail::CallState::
+                        FinishPullServerToClientMessage>();
+              },
+              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
+                return absl::optional<MessageHandle>();
+              });
         });
   }
   // Server: Indicate end of response
