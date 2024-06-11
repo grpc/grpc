@@ -710,7 +710,7 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
                          .value_or("")) {
   if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
     LOG(INFO) << "[WRR " << this << "] Created -- locality_name=\""
-              << std::string(locality_name_).c_str() << "\"";
+              << std::string(locality_name_) << "\"";
   }
 }
 
@@ -773,7 +773,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
       LOG(INFO) << "[WRR " << this << "] received update with address error: "
-                << args.addresses.status().ToString().c_str() << "";
+                << args.addresses.status().ToString() << "";
     }
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
@@ -784,7 +784,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
       latest_pending_endpoint_list_ != nullptr) {
     LOG(INFO) << "[WRR " << this
               << "] replacing previous pending endpoint list "
-              << latest_pending_endpoint_list_.get() << "";
+              << latest_pending_endpoint_list_.get();
   }
   std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<WrrEndpointList>(
@@ -795,7 +795,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb) &&
         endpoint_list_ != nullptr) {
       LOG(INFO) << "[WRR " << this << "] replacing previous endpoint list "
-                << endpoint_list_.get() << "";
+                << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
     absl::Status status =
