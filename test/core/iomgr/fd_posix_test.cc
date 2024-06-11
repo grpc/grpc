@@ -349,7 +349,7 @@ static void client_start(client* cl, int port) {
         LOG(FATAL) << "poll() failed during connect; errno=" << errno;
       }
     } else {
-      LOG(FATAL) << "Failed to connect to the server (errno=" << errno;
+      LOG(FATAL) << "Failed to connect to the server (errno=" << errno << ")";
     }
   }
 
