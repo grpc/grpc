@@ -53,7 +53,7 @@ def _run(target: int, secure_mode: bool, prometheus_endpoint: int):
             try:
                 stub.UnaryCall(request)
                 time.sleep(1)
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 logger.info(
                     "Request failed, this is normal during initial setup."
                 )
