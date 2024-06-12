@@ -17,25 +17,30 @@
 #include <memory>
 #include <tuple>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include "src/core/lib/promise/poll.h"
+#include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {
 
 TEST(JoinTest, Join1) {
-  EXPECT_EQ(Join([] { return 3; })(),
-            (Poll<std::tuple<int>>(std::make_tuple(3))));
+  auto r = Join([] { return 3; })();
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value(), std::make_tuple(3));
 }
 
 TEST(JoinTest, Join2) {
-  EXPECT_EQ(Join([] { return 3; }, [] { return 4; })(),
-            (Poll<std::tuple<int, int>>(std::make_tuple(3, 4))));
+  auto r = Join([] { return 3; }, [] { return 4; })();
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value(), std::make_tuple(3, 4));
 }
 
 TEST(JoinTest, Join3) {
-  EXPECT_EQ(Join([] { return 3; }, [] { return 4; }, [] { return 5; })(),
-            (Poll<std::tuple<int, int, int>>(std::make_tuple(3, 4, 5))));
+  auto r = Join([] { return 3; }, [] { return 4; }, [] { return 5; })();
+  EXPECT_TRUE(r.ready());
+  EXPECT_EQ(r.value(), std::make_tuple(3, 4, 5));
 }
 
 }  // namespace grpc_core

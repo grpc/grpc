@@ -241,6 +241,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//src/core:join",
         "//src/core:poll",
     ],
