@@ -3314,6 +3314,7 @@ grpc_cc_library(
         "metadata_batch",
         "ref_counted",
         "slice",
+        "unique_type_name",
         "useful",
         "//:gpr_public_hdrs",
         "//:grpc_public_hdrs",
