@@ -47,6 +47,10 @@ class DumpArgs {
     dumper.Stringify(custom_sink);
   }
 
+  friend std::ostream& operator<<(std::ostream& out, const DumpArgs& dumper) {
+    return out << absl::StrCat(dumper);
+  }
+
  private:
   class CustomSink {
    public:
