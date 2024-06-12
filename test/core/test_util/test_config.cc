@@ -138,6 +138,11 @@ void grpc_test_init(int* argc, char** argv) {
   srand(seed());
 }
 
+void grpc_set_absl_verbosity_debug() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  absl::SetVLogLevel("*grpc*/*", 2);
+}
+
 bool grpc_wait_until_shutdown(int64_t time_s) {
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(time_s);
   while (grpc_is_initialized()) {

@@ -58,7 +58,7 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    windows: false
+    windows: true
 - name: event_engine_dns
   default:
     # not tested on iOS at all
@@ -111,7 +111,6 @@
 - name: work_serializer_clears_time_cache
   default: true
 - name: work_serializer_dispatch
-  requires: ["event_engine_client"]
   default:
     # TODO(ysseung): Not fully tested.
     ios: broken
