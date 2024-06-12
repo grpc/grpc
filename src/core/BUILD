@@ -4870,6 +4870,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
         "absl/log:check",
+        "absl/log:globals",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
