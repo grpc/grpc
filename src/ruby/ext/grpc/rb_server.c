@@ -49,16 +49,13 @@ typedef struct grpc_rb_server {
   /* The actual server */
   grpc_server* wrapped;
   grpc_completion_queue* queue;
-  int shutdown_and_notify_done;
   int destroy_done;
 } grpc_rb_server;
 
-static void grpc_rb_server_maybe_shutdown_and_notify(grpc_rb_server* server,
-                                                     gpr_timespec deadline) {
+static void grpc_rb_server_shutdown_and_notify(grpc_rb_server* server,
+                                               gpr_timespec deadline) {
   grpc_event ev;
   void* tag = &ev;
-  if (server->shutdown_and_notify_done) return;
-  server->shutdown_and_notify_done = 1;
   if (server->wrapped != NULL) {
     grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
     // Following pluck calls will release the GIL and block but cannot
@@ -134,7 +131,6 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
   grpc_rb_server* wrapper = ALLOC(grpc_rb_server);
   wrapper->wrapped = NULL;
   wrapper->destroy_done = 0;
-  wrapper->shutdown_and_notify_done = 0;
   return TypedData_Wrap_Struct(cls, &grpc_rb_server_data_type, wrapper);
 }
 
@@ -309,7 +305,7 @@ static VALUE grpc_rb_server_shutdown_and_notify(VALUE self, VALUE timeout) {
     deadline = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   }
 
-  grpc_rb_server_maybe_shutdown_and_notify(s, deadline);
+  grpc_rb_server_shutdown_and_notify(s, deadline);
 
   return Qnil;
 }

@@ -19,6 +19,8 @@
 
 require_relative './end2end_common'
 
+ENV["GRPC_VERBOSITY"] = "DEBUG"
+
 def main
   parent_controller_port = ''
   server_port = ''
