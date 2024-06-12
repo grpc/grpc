@@ -19,6 +19,8 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace dump_args_detail {
@@ -39,17 +41,42 @@ class DumpArgs {
     do_these_things({AddDumper(&args)...});
   }
 
-  friend std::ostream& operator<<(std::ostream& out, const DumpArgs& args);
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const DumpArgs& dumper) {
+    CustomSinkImpl<Sink> custom_sink(sink);
+    dumper.Stringify(custom_sink);
+  }
 
  private:
+  class CustomSink {
+   public:
+    virtual void Append(absl::string_view x) = 0;
+
+   protected:
+    ~CustomSink() = default;
+  };
+
+  template <typename Sink>
+  class CustomSinkImpl : public CustomSink {
+   public:
+    explicit CustomSinkImpl(Sink& sink) : sink_(sink) {}
+    void Append(absl::string_view x) override { sink_.Append(x); }
+
+   private:
+    Sink& sink_;
+  };
+
   template <typename T>
   int AddDumper(T* p) {
-    arg_dumpers_.push_back([p](std::ostream& os) { os << *p; });
+    arg_dumpers_.push_back(
+        [p](CustomSink& os) { os.Append(absl::StrCat(*p)); });
     return 0;
   }
 
+  void Stringify(CustomSink& sink) const;
+
   const char* arg_string_;
-  std::vector<absl::AnyInvocable<void(std::ostream&) const>> arg_dumpers_;
+  std::vector<absl::AnyInvocable<void(CustomSink&) const>> arg_dumpers_;
 };
 
 }  // namespace dump_args_detail
