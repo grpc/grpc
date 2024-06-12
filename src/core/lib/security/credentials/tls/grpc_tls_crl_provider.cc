@@ -49,7 +49,6 @@
 #include "src/core/lib/slice/slice.h"
 
 namespace grpc_core {
-namespace experimental {
 
 namespace {
 // TODO(gtcooke94) Move ssl_transport_security_utils to it's own BUILD target
@@ -256,5 +255,4 @@ std::shared_ptr<Crl> DirectoryReloaderCrlProvider::GetCrl(
   return it->second;
 }
 
-}  // namespace experimental
 }  // namespace grpc_core
