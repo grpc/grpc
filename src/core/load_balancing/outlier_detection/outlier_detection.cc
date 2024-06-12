@@ -960,140 +960,137 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
                     << "] random_key=" << random_key
                     << " ejected_host_count=" << ejected_host_count
                     << " current_percent=" << current_percent;
-          if (random_key <
-                  config.success_rate_ejection->enforcement_percentage &&
-              (ejected_host_count == 0 ||
-               (current_percent < config.max_ejection_percent))) {
-            // Eject and record the timestamp for use when ejecting addresses in
-            // this iteration.
-            if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-              LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                        << "] ejecting candidate";
-            }
-            candidate.first->Eject(time_now);
-            ++ejected_host_count;
-          }
         }
-      }
-    }
-    // failure percentage algorithm
-    if (!failure_percentage_ejection_candidates.empty() &&
-        failure_percentage_ejection_candidates.size() >=
-            config.failure_percentage_ejection->minimum_hosts) {
-      if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-        LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                  << "] running failure percentage algorithm: "
-                  << "threshold="
-                  << config.failure_percentage_ejection->threshold
-                  << ", enforcement_percentage="
-                  << config.failure_percentage_ejection->enforcement_percentage;
-      }
-      for (auto& candidate : failure_percentage_ejection_candidates) {
-        if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-          LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                    << "] checking candidate " << candidate.first
-                    << ": success_rate=" << candidate.second;
-        }
-        // Extra check to make sure success rate algorithm didn't already
-        // eject this backend.
-        if (candidate.first->ejection_time().has_value()) continue;
-        if ((100.0 - candidate.second) >
-            config.failure_percentage_ejection->threshold) {
-          uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
-          double current_percent =
-              100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
+        if (random_key < config.success_rate_ejection->enforcement_percentage &&
+            (ejected_host_count == 0 ||
+             (current_percent < config.max_ejection_percent))) {
+          // Eject and record the timestamp for use when ejecting addresses in
+          // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
             LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                      << "] random_key=" << random_key
-                      << " ejected_host_count=" << ejected_host_count
-                      << " current_percent=" << current_percent;
+                      << "] ejecting candidate";
           }
-          if (random_key <
-                  config.failure_percentage_ejection->enforcement_percentage &&
-              (ejected_host_count == 0 ||
-               (current_percent < config.max_ejection_percent))) {
-            // Eject and record the timestamp for use when ejecting addresses in
-            // this iteration.
-            if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-              LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                        << "] ejecting candidate";
-            }
-            candidate.first->Eject(time_now);
-            ++ejected_host_count;
-          }
+          candidate.first->Eject(time_now);
+          ++ejected_host_count;
         }
       }
     }
-    // For each address in the map:
-    //   If the address is not ejected and the multiplier is greater than 0,
-    //   decrease the multiplier by 1. If the address is ejected, and the
-    //   current time is after ejection_timestamp + min(base_ejection_time *
-    //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
-    //   address.
-    for (auto& state : parent_->endpoint_state_map_) {
-      auto* endpoint_state = state.second.get();
-      const bool unejected =
-          endpoint_state->MaybeUneject(config.base_ejection_time.millis(),
-                                       config.max_ejection_time.millis());
-      if (unejected && GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
+  }
+  // failure percentage algorithm
+  if (!failure_percentage_ejection_candidates.empty() &&
+      failure_percentage_ejection_candidates.size() >=
+          config.failure_percentage_ejection->minimum_hosts) {
+    if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
+      LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                << "] running failure percentage algorithm: "
+                << "threshold=" << config.failure_percentage_ejection->threshold
+                << ", enforcement_percentage="
+                << config.failure_percentage_ejection->enforcement_percentage;
+    }
+    for (auto& candidate : failure_percentage_ejection_candidates) {
+      if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
         LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                  << "] unejected endpoint " << state.first.ToString() << " ("
-                  << endpoint_state << ")";
+                  << "] checking candidate " << candidate.first
+                  << ": success_rate=" << candidate.second;
+      }
+      // Extra check to make sure success rate algorithm didn't already
+      // eject this backend.
+      if (candidate.first->ejection_time().has_value()) continue;
+      if ((100.0 - candidate.second) >
+          config.failure_percentage_ejection->threshold) {
+        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        double current_percent =
+            100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
+        if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
+          LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                    << "] random_key=" << random_key
+                    << " ejected_host_count=" << ejected_host_count
+                    << " current_percent=" << current_percent;
+        }
+        if (random_key <
+                config.failure_percentage_ejection->enforcement_percentage &&
+            (ejected_host_count == 0 ||
+             (current_percent < config.max_ejection_percent))) {
+          // Eject and record the timestamp for use when ejecting addresses in
+          // this iteration.
+          if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
+            LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                      << "] ejecting candidate";
+          }
+          candidate.first->Eject(time_now);
+          ++ejected_host_count;
+        }
       }
     }
-    parent_->ejection_timer_ =
-        MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
+  }
+  // For each address in the map:
+  //   If the address is not ejected and the multiplier is greater than 0,
+  //   decrease the multiplier by 1. If the address is ejected, and the
+  //   current time is after ejection_timestamp + min(base_ejection_time *
+  //   multiplier, max(base_ejection_time, max_ejection_time)), un-eject the
+  //   address.
+  for (auto& state : parent_->endpoint_state_map_) {
+    auto* endpoint_state = state.second.get();
+    const bool unejected = endpoint_state->MaybeUneject(
+        config.base_ejection_time.millis(), config.max_ejection_time.millis());
+    if (unejected && GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
+      LOG(INFO) << "[outlier_detection_lb " << parent_.get()
+                << "] unejected endpoint " << state.first.ToString() << " ("
+                << endpoint_state << ")";
+    }
+  }
+  parent_->ejection_timer_ =
+      MakeOrphanable<EjectionTimer>(parent_, Timestamp::Now());
+}
+
+//
+// factory
+//
+
+class OutlierDetectionLbFactory final : public LoadBalancingPolicyFactory {
+ public:
+  OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      LoadBalancingPolicy::Args args) const override {
+    return MakeOrphanable<OutlierDetectionLb>(std::move(args));
   }
 
-  //
-  // factory
-  //
+  absl::string_view name() const override { return kOutlierDetection; }
 
-  class OutlierDetectionLbFactory final : public LoadBalancingPolicyFactory {
-   public:
-    OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
-        LoadBalancingPolicy::Args args) const override {
-      return MakeOrphanable<OutlierDetectionLb>(std::move(args));
-    }
-
-    absl::string_view name() const override { return kOutlierDetection; }
-
-    absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
-    ParseLoadBalancingConfig(const Json& json) const override {
-      ValidationErrors errors;
-      OutlierDetectionConfig outlier_detection_config;
-      RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
+  absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
+  ParseLoadBalancingConfig(const Json& json) const override {
+    ValidationErrors errors;
+    OutlierDetectionConfig outlier_detection_config;
+    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
+    {
+      outlier_detection_config =
+          LoadFromJson<OutlierDetectionConfig>(json, JsonArgs(), &errors);
+      // Parse childPolicy manually.
       {
-        outlier_detection_config =
-            LoadFromJson<OutlierDetectionConfig>(json, JsonArgs(), &errors);
-        // Parse childPolicy manually.
-        {
-          ValidationErrors::ScopedField field(&errors, ".childPolicy");
-          auto it = json.object().find("childPolicy");
-          if (it == json.object().end()) {
-            errors.AddError("field not present");
+        ValidationErrors::ScopedField field(&errors, ".childPolicy");
+        auto it = json.object().find("childPolicy");
+        if (it == json.object().end()) {
+          errors.AddError("field not present");
+        } else {
+          auto child_policy_config = CoreConfiguration::Get()
+                                         .lb_policy_registry()
+                                         .ParseLoadBalancingConfig(it->second);
+          if (!child_policy_config.ok()) {
+            errors.AddError(child_policy_config.status().message());
           } else {
-            auto child_policy_config =
-                CoreConfiguration::Get()
-                    .lb_policy_registry()
-                    .ParseLoadBalancingConfig(it->second);
-            if (!child_policy_config.ok()) {
-              errors.AddError(child_policy_config.status().message());
-            } else {
-              child_policy = std::move(*child_policy_config);
-            }
+            child_policy = std::move(*child_policy_config);
           }
         }
       }
-      if (!errors.ok()) {
-        return errors.status(
-            absl::StatusCode::kInvalidArgument,
-            "errors validating outlier_detection LB policy config");
-      }
-      return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
-                                                      std::move(child_policy));
     }
-  };
+    if (!errors.ok()) {
+      return errors.status(
+          absl::StatusCode::kInvalidArgument,
+          "errors validating outlier_detection LB policy config");
+    }
+    return MakeRefCounted<OutlierDetectionLbConfig>(outlier_detection_config,
+                                                    std::move(child_policy));
+  }
+};
 
 }  // namespace
 
