@@ -18,7 +18,7 @@ module GRPC
     # Need a free variable here to keep value of logger_obj for logger closure
     @logger = logger_obj
 
-    self.extend(
+    extend(
       Module.new do
         def logger
           @logger
