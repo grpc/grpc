@@ -505,8 +505,6 @@ class ServerTransport;
 
 class Transport : public InternallyRefCounted<Transport> {
  public:
-  using InternallyRefCounted<Transport>::InternallyRefCounted;
-
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
@@ -603,7 +601,6 @@ class FilterStackTransport : public Transport {
 
 class ClientTransport : public Transport {
  public:
-  ClientTransport() : Transport("client_transport") {}
   virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
@@ -612,7 +609,6 @@ class ClientTransport : public Transport {
 
 class ServerTransport : public Transport {
  public:
-  ServerTransport() : Transport("server_transport") {}
   // Called once slightly after transport setup to register the accept function.
   virtual void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;
