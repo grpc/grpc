@@ -336,7 +336,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        absl::nullopt}
           .ToMetadataBatch();
-  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
+  bool saw_encoding_errors = false;
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_,
+                                      saw_encoding_errors);
+  // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       WaitForDataEndpointSetup(self));
@@ -350,7 +353,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        self->connection_->data_alignment_}
           .ToMetadataBatch();
-  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
+  bool saw_encoding_errors = false;
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_,
+                                      saw_encoding_errors);
+  // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       [self]() mutable {

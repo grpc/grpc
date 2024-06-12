@@ -69,7 +69,7 @@ def _get_external_deps(external_deps):
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
-                "//conditions:default": ["//external:cares"],
+                "//conditions:default": ["//third_party:cares"],
             })
         elif dep == "cronet_c_for_grpc":
             ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
@@ -84,7 +84,7 @@ def _get_external_deps(external_deps):
         elif dep == "libprotobuf_mutator":
             ret.append("@com_google_libprotobuf_mutator//:libprotobuf_mutator")
         else:
-            ret.append("//external:" + dep)
+            ret.append("//third_party:" + dep)
     return ret
 
 def _update_visibility(visibility):
