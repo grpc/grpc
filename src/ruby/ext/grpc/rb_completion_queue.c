@@ -35,15 +35,15 @@ typedef struct next_call_stack {
   grpc_event event;
   gpr_timespec timeout;
   void* tag;
-  void(*unblock_func)(void*);
+  void (*unblock_func)(void*);
   void* unblock_func_arg;
 } next_call_stack;
 
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
 static void* grpc_rb_completion_queue_pluck_no_gil(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
-  next_call->event = grpc_completion_queue_pluck(
-      next_call->cq, next_call->tag, next_call->timeout, NULL);
+  next_call->event = grpc_completion_queue_pluck(next_call->cq, next_call->tag,
+                                                 next_call->timeout, NULL);
   return NULL;
 }
 
@@ -66,7 +66,9 @@ static void outer_unblock_func(void* param) {
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline, void(*unblock_func)(void* param), void* unblock_func_arg) {
+                                     gpr_timespec deadline,
+                                     void (*unblock_func)(void* param),
+                                     void* unblock_func_arg) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   next_call.cq = queue;

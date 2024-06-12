@@ -205,9 +205,10 @@ struct server_request_call_args {
 static void shutdown_server_unblock_func(void* arg) {
   grpc_rb_server* server = (grpc_rb_server*)arg;
   gpr_mu_lock(&server->shutdown_and_notify_done_mu);
-  gpr_log(GPR_INFO,
-          "GRPC_RUBY: shutdown_server_unblock_func shutdown_and_notify_done: %d",
-          server->shutdown_and_notify_done);
+  gpr_log(
+      GPR_INFO,
+      "GRPC_RUBY: shutdown_server_unblock_func shutdown_and_notify_done: %d",
+      server->shutdown_and_notify_done);
   if (server->shutdown_and_notify_done) {
     gpr_mu_unlock(&server->shutdown_and_notify_done_mu);
     return;
@@ -221,10 +222,11 @@ static void shutdown_server_unblock_func(void* arg) {
   grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
   // Following call is blocking, but should finish quickly since we've
   // cancelled all calls.
-  event = grpc_completion_queue_pluck(
-        server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  event = grpc_completion_queue_pluck(server->queue, tag,
+                                      gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
   gpr_log(GPR_INFO,
-          "GRPC_RUBY: shutdown_server_unblock_func pluck event.type: %d event.success: %d",
+          "GRPC_RUBY: shutdown_server_unblock_func pluck event.type: %d "
+          "event.success: %d",
           event.type, event.success);
 }
 
@@ -251,7 +253,8 @@ static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
   }
 
   grpc_event ev = rb_completion_queue_pluck(
-      args->server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), shutdown_server_unblock_func, args->server);
+      args->server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME),
+      shutdown_server_unblock_func, args->server);
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "request_call completion failed");
   }
