@@ -49,8 +49,6 @@ typedef struct grpc_rb_server {
   /* The actual server */
   grpc_server* wrapped;
   grpc_completion_queue* queue;
-  // shutdown_and_notify_done can be accessed with and without the GIL
-  gpr_mu shutdown_and_notify_done_mu;
   int shutdown_and_notify_done;
   int destroy_done;
 } grpc_rb_server;
@@ -59,13 +57,8 @@ static void grpc_rb_server_maybe_shutdown_and_notify(grpc_rb_server* server,
                                                      gpr_timespec deadline) {
   grpc_event ev;
   void* tag = &ev;
-  gpr_mu_lock(&server->shutdown_and_notify_done_mu);
-  if (server->shutdown_and_notify_done) {
-    gpr_mu_unlock(&server->shutdown_and_notify_done_mu);
-    return;
-  }
+  if (server->shutdown_and_notify_done) return;
   server->shutdown_and_notify_done = 1;
-  gpr_mu_unlock(&server->shutdown_and_notify_done_mu);
   if (server->wrapped != NULL) {
     grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
     // Following pluck calls will release the GIL and block but cannot
@@ -142,7 +135,6 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
   wrapper->wrapped = NULL;
   wrapper->destroy_done = 0;
   wrapper->shutdown_and_notify_done = 0;
-  gpr_mu_init(&wrapper->shutdown_and_notify_done_mu);
   return TypedData_Wrap_Struct(cls, &grpc_rb_server_data_type, wrapper);
 }
 
@@ -204,22 +196,12 @@ struct server_request_call_args {
 
 static void shutdown_server_unblock_func(void* arg) {
   grpc_rb_server* server = (grpc_rb_server*)arg;
-  gpr_mu_lock(&server->shutdown_and_notify_done_mu);
-  gpr_log(
-      GPR_INFO,
-      "GRPC_RUBY: shutdown_server_unblock_func shutdown_and_notify_done: %d",
-      server->shutdown_and_notify_done);
-  if (server->shutdown_and_notify_done) {
-    gpr_mu_unlock(&server->shutdown_and_notify_done_mu);
-    return;
-  }
-  server->shutdown_and_notify_done = 1;
-  gpr_mu_unlock(&server->shutdown_and_notify_done_mu);
+  gpr_log(GPR_INFO, "GRPC_RUBY: shutdown_server_unblock_func");
   GPR_ASSERT(server->wrapped != NULL);
-  grpc_server_cancel_all_calls(server->wrapped);
   grpc_event event;
   void* tag = &event;
   grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
+  grpc_server_cancel_all_calls(server->wrapped);
   // Following call is blocking, but should finish quickly since we've
   // cancelled all calls.
   event = grpc_completion_queue_pluck(server->queue, tag,
