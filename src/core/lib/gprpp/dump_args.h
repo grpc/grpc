@@ -61,7 +61,7 @@ class DumpArgs {
   };
 
   template <typename Sink>
-  class CustomSinkImpl : public CustomSink {
+  class CustomSinkImpl final : public CustomSink {
    public:
     explicit CustomSinkImpl(Sink& sink) : sink_(sink) {}
     void Append(absl::string_view x) override { sink_.Append(x); }
