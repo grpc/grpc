@@ -932,8 +932,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
       if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
         LOG(INFO) << "[xds_override_host_lb " << this << "] map key " << address
                   << ": setting "
-                  << "eds_health_status=" << address_info.eds_health_status
-                  << " address_list=" << address_info.address_list;
+                  << "eds_health_status="
+                  << address_info.eds_health_status.ToString()
+                  << " address_list=" << address_info.address_list.ToString();
       }
       it->second->set_eds_health_status(address_info.eds_health_status);
       it->second->set_address_list(std::move(address_info.address_list));
