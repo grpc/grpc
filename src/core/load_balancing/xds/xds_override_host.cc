@@ -734,7 +734,7 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
       if (status.status() != XdsHealthStatus::kDraining) {
         if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
           LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                    << endpointendpoint.ToString()
+                    << endpoint.ToString()
                     << ": not draining, passing to child";
         }
         callback(endpoint);
@@ -866,9 +866,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
         !override_host_status_set_.Contains(status)) {
       if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
         LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                  << endpoint
-                  << ": draining but not in override_host_status set -- "
-                     "ignoring";
+                  << endpoint.ToString();
+        << ": draining but not in override_host_status set -- "
+           "ignoring";
       }
       return;
     }
