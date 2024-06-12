@@ -346,6 +346,7 @@ grpc_objc_testing_library(
 grpc_objc_testing_library(
     name = "EventEngineUnitTests-lib",
     srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
+    defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
     deps = [
         "//src/core:cf_event_engine",
         "//test/core/event_engine/cf:cf_engine_unit_test_lib",
