@@ -32,6 +32,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -41,7 +42,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/impl/connectivity_state.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/subchannel_interface_internal.h"
