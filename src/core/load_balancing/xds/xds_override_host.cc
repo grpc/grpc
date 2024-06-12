@@ -734,7 +734,8 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
       if (status.status() != XdsHealthStatus::kDraining) {
         if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
           LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                    << endpoint << ": not draining, passing to child";
+                    << endpointendpoint.ToString()
+                    << ": not draining, passing to child";
         }
         callback(endpoint);
       }
@@ -778,8 +779,10 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
   connection_idle_timeout_ = it->second->cluster->connection_idle_timeout;
   if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
     LOG(INFO) << "[xds_override_host_lb " << this
-              << "] override host status set: " << override_host_status_set_
-              << " connection idle timeout: " << connection_idle_timeout_;
+              << "] override host status set: "
+              << override_host_status_set_.ToString()
+              << " connection idle timeout: "
+              << connection_idle_timeout_.ToString();
   }
   // Update address map and wrap endpoint iterator for child policy.
   if (args.addresses.ok()) {
