@@ -52,8 +52,8 @@ typedef struct grpc_rb_server {
   int destroy_done;
 } grpc_rb_server;
 
-static void grpc_rb_server_shutdown_and_notify_internal(
-    grpc_rb_server* server, gpr_timespec deadline) {
+static void grpc_rb_server_shutdown_and_notify_internal(grpc_rb_server* server,
+                                                        gpr_timespec deadline) {
   grpc_event ev;
   void* tag = &ev;
   if (server->wrapped != NULL) {
