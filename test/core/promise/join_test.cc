@@ -26,21 +26,17 @@
 namespace grpc_core {
 
 TEST(JoinTest, Join1) {
-  auto r = Join([] { return 3; })();
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value(), std::make_tuple(3));
+  EXPECT_THAT(Join([] { return 3; })(), IsReady(std::make_tuple(3)));
 }
 
 TEST(JoinTest, Join2) {
-  auto r = Join([] { return 3; }, [] { return 4; })();
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value(), std::make_tuple(3, 4));
+  EXPECT_THAT(Join([] { return 3; }, [] { return 4; })(),
+              IsReady(std::make_tuple(3, 4)));
 }
 
 TEST(JoinTest, Join3) {
-  auto r = Join([] { return 3; }, [] { return 4; }, [] { return 5; })();
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value(), std::make_tuple(3, 4, 5));
+  EXPECT_THAT(Join([] { return 3; }, [] { return 4; }, [] { return 5; })(),
+              IsReady(std::make_tuple(3, 4, 5)));
 }
 
 }  // namespace grpc_core
