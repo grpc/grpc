@@ -488,11 +488,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//:gpr",
         "//:promise",
         "//src/core:activity",
         "//src/core:mpsc",
-        "poll_matcher",
     ],
 )
 
