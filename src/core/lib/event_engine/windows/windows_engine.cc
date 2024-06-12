@@ -326,21 +326,24 @@ void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
+  if (ShouldUseAresDnsResolver()) {
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-  auto ares_resolver = AresResolver::CreateAresResolver(
-      options.dns_server,
-      std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
-      shared_from_this());
-  if (!ares_resolver.ok()) {
-    return ares_resolver.status();
+    GRPC_TRACE_LOG(event_engine_dns, INFO)
+        << "WindowsEventEngine::" << this << " creating AresResolver";
+    auto ares_resolver = AresResolver::CreateAresResolver(
+        options.dns_server,
+        std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
+        shared_from_this());
+    if (!ares_resolver.ok()) {
+      return ares_resolver.status();
+    }
+    return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
+        std::move(*ares_resolver));
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   }
-  return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
-      std::move(*ares_resolver));
-#else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   GRPC_TRACE_LOG(event_engine_dns, INFO)
       << "WindowsEventEngine::" << this << " creating NativeWindowsDNSResolver";
   return std::make_unique<NativeWindowsDNSResolver>(shared_from_this());
-#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
@@ -496,8 +499,8 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   bool success =
       ConnectEx(connection_state->socket()->raw_socket(), address.address(),
                 address.size(), nullptr, 0, nullptr, info->overlapped());
-  // It wouldn't be unusual to get a success immediately. But we'll still get an
-  // IOCP notification, so let's ignore it.
+  // It wouldn't be unusual to get a success immediately. But we'll still get
+  // an IOCP notification, so let's ignore it.
   if (success) return connection_state->connection_handle();
   // Otherwise, we need to handle an error or a pending IO Event.
   int last_error = WSAGetLastError();
@@ -556,7 +559,8 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
   grpc_core::MutexLock state_lock(&connection_state->mu());
-  // The connection cannot be cancelled if the deadline timer is already firing.
+  // The connection cannot be cancelled if the deadline timer is already
+  // firing.
   if (!Cancel(connection_state->timer_handle())) return false;
   // The deadline timer was cancelled, so we must clean up its state.
   connection_state->AbortDeadlineTimer();
