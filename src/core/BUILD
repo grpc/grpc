@@ -3540,6 +3540,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_metadata",
+    srcs = ["client_channel/lb_metadata.cc"],
+    hdrs = ["client_channel/lb_metadata.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "lb_policy",
+        "metadata_batch",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_call_tracing_filter",
+    srcs = ["client_channel/lb_call_tracing_filter.cc"],
+    hdrs = ["client_channel/lb_call_tracing_filter.h"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        "arena",
+        "backend_metric_parser",
+        "channel_args",
+        "context",
+        "grpc_backend_metric_data",
+        "lb_metadata",
+        "lb_policy",
+        "metadata",
+        "metadata_batch",
+        "slice",
+        "//:grpc_base",
+        "//:grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
     name = "subchannel_interface",
     hdrs = ["load_balancing/subchannel_interface.h"],
     external_deps = ["absl/status"],
