@@ -34,6 +34,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -51,6 +52,9 @@
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
+
+extern absl::Status AresInit();
+extern void AresShutdown();
 
 #define MAX_PLUGINS 128
 
@@ -109,8 +113,14 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
-    // Note: use AresInit() when we remove this function.
-    grpc_resolver_dns_ares_init();
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      auto status = AresInit();
+      if (!status.ok()) {
+        VLOG(2) << "AresInit failed: " << status.message();
+      }
+    } else {
+      grpc_resolver_dns_ares_init();
+    }
     grpc_iomgr_start();
   }
 
@@ -123,8 +133,11 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    // Note: use AresShutdown() when we remove this function.
-    grpc_resolver_dns_ares_shutdown();
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      AresShutdown();
+    } else {
+      grpc_resolver_dns_ares_shutdown();
+    }
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;

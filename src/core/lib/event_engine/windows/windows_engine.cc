@@ -499,8 +499,8 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
   bool success =
       ConnectEx(connection_state->socket()->raw_socket(), address.address(),
                 address.size(), nullptr, 0, nullptr, info->overlapped());
-  // It wouldn't be unusual to get a success immediately. But we'll still get
-  // an IOCP notification, so let's ignore it.
+  // It wouldn't be unusual to get a success immediately. But we'll still get an
+  // IOCP notification, so let's ignore it.
   if (success) return connection_state->connection_handle();
   // Otherwise, we need to handle an error or a pending IO Event.
   int last_error = WSAGetLastError();
@@ -559,8 +559,7 @@ bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   }
   auto* connection_state = reinterpret_cast<ConnectionState*>(handle.keys[0]);
   grpc_core::MutexLock state_lock(&connection_state->mu());
-  // The connection cannot be cancelled if the deadline timer is already
-  // firing.
+  // The connection cannot be cancelled if the deadline timer is already firing.
   if (!Cancel(connection_state->timer_handle())) return false;
   // The deadline timer was cancelled, so we must clean up its state.
   connection_state->AbortDeadlineTimer();
