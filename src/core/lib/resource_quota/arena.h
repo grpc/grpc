@@ -99,8 +99,8 @@ void DestroyArenaContext(void* p) {
 }
 
 template <typename T>
-const uint16_t ArenaContextTraits<T>::id_ = BaseArenaContextTraits::MakeId(
-    DestroyArenaContext<T>);
+const uint16_t ArenaContextTraits<T>::id_ =
+    BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
 
 template <typename T, typename A, typename B>
 struct IfArray {
