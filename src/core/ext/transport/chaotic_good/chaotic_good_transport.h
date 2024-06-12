@@ -33,8 +33,6 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 
-extern grpc_core::TraceFlag grpc_chaotic_good_trace;
-
 namespace grpc_core {
 namespace chaotic_good {
 
@@ -54,8 +52,10 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   }
 
   auto WriteFrame(const FrameInterface& frame) {
-    auto buffers = frame.Serialize(&encoder_);
-    if (grpc_chaotic_good_trace.enabled()) {
+    bool saw_encoding_errors = false;
+    auto buffers = frame.Serialize(&encoder_, saw_encoding_errors);
+    // ignore encoding errors: they will be logged separately already
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
       gpr_log(GPR_INFO, "CHAOTIC_GOOD: WriteFrame to:%s %s",
               ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                   .value_or("<<unknown peer address>>")
@@ -76,7 +76,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           auto frame_header =
               FrameHeader::Parse(reinterpret_cast<const uint8_t*>(
                   GRPC_SLICE_START_PTR(read_buffer.c_slice())));
-          if (grpc_chaotic_good_trace.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
             gpr_log(GPR_INFO, "CHAOTIC_GOOD: ReadHeader from:%s %s",
                     ResolvedAddressToString(control_endpoint_.GetPeerAddress())
                         .value_or("<<unknown peer address>>")
@@ -125,7 +125,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
                                 FrameLimits limits) {
     auto s = frame.Deserialize(&parser_, header, bitgen_, arena,
                                std::move(buffers), limits);
-    if (grpc_chaotic_good_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
       gpr_log(GPR_INFO, "CHAOTIC_GOOD: DeserializeFrame %s",
               s.ok() ? frame.ToString().c_str() : s.ToString().c_str());
     }

@@ -46,13 +46,13 @@
 namespace grpc {
 namespace internal {
 
-class OpenTelemetryPlugin::ClientCallTracer
+class OpenTelemetryPluginImpl::ClientCallTracer
     : public grpc_core::ClientCallTracer {
  public:
   class CallAttemptTracer
       : public grpc_core::ClientCallTracer::CallAttemptTracer {
    public:
-    CallAttemptTracer(const OpenTelemetryPlugin::ClientCallTracer* parent,
+    CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
                       bool arena_allocated);
 
     std::string TraceId() override {
@@ -113,8 +113,8 @@ class OpenTelemetryPlugin::ClientCallTracer
 
   ClientCallTracer(
       const grpc_core::Slice& path, grpc_core::Arena* arena,
-      bool registered_method, OpenTelemetryPlugin* otel_plugin,
-      std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config);
+      bool registered_method, OpenTelemetryPluginImpl* otel_plugin,
+      std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config);
   ~ClientCallTracer() override;
 
   std::string TraceId() override {
@@ -143,8 +143,8 @@ class OpenTelemetryPlugin::ClientCallTracer
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
   const bool registered_method_;
-  OpenTelemetryPlugin* otel_plugin_;
-  std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config_;
+  OpenTelemetryPluginImpl* otel_plugin_;
+  std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

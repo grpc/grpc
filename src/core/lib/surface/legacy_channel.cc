@@ -92,14 +92,34 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+    // Add per-server stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        (*r)->stats_plugin_group->AddStatsPlugin(
+            plugin, plugin->GetServerScopeConfig(args));
+      }
+    }
   } else {
     std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
                                 .value_or(CoreConfiguration::Get()
                                               .resolver_registry()
                                               .GetDefaultAuthority(target));
+    experimental::StatsPluginChannelScope scope(target, authority);
     *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-            experimental::StatsPluginChannelScope(target, authority));
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+    // Add per-channel stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        (*r)->stats_plugin_group->AddStatsPlugin(
+            plugin, plugin->GetChannelScopeConfig(scope));
+      }
+    }
   }
   return MakeRefCounted<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
@@ -284,7 +304,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
 
   static void WatchComplete(void* arg, grpc_error_handle error) {
     RefCountedPtr<StateWatcher> self(static_cast<StateWatcher*>(arg));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
+    if (GRPC_TRACE_FLAG_ENABLED(op_failure)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
     MutexLock lock(&self->mu_);

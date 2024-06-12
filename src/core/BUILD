@@ -547,7 +547,6 @@ grpc_cc_library(
         "pipe",
         "poll",
         "promise_factory",
-        "promise_trace",
         "try_seq",
         "//:gpr",
         "//:gpr_platform",
@@ -577,11 +576,11 @@ grpc_cc_library(
         "context",
         "poll",
         "promise_factory",
-        "promise_trace",
         "ref_counted",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
+        "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
 )
@@ -796,9 +795,8 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_like",
-        "promise_trace",
         "//:gpr",
-        "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -887,9 +885,9 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_like",
-        "promise_trace",
         "//:debug_location",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1025,8 +1023,8 @@ grpc_cc_library(
     deps = [
         "activity",
         "poll",
-        "promise_trace",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1044,9 +1042,9 @@ grpc_cc_library(
     deps = [
         "activity",
         "poll",
-        "promise_trace",
         "wait_set",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
@@ -1068,7 +1066,6 @@ grpc_cc_library(
         "context",
         "poll",
         "promise_factory",
-        "promise_trace",
         "//:debug_location",
         "//:gpr",
     ],
@@ -1095,7 +1092,6 @@ grpc_cc_library(
         "interceptor_list",
         "map",
         "poll",
-        "promise_trace",
         "seq",
         "//:debug_location",
         "//:gpr",
@@ -1133,21 +1129,6 @@ grpc_cc_library(
         "ref_counted",
         "//:gpr",
         "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
-    name = "promise_trace",
-    srcs = [
-        "lib/promise/trace.cc",
-    ],
-    hdrs = [
-        "lib/promise/trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
     ],
 )
 
@@ -1205,10 +1186,10 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "promise_status",
-        "promise_trace",
         "status_flag",
         "//:gpr",
         "//:gpr_platform",
+        "//:grpc_trace",
     ],
 )
 
@@ -1445,7 +1426,6 @@ grpc_cc_library(
         "periodic_update",
         "poll",
         "race",
-        "resource_quota_trace",
         "seq",
         "slice_refcount",
         "time",
@@ -1537,20 +1517,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "resource_quota_trace",
-    srcs = [
-        "lib/resource_quota/trace.cc",
-    ],
-    hdrs = [
-        "lib/resource_quota/trace.h",
-    ],
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "resource_quota",
     srcs = [
         "lib/resource_quota/resource_quota.cc",
@@ -1578,9 +1544,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "slice_refcount",
-    srcs = [
-        "lib/slice/slice_refcount.cc",
-    ],
     hdrs = [
         "lib/slice/slice_refcount.h",
     ],
@@ -2493,6 +2456,7 @@ grpc_cc_library(
         "ares_resolver",
         "channel_args_endpoint_config",
         "common_event_engine_closures",
+        "dump_args",
         "error",
         "event_engine_common",
         "event_engine_tcp_socket_utils",
@@ -2687,11 +2651,9 @@ grpc_cc_library(
     ],
 )
 
+# TODO(hork): delete this target when refactoring to GRPC_TRACE_LOG(flag, level)
 grpc_cc_library(
     name = "event_engine_trace",
-    srcs = [
-        "lib/event_engine/trace.cc",
-    ],
     hdrs = [
         "lib/event_engine/trace.h",
     ],
@@ -2732,6 +2694,7 @@ grpc_cc_library(
         {
             "//:windows": ["windows_event_engine"],
             "//:windows_msvc": ["windows_event_engine"],
+            "//:windows_clang": ["windows_event_engine"],
             "//:windows_other": ["windows_event_engine"],
             "//:mac": [
                 "posix_event_engine",
@@ -3106,21 +3069,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "channel_stack_trace",
-    srcs = [
-        "lib/channel/channel_stack_trace.cc",
-    ],
-    hdrs = [
-        "lib/channel/channel_stack_trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "channel_init",
     srcs = [
         "lib/surface/channel_init.cc",
@@ -3140,7 +3088,6 @@ grpc_cc_library(
         "call_filters",
         "channel_args",
         "channel_fwd",
-        "channel_stack_trace",
         "channel_stack_type",
         "interception_chain",
         "//:channel_stack_builder",
@@ -4765,7 +4712,6 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "validation_errors",
-        "//:call_trace",
         "//:channel_arg_names",
         "//:config",
         "//:gpr",
@@ -4924,6 +4870,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
         "absl/log:check",
+        "absl/log:globals",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -5804,6 +5751,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "glob",
+    srcs = ["lib/gprpp/glob.cc"],
+    hdrs = ["lib/gprpp/glob.h"],
+    external_deps = ["absl/strings"],
+)
+
+grpc_cc_library(
     name = "status_conversion",
     srcs = ["lib/transport/status_conversion.cc"],
     hdrs = ["lib/transport/status_conversion.h"],
@@ -6580,21 +6534,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_xds_trace",
-    srcs = [
-        "resolver/xds/xds_resolver_trace.cc",
-    ],
-    hdrs = [
-        "resolver/xds/xds_resolver_trace.h",
-    ],
-    language = "c++",
-    deps = [
-        "//:gpr_platform",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
     name = "xds_dependency_manager",
     srcs = [
         "resolver/xds/xds_dependency_manager.cc",
@@ -6612,7 +6551,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_lb_xds_channel_args",
-        "grpc_resolver_xds_trace",
         "grpc_xds_client",
         "match",
         "ref_counted",
@@ -6654,7 +6592,6 @@ grpc_cc_library(
         "experiments",
         "grpc_lb_policy_ring_hash",
         "grpc_resolver_xds_attributes",
-        "grpc_resolver_xds_trace",
         "grpc_service_config",
         "grpc_xds_client",
         "iomgr_fwd",
@@ -7064,7 +7001,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_inproc",
     srcs = [
-        "ext/transport/inproc/inproc_plugin.cc",
         "ext/transport/inproc/inproc_transport.cc",
         "ext/transport/inproc/legacy_inproc_transport.cc",
     ],
@@ -7327,9 +7263,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "chaotic_good_transport",
-    srcs = [
-        "ext/transport/chaotic_good/chaotic_good_transport.cc",
-    ],
     hdrs = [
         "ext/transport/chaotic_good/chaotic_good_transport.h",
     ],
@@ -7893,6 +7826,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log:check",
         "absl/strings",
+        "absl/types:optional",
         "absl/types:span",
     ],
     language = "c++",

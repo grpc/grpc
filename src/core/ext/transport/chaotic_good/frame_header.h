@@ -34,6 +34,19 @@ enum class FrameType : uint8_t {
   kCancel = 0x81,
 };
 
+inline std::ostream& operator<<(std::ostream& out, FrameType type) {
+  switch (type) {
+    case FrameType::kSettings:
+      return out << "Settings";
+    case FrameType::kFragment:
+      return out << "Fragment";
+    case FrameType::kCancel:
+      return out << "Cancel";
+    default:
+      return out << "Unknown[" << static_cast<int>(type) << "]";
+  }
+}
+
 struct FrameHeader {
   FrameType type = FrameType::kCancel;
   BitSet<3> flags;

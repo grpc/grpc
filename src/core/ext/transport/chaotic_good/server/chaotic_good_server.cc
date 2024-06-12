@@ -98,7 +98,7 @@ ChaoticGoodServerListener::~ChaoticGoodServerListener() {
 
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(
     grpc_event_engine::experimental::EventEngine::ResolvedAddress addr) {
-  if (grpc_chaotic_good_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     auto str = grpc_event_engine::experimental::ResolvedAddressToString(addr);
     LOG(INFO) << "CHAOTIC_GOOD: Listen on "
               << (str.ok() ? str->c_str() : str.status().ToString());
@@ -139,9 +139,9 @@ absl::Status ChaoticGoodServerListener::StartListening() {
   CHECK(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
   if (!status.ok()) {
-    LOG(ERROR) << "Start listening failed: " << status.ToString();
-  } else if (grpc_chaotic_good_trace.enabled()) {
-    LOG(INFO) << "CHAOTIC_GOOD: Started listening";
+    LOG(ERROR) << "Start listening failed: " << status;
+  } else {
+    GRPC_TRACE_LOG(chaotic_good, INFO) << "CHAOTIC_GOOD: Started listening";
   }
   return status;
 }
@@ -159,9 +159,7 @@ ChaoticGoodServerListener::ActiveConnection::~ActiveConnection() {
 }
 
 void ChaoticGoodServerListener::ActiveConnection::Orphan() {
-  if (grpc_chaotic_good_trace.enabled()) {
-    LOG(INFO) << "ActiveConnection::Orphan() " << this;
-  }
+  GRPC_TRACE_LOG(chaotic_good, INFO) << "ActiveConnection::Orphan() " << this;
   if (handshaking_state_ != nullptr) {
     handshaking_state_->Shutdown();
     handshaking_state_.reset();
@@ -299,7 +297,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           },
           [self](PromiseEndpoint ret) -> absl::Status {
             MutexLock lock(&self->connection_->listener_->mu_);
-            if (grpc_chaotic_good_trace.enabled()) {
+            if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
               gpr_log(
                   GPR_INFO, "%p Data endpoint setup done: shutdown=%s",
                   self->connection_.get(),
@@ -338,7 +336,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        absl::nullopt}
           .ToMetadataBatch();
-  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
+  bool saw_encoding_errors = false;
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_,
+                                      saw_encoding_errors);
+  // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       WaitForDataEndpointSetup(self));
@@ -352,7 +353,10 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       SettingsMetadata{absl::nullopt, self->connection_->connection_id_,
                        self->connection_->data_alignment_}
           .ToMetadataBatch();
-  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_);
+  bool saw_encoding_errors = false;
+  auto write_buffer = frame.Serialize(&self->connection_->hpack_compressor_,
+                                      saw_encoding_errors);
+  // ignore encoding errors: they will be logged separately already
   return TrySeq(
       self->connection_->endpoint_.Write(std::move(write_buffer.control)),
       [self]() mutable {
@@ -445,19 +449,14 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 
 Timestamp ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     GetConnectionDeadline() {
-  if (connection_->args().Contains(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)) {
-    return Timestamp::Now() +
-           connection_->args()
-               .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
-               .value();
-  }
-  return Timestamp::Now() + kConnectionDeadline;
+  return Timestamp::Now() +
+         connection_->args()
+             .GetDurationFromIntMillis(GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS)
+             .value_or(kConnectionDeadline);
 }
 
 void ChaoticGoodServerListener::Orphan() {
-  if (grpc_chaotic_good_trace.enabled()) {
-    LOG(INFO) << "ChaoticGoodServerListener::Orphan()";
-  }
+  GRPC_TRACE_LOG(chaotic_good, INFO) << "ChaoticGoodServerListener::Orphan()";
   {
     absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list;
     MutexLock lock(&mu_);

@@ -78,14 +78,8 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(hork): Add a test that checks for proper authority from balancer
 // addresses.
 
-// TODO(hork): replace this with `dns_resolver` when all other resolver
-// implementations are removed.
-TraceFlag grpc_event_engine_client_channel_resolver_trace(
-    false, "event_engine_client_channel_resolver");
-
 #define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                    \
-  if (GRPC_TRACE_FLAG_ENABLED(                                           \
-          grpc_event_engine_client_channel_resolver_trace)) {            \
+  if (GRPC_TRACE_FLAG_ENABLED(event_engine_client_channel_resolver)) {   \
     gpr_log(GPR_DEBUG, "(event_engine client channel resolver) " format, \
             __VA_ARGS__);                                                \
   }
@@ -185,7 +179,7 @@ EventEngineClientChannelDNSResolver::EventEngineClientChannelDNSResolver(
                           .set_jitter(GRPC_DNS_RECONNECT_JITTER)
                           .set_max_backoff(Duration::Milliseconds(
                               GRPC_DNS_RECONNECT_MAX_BACKOFF_SECONDS * 1000)),
-                      &grpc_event_engine_client_channel_resolver_trace),
+                      &event_engine_client_channel_resolver_trace),
       request_service_config_(
           !channel_args()
                .GetBool(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION)
