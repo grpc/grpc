@@ -29,7 +29,6 @@
 
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -86,9 +85,8 @@ grpc_ssl_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, grpc_core::ChannelArgs* args) {
   if (config_.pem_root_certs == nullptr) {
-    gpr_log(GPR_ERROR,
-            "No root certs in config. Client-side security connector must have "
-            "root certs.");
+    LOG(ERROR) << "No root certs in config. Client-side security connector "
+                  "must have root certs.";
     return nullptr;
   }
   absl::optional<std::string> overridden_target_name =
@@ -112,9 +110,7 @@ grpc_ssl_credentials::create_security_connector(
         &config_, config_.pem_root_certs, root_store_, session_cache,
         &factory_with_cache);
     if (status != GRPC_SECURITY_OK) {
-      gpr_log(GPR_ERROR,
-              "InitializeClientHandshakerFactory returned bad "
-              "status.");
+      LOG(ERROR) << "InitializeClientHandshakerFactory returned bad status.";
       return nullptr;
     }
     security_connector = grpc_ssl_channel_security_connector_create(
@@ -197,9 +193,8 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
                            config->pem_key_cert_pair->cert_chain != nullptr;
   tsi_ssl_client_handshaker_options options;
   if (pem_root_certs == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Handshaker factory creation failed. pem_root_certs cannot be nullptr");
+    LOG(ERROR) << "Handshaker factory creation failed. pem_root_certs cannot "
+                  "be nullptr";
     return GRPC_SECURITY_ERROR;
   }
   options.pem_root_certs = pem_root_certs;
@@ -218,8 +213,8 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
                                                             handshaker_factory);
   gpr_free(options.alpn_protocols);
   if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
-            tsi_result_to_string(result));
+    LOG(ERROR) << "Handshaker factory creation failed with "
+               << tsi_result_to_string(result);
     return GRPC_SECURITY_ERROR;
   }
   return GRPC_SECURITY_OK;
@@ -454,16 +449,14 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_with_options(
   grpc_server_credentials* retval = nullptr;
 
   if (options == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid options trying to create SSL server credentials.");
+    LOG(ERROR) << "Invalid options trying to create SSL server credentials.";
     goto done;
   }
 
   if (options->certificate_config == nullptr &&
       options->certificate_config_fetcher == nullptr) {
-    gpr_log(GPR_ERROR,
-            "SSL server credentials options must specify either "
-            "certificate config or fetcher.");
+    LOG(ERROR) << "SSL server credentials options must specify either "
+                  "certificate config or fetcher.";
     goto done;
   } else if (options->certificate_config_fetcher != nullptr &&
              options->certificate_config_fetcher->cb == nullptr) {

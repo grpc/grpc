@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+    grpc_set_absl_verbosity_debug();
     add_test();
     destruction_test();
     grpc_iomgr_platform_shutdown();
@@ -256,7 +256,7 @@ int main(int argc, char** argv) {
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+    grpc_set_absl_verbosity_debug();
     long_running_service_cleanup_test();
     add_test();
     destruction_test();

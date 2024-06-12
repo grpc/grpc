@@ -16,9 +16,10 @@
 //
 //
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -44,10 +45,9 @@ static target_service_account* target_service_account_create(
 void grpc_alts_credentials_client_options_add_target_service_account(
     grpc_alts_credentials_options* options, const char* service_account) {
   if (options == nullptr || service_account == nullptr) {
-    gpr_log(
-        GPR_ERROR,
-        "Invalid nullptr arguments to "
-        "grpc_alts_credentials_client_options_add_target_service_account()");
+    LOG(ERROR)
+        << "Invalid nullptr arguments to "
+           "grpc_alts_credentials_client_options_add_target_service_account()";
     return;
   }
   auto client_options =

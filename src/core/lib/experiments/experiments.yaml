@@ -124,7 +124,7 @@
 - name: multiping
   description:
     Allow more than one ping to be in flight at a time by default.
-  expiry: 2024/06/15
+  expiry: 2024/09/15
   owner: ctiller@google.com
   test_tags: [flow_control_test]
 - name: peer_state_based_framing
@@ -143,7 +143,7 @@
 - name: promise_based_inproc_transport
   description:
     Use promises for the in-process transport.
-  expiry: 2024/06/06
+  expiry: 2024/09/15
   owner: ctiller@google.com
   test_tags: []
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
