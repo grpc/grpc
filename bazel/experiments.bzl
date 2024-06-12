@@ -41,7 +41,7 @@ EXPERIMENT_ENABLES = {
     "trace_record_callops": "trace_record_callops",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
-    "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
+    "work_serializer_dispatch": "work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [
@@ -55,15 +55,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "core_end2end_test": [
-                "event_engine_client",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -82,10 +76,14 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "event_engine_client",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",

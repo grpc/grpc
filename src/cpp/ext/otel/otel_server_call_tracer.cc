@@ -49,7 +49,7 @@
 namespace grpc {
 namespace internal {
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordReceivedInitialMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
   path_ =
       recv_initial_metadata->get_pointer(grpc_core::HttpPathMetadata())->Ref();
@@ -80,7 +80,7 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordReceivedInitialMetadata(
   }
 }
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordSendInitialMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendInitialMetadata(
     grpc_metadata_batch* send_initial_metadata) {
   scope_config_->active_plugin_options_view().ForEach(
       [&](const InternalOpenTelemetryPluginOption& plugin_option,
@@ -96,14 +96,14 @@ void OpenTelemetryPlugin::ServerCallTracer::RecordSendInitialMetadata(
       otel_plugin_);
 }
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordSendTrailingMetadata(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendTrailingMetadata(
     grpc_metadata_batch* /*send_trailing_metadata*/) {
   // We need to record the time when the trailing metadata was sent to
   // mark the completeness of the request.
   elapsed_time_ = absl::Now() - start_time_;
 }
 
-void OpenTelemetryPlugin::ServerCallTracer::RecordEnd(
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   std::array<std::pair<absl::string_view, absl::string_view>, 2>
       additional_labels = {

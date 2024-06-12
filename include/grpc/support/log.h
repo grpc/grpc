@@ -82,6 +82,7 @@ struct gpr_log_func_args {
 typedef struct gpr_log_func_args gpr_log_func_args;
 
 typedef void (*gpr_log_func)(gpr_log_func_args* args);
+
 GPRAPI void gpr_set_log_function(gpr_log_func func);
 
 GPRAPI void gpr_assertion_failed(const char* filename, int line,

@@ -35,8 +35,6 @@
 #include "src/core/lib/iomgr/ev_apple.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-extern grpc_core::TraceFlag grpc_tcp_trace;
-
 GrpcLibraryInitHolder::GrpcLibraryInitHolder() { grpc_init(); }
 
 GrpcLibraryInitHolder::~GrpcLibraryInitHolder() { grpc_shutdown(); }
@@ -65,7 +63,7 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
   grpc_error_handle error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_DEBUG, "CFStream ReadCallback (%p, %p, %lu, %p)", handle,
             stream, type, client_callback_info);
   }
@@ -99,7 +97,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
   grpc_error_handle error;
   CFErrorRef stream_error;
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_DEBUG, "CFStream WriteCallback (%p, %p, %lu, %p)", handle,
             stream, type, clientCallBackInfo);
   }
@@ -176,7 +174,7 @@ void CFStreamHandle::Shutdown(grpc_error_handle error) {
 }
 
 void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "CFStream Handle ref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
@@ -186,7 +184,7 @@ void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
 }
 
 void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,

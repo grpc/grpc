@@ -114,7 +114,10 @@ auto ChaoticGoodConnector::DataEndpointWriteSettingsFrame(
   frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kData,
                                    self->connection_id_, kDataAlignmentBytes}
                       .ToMetadataBatch();
-  auto write_buffer = frame.Serialize(&self->hpack_compressor_);
+  bool saw_encoding_errors = false;
+  auto write_buffer =
+      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
+  // ignore encoding errors: they will be logged separately already
   return self->data_endpoint_.Write(std::move(write_buffer.control));
 }
 
@@ -215,7 +218,10 @@ auto ChaoticGoodConnector::ControlEndpointWriteSettingsFrame(
   frame.headers = SettingsMetadata{SettingsMetadata::ConnectionType::kControl,
                                    absl::nullopt, absl::nullopt}
                       .ToMetadataBatch();
-  auto write_buffer = frame.Serialize(&self->hpack_compressor_);
+  bool saw_encoding_errors = false;
+  auto write_buffer =
+      frame.Serialize(&self->hpack_compressor_, saw_encoding_errors);
+  // ignore encoding errors: they will be logged separately already
   return self->control_endpoint_.Write(std::move(write_buffer.control));
 }
 
@@ -313,7 +319,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
         },
         EventEngineWakeupScheduler(self->event_engine_),
         [self](absl::Status status) {
-          if (grpc_chaotic_good_trace.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
             gpr_log(GPR_INFO, "ChaoticGoodConnector::OnHandshakeDone: %s",
                     status.ToString().c_str());
           }
