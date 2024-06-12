@@ -866,9 +866,9 @@ void XdsOverrideHostLb::UpdateAddressMap(
         !override_host_status_set_.Contains(status)) {
       if (GRPC_TRACE_FLAG_ENABLED(xds_override_host_lb)) {
         LOG(INFO) << "[xds_override_host_lb " << this << "] endpoint "
-                  << endpoint.ToString();
-        << ": draining but not in override_host_status set -- "
-           "ignoring";
+                  << endpoint.ToString()
+                  << ": draining but not in override_host_status set -- "
+                     "ignoring";
       }
       return;
     }
@@ -934,7 +934,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
                   << ": setting "
                   << "eds_health_status="
                   << address_info.eds_health_status.ToString()
-                  << " address_list=" << address_info.address_list.ToString();
+                  << " address_list=" << address_info.address_list.c_str();
       }
       it->second->set_eds_health_status(address_info.eds_health_status);
       it->second->set_address_list(std::move(address_info.address_list));
