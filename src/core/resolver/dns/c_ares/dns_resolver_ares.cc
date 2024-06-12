@@ -735,16 +735,16 @@ void grpc_resolver_dns_ares_init() {
   }
 }
 
-void grpc_resolver_dns_ares_reset_dns_resolver() {
-  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::AresDNSResolver>());
-}
-
 void grpc_resolver_dns_ares_shutdown() {
   if (grpc_core::ShouldUseAresDnsResolver(
           grpc_core::ConfigVars::Get().DnsResolver())) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }
+}
+
+void grpc_resolver_dns_ares_reset_dns_resolver() {
+  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::AresDNSResolver>());
 }
 
 #else  // GRPC_ARES == 1
@@ -759,5 +759,7 @@ void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
 void grpc_resolver_dns_ares_init() {}
 
 void grpc_resolver_dns_ares_shutdown() {}
+
+void grpc_resolver_dns_ares_reset_dns_resolver() {}
 
 #endif  // GRPC_ARES == 1
