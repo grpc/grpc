@@ -52,8 +52,8 @@ typedef struct grpc_rb_server {
   int destroy_done;
 } grpc_rb_server;
 
-static void grpc_rb_server_shutdown_and_notify(grpc_rb_server* server,
-                                               gpr_timespec deadline) {
+static void grpc_rb_server_shutdown_and_notify_internal(
+    grpc_rb_server* server, gpr_timespec deadline) {
   grpc_event ev;
   void* tag = &ev;
   if (server->wrapped != NULL) {
@@ -99,7 +99,7 @@ static void grpc_rb_server_free_internal(void* p) {
   deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                           gpr_time_from_seconds(2, GPR_TIMESPAN));
 
-  grpc_rb_server_maybe_shutdown_and_notify(svr, deadline);
+  grpc_rb_server_shutdown_and_notify_internal(svr, deadline);
   grpc_rb_server_maybe_destroy(svr);
 
   xfree(p);
@@ -305,7 +305,7 @@ static VALUE grpc_rb_server_shutdown_and_notify(VALUE self, VALUE timeout) {
     deadline = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   }
 
-  grpc_rb_server_shutdown_and_notify(s, deadline);
+  grpc_rb_server_shutdown_and_notify_internal(s, deadline);
 
   return Qnil;
 }
