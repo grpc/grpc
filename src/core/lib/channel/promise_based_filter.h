@@ -32,6 +32,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -39,7 +40,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/call_finalization.h"

@@ -22,6 +22,7 @@
 #include <stdlib.h>
 
 #include "absl/debugging/failure_signal_handler.h"
+#include "absl/log/globals.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
@@ -137,6 +138,11 @@ void grpc_test_init(int* argc, char** argv) {
   srand(seed());
 }
 
+void grpc_set_absl_verbosity_debug() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  absl::SetVLogLevel("*grpc*/*", 2);
+}
+
 bool grpc_wait_until_shutdown(int64_t time_s) {
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(time_s);
   while (grpc_is_initialized()) {
@@ -148,6 +154,11 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
     }
   }
   return true;
+}
+
+void grpc_disable_all_absl_logs() {
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  absl::SetVLogLevel("*grpc*/*", -1);
 }
 
 namespace grpc {

@@ -27,6 +27,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/binder/end2end/fuzzers/binder_transport_fuzzer.pb.h"
 #include "test/core/transport/binder/end2end/fuzzers/fuzzer_utils.h"
 
@@ -37,7 +38,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 DEFINE_PROTO_FUZZER(const binder_transport_fuzzer::Input& input) {
   if (squelch) {
-    gpr_disable_all_logs();
+    grpc_disable_all_absl_logs();
   }
   grpc_init();
   {

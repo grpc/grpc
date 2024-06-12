@@ -42,9 +42,15 @@ gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms);
 // Prefer TestEnvironment below.
 void grpc_test_init(int* argc, char** argv);
 
+// Disable all absl logs via SetMinLogLevel and SetVLogLevel
+void grpc_disable_all_absl_logs(void);
+
 // Wait until gRPC is fully shut down.
 // Returns if grpc is shutdown
 bool grpc_wait_until_shutdown(int64_t time_s);
+
+// Sets absl verbosity via SetMinLogLevel and SetVLogLevel
+void grpc_set_absl_verbosity_debug(void);
 
 namespace grpc {
 namespace testing {

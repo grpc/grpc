@@ -229,7 +229,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gnarly"  # @unused
 
-core_version = "41.0.0"  # @unused
+core_version = "42.0.0"  # @unused
 
 version = "1.65.0-dev"  # @unused
 
@@ -2950,6 +2950,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        ":grpc++",
         "//src/cpp/ext/otel:otel_plugin",
     ],
 )
