@@ -386,7 +386,6 @@ void ChaoticGoodServerTransport::SetCallDestination(
 }
 
 void ChaoticGoodServerTransport::Orphan() {
-  LOG(INFO) << "ChaoticGoodServerTransport::Orphan";
   ActivityPtr writer;
   ActivityPtr reader;
   {
