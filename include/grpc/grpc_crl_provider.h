@@ -25,12 +25,12 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
+// TODO(gtcooke94) remove credentials import when tls credentials options are
+// removed
 #include <grpc/credentials.h>
-#include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
 namespace grpc_core {
-namespace experimental {
 
 // Opaque representation of a CRL. Must be thread safe.
 class Crl {
@@ -79,11 +79,19 @@ absl::StatusOr<std::shared_ptr<CrlProvider>> CreateDirectoryReloaderCrlProvider(
     absl::string_view directory, std::chrono::seconds refresh_duration,
     std::function<void(absl::Status)> reload_error_callback);
 
+// TODO(gtcooke94) - Remove experimental aliases eventually, put here so we
+// don't break existing code
+namespace experimental {
+using grpc_core::CertificateInfo;
+using grpc_core::CreateDirectoryReloaderCrlProvider;
+using grpc_core::CreateStaticCrlProvider;
+using grpc_core::Crl;
+using grpc_core::CrlProvider;
 }  // namespace experimental
+
 }  // namespace grpc_core
 
-// TODO(gtcooke94) - Mark with api macro when all wrapped langauges support C++
-// in core APIs
+// TODO(gtcooke94) - Remove when grpc_tls_credentials_options are removed
 /**
  * EXPERIMENTAL API - Subject to change
  *
