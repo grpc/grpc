@@ -93,6 +93,7 @@ class InprocServerTransport final : public ServerTransport {
   }
 
   void Disconnect(absl::Status error) {
+    if (disconnecting_.exchange(true, std::memory_order_relaxed)) return;
     connected_state_->Disconnect(std::move(error));
     state_.store(ConnectionState::kDisconnected, std::memory_order_relaxed);
   }
@@ -129,7 +130,6 @@ class InprocServerTransport final : public ServerTransport {
     }
 
     void Disconnect(absl::Status error) {
-      if (disconnecting_.exchange(true, std::memory_order_relaxed)) return;
       disconnect_error_ = std::move(error);
     }
 
@@ -145,7 +145,6 @@ class InprocServerTransport final : public ServerTransport {
     }
 
    private:
-    std::atomic<bool> disconnecting_{false};
     absl::Status disconnect_error_;
     Mutex state_tracker_mu_;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(state_tracker_mu_){
@@ -158,6 +157,7 @@ class InprocServerTransport final : public ServerTransport {
   enum class ConnectionState : uint8_t { kInitial, kReady, kDisconnected };
 
   std::atomic<ConnectionState> state_{ConnectionState::kInitial};
+  std::atomic<bool> disconnecting_{false};
   RefCountedPtr<UnstartedCallDestination> unstarted_call_handler_;
   RefCountedPtr<ConnectedState> connected_state_ =
       MakeRefCounted<ConnectedState>();
