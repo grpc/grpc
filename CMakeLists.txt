@@ -2718,6 +2718,7 @@ foreach(_hdr
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/internal/save_default_engine.h
   include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
@@ -3416,6 +3417,7 @@ foreach(_hdr
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/internal/save_default_engine.h
   include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
@@ -5485,6 +5487,7 @@ foreach(_hdr
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
+  include/grpc/event_engine/internal/save_default_engine.h
   include/grpc/event_engine/internal/slice_cast.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h

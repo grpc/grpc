@@ -42,6 +42,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpc/event_engine/internal/save_default_engine.h>
 
 #ifdef GPR_LINUX
 #include <sys/syscall.h>
@@ -346,6 +347,8 @@ void grpc_ruby_init() {
   gpr_once_init(&g_once_init, grpc_ruby_basic_init);
   grpc_ruby_fork_guard();
   grpc_init();
+  // Don't let the EE ever get destroyed. This simplifies forking.
+  grpc_save_default_engine();
   grpc_ruby_init_threads();
   // (only gpr_log after logging has been initialized)
   gpr_log(GPR_DEBUG,
