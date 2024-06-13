@@ -1182,7 +1182,7 @@ TEST(CallStateTest, PullServerInitialMetadataBlocksUntilStart) {
   activity.Activate();
   CallState state;
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
-  state.PushServerInitialMetadata();
+  EXPECT_WAKEUP(activity, state.PushServerInitialMetadata());
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
   EXPECT_WAKEUP(activity, state.Start());
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
@@ -1346,6 +1346,17 @@ TEST(CallStateTest, ReceiveTrailersOnly) {
   activity.Activate();
   CallState state;
   state.Start();
+  state.PushServerTrailingMetadata(false);
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
+  state.FinishPullServerInitialMetadata();
+  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
+  state.FinishPullServerTrailingMetadata();
+}
+
+TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
   state.PushServerTrailingMetadata(false);
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();

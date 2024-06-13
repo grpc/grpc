@@ -632,6 +632,12 @@ Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
                         server_to_client_push_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
+      if (server_to_client_push_state_ ==
+          ServerToClientPushState::kTrailersOnly) {
+        server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
+        return false;
+      }
+      server_to_client_push_waiter_.pending();
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kStarted:
       break;
