@@ -2947,7 +2947,10 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
    public:
     explicit FailConfigSelector(absl::Status status)
         : status_(std::move(status)) {}
-    const char* name() const override { return "FailConfigSelector"; }
+    grpc_core::UniqueTypeName name() const override {
+      static grpc_core::UniqueTypeName::Factory kFactory("FailConfigSelector");
+      return kFactory.Create();
+    }
     bool Equals(const ConfigSelector* other) const override {
       return status_ == static_cast<const FailConfigSelector*>(other)->status_;
     }
