@@ -53,7 +53,9 @@ class TlsCredentialsBuilder {
   // 2. The certificate chain conveying the application's identity and the
   // corresponding private key.
   void set_certificate_provider(
-      std::shared_ptr<CertificateProviderInterface> certificate_provider);
+      std::shared_ptr<CertificateProviderInterface> certificate_provider) {
+    certificate_provider_ = certificate_provider;
+  };
 
   // Watches the updates of root certificates with name |name|. If used in TLS
   // credentials, setting this field is optional for both the client side and
@@ -129,8 +131,8 @@ class TlsCredentialsBuilder {
  private:
   grpc_tls_version min_tls_version_ = grpc_tls_version::TLS1_2;
   grpc_tls_version max_tls_version_ = grpc_tls_version::TLS1_3;
-  std::shared_ptr<grpc_tls_certificate_verifier> certificate_verifier_;
-  std::shared_ptr<grpc_tls_certificate_provider> certificate_provider_;
+  std::shared_ptr<CertificateVerifierInterface> certificate_verifier_;
+  std::shared_ptr<CertificateProviderInterface> certificate_provider_;
   bool watch_root_cert_ = false;
   std::string root_cert_name_;
   bool watch_identity_pair_ = false;
