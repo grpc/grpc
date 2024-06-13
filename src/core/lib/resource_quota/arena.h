@@ -94,8 +94,13 @@ class ArenaContextTraits : public BaseArenaContextTraits {
 };
 
 template <typename T>
-const uint16_t ArenaContextTraits<T>::id_ = BaseArenaContextTraits::MakeId(
-    [](void* ptr) { ArenaContextType<T>::Destroy(static_cast<T*>(ptr)); });
+void DestroyArenaContext(void* p) {
+  ArenaContextType<T>::Destroy(static_cast<T*>(p));
+}
+
+template <typename T>
+const uint16_t ArenaContextTraits<T>::id_ =
+    BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
 
 template <typename T, typename A, typename B>
 struct IfArray {
@@ -283,6 +288,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
     slot = context;
+    DCHECK_EQ(GetContext<T>(), context);
   }
 
  private:

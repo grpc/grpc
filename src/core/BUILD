@@ -3297,9 +3297,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "config_selector",
-    srcs = [
-        "client_channel/config_selector.cc",
-    ],
     hdrs = [
         "client_channel/config_selector.h",
     ],
@@ -3315,9 +3312,11 @@ grpc_cc_library(
         "channel_fwd",
         "client_channel_internal_header",
         "grpc_service_config",
+        "interception_chain",
         "metadata_batch",
         "ref_counted",
         "slice",
+        "unique_type_name",
         "useful",
         "//:gpr_public_hdrs",
         "//:grpc_public_hdrs",
@@ -5217,6 +5216,7 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",
+        "interception_chain",
         "iomgr_fwd",
         "json",
         "json_args",
