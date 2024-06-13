@@ -289,11 +289,9 @@ void LegacyChannelIdleFilter::CloseChannel() {
 }
 
 const grpc_channel_filter LegacyClientIdleFilter::kFilter =
-    MakePromiseBasedFilter<LegacyClientIdleFilter, FilterEndpoint::kClient>(
-        "client_idle");
+    MakePromiseBasedFilter<LegacyClientIdleFilter, FilterEndpoint::kClient>();
 const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
-    MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>(
-        "max_age");
+    MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>();
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()

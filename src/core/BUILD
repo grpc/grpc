@@ -3095,6 +3095,7 @@ grpc_cc_library(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_trace",
+        "unique_type_name",
     ],
 )
 

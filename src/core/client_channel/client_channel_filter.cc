@@ -316,7 +316,7 @@ const grpc_channel_filter ClientChannelFilter::kFilter = {
     grpc_channel_stack_no_post_init,
     ClientChannelFilter::Destroy,
     ClientChannelFilter::GetChannelInfo,
-    "client-channel",
+    GRPC_UNIQUE_TYPE_NAME_HERE("client-channel"),
 };
 
 //
@@ -443,7 +443,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     DynamicTerminationFilter::Destroy,
     DynamicTerminationFilter::GetChannelInfo,
-    "dynamic_filter_termination",
+    GRPC_UNIQUE_TYPE_NAME_HERE("dynamic_filter_termination"),
 };
 
 }  // namespace

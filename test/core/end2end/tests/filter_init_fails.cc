@@ -85,7 +85,7 @@ const grpc_channel_filter test_filter = {
     // last one.
     // Filter ordering code falls back to lexical ordering in the absense of
     // other dependencies, so name this appropriately.
-    "zzzzzz_filter_init_fails"};
+    GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_filter_init_fails")};
 
 void RegisterFilter(grpc_channel_stack_type type) {
   CoreConfiguration::RegisterBuilder(

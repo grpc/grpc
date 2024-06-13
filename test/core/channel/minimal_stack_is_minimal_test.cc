@@ -101,9 +101,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
 
   std::vector<std::string> parts;
   for (const auto& entry : *builder.mutable_stack()) {
-    const char* name = entry->name;
-    if (name == nullptr) continue;
-    parts.push_back(name);
+    parts.push_back(std::string(entry->name.name()));
   }
 
   return parts;

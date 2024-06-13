@@ -2051,6 +2051,7 @@ grpc_cc_library(
         "orphanable",
         "promise",
         "ref_counted_ptr",
+        "//src/core:unique_type_name",
         "stats",
         "//src/core:1999",
         "//src/core:activity",
