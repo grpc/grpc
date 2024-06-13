@@ -122,11 +122,7 @@ BANNED_EXCEPT = {
 errors = 0
 num_files = 0
 for root, dirs, files in os.walk("."):
-    if root.startswith("./tools"):
-        continue
-    if root.startswith("./third_party"):
-        continue
-    if root.startswith("./src/python"):
+    if root.startswith("./tools/distrib/python/grpcio_tools") or root.startswith("./src/python"):
         continue
     for filename in files:
         num_files += 1
@@ -135,7 +131,6 @@ for root, dirs, files in os.walk("."):
             continue
         with open(path) as f:
             text = f.read()
-        # print(path) # DELETE DELETE
         for banned, exceptions in list(BANNED_EXCEPT.items()):
             if path in exceptions:
                 continue
