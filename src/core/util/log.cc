@@ -124,6 +124,8 @@ static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
   return error_value;
 }
 
+#define GRPC_VERBOSITY_MACRO
+
 void gpr_to_absl_verbosity_setting_init(void) {
 // This is enabled in Github only.
 // This ifndef is converted to ifdef internally by copybara.
