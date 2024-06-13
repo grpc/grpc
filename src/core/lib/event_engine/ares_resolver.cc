@@ -79,9 +79,6 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
 
-// TODO(yijiem): remove this once we remove the iomgr dns system.
-extern void grpc_resolver_dns_ares_reset_dns_resolver(void);
-
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -822,8 +819,6 @@ absl::Status AresInit() {
           absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
     }
 #endif  // GPR_WINDOWS
-    // TODO(yijiem): remove this once we remove the iomgr dns system.
-    grpc_resolver_dns_ares_reset_dns_resolver();
   }
   return absl::OkStatus();
 }

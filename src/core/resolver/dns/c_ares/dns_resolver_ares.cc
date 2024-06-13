@@ -744,7 +744,10 @@ void grpc_resolver_dns_ares_shutdown() {
 }
 
 void grpc_resolver_dns_ares_reset_dns_resolver() {
-  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::AresDNSResolver>());
+  if (grpc_core::ShouldUseAresDnsResolver(
+          grpc_core::ConfigVars::Get().DnsResolver())) {
+    grpc_core::ResetDNSResolver(std::make_unique<grpc_core::AresDNSResolver>());
+  }
 }
 
 #else  // GRPC_ARES == 1
