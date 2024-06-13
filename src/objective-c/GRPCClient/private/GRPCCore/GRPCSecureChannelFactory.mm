@@ -68,6 +68,18 @@
     if (utf8Str != NULL) {
       setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", utf8Str, 1);
     } else {
+      // Swift Package Manager puts the resources under PACKAGENAME_TARGETNAME.bundle
+      NSArray *bundleURLs = [[NSBundle mainBundle] URLsForResourcesWithExtension:@"bundle"
+                                                                    subdirectory:nil];
+      for (NSURL *bundleURL in bundleURLs) {
+        NSBundle *resourceBundle = [NSBundle bundleWithURL:[bundleURL URLByAppendingPathComponent: resourceBundlePath]];
+        _sslRootPathStr = [resourceBundle pathForResource:rootsPEM ofType:@"pem"];
+        utf8Str = [_sslRootPathStr cStringUsingEncoding:NSUTF8StringEncoding];
+        if (utf8Str != NULL) {
+          setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", utf8Str, 1);
+          return;
+        }
+      }
       if (errorPtr) {
         *errorPtr = [NSError
             errorWithDomain:kGRPCErrorDomain
