@@ -79,6 +79,9 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif
 
+// TODO(yijiem): remove this once we remove the iomgr dns system.
+extern void grpc_resolver_dns_ares_reset_dns_resolver(void);
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -792,17 +795,22 @@ bool g_event_engine_grpc_ares_test_only_force_tcp = false;
 bool ShouldUseAresDnsResolver() {
 #if defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) || \
     defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  std::cout << "1" << std::endl;
   auto resolver_env = grpc_core::ConfigVars::Get().DnsResolver();
+  std::cout << resolver_env << std::endl;
   return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
 #else   // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) ||
         // defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  std::cout << "2" << std::endl;
   return false;
 #endif  // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) ||
         // defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 absl::Status AresInit() {
+  std::cout << "in AresInit" << std::endl;
   if (ShouldUseAresDnsResolver()) {
+    std::cout << "in ShouldUseAresDnsResolver" << std::endl;
     address_sorting_init();
     // ares_library_init and ares_library_cleanup are currently no-op except
     // under Windows. Calling them may cause race conditions when other parts of
@@ -814,17 +822,21 @@ absl::Status AresInit() {
           absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
     }
 #endif  // GPR_WINDOWS
+    // TODO(yijiem): remove this once we remove the iomgr dns system.
+    grpc_resolver_dns_ares_reset_dns_resolver();
   }
   return absl::OkStatus();
 }
 void AresShutdown() {
-  address_sorting_shutdown();
-  // ares_library_init and ares_library_cleanup are currently no-op except
-  // under Windows. Calling them may cause race conditions when other parts of
-  // the binary calls these functions concurrently.
+  if (ShouldUseAresDnsResolver()) {
+    address_sorting_shutdown();
+    // ares_library_init and ares_library_cleanup are currently no-op except
+    // under Windows. Calling them may cause race conditions when other parts of
+    // the binary calls these functions concurrently.
 #ifdef GPR_WINDOWS
-  ares_library_cleanup();
+    ares_library_cleanup();
 #endif  // GPR_WINDOWS
+  }
 }
 
 #else  // GRPC_ARES == 1

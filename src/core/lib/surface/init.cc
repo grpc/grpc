@@ -52,7 +52,6 @@
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
-void grpc_resolver_dns_ares_reset_dns_resolver(void);
 
 extern absl::Status AresInit();
 extern void AresShutdown();
@@ -118,9 +117,6 @@ void grpc_init(void) {
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
-      } else {
-        // TODO(yijiem): remove this once we remove the iomgr dns system.
-        grpc_resolver_dns_ares_reset_dns_resolver();
       }
     } else {
       grpc_resolver_dns_ares_init();
