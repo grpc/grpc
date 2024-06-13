@@ -111,7 +111,7 @@ for root, dirs, files in os.walk("src/core"):
 
 assert errors == 0
 if errors > 0:
-    print(('Number of errors : %d ' % (errors)))
+    print(("Number of errors : %d " % (errors)))
 
 # This check comes about from this issue:
 # https://github.com/grpc/grpc/issues/15381

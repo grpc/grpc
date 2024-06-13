@@ -122,7 +122,9 @@ BANNED_EXCEPT = {
 errors = 0
 num_files = 0
 for root, dirs, files in os.walk("."):
-    if root.startswith("./tools/distrib/python/grpcio_tools") or root.startswith("./src/python"):
+    if root.startswith(
+        "./tools/distrib/python/grpcio_tools"
+    ) or root.startswith("./src/python"):
         continue
     for filename in files:
         num_files += 1
@@ -135,12 +137,17 @@ for root, dirs, files in os.walk("."):
             if path in exceptions:
                 continue
             if banned in text:
-                print(('Illegal use of "%s" in %s . Use absl functions instead.' % (banned, path)))
+                print(
+                    (
+                        'Illegal use of "%s" in %s . Use absl functions instead.'
+                        % (banned, path)
+                    )
+                )
                 errors += 1
 
 assert errors == 0
 if errors > 0:
-    print(('Number of errors : %d ' % (errors)))
+    print(("Number of errors : %d " % (errors)))
 
 # This check comes about from this issue:
 # https://github.com/grpc/grpc/issues/15381
