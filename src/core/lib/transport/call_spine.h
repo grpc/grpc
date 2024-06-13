@@ -441,6 +441,9 @@ auto OutgoingMessages(CallHalf h) {
 
 // Forward a call from `call_handler` to `call_initiator` (with initial metadata
 // `client_initial_metadata`)
+// `on_server_trailing_metadata_from_initiator` is a callback that will be
+// called with the server trailing metadata received by the initiator, and can
+// be used to mutate that metadata if desired.
 void ForwardCall(
     CallHandler call_handler, CallInitiator call_initiator,
     absl::AnyInvocable<void(ServerMetadata&)>
