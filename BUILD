@@ -2051,7 +2051,6 @@ grpc_cc_library(
         "orphanable",
         "promise",
         "ref_counted_ptr",
-        "//src/core:unique_type_name",
         "stats",
         "//src/core:1999",
         "//src/core:activity",
@@ -2114,6 +2113,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:transport_fwd",
         "//src/core:try_seq",
+        "//src/core:unique_type_name",
         "//src/core:useful",
     ],
 )

@@ -3090,12 +3090,12 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "interception_chain",
+        "unique_type_name",
         "//:channel_stack_builder",
         "//:debug_location",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc_trace",
-        "unique_type_name",
     ],
 )
 
