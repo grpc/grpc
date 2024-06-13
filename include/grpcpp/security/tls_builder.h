@@ -28,11 +28,17 @@ namespace grpc {
 class TlsChannelCredentialsBuilder final
     : public grpc_core::TlsChannelCredentialsBuilder {
   std::shared_ptr<ChannelCredentials> BuildTlsChannelCredentials();
+
+ private:
+  using grpc_core::TlsChannelCredentialsBuilder::BuildTlsChannelCredentials;
 };
 
 class TlsServerCredentialsBuilder final
     : public grpc_core::TlsServerCredentialsBuilder {
   std::shared_ptr<ServerCredentials> BuildTlsServerCredentials();
+
+ private:
+  using grpc_core::TlsServerCredentialsBuilder::BuildTlsServerCredentials;
 };
 }  // namespace grpc
 
