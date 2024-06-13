@@ -31,7 +31,6 @@ namespace grpc_core {
 
 // TODO(gtcooke94) create these
 class CertificateProviderInterface {};
-class CustomChainBuilderInterface {};
 class CertificateVerifierInterface {};
 
 // Base class of TLS credentials builder.
@@ -68,7 +67,10 @@ class TlsCredentialsBuilder {
   // root certificates).
   //
   // @param name the name of root certificates being set.
-  void watch_root_certificates(absl::string_view name);
+  void watch_root_certificates(absl::string_view name) {
+    root_cert_name_ = std::string(name);
+    watch_root_cert_ = true;
+  };
 
   // Watches the updates of identity key-certificate pairs with name
   // |name|. If used in TLS credentials, it is required to be set
@@ -76,7 +78,10 @@ class TlsCredentialsBuilder {
   // TLS scenario, the client is not required to provide identity certificates).
 
   // @param name the name of the identity key cert pairs to watch.
-  void watch_identity_key_cert_pairs(absl::string_view name);
+  void watch_identity_key_cert_pairs(absl::string_view name) {
+    identity_cert_name_ = std::string(name);
+    watch_identity_pair_ = true;
+  };
 
   // WARNING: EXPERT USE ONLY. MISUSE CAN LEAD TO SIGNIFICANT SECURITY
   // DEGRADATION.
@@ -90,7 +95,9 @@ class TlsCredentialsBuilder {
   // @param tls_session_key_log_file_path: Path where TLS session keys should
   // be logged.
   void set_tls_session_key_log_file_path_dangerous(
-      absl::string_view tls_session_key_log_file_path);
+      absl::string_view tls_session_key_log_file_path) {
+    tls_session_key_log_file_path_ = std::string(tls_session_key_log_file_path);
+  };
 
   // Sets the certificate verifier. The certificate verifier performs checks on
   // the peer certificate chain after the chain has been (cryptographically)
@@ -100,30 +107,28 @@ class TlsCredentialsBuilder {
   // If set to nulltpr, this will overwrite the host name verifier and lead you
   // to not doing any checks (aside from the cryptographic ones).
   void set_certificate_verifier(
-      std::shared_ptr<CertificateVerifierInterface> certificate_verifier);
+      std::shared_ptr<CertificateVerifierInterface> certificate_verifier) {
+    certificate_verifier_ = certificate_verifier;
+  };
 
   // Sets the crl provider, see CrlProvider for more details.
-  void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
+  void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider) {
+    crl_provider_ = crl_provider;
+  };
 
   // Sets the minimum TLS version that will be negotiated during the TLS
   // handshake. If not set, the underlying SSL library will default to TLS v1.2.
   // @param tls_version: The minimum TLS version.
-  void set_min_tls_version(grpc_tls_version tls_version);
+  void set_min_tls_version(grpc_tls_version tls_version) {
+    min_tls_version_ = tls_version;
+  };
 
   // Sets the maximum TLS version that will be negotiated during the TLS
   // handshake. If not set, the underlying SSL library will default to TLS v1.3.
   // @param tls_version: The maximum TLS version.
-  void set_max_tls_version(grpc_tls_version tls_version);
-
-  // WARNING: EXPERT USE ONLY. MISUSE CAN LEAD TO SIGNIFICANT SECURITY
-  // DEGRADATION.
-  //
-  // Sets a custom chain builder implementation that replaces the default chain
-  // building from the underlying SSL library. Fully replacing and implementing
-  // chain building is a complex task and has dangerous security implications if
-  // done wrong, thus this API is inteded for expert use only.
-  void set_custom_chain_builder_dangerous(
-      std::shared_ptr<CustomChainBuilderInterface> chain_builder);
+  void set_max_tls_version(grpc_tls_version tls_version) {
+    max_tls_version_ = tls_version;
+  }
 
  protected:
   TlsCredentialsBuilder() = default;
@@ -162,7 +167,9 @@ class TlsServerCredentialsBuilder : public TlsCredentialsBuilder {
   // default is GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, which represents
   // normal TLS.
   void set_cert_request_type(
-      grpc_ssl_client_certificate_request_type cert_request_type);
+      grpc_ssl_client_certificate_request_type cert_request_type) {
+    cert_request_type_ = cert_request_type;
+  };
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_ =
@@ -181,7 +188,9 @@ class TlsChannelCredentialsBuilder : public grpc_core::TlsCredentialsBuilder {
  public:
   // Sets the decision of whether to do a crypto check on the server
   // certificates. The default is true.
-  void set_verify_server_certificates(bool verify_server_certs);
+  void set_verify_server_certificates(bool verify_server_cert) {
+    verify_server_cert_ = verify_server_cert;
+  }
 
   // Builds a grpc_channel_credentials instance that establishes TLS connections
   // in the manner specified by options.
