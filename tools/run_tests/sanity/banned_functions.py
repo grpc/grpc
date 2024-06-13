@@ -146,6 +146,5 @@ if errors > 0:
 # https://github.com/grpc/grpc/issues/15381
 # Basically, a change rendered this script useless and we did not realize it.
 # This check ensures that this type of issue doesn't occur again.
-
-# print(('Number of files checked : %d ' % (num_files)))
 assert num_files > 18000  # we have more files
+# print(('Number of files checked : %d ' % (num_files)))
