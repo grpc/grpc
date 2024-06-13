@@ -1195,14 +1195,17 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   }
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_CLIENT_CHANNEL, builder);
-  // TODO(roth): add filters returned by config selector
-  // Create call destination.
+  // Add filters returned by the config selector (e.g., xDS HTTP filters).
+  config_selector->AddFilters(builder);
+  // TODO(roth, ctiller): When we implement the retry interceptor, that
+  // needs to be added *after* the filters added by the config selector.
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
     Crash("call v3 stack does not yet support retries");
   }
+  // Create call destination.
   auto top_of_stack_call_destination = builder.Build(call_destination_);
   // Send result to data plane.
   if (!top_of_stack_call_destination.ok()) {

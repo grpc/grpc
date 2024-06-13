@@ -437,7 +437,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                  tmp_str);
         return ST_STOP;
       }
-      GPR_ASSERT(md_ary->count < md_ary->capacity);
+      GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
       md_ary->metadata[md_ary->count].key = key_slice;
       md_ary->metadata[md_ary->count].value = value_slice;
       md_ary->count += 1;
@@ -453,7 +453,7 @@ static int grpc_rb_md_ary_fill_hash_cb(VALUE key, VALUE val, VALUE md_ary_obj) {
                tmp_str);
       return ST_STOP;
     }
-    GPR_ASSERT(md_ary->count < md_ary->capacity);
+    GRPC_RUBY_ASSERT(md_ary->count < md_ary->capacity);
     md_ary->metadata[md_ary->count].key = key_slice;
     md_ary->metadata[md_ary->count].value = value_slice;
     md_ary->count += 1;

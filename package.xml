@@ -124,7 +124,6 @@
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_service_config.h" role="src" />
-    <file baseinstalldir="/" name="src/core/client_channel/config_selector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/dynamic_filters.cc" role="src" />
