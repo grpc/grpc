@@ -259,7 +259,7 @@ void AbslStringify(Sink& sink, const Poll<T>& poll) {
     absl::Format(&sink, "<<pending>>");
     return;
   }
-  absl::Format(&sink, "%s", poll.value());
+  absl::Format(&sink, "%v", poll.value());
 }
 
 }  // namespace grpc_core
