@@ -140,7 +140,7 @@ class TlsCredentialsBuilder {
 };
 
 // Server-specific options for configuring TLS.
-class TlsServerCredentialsBuilder final : public TlsCredentialsBuilder {
+class TlsServerCredentialsBuilder : public TlsCredentialsBuilder {
  public:
   // A certificate provider that provides identity credentials is required,
   // because a server must always present identity credentials during any TLS
@@ -175,8 +175,7 @@ class TlsServerCredentialsBuilder final : public TlsCredentialsBuilder {
 // and it provides root certifices that root will be used. If a certificate
 // provider is set and it provides identity credentials those identity
 // credentials will be used.
-class TlsChannelCredentialsBuilder final
-    : public grpc_core::TlsCredentialsBuilder {
+class TlsChannelCredentialsBuilder : public grpc_core::TlsCredentialsBuilder {
  public:
   // Sets the decision of whether to do a crypto check on the server
   // certificates. The default is true.
