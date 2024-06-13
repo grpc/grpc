@@ -18,6 +18,7 @@ require 'logger'
 describe GRPC do
   describe '.logger=' do
     it 'sets logger' do
+      GRPC.logger = GRPC::DefaultLogger::NoopLogger.new
       expect(GRPC.logger).to be_kind_of(GRPC::DefaultLogger::NoopLogger)
 
       GRPC.logger = Logger.new(STDOUT)
