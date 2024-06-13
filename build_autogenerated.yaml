@@ -6635,6 +6635,29 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: call_spine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/call_spine_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: call_tracer_test
   gtest: true
   build: test

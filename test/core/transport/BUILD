@@ -188,5 +188,5 @@ grpc_yodel_simple_test(
     deps = [
         "//src/core:call_spine",
         "//test/core/call/yodel:yodel_test",
-    ]
+    ],
 )
