@@ -235,7 +235,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   CHECK(md != nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
             GetContext<Activity>()->DebugTag().c_str(), this,
             md->DebugString().c_str(), DebugString().c_str());

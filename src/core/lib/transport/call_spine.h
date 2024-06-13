@@ -130,7 +130,9 @@ class CallSpine final : public Party {
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        PushServerTrailingMetadata(StatusCast<ServerMetadataHandle>(r));
+        auto md = StatusCast<ServerMetadataHandle>(r);
+        md->Set(GrpcCallWasCancelled(), true);
+        PushServerTrailingMetadata(std::move(md));
       }
       return r;
     });
