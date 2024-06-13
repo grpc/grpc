@@ -316,8 +316,8 @@ void CallState::Start() {
     case ServerToClientPullState::kIdle:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
-    case ServerToClientPullState::kProcessingServerTrailingMetadata:
       LOG(FATAL) << "Start called twice";
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
     case ServerToClientPullState::kTerminated:
       break;
   }

@@ -319,7 +319,8 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
   call_handler.SpawnGuarded("outbound_loop", [this, call_handler]() mutable {
     const uint32_t stream_id = MakeStream(call_handler);
     return Map(CallOutboundLoop(stream_id, call_handler),
-               [stream_id, this](absl::Status result) {
+               [stream_id, sender = outgoing_frames_.MakeSender()](
+                   absl::Status result) mutable {
                  GRPC_TRACE_LOG(chaotic_good, INFO)
                      << "CHAOTIC_GOOD: Call " << stream_id << " finished with "
                      << result.ToString();
@@ -328,8 +329,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                        << "CHAOTIC_GOOD: Send cancel";
                    CancelFrame frame;
                    frame.stream_id = stream_id;
-                   if (!outgoing_frames_.MakeSender().UnbufferedImmediateSend(
-                           std::move(frame))) {
+                   if (!sender.UnbufferedImmediateSend(std::move(frame))) {
                      GRPC_TRACE_LOG(chaotic_good, INFO)
                          << "CHAOTIC_GOOD: Send cancel failed";
                    }
