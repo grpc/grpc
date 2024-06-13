@@ -57,6 +57,21 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+void ChaoticGoodClientTransport::Orphan() {
+  LOG(INFO) << "ChaoticGoodClientTransport::Orphan";
+  AbortWithError();
+  ActivityPtr writer;
+  ActivityPtr reader;
+  {
+    MutexLock lock(&mu_);
+    writer = std::move(writer_);
+    reader = std::move(reader_);
+  }
+  writer.reset();
+  reader.reset();
+  Unref();
+}
+
 auto ChaoticGoodClientTransport::TransportWriteLoop(
     RefCountedPtr<ChaoticGoodTransport> transport) {
   return Loop([this, transport = std::move(transport)] {
@@ -176,11 +191,12 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
 
 auto ChaoticGoodClientTransport::OnTransportActivityDone(
     absl::string_view what) {
-  return [this, what](absl::Status status) {
+  return [self = RefAsSubclass<ChaoticGoodClientTransport>(),
+          what](absl::Status status) {
     GRPC_TRACE_LOG(chaotic_good, INFO)
-        << "CHAOTIC_GOOD: Client transport " << this << " closed (via " << what
-        << "): " << status;
-    AbortWithError();
+        << "CHAOTIC_GOOD: Client transport " << self.get() << " closed (via "
+        << what << "): " << status;
+    self->AbortWithError();
   };
 }
 

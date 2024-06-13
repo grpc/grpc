@@ -82,12 +82,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
-  void Orphan() override {
-    GRPC_TRACE_LOG(chaotic_good, INFO)
-        << "ChaoticGoodClientTransport::Orphan: " << this;
-    AbortWithError();
-    Unref();
-  }
+  void Orphan() override;
 
   void StartCall(CallHandler call_handler) override;
   void AbortWithError();
