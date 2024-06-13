@@ -64,7 +64,9 @@ void DirectChannel::StartCall(UnstartedCallHandler unstarted_handler) {
       });
 }
 
-void DirectChannel::GetInfo(const grpc_channel_info* info) {}
+void DirectChannel::GetInfo(const grpc_channel_info* info) {
+  // TODO(roth): Implement this.
+}
 
 grpc_call* DirectChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
