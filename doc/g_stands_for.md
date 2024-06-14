@@ -64,4 +64,5 @@
 - 1.62 'g' stands for ['guardian'](https://github.com/grpc/grpc/tree/v1.62.x)
 - 1.63 'g' stands for ['giggle'](https://github.com/grpc/grpc/tree/v1.63.x)
 - 1.64 'g' stands for ['grateful'](https://github.com/grpc/grpc/tree/v1.64.x)
-- 1.65 'g' stands for ['gnarly'](https://github.com/grpc/grpc/tree/master)
+- 1.65 'g' stands for ['gnarly'](https://github.com/grpc/grpc/tree/v1.65.x)
+- 1.66 'g' stands for ['gladiator'](https://github.com/grpc/grpc/tree/master)
