@@ -58,8 +58,11 @@ struct AllOkTraits {
 template <typename Result, typename... Promises>
 class AllOk {
  public:
-  explicit AllOk(Promises... promises) : state_(std::move(promises)...) {}
-  auto operator()() { return state_.PollOnce(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit AllOk(Promises... promises)
+      : state_(std::move(promises)...) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
+    return state_.PollOnce();
+  }
 
  private:
   JoinState<AllOkTraits<Result>, Promises...> state_;

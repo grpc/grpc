@@ -33,20 +33,20 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   };
 % endfor
   GPR_NO_UNIQUE_ADDRESS BitSet<${n}> ready;
-  JoinState(${",".join(f"P{i}&& p{i}" for i in range(0,n))}) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(${",".join(f"P{i}&& p{i}" for i in range(0,n))}) {
 % for i in range(0,n):
     Construct(&promise${i}, std::forward<P${i}>(p${i}));
 % endfor
   }
-  JoinState(const JoinState& other) {
-    CHECK(other.ready.none());
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
+    DCHECK(other.ready.none());
 % for i in range(0,n):
     Construct(&promise${i}, other.promise${i});
 % endfor
   }
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
-  JoinState(JoinState&& other) noexcept : ready(other.ready) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept : ready(other.ready) {
 % for i in range(0,n):
     if (ready.is_set(${i})) {
       Construct(&result${i}, std::move(other.result${i}));
@@ -55,7 +55,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
     }
 % endfor
   }
-  ~JoinState() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~JoinState() {
 % for i in range(0,n):
     if (ready.is_set(${i})) {
       Destruct(&result${i});
@@ -66,7 +66,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   }
   using Result = typename Traits::template ResultType<std::tuple<
       ${",".join(f"Result{i}" for i in range(0,n))}>>;
-  Poll<Result> PollOnce() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
 % for i in range(0,n):
     if (!ready.is_set(${i})) {
       GRPC_TRACE_VLOG(promise_primitives, 2) << "join[" << this << "]: begin poll joint ${i+1}/${n}";

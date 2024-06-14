@@ -49,7 +49,7 @@ class Map {
   using Result =
       RemoveCVRef<decltype(std::declval<Fn>()(std::declval<PromiseResult>()))>;
 
-  Poll<Result> operator()() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> operator()() {
     Poll<PromiseResult> r = promise_();
     if (auto* p = r.value_if_ready()) {
       return fn_(std::move(*p));
