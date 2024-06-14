@@ -318,7 +318,7 @@ struct AddOpImpl<FilterType, T, const NoInterceptor*, which> {
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&)>
+          void (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  void (FilterType::Call::*)(typename T::element_type&), impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
@@ -355,8 +355,8 @@ struct AddOpImpl<FilterType, T,
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&,
-                                         FilterType*)>
+          void (FilterType::Call::* impl)(typename T::element_type&,
+                                          FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
@@ -396,7 +396,7 @@ struct AddOpImpl<
 
 // $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          T (FilterType::Call::*impl)(T, FilterType*)>
+          T (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
                   Layout<FallibleOperator<T>>& to) {
@@ -438,7 +438,7 @@ struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&),
                  impl> {
@@ -483,7 +483,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T,
@@ -511,8 +511,8 @@ struct AddOpImpl<
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&,
-                                                 FilterType*)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&,
+                                                  FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&,
                                                     FilterType*),
@@ -541,7 +541,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(
@@ -571,7 +571,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::StatusOr<$VALUE_HANDLE> $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          absl::StatusOr<T> (FilterType::Call::*impl)(T, FilterType*)>
+          absl::StatusOr<T> (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::StatusOr<T> (FilterType::Call::*)(T, FilterType*),
                  impl> {
@@ -599,7 +599,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -628,7 +628,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -657,7 +657,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -687,7 +687,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -717,7 +717,7 @@ struct AddOpImpl<FilterType, T,
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&)>
+          R (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T, R (FilterType::Call::*)(typename T::element_type&), impl,
     absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
@@ -768,7 +768,7 @@ struct AddOpImpl<
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&, FilterType*)>
+          R (FilterType::Call::* impl)(typename T::element_type&, FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
@@ -824,7 +824,7 @@ struct AddOpImpl<
 // PROMISE_RETURNING(absl::StatusOr<$VALUE_HANDLE>)
 // $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(T, FilterType*)>
+          R (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  absl::enable_if_t<std::is_same<absl::StatusOr<T>,
                                                 PromiseResult<R>>::value>> {
@@ -1049,7 +1049,7 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1063,8 +1063,8 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*,
-                                                FilterType*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*,
+                                                 FilterType*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1400,6 +1400,622 @@ class CallState {
   IntraActivityWaiter server_trailing_metadata_waiter_;
 };
 
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline CallState::CallState()
+    : client_to_server_pull_state_(ClientToServerPullState::kBegin),
+      client_to_server_push_state_(ClientToServerPushState::kIdle),
+      server_to_client_pull_state_(ServerToClientPullState::kUnstarted),
+      server_to_client_push_state_(ServerToClientPushState::kStart),
+      server_trailing_metadata_state_(ServerTrailingMetadataState::kNotPushed) {
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void CallState::Start() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] Start: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+      server_to_client_pull_state_ = ServerToClientPullState::kStarted;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      LOG(FATAL) << "Start called twice";
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+    case ServerToClientPullState::kTerminated:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::BeginPushClientToServerMessage() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] BeginPushClientToServerMessage: "
+      << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      client_to_server_push_state_ = ClientToServerPushState::kPushedMessage;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      LOG(FATAL) << "PushClientToServerMessage called twice concurrently";
+      break;
+    case ClientToServerPushState::kPushedHalfClose:
+      LOG(FATAL) << "PushClientToServerMessage called after half-close";
+      break;
+    case ClientToServerPushState::kFinished:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
+CallState::PollPushClientToServerMessage() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollPushClientToServerMessage: "
+      << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+    case ClientToServerPushState::kPushedHalfClose:
+      return Success{};
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      return client_to_server_push_waiter_.pending();
+    case ClientToServerPushState::kFinished:
+      return Failure{};
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::ClientToServerHalfClose() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] ClientToServerHalfClose: "
+      << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kPushedMessage:
+      client_to_server_push_state_ =
+          ClientToServerPushState::kPushedMessageAndHalfClosed;
+      break;
+    case ClientToServerPushState::kPushedHalfClose:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      LOG(FATAL) << "ClientToServerHalfClose called twice";
+      break;
+    case ClientToServerPushState::kFinished:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::BeginPullClientInitialMetadata() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] BeginPullClientInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+      client_to_server_pull_state_ =
+          ClientToServerPullState::kProcessingClientInitialMetadata;
+      break;
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+    case ClientToServerPullState::kIdle:
+    case ClientToServerPullState::kReading:
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      LOG(FATAL) << "BeginPullClientInitialMetadata called twice";
+      break;
+    case ClientToServerPullState::kTerminated:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::FinishPullClientInitialMetadata() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] FinishPullClientInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+      LOG(FATAL) << "FinishPullClientInitialMetadata called before Begin";
+      break;
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+      client_to_server_pull_state_ = ClientToServerPullState::kIdle;
+      client_to_server_pull_waiter_.Wake();
+      break;
+    case ClientToServerPullState::kIdle:
+    case ClientToServerPullState::kReading:
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      LOG(FATAL) << "Out of order FinishPullClientInitialMetadata";
+      break;
+    case ClientToServerPullState::kTerminated:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ValueOrFailure<bool>>
+CallState::PollPullClientToServerMessageAvailable() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollPullClientToServerMessageAvailable: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_,
+                        client_to_server_push_state_);
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+      return client_to_server_pull_waiter_.pending();
+    case ClientToServerPullState::kIdle:
+      client_to_server_pull_state_ = ClientToServerPullState::kReading;
+      ABSL_FALLTHROUGH_INTENDED;
+    case ClientToServerPullState::kReading:
+      break;
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      LOG(FATAL) << "PollPullClientToServerMessageAvailable called while "
+                    "processing a message";
+      break;
+    case ClientToServerPullState::kTerminated:
+      return Failure{};
+  }
+  DCHECK_EQ(client_to_server_pull_state_, ClientToServerPullState::kReading);
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      return client_to_server_push_waiter_.pending();
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      client_to_server_pull_state_ =
+          ClientToServerPullState::kProcessingClientToServerMessage;
+      return true;
+    case ClientToServerPushState::kPushedHalfClose:
+      return false;
+    case ClientToServerPushState::kFinished:
+      client_to_server_pull_state_ = ClientToServerPullState::kTerminated;
+      return Failure{};
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::FinishPullClientToServerMessage() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] FinishPullClientToServerMessage: "
+      << GRPC_DUMP_ARGS(this, client_to_server_pull_state_,
+                        client_to_server_push_state_);
+  switch (client_to_server_pull_state_) {
+    case ClientToServerPullState::kBegin:
+    case ClientToServerPullState::kProcessingClientInitialMetadata:
+      LOG(FATAL) << "FinishPullClientToServerMessage called before Begin";
+      break;
+    case ClientToServerPullState::kIdle:
+      LOG(FATAL) << "FinishPullClientToServerMessage called twice";
+      break;
+    case ClientToServerPullState::kReading:
+      LOG(FATAL) << "FinishPullClientToServerMessage called before "
+                    "PollPullClientToServerMessageAvailable";
+      break;
+    case ClientToServerPullState::kProcessingClientToServerMessage:
+      client_to_server_pull_state_ = ClientToServerPullState::kIdle;
+      client_to_server_pull_waiter_.Wake();
+      break;
+    case ClientToServerPullState::kTerminated:
+      break;
+  }
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kPushedMessage:
+      client_to_server_push_state_ = ClientToServerPushState::kIdle;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kIdle:
+    case ClientToServerPushState::kPushedHalfClose:
+      LOG(FATAL) << "FinishPullClientToServerMessage called without a message";
+      break;
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      client_to_server_push_state_ = ClientToServerPushState::kPushedHalfClose;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kFinished:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline StatusFlag
+CallState::PushServerInitialMetadata() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PushServerInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, server_to_client_push_state_,
+                        server_trailing_metadata_state_);
+  if (server_trailing_metadata_state_ !=
+      ServerTrailingMetadataState::kNotPushed) {
+    return Failure{};
+  }
+  CHECK_EQ(server_to_client_push_state_, ServerToClientPushState::kStart);
+  server_to_client_push_state_ =
+      ServerToClientPushState::kPushedServerInitialMetadata;
+  server_to_client_push_waiter_.Wake();
+  return Success{};
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::BeginPushServerToClientMessage() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] BeginPushServerToClientMessage: "
+      << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kStart:
+      LOG(FATAL) << "BeginPushServerToClientMessage called before "
+                    "PushServerInitialMetadata";
+      break;
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+      server_to_client_push_state_ =
+          ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage;
+      break;
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+    case ServerToClientPushState::kPushedMessage:
+      LOG(FATAL) << "BeginPushServerToClientMessage called twice concurrently";
+      break;
+    case ServerToClientPushState::kTrailersOnly:
+      // Will fail in poll.
+      break;
+    case ServerToClientPushState::kIdle:
+      server_to_client_push_state_ = ServerToClientPushState::kPushedMessage;
+      server_to_client_push_waiter_.Wake();
+      break;
+    case ServerToClientPushState::kFinished:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
+CallState::PollPushServerToClientMessage() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollPushServerToClientMessage: "
+      << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kStart:
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+      LOG(FATAL) << "PollPushServerToClientMessage called before "
+                 << "PushServerInitialMetadata";
+    case ServerToClientPushState::kTrailersOnly:
+      return false;
+    case ServerToClientPushState::kPushedMessage:
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+      return server_to_client_push_waiter_.pending();
+    case ServerToClientPushState::kIdle:
+      return Success{};
+    case ServerToClientPushState::kFinished:
+      return Failure{};
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool
+CallState::PushServerTrailingMetadata(bool cancel) {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PushServerTrailingMetadata: "
+      << GRPC_DUMP_ARGS(this, cancel, server_trailing_metadata_state_,
+                        server_to_client_push_state_,
+                        client_to_server_push_state_,
+                        server_trailing_metadata_waiter_.DebugString());
+  if (server_trailing_metadata_state_ !=
+      ServerTrailingMetadataState::kNotPushed) {
+    return false;
+  }
+  server_trailing_metadata_state_ =
+      cancel ? ServerTrailingMetadataState::kPushedCancel
+             : ServerTrailingMetadataState::kPushed;
+  server_trailing_metadata_waiter_.Wake();
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kStart:
+      server_to_client_push_state_ = ServerToClientPushState::kTrailersOnly;
+      server_to_client_push_waiter_.Wake();
+      break;
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+    case ServerToClientPushState::kPushedMessage:
+      if (cancel) {
+        server_to_client_push_state_ = ServerToClientPushState::kFinished;
+        server_to_client_push_waiter_.Wake();
+      }
+      break;
+    case ServerToClientPushState::kIdle:
+      if (cancel) {
+        server_to_client_push_state_ = ServerToClientPushState::kFinished;
+        server_to_client_push_waiter_.Wake();
+      }
+      break;
+    case ServerToClientPushState::kFinished:
+    case ServerToClientPushState::kTrailersOnly:
+      break;
+  }
+  switch (client_to_server_push_state_) {
+    case ClientToServerPushState::kIdle:
+      client_to_server_push_state_ = ClientToServerPushState::kFinished;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kPushedMessage:
+    case ClientToServerPushState::kPushedMessageAndHalfClosed:
+      client_to_server_push_state_ = ClientToServerPushState::kFinished;
+      client_to_server_push_waiter_.Wake();
+      break;
+    case ClientToServerPushState::kPushedHalfClose:
+    case ClientToServerPushState::kFinished:
+      break;
+  }
+  return true;
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<bool>
+CallState::PollPullServerInitialMetadataAvailable() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollPullServerInitialMetadataAvailable: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
+                        server_to_client_push_state_);
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+      if (server_to_client_push_state_ ==
+          ServerToClientPushState::kTrailersOnly) {
+        server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
+        return false;
+      }
+      server_to_client_push_waiter_.pending();
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStarted:
+      break;
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      LOG(FATAL) << "PollPullServerInitialMetadataAvailable called twice";
+    case ServerToClientPullState::kTerminated:
+      return false;
+  }
+  DCHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kStarted);
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kStart:
+      return server_to_client_push_waiter_.pending();
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+      server_to_client_pull_state_ =
+          ServerToClientPullState::kProcessingServerInitialMetadata;
+      server_to_client_pull_waiter_.Wake();
+      return true;
+    case ServerToClientPushState::kIdle:
+    case ServerToClientPushState::kPushedMessage:
+      LOG(FATAL)
+          << "PollPullServerInitialMetadataAvailable after metadata processed";
+    case ServerToClientPushState::kFinished:
+      server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
+      server_to_client_pull_waiter_.Wake();
+      return false;
+    case ServerToClientPushState::kTrailersOnly:
+      return false;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::FinishPullServerInitialMetadata() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] FinishPullServerInitialMetadata: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+      LOG(FATAL) << "FinishPullServerInitialMetadata called before Start";
+    case ServerToClientPullState::kStarted:
+      CHECK_EQ(server_to_client_push_state_,
+               ServerToClientPushState::kTrailersOnly);
+      return;
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+      server_to_client_pull_state_ = ServerToClientPullState::kIdle;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      LOG(FATAL) << "Out of order FinishPullServerInitialMetadata";
+    case ServerToClientPullState::kTerminated:
+      return;
+  }
+  DCHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kIdle);
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kStart:
+      LOG(FATAL) << "FinishPullServerInitialMetadata called before initial "
+                    "metadata consumed";
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+      server_to_client_push_state_ = ServerToClientPushState::kIdle;
+      server_to_client_push_waiter_.Wake();
+      break;
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+      server_to_client_push_state_ = ServerToClientPushState::kPushedMessage;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPushState::kIdle:
+    case ServerToClientPushState::kPushedMessage:
+    case ServerToClientPushState::kTrailersOnly:
+    case ServerToClientPushState::kFinished:
+      LOG(FATAL) << "FinishPullServerInitialMetadata called twice";
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ValueOrFailure<bool>>
+CallState::PollPullServerToClientMessageAvailable() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollPullServerToClientMessageAvailable: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
+                        server_to_client_push_state_,
+                        server_trailing_metadata_state_);
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStarted:
+      if (server_to_client_push_state_ ==
+          ServerToClientPushState::kTrailersOnly) {
+        return false;
+      }
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kIdle:
+      server_to_client_pull_state_ = ServerToClientPullState::kReading;
+      ABSL_FALLTHROUGH_INTENDED;
+    case ServerToClientPullState::kReading:
+      break;
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      LOG(FATAL) << "PollPullServerToClientMessageAvailable called while "
+                    "processing a message";
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      LOG(FATAL) << "PollPullServerToClientMessageAvailable called while "
+                    "processing trailing metadata";
+    case ServerToClientPullState::kTerminated:
+      return Failure{};
+  }
+  DCHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kReading);
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kStart:
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+      return server_to_client_push_waiter_.pending();
+    case ServerToClientPushState::kIdle:
+      if (server_trailing_metadata_state_ !=
+          ServerTrailingMetadataState::kNotPushed) {
+        return false;
+      }
+      server_trailing_metadata_waiter_.pending();
+      return server_to_client_push_waiter_.pending();
+    case ServerToClientPushState::kTrailersOnly:
+      DCHECK_NE(server_trailing_metadata_state_,
+                ServerTrailingMetadataState::kNotPushed);
+      return false;
+    case ServerToClientPushState::kPushedMessage:
+      server_to_client_pull_state_ =
+          ServerToClientPullState::kProcessingServerToClientMessage;
+      server_to_client_pull_waiter_.Wake();
+      return true;
+    case ServerToClientPushState::kFinished:
+      server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
+      server_to_client_pull_waiter_.Wake();
+      return Failure{};
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::FinishPullServerToClientMessage() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] FinishPullServerToClientMessage: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
+                        server_to_client_push_state_);
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+      LOG(FATAL)
+          << "FinishPullServerToClientMessage called before metadata available";
+    case ServerToClientPullState::kIdle:
+      LOG(FATAL) << "FinishPullServerToClientMessage called twice";
+    case ServerToClientPullState::kReading:
+      LOG(FATAL) << "FinishPullServerToClientMessage called before "
+                 << "PollPullServerToClientMessageAvailable";
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      server_to_client_pull_state_ = ServerToClientPullState::kIdle;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      LOG(FATAL) << "FinishPullServerToClientMessage called while processing "
+                    "trailing metadata";
+    case ServerToClientPullState::kTerminated:
+      break;
+  }
+  switch (server_to_client_push_state_) {
+    case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
+    case ServerToClientPushState::kPushedServerInitialMetadata:
+    case ServerToClientPushState::kStart:
+      LOG(FATAL) << "FinishPullServerToClientMessage called before initial "
+                    "metadata consumed";
+    case ServerToClientPushState::kTrailersOnly:
+      LOG(FATAL) << "FinishPullServerToClientMessage called after "
+                    "PushServerTrailingMetadata";
+    case ServerToClientPushState::kPushedMessage:
+      server_to_client_push_state_ = ServerToClientPushState::kIdle;
+      server_to_client_push_waiter_.Wake();
+      break;
+    case ServerToClientPushState::kIdle:
+      LOG(FATAL) << "FinishPullServerToClientMessage called without a message";
+    case ServerToClientPushState::kFinished:
+      break;
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<Empty>
+CallState::PollServerTrailingMetadataAvailable() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollServerTrailingMetadataAvailable: "
+      << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
+                        server_trailing_metadata_state_,
+                        server_trailing_metadata_waiter_.DebugString());
+  switch (server_to_client_pull_state_) {
+    case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kProcessingServerToClientMessage:
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kIdle:
+    case ServerToClientPullState::kReading:
+      if (server_trailing_metadata_state_ !=
+          ServerTrailingMetadataState::kNotPushed) {
+        server_to_client_pull_state_ =
+            ServerToClientPullState::kProcessingServerTrailingMetadata;
+        server_to_client_pull_waiter_.Wake();
+        return Empty{};
+      }
+      return server_trailing_metadata_waiter_.pending();
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
+      LOG(FATAL) << "PollServerTrailingMetadataAvailable called twice";
+    case ServerToClientPullState::kTerminated:
+      return Empty{};
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
+CallState::FinishPullServerTrailingMetadata() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] FinishPullServerTrailingMetadata: "
+      << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_,
+                        server_trailing_metadata_waiter_.DebugString());
+  switch (server_trailing_metadata_state_) {
+    case ServerTrailingMetadataState::kNotPushed:
+      LOG(FATAL) << "FinishPullServerTrailingMetadata called before "
+                    "PollServerTrailingMetadataAvailable";
+    case ServerTrailingMetadataState::kPushed:
+      server_trailing_metadata_state_ = ServerTrailingMetadataState::kPulled;
+      server_trailing_metadata_waiter_.Wake();
+      break;
+    case ServerTrailingMetadataState::kPushedCancel:
+      server_trailing_metadata_state_ =
+          ServerTrailingMetadataState::kPulledCancel;
+      server_trailing_metadata_waiter_.Wake();
+      break;
+    case ServerTrailingMetadataState::kPulled:
+    case ServerTrailingMetadataState::kPulledCancel:
+      LOG(FATAL) << "FinishPullServerTrailingMetadata called twice";
+  }
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<bool>
+CallState::PollWasCancelled() {
+  GRPC_TRACE_LOG(call_state, INFO)
+      << "[call_state] PollWasCancelled: "
+      << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_);
+  switch (server_trailing_metadata_state_) {
+    case ServerTrailingMetadataState::kNotPushed:
+    case ServerTrailingMetadataState::kPushed:
+    case ServerTrailingMetadataState::kPushedCancel: {
+      return server_trailing_metadata_waiter_.pending();
+    }
+    case ServerTrailingMetadataState::kPulled:
+      return false;
+    case ServerTrailingMetadataState::kPulledCancel:
+      return true;
+  }
+}
+
 template <typename Fn>
 class ServerTrailingMetadataInterceptor {
  public:
@@ -1576,9 +2192,9 @@ class CallFilters {
   }
 
  private:
-  template <typename Output, void (filters_detail::CallState::*on_done)(),
+  template <typename Output, void (filters_detail::CallState::* on_done)(),
             typename Input>
-  Poll<ValueOrFailure<Output>> FinishStep(
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<ValueOrFailure<Output>> FinishStep(
       Poll<filters_detail::ResultOr<Input>> p) {
     auto* r = p.value_if_ready();
     if (r == nullptr) return Pending{};
@@ -1591,11 +2207,11 @@ class CallFilters {
   }
 
   template <typename Output, typename Input,
-            Input(CallFilters::*input_location),
+            Input(CallFilters::* input_location),
             filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
-                filters_detail::StackData::*layout),
-            void (filters_detail::CallState::*on_done)()>
-  auto RunExecutor() {
+                filters_detail::StackData::* layout),
+            void (filters_detail::CallState::* on_done)()>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto RunExecutor() {
     DCHECK_NE((this->*input_location).get(), nullptr);
     return [this,
             executor = filters_detail::OperationExecutor<Input>()]() mutable {
@@ -1611,7 +2227,8 @@ class CallFilters {
  public:
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
-  GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  PullClientInitialMetadata() {
     call_state_.BeginPullClientInitialMetadata();
     return RunExecutor<
         ClientMetadataHandle, ClientMetadataHandle,
@@ -1621,13 +2238,15 @@ class CallFilters {
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
-  StatusFlag PushServerInitialMetadata(ServerMetadataHandle md) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION StatusFlag
+  PushServerInitialMetadata(ServerMetadataHandle md) {
     push_server_initial_metadata_ = std::move(md);
     return call_state_.PushServerInitialMetadata();
   }
   // Client: Fetch server initial metadata
   // Returns a promise that resolves to ValueOrFailure<ServerMetadataHandle>
-  GRPC_MUST_USE_RESULT auto PullServerInitialMetadata() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  PullServerInitialMetadata() {
     return Seq(
         [this]() {
           return call_state_.PollPullServerInitialMetadataAvailable();
@@ -1656,7 +2275,8 @@ class CallFilters {
   }
   // Client: Push client to server message
   // Returns a promise that resolves to a StatusFlag indicating success
-  GRPC_MUST_USE_RESULT auto PushClientToServerMessage(MessageHandle message) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  PushClientToServerMessage(MessageHandle message) {
     call_state_.BeginPushClientToServerMessage();
     DCHECK_NE(message.get(), nullptr);
     DCHECK_EQ(push_client_to_server_message_.get(), nullptr);
@@ -1664,10 +2284,13 @@ class CallFilters {
     return [this]() { return call_state_.PollPushClientToServerMessage(); };
   }
   // Client: Indicate that no more messages will be sent
-  void FinishClientToServerSends() { call_state_.ClientToServerHalfClose(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void FinishClientToServerSends() {
+    call_state_.ClientToServerHalfClose();
+  }
   // Server: Fetch client to server message
   // Returns a promise that resolves to ValueOrFailure<MessageHandle>
-  GRPC_MUST_USE_RESULT auto PullClientToServerMessage() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  PullClientToServerMessage() {
     return TrySeq(
         [this]() {
           return call_state_.PollPullClientToServerMessageAvailable();
@@ -1690,14 +2313,16 @@ class CallFilters {
   }
   // Server: Push server to client message
   // Returns a promise that resolves to a StatusFlag indicating success
-  GRPC_MUST_USE_RESULT auto PushServerToClientMessage(MessageHandle message) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  PushServerToClientMessage(MessageHandle message) {
     call_state_.BeginPushServerToClientMessage();
     push_server_to_client_message_ = std::move(message);
     return [this]() { return call_state_.PollPushServerToClientMessage(); };
   }
   // Server: Fetch server to client message
   // Returns a promise that resolves to ValueOrFailure<MessageHandle>
-  GRPC_MUST_USE_RESULT auto PullServerToClientMessage() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  PullServerToClientMessage() {
     return TrySeq(
         [this]() {
           return call_state_.PollPullServerToClientMessageAvailable();
@@ -1725,7 +2350,8 @@ class CallFilters {
   void PushServerTrailingMetadata(ServerMetadataHandle md);
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
-  GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  PullServerTrailingMetadata() {
     return Seq(
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
@@ -1759,7 +2385,8 @@ class CallFilters {
   // request was cancelled or not -- failure to send trailing metadata is
   // considered a cancellation, as is actual cancellation -- but not application
   // errors.
-  GRPC_MUST_USE_RESULT auto WasCancelled() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT auto
+  WasCancelled() {
     return [this]() { return call_state_.PollWasCancelled(); };
   }
   // Client & server: fill in final_info with the final status of the call.

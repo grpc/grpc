@@ -90,6 +90,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - auth_context_refcount - Auth context refcounting.
   - call_combiner - Call combiner state.
   - call_refcount - Refcount on call.
+  - call_state - Traces state transitions of a call spine.
   - closure - Legacy closure creation, scheduling, and completion.
   - combiner - Combiner lock state.
   - cq_refcount - Completion queue refcounting.

@@ -115,7 +115,7 @@ bool HasContext() {
 template <typename T>
 T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  CHECK_NE(p, nullptr);
+  DCHECK_NE(p, nullptr);
   return p;
 }
 
