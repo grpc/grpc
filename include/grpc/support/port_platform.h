@@ -746,6 +746,24 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif
 #endif /* GPR_ATTRIBUTE_NOINLINE */
 
+#ifndef GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#if GPR_HAS_CPP_ATTRIBUTE(clang::always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION [[clang::always_inline]]
+#elif GPR_HAS_ATTRIBUTE(always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION __attribute__((always_inline))
+#else
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+#endif
+#endif /* GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION */
+
+#ifndef GPR_ATTRIBUTE_ALWAYS_INLINE_STATEMENT
+#if GPR_HAS_CPP_ATTRIBUTE(clang::always_inline)
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_STATEMENT [[clang::always_inline]]
+#else
+#define GPR_ATTRIBUTE_ALWAYS_INLINE_STATEMENT
+#endif
+#endif /* GPR_ATTRIBUTE_ALWAYS_INLINE_STATEMENT */
+
 #ifndef GPR_NO_UNIQUE_ADDRESS
 #if GPR_HAS_CPP_ATTRIBUTE(no_unique_address)
 #define GPR_NO_UNIQUE_ADDRESS [[no_unique_address]]
