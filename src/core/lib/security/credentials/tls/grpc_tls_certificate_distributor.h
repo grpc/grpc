@@ -111,7 +111,7 @@ class TlsCertificateDistributor {
   void SetError(grpc_error_handle error);
 
   // Sets the TLS certificate watch status callback function. The
-  // grpc_tls_certificate_distributor will invoke this callback when a new
+  // TlsCertificateDistributor will invoke this callback when a new
   // certificate name is watched by a newly registered watcher, or when a
   // certificate name is no longer watched by any watchers.
   // Note that when the callback shows a cert is no longer being watched, the
@@ -212,6 +212,6 @@ class TlsCertificateDistributor {
       ABSL_GUARDED_BY(mu_);
 };
 
-typedef TlsCertificateDistributor grpc_tls_certificate_distributor;
+typedef TlsCertificateDistributor TlsCertificateDistributor;
 
 #endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H

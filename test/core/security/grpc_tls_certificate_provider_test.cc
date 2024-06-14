@@ -106,8 +106,8 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     }
   };
 
-  class TlsCertificatesTestWatcher : public grpc_tls_certificate_distributor::
-                                         TlsCertificatesWatcherInterface {
+  class TlsCertificatesTestWatcher
+      : public TlsCertificateDistributor::TlsCertificatesWatcherInterface {
    public:
     // ctor sets state->watcher to this.
     explicit TlsCertificatesTestWatcher(WatcherState* state) : state_(state) {
@@ -166,7 +166,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   }
 
   WatcherState* MakeWatcher(
-      std::shared_ptr<grpc_tls_certificate_distributor> distributor,
+      std::shared_ptr<TlsCertificateDistributor> distributor,
       absl::optional<std::string> root_cert_name,
       absl::optional<std::string> identity_cert_name) {
     MutexLock lock(&mu_);
@@ -196,7 +196,7 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   std::string root_cert_2_;
   std::string private_key_2_;
   std::string cert_chain_2_;
-  std::shared_ptr<grpc_tls_certificate_distributor> distributor_;
+  std::shared_ptr<TlsCertificateDistributor> distributor_;
   // Use a std::list<> here to avoid the address invalidation caused by internal
   // reallocation of std::vector<>.
   std::list<WatcherState> watchers_;

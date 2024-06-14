@@ -48,14 +48,13 @@
 // state among different instances as they deem fit.
 //
 // On creation, grpc_tls_certificate_provider creates a
-// grpc_tls_certificate_distributor object. When the credentials and validation
+// TlsCertificateDistributor object. When the credentials and validation
 // contexts become valid or changed, a grpc_tls_certificate_provider should
 // notify its distributor so as to propagate the update to the watchers.
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  virtual std::shared_ptr<grpc_tls_certificate_distributor> distributor()
-      const = 0;
+  virtual std::shared_ptr<TlsCertificateDistributor> distributor() const = 0;
 
   // Compares this grpc_tls_certificate_provider object with \a other.
   // If this method returns 0, it means that gRPC can treat the two certificate
@@ -103,8 +102,7 @@ class StaticDataCertificateProvider final
 
   ~StaticDataCertificateProvider() override;
 
-  std::shared_ptr<grpc_tls_certificate_distributor> distributor()
-      const override {
+  std::shared_ptr<TlsCertificateDistributor> distributor() const override {
     return distributor_;
   }
 
@@ -122,7 +120,7 @@ class StaticDataCertificateProvider final
                         other);
   }
 
-  std::shared_ptr<grpc_tls_certificate_distributor> distributor_;
+  std::shared_ptr<TlsCertificateDistributor> distributor_;
   std::string root_certificate_;
   PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
@@ -143,8 +141,7 @@ class FileWatcherCertificateProvider final
 
   ~FileWatcherCertificateProvider() override;
 
-  std::shared_ptr<grpc_tls_certificate_distributor> distributor()
-      const override {
+  std::shared_ptr<TlsCertificateDistributor> distributor() const override {
     return distributor_;
   }
 
@@ -181,7 +178,7 @@ class FileWatcherCertificateProvider final
   std::string root_cert_path_;
   int64_t refresh_interval_sec_ = 0;
 
-  std::shared_ptr<grpc_tls_certificate_distributor> distributor_;
+  std::shared_ptr<TlsCertificateDistributor> distributor_;
   Thread refresh_thread_;
   gpr_event shutdown_event_;
 
