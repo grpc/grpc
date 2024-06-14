@@ -588,7 +588,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
                         "(Failed to connect to remote host: )?"
                         "(Timeout occurred: )?"
                         // Syscall
-                        "((connect|recvmsg|getsockopt\\(SO\\_ERROR\\)): )?"
+                        "((connect|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
                         // strerror() output or other message
                         "(Connection refused"
                         "|Connection reset by peer"
