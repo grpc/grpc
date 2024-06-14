@@ -35,7 +35,7 @@ namespace promise_detail {
 template <typename Promise, typename Fn>
 class Map {
  public:
-  Map(Promise promise, Fn fn)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Map(Promise promise, Fn fn)
       : promise_(std::move(promise)), fn_(std::move(fn)) {}
 
   Map(const Map&) = delete;
@@ -68,7 +68,8 @@ class Map {
 // Takes a promise, and a synchronous function to mutate its result, and
 // returns a promise.
 template <typename Promise, typename Fn>
-promise_detail::Map<Promise, Fn> Map(Promise promise, Fn fn) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Map<Promise, Fn> Map(
+    Promise promise, Fn fn) {
   return promise_detail::Map<Promise, Fn>(std::move(promise), std::move(fn));
 }
 
