@@ -54,8 +54,8 @@
 struct grpc_tls_certificate_provider
     : public grpc_core::RefCounted<grpc_tls_certificate_provider> {
  public:
-  virtual grpc_core::RefCountedPtr<grpc_tls_certificate_distributor>
-  distributor() const = 0;
+  virtual std::shared_ptr<grpc_tls_certificate_distributor> distributor()
+      const = 0;
 
   // Compares this grpc_tls_certificate_provider object with \a other.
   // If this method returns 0, it means that gRPC can treat the two certificate
@@ -103,7 +103,8 @@ class StaticDataCertificateProvider final
 
   ~StaticDataCertificateProvider() override;
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  std::shared_ptr<grpc_tls_certificate_distributor> distributor()
+      const override {
     return distributor_;
   }
 
@@ -121,7 +122,7 @@ class StaticDataCertificateProvider final
                         other);
   }
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  std::shared_ptr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
   PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
@@ -142,7 +143,8 @@ class FileWatcherCertificateProvider final
 
   ~FileWatcherCertificateProvider() override;
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  std::shared_ptr<grpc_tls_certificate_distributor> distributor()
+      const override {
     return distributor_;
   }
 
@@ -179,7 +181,7 @@ class FileWatcherCertificateProvider final
   std::string root_cert_path_;
   int64_t refresh_interval_sec_ = 0;
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  std::shared_ptr<grpc_tls_certificate_distributor> distributor_;
   Thread refresh_thread_;
   gpr_event shutdown_event_;
 

@@ -46,7 +46,8 @@ class CertificateProviderStoreTest : public ::testing::Test {
 
 class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  std::shared_ptr<grpc_tls_certificate_distributor> distributor()
+      const override {
     // never called
     CHECK(0);
     return nullptr;

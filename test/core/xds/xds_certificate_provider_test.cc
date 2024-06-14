@@ -56,14 +56,15 @@ PemKeyCertPairList MakeKeyCertPairsType2() {
 class TestCertProvider : public grpc_tls_certificate_provider {
  public:
   TestCertProvider()
-      : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {}
+      : distributor_(std::make_shared<grpc_tls_certificate_distributor>()) {}
 
   UniqueTypeName type() const override {
     static UniqueTypeName::Factory kFactory("Xds");
     return kFactory.Create();
   }
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
+  std::shared_ptr<grpc_tls_certificate_distributor> distributor()
+      const override {
     return distributor_;
   }
 
@@ -72,7 +73,7 @@ class TestCertProvider : public grpc_tls_certificate_provider {
     return QsortCompare(this, static_cast<const TestCertProvider*>(other));
   }
 
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
+  std::shared_ptr<grpc_tls_certificate_distributor> distributor_;
 };
 
 class TestCertificatesWatcher

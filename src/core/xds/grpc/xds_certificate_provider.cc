@@ -44,7 +44,7 @@ class RootCertificatesWatcher final
   // CancelTlsCertificatesWatch() is called, but that can potentially change in
   // the future.
   explicit RootCertificatesWatcher(
-      RefCountedPtr<grpc_tls_certificate_distributor> parent)
+      std::shared_ptr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(absl::optional<absl::string_view> root_certs,
@@ -65,7 +65,7 @@ class RootCertificatesWatcher final
   }
 
  private:
-  RefCountedPtr<grpc_tls_certificate_distributor> parent_;
+  std::shared_ptr<grpc_tls_certificate_distributor> parent_;
 };
 
 class IdentityCertificatesWatcher final
@@ -77,7 +77,7 @@ class IdentityCertificatesWatcher final
   // CancelTlsCertificatesWatch() is called, but that can potentially change in
   // the future.
   explicit IdentityCertificatesWatcher(
-      RefCountedPtr<grpc_tls_certificate_distributor> parent)
+      std::shared_ptr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(
@@ -97,7 +97,7 @@ class IdentityCertificatesWatcher final
   }
 
  private:
-  RefCountedPtr<grpc_tls_certificate_distributor> parent_;
+  std::shared_ptr<grpc_tls_certificate_distributor> parent_;
 };
 
 }  // namespace
@@ -112,7 +112,7 @@ XdsCertificateProvider::XdsCertificateProvider(
     RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
     absl::string_view identity_cert_name,
     std::vector<StringMatcher> san_matchers)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+    : distributor_(std::make_shared<grpc_tls_certificate_distributor>()),
       root_cert_provider_(std::move(root_cert_provider)),
       root_cert_name_(root_cert_name),
       identity_cert_provider_(std::move(identity_cert_provider)),
@@ -128,7 +128,7 @@ XdsCertificateProvider::XdsCertificateProvider(
     absl::string_view root_cert_name,
     RefCountedPtr<grpc_tls_certificate_provider> identity_cert_provider,
     absl::string_view identity_cert_name, bool require_client_certificate)
-    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+    : distributor_(std::make_shared<grpc_tls_certificate_distributor>()),
       root_cert_provider_(std::move(root_cert_provider)),
       root_cert_name_(root_cert_name),
       identity_cert_provider_(std::move(identity_cert_provider)),
