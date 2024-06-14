@@ -631,11 +631,30 @@ class XdsClientTest : public ::testing::Test {
       MutexLock lock(&mu_);
       return resource_updates_valid_;
     }
+
     ResourceUpdateMap resource_updates_invalid() const {
       MutexLock lock(&mu_);
       return resource_updates_invalid_;
     }
+
     const ServerFailureMap& server_failures() const { return server_failures_; }
+
+    absl::Status WaitForUpdates(int count,
+                                absl::Duration timeout = absl::Seconds(3)) {
+      MutexLock lock(&mu_);
+      if (updates_count_ >= count) {
+        return absl::OkStatus();
+      }
+      absl::Time deadline = absl::Now() + timeout;
+      while (absl::Now() < deadline && updates_count_ < count) {
+        updates_cond_.WaitWithDeadline(&mu_, deadline);
+      }
+      if (updates_count_ < count) {
+        return absl::DeadlineExceededError(absl::StrFormat(
+            "Got %d updates, was expecting %d", updates_count_, count));
+      }
+      return absl::OkStatus();
+    }
 
    private:
     void ReportResourceUpdates(absl::string_view xds_server,
@@ -651,6 +670,8 @@ class XdsClientTest : public ::testing::Test {
       if (num_resources_invalid > 0) {
         resource_updates_invalid_[key] += num_resources_invalid;
       }
+      ++updates_count_;
+      updates_cond_.SignalAll();
     }
 
     void ReportServerFailure(absl::string_view xds_server) override {
@@ -659,6 +680,8 @@ class XdsClientTest : public ::testing::Test {
     }
 
     mutable Mutex mu_;
+    CondVar updates_cond_;
+    int updates_count_ ABSL_GUARDED_BY(mu_) = 0;
     ResourceUpdateMap resource_updates_valid_ ABSL_GUARDED_BY(mu_);
     ResourceUpdateMap resource_updates_invalid_ ABSL_GUARDED_BY(mu_);
     ServerFailureMap server_failures_ ABSL_GUARDED_BY(mu_);
@@ -1819,6 +1842,9 @@ TEST_F(XdsClientTest, ResourceValidationFailureForCachedResource) {
             "invalid resource: INVALID_ARGUMENT: errors validating JSON: "
             "[field:value error:is not a number] (node ID:xds_client_test)")
       << *error;
+  auto wait_for_updates = metrics_reporter_->WaitForUpdates(2);
+  EXPECT_EQ(wait_for_updates.code(), absl::StatusCode::kOk)
+      << wait_for_updates.message();
   // Check metric data.
   EXPECT_THAT(metrics_reporter_->resource_updates_valid(),
               ::testing::ElementsAre(::testing::Pair(
