@@ -51,8 +51,9 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
          GRPC_STATUS_OK;
 }
 
-ServerMetadataHandle ServerMetadataFromStatus(
-    const absl::Status& status, Arena* arena = GetContext<Arena>());
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
+ServerMetadataHandle CancelledServerMetadataFromStatus(
+    const absl::Status& status);
 
 template <>
 struct StatusCastImpl<ServerMetadataHandle, absl::Status> {
