@@ -57,6 +57,21 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+void ChaoticGoodClientTransport::Orphan() {
+  LOG(INFO) << "ChaoticGoodClientTransport::Orphan";
+  AbortWithError();
+  ActivityPtr writer;
+  ActivityPtr reader;
+  {
+    MutexLock lock(&mu_);
+    writer = std::move(writer_);
+    reader = std::move(reader_);
+  }
+  writer.reset();
+  reader.reset();
+  Unref();
+}
+
 auto ChaoticGoodClientTransport::TransportWriteLoop(
     RefCountedPtr<ChaoticGoodTransport> transport) {
   return Loop([this, transport = std::move(transport)] {
@@ -176,11 +191,12 @@ auto ChaoticGoodClientTransport::TransportReadLoop(
 
 auto ChaoticGoodClientTransport::OnTransportActivityDone(
     absl::string_view what) {
-  return [this, what](absl::Status status) {
+  return [self = RefAsSubclass<ChaoticGoodClientTransport>(),
+          what](absl::Status status) {
     GRPC_TRACE_LOG(chaotic_good, INFO)
-        << "CHAOTIC_GOOD: Client transport " << this << " closed (via " << what
-        << "): " << status;
-    AbortWithError();
+        << "CHAOTIC_GOOD: Client transport " << self.get() << " closed (via "
+        << what << "): " << status;
+    self->AbortWithError();
   };
 }
 
@@ -303,7 +319,8 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
   call_handler.SpawnGuarded("outbound_loop", [this, call_handler]() mutable {
     const uint32_t stream_id = MakeStream(call_handler);
     return Map(CallOutboundLoop(stream_id, call_handler),
-               [stream_id, this](absl::Status result) {
+               [stream_id, sender = outgoing_frames_.MakeSender()](
+                   absl::Status result) mutable {
                  GRPC_TRACE_LOG(chaotic_good, INFO)
                      << "CHAOTIC_GOOD: Call " << stream_id << " finished with "
                      << result.ToString();
@@ -312,8 +329,7 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                        << "CHAOTIC_GOOD: Send cancel";
                    CancelFrame frame;
                    frame.stream_id = stream_id;
-                   if (!outgoing_frames_.MakeSender().UnbufferedImmediateSend(
-                           std::move(frame))) {
+                   if (!sender.UnbufferedImmediateSend(std::move(frame))) {
                      GRPC_TRACE_LOG(chaotic_good, INFO)
                          << "CHAOTIC_GOOD: Send cancel failed";
                    }

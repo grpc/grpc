@@ -136,7 +136,6 @@ let package = Package(
         "src/core/client_channel/client_channel_plugin.cc",
         "src/core/client_channel/client_channel_service_config.cc",
         "src/core/client_channel/client_channel_service_config.h",
-        "src/core/client_channel/config_selector.cc",
         "src/core/client_channel/config_selector.h",
         "src/core/client_channel/connector.h",
         "src/core/client_channel/direct_channel.cc",

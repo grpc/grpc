@@ -368,7 +368,7 @@ Q = @
 endif
 
 CORE_VERSION = 42.0.0
-CPP_VERSION = 1.65.0-dev
+CPP_VERSION = 1.66.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -675,7 +675,6 @@ LIBGRPC_SRC = \
     src/core/client_channel/client_channel_filter.cc \
     src/core/client_channel/client_channel_plugin.cc \
     src/core/client_channel/client_channel_service_config.cc \
-    src/core/client_channel/config_selector.cc \
     src/core/client_channel/direct_channel.cc \
     src/core/client_channel/dynamic_filters.cc \
     src/core/client_channel/global_subchannel_pool.cc \

@@ -737,7 +737,7 @@ struct AddOpImpl<
         if (r->ok()) {
           return ResultOr<T>{std::move(value), nullptr};
         }
-        return ResultOr<T>{nullptr, ServerMetadataFromStatus(*r)};
+        return ResultOr<T>{nullptr, CancelledServerMetadataFromStatus(*r)};
       }
 
      private:
@@ -792,7 +792,7 @@ struct AddOpImpl<
         if (r->ok()) {
           return ResultOr<T>{std::move(value), nullptr};
         }
-        return ResultOr<T>{nullptr, ServerMetadataFromStatus(*r)};
+        return ResultOr<T>{nullptr, CancelledServerMetadataFromStatus(*r)};
       }
 
      private:
@@ -842,7 +842,8 @@ struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
         if (r == nullptr) return Pending{};
         this->~Promise();
         if (r->ok()) return ResultOr<T>{std::move(**r), nullptr};
-        return ResultOr<T>{nullptr, ServerMetadataFromStatus(r->status())};
+        return ResultOr<T>{nullptr,
+                           CancelledServerMetadataFromStatus(r->status())};
       }
 
      private:
@@ -1237,7 +1238,7 @@ class CallState {
     kReading,
     // Main call loop: processing one message
     kProcessingClientToServerMessage,
-    // Client initial metadata has been processed
+    // Processing complete
     kTerminated,
   };
   static const char* ClientToServerPullStateString(

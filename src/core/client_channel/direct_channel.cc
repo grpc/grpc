@@ -58,13 +58,16 @@ void DirectChannel::Orphaned() {
 
 void DirectChannel::StartCall(UnstartedCallHandler unstarted_handler) {
   unstarted_handler.SpawnInfallible(
-      "start", [this, unstarted_handler]() mutable {
-        interception_chain_->StartCall(std::move(unstarted_handler));
+      "start",
+      [interception_chain = interception_chain_, unstarted_handler]() mutable {
+        interception_chain->StartCall(std::move(unstarted_handler));
         return []() { return Empty{}; };
       });
 }
 
-void DirectChannel::GetInfo(const grpc_channel_info* info) {}
+void DirectChannel::GetInfo(const grpc_channel_info* info) {
+  // TODO(roth): Implement this.
+}
 
 grpc_call* DirectChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,

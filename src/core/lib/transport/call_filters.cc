@@ -235,7 +235,7 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
   CHECK(md != nullptr);
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s PushServerTrailingMetadata[%p]: %s into %s",
             GetContext<Activity>()->DebugTag().c_str(), this,
             md->DebugString().c_str(), DebugString().c_str());
@@ -316,8 +316,8 @@ void CallState::Start() {
     case ServerToClientPullState::kIdle:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
-    case ServerToClientPullState::kProcessingServerTrailingMetadata:
       LOG(FATAL) << "Start called twice";
+    case ServerToClientPullState::kProcessingServerTrailingMetadata:
     case ServerToClientPullState::kTerminated:
       break;
   }
@@ -632,6 +632,12 @@ Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
                         server_to_client_push_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
+      if (server_to_client_push_state_ ==
+          ServerToClientPushState::kTrailersOnly) {
+        server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
+        return false;
+      }
+      server_to_client_push_waiter_.pending();
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kStarted:
       break;

@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.65.0-dev")
+set(PACKAGE_VERSION       "1.66.0-dev")
 set(gRPC_CORE_VERSION     "42.0.0")
 set(gRPC_CORE_SOVERSION   "42")
-set(gRPC_CPP_VERSION      "1.65.0-dev")
-set(gRPC_CPP_SOVERSION    "1.65")
+set(gRPC_CPP_VERSION      "1.66.0-dev")
+set(gRPC_CPP_SOVERSION    "1.66")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -967,6 +967,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx call_filters_test)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx call_host_override_test)
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx call_spine_test)
+  endif()
   add_dependencies(buildtests_cxx call_tracer_test)
   add_dependencies(buildtests_cxx call_utils_test)
   add_dependencies(buildtests_cxx cancel_after_accept_test)
@@ -1853,7 +1856,6 @@ add_library(grpc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
-  src/core/client_channel/config_selector.cc
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
@@ -2947,7 +2949,6 @@ add_library(grpc_unsecure
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
-  src/core/client_channel/config_selector.cc
   src/core/client_channel/direct_channel.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
@@ -4257,7 +4258,9 @@ foreach(_hdr
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h
   include/grpcpp/generic/async_generic_service.h
+  include/grpcpp/generic/callback_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
@@ -4318,6 +4321,7 @@ foreach(_hdr
   include/grpcpp/impl/completion_queue_tag.h
   include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
+  include/grpcpp/impl/generic_stub_internal.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/interceptor_common.h
@@ -5000,7 +5004,9 @@ foreach(_hdr
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h
   include/grpcpp/generic/async_generic_service.h
+  include/grpcpp/generic/callback_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
@@ -5061,6 +5067,7 @@ foreach(_hdr
   include/grpcpp/impl/completion_queue_tag.h
   include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
+  include/grpcpp/impl/generic_stub_internal.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/interceptor_common.h
@@ -6010,6 +6017,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(activity_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   test/core/promise/activity_test.cc
@@ -8724,6 +8732,59 @@ target_link_libraries(call_host_override_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(call_spine_test
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+    test/core/call/yodel/test_main.cc
+    test/core/call/yodel/yodel_test.cc
+    test/core/event_engine/event_engine_test_utils.cc
+    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+    test/core/transport/call_spine_test.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(call_spine_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(call_spine_test PUBLIC cxx_std_14)
+  target_include_directories(call_spine_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(call_spine_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    grpc_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
 
 add_executable(call_tracer_test
   test/core/telemetry/call_tracer_test.cc
@@ -9436,6 +9497,7 @@ add_executable(cancel_callback_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -10543,6 +10605,7 @@ add_executable(chunked_vector_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -13851,6 +13914,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -14651,6 +14715,7 @@ add_executable(flow_control_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -14737,6 +14802,7 @@ add_executable(for_each_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -18184,6 +18250,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   test/core/promise/inter_activity_pipe_test.cc
@@ -18537,6 +18604,7 @@ add_executable(interceptor_list_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -19329,6 +19397,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(latch_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   test/core/promise/latch_test.cc
@@ -19747,6 +19816,7 @@ add_executable(map_pipe_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
   src/core/lib/experiments/experiments.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -20731,6 +20801,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(mpsc_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   test/core/promise/mpsc_test.cc
 )
@@ -20766,6 +20840,7 @@ target_link_libraries(mpsc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -21227,6 +21302,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(observable_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   test/core/promise/observable_test.cc
 )
@@ -21262,6 +21341,7 @@ target_link_libraries(observable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -23107,6 +23187,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_mutex_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   test/core/promise/promise_mutex_test.cc
@@ -32868,6 +32949,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wait_for_callback_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/gprpp/dump_args.cc
+  src/core/lib/gprpp/glob.cc
   src/core/lib/promise/activity.cc
   test/core/promise/wait_for_callback_test.cc
 )
@@ -32903,6 +32988,7 @@ target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
