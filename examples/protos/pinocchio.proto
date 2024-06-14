@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package instacart.infra.pinocchio.v2;
+
+option go_package = "github.com/instacart/carrot/pbgen/pbgen-go/instacart/infra/pinocchio/v2;pinocchiopb";
+
+// Request message used for the Echo RPC.
+message EchoRequest {
+  // Message to be sent as part of the echo.
+  string message = 1;
+}
+
+// Response message used for the Echo RPC.
+message EchoResponse {
+  // Message to be returned as part of the echo.
+  string message = 1;
+}
+
+// Service for checking network health. This is not a real service and is only used for testing purpose via the pinocchio app.
+// Service standard requires that upon receiving a "Where are you?" message - the server responds with NOT_FOUND and
+// grpc message of "Not here"
+service PinocchioService {
+  // Performs an echo operation, sending a string and getting it back.
+  rpc Echo(EchoRequest) returns (EchoResponse);
+  // Collects each request from stream and returns them joined by ", "
+  rpc EchoStreamRequest(stream EchoRequest) returns (EchoResponse);
+  // Returns the request 3 times
+  rpc EchoStreamResponse(EchoRequest) returns (stream EchoResponse);
+  // Echoes each request
+  rpc EchoStreamRequestResponse(stream EchoRequest) returns (stream EchoResponse);
+}
