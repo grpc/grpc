@@ -127,6 +127,11 @@ struct StatusCastImpl<absl::Status, const StatusFlag&> {
   }
 };
 
+template <>
+struct StatusCastImpl<StatusFlag, Success> {
+  static StatusFlag Cast(Success) { return StatusFlag(true); }
+};
+
 template <typename T>
 struct FailureStatusCastImpl<absl::StatusOr<T>, StatusFlag> {
   static absl::StatusOr<T> Cast(StatusFlag flag) {

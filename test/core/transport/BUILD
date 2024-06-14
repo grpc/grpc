@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test","grpc_cc_library", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
 
 licenses(["notice"])
 
@@ -188,5 +189,25 @@ grpc_yodel_simple_test(
     deps = [
         "//src/core:call_spine",
         "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_spine_benchmarks",
+    hdrs = ["call_spine_benchmarks.h"],
+    external_deps = ["benchmark"],
+)
+
+grpc_cc_test(
+    name = "bm_call_spine",
+    size = "small",
+    srcs = ["bm_call_spine.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = ["benchmark"],
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        ":call_spine_benchmarks",
     ],
 )
