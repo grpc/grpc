@@ -296,7 +296,8 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   auto watcher_ptr = std::make_unique<TlsChannelCertificateWatcher>(this);
   certificate_watcher_ = watcher_ptr.get();
   // Register the watcher with the distributor.
-  TlsCertificateDistributor* distributor = options_->certificate_distributor();
+  std::shared_ptr<TlsCertificateDistributor> distributor =
+      options_->certificate_distributor();
   absl::optional<std::string> watched_root_cert_name;
   if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
@@ -326,7 +327,8 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
     tsi_ssl_session_cache_unref(ssl_session_cache_);
   }
   // Cancel all the watchers.
-  TlsCertificateDistributor* distributor = options_->certificate_distributor();
+  std::shared_ptr<TlsCertificateDistributor> distributor =
+      options_->certificate_distributor();
   if (distributor != nullptr) {
     distributor->CancelTlsCertificatesWatch(certificate_watcher_);
   }
@@ -586,7 +588,8 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
   auto watcher_ptr = std::make_unique<TlsServerCertificateWatcher>(this);
   certificate_watcher_ = watcher_ptr.get();
   // Register the watcher with the distributor.
-  TlsCertificateDistributor* distributor = options_->certificate_distributor();
+  std::shared_ptr<TlsCertificateDistributor> distributor =
+      options_->certificate_distributor();
   absl::optional<std::string> watched_root_cert_name;
   if (options_->watch_root_cert()) {
     watched_root_cert_name = options_->root_cert_name();
@@ -603,7 +606,8 @@ TlsServerSecurityConnector::TlsServerSecurityConnector(
 
 TlsServerSecurityConnector::~TlsServerSecurityConnector() {
   // Cancel all the watchers.
-  TlsCertificateDistributor* distributor = options_->certificate_distributor();
+  std::shared_ptr<TlsCertificateDistributor> distributor =
+      options_->certificate_distributor();
   distributor->CancelTlsCertificatesWatch(certificate_watcher_);
   if (server_handshaker_factory_ != nullptr) {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
