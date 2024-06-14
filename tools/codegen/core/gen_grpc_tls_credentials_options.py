@@ -118,8 +118,8 @@ _DATA_MEMBERS = [
             "Returns the distributor from certificate_provider_ if it is set,"
             " nullptr otherwise."
         ),
-        override_getter="""grpc_tls_certificate_distributor* certificate_distributor() {
-    if (certificate_provider_ != nullptr) { return certificate_provider_->distributor().get(); }
+        override_getter="""std::shared_ptr<TlsCertificateDistributor> certificate_distributor() {
+    if (certificate_provider_ != nullptr) { return certificate_provider_->distributor(); }
     return nullptr;
   }""",
         setter_move_semantics=True,
