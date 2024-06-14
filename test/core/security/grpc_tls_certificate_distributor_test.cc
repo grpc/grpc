@@ -107,8 +107,8 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     }
   };
 
-  class TlsCertificatesTestWatcher : public TlsCertificateDistributor::
-                                         TlsCertificatesWatcherInterface {
+  class TlsCertificatesTestWatcher
+      : public TlsCertificateDistributor::TlsCertificatesWatcherInterface {
    public:
     // ctor sets state->watcher to this.
     explicit TlsCertificatesTestWatcher(WatcherState* state) : state_(state) {
