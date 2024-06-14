@@ -2442,6 +2442,7 @@ ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttribute(
   return service_config_call_data->GetCallAttribute(type);
 }
 
+// FIXME: use LB call tracing filter instead of doing this here
 ClientCallTracer::CallAttemptTracer*
 ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttemptTracer()
     const {

@@ -37,7 +37,19 @@ class LbCallTracingFilter final
   class Call {
    public:
     void OnClientInitialMetadata(ClientMetadata& metadata);
-    static const NoInterceptor OnClientToServerMessage;
+    // We don't actually want to intercept client-to-server messages,
+    // but there's currently a bug in the filter framework whereby we
+    // can't intercept half-close without also intercepting messages.
+    // TODO(ctiller): Fix filter framework so that we don't need to
+    // intercept messages here.
+    // TODO(ctiller): Even if we have to implement this hook, we should
+    // be able to do just this:
+    //   void OnClientToServerMessage(const Message&) {}
+    // However, that doesn't build.  It looks like there's no simpler
+    // form of this method that works with both the legacy stack and v3.
+    ServerMetadataHandle OnClientToServerMessage(const Message&) {
+      return ServerMetadataFromStatus(absl::OkStatus());
+    }
     void OnClientToServerHalfClose();
 
     void OnServerInitialMetadata(ServerMetadata& metadata);
