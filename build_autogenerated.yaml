@@ -6308,6 +6308,21 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: call_arena_allocator_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/call_arena_allocator_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: call_creds_test
   gtest: true
   build: test
