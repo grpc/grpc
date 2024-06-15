@@ -35,10 +35,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 
-#ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
-#define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
-#endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
-
 static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
