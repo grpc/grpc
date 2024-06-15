@@ -193,7 +193,7 @@ struct server_request_call_args {
 static void shutdown_server_unblock_func(void* arg) {
   grpc_rb_server* server = (grpc_rb_server*)arg;
   gpr_log(GPR_INFO, "GRPC_RUBY: shutdown_server_unblock_func");
-  GPR_ASSERT(server->wrapped != NULL);
+  GRPC_RUBY_ASSERT(server->wrapped != NULL);
   grpc_event event;
   void* tag = &event;
   grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
