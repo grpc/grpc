@@ -146,6 +146,9 @@ void gpr_to_absl_verbosity_setting_init(void) {
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  } else if (verbosity.empty()) {
+    // Do not set absl::MinLogLevel if verbosity has not been set. Note that the
+    // default gRPC min log severity that is printed will still be ERROR.
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
