@@ -128,7 +128,11 @@ class ArenaFactory : public RefCounted<ArenaFactory> {
   MemoryAllocator allocator_;
 };
 
-RefCountedPtr<ArenaFactory> SimpleArenaAllocator(size_t initial_size = 1024);
+MemoryAllocator DefaultMemoryAllocatorForSimpleArenaAllocator();
+RefCountedPtr<ArenaFactory> SimpleArenaAllocator(
+    size_t initial_size = 1024,
+    MemoryAllocator allocator =
+        DefaultMemoryAllocatorForSimpleArenaAllocator());
 
 class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
                                       arena_detail::UnrefDestroy> {
@@ -151,12 +155,10 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   // Allocate \a size bytes from the arena.
   void* Alloc(size_t size) {
-    static constexpr size_t base_size =
-        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
     size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(size);
     size_t begin = total_used_.fetch_add(size, std::memory_order_relaxed);
     if (begin + size <= initial_zone_size_) {
-      return reinterpret_cast<char*>(this) + base_size + begin;
+      return reinterpret_cast<char*>(this) + begin;
     } else {
       return AllocZone(size);
     }
@@ -283,6 +285,13 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
       ArenaContextType<T>::Destroy(static_cast<T*>(slot));
     }
     slot = context;
+  }
+
+  static size_t ArenaOverhead() {
+    return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Arena));
+  }
+  static size_t ArenaZoneOverhead() {
+    return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Zone));
   }
 
  private:
