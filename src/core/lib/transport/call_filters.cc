@@ -311,8 +311,14 @@ void CallState::Start() {
       server_to_client_pull_state_ = ServerToClientPullState::kStarted;
       server_to_client_pull_waiter_.Wake();
       break;
+    case ServerToClientPullState::kUnstartedReading:
+      server_to_client_pull_state_ = ServerToClientPullState::kStartedReading;
+      server_to_client_pull_waiter_.Wake();
+      break;
     case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
     case ServerToClientPullState::kIdle:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
@@ -630,8 +636,10 @@ Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
       << "[call_state] PollPullServerInitialMetadataAvailable: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
                         server_to_client_push_state_);
+  bool reading;
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kUnstartedReading:
       if (server_to_client_push_state_ ==
           ServerToClientPushState::kTrailersOnly) {
         server_to_client_pull_state_ = ServerToClientPullState::kTerminated;
@@ -639,9 +647,14 @@ Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
       }
       server_to_client_push_waiter_.pending();
       return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStartedReading:
+      reading = true;
+      break;
     case ServerToClientPullState::kStarted:
+      reading = false;
       break;
     case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
     case ServerToClientPullState::kIdle:
     case ServerToClientPullState::kReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
@@ -650,14 +663,19 @@ Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
     case ServerToClientPullState::kTerminated:
       return false;
   }
-  DCHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kStarted);
+  DCHECK(server_to_client_pull_state_ == ServerToClientPullState::kStarted ||
+         server_to_client_pull_state_ ==
+             ServerToClientPullState::kStartedReading)
+      << server_to_client_pull_state_;
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
       return server_to_client_push_waiter_.pending();
     case ServerToClientPushState::kPushedServerInitialMetadata:
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
       server_to_client_pull_state_ =
-          ServerToClientPullState::kProcessingServerInitialMetadata;
+          reading
+              ? ServerToClientPullState::kProcessingServerInitialMetadataReading
+              : ServerToClientPullState::kProcessingServerInitialMetadata;
       server_to_client_pull_waiter_.Wake();
       return true;
     case ServerToClientPushState::kIdle:
@@ -679,13 +697,19 @@ void CallState::FinishPullServerInitialMetadata() {
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kUnstartedReading:
       LOG(FATAL) << "FinishPullServerInitialMetadata called before Start";
     case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kStartedReading:
       CHECK_EQ(server_to_client_push_state_,
                ServerToClientPushState::kTrailersOnly);
       return;
     case ServerToClientPullState::kProcessingServerInitialMetadata:
       server_to_client_pull_state_ = ServerToClientPullState::kIdle;
+      server_to_client_pull_waiter_.Wake();
+      break;
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
+      server_to_client_pull_state_ = ServerToClientPullState::kReading;
       server_to_client_pull_waiter_.Wake();
       break;
     case ServerToClientPullState::kIdle:
@@ -696,7 +720,9 @@ void CallState::FinishPullServerInitialMetadata() {
     case ServerToClientPullState::kTerminated:
       return;
   }
-  DCHECK_EQ(server_to_client_pull_state_, ServerToClientPullState::kIdle);
+  DCHECK(server_to_client_pull_state_ == ServerToClientPullState::kIdle ||
+         server_to_client_pull_state_ == ServerToClientPullState::kReading)
+      << server_to_client_pull_state_;
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
       LOG(FATAL) << "FinishPullServerInitialMetadata called before initial "
@@ -725,9 +751,19 @@ Poll<ValueOrFailure<bool>> CallState::PollPullServerToClientMessageAvailable() {
                         server_trailing_metadata_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
+      server_to_client_pull_state_ = ServerToClientPullState::kUnstartedReading;
+      return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kProcessingServerInitialMetadata:
+      server_to_client_pull_state_ =
+          ServerToClientPullState::kProcessingServerInitialMetadataReading;
+      return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kUnstartedReading:
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kStarted:
+      server_to_client_pull_state_ = ServerToClientPullState::kStartedReading;
+      ABSL_FALLTHROUGH_INTENDED;
+    case ServerToClientPullState::kStartedReading:
       if (server_to_client_push_state_ ==
           ServerToClientPushState::kTrailersOnly) {
         return false;
@@ -783,8 +819,11 @@ void CallState::FinishPullServerToClientMessage() {
                         server_to_client_push_state_);
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kUnstarted:
+    case ServerToClientPullState::kUnstartedReading:
     case ServerToClientPullState::kStarted:
+    case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
       LOG(FATAL)
           << "FinishPullServerToClientMessage called before metadata available";
     case ServerToClientPullState::kIdle:
@@ -830,12 +869,15 @@ Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
                         server_trailing_metadata_waiter_.DebugString());
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kProcessingServerInitialMetadata:
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
+    case ServerToClientPullState::kStartedReading:
+    case ServerToClientPullState::kUnstartedReading:
+    case ServerToClientPullState::kReading:
       return server_to_client_pull_waiter_.pending();
     case ServerToClientPullState::kStarted:
     case ServerToClientPullState::kUnstarted:
     case ServerToClientPullState::kIdle:
-    case ServerToClientPullState::kReading:
       if (server_trailing_metadata_state_ !=
           ServerTrailingMetadataState::kNotPushed) {
         server_to_client_pull_state_ =
