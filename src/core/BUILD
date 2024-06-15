@@ -500,7 +500,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "poll",
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings:str_format",
+    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/poll.h",
@@ -3295,9 +3298,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "config_selector",
-    srcs = [
-        "client_channel/config_selector.cc",
-    ],
     hdrs = [
         "client_channel/config_selector.h",
     ],
@@ -3313,9 +3313,11 @@ grpc_cc_library(
         "channel_fwd",
         "client_channel_internal_header",
         "grpc_service_config",
+        "interception_chain",
         "metadata_batch",
         "ref_counted",
         "slice",
+        "unique_type_name",
         "useful",
         "//:gpr_public_hdrs",
         "//:grpc_public_hdrs",
@@ -4870,6 +4872,7 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
         "absl/log:check",
+        "absl/log:globals",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -5214,6 +5217,7 @@ grpc_cc_library(
         "grpc_tls_credentials",
         "grpc_transport_chttp2_client_connector",
         "init_internally",
+        "interception_chain",
         "iomgr_fwd",
         "json",
         "json_args",
