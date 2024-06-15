@@ -200,6 +200,7 @@ BANNED_EXCEPT = {
         "./src/core/resolver/xds/xds_dependency_manager.cc",
         "./src/core/resolver/xds/xds_resolver.cc",
         "./src/core/server/server.cc",
+        "./src/ruby/ext/grpc/rb_call.c",
         "./src/core/server/xds_server_config_fetcher.cc",
         "./src/core/tsi/alts/frame_protector/frame_handler.cc",
         "./src/core/tsi/alts/handshaker/alts_handshaker_client.cc",
@@ -308,8 +309,7 @@ BANNED_EXCEPT = {
         "./src/core/util/log.cc",
     ],
     "GPR_ASSERT(": [
-        "./include/grpc/support/log.h",
-        "./src/cpp/ext/otel/otel_plugin.cc",
+        "./src/ruby/ext/grpc/rb_server.c",
     ],
     "GPR_DEBUG_ASSERT(": [],
 }
