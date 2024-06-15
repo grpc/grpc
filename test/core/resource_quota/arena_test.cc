@@ -313,6 +313,30 @@ TEST(ArenaTest, FinalizeArenaIsCalled) {
   arena.reset();
 }
 
+TEST(ArenaTest, AccurateBaseByteCount) {
+  auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
+  auto arena = Arena::Create(1, factory);
+  EXPECT_CALL(*factory, FinalizeArena(arena.get())).WillOnce([](Arena* a) {
+    EXPECT_EQ(a->TotalUsedBytes(),
+              GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+                  arena_detail::BaseArenaContextTraits::ContextSize()));
+  });
+  arena.reset();
+}
+
+TEST(ArenaTest, AccurateByteCountWithAllocation) {
+  auto factory = MakeRefCounted<StrictMock<MockArenaFactory>>();
+  auto arena = Arena::Create(1, factory);
+  arena->Alloc(1000);
+  EXPECT_CALL(*factory, FinalizeArena(arena.get())).WillOnce([](Arena* a) {
+    EXPECT_EQ(a->TotalUsedBytes(),
+              GPR_ROUND_UP_TO_ALIGNMENT_SIZE(
+                  arena_detail::BaseArenaContextTraits::ContextSize()) +
+                  GPR_ROUND_UP_TO_ALIGNMENT_SIZE(1000));
+  });
+  arena.reset();
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char* argv[]) {
