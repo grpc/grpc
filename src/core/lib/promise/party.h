@@ -229,6 +229,10 @@ class PartySyncUsingAtomics {
     return iteration_.load(std::memory_order_relaxed);
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool HasParticipants() const {
+    return (state_.load(std::memory_order_relaxed) & kAllocatedMask) != 0;
+  }
+
  private:
   bool UnreffedLast();
 
@@ -470,7 +474,16 @@ class Party : public Activity, private Wakeable {
   // Destroy any remaining participants.
   // Should be called by derived types in response to PartyOver.
   // Needs to have normal context setup before calling.
-  void CancelRemainingParticipants();
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void CancelRemainingParticipants() {
+    if (!sync_.HasParticipants()) return;
+    ScopedActivity activity(this);
+    for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+      if (auto* p =
+              participants_[i].exchange(nullptr, std::memory_order_acquire)) {
+        p->Destroy();
+      }
+    }
+  }
 
  private:
   // Concrete implementation of a participant for some promise & oncomplete

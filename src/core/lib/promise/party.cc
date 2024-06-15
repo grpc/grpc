@@ -177,16 +177,6 @@ Party::Participant::~Participant() {
 
 Party::~Party() {}
 
-void Party::CancelRemainingParticipants() {
-  ScopedActivity activity(this);
-  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
-    if (auto* p =
-            participants_[i].exchange(nullptr, std::memory_order_acquire)) {
-      p->Destroy();
-    }
-  }
-}
-
 std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
   return absl::StrFormat("%s [parts:%x]", DebugTag(), wakeup_mask);
 }
