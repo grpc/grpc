@@ -1447,7 +1447,7 @@ grpc_cc_library(
     hdrs = [
         "lib/resource_quota/periodic_update.h",
     ],
-    external_deps = ["absl/functional:function_ref"],
+    external_deps = ["absl/functional:function_ref","absl/log"],
     deps = [
         "time",
         "useful",
