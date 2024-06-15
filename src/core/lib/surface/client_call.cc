@@ -108,6 +108,7 @@ ClientCall::ClientCall(
     RefCountedPtr<Arena> arena,
     RefCountedPtr<UnstartedCallDestination> destination)
     : Call(false, deadline, std::move(arena), event_engine),
+      DualRefCounted("ClientCall"),
       cq_(cq),
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
@@ -153,6 +154,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          ResetDeadline();
           return;
         }
         break;
@@ -168,6 +170,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          ResetDeadline();
           auto* unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
           while (unordered_start != nullptr) {
             auto next = unordered_start->next;
