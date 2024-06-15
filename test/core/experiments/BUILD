@@ -29,6 +29,21 @@ grpc_cc_library(
     ],
 )
 
+
+grpc_cc_test(
+    name = "bm_experiments",
+    srcs = ["bm_experiments.cc"],
+    external_deps = [
+        "benchmark",
+        "absl/container:btree",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/core:channel_args",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "experiments_test",
     srcs = ["experiments_test.cc"],
