@@ -24,156 +24,6 @@
 namespace grpc_core {
 
 namespace {
-void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
-}  // namespace
-
-namespace filters_detail {
-
-void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data) {
-  for (const auto& op : ops) {
-    op.half_close(Offset(call_data, op.call_offset), op.channel_data);
-  }
-}
-
-template <typename T>
-OperationExecutor<T>::~OperationExecutor() {
-  if (promise_data_ != nullptr) {
-    ops_->early_destroy(promise_data_);
-    gpr_free_aligned(promise_data_);
-  }
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::Start(
-    const Layout<FallibleOperator<T>>* layout, T input, void* call_data) {
-  ops_ = layout->ops.data();
-  end_ops_ = ops_ + layout->ops.size();
-  if (layout->promise_size == 0) {
-    // No call state ==> instantaneously ready
-    auto r = InitStep(std::move(input), call_data);
-    CHECK(r.ready());
-    return r;
-  }
-  promise_data_ =
-      gpr_malloc_aligned(layout->promise_size, layout->promise_alignment);
-  return InitStep(std::move(input), call_data);
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::InitStep(T input, void* call_data) {
-  CHECK(input != nullptr);
-  while (true) {
-    if (ops_ == end_ops_) {
-      return ResultOr<T>{std::move(input), nullptr};
-    }
-    auto p =
-        ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
-                           ops_->channel_data, std::move(input));
-    if (auto* r = p.value_if_ready()) {
-      if (r->ok == nullptr) return std::move(*r);
-      input = std::move(r->ok);
-      ++ops_;
-      continue;
-    }
-    return Pending{};
-  }
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::Step(void* call_data) {
-  DCHECK_NE(promise_data_, nullptr);
-  auto p = ContinueStep(call_data);
-  if (p.ready()) {
-    gpr_free_aligned(promise_data_);
-    promise_data_ = nullptr;
-  }
-  return p;
-}
-
-template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::ContinueStep(void* call_data) {
-  auto p = ops_->poll(promise_data_);
-  if (auto* r = p.value_if_ready()) {
-    if (r->ok == nullptr) return std::move(*r);
-    ++ops_;
-    return InitStep(std::move(r->ok), call_data);
-  }
-  return Pending{};
-}
-
-template <typename T>
-InfallibleOperationExecutor<T>::~InfallibleOperationExecutor() {
-  if (promise_data_ != nullptr) {
-    ops_->early_destroy(promise_data_);
-    gpr_free_aligned(promise_data_);
-  }
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::Start(
-    const Layout<InfallibleOperator<T>>* layout, T input, void* call_data) {
-  ops_ = layout->ops.data();
-  end_ops_ = ops_ + layout->ops.size();
-  if (layout->promise_size == 0) {
-    // No call state ==> instantaneously ready
-    auto r = InitStep(std::move(input), call_data);
-    CHECK(r.ready());
-    return r;
-  }
-  promise_data_ =
-      gpr_malloc_aligned(layout->promise_size, layout->promise_alignment);
-  return InitStep(std::move(input), call_data);
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::InitStep(T input, void* call_data) {
-  while (true) {
-    if (ops_ == end_ops_) {
-      return input;
-    }
-    auto p =
-        ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
-                           ops_->channel_data, std::move(input));
-    if (auto* r = p.value_if_ready()) {
-      input = std::move(*r);
-      ++ops_;
-      continue;
-    }
-    return Pending{};
-  }
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::Step(void* call_data) {
-  DCHECK_NE(promise_data_, nullptr);
-  auto p = ContinueStep(call_data);
-  if (p.ready()) {
-    gpr_free_aligned(promise_data_);
-    promise_data_ = nullptr;
-  }
-  return p;
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::ContinueStep(void* call_data) {
-  auto p = ops_->poll(promise_data_);
-  if (auto* r = p.value_if_ready()) {
-    ++ops_;
-    return InitStep(std::move(*r), call_data);
-  }
-  return Pending{};
-}
-
-// Explicit instantiations of some types used in filters.h
-// We'll need to add ServerMetadataHandle to this when it becomes different
-// to ClientMetadataHandle
-template class OperationExecutor<ClientMetadataHandle>;
-template class OperationExecutor<MessageHandle>;
-template class InfallibleOperationExecutor<ServerMetadataHandle>;
-
-}  // namespace filters_detail
-
-namespace {
 // Call data for those calls that don't have any call data
 // (we form pointers to this that aren't allowed to be nullptr)
 char g_empty_call_data;
@@ -190,7 +40,8 @@ CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
 CallFilters::~CallFilters() {
   if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
     for (const auto& destructor : stack_->data_.filter_destructor) {
-      destructor.call_destroy(Offset(call_data_, destructor.call_offset));
+      destructor.call_destroy(
+          filters_detail::Offset(call_data_, destructor.call_offset));
     }
     gpr_free_aligned(call_data_);
   }
@@ -206,15 +57,16 @@ void CallFilters::SetStack(RefCountedPtr<Stack> stack) {
     call_data_ = &g_empty_call_data;
   }
   for (const auto& constructor : stack_->data_.filter_constructor) {
-    constructor.call_init(Offset(call_data_, constructor.call_offset),
-                          constructor.channel_data);
+    constructor.call_init(
+        filters_detail::Offset(call_data_, constructor.call_offset),
+        constructor.channel_data);
   }
   call_state_.Start();
 }
 
 void CallFilters::Finalize(const grpc_call_final_info* final_info) {
   for (auto& finalizer : stack_->data_.finalizers) {
-    finalizer.final(Offset(call_data_, finalizer.call_offset),
+    finalizer.final(filters_detail::Offset(call_data_, finalizer.call_offset),
                     finalizer.channel_data, final_info);
   }
 }

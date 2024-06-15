@@ -107,7 +107,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -257,46 +257,6 @@ void Party::RunLocked() {
 #else
   body();
 #endif
-}
-
-bool Party::RunParty() {
-  ScopedActivity activity(this);
-  return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
-}
-
-bool Party::RunOneParticipant(int i) {
-  // If the participant is null, skip.
-  // This allows participants to complete whilst wakers still exist
-  // somewhere.
-  auto* participant = participants_[i].load(std::memory_order_acquire);
-  if (participant == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-      gpr_log(GPR_INFO, "%s[party] wakeup %d already complete",
-              DebugTag().c_str(), i);
-    }
-    return false;
-  }
-  absl::string_view name;
-  if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-    name = participant->name();
-    gpr_log(GPR_INFO, "%s[%s] begin job %d", DebugTag().c_str(),
-            std::string(name).c_str(), i);
-  }
-  // Poll the participant.
-  currently_polling_ = i;
-  bool done = participant->PollParticipantPromise();
-  currently_polling_ = kNotPolling;
-  if (done) {
-    if (!name.empty()) {
-      gpr_log(GPR_INFO, "%s[%s] end poll and finish job %d", DebugTag().c_str(),
-              std::string(name).c_str(), i);
-    }
-    participants_[i].store(nullptr, std::memory_order_relaxed);
-  } else if (!name.empty()) {
-    gpr_log(GPR_INFO, "%s[%s] end poll", DebugTag().c_str(),
-            std::string(name).c_str());
-  }
-  return done;
 }
 
 void Party::AddParticipants(Participant** participants, size_t count) {

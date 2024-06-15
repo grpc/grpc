@@ -76,7 +76,7 @@ class PartySyncUsingAtomics {
   explicit PartySyncUsingAtomics(size_t initial_refs)
       : state_(kOneRef * initial_refs) {}
 
-  void IncrementRefCount() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void IncrementRefCount() {
     const uint64_t prev_state =
         state_.fetch_add(kOneRef, std::memory_order_relaxed);
     LogStateChange("IncrementRefCount", prev_state, prev_state + kOneRef);
@@ -84,7 +84,7 @@ class PartySyncUsingAtomics {
   GRPC_MUST_USE_RESULT bool RefIfNonZero();
   // Returns true if the ref count is now zero and the caller should call
   // PartyOver
-  GRPC_MUST_USE_RESULT bool Unref() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT bool Unref() {
     const uint64_t prev_state =
         state_.fetch_sub(kOneRef, std::memory_order_acq_rel);
     LogStateChange("Unref", prev_state, prev_state - kOneRef);
@@ -93,7 +93,8 @@ class PartySyncUsingAtomics {
     }
     return false;
   }
-  void ForceImmediateRepoll(WakeupMask mask) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void ForceImmediateRepoll(
+      WakeupMask mask) {
     // Or in the bit for the currently polling participant.
     // Will be grabbed next round to force a repoll of this promise.
     const uint64_t prev_state =
@@ -105,7 +106,8 @@ class PartySyncUsingAtomics {
   // for the participant that should be polled. It should return true if the
   // participant completed and should be removed from the allocated set.
   template <typename F>
-  GRPC_MUST_USE_RESULT bool RunParty(F poll_one_participant) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT bool RunParty(
+      F poll_one_participant) {
     uint64_t prev_state;
     iteration_.fetch_add(1, std::memory_order_relaxed);
     for (;;) {
@@ -173,7 +175,8 @@ class PartySyncUsingAtomics {
   // participants. Adds a ref that should be dropped by the caller after
   // RunParty has been called (if that was required).
   template <typename F>
-  GRPC_MUST_USE_RESULT bool AddParticipantsAndRef(size_t count, F store) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT bool
+  AddParticipantsAndRef(size_t count, F store) {
     uint64_t state = state_.load(std::memory_order_acquire);
     uint64_t allocated;
 
@@ -219,16 +222,19 @@ class PartySyncUsingAtomics {
   // Returns true if the caller should run the party.
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
 
-  void WakeAfterPoll(WakeupMask mask) { wake_after_poll_ |= mask; }
-  uint32_t iteration() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeAfterPoll(WakeupMask mask) {
+    wake_after_poll_ |= mask;
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION uint32_t iteration() const {
     return iteration_.load(std::memory_order_relaxed);
   }
 
  private:
   bool UnreffedLast();
 
-  void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
-                      DebugLocation loc = {}) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void LogStateChange(
+      const char* op, uint64_t prev_state, uint64_t new_state,
+      DebugLocation loc = {}) {
     if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
       gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
               "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
@@ -453,7 +459,11 @@ class Party : public Activity, private Wakeable {
   // Should not be called by derived types except as a tail call to the base
   // class RunParty when overriding this method to add custom context.
   // Returns true if the party is over.
-  GRPC_MUST_USE_RESULT virtual bool RunParty();
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT virtual bool
+  RunParty() {
+    ScopedActivity activity(this);
+    return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
+  }
 
   bool RefIfNonZero() { return sync_.RefIfNonZero(); }
 
@@ -613,7 +623,40 @@ class Party : public Activity, private Wakeable {
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
-  bool RunOneParticipant(int i);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool RunOneParticipant(int i) {
+    // If the participant is null, skip.
+    // This allows participants to complete whilst wakers still exist
+    // somewhere.
+    auto* participant = participants_[i].load(std::memory_order_acquire);
+    if (participant == nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+        gpr_log(GPR_INFO, "%s[party] wakeup %d already complete",
+                DebugTag().c_str(), i);
+      }
+      return false;
+    }
+    absl::string_view name;
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+      name = participant->name();
+      gpr_log(GPR_INFO, "%s[%s] begin job %d", DebugTag().c_str(),
+              std::string(name).c_str(), i);
+    }
+    // Poll the participant.
+    currently_polling_ = i;
+    bool done = participant->PollParticipantPromise();
+    currently_polling_ = kNotPolling;
+    if (done) {
+      if (!name.empty()) {
+        gpr_log(GPR_INFO, "%s[%s] end poll and finish job %d",
+                DebugTag().c_str(), std::string(name).c_str(), i);
+      }
+      participants_[i].store(nullptr, std::memory_order_relaxed);
+    } else if (!name.empty()) {
+      gpr_log(GPR_INFO, "%s[%s] end poll", DebugTag().c_str(),
+              std::string(name).c_str());
+    }
+    return done;
+  }
 
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
       const = 0;
