@@ -150,6 +150,8 @@ void gpr_to_absl_verbosity_setting_init(void) {
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  } else if (verbosity.empty()) {
+    // Do not alter absl settings if GRPC_VERBOSITY flag is absent.
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
