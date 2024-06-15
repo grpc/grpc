@@ -65,7 +65,7 @@ void DirectChannel::StartCall(UnstartedCallHandler unstarted_handler) {
       });
 }
 
-void DirectChannel::GetInfo(const grpc_channel_info* info) {
+void DirectChannel::GetInfo(const grpc_channel_info*) {
   // TODO(roth): Implement this.
 }
 
@@ -73,7 +73,7 @@ grpc_call* DirectChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
     Slice path, absl::optional<Slice> authority, Timestamp deadline,
-    bool registered_method) {
+    bool /*registered_method*/) {
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
                         compression_options(), event_engine_.get(),

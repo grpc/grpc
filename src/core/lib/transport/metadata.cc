@@ -14,11 +14,10 @@
 
 #include "src/core/lib/transport/metadata.h"
 
-#include "metadata_batch.h"
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 

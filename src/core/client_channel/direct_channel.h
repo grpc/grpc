@@ -67,26 +67,25 @@ class DirectChannel final : public Channel {
     return event_engine_.get();
   }
   bool SupportsConnectivityWatcher() const override { return false; }
-  grpc_connectivity_state CheckConnectivityState(bool try_to_connect) override {
+  grpc_connectivity_state CheckConnectivityState(bool) override {
     Crash("CheckConnectivityState not supported");
   }
-  void WatchConnectivityState(grpc_connectivity_state last_observed_state,
-                              Timestamp deadline, grpc_completion_queue* cq,
-                              void* tag) override {
+  void WatchConnectivityState(grpc_connectivity_state, Timestamp,
+                              grpc_completion_queue*, void*) override {
     Crash("WatchConnectivityState not supported");
   }
   void AddConnectivityWatcher(
-      grpc_connectivity_state initial_state,
-      OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) override {
+      grpc_connectivity_state,
+      OrphanablePtr<AsyncConnectivityStateWatcherInterface>) override {
     Crash("AddConnectivityWatcher not supported");
   }
   void RemoveConnectivityWatcher(
-      AsyncConnectivityStateWatcherInterface* watcher) override {
+      AsyncConnectivityStateWatcherInterface*) override {
     Crash("RemoveConnectivityWatcher not supported");
   }
   void GetInfo(const grpc_channel_info* channel_info) override;
   void ResetConnectionBackoff() override {}
-  void Ping(grpc_completion_queue* cq, void* tag) override {
+  void Ping(grpc_completion_queue*, void*) override {
     Crash("Ping not supported");
   }
 

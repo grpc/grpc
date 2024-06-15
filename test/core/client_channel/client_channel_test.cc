@@ -281,7 +281,7 @@ CLIENT_CHANNEL_TEST(StartCall) {
 }
 
 // A filter that adds metadata foo=bar.
-class TestFilter : public ImplementChannelFilter<TestFilter> {
+class TestFilter {
  public:
   class Call {
    public:
