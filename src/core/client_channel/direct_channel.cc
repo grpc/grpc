@@ -41,11 +41,8 @@ absl::StatusOr<RefCountedPtr<DirectChannel>> DirectChannel::Create(
   InterceptionChainBuilder builder(args);
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_CLIENT_DIRECT_CHANNEL, builder);
-  auto interception_chain =
-      builder.Build(std::move(transport_call_destination));
-  if (!interception_chain.ok()) {
-    return interception_chain.status();
-  }
+  auto interception_chain = builder.Build(transport_call_destination);
+  if (!interception_chain.ok()) return interception_chain.status();
   return MakeRefCounted<DirectChannel>(
       std::move(target), args, std::move(event_engine),
       std::move(transport_call_destination), std::move(*interception_chain));
