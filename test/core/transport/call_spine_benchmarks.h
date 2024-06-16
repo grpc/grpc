@@ -149,6 +149,54 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
   }
 }
 
+template <typename Fixture>
+void BM_ClientToServerStreaming(benchmark::State& state) {
+  Fixture fixture;
+  BenchmarkCall call = fixture.MakeCall();
+  int initial_metadata_done = 0;
+  call.handler.SpawnInfallible("handler-initial-metadata", [&]() {
+    return Map(call.handler.PullClientInitialMetadata(),
+               [&](ValueOrFailure<ClientMetadataHandle> md) {
+                 CHECK(md.ok());
+                 call.handler.PushServerInitialMetadata(
+                     fixture.MakeServerInitialMetadata());
+                 ++initial_metadata_done;
+                 return Empty{};
+               });
+  });
+  call.initiator.SpawnInfallible("initiator-initial-metadata", [&]() {
+    return Map(call.initiator.PullServerInitialMetadata(),
+               [&](absl::optional<ServerMetadataHandle> md) {
+                 CHECK(md.has_value());
+                 ++initial_metadata_done;
+                 return Empty{};
+               });
+  });
+  CHECK_EQ(initial_metadata_done, 2);
+  for (auto _ : state) {
+    bool handler_done = false;
+    bool initiator_done = false;
+    call.handler.SpawnInfallible("handler", [&]() {
+      return Map(call.handler.PullMessage(),
+                 [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                   CHECK(msg.ok());
+                   handler_done = true;
+                   return Empty{};
+                 });
+    });
+    call.initiator.SpawnInfallible("initiator", [&]() {
+      return Map(call.initiator.PushMessage(fixture.MakePayload()),
+                 [&](StatusFlag result) {
+                   CHECK(result.ok());
+                   initiator_done = true;
+                   return Empty{};
+                 });
+    });
+    CHECK(handler_done);
+    CHECK(initiator_done);
+  }
+}
+
 // Base class for fixtures that wrap a single filter.
 // Traits should have MakeClientInitialMetadata, MakeServerInitialMetadata,
 // MakePayload, MakeServerTrailingMetadata, MakeChannelArgs and a type named
@@ -224,6 +272,7 @@ class InterceptorFixture {
 
 #define GRPC_CALL_SPINE_BENCHMARK(Fixture)                \
   BENCHMARK(grpc_core::BM_UnaryWithSpawnPerEnd<Fixture>); \
-  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerOp<Fixture>)
+  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerOp<Fixture>);  \
+  BENCHMARK(grpc_core::BM_ClientToServerStreaming<Fixture>)
 
 #endif
