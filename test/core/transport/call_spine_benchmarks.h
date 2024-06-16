@@ -149,6 +149,77 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
   }
 }
 
+// Base class for fixtures that wrap a single filter.
+// Traits should have MakeClientInitialMetadata, MakeServerInitialMetadata,
+// MakePayload, MakeServerTrailingMetadata, MakeChannelArgs and a type named
+// Filter.
+template <class Traits>
+class FilterFixture {
+ public:
+  BenchmarkCall MakeCall() {
+    auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
+                          event_engine_.get(), arena_allocator_->MakeArena());
+    return {std::move(p.initiator), p.handler.StartCall(stack_)};
+  }
+
+  ServerMetadataHandle MakeServerInitialMetadata() {
+    return traits_.MakeServerInitialMetadata();
+  }
+
+  MessageHandle MakePayload() { return traits_.MakePayload(); }
+
+  ServerMetadataHandle MakeServerTrailingMetadata() {
+    return traits_.MakeServerTrailingMetadata();
+  }
+
+ private:
+  Traits traits_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+  RefCountedPtr<CallArenaAllocator> arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test-allocator"),
+          1024);
+  const RefCountedPtr<CallFilters::Stack> stack_ = [this]() {
+    auto filter = Traits::Filter::Create(traits_.MakeChannelArgs(),
+                                         typename Traits::Filter::Args{});
+    CHECK(filter.ok());
+    CallFilters::StackBuilder builder;
+    builder.Add(filter->get());
+    builder.AddOwnedObject(std::move(*filter));
+    return builder.Build();
+  }();
+};
+
+// Base class for fixtures that wrap a single interceptor.
+// The interceptor must be configured such that it always hijacks or passes
+// through the UnstartedCallHandler immediately.
+template <class Interceptor>
+class InterceptorFixture {
+ public:
+ private:
+  class SinkDestination : public CallDestination {
+   public:
+    void HandleCall(CallHandler handler) override {
+      handler_ = std::move(handler);
+    }
+
+    CallHandler TakeHandler() { return std::move(handler_); }
+
+   private:
+    CallHandler handler_;
+  };
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+  RefCountedPtr<CallArenaAllocator> arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test-allocator"),
+          1024);
+};
+
 }  // namespace grpc_core
 
 #define GRPC_CALL_SPINE_BENCHMARK(Fixture)                \
