@@ -1606,8 +1606,8 @@ class CallFilters {
             void (filters_detail::CallState::* on_done)()>
   auto RunExecutor() {
     DCHECK_NE((this->*input_location).get(), nullptr);
-    return [this,
-            executor = filters_detail::OperationExecutor<Input>()]() mutable {
+    filters_detail::OperationExecutor<Input> executor;
+    return [this, executor = std::move(executor)]() mutable {
       if ((this->*input_location) != nullptr) {
         return FinishStep<Output, on_done>(
             executor.Start(&(stack_->data_.*layout),
@@ -1738,9 +1738,10 @@ class CallFilters {
     return Seq(
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
-          return [this, executor = filters_detail::InfallibleOperationExecutor<
-                            ServerMetadataHandle>()]() mutable
-                 -> Poll<ServerMetadataHandle> {
+          filters_detail::InfallibleOperationExecutor<ServerMetadataHandle>
+              executor;
+          return [this, executor = std::move(
+                            executor)]() mutable -> Poll<ServerMetadataHandle> {
             auto finish_step = [this](Poll<ServerMetadataHandle> p)
                 -> Poll<ServerMetadataHandle> {
               auto* r = p.value_if_ready();
