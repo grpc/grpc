@@ -28,8 +28,6 @@
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/call/yodel/yodel_test.h"
 
-using testing::StrictMock;
-
 namespace grpc_core {
 
 using EventEngine = grpc_event_engine::experimental::EventEngine;

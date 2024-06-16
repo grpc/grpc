@@ -149,10 +149,130 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
   }
 }
 
+template <typename Fixture>
+void BM_ClientToServerStreaming(benchmark::State& state) {
+  Fixture fixture;
+  BenchmarkCall call = fixture.MakeCall();
+  int initial_metadata_done = 0;
+  call.handler.SpawnInfallible("handler-initial-metadata", [&]() {
+    return Map(call.handler.PullClientInitialMetadata(),
+               [&](ValueOrFailure<ClientMetadataHandle> md) {
+                 CHECK(md.ok());
+                 call.handler.PushServerInitialMetadata(
+                     fixture.MakeServerInitialMetadata());
+                 ++initial_metadata_done;
+                 return Empty{};
+               });
+  });
+  call.initiator.SpawnInfallible("initiator-initial-metadata", [&]() {
+    return Map(call.initiator.PullServerInitialMetadata(),
+               [&](absl::optional<ServerMetadataHandle> md) {
+                 CHECK(md.has_value());
+                 ++initial_metadata_done;
+                 return Empty{};
+               });
+  });
+  CHECK_EQ(initial_metadata_done, 2);
+  for (auto _ : state) {
+    bool handler_done = false;
+    bool initiator_done = false;
+    call.handler.SpawnInfallible("handler", [&]() {
+      return Map(call.handler.PullMessage(),
+                 [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                   CHECK(msg.ok());
+                   handler_done = true;
+                   return Empty{};
+                 });
+    });
+    call.initiator.SpawnInfallible("initiator", [&]() {
+      return Map(call.initiator.PushMessage(fixture.MakePayload()),
+                 [&](StatusFlag result) {
+                   CHECK(result.ok());
+                   initiator_done = true;
+                   return Empty{};
+                 });
+    });
+    CHECK(handler_done);
+    CHECK(initiator_done);
+  }
+}
+
+// Base class for fixtures that wrap a single filter.
+// Traits should have MakeClientInitialMetadata, MakeServerInitialMetadata,
+// MakePayload, MakeServerTrailingMetadata, MakeChannelArgs and a type named
+// Filter.
+template <class Traits>
+class FilterFixture {
+ public:
+  BenchmarkCall MakeCall() {
+    auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
+                          event_engine_.get(), arena_allocator_->MakeArena());
+    return {std::move(p.initiator), p.handler.StartCall(stack_)};
+  }
+
+  ServerMetadataHandle MakeServerInitialMetadata() {
+    return traits_.MakeServerInitialMetadata();
+  }
+
+  MessageHandle MakePayload() { return traits_.MakePayload(); }
+
+  ServerMetadataHandle MakeServerTrailingMetadata() {
+    return traits_.MakeServerTrailingMetadata();
+  }
+
+ private:
+  Traits traits_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+  RefCountedPtr<CallArenaAllocator> arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test-allocator"),
+          1024);
+  const RefCountedPtr<CallFilters::Stack> stack_ = [this]() {
+    auto filter = Traits::Filter::Create(traits_.MakeChannelArgs(),
+                                         typename Traits::Filter::Args{});
+    CHECK(filter.ok());
+    CallFilters::StackBuilder builder;
+    builder.Add(filter->get());
+    builder.AddOwnedObject(std::move(*filter));
+    return builder.Build();
+  }();
+};
+
+// Base class for fixtures that wrap a single interceptor.
+// The interceptor must be configured such that it always hijacks or passes
+// through the UnstartedCallHandler immediately.
+template <class Interceptor>
+class InterceptorFixture {
+ public:
+ private:
+  class SinkDestination : public CallDestination {
+   public:
+    void HandleCall(CallHandler handler) override {
+      handler_ = std::move(handler);
+    }
+
+    CallHandler TakeHandler() { return std::move(handler_); }
+
+   private:
+    CallHandler handler_;
+  };
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+  RefCountedPtr<CallArenaAllocator> arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test-allocator"),
+          1024);
+};
+
 }  // namespace grpc_core
 
 #define GRPC_CALL_SPINE_BENCHMARK(Fixture)                \
   BENCHMARK(grpc_core::BM_UnaryWithSpawnPerEnd<Fixture>); \
-  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerOp<Fixture>)
+  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerOp<Fixture>);  \
+  BENCHMARK(grpc_core::BM_ClientToServerStreaming<Fixture>)
 
 #endif

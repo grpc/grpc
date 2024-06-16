@@ -196,6 +196,7 @@ grpc_cc_library(
     name = "call_spine_benchmarks",
     hdrs = ["call_spine_benchmarks.h"],
     external_deps = ["benchmark"],
+    visibility = ["//test/core:__subpackages__"],
 )
 
 grpc_cc_test(
