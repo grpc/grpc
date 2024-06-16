@@ -358,6 +358,7 @@ Poll<StatusFlag> CallState::PollPushClientToServerMessage() {
     case ClientToServerPushState::kFinished:
       return Failure{};
   }
+  Crash("Unreachable");
 }
 
 void CallState::ClientToServerHalfClose() {
@@ -460,6 +461,7 @@ Poll<ValueOrFailure<bool>> CallState::PollPullClientToServerMessageAvailable() {
       client_to_server_pull_state_ = ClientToServerPullState::kTerminated;
       return Failure{};
   }
+  Crash("Unreachable");
 }
 
 void CallState::FinishPullClientToServerMessage() {
@@ -568,6 +570,7 @@ Poll<StatusFlag> CallState::PollPushServerToClientMessage() {
     case ServerToClientPushState::kFinished:
       return Failure{};
   }
+  Crash("Unreachable");
 }
 
 bool CallState::PushServerTrailingMetadata(bool cancel) {
@@ -671,6 +674,7 @@ Poll<bool> CallState::PollPullServerInitialMetadataAvailable() {
     case ServerToClientPushState::kTrailersOnly:
       return false;
   }
+  Crash("Unreachable");
 }
 
 void CallState::FinishPullServerInitialMetadata() {
@@ -774,6 +778,7 @@ Poll<ValueOrFailure<bool>> CallState::PollPullServerToClientMessageAvailable() {
       server_to_client_pull_waiter_.Wake();
       return Failure{};
   }
+  Crash("Unreachable");
 }
 
 void CallState::FinishPullServerToClientMessage() {
@@ -849,6 +854,7 @@ Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
     case ServerToClientPullState::kTerminated:
       return Empty{};
   }
+  Crash("Unreachable");
 }
 
 void CallState::FinishPullServerTrailingMetadata() {
@@ -890,6 +896,7 @@ Poll<bool> CallState::PollWasCancelled() {
     case ServerTrailingMetadataState::kPulledCancel:
       return true;
   }
+  Crash("Unreachable");
 }
 
 std::string CallState::DebugString() const {
