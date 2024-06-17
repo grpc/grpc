@@ -5131,6 +5131,19 @@ libs:
   - grpc++
   - opentelemetry-cpp::api
 targets:
+- name: bm_experiments
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/experiments/bm_experiments.cc
+  deps:
+  - absl/container:btree
+  - benchmark
+  - grpc++
+  - grpc_test_util
+  benchmark: true
+  defaults: benchmark
 - name: fd_conservation_posix_test
   build: test
   language: c
