@@ -37,7 +37,6 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -353,7 +352,8 @@ void EndpointDestroy(grpc_endpoint* ep) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Destroy", eeep->wrapper);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::Endpoint::" << eeep->wrapper << " EndpointDestroy";
   eeep->wrapper->TriggerShutdown(nullptr);
   eeep->wrapper->Unref();
 }
@@ -411,7 +411,8 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
   } else {
     fd_ = -1;
   }
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::Endpoint %p Create", eeep_->wrapper);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::Endpoint " << eeep_->wrapper << " Create";
 }
 
 }  // namespace

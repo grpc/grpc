@@ -1685,7 +1685,6 @@ grpc_cc_library(
         "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
-        "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:examine_stack",
         "//src/core:experiments",
