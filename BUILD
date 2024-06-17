@@ -1871,6 +1871,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:channel_stack_type",
+        "//src/core:direct_channel",
         "//src/core:experiments",
         "//src/core:iomgr_fwd",
         "//src/core:ref_counted",

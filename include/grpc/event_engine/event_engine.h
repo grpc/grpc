@@ -503,6 +503,20 @@ bool operator!=(const EventEngine::ConnectionHandle& lhs,
 std::ostream& operator<<(std::ostream& out,
                          const EventEngine::ConnectionHandle& handle);
 
+namespace detail {
+std::string FormatHandleString(uint64_t key1, uint64_t key2);
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::ConnectionHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
+
+template <typename Sink>
+void AbslStringify(Sink& out, const EventEngine::TaskHandle& handle) {
+  out.Append(detail::FormatHandleString(handle.keys[0], handle.keys[1]));
+}
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

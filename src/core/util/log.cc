@@ -35,10 +35,6 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 
-#ifndef GPR_DEFAULT_LOG_VERBOSITY_STRING
-#define GPR_DEFAULT_LOG_VERBOSITY_STRING "ERROR"
-#endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
-
 static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
 static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
 
@@ -51,11 +47,6 @@ static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
   grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
                    grpc_core::SourceLocation(file, line));
-}
-
-void gpr_assertion_failed(const char* filename, int line, const char* message) {
-  grpc_core::Crash(absl::StrCat("ASSERTION FAILED: ", message),
-                   grpc_core::SourceLocation(filename, line));
 }
 
 const char* gpr_log_severity_string(gpr_log_severity severity) {
@@ -150,6 +141,9 @@ void gpr_to_absl_verbosity_setting_init(void) {
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
+  } else if (verbosity.empty()) {
+    // Do not set absl::MinLogLevel if verbosity has not been set. Note that the
+    // default gRPC min log severity that is printed will still be ERROR.
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }

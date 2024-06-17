@@ -144,6 +144,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/client_channel/client_channel_service_config.h )
   s.files += %w( src/core/client_channel/config_selector.h )
   s.files += %w( src/core/client_channel/connector.h )
+  s.files += %w( src/core/client_channel/direct_channel.cc )
+  s.files += %w( src/core/client_channel/direct_channel.h )
   s.files += %w( src/core/client_channel/dynamic_filters.cc )
   s.files += %w( src/core/client_channel/dynamic_filters.h )
   s.files += %w( src/core/client_channel/global_subchannel_pool.cc )

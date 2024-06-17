@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
 
 licenses(["notice"])
 
@@ -21,6 +22,23 @@ grpc_package(name = "test/core/transport")
 grpc_cc_test(
     name = "bdp_estimator_test",
     srcs = ["bdp_estimator_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "call_arena_allocator_test",
+    srcs = ["call_arena_allocator_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -174,5 +192,18 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "call_spine",
+    srcs = ["call_spine_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:call_spine",
+        "//test/core/call/yodel:yodel_test",
     ],
 )

@@ -234,6 +234,7 @@ libs:
   - src/core/client_channel/client_channel_service_config.h
   - src/core/client_channel/config_selector.h
   - src/core/client_channel/connector.h
+  - src/core/client_channel/direct_channel.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
   - src/core/client_channel/load_balanced_call_destination.h
@@ -1258,6 +1259,7 @@ libs:
   - src/core/client_channel/client_channel_filter.cc
   - src/core/client_channel/client_channel_plugin.cc
   - src/core/client_channel/client_channel_service_config.cc
+  - src/core/client_channel/direct_channel.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
   - src/core/client_channel/load_balanced_call_destination.cc
@@ -2219,6 +2221,7 @@ libs:
   - src/core/client_channel/client_channel_service_config.h
   - src/core/client_channel/config_selector.h
   - src/core/client_channel/connector.h
+  - src/core/client_channel/direct_channel.h
   - src/core/client_channel/dynamic_filters.h
   - src/core/client_channel/global_subchannel_pool.h
   - src/core/client_channel/load_balanced_call_destination.h
@@ -2713,6 +2716,7 @@ libs:
   - src/core/client_channel/client_channel_filter.cc
   - src/core/client_channel/client_channel_plugin.cc
   - src/core/client_channel/client_channel_service_config.cc
+  - src/core/client_channel/direct_channel.cc
   - src/core/client_channel/dynamic_filters.cc
   - src/core/client_channel/global_subchannel_pool.cc
   - src/core/client_channel/load_balanced_call_destination.cc
@@ -5127,6 +5131,19 @@ libs:
   - grpc++
   - opentelemetry-cpp::api
 targets:
+- name: bm_experiments
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/experiments/bm_experiments.cc
+  deps:
+  - absl/container:btree
+  - benchmark
+  - grpc++
+  - grpc_test_util
+  benchmark: true
+  defaults: benchmark
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -5238,6 +5255,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -5260,6 +5278,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/activity_test.cc
@@ -6312,6 +6331,21 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: call_arena_allocator_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/call_arena_allocator_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: call_creds_test
   gtest: true
   build: test
@@ -6428,6 +6462,7 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/if.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
@@ -6436,6 +6471,7 @@ targets:
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/try_seq.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -6627,6 +6663,29 @@ targets:
   - grpc_authorization_provider
   - grpc_unsecure
   - grpc_test_util
+- name: call_spine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/call/yodel/yodel_test.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/call/yodel/test_main.cc
+  - test/core/call/yodel/yodel_test.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/call_spine_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: call_tracer_test
   gtest: true
   build: test
@@ -7590,6 +7649,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -7655,6 +7715,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -8409,6 +8470,7 @@ targets:
   - src/core/lib/gprpp/chunked_vector.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -8473,6 +8535,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -9493,6 +9556,7 @@ targets:
   - gtest
   - absl/functional:any_invocable
   - absl/log:check
+  - absl/strings:str_format
   uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
@@ -9991,6 +10055,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -10043,6 +10108,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -10550,6 +10616,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -10619,6 +10686,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -10682,6 +10750,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -10756,6 +10825,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -12321,6 +12391,7 @@ targets:
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -12339,6 +12410,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/inter_activity_pipe_test.cc
@@ -12966,6 +13038,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -13032,6 +13105,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -13482,6 +13556,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -13503,6 +13578,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/latch_test.cc
@@ -13668,6 +13744,7 @@ targets:
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/cpp_impl_of.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/orphanable.h
@@ -13742,6 +13819,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/gprpp/status_helper.cc
   - src/core/lib/gprpp/time.cc
@@ -14272,9 +14350,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
   - src/core/lib/gprpp/ref_counted_ptr.h
@@ -14289,11 +14372,16 @@ targets:
   - src/core/lib/promise/wait_set.h
   - test/core/promise/poll_matcher.h
   src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/mpsc_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -14571,9 +14659,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -14589,11 +14682,16 @@ targets:
   - src/core/lib/promise/poll.h
   - test/core/promise/poll_matcher.h
   src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/observable_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -15503,6 +15601,7 @@ targets:
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/bitset.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
   - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -15525,6 +15624,7 @@ targets:
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/dump_args.cc
   - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/promise_mutex_test.cc
@@ -21279,9 +21379,14 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/gprpp/atomic_utils.h
   - src/core/lib/gprpp/down_cast.h
+  - src/core/lib/gprpp/dump_args.h
+  - src/core/lib/gprpp/glob.h
   - src/core/lib/gprpp/notification.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -21296,11 +21401,16 @@ targets:
   - src/core/lib/promise/wait_for_callback.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/gprpp/dump_args.cc
+  - src/core/lib/gprpp/glob.cc
   - src/core/lib/promise/activity.cc
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor

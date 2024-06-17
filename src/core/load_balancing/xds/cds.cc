@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -184,19 +185,19 @@ class CdsLb final : public LoadBalancingPolicy {
 
 CdsLb::CdsLb(Args args) : LoadBalancingPolicy(std::move(args)) {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] created", this);
+    LOG(INFO) << "[cdslb " << this << "] created";
   }
 }
 
 CdsLb::~CdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] destroying cds LB policy", this);
+    LOG(INFO) << "[cdslb " << this << "] destroying cds LB policy";
   }
 }
 
 void CdsLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] shutting down", this);
+    LOG(INFO) << "[cdslb " << this << "] shutting down";
   }
   shutting_down_ = true;
   ResetState();
@@ -295,9 +296,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-      gpr_log(GPR_INFO,
-              "[cdslb %p] obtaining dynamic subscription for cluster %s", this,
-              cluster_name_.c_str());
+      LOG(INFO) << "[cdslb " << this
+                << "] obtaining dynamic subscription for cluster "
+                << cluster_name_;
     }
     auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
     if (dependency_mgr == nullptr) {
@@ -663,8 +664,8 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
        Json::FromObject(std::move(outlier_detection_config))},
   })});
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
-            JsonDump(outlier_detection_policy, /*indent=*/1).c_str());
+    LOG(INFO) << "[cdslb " << this << "] generated config for child policy: "
+              << JsonDump(outlier_detection_policy, /*indent=*/1);
   }
   return outlier_detection_policy;
 }
@@ -696,8 +697,8 @@ Json CdsLb::CreateChildPolicyConfigForAggregateCluster(
        })},
   })});
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s", this,
-            JsonDump(json, /*indent=*/1).c_str());
+    LOG(INFO) << "[cdslb " << this << "] generated config for child policy: "
+              << JsonDump(json, /*indent=*/1);
   }
   return json;
 }
@@ -715,8 +716,8 @@ void CdsLb::ResetState() {
 
 void CdsLb::ReportTransientFailure(absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    gpr_log(GPR_INFO, "[cdslb %p] reporting TRANSIENT_FAILURE: %s", this,
-            status.ToString().c_str());
+    LOG(INFO) << "[cdslb " << this
+              << "] reporting TRANSIENT_FAILURE: " << status;
   }
   ResetState();
   channel_control_helper()->UpdateState(
