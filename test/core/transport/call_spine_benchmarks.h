@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef BM_CALL_SPINE_H
-#define BM_CALL_SPINE_H
+#ifndef GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
+#define GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
 
 #include "absl/status/status.h"
 #include "benchmark/benchmark.h"
@@ -165,14 +165,15 @@ template <typename Fixture>
 void BM_ClientToServerStreaming(benchmark::State& state) {
   Fixture fixture;
   BenchmarkCall call = fixture.MakeCall();
-  int initial_metadata_done = 0;
+  Notification handler_metadata_done;
+  Notification initiator_metadata_done;
   call.handler.SpawnInfallible("handler-initial-metadata", [&]() {
     return Map(call.handler.PullClientInitialMetadata(),
                [&](ValueOrFailure<ClientMetadataHandle> md) {
                  CHECK(md.ok());
                  call.handler.PushServerInitialMetadata(
                      fixture.MakeServerInitialMetadata());
-                 ++initial_metadata_done;
+                 handler_metadata_done.Notify();
                  return Empty{};
                });
   });
@@ -180,11 +181,12 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
     return Map(call.initiator.PullServerInitialMetadata(),
                [&](absl::optional<ServerMetadataHandle> md) {
                  CHECK(md.has_value());
-                 ++initial_metadata_done;
+                 initiator_metadata_done.Notify();
                  return Empty{};
                });
   });
-  CHECK_EQ(initial_metadata_done, 2);
+  handler_metadata_done.WaitForNotification();
+  initiator_metadata_done.WaitForNotification();
   for (auto _ : state) {
     Notification handler_done;
     Notification initiator_done;
@@ -341,4 +343,4 @@ class UnstartedCallDestinationFixture {
   BENCHMARK(grpc_core::BM_UnaryWithSpawnPerOp<Fixture>);  \
   BENCHMARK(grpc_core::BM_ClientToServerStreaming<Fixture>)
 
-#endif
+#endif  // GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H

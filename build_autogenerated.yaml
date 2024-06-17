@@ -5131,6 +5131,79 @@ libs:
   - grpc++
   - opentelemetry-cpp::api
 targets:
+- name: bm_call_spine
+  build: test
+  language: c
+  headers:
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - test/core/transport/bm_call_spine.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001
+  benchmark: true
+  defaults: benchmark
+  uses_polling: false
+- name: bm_client_call
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/call/bm_client_call.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001
+  benchmark: true
+  defaults: benchmark
+  uses_polling: false
+- name: bm_client_channel
+  build: test
+  language: c
+  headers:
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - test/core/client_channel/bm_client_channel.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001
+  benchmark: true
+  defaults: benchmark
+  uses_polling: false
+- name: bm_http_client_filter
+  build: test
+  language: c
+  headers:
+  - test/core/transport/call_spine_benchmarks.h
+  src:
+  - test/core/filters/bm_http_client_filter.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001
+  benchmark: true
+  defaults: benchmark
+  uses_polling: false
+- name: bm_party
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/promise/bm_party.cc
+  deps:
+  - benchmark
+  - grpc
+  args:
+  - --benchmark_min_time=0.001
+  benchmark: true
+  defaults: benchmark
+  uses_polling: false
 - name: fd_conservation_posix_test
   build: test
   language: c

@@ -86,7 +86,7 @@ class ClientChannelTraits {
     RefCountedPtr<Subchannel> CreateSubchannel(
         const grpc_resolved_address& address,
         const ChannelArgs& args) override {
-      gpr_log(GPR_INFO, "CreateSubchannel: args=%s", args.ToString().c_str());
+      LOG(INFO) << "CreateSubchannel: args=" << args;
       return Subchannel::Create(MakeOrphanable<TestConnector>(), address, args);
     }
   };
