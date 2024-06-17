@@ -19,6 +19,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/strings/str_format.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -250,6 +251,15 @@ std::string PollToString(
     return "<<pending>>";
   }
   return t_to_string(poll.value());
+}
+
+template <typename Sink, typename T>
+void AbslStringify(Sink& sink, const Poll<T>& poll) {
+  if (poll.pending()) {
+    absl::Format(&sink, "<<pending>>");
+    return;
+  }
+  absl::Format(&sink, "%v", poll.value());
 }
 
 }  // namespace grpc_core

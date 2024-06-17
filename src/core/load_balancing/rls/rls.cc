@@ -42,6 +42,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/hash/hash.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -1963,7 +1964,7 @@ RlsLb::RlsLb(Args args)
               },
               Duration::Seconds(5), kMetricCacheSize, kMetricCacheEntries)) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] policy created", this);
+    LOG(INFO) << "[rlslb " << this << "] policy created";
   }
 }
 
@@ -1990,7 +1991,7 @@ bool EndpointsEqual(
 
 absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] policy updated", this);
+    LOG(INFO) << "[rlslb " << this << "] policy updated";
   }
   update_in_progress_ = true;
   // Swap out config.
@@ -1999,8 +2000,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb) &&
       (old_config == nullptr ||
        old_config->child_policy_config() != config_->child_policy_config())) {
-    gpr_log(GPR_INFO, "[rlslb %p] updated child policy config: %s", this,
-            JsonDump(config_->child_policy_config()).c_str());
+    LOG(INFO) << "[rlslb " << this << "] updated child policy config: "
+              << JsonDump(config_->child_policy_config());
   }
   // Swap out addresses.
   // If the new address list is an error and we have an existing address list,
@@ -2025,14 +2026,14 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
       config_->default_target() != old_config->default_target()) {
     if (config_->default_target().empty()) {
       if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-        gpr_log(GPR_INFO, "[rlslb %p] unsetting default target", this);
+        LOG(INFO) << "[rlslb " << this << "] unsetting default target";
       }
       default_child_policy_.reset();
     } else {
       auto it = child_policy_map_.find(config_->default_target());
       if (it == child_policy_map_.end()) {
         if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-          gpr_log(GPR_INFO, "[rlslb %p] creating new default target", this);
+          LOG(INFO) << "[rlslb " << this << "] creating new default target";
         }
         default_child_policy_ = MakeRefCounted<ChildPolicyWrapper>(
             RefAsSubclass<RlsLb>(DEBUG_LOCATION, "ChildPolicyWrapper"),
@@ -2065,15 +2066,15 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     // Start update of child policies if needed.
     if (update_child_policies) {
       if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-        gpr_log(GPR_INFO, "[rlslb %p] starting child policy updates", this);
+        LOG(INFO) << "[rlslb " << this << "] starting child policy updates";
       }
       for (auto& p : child_policy_map_) {
         p.second->StartUpdate();
       }
     } else if (created_default_child) {
       if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-        gpr_log(GPR_INFO, "[rlslb %p] starting default child policy update",
-                this);
+        LOG(INFO) << "[rlslb " << this
+                  << "] starting default child policy update";
       }
       default_child_policy_->StartUpdate();
     }
@@ -2082,7 +2083,7 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
   std::vector<std::string> errors;
   if (update_child_policies) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] finishing child policy updates", this);
+      LOG(INFO) << "[rlslb " << this << "] finishing child policy updates";
     }
     for (auto& p : child_policy_map_) {
       absl::Status status = p.second->MaybeFinishUpdate();
@@ -2093,8 +2094,8 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     }
   } else if (created_default_child) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-      gpr_log(GPR_INFO, "[rlslb %p] finishing default child policy update",
-              this);
+      LOG(INFO) << "[rlslb " << this
+                << "] finishing default child policy update";
     }
     absl::Status status = default_child_policy_->MaybeFinishUpdate();
     if (!status.ok()) {
@@ -2138,7 +2139,7 @@ void RlsLb::ResetBackoffLocked() {
 
 void RlsLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] policy shutdown", this);
+    LOG(INFO) << "[rlslb " << this << "] policy shutdown";
   }
   registered_metric_callback_.reset();
   MutexLock lock(&mu_);
@@ -2182,7 +2183,7 @@ void RlsLb::UpdatePickerLocked() {
   // is being propagated to our children.
   if (update_in_progress_) return;
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] updating picker", this);
+    LOG(INFO) << "[rlslb " << this << "] updating picker";
   }
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   if (!child_policy_map_.empty()) {
@@ -2218,8 +2219,8 @@ void RlsLb::UpdatePickerLocked() {
     }
   }
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
-    gpr_log(GPR_INFO, "[rlslb %p] reporting state %s", this,
-            ConnectivityStateName(state));
+    LOG(INFO) << "[rlslb " << this << "] reporting state "
+              << ConnectivityStateName(state);
   }
   absl::Status status;
   if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
