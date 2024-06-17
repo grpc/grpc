@@ -2247,8 +2247,8 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/hash",
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2279,6 +2279,7 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
+        "//:grpc_trace",
         "//:ref_counted_ptr",
     ],
 )
