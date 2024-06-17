@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test","grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
 
@@ -207,8 +207,8 @@ grpc_cc_test(
     external_deps = ["benchmark"],
     uses_polling = False,
     deps = [
+        ":call_spine_benchmarks",
         "//:grpc",
         "//src/core:default_event_engine",
-        ":call_spine_benchmarks",
     ],
 )
