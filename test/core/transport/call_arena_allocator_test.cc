@@ -41,8 +41,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/test_util/test_config.h"
 
-using testing::StrictMock;
-
 namespace grpc_core {
 
 TEST(CallArenaAllocatorTest, SettlesEmpty) {
