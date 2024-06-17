@@ -9541,6 +9541,7 @@ targets:
   - gtest
   - absl/functional:any_invocable
   - absl/log:check
+  - absl/strings:str_format
   uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true

@@ -13010,6 +13010,7 @@ target_link_libraries(dump_args_test
   gtest
   absl::any_invocable
   absl::check
+  absl::str_format
 )
 
 
