@@ -254,9 +254,8 @@ class XdsClient::XdsChannel::AdsCall final
         LOG(INFO) << "[xds_client " << ads_call_->xds_client()
                   << "] xds server "
                   << ads_call_->xds_channel()->server_.server_uri()
-                  << ": timeout obtaining resource "
-                     "{type="
-                  << type_->type_url() << " name="
+                  << ": timeout obtaining resource {type=" << type_->type_url()
+                  << " name="
                   << XdsClient::ConstructFullXdsResourceName(
                          name_.authority, type_->type_url(), name_.key)
                   << "} from xds server";
@@ -1163,8 +1162,8 @@ void XdsClient::XdsChannel::AdsCall::OnRecvMessage(absl::string_view payload) {
                          absl::StrJoin(result.errors, "; "), "]"));
         LOG(ERROR) << "[xds_client " << xds_client() << "] xds server "
                    << xds_channel()->server_.server_uri()
-                   << ": ADS response invalid for resource " << result.type_url
-                   << " version " << result.version
+                   << ": ADS response invalid for resource type "
+                   << result.type_url << " version " << result.version
                    << ", will NACK: nonce=" << state.nonce
                    << " status=" << state.status;
       }
@@ -1472,7 +1471,8 @@ void XdsClient::XdsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
               << xds_channel()->server_.server_uri()
               << ": LRS response received, " << new_cluster_names.size()
               << " cluster names, send_all_clusters=" << send_all_clusters
-              << ", load_report_interval=" << new_load_reporting_interval;
+              << ", load_report_interval="
+              << new_load_reporting_interval.millis() << "ms";
     size_t i = 0;
     for (const auto& name : new_cluster_names) {
       LOG(INFO) << "[xds_client " << xds_client() << "] cluster_name " << i++
@@ -1487,7 +1487,7 @@ void XdsClient::XdsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
       LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
                 << xds_channel()->server_.server_uri()
                 << ": increased load_report_interval to minimum value "
-                << GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS;
+                << GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS << "ms";
     }
   }
   // Ignore identical update.
@@ -1703,8 +1703,8 @@ void XdsClient::WatchResource(const XdsResourceType* type,
       // watcher immediately.
       if (resource_state.resource != nullptr) {
         if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-          LOG(INFO) << "[xds_client " << this << "] returning cached listener "
-                    << "data for " << name;
+          LOG(INFO) << "[xds_client " << this
+                    << "] returning cached listener data for " << name;
         }
         work_serializer_.Schedule(
             [watcher, value = resource_state.resource]()
