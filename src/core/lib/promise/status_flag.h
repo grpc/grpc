@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 #define GRPC_SRC_CORE_LIB_PROMISE_STATUS_FLAG_H
 
+#include <ostream>
+
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -189,6 +191,16 @@ class ValueOrFailure {
  private:
   absl::optional<T> value_;
 };
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& os,
+                                const ValueOrFailure<T>& value) {
+  if (value.ok()) {
+    return os << "Success(" << *value << ")";
+  } else {
+    return os << "Failure";
+  }
+}
 
 template <typename T>
 inline bool IsStatusOk(const ValueOrFailure<T>& value) {
