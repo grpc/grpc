@@ -294,7 +294,7 @@ void CFStreamEndpointImpl::DoRead(
   if (read_size < 0) {
     auto status = CFErrorToStatus(CFReadStreamCopyError(cf_read_stream_));
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-        << "CFStream read error: " << status << ", read_size: " read_size;
+        << "CFStream read error: " << status << ", read_size: " << read_size;
     on_read(status);
     return;
   }
