@@ -15,4 +15,4 @@
 
 def grpc_benchmark_args():
     """Command line arguments for running a microbenchmark as a test"""
-    return ["--benchmark_min_time=0.001"]
+    return ["--benchmark_min_time=0.001s"]

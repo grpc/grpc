@@ -5142,7 +5142,7 @@ targets:
   - benchmark
   - grpc
   args:
-  - --benchmark_min_time=0.001
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
   uses_polling: false
@@ -5156,7 +5156,7 @@ targets:
   - benchmark
   - grpc
   args:
-  - --benchmark_min_time=0.001
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
   uses_polling: false
@@ -5171,10 +5171,23 @@ targets:
   - benchmark
   - grpc
   args:
-  - --benchmark_min_time=0.001
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
   uses_polling: false
+- name: bm_experiments
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/experiments/bm_experiments.cc
+  deps:
+  - absl/container:btree
+  - benchmark
+  - grpc++
+  - grpc_test_util
+  benchmark: true
+  defaults: benchmark
 - name: bm_http_client_filter
   build: test
   language: c
@@ -5186,7 +5199,7 @@ targets:
   - benchmark
   - grpc
   args:
-  - --benchmark_min_time=0.001
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
   uses_polling: false
@@ -5200,7 +5213,7 @@ targets:
   - benchmark
   - grpc
   args:
-  - --benchmark_min_time=0.001
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
   uses_polling: false
