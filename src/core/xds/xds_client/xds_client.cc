@@ -1004,8 +1004,8 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
     LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
-              << xds_channel()->server_.server_uri() << ": starting ADS call "
-              << "(ads_call: " << this
+              << xds_channel()->server_.server_uri()
+              << ": starting ADS call (ads_call: " << this
               << ", streaming_call: " << streaming_call_.get() << ")";
   }
   // If this is a reconnect, add any necessary subscriptions from what's
@@ -1242,8 +1242,8 @@ void XdsClient::XdsChannel::AdsCall::OnStatusReceived(absl::Status status) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
                 << xds_channel()->server_.server_uri()
-                << ": ADS call status received "
-                << "(xds_channel=" << xds_channel() << ", ads_call=" << this
+                << ": ADS call status received (xds_channel=" << xds_channel()
+                << ", ads_call=" << this
                 << ", streaming_call=" << streaming_call_.get()
                 << "): " << status;
     }
@@ -1486,8 +1486,7 @@ void XdsClient::XdsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
                 << xds_channel()->server_.server_uri()
-                << ": increased load_report_interval "
-                   "to minimum value "
+                << ": increased load_report_interval to minimum value "
                 << GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS;
     }
   }
@@ -1498,8 +1497,7 @@ void XdsClient::XdsChannel::LrsCall::OnRecvMessage(absl::string_view payload) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
                 << xds_channel()->server_.server_uri()
-                << ": incoming LRS response identical "
-                   "to current, ignoring.";
+                << ": incoming LRS response identical to current, ignoring.";
     }
     return;
   }
@@ -1522,9 +1520,8 @@ void XdsClient::XdsChannel::LrsCall::OnStatusReceived(absl::Status status) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
     LOG(INFO) << "[xds_client " << xds_client() << "] xds server "
               << xds_channel()->server_.server_uri()
-              << ": LRS call status received "
-                 "(xds_channel="
-              << xds_channel() << ", lrs_call=" << this
+              << ": LRS call status received (xds_channel=" << xds_channel()
+              << ", lrs_call=" << this
               << ", streaming_call=" << streaming_call_.get()
               << "): " << status;
   }
