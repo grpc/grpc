@@ -78,6 +78,12 @@ class DumpArgs {
     return 0;
   }
 
+  int AddDumper(void** p) {
+    arg_dumpers_.push_back(
+        [p](CustomSink& os) { os.Append(absl::StrFormat("%p", *p)); });
+    return 0;
+  }
+
   template <typename T>
   int AddDumper(T** p) {
     return AddDumper(reinterpret_cast<void**>(p));
