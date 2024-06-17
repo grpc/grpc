@@ -106,7 +106,8 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
     LOG(INFO) << "[xds_client " << xds_client_.get()
               << "] created locality stats " << this << " for {" << lrs_server_
               << ", " << cluster_name_ << ", " << eds_service_name_ << ", "
-              << (name_ == nullptr ? "<none>" : name_->human_readable_string())
+              << (name_ == nullptr ? "<none>"
+                                   : name_->human_readable_string().c_str())
               << "}";
   }
 }
@@ -117,7 +118,8 @@ XdsClusterLocalityStats::~XdsClusterLocalityStats() {
               << "] destroying locality stats " << this << " for {"
               << lrs_server_ << ", " << cluster_name_ << ", "
               << eds_service_name_ << ", "
-              << (name_ == nullptr ? "<none>" : name_->human_readable_string())
+              << (name_ == nullptr ? "<none>"
+                                   : name_->human_readable_string().c_str())
               << "}";
   }
   xds_client_->RemoveClusterLocalityStats(lrs_server_, cluster_name_,
