@@ -66,6 +66,8 @@ class CallArenaAllocator final : public ArenaFactory {
     call_size_estimator_.UpdateCallSizeEstimate(arena->TotalUsedBytes());
   }
 
+  size_t CallSizeEstimate() { return call_size_estimator_.CallSizeEstimate(); }
+
  private:
   CallSizeEstimator call_size_estimator_;
 };
