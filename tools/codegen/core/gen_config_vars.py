@@ -219,8 +219,8 @@ with open("test/core/test_util/fuzz_config_vars.h", "w") as H:
         ],
     )
 
-    print("#ifndef GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_H", file=H)
-    print("#define GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_H", file=H)
+    print("#ifndef GRPC_TEST_CORE_TEST_UTIL_FUZZ_CONFIG_VARS_H", file=H)
+    print("#define GRPC_TEST_CORE_TEST_UTIL_FUZZ_CONFIG_VARS_H", file=H)
     print(file=H)
     print("#include <grpc/support/port_platform.h>", file=H)
     print(file=H)
@@ -243,7 +243,7 @@ with open("test/core/test_util/fuzz_config_vars.h", "w") as H:
     print(file=H)
     print("}  // namespace grpc_core", file=H)
     print(file=H)
-    print("#endif  // GRPC_TEST_CORE_UTIL_FUZZ_CONFIG_VARS_H", file=H)
+    print("#endif  // GRPC_TEST_CORE_TEST_UTIL_FUZZ_CONFIG_VARS_H", file=H)
 
 with open("test/core/test_util/fuzz_config_vars.cc", "w") as C:
     put_copyright(C)
