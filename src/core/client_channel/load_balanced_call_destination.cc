@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
+#include "absl/log/log.h"
+
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
@@ -43,10 +45,8 @@ class LbMetadata : public LoadBalancingPolicy::MetadataInterface {
     }
     batch_->Append(key, Slice::FromStaticString(value),
                    [key](absl::string_view error, const Slice& value) {
-                     gpr_log(GPR_ERROR, "%s",
-                             absl::StrCat(error, " key:", key,
-                                          " value:", value.as_string_view())
-                                 .c_str());
+                     LOG(ERROR) << error << " key:" << key
+                                << " value:" << value.as_string_view();
                    });
   }
 
