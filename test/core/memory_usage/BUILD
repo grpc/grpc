@@ -58,9 +58,9 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:chaotic_good_connector",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//src/core:chaotic_good_connector",
     ],
 )
 
@@ -83,11 +83,11 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:chaotic_good_server",
         "//src/core:xds_enabled_server",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//src/core:chaotic_good_server",
     ],
 )
 
@@ -111,11 +111,11 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpcpp_chaotic_good",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//:grpcpp_chaotic_good",
     ],
 )
 
@@ -138,11 +138,11 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpcpp_chaotic_good",
         "//src/proto/grpc/testing:benchmark_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//:grpcpp_chaotic_good",
     ],
 )
 
