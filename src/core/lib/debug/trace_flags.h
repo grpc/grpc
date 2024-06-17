@@ -74,6 +74,7 @@ extern TraceFlag event_engine_dns_trace;
 extern TraceFlag event_engine_endpoint_trace;
 extern TraceFlag event_engine_endpoint_data_trace;
 extern TraceFlag event_engine_poller_trace;
+extern TraceFlag event_engine_secure_endpoint_trace;
 extern TraceFlag executor_trace;
 extern TraceFlag fault_injection_filter_trace;
 extern TraceFlag flowctl_trace;

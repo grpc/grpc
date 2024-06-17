@@ -1576,6 +1576,8 @@ grpc_cc_library(
         "//src/core:lib/iomgr/event_engine_shims/closure.cc",
         "//src/core:lib/iomgr/event_engine_shims/endpoint.cc",
         "//src/core:lib/iomgr/event_engine_shims/tcp_client.cc",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint_pair_posix.cc",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint_pair_windows.cc",
     ],
     hdrs = [
         "//src/core:lib/iomgr/block_annotate.h",
@@ -1627,6 +1629,7 @@ grpc_cc_library(
         "//src/core:lib/iomgr/event_engine_shims/closure.h",
         "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
         "//src/core:lib/iomgr/event_engine_shims/tcp_client.h",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint_pair.h",
     ],
     defines = select({
         "systemd": ["HAVE_LIBSYSTEMD"],
@@ -1712,6 +1715,7 @@ grpc_cc_library(
         "//src/core:useful",
         "//src/core:windows_event_engine",
         "//src/core:windows_event_engine_listener",
+        "//src/core:windows_iocp",
     ],
 )
 
@@ -2260,6 +2264,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_security_base",
     srcs = [
+        "//src/core:handshaker/security/legacy_secure_endpoint.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
         "//src/core:lib/security/context/security_context.cc",
@@ -2272,6 +2277,7 @@ grpc_cc_library(
         "//src/core:lib/security/transport/server_auth_filter.cc",
     ],
     hdrs = [
+        "//src/core:handshaker/security/legacy_secure_endpoint.h",
         "//src/core:handshaker/security/secure_endpoint.h",
         "//src/core:handshaker/security/security_handshaker.h",
         "//src/core:lib/security/context/security_context.h",
@@ -2291,6 +2297,8 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:optional",
+        "absl/functional:bind_front",
+        "absl/functional:any_invocable",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -2301,6 +2309,7 @@ grpc_cc_library(
         "channelz",
         "config",
         "debug_location",
+        "event_engine_base_hdrs",
         "exec_ctx",
         "gpr",
         "grpc_base",
@@ -2321,8 +2330,11 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:closure",
         "//src/core:context",
+        "//src/core:default_event_engine",
         "//src/core:error",
+        "//src/core:event_engine_extensions",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:event_engine_query_extensions",
         "//src/core:gpr_atm",
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",

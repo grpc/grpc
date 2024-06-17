@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2015 gRPC authors.
+// Copyright 2024 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,22 +19,31 @@
 #ifndef GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURE_ENDPOINT_H
 #define GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURE_ENDPOINT_H
 
-#include <stddef.h>
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/endpoint.h"
+#include <memory>
 
-// Takes ownership of protector, zero_copy_protector, and to_wrap, and refs
-// leftover_slices. If zero_copy_protector is not NULL, protector will never be
-// used.
-grpc_endpoint* grpc_secure_endpoint_create(
-    struct tsi_frame_protector* protector,
-    struct tsi_zero_copy_grpc_protector* zero_copy_protector,
-    grpc_endpoint* to_wrap, grpc_slice* leftover_slices,
-    const grpc_channel_args* channel_args, size_t leftover_nslices);
+#include "include/grpc/event_engine/event_engine.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/tsi/transport_security_interface.h"
+
+namespace grpc_core {
+
+// Creates a secure endpoint around `to_wrap`. Uses `protector` and
+// `zero_copy_protector` to protect and unprotect data passed to and from the
+// endpoint.
+std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+CreateSecureEndpoint(
+    tsi_frame_protector* protector,
+    tsi_zero_copy_grpc_protector* zero_copy_protector,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        to_wrap,
+    grpc_event_engine::experimental::Slice* leftover_slices,
+    const grpc_core::ChannelArgs& channel_args, size_t leftover_nslices);
+
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURE_ENDPOINT_H
