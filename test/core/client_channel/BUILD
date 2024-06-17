@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
 
 grpc_package(name = "test/core/client_channel")
 
@@ -111,5 +112,19 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "bm_client_channel",
+    size = "small",
+    srcs = ["bm_client_channel.cc"],
+    args = grpc_benchmark_args(),
+    external_deps = ["benchmark"],
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:default_event_engine",
+        "//test/core/transport:call_spine_benchmarks",
     ],
 )

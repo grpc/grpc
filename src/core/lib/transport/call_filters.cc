@@ -737,7 +737,7 @@ void CallState::FinishPullServerInitialMetadata() {
       break;
     case ServerToClientPushState::kPushedServerInitialMetadataAndPushedMessage:
       server_to_client_push_state_ = ServerToClientPushState::kPushedMessage;
-      server_to_client_pull_waiter_.Wake();
+      server_to_client_push_waiter_.Wake();
       break;
     case ServerToClientPushState::kIdle:
     case ServerToClientPushState::kPushedMessage:
@@ -874,12 +874,29 @@ Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
                         server_trailing_metadata_waiter_.DebugString());
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kProcessingServerInitialMetadata:
-    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
     case ServerToClientPullState::kProcessingServerToClientMessage:
+    case ServerToClientPullState::kProcessingServerInitialMetadataReading:
     case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kUnstartedReading:
-    case ServerToClientPullState::kReading:
       return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kReading:
+      switch (server_to_client_push_state_) {
+        case ServerToClientPushState::kPushedServerInitialMetadata:
+        case ServerToClientPushState::
+            kPushedServerInitialMetadataAndPushedMessage:
+        case ServerToClientPushState::kPushedMessage:
+          server_to_client_push_waiter_.pending();
+          return server_to_client_pull_waiter_.pending();
+        case ServerToClientPushState::kTrailersOnly:
+        case ServerToClientPushState::kIdle:
+        case ServerToClientPushState::kStart:
+        case ServerToClientPushState::kFinished:
+          server_to_client_pull_state_ =
+              ServerToClientPullState::kProcessingServerTrailingMetadata;
+          server_to_client_pull_waiter_.Wake();
+          return Empty{};
+      }
+      break;
     case ServerToClientPullState::kStarted:
     case ServerToClientPullState::kUnstarted:
     case ServerToClientPullState::kIdle:

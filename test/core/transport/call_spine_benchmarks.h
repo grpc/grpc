@@ -15,8 +15,11 @@
 #ifndef BM_CALL_SPINE_H
 #define BM_CALL_SPINE_H
 
+#include "absl/status/status.h"
 #include "benchmark/benchmark.h"
 
+#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/transport/call_spine.h"
@@ -32,52 +35,59 @@ template <typename Fixture>
 void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
   Fixture fixture;
   for (auto _ : state) {
-    BenchmarkCall call = fixture.MakeCall();
-    bool handler_done = false;
-    bool initiator_done = false;
-    call.handler.SpawnInfallible("handler", [&]() {
-      call.handler.PushServerInitialMetadata(
-          fixture.MakeServerInitialMetadata());
-      return Map(AllOk<StatusFlag>(
-                     Map(call.handler.PullClientInitialMetadata(),
-                         [](ValueOrFailure<ClientMetadataHandle> md) {
-                           return md.status();
-                         }),
-                     Map(call.handler.PullMessage(),
-                         [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
-                           return msg.status();
-                         }),
-                     call.handler.PushMessage(fixture.MakePayload())),
-                 [&](StatusFlag status) {
-                   CHECK(status.ok());
-                   call.handler.PushServerTrailingMetadata(
-                       fixture.MakeServerTrailingMetadata());
-                   handler_done = true;
-                   return Empty{};
-                 });
-    });
-    call.initiator.SpawnInfallible("initiator", [&]() {
-      return Map(AllOk<StatusFlag>(
-                     Map(call.initiator.PushMessage(fixture.MakePayload()),
-                         [](StatusFlag) { return Success{}; }),
-                     Map(call.initiator.PullServerInitialMetadata(),
-                         [](absl::optional<ServerMetadataHandle> md) {
-                           return Success{};
-                         }),
-                     Map(call.initiator.PullMessage(),
-                         [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
-                           return msg.status();
-                         }),
-                     Map(call.initiator.PullServerTrailingMetadata(),
-                         [](ServerMetadataHandle) { return Success(); })),
-                 [&](StatusFlag result) {
-                   CHECK(result.ok());
-                   initiator_done = true;
-                   return Empty{};
-                 });
-    });
-    CHECK(handler_done);
-    CHECK(initiator_done);
+    Notification handler_done;
+    Notification initiator_done;
+    {
+      ExecCtx exec_ctx;
+      BenchmarkCall call = fixture.MakeCall();
+      call.handler.SpawnInfallible("handler", [handler = call.handler, &fixture,
+                                               &handler_done]() mutable {
+        handler.PushServerInitialMetadata(fixture.MakeServerInitialMetadata());
+        return Map(
+            AllOk<StatusFlag>(
+                Map(handler.PullClientInitialMetadata(),
+                    [](ValueOrFailure<ClientMetadataHandle> md) {
+                      return md.status();
+                    }),
+                Map(handler.PullMessage(),
+                    [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                      return msg.status();
+                    }),
+                handler.PushMessage(fixture.MakePayload())),
+            [&handler_done, &fixture, handler](StatusFlag status) mutable {
+              CHECK(status.ok());
+              handler.PushServerTrailingMetadata(
+                  fixture.MakeServerTrailingMetadata());
+              handler_done.Notify();
+              return Empty{};
+            });
+      });
+      call.initiator.SpawnInfallible(
+          "initiator",
+          [initiator = call.initiator, &fixture, &initiator_done]() mutable {
+            return Map(
+                AllOk<StatusFlag>(
+                    Map(initiator.PushMessage(fixture.MakePayload()),
+                        [](StatusFlag) { return Success{}; }),
+                    Map(initiator.PullServerInitialMetadata(),
+                        [](absl::optional<ServerMetadataHandle> md) {
+                          return Success{};
+                        }),
+                    Map(initiator.PullMessage(),
+                        [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                          return msg.status();
+                        }),
+                    Map(initiator.PullServerTrailingMetadata(),
+                        [](ServerMetadataHandle) { return Success(); })),
+                [&initiator_done](StatusFlag result) {
+                  CHECK(result.ok());
+                  initiator_done.Notify();
+                  return Empty{};
+                });
+          });
+    }
+    handler_done.WaitForNotification();
+    initiator_done.WaitForNotification();
   }
 }
 
@@ -86,9 +96,10 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
   Fixture fixture;
   for (auto _ : state) {
     BenchmarkCall call = fixture.MakeCall();
-    bool handler_done = false;
-    bool initiator_done = false;
+    Notification handler_done;
+    Notification initiator_done;
     {
+      ExecCtx exec_ctx;
       Party::BulkSpawner handler_spawner(call.handler.party());
       Party::BulkSpawner initiator_spawner(call.initiator.party());
       handler_spawner.Spawn(
@@ -105,21 +116,21 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
           [](ValueOrFailure<ClientMetadataHandle> md) { CHECK(md.ok()); });
       handler_spawner.Spawn(
           "HANDLER:PullMessage", [&]() { return call.handler.PullMessage(); },
-          [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+          [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
             CHECK(msg.ok());
+            call.handler.SpawnInfallible(
+                "HANDLER:PushServerTrailingMetadata", [&]() {
+                  call.handler.PushServerTrailingMetadata(
+                      fixture.MakeServerTrailingMetadata());
+                  handler_done.Notify();
+                  return Empty{};
+                });
           });
       handler_spawner.Spawn(
           "HANDLER:PushMessage",
           [&]() { return call.handler.PushMessage(fixture.MakePayload()); },
           [](StatusFlag) {});
-      handler_spawner.Spawn(
-          "HANDLER:PushServerTrailingMetadata",
-          [&]() {
-            call.handler.PushServerTrailingMetadata(
-                fixture.MakeServerTrailingMetadata());
-            return Empty{};
-          },
-          [&](Empty) { handler_done = true; });
+
       initiator_spawner.Spawn(
           "INITIATOR:PushMessage",
           [&]() { return call.initiator.PushMessage(fixture.MakePayload()); },
@@ -140,12 +151,12 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
           "INITIATOR:PullServerTrailingMetadata",
           [&]() { return call.initiator.PullServerTrailingMetadata(); },
           [&](ServerMetadataHandle md) {
-            initiator_done = true;
+            initiator_done.Notify();
             return Empty{};
           });
     }
-    CHECK(handler_done);
-    CHECK(initiator_done);
+    handler_done.WaitForNotification();
+    initiator_done.WaitForNotification();
   }
 }
 
@@ -174,13 +185,13 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
   });
   CHECK_EQ(initial_metadata_done, 2);
   for (auto _ : state) {
-    bool handler_done = false;
-    bool initiator_done = false;
+    Notification handler_done;
+    Notification initiator_done;
     call.handler.SpawnInfallible("handler", [&]() {
       return Map(call.handler.PullMessage(),
                  [&](ValueOrFailure<absl::optional<MessageHandle>> msg) {
                    CHECK(msg.ok());
-                   handler_done = true;
+                   handler_done.Notify();
                    return Empty{};
                  });
     });
@@ -188,13 +199,22 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
       return Map(call.initiator.PushMessage(fixture.MakePayload()),
                  [&](StatusFlag result) {
                    CHECK(result.ok());
-                   initiator_done = true;
+                   initiator_done.Notify();
                    return Empty{};
                  });
     });
-    CHECK(handler_done);
-    CHECK(initiator_done);
+    handler_done.WaitForNotification();
+    initiator_done.WaitForNotification();
   }
+  call.initiator.SpawnInfallible("done", [&]() {
+    call.initiator.Cancel();
+    return Empty{};
+  });
+  call.handler.SpawnInfallible("done", [&]() {
+    call.handler.PushServerTrailingMetadata(
+        CancelledServerMetadataFromStatus(absl::CancelledError()));
+    return Empty{};
+  });
 }
 
 // Base class for fixtures that wrap a single filter.
@@ -240,25 +260,64 @@ class FilterFixture {
   }();
 };
 
-// Base class for fixtures that wrap a single interceptor.
-// The interceptor must be configured such that it always hijacks or passes
-// through the UnstartedCallHandler immediately.
-template <class Interceptor>
-class InterceptorFixture {
+// Base class for fixtures that wrap an UnstartedCallDestination.
+template <class Traits>
+class UnstartedCallDestinationFixture {
  public:
+  BenchmarkCall MakeCall() {
+    auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
+                          event_engine_.get(), arena_allocator_->MakeArena());
+    top_destination_->StartCall(std::move(p.handler));
+    auto handler = bottom_destination_->TakeHandler();
+    absl::optional<CallHandler> started_handler;
+    Notification started;
+    handler.SpawnInfallible("handler_setup", [&]() {
+      started_handler = handler.StartCall(stack_);
+      started.Notify();
+      return Empty{};
+    });
+    started.WaitForNotification();
+    CHECK(started_handler.has_value());
+    return {std::move(p.initiator), std::move(*started_handler)};
+  }
+
+  ServerMetadataHandle MakeServerInitialMetadata() {
+    return traits_.MakeServerInitialMetadata();
+  }
+
+  MessageHandle MakePayload() { return traits_.MakePayload(); }
+
+  ServerMetadataHandle MakeServerTrailingMetadata() {
+    return traits_.MakeServerTrailingMetadata();
+  }
+
  private:
-  class SinkDestination : public CallDestination {
+  class SinkDestination : public UnstartedCallDestination {
    public:
-    void HandleCall(CallHandler handler) override {
+    void StartCall(UnstartedCallHandler handler) override {
+      MutexLock lock(&mu_);
       handler_ = std::move(handler);
     }
+    void Orphaned() override {}
 
-    CallHandler TakeHandler() { return std::move(handler_); }
+    UnstartedCallHandler TakeHandler() {
+      mu_.LockWhen(absl::Condition(
+          +[](SinkDestination* dest) ABSL_EXCLUSIVE_LOCKS_REQUIRED(dest->mu_) {
+            return dest->handler_.has_value();
+          },
+          this));
+      auto h = std::move(*handler_);
+      handler_.reset();
+      mu_.Unlock();
+      return h;
+    }
 
    private:
-    CallHandler handler_;
+    absl::Mutex mu_;
+    absl::optional<UnstartedCallHandler> handler_ ABSL_GUARDED_BY(mu_);
   };
 
+  Traits traits_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
   RefCountedPtr<CallArenaAllocator> arena_allocator_ =
@@ -266,6 +325,12 @@ class InterceptorFixture {
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test-allocator"),
           1024);
+  RefCountedPtr<SinkDestination> bottom_destination_ =
+      MakeRefCounted<SinkDestination>();
+  RefCountedPtr<UnstartedCallDestination> top_destination_ =
+      traits_.CreateCallDestination(bottom_destination_);
+  RefCountedPtr<CallFilters::Stack> stack_ =
+      CallFilters::StackBuilder().Build();
 };
 
 }  // namespace grpc_core
