@@ -223,6 +223,7 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
   }
   // endpoint
   std::vector<grpc_resolved_address> addresses;
+  absl::string_view hostname;
   {
     ValidationErrors::ScopedField field(errors, ".endpoint");
     const envoy_config_endpoint_v3_Endpoint* endpoint =
@@ -252,13 +253,18 @@ absl::optional<EndpointAddresses> EndpointAddressesParse(
         if (address.has_value()) addresses.push_back(*address);
       }
     }
+    hostname =
+        UpbStringToAbsl(envoy_config_endpoint_v3_Endpoint_hostname(endpoint));
   }
   if (addresses.empty()) return absl::nullopt;
   // Convert to EndpointAddresses.
-  return EndpointAddresses(
-      addresses, ChannelArgs()
-                     .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
-                     .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status()));
+  auto args = ChannelArgs()
+                  .Set(GRPC_ARG_ADDRESS_WEIGHT, weight)
+                  .Set(GRPC_ARG_XDS_HEALTH_STATUS, status->status());
+  if (!hostname.empty()) {
+    args = args.Set(GRPC_ARG_ADDRESS_NAME, hostname);
+  }
+  return EndpointAddresses(addresses, args);
 }
 
 struct ParsedLocality {
