@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -43,7 +44,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/metrics.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>

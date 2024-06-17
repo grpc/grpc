@@ -37,7 +37,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"

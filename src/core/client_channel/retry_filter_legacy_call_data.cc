@@ -26,8 +26,6 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
-
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
