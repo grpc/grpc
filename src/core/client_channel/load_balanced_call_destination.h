@@ -32,13 +32,13 @@ template <>
 struct ContextType<LbOnCommit> {};
 
 // Context type for LB call start time.
-struct LoadBalancedCallState {
+struct LoadBalancedCallStartTime {
   gpr_cycle_counter lb_call_start_time = gpr_get_cycle_counter();
 };
 template <>
-struct ArenaContextType<LoadBalancedCallState> {
-  static void Destroy(LoadBalancedCallState* ptr) {
-    ptr->~LoadBalancedCallState();
+struct ArenaContextType<LoadBalancedCallStartTime> {
+  static void Destroy(LoadBalancedCallStartTime* ptr) {
+    ptr->~LoadBalancedCallStartTime();
   }
 };
 

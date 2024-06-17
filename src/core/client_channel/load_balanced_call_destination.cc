@@ -38,8 +38,8 @@ void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
   // call start time, which we'll need when calling the tracer from the
   // LB call tracing filter.
   auto* arena = GetContext<Arena>();
-  arena->SetContext<LoadBalancedCallState>(
-      arena->New<LoadBalancedCallState>());
+  arena->SetContext<LoadBalancedCallStartTime>(
+      arena->New<LoadBalancedCallStartTime>());
 }
 
 class LbCallState : public ClientChannelLbCallState {

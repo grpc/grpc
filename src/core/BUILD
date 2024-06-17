@@ -3549,6 +3549,7 @@ grpc_cc_library(
     srcs = ["client_channel/lb_metadata.cc"],
     hdrs = ["client_channel/lb_metadata.h"],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "absl/types:optional",
     ],

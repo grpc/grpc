@@ -162,10 +162,9 @@ void LbCallTracingFilter::Call::OnFinalize(const grpc_call_final_info*) {
   auto* tracer = DownCast<ClientCallTracer::CallAttemptTracer*>(
       MaybeGetContext<CallTracerInterface>());
   if (tracer == nullptr) return;
-  auto* lb_call_state = GetContext<LoadBalancedCallState>();
-  CHECK(lb_call_state != nullptr);
+  auto* lb_call_start_time = GetContext<LoadBalancedCallStartTime>();
   gpr_timespec latency = gpr_cycle_counter_sub(
-      gpr_get_cycle_counter(), lb_call_state->lb_call_start_time);
+      gpr_get_cycle_counter(), lb_call_start_time->lb_call_start_time);
   tracer->RecordEnd(latency);
 }
 
