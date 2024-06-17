@@ -914,8 +914,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << " success rate candidates and "
               << failure_percentage_ejection_candidates.size()
               << " failure percentage candidates; ejected_host_count="
-              << ejected_host_count << "; success_rate_sum=" << success_rate_sum
-              << ".";
+              << ejected_host_count
+              << "; success_rate_sum=" << success_rate_sum;
   }
   // success rate algorithm
   if (!success_rate_ejection_candidates.empty() &&
@@ -926,7 +926,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
                 << "] running success rate algorithm: "
                 << "stdev_factor=" << config.success_rate_ejection->stdev_factor
                 << ", enforcement_percentage="
-                << config.success_rate_ejection->enforcement_percentage << ".";
+                << config.success_rate_ejection->enforcement_percentage;
     }
     // calculate ejection threshold: (mean - stdev *
     // (success_rate_ejection.stdev_factor / 1000))
@@ -943,13 +943,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
       LOG(INFO) << "[outlier_detection_lb " << parent_.get()
                 << "] stdev=" << stdev
-                << ", ejection_threshold=" << ejection_threshold << ".";
+                << ", ejection_threshold=" << ejection_threshold;
     }
     for (auto& candidate : success_rate_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
         LOG(INFO) << "[outlier_detection_lb " << parent_.get()
                   << "] checking candidate " << candidate.first
-                  << ": success_rate=" << candidate.second << ".";
+                  << ": success_rate=" << candidate.second;
       }
       if (candidate.second < ejection_threshold) {
         uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
@@ -959,7 +959,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           LOG(INFO) << "[outlier_detection_lb " << parent_.get()
                     << "] random_key=" << random_key
                     << " ejected_host_count=" << ejected_host_count
-                    << " current_percent=" << current_percent << ".";
+                    << " current_percent=" << current_percent;
         }
         if (random_key < config.success_rate_ejection->enforcement_percentage &&
             (ejected_host_count == 0 ||
@@ -968,7 +968,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
             LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                      << "] ejecting candidate.";
+                      << "] ejecting candidate";
           }
           candidate.first->Eject(time_now);
           ++ejected_host_count;
@@ -985,14 +985,13 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
                 << "] running failure percentage algorithm: "
                 << "threshold=" << config.failure_percentage_ejection->threshold
                 << ", enforcement_percentage="
-                << config.failure_percentage_ejection->enforcement_percentage
-                << ".";
+                << config.failure_percentage_ejection->enforcement_percentage;
     }
     for (auto& candidate : failure_percentage_ejection_candidates) {
       if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
         LOG(INFO) << "[outlier_detection_lb " << parent_.get()
                   << "] checking candidate " << candidate.first
-                  << ": success_rate=" << candidate.second << ".";
+                  << ": success_rate=" << candidate.second;
       }
       // Extra check to make sure success rate algorithm didn't already
       // eject this backend.
@@ -1006,7 +1005,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           LOG(INFO) << "[outlier_detection_lb " << parent_.get()
                     << "] random_key=" << random_key
                     << " ejected_host_count=" << ejected_host_count
-                    << " current_percent=" << current_percent << ".";
+                    << " current_percent=" << current_percent;
         }
         if (random_key <
                 config.failure_percentage_ejection->enforcement_percentage &&
@@ -1016,7 +1015,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           // this iteration.
           if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
             LOG(INFO) << "[outlier_detection_lb " << parent_.get()
-                      << "] ejecting candidate.";
+                      << "] ejecting candidate";
           }
           candidate.first->Eject(time_now);
           ++ejected_host_count;
@@ -1037,7 +1036,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
     if (unejected && GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
       LOG(INFO) << "[outlier_detection_lb " << parent_.get()
                 << "] unejected endpoint " << state.first.ToString() << " ("
-                << endpoint_state << ").";
+                << endpoint_state << ")";
     }
   }
   parent_->ejection_timer_ =
