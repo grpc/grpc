@@ -60,6 +60,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     language = "c++",
     deps = [

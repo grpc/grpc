@@ -21,7 +21,7 @@
 namespace grpc_core {
 namespace dump_args_detail {
 
-std::ostream& operator<<(std::ostream& out, const DumpArgs& args) {
+void DumpArgs::Stringify(CustomSink& sink) const {
   // Parse the argument string into a vector of keys.
   // #__VA_ARGS__ produces a stringified version of the arguments passed to the
   // macro. It's comma separated, and we can use that to split the string into
@@ -29,8 +29,8 @@ std::ostream& operator<<(std::ostream& out, const DumpArgs& args) {
   // we need to skip commas that are inside parenthesis.
   std::vector<absl::string_view> keys;
   int depth = 0;
-  const char* start = args.arg_string_;
-  for (const char* p = args.arg_string_; *p; ++p) {
+  const char* start = arg_string_;
+  for (const char* p = arg_string_; *p; ++p) {
     if (*p == '(') {
       ++depth;
     } else if (*p == ')') {
@@ -41,13 +41,13 @@ std::ostream& operator<<(std::ostream& out, const DumpArgs& args) {
     }
   }
   keys.push_back(start);
-  CHECK_EQ(keys.size(), args.arg_dumpers_.size());
+  CHECK_EQ(keys.size(), arg_dumpers_.size());
   for (size_t i = 0; i < keys.size(); i++) {
-    if (i != 0) out << ", ";
-    out << absl::StripAsciiWhitespace(keys[i]) << " = ";
-    args.arg_dumpers_[i](out);
+    if (i != 0) sink.Append(", ");
+    sink.Append(absl::StripAsciiWhitespace(keys[i]));
+    sink.Append(" = ");
+    arg_dumpers_[i](sink);
   }
-  return out;
 }
 
 }  // namespace dump_args_detail
