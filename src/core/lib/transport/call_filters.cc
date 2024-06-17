@@ -870,15 +870,16 @@ Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
   GRPC_TRACE_LOG(call, INFO)
       << "[call_state] PollServerTrailingMetadataAvailable: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
+                        server_to_client_push_state_,
                         server_trailing_metadata_state_,
                         server_trailing_metadata_waiter_.DebugString());
   switch (server_to_client_pull_state_) {
     case ServerToClientPullState::kProcessingServerInitialMetadata:
     case ServerToClientPullState::kProcessingServerToClientMessage:
     case ServerToClientPullState::kProcessingServerInitialMetadataReading:
-    case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kUnstartedReading:
       return server_to_client_pull_waiter_.pending();
+    case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kReading:
       switch (server_to_client_push_state_) {
         case ServerToClientPushState::kPushedServerInitialMetadata:
