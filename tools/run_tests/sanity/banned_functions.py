@@ -217,7 +217,6 @@ BANNED_EXCEPT = {
         "./src/ruby/ext/grpc/rb_event_thread.c",
         "./src/ruby/ext/grpc/rb_grpc.c",
         "./src/ruby/ext/grpc/rb_server.c",
-        "./test/cpp/qps/report.h",
     ],
     "gpr_should_log(": [
         "./include/grpc/support/log.h",
