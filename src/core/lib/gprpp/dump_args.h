@@ -20,6 +20,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
@@ -75,6 +76,16 @@ class DumpArgs {
     arg_dumpers_.push_back(
         [p](CustomSink& os) { os.Append(absl::StrCat(*p)); });
     return 0;
+  }
+
+  template <typename T>
+  int AddDumper(T** p) {
+    return AddDumper(reinterpret_cast<void**>(p));
+  }
+
+  template <typename T>
+  int AddDumper(T* const* p) {
+    return AddDumper(const_cast<T**>(p));
   }
 
   void Stringify(CustomSink& sink) const;
