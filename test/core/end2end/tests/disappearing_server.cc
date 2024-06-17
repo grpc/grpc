@@ -71,7 +71,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, DisappearingServer) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   OneRequestAndShutdownServer(*this);
   InitServer(ChannelArgs());
   OneRequestAndShutdownServer(*this);

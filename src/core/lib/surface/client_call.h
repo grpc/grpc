@@ -82,8 +82,9 @@ class ClientCall final
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
-    // TODO(ctiller): only when we're not already finished
-    CancelWithError(absl::CancelledError());
+    if (!saw_trailing_metadata_.load(std::memory_order_relaxed)) {
+      CancelWithError(absl::CancelledError());
+    }
   }
 
   void SetCompletionQueue(grpc_completion_queue*) override {
@@ -164,6 +165,7 @@ class ClientCall final
   ServerMetadataHandle received_initial_metadata_;
   ServerMetadataHandle received_trailing_metadata_;
   bool is_trailers_only_;
+  std::atomic<bool> saw_trailing_metadata_{false};
 };
 
 grpc_call* MakeClientCall(
