@@ -3127,6 +3127,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "debug_location",
+    external_deps = ["absl/strings"],
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
     visibility = ["@grpc:debug_location"],
