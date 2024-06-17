@@ -14,6 +14,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
@@ -32,8 +33,8 @@ class ClientChannelTraits {
  public:
   RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
       RefCountedPtr<UnstartedCallDestination> final_destination) {
-    call_destination_factory_.reset(
-        new TestCallDestinationFactory(std::move(final_destination)));
+    call_destination_factory_ = absl::make_unique<TestCallDestinationFactory>(
+        std::move(final_destination));
     auto channel = ClientChannel::Create(
         "test:///target",
         ChannelArgs()
