@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/call/yodel:grpc_yodel_test.bzl", "grpc_yodel_simple_test")
 
 licenses(["notice"])
 
@@ -174,5 +175,18 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_yodel_simple_test(
+    name = "call_spine",
+    srcs = ["call_spine_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//src/core:call_spine",
+        "//test/core/call/yodel:yodel_test",
     ],
 )

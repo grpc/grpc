@@ -144,7 +144,7 @@ class MpscSender {
       if (center == nullptr) return false;
       if (batch == 0) {
         batch = center->Send(std::move(t));
-        CHECK_NE(batch, 0);
+        CHECK_NE(batch, 0u);
         if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
       }
       auto p = center->PollReceiveBatch(batch);

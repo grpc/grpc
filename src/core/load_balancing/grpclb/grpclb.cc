@@ -73,6 +73,8 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/log/check.h"
+#include "absl/log/globals.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -607,19 +609,15 @@ bool IsServerValid(const GrpcLbServer& server, size_t idx, bool log) {
   if (server.drop) return false;
   if (GPR_UNLIKELY(server.port >> 16 != 0)) {
     if (log) {
-      gpr_log(GPR_ERROR,
-              "Invalid port '%d' at index %" PRIuPTR
-              " of serverlist. Ignoring.",
-              server.port, idx);
+      LOG(ERROR) << "Invalid port '" << server.port << "' at index " << idx
+                 << " of serverlist. Ignoring.";
     }
     return false;
   }
   if (GPR_UNLIKELY(server.ip_size != 4 && server.ip_size != 16)) {
     if (log) {
-      gpr_log(GPR_ERROR,
-              "Expected IP to be 4 or 16 bytes, got %d at index %" PRIuPTR
-              " of serverlist. Ignoring",
-              server.ip_size, idx);
+      LOG(ERROR) << "Expected IP to be 4 or 16 bytes, got " << server.ip_size
+                 << " at index " << idx << " of serverlist. Ignoring";
     }
     return false;
   }
@@ -670,11 +668,9 @@ class GrpcLb::Serverlist::AddressIterator final
       std::string lb_token(server.load_balance_token, lb_token_length);
       if (lb_token.empty()) {
         auto addr_uri = grpc_sockaddr_to_uri(&addr);
-        gpr_log(GPR_INFO,
-                "Missing LB token for backend address '%s'. The empty token "
-                "will be used instead",
-                addr_uri.ok() ? addr_uri->c_str()
-                              : addr_uri.status().ToString().c_str());
+        LOG(INFO) << "Missing LB token for backend address '"
+                  << (addr_uri.ok() ? *addr_uri : addr_uri.status().ToString())
+                  << "'. The empty token will be used instead";
       }
       // Return address with a channel arg containing LB token and stats object.
       callback(EndpointAddresses(
@@ -1092,9 +1088,8 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lb_call_, &op, 1, &client_load_report_done_closure_);
   if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR,
-            "[grpclb %p] lb_calld=%p call_error=%d sending client load report",
-            grpclb_policy_.get(), this, call_error);
+    LOG(ERROR) << "[grpclb " << grpclb_policy_.get() << "] lb_calld=" << this
+               << " call_error=" << call_error << " sending client load report";
     CHECK_EQ(call_error, GRPC_CALL_OK);
   }
 }
@@ -1162,13 +1157,12 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   upb::Arena arena;
   if (!GrpcLbResponseParse(response_slice, arena.ptr(), &response) ||
       (response.type == response.INITIAL && seen_initial_response_)) {
-    if (gpr_should_log(GPR_LOG_SEVERITY_ERROR)) {
+    if (absl::MinLogLevel() <= absl::LogSeverityAtLeast::kError) {
       char* response_slice_str =
           grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-      gpr_log(GPR_ERROR,
-              "[grpclb %p] lb_calld=%p: Invalid LB response received: '%s'. "
-              "Ignoring.",
-              grpclb_policy(), this, response_slice_str);
+      LOG(ERROR) << "[grpclb " << grpclb_policy() << "] lb_calld=" << this
+                 << ": Invalid LB response received: '" << response_slice_str
+                 << "'. Ignoring.";
       gpr_free(response_slice_str);
     }
   } else {
@@ -1468,10 +1462,9 @@ GrpcLb::GrpcLb(Args args)
               .value_or(Duration::Milliseconds(
                   GRPC_GRPCLB_DEFAULT_SUBCHANNEL_DELETION_DELAY_MS)))) {
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] Will use '%s' as the server name for LB request.",
-            this,
-            std::string(channel_control_helper()->GetAuthority()).c_str());
+    LOG(INFO) << "[grpclb " << this << "] Will use '"
+              << std::string(channel_control_helper()->GetAuthority())
+              << "' as the server name for LB request.";
   }
 }
 
@@ -1538,8 +1531,8 @@ class GrpcLb::NullLbTokenEndpointIterator final
       const override {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-        gpr_log(GPR_INFO, "[grpclb %p] fallback address: %s", this,
-                endpoint.ToString().c_str());
+        LOG(INFO) << "[grpclb " << this
+                  << "] fallback address: " << endpoint.ToString();
       }
       callback(EndpointAddresses(endpoint.addresses(),
                                  endpoint.args().SetObject(empty_token_)));
@@ -1554,7 +1547,7 @@ class GrpcLb::NullLbTokenEndpointIterator final
 
 absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] received update", this);
+    LOG(INFO) << "[grpclb " << this << "] received update";
   }
   const bool is_initial_update = lb_channel_ == nullptr;
   config_ = args.config.TakeAsSubclass<GrpcLbConfig>();
@@ -1612,8 +1605,8 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
   EndpointAddressesList balancer_addresses = ExtractBalancerAddresses(args_);
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
     for (const auto& endpoint : balancer_addresses) {
-      gpr_log(GPR_INFO, "[grpclb %p] balancer address: %s", this,
-              endpoint.ToString().c_str());
+      LOG(INFO) << "[grpclb " << this
+                << "] balancer address: " << endpoint.ToString();
     }
   }
   absl::Status status;
@@ -1678,13 +1671,13 @@ void GrpcLb::StartBalancerCallLocked() {
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
   Duration timeout = lb_call_backoff_.NextAttemptTime() - Timestamp::Now();
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
+    LOG(INFO) << "[grpclb " << this << "] Connection to LB server lost...";
     if (timeout > Duration::Zero()) {
       gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout.millis());
     } else {
-      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active immediately.",
-              this);
+      LOG(INFO) << "[grpclb " << this
+                << "] ... retry_timer_active immediately.";
     }
   }
   lb_call_retry_timer_handle_ =
@@ -1707,7 +1700,7 @@ void GrpcLb::OnBalancerCallRetryTimerLocked() {
   lb_call_retry_timer_handle_.reset();
   if (!shutting_down_ && lb_calld_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-      gpr_log(GPR_INFO, "[grpclb %p] Restarting call to LB server", this);
+      LOG(INFO) << "[grpclb " << this << "] Restarting call to LB server";
     }
     StartBalancerCallLocked();
   }
@@ -1739,10 +1732,9 @@ void GrpcLb::OnFallbackTimerLocked() {
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
   if (fallback_at_startup_checks_pending_ && !shutting_down_) {
-    gpr_log(GPR_INFO,
-            "[grpclb %p] No response from balancer after fallback timeout; "
-            "entering fallback mode",
-            this);
+    LOG(INFO) << "[grpclb " << this
+              << "] No response from balancer after fallback timeout; "
+                 "entering fallback mode";
     fallback_at_startup_checks_pending_ = false;
     CancelBalancerChannelConnectivityWatchLocked();
     fallback_mode_ = true;
@@ -1777,8 +1769,8 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
       MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args), &glb_trace);
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Created new child policy handler (%p)", this,
-            lb_policy.get());
+    LOG(INFO) << "[grpclb " << this << "] Created new child policy handler ("
+              << lb_policy.get() << ")";
   }
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created child policy. This will make the child policy progress upon
@@ -1831,8 +1823,8 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   }
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(glb)) {
-    gpr_log(GPR_INFO, "[grpclb %p] Updating child policy handler %p", this,
-            child_policy_.get());
+    LOG(INFO) << "[grpclb " << this << "] Updating child policy handler "
+              << child_policy_.get();
   }
   // TODO(roth): If we're in fallback mode and the child policy rejects the
   // update, we should propagate that failure back to the resolver somehow.

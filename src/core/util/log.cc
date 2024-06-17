@@ -53,11 +53,6 @@ void gpr_unreachable_code(const char* reason, const char* file, int line) {
                    grpc_core::SourceLocation(file, line));
 }
 
-void gpr_assertion_failed(const char* filename, int line, const char* message) {
-  grpc_core::Crash(absl::StrCat("ASSERTION FAILED: ", message),
-                   grpc_core::SourceLocation(filename, line));
-}
-
 const char* gpr_log_severity_string(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_DEBUG:
@@ -196,9 +191,4 @@ void gpr_set_log_function(gpr_log_func f) {
          "using this function. You may create a new absl LogSink with similar "
          "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
   gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
-}
-
-void gpr_disable_all_logs() {
-  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
-  absl::SetVLogLevel("*grpc*/*", -1);
 }

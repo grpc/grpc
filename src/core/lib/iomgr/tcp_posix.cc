@@ -857,7 +857,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
     size_t i;
     gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
             tcp->peer_string.c_str(), grpc_core::StatusToString(error).c_str());
-    if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+    if (ABSL_VLOG_IS_ON(2)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
                                      GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -1849,7 +1849,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
 
     for (i = 0; i < buf->count; i++) {
       gpr_log(GPR_INFO, "WRITE %p (peer=%s)", tcp, tcp->peer_string.c_str());
-      if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
+      if (ABSL_VLOG_IS_ON(2)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
         VLOG(2) << "WRITE DATA: " << data;

@@ -451,6 +451,7 @@ for dirname in [
             "filegroup": lambda name, **kwargs: None,
             "sh_library": lambda name, **kwargs: None,
             "platform": lambda name, **kwargs: None,
+            "grpc_clang_cl_settings": lambda **kwargs: None,
         },
         {},
     )
