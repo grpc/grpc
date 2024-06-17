@@ -418,10 +418,10 @@ class Subchannel::ConnectedSubchannelStateWatcher final
       if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
           new_state == GRPC_CHANNEL_SHUTDOWN) {
         if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-          gpr_log(GPR_INFO,
-                  "subchannel %p %s: Connected subchannel %p reports %s: %s", c,
-                  c->key_.ToString().c_str(), c->connected_subchannel_.get(),
-                  ConnectivityStateName(new_state), status.ToString().c_str());
+          LOG(INFO) << "subchannel " << c << " " << c->key_.ToString()
+                    << ": Connected subchannel " << c->connected_subchannel_
+                    << " reports " << ConnectivityStateName(new_state) << ": "
+                    << status;
         }
         c->connected_subchannel_.reset();
         if (c->channelz_node() != nullptr) {
@@ -603,8 +603,8 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
     if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-      gpr_log(GPR_INFO, "subchannel %p %s: throttling keepalive time to %d",
-              this, key_.ToString().c_str(), new_keepalive_time);
+      LOG(INFO) << "subchannel " << this << " " << key_.ToString()
+                << ": throttling keepalive time to " << new_keepalive_time;
     }
     args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time);
   }
@@ -758,8 +758,8 @@ void Subchannel::OnRetryTimer() {
 
 void Subchannel::OnRetryTimerLocked() {
   if (shutdown_) return;
-  gpr_log(GPR_INFO, "subchannel %p %s: backoff delay elapsed, reporting IDLE",
-          this, key_.ToString().c_str());
+  LOG(INFO) << "subchannel " << this << " " << key_.ToString()
+            << ": backoff delay elapsed, reporting IDLE";
   SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, absl::OkStatus());
 }
 
@@ -803,11 +803,10 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
   if (connecting_result_.transport == nullptr || !PublishTransportLocked()) {
     const Duration time_until_next_attempt =
         next_attempt_time_ - Timestamp::Now();
-    gpr_log(GPR_INFO,
-            "subchannel %p %s: connect failed (%s), backing off for %" PRId64
-            " ms",
-            this, key_.ToString().c_str(), StatusToString(error).c_str(),
-            time_until_next_attempt.millis());
+    LOG(INFO) << "subchannel " << this << " " << key_.ToString()
+              << ": connect failed (" << StatusToString(error)
+              << "), backing off for " << time_until_next_attempt.millis()
+              << " ms";
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     retry_timer_handle_ = event_engine_->RunAfter(
@@ -844,9 +843,8 @@ bool Subchannel::PublishTransportLocked() {
     absl::StatusOr<RefCountedPtr<grpc_channel_stack>> stack = builder.Build();
     if (!stack.ok()) {
       connecting_result_.Reset();
-      gpr_log(GPR_ERROR,
-              "subchannel %p %s: error initializing subchannel stack: %s", this,
-              key_.ToString().c_str(), stack.status().ToString().c_str());
+      LOG(ERROR) << "subchannel " << this << " " << key_.ToString()
+                 << ": error initializing subchannel stack: " << stack.status();
       return false;
     }
     connected_subchannel_ = MakeRefCounted<LegacyConnectedSubchannel>(
@@ -865,10 +863,9 @@ bool Subchannel::PublishTransportLocked() {
     auto call_destination = builder.Build(transport_destination);
     if (!call_destination.ok()) {
       connecting_result_.Reset();
-      gpr_log(GPR_ERROR,
-              "subchannel %p %s: error initializing subchannel stack: %s", this,
-              key_.ToString().c_str(),
-              call_destination.status().ToString().c_str());
+      LOG(ERROR) << "subchannel " << this << " " << key_.ToString()
+                 << ": error initializing subchannel stack: "
+                 << call_destination.status();
       return false;
     }
     connected_subchannel_ = MakeRefCounted<NewConnectedSubchannel>(
@@ -878,8 +875,8 @@ bool Subchannel::PublishTransportLocked() {
   connecting_result_.Reset();
   // Publish.
   if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
-    gpr_log(GPR_INFO, "subchannel %p %s: new connected subchannel at %p", this,
-            key_.ToString().c_str(), connected_subchannel_.get());
+    LOG(INFO) << "subchannel " << this << " " << key_.ToString()
+              << ": new connected subchannel at " << connected_subchannel_;
   }
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket_node));

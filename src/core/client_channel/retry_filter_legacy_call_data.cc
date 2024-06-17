@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/client_channel/retry_filter_legacy_call_data.h"
 
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include <memory>
@@ -25,6 +25,9 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+
+#include <grpc/support/log.h>
+
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
@@ -1142,12 +1145,10 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
   if (GRPC_TRACE_FLAG_ENABLED(retry)) {
     LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
               << " attempt=" << call_attempt << ": call finished, status="
-              << grpc_status_code_to_string(status)
-              << " server_pushback=" << (server_pushback.has_value()
-                                             ? server_pushback->ToString()
-                                             : "N/A")
-              << " is_lb_drop=" << is_lb_drop
-              << " stream_network_state="
+              << grpc_status_code_to_string(status) << " server_pushback="
+              << (server_pushback.has_value() ? server_pushback->ToString()
+                                              : "N/A")
+              << " is_lb_drop=" << is_lb_drop << " stream_network_state="
               << (stream_network_state.has_value()
                       ? absl::StrCat(*stream_network_state)
                       : "N/A");
@@ -1355,8 +1356,7 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::OnCompleteForCancelOp(
               << " attempt=" << call_attempt
               << " batch_data=" << batch_data.get()
               << ": got on_complete for cancel_stream batch, error="
-              << StatusToString(error)
-              << ", batch="
+              << StatusToString(error) << ", batch="
               << grpc_transport_stream_op_batch_string(&batch_data->batch_,
                                                        false);
   }
@@ -1395,10 +1395,10 @@ void RetryFilter::LegacyCallData::CallAttempt::BatchData::
     AddRetriableSendMessageOp() {
   auto* calld = call_attempt_->calld_;
   if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-  LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
-          << " attempt=" << call_attempt_
-          << ": starting calld->send_messages["
-          << call_attempt_->started_send_message_count_ << "]";
+    LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
+              << " attempt=" << call_attempt_
+              << ": starting calld->send_messages["
+              << call_attempt_->started_send_message_count_ << "]";
   }
   CachedSendMessage cache =
       calld->send_messages_[call_attempt_->started_send_message_count_];
@@ -1742,8 +1742,8 @@ void RetryFilter::LegacyCallData::MaybeCacheSendOpsForBatch(
 
 void RetryFilter::LegacyCallData::FreeCachedSendInitialMetadata() {
   if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << chand_
-              << " calld=" << this << ": destroying send_initial_metadata";
+    LOG(INFO) << "chand=" << chand_ << " calld=" << this
+              << ": destroying send_initial_metadata";
   }
   send_initial_metadata_.Clear();
 }
@@ -1751,8 +1751,8 @@ void RetryFilter::LegacyCallData::FreeCachedSendInitialMetadata() {
 void RetryFilter::LegacyCallData::FreeCachedSendMessage(size_t idx) {
   if (send_messages_[idx].slices != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-    LOG(INFO) << "chand=" << chand_ << " calld=" << this
-            << ": destroying send_messages[" << idx << "]";
+      LOG(INFO) << "chand=" << chand_ << " calld=" << this
+                << ": destroying send_messages[" << idx << "]";
     }
     Destruct(std::exchange(send_messages_[idx].slices, nullptr));
   }
@@ -1760,8 +1760,8 @@ void RetryFilter::LegacyCallData::FreeCachedSendMessage(size_t idx) {
 
 void RetryFilter::LegacyCallData::FreeCachedSendTrailingMetadata() {
   if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-  LOG(INFO) << "chand=" << chand_ << " calld=" << this
-          << ": destroying send_trailing_metadata";
+    LOG(INFO) << "chand=" << chand_ << " calld=" << this
+              << ": destroying send_trailing_metadata";
   }
   send_trailing_metadata_.Clear();
 }
@@ -1866,7 +1866,7 @@ void RetryFilter::LegacyCallData::MaybeClearPendingBatch(
            nullptr)) {
     if (GRPC_TRACE_FLAG_ENABLED(retry)) {
       LOG(INFO) << "chand=" << chand_ << " calld=" << this
-          << ": clearing pending batch";
+                << ": clearing pending batch";
     }
     PendingBatchClear(pending);
   }
@@ -1892,8 +1892,8 @@ void RetryFilter::LegacyCallData::PendingBatchesFail(grpc_error_handle error) {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i].batch != nullptr) ++num_batches;
     }
-LOG(INFO) << "chand=" << chand_ << " calld=" << this << ": failing "
-          << num_batches << " pending batches: " << StatusToString(error);
+    LOG(INFO) << "chand=" << chand_ << " calld=" << this << ": failing "
+              << num_batches << " pending batches: " << StatusToString(error);
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -1921,8 +1921,8 @@ RetryFilter::LegacyCallData::PendingBatchFind(const char* log_message,
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr && predicate(batch)) {
       if (GRPC_TRACE_FLAG_ENABLED(retry)) {
-      LOG(INFO) << "chand=" << chand_ << " calld=" << this << ": " << log_message
-              << " pending batch at index " << i;
+        LOG(INFO) << "chand=" << chand_ << " calld=" << this << ": "
+                  << log_message << " pending batch at index " << i;
       }
       return pending;
     }
@@ -2025,6 +2025,5 @@ void RetryFilter::LegacyCallData::StartTransparentRetry(
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call_, "OnRetryTimer");
 }
-
 
 }  // namespace grpc_core
