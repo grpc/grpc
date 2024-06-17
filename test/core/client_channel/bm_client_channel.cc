@@ -159,8 +159,22 @@ class TestResolverFactory final : public ResolverFactory {
   absl::string_view scheme() const override { return "test"; }
   bool IsValidUri(const URI&) const override { return true; }
 };
-}  // namespace
 
+void BM_CreateClientChannel(benchmark::State& state) {
+  class FinalDestination : public UnstartedCallDestination {
+   public:
+    void StartCall(UnstartedCallHandler) override {}
+    void Orphaned() override {}
+  };
+  ClientChannelTraits traits;
+  auto final_destination = MakeRefCounted<FinalDestination>();
+  for (auto _ : state) {
+    traits.CreateCallDestination(final_destination);
+  }
+}
+BENCHMARK(BM_CreateClientChannel);
+
+}  // namespace
 }  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
