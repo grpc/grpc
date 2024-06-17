@@ -882,20 +882,24 @@ Poll<Empty> CallState::PollServerTrailingMetadataAvailable() {
     case ServerToClientPullState::kStartedReading:
     case ServerToClientPullState::kReading:
       switch (server_to_client_push_state_) {
+        case ServerToClientPushState::kTrailersOnly:
+        case ServerToClientPushState::kIdle:
+        case ServerToClientPushState::kStart:
+        case ServerToClientPushState::kFinished:
+          if (server_trailing_metadata_state_ !=
+              ServerTrailingMetadataState::kNotPushed) {
+            server_to_client_pull_state_ =
+                ServerToClientPullState::kProcessingServerTrailingMetadata;
+            server_to_client_pull_waiter_.Wake();
+            return Empty{};
+          }
+          ABSL_FALLTHROUGH_INTENDED;
         case ServerToClientPushState::kPushedServerInitialMetadata:
         case ServerToClientPushState::
             kPushedServerInitialMetadataAndPushedMessage:
         case ServerToClientPushState::kPushedMessage:
           server_to_client_push_waiter_.pending();
           return server_to_client_pull_waiter_.pending();
-        case ServerToClientPushState::kTrailersOnly:
-        case ServerToClientPushState::kIdle:
-        case ServerToClientPushState::kStart:
-        case ServerToClientPushState::kFinished:
-          server_to_client_pull_state_ =
-              ServerToClientPullState::kProcessingServerTrailingMetadata;
-          server_to_client_pull_waiter_.Wake();
-          return Empty{};
       }
       break;
     case ServerToClientPullState::kStarted:
