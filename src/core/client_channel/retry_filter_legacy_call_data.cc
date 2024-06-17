@@ -668,8 +668,8 @@ void RetryFilter::LegacyCallData::CallAttempt::OnPerAttemptRecvTimerLocked(
   if (GRPC_TRACE_FLAG_ENABLED(retry)) {
     LOG(INFO) << "chand=" << calld->chand_ << " calld=" << calld
               << " attempt=" << call_attempt
-              << ": perAttemptRecvTimeout timer fired: "
-              << "error=" << StatusToString(error)
+              << ": perAttemptRecvTimeout timer fired: error="
+              << StatusToString(error)
               << ", per_attempt_recv_timer_handle_.has_value()="
               << call_attempt->per_attempt_recv_timer_handle_.has_value();
   }
@@ -707,8 +707,8 @@ void RetryFilter::LegacyCallData::CallAttempt::
   if (per_attempt_recv_timer_handle_.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(retry)) {
       LOG(INFO) << "chand=" << calld_->chand_ << " calld=" << calld_
-                << " attempt=" << this << ": cancelling "
-                << "perAttemptRecvTimeout timer";
+                << " attempt=" << this
+                << ": cancelling perAttemptRecvTimeout timer";
     }
     if (calld_->chand_->event_engine()->Cancel(
             *per_attempt_recv_timer_handle_)) {

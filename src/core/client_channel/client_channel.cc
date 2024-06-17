@@ -283,7 +283,8 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
           }
         }
       } else {
-        LOG(ERROR) << "client_channel=" << subchannel_wrapper_->client_channel_
+        LOG(ERROR) << "client_channel="
+                   << subchannel_wrapper_->client_channel_.get()
                    << ": Illegal keepalive throttling value "
                    << std::string(keepalive_throttling.value());
       }
@@ -452,7 +453,7 @@ class ClientChannel::ClientChannelControlHelper
       const char* extra = client_channel_->disconnect_error_.ok()
                               ? ""
                               : " (ignoring -- channel shutting down)";
-      LOG(INFO) << "client_channel=" << client_channel_
+      LOG(INFO) << "client_channel=" << client_channel_.get()
                 << ": update: state=" << ConnectivityStateName(state)
                 << " status=(" << status << ") picker=" << picker.get()
                 << extra;

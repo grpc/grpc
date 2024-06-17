@@ -418,9 +418,9 @@ class Subchannel::ConnectedSubchannelStateWatcher final
           new_state == GRPC_CHANNEL_SHUTDOWN) {
         if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
           LOG(INFO) << "subchannel " << c << " " << c->key_.ToString()
-                    << ": Connected subchannel " << c->connected_subchannel_
-                    << " reports " << ConnectivityStateName(new_state) << ": "
-                    << status;
+                    << ": Connected subchannel "
+                    << c->connected_subchannel_.get() << " reports "
+                    << ConnectivityStateName(new_state) << ": " << status;
         }
         c->connected_subchannel_.reset();
         if (c->channelz_node() != nullptr) {
@@ -875,7 +875,8 @@ bool Subchannel::PublishTransportLocked() {
   // Publish.
   if (GRPC_TRACE_FLAG_ENABLED(subchannel)) {
     LOG(INFO) << "subchannel " << this << " " << key_.ToString()
-              << ": new connected subchannel at " << connected_subchannel_;
+              << ": new connected subchannel at "
+              << connected_subchannel_.get();
   }
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket_node));
