@@ -53,6 +53,54 @@ class CallSpineFixture {
 };
 GRPC_CALL_SPINE_BENCHMARK(CallSpineFixture);
 
+class ForwardCallFixture {
+ public:
+  BenchmarkCall MakeCall() {
+    auto p1 = MakeCallPair(Arena::MakePooled<ClientMetadata>(),
+                           event_engine_.get(), arena_allocator_->MakeArena());
+    auto p2 = MakeCallPair(Arena::MakePooled<ClientMetadata>(),
+                           event_engine_.get(), arena_allocator_->MakeArena());
+    p1.handler.SpawnInfallible("initial_metadata", [&]() {
+      auto p1_handler = p1.handler.StartCall(stack_);
+      return Map(
+          p1_handler.PullClientInitialMetadata(),
+          [p1_handler, &p2](ValueOrFailure<ClientMetadataHandle> md) mutable {
+            CHECK(md.ok());
+            ForwardCall(std::move(p1_handler), std::move(p2.initiator));
+            return Empty{};
+          });
+    });
+    absl::optional<CallHandler> p2_handler;
+    p2.handler.SpawnInfallible("start", [&]() {
+      p2_handler = p2.handler.StartCall(stack_);
+      return Empty{};
+    });
+    return {std::move(p1.initiator), std::move(*p2_handler)};
+  }
+
+  ServerMetadataHandle MakeServerInitialMetadata() {
+    return Arena::MakePooled<ServerMetadata>();
+  }
+
+  MessageHandle MakePayload() { return Arena::MakePooled<Message>(); }
+
+  ServerMetadataHandle MakeServerTrailingMetadata() {
+    return Arena::MakePooled<ServerMetadata>();
+  }
+
+ private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+  RefCountedPtr<CallArenaAllocator> arena_allocator_ =
+      MakeRefCounted<CallArenaAllocator>(
+          ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
+              "test-allocator"),
+          1024);
+  RefCountedPtr<CallFilters::Stack> stack_ =
+      CallFilters::StackBuilder().Build();
+};
+GRPC_CALL_SPINE_BENCHMARK(ForwardCallFixture);
+
 }  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
