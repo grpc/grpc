@@ -31,6 +31,7 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -46,7 +47,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
@@ -705,9 +705,9 @@ class ClientChannelFilter::SubchannelWrapper final
             }
           }
         } else {
-          gpr_log(GPR_ERROR, "chand=%p: Illegal keepalive throttling value %s",
-                  parent_->chand_,
-                  std::string(keepalive_throttling.value()).c_str());
+          LOG(ERROR) << "chand=" << parent_->chand_
+                     << ": Illegal keepalive throttling value "
+                     << std::string(keepalive_throttling.value());
         }
       }
       // Propagate status only in state TF.
@@ -1210,15 +1210,13 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
               .LoadBalancingPolicyExists(*policy_name, &requires_config) ||
          requires_config)) {
       if (requires_config) {
-        gpr_log(GPR_ERROR,
-                "LB policy: %s passed through channel_args must not "
-                "require a config. Using pick_first instead.",
-                std::string(*policy_name).c_str());
+        LOG(ERROR) << "LB policy: " << *policy_name
+                   << " passed through channel_args must not "
+                      "require a config. Using pick_first instead.";
       } else {
-        gpr_log(GPR_ERROR,
-                "LB policy: %s passed through channel_args does not exist. "
-                "Using pick_first instead.",
-                std::string(*policy_name).c_str());
+        LOG(ERROR) << "LB policy: " << *policy_name
+                   << " passed through channel_args does not exist. "
+                      "Using pick_first instead.";
       }
       policy_name = "pick_first";
     }
@@ -2016,8 +2014,9 @@ void ClientChannelFilter::FilterBasedCallData::StartTransportStreamOpBatch(
   auto* chand = static_cast<ClientChannelFilter*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(client_channel_call) &&
       !GRPC_TRACE_FLAG_ENABLED(channel)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: batch started from above: %s", chand,
-            calld, grpc_transport_stream_op_batch_string(batch, false).c_str());
+    LOG(INFO) << "chand=" << chand << " calld=" << calld
+              << ": batch started from above: "
+              << grpc_transport_stream_op_batch_string(batch, false);
   }
   // Intercept recv_trailing_metadata to commit the call, in case we wind up
   // failing the call before we get down to the retry or LB call layer.
@@ -2159,9 +2158,8 @@ void ClientChannelFilter::FilterBasedCallData::PendingBatchesFail(
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
-            chand(), this, num_batches, StatusToString(error).c_str());
+    LOG(INFO) << "chand=" << chand() << " calld=" << this << ": failing "
+              << num_batches << " pending batches: " << StatusToString(error);
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2202,10 +2200,9 @@ void ClientChannelFilter::FilterBasedCallData::PendingBatchesResume() {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: starting %" PRIuPTR
-            " pending batches on dynamic_call=%p",
-            chand(), this, num_batches, dynamic_call_.get());
+    LOG(INFO) << "chand=" << chand() << " calld=" << this << ": starting "
+              << num_batches
+              << " pending batches on dynamic_call=" << dynamic_call_.get();
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2378,10 +2375,8 @@ class ClientChannelFilter::LoadBalancedCall::Metadata final
     }
     batch_->Append(key, Slice::FromStaticString(value),
                    [key](absl::string_view error, const Slice& value) {
-                     gpr_log(GPR_ERROR, "%s",
-                             absl::StrCat(error, " key:", key,
-                                          " value:", value.as_string_view())
-                                 .c_str());
+                     LOG(ERROR) << error << " key:" << key
+                                << " value:" << value.as_string_view();
                    });
   }
 
@@ -2848,9 +2843,8 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesFail(
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: failing %" PRIuPTR " pending batches: %s",
-            chand(), this, num_batches, StatusToString(error).c_str());
+    LOG(INFO) << "chand=" << chand() << " lb_call=" << this << ": failing "
+              << num_batches << " pending batches: " << StatusToString(error);
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2890,10 +2884,9 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::PendingBatchesResume() {
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
       if (pending_batches_[i] != nullptr) ++num_batches;
     }
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: starting %" PRIuPTR
-            " pending batches on subchannel_call=%p",
-            chand(), this, num_batches, subchannel_call_.get());
+    LOG(INFO) << "chand=" << chand() << " lb_call=" << this << ": starting "
+              << num_batches << " pending batches on subchannel_call="
+              << subchannel_call_.get();
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2916,12 +2909,10 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
     StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
   if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call) ||
       GRPC_TRACE_FLAG_ENABLED(channel)) {
-    gpr_log(GPR_INFO,
-            "chand=%p lb_call=%p: batch started from above: %s, "
-            "call_attempt_tracer()=%p",
-            chand(), this,
-            grpc_transport_stream_op_batch_string(batch, false).c_str(),
-            call_attempt_tracer());
+    LOG(INFO) << "chand=" << chand() << " lb_call=" << this
+              << ": batch started from above: "
+              << grpc_transport_stream_op_batch_string(batch, false)
+              << ", call_attempt_tracer()=" << call_attempt_tracer();
   }
   // Handle call tracing.
   if (call_attempt_tracer() != nullptr) {

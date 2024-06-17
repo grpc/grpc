@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/lb_metadata.h"
 
+#include "absl/log/log.h"
+
 namespace grpc_core {
 
 namespace {
@@ -61,10 +63,8 @@ void LbMetadata::Add(absl::string_view key, absl::string_view value) {
   }
   batch_->Append(key, Slice::FromStaticString(value),
                  [key](absl::string_view error, const Slice& value) {
-                   gpr_log(GPR_ERROR, "%s",
-                           absl::StrCat(error, " key:", key,
-                                        " value:", value.as_string_view())
-                               .c_str());
+                   LOG(ERROR) << error << " key:" << key
+                              << " value:" << value.as_string_view();
                  });
 }
 

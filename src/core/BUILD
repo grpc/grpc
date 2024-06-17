@@ -500,7 +500,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "poll",
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings:str_format",
+    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/poll.h",
@@ -952,12 +955,14 @@ grpc_cc_library(
         "atomic_utils",
         "construct_destruct",
         "context",
+        "dump_args",
         "event_engine_context",
         "no_destruct",
         "poll",
         "promise_factory",
         "promise_status",
         "//:gpr",
+        "//:grpc_trace",
         "//:orphanable",
     ],
 )
@@ -7048,8 +7053,8 @@ grpc_cc_library(
         "ext/transport/inproc/legacy_inproc_transport.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -7066,6 +7071,7 @@ grpc_cc_library(
         "error",
         "experiments",
         "iomgr_fwd",
+        "metadata",
         "metadata_batch",
         "resource_quota",
         "slice",
@@ -7484,12 +7490,15 @@ grpc_cc_library(
     deps = [
         "call_final_info",
         "dump_args",
+        "if",
         "latch",
         "map",
         "message",
         "metadata",
         "ref_counted",
+        "seq",
         "status_flag",
+        "try_seq",
         "//:gpr",
         "//:promise",
         "//:ref_counted_ptr",
@@ -7589,7 +7598,10 @@ grpc_cc_library(
     hdrs = [
         "lib/transport/call_spine.h",
     ],
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/log:check",
+    ],
     deps = [
         "1999",
         "call_arena_allocator",
@@ -7607,6 +7619,24 @@ grpc_cc_library(
         "try_seq",
         "//:gpr",
         "//:promise",
+    ],
+)
+
+grpc_cc_library(
+    name = "direct_channel",
+    srcs = [
+        "client_channel/direct_channel.cc",
+    ],
+    hdrs = [
+        "client_channel/direct_channel.h",
+    ],
+    deps = [
+        "channel_stack_type",
+        "interception_chain",
+        "//:channel",
+        "//:config",
+        "//:grpc_base",
+        "//:orphanable",
     ],
 )
 

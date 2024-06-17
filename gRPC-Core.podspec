@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.65.0-dev'
+  version = '1.66.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -257,6 +257,8 @@ Pod::Spec.new do |s|
                       'src/core/client_channel/client_channel_service_config.h',
                       'src/core/client_channel/config_selector.h',
                       'src/core/client_channel/connector.h',
+                      'src/core/client_channel/direct_channel.cc',
+                      'src/core/client_channel/direct_channel.h',
                       'src/core/client_channel/dynamic_filters.cc',
                       'src/core/client_channel/dynamic_filters.h',
                       'src/core/client_channel/global_subchannel_pool.cc',
@@ -2365,6 +2367,7 @@ Pod::Spec.new do |s|
                               'src/core/client_channel/client_channel_service_config.h',
                               'src/core/client_channel/config_selector.h',
                               'src/core/client_channel/connector.h',
+                              'src/core/client_channel/direct_channel.h',
                               'src/core/client_channel/dynamic_filters.h',
                               'src/core/client_channel/global_subchannel_pool.h',
                               'src/core/client_channel/lb_call_tracing_filter.h',
