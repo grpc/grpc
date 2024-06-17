@@ -2098,9 +2098,10 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
             locality_state.locality_stats->GetSnapshotAndReset();
         if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
           LOG(INFO) << "[xds_client " << this
-                    << "] cluster=" << cluster_key.first
-                    << " eds_service_name=" << cluster_key.second
-                    << " locality=" << locality_name->human_readable_string()
+                    << "] cluster=" << cluster_key.first.c_str()
+                    << " eds_service_name=" << cluster_key.second.c_str()
+                    << " locality="
+                    << locality_name->human_readable_string().c_str()
                     << " locality_stats=" << locality_state.locality_stats;
         }
       }
