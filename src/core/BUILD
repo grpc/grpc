@@ -500,7 +500,10 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "poll",
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings:str_format",
+    ],
     language = "c++",
     public_hdrs = [
         "lib/promise/poll.h",

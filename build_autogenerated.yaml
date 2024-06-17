@@ -13280,6 +13280,7 @@ targets:
   - src/core/lib/promise/join.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -14340,6 +14341,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/wait_set.h
+  - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
