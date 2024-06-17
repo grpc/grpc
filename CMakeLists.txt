@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.65.0-dev")
+set(PACKAGE_VERSION       "1.66.0-dev")
 set(gRPC_CORE_VERSION     "42.0.0")
 set(gRPC_CORE_SOVERSION   "42")
-set(gRPC_CPP_VERSION      "1.65.0-dev")
-set(gRPC_CPP_SOVERSION    "1.65")
+set(gRPC_CPP_VERSION      "1.66.0-dev")
+set(gRPC_CPP_SOVERSION    "1.66")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -1854,7 +1854,6 @@ add_library(grpc
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
-  src/core/client_channel/config_selector.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
   src/core/client_channel/load_balanced_call_destination.cc
@@ -2947,7 +2946,6 @@ add_library(grpc_unsecure
   src/core/client_channel/client_channel_filter.cc
   src/core/client_channel/client_channel_plugin.cc
   src/core/client_channel/client_channel_service_config.cc
-  src/core/client_channel/config_selector.cc
   src/core/client_channel/dynamic_filters.cc
   src/core/client_channel/global_subchannel_pool.cc
   src/core/client_channel/load_balanced_call_destination.cc
@@ -4256,7 +4254,9 @@ foreach(_hdr
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h
   include/grpcpp/generic/async_generic_service.h
+  include/grpcpp/generic/callback_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
@@ -4317,6 +4317,7 @@ foreach(_hdr
   include/grpcpp/impl/completion_queue_tag.h
   include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
+  include/grpcpp/impl/generic_stub_internal.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/interceptor_common.h
@@ -4999,7 +5000,9 @@ foreach(_hdr
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h
   include/grpcpp/generic/async_generic_service.h
+  include/grpcpp/generic/callback_generic_service.h
   include/grpcpp/generic/generic_stub.h
+  include/grpcpp/generic/generic_stub_callback.h
   include/grpcpp/grpcpp.h
   include/grpcpp/health_check_service_interface.h
   include/grpcpp/impl/call.h
@@ -5060,6 +5063,7 @@ foreach(_hdr
   include/grpcpp/impl/completion_queue_tag.h
   include/grpcpp/impl/create_auth_context.h
   include/grpcpp/impl/delegating_channel.h
+  include/grpcpp/impl/generic_stub_internal.h
   include/grpcpp/impl/grpc_library.h
   include/grpcpp/impl/intercepted_channel.h
   include/grpcpp/impl/interceptor_common.h
