@@ -39,6 +39,7 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"

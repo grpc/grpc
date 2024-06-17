@@ -15,14 +15,13 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/closure.h"
