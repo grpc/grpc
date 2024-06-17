@@ -108,6 +108,7 @@ ClientCall::ClientCall(
     RefCountedPtr<Arena> arena,
     RefCountedPtr<UnstartedCallDestination> destination)
     : Call(false, deadline, std::move(arena), event_engine),
+      DualRefCounted("ClientCall"),
       cq_(cq),
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
@@ -153,6 +154,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          ResetDeadline();
           return;
         }
         break;
@@ -168,6 +170,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          ResetDeadline();
           auto* unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
           while (unordered_start != nullptr) {
             auto next = unordered_start->next;
@@ -338,6 +341,8 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           [this, out_status, out_status_details, out_error_string,
            out_trailing_metadata](
               ServerMetadataHandle server_trailing_metadata) {
+            saw_trailing_metadata_.store(true, std::memory_order_relaxed);
+            ResetDeadline();
             GRPC_TRACE_LOG(call, INFO)
                 << DebugTag() << "RecvStatusOnClient "
                 << server_trailing_metadata->DebugString();

@@ -31,6 +31,19 @@ using ServerMetadataHandle = Arena::PoolPtr<ServerMetadata>;
 using ClientMetadata = grpc_metadata_batch;
 using ClientMetadataHandle = Arena::PoolPtr<ClientMetadata>;
 
+// TODO(ctiller): separate when we have different types for client/server
+// metadata.
+template <typename Sink>
+void AbslStringify(Sink& sink, const Arena::PoolPtr<grpc_metadata_batch>& md) {
+  if (md == nullptr) {
+    sink.Append("nullptr");
+    return;
+  }
+  sink.Append("ServerMetadata{");
+  sink.Append(md->DebugString());
+  sink.Append("}");
+}
+
 // Ok/not-ok check for trailing metadata, so that it can be used as result types
 // for TrySeq.
 inline bool IsStatusOk(const ServerMetadataHandle& m) {
@@ -38,8 +51,9 @@ inline bool IsStatusOk(const ServerMetadataHandle& m) {
          GRPC_STATUS_OK;
 }
 
-ServerMetadataHandle ServerMetadataFromStatus(
-    const absl::Status& status, Arena* arena = GetContext<Arena>());
+ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status);
+ServerMetadataHandle CancelledServerMetadataFromStatus(
+    const absl::Status& status);
 
 template <>
 struct StatusCastImpl<ServerMetadataHandle, absl::Status> {

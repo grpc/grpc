@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -295,19 +296,19 @@ PriorityLb::PriorityLb(Args args)
               .GetDurationFromIntMillis(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS)
               .value_or(kDefaultChildFailoverTimeout))) {
   if (GRPC_TRACE_FLAG_ENABLED(priority_lb)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] created", this);
+    LOG(INFO) << "[priority_lb " << this << "] created";
   }
 }
 
 PriorityLb::~PriorityLb() {
   if (GRPC_TRACE_FLAG_ENABLED(priority_lb)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] destroying priority LB policy", this);
+    LOG(INFO) << "[priority_lb " << this << "] destroying priority LB policy";
   }
 }
 
 void PriorityLb::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(priority_lb)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] shutting down", this);
+    LOG(INFO) << "[priority_lb " << this << "] shutting down";
   }
   shutting_down_ = true;
   children_.clear();
@@ -331,7 +332,7 @@ void PriorityLb::ResetBackoffLocked() {
 
 absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(priority_lb)) {
-    gpr_log(GPR_INFO, "[priority_lb %p] received update", this);
+    LOG(INFO) << "[priority_lb " << this << "] received update";
   }
   // Update config.
   config_ = args.config.TakeAsSubclass<PriorityLbConfig>();
