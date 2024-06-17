@@ -50,11 +50,6 @@ BANNED_EXCEPT = {
     ],
     "gpr_log(": [
         "./include/grpc/support/log.h",
-        "./src/core/client_channel/client_channel.cc",
-        "./src/core/client_channel/client_channel_filter.cc",
-        "./src/core/client_channel/load_balanced_call_destination.cc",
-        "./src/core/client_channel/retry_filter_legacy_call_data.cc",
-        "./src/core/client_channel/subchannel.cc",
         "./src/core/ext/filters/backend_metrics/backend_metric_filter.cc",
         "./src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc",
         "./src/core/ext/filters/fault_injection/fault_injection_filter.cc",
