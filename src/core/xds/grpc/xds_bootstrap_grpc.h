@@ -96,6 +96,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
 
     Json ToJson() const;
 
+    bool AllowAuthorityRewriting() const;
+
    private:
     std::string server_uri_;
     RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
