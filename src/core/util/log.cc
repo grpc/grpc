@@ -103,7 +103,7 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
 
 void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
   LOG(ERROR)
-      << "This will not be set. Please set this via absl log level settings";
+      << "This will not be set. Please set this via absl log level settings.";
 }
 
 static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
@@ -150,10 +150,9 @@ void gpr_log_verbosity_init(void) {
 
 void gpr_set_log_function(gpr_log_func f) {
   LOG(ERROR)
-      << "This function is in the process of being deprecated. Your "
-         "gpr_log_func will not work as expected. This is because only few "
-         "instances of gpr_log remain in our code base. All instances of "
-         "gpr_log will log via this custom function. Many of the gpr_log "
+      << "This function is deprecated. Your gpr_log_func will not work as "
+         "expected. This is because only few "
+         "instances of gpr_log remain in our code base. Many of the gpr_log "
          "statements have been converted to ABSL_LOG statements. These will "
          "log to the default absl log sink. The gpr_set_log_function function "
          "will be deleted in the next gRPC release. We strongly advice against "
