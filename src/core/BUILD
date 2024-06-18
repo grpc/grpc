@@ -5142,9 +5142,42 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_client",
+    name = "xds_credentials",
     srcs = [
         "lib/security/credentials/xds/xds_credentials.cc",
+    ],
+    hdrs = [
+        "lib/security/credentials/xds/xds_credentials.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_args",
+        "grpc_lb_xds_channel_args",
+        "grpc_matchers",
+        "grpc_tls_credentials",
+        "unique_type_name",
+        "useful",
+        "xds_certificate_provider",
+        "//:channel_arg_names",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_client",
+    srcs = [
         "xds/grpc/file_watcher_certificate_provider_factory.cc",
         "xds/grpc/xds_audit_logger_registry.cc",
         "xds/grpc/xds_bootstrap_grpc.cc",
@@ -5165,7 +5198,6 @@ grpc_cc_library(
         "xds/grpc/xds_transport_grpc.cc",
     ],
     hdrs = [
-        "lib/security/credentials/xds/xds_credentials.h",
         "xds/grpc/file_watcher_certificate_provider_factory.h",
         "xds/grpc/xds_audit_logger_registry.h",
         "xds/grpc/xds_bootstrap_grpc.h",
@@ -5315,6 +5347,7 @@ grpc_cc_library(
         "validation_errors",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
+        "xds_credentials",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",
@@ -5405,6 +5438,7 @@ grpc_cc_library(
         "unique_type_name",
         "xds_certificate_provider",
         "xds_certificate_provider_store",
+        "xds_credentials",
         "//:api_trace",
         "//:config",
         "//:debug_location",
@@ -5549,6 +5583,7 @@ grpc_cc_library(
         "resolved_address",
         "subchannel_interface",
         "validation_errors",
+        "xds_credentials",
         "xds_dependency_manager",
         "//:call_tracer",
         "//:config",
