@@ -222,6 +222,10 @@ grpc_cc_test(
     srcs = ["bm_call_spine.cc"],
     args = grpc_benchmark_args(),
     external_deps = ["benchmark"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [
         ":call_spine_benchmarks",

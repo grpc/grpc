@@ -85,6 +85,10 @@ grpc_cc_test(
     srcs = ["bm_client_call.cc"],
     args = grpc_benchmark_args(),
     external_deps = ["benchmark"],
+    tags = [
+        "no_mac",
+        "no_windows",
+    ],
     uses_polling = False,
     deps = [
         "//:grpc",
