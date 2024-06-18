@@ -64,6 +64,7 @@
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -201,10 +202,11 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        LocalityData locality_data, std::string hostname)
+        LocalityData locality_data, absl::string_view hostname)
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
           locality_data_(std::move(locality_data)),
-          hostname_(std::move(hostname)) {}
+          hostname_(grpc_event_engine::experimental::Slice::FromCopiedString(
+              hostname)) {}
 
     RefCountedStringValue locality() const {
       return Match(
@@ -226,11 +228,13 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
           });
     }
 
-    const std::string& hostname() const { return hostname_; }
+    const grpc_event_engine::experimental::Slice& hostname() const {
+      return hostname_;
+    }
 
    private:
     LocalityData locality_data_;
-    std::string hostname_;
+    grpc_event_engine::experimental::Slice hostname_;
   };
 
   // A picker that wraps the picker from the child to perform drops.
@@ -251,6 +255,7 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
     RefCountedPtr<XdsEndpointResource::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
     RefCountedPtr<SubchannelPicker> picker_;
+    std::string default_authority_;
   };
 
   class Helper final
@@ -399,7 +404,9 @@ XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
           xds_cluster_impl_lb->cluster_resource_->namespace_telemetry_label),
       drop_config_(xds_cluster_impl_lb->drop_config_),
       drop_stats_(xds_cluster_impl_lb->drop_stats_),
-      picker_(std::move(picker)) {
+      picker_(std::move(picker)),
+      default_authority_(
+          xds_cluster_impl_lb->channel_control_helper()->GetAuthority()) {
   if (GRPC_TRACE_FLAG_ENABLED(xds_cluster_impl_lb)) {
     LOG(INFO) << "[xds_cluster_impl_lb " << xds_cluster_impl_lb
               << "] constructed new picker " << this;
@@ -458,14 +465,27 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
     }
-    // Handle authority rewriting.
-    auto* cluster_name_attribute =
-        call_state->GetCallAttribute<XdsClusterAttribute>();
-
-
-// FIXME
-
-
+    // Handle authority rewriting if needed.
+    if (!subchannel_wrapper->hostname().empty()) {
+      auto* route_state_attribute =
+          call_state->GetCallAttribute<XdsRouteStateAttribute>();
+      if (route_state_attribute != nullptr &&
+          route_state_attribute->route().auto_host_rewrite) {
+        complete_pick->metadata_mutations.Add(
+            ":authority", subchannel_wrapper->hostname().Ref());
+        // If configured, set x-forward-for header to the original authority.
+        // We use the channel's default authority if the header is not
+        // already set.
+        if (route_state_attribute->route().append_x_forwarded_host) {
+          std::string buffer;
+          absl::string_view old_authority =
+              args.initial_metadata->Lookup(":authority", &buffer);
+          if (old_authority.empty()) old_authority = default_authority_;
+          complete_pick->metadata_mutations.Add("x-forwarded-host",
+                                                old_authority);
+        }
+      }
+    }
     // Unwrap subchannel to pass back up the stack.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     // Inject subchannel call tracker to record call completion.
@@ -821,7 +841,7 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
       std::move(locality_data),
-      per_address_args.GetOwnedString(GRPC_ARG_ADDRESS_NAME).value_or(""));
+      per_address_args.GetString(GRPC_ARG_ADDRESS_NAME).value_or(""));
 }
 
 void XdsClusterImplLb::Helper::UpdateState(
