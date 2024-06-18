@@ -53,8 +53,11 @@ class XdsRouteStateAttribute
     return factory.Create();
   }
 
-  virtual bool HasClusterForRoute(absl::string_view cluster_name) const = 0;
   UniqueTypeName type() const override { return TypeName(); }
+
+  virtual bool HasClusterForRoute(absl::string_view cluster_name) const = 0;
+
+  virtual const XdsRouteConfigResource::Route& route() const = 0;
 };
 
 }  // namespace grpc_core
