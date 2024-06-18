@@ -37,6 +37,7 @@
 
 void gpr_default_log(gpr_log_func_args* args);
 void gpr_platform_log(gpr_log_func_args* args);
+static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
   grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
@@ -59,9 +60,9 @@ int gpr_should_log(gpr_log_severity severity) {
   static const absl::LogSeverityAtLeast absl_min_log_level =
       absl::MinLogLevel();
   if (severity == GPR_LOG_SEVERITY_ERROR) {
-    return true;
+    return absl_min_log_level <= absl::LogSeverityAtLeast::kError;
   } else if (severity == GPR_LOG_SEVERITY_INFO) {
-    return absl_min_log_level >= absl::LogSeverityAtLeast::kInfo;
+    return absl_min_log_level <= absl::LogSeverityAtLeast::kInfo;
   } else {
     return VLOG_IS_ON(2);
   }
@@ -101,17 +102,9 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
   reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
 }
 
-void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
+void gpr_set_log_verbosity(gpr_log_severity deprecated_setting) {
   LOG(ERROR)
       << "This will not be set. Please set this via absl log level settings.";
-}
-
-static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
-  if (absl::EqualsIgnoreCase(str, "DEBUG")) return GPR_LOG_SEVERITY_DEBUG;
-  if (absl::EqualsIgnoreCase(str, "INFO")) return GPR_LOG_SEVERITY_INFO;
-  if (absl::EqualsIgnoreCase(str, "ERROR")) return GPR_LOG_SEVERITY_ERROR;
-  if (absl::EqualsIgnoreCase(str, "NONE")) return GPR_LOG_SEVERITY_NONE;
-  return error_value;
 }
 
 void gpr_log_verbosity_init(void) {
@@ -141,21 +134,16 @@ void gpr_log_verbosity_init(void) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
   } else if (verbosity.empty()) {
-    // Do not alter absl
+    // Do not alter absl settings if GRPC_VERBOSITY flag is not set.
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
 #endif  // GRPC_VERBOSITY_MACRO
 }
 
-void gpr_set_log_function(gpr_log_func f) {
+void gpr_set_log_function(gpr_log_func deprecated_setting) {
   LOG(ERROR)
-      << "This function is deprecated. Your gpr_log_func will not work as "
-         "expected. This is because only few "
-         "instances of gpr_log remain in our code base. Many of the gpr_log "
-         "statements have been converted to ABSL_LOG statements. These will "
-         "log to the default absl log sink. The gpr_set_log_function function "
-         "will be deleted in the next gRPC release. We strongly advice against "
-         "using this function. You may create a new absl LogSink with similar "
+      << "This function is deprecated. This function will be deleted in the "
+         "next gRPC release. You may create a new absl LogSink with similar "
          "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
 }

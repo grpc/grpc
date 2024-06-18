@@ -28,7 +28,9 @@
 extern "C" {
 #endif
 
-/** Logging functions in this file are deprecated. Please use absl LOG instead.
+/**
+ * Logging functions in this file are deprecated.
+ * Please use absl ABSL_LOG instead.
  */
 
 /** The severity of a log message - use the #defines below when calling into
@@ -58,7 +60,7 @@ GPRAPI void gpr_log_message(const char* file, int line,
                             gpr_log_severity severity, const char* message);
 
 /** Set global log verbosity */
-GPRAPI void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print);
+GPRAPI void gpr_set_log_verbosity(gpr_log_severity deprecated_setting);
 
 GPRAPI void gpr_log_verbosity_init(void);
 
@@ -76,7 +78,7 @@ typedef struct gpr_log_func_args gpr_log_func_args;
 
 typedef void (*gpr_log_func)(gpr_log_func_args* args);
 
-GPRAPI void gpr_set_log_function(gpr_log_func func);
+GPRAPI void gpr_set_log_function(gpr_log_func deprecated_setting);
 
 #ifdef __cplusplus
 }
