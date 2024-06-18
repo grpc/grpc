@@ -109,10 +109,10 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
   reinterpret_cast<gpr_log_func>(gpr_atm_no_barrier_load(&g_log_func))(&lfargs);
 }
 
-void gpr_set_log_verbosity(gpr_log_severity deprecated_setting) {
+void gpr_set_log_verbosity(
+    [[maybe_unused]] gpr_log_severity deprecated_setting) {
   LOG(ERROR)
-      << "This will not be set. Please set this via absl log level settings. ";
-  DVLOG(3) << deprecated_setting;
+      << "This will not be set. Please set this via absl log level settings.";
 }
 
 void gpr_log_verbosity_init(void) {
@@ -121,6 +121,9 @@ void gpr_log_verbosity_init(void) {
 // Internally grpc verbosity is managed using absl settings.
 // So internally we avoid setting it like this.
 #ifndef GRPC_VERBOSITY_MACRO
+  // SetMinLogLevel sets the value for the entire binary, not just gRPC.
+  // This setting will change things for other libraries/code that is unrelated
+  // to grpc.
   absl::string_view verbosity = grpc_core::ConfigVars::Get().Verbosity();
   DVLOG(2) << "Log verbosity: " << verbosity;
   if (absl::EqualsIgnoreCase(verbosity, "INFO")) {
@@ -149,10 +152,9 @@ void gpr_log_verbosity_init(void) {
 #endif  // GRPC_VERBOSITY_MACRO
 }
 
-void gpr_set_log_function(gpr_log_func deprecated_setting) {
+void gpr_set_log_function([[maybe_unused]] gpr_log_func deprecated_setting) {
   LOG(ERROR)
       << "This function is deprecated. This function will be deleted in the "
          "next gRPC release. You may create a new absl LogSink with similar "
          "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
-  DVLOG(3) << deprecated_setting;
 }
