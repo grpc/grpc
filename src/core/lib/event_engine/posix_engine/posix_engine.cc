@@ -49,7 +49,6 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -436,8 +435,8 @@ struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   EventEngine::TaskHandle handle;
 
   void Run() override {
-    GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p executing callback:%s", engine,
-                            HandleToString(handle).c_str());
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "PosixEventEngine:" << engine << " executing callback:" << handle;
     {
       grpc_core::MutexLock lock(&engine->mu_);
       engine->known_handles_.erase(handle);
@@ -513,8 +512,8 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   grpc_core::MutexLock lock(&mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
-  GRPC_EVENT_ENGINE_TRACE("PosixEventEngine:%p scheduling callback:%s", this,
-                          HandleToString(handle).c_str());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "PosixEventEngine:" << this << " scheduling callback:" << handle;
   timer_manager_->TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
