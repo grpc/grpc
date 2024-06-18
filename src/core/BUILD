@@ -5077,6 +5077,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_certificate_provider",
+    srcs = [
+        "xds/grpc/xds_certificate_provider.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_certificate_provider.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:bind_front",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "channel_args",
+        "error",
+        "grpc_matchers",
+        "grpc_tls_credentials",
+        "unique_type_name",
+        "useful",
+        "//:gpr",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+        "//:tsi_ssl_credentials",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "lib/security/credentials/xds/xds_credentials.cc",
@@ -5084,7 +5116,6 @@ grpc_cc_library(
         "xds/grpc/file_watcher_certificate_provider_factory.cc",
         "xds/grpc/xds_audit_logger_registry.cc",
         "xds/grpc/xds_bootstrap_grpc.cc",
-        "xds/grpc/xds_certificate_provider.cc",
         "xds/grpc/xds_client_grpc.cc",
         "xds/grpc/xds_cluster.cc",
         "xds/grpc/xds_cluster_specifier_plugin.cc",
@@ -5107,7 +5138,6 @@ grpc_cc_library(
         "xds/grpc/file_watcher_certificate_provider_factory.h",
         "xds/grpc/xds_audit_logger_registry.h",
         "xds/grpc/xds_bootstrap_grpc.h",
-        "xds/grpc/xds_certificate_provider.h",
         "xds/grpc/xds_client_grpc.h",
         "xds/grpc/xds_cluster.h",
         "xds/grpc/xds_cluster_specifier_plugin.h",
@@ -5252,6 +5282,7 @@ grpc_cc_library(
         "upb_utils",
         "useful",
         "validation_errors",
+        "xds_certificate_provider",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",
@@ -5340,6 +5371,7 @@ grpc_cc_library(
         "resolved_address",
         "slice_refcount",
         "unique_type_name",
+        "xds_certificate_provider",
         "//:api_trace",
         "//:config",
         "//:debug_location",
