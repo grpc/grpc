@@ -43,6 +43,7 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
@@ -546,6 +547,8 @@ class PromiseActivity final
   }
 
   void WakeupAsync(WakeupMask) final {
+    GRPC_LATENT_SEE_SCOPE("PromiseActivity::WakeupAsync");
+    wakeup_flow_.emplace(GRPC_LATENT_SEE_METADATA("Activity::Wakeup"));
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       this->ScheduleWakeup();
@@ -569,6 +572,8 @@ class PromiseActivity final
   // In response to Wakeup, run the Promise state machine again until it
   // settles. Then check for completion, and if we have completed, call on_done.
   void Step() ABSL_LOCKS_EXCLUDED(mu()) {
+    GRPC_LATENT_SEE_PARENT_SCOPE("PromiseActivity::Step");
+    wakeup_flow_.reset();
     // Poll the promise until things settle out under a lock.
     mu()->Lock();
     if (done_) {
@@ -645,6 +650,7 @@ class PromiseActivity final
     GPR_NO_UNIQUE_ADDRESS Promise promise;
   };
   GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu());
+  absl::optional<latent_see::Flow> wakeup_flow_;
 };
 
 }  // namespace promise_detail

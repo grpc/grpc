@@ -975,6 +975,7 @@ grpc_cc_library(
         "context",
         "dump_args",
         "event_engine_context",
+        "latent_see",
         "no_destruct",
         "poll",
         "promise_factory",
