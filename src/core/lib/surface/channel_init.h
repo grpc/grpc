@@ -177,10 +177,12 @@ class ChannelInit {
    public:
     // TODO(ctiller): Remove grpc_channel_filter* arg when that can be
     // deprecated (once filter stack is removed).
-    explicit FilterRegistration(const grpc_channel_filter* filter,
+    explicit FilterRegistration(UniqueTypeName name,
+                                const grpc_channel_filter* filter,
                                 FilterAdder filter_adder,
                                 SourceLocation registration_source)
-        : filter_(filter),
+        : name_(name),
+          filter_(filter),
           filter_adder_(filter_adder),
           registration_source_(registration_source) {}
     FilterRegistration(const FilterRegistration&) = delete;
@@ -191,14 +193,14 @@ class ChannelInit {
     // the same channel stack type as this registration.
     template <typename Filter>
     FilterRegistration& After() {
-      return After({&Filter::kFilter});
+      return After({UniqueTypeNameFor<Filter>()});
     }
     // Ensure that this filter is placed *before* the filters listed here.
     // By Build() time all filters listed here must also be registered against
     // the same channel stack type as this registration.
     template <typename Filter>
     FilterRegistration& Before() {
-      return Before({&Filter::kFilter});
+      return Before({UniqueTypeNameFor<Filter>()});
     }
 
     // Ensure that this filter is placed *after* the filters listed here.
@@ -206,15 +208,13 @@ class ChannelInit {
     // the same channel stack type as this registration.
     // TODO(ctiller): remove in favor of the version that does not mention
     // grpc_channel_filter
-    FilterRegistration& After(
-        std::initializer_list<const grpc_channel_filter*> filters);
+    FilterRegistration& After(std::initializer_list<UniqueTypeName> filters);
     // Ensure that this filter is placed *before* the filters listed here.
     // By Build() time all filters listed here must also be registered against
     // the same channel stack type as this registration.
     // TODO(ctiller): remove in favor of the version that does not mention
     // grpc_channel_filter
-    FilterRegistration& Before(
-        std::initializer_list<const grpc_channel_filter*> filters);
+    FilterRegistration& Before(std::initializer_list<UniqueTypeName> filters);
     // Add a predicate for this filters inclusion.
     // If the predicate returns true the filter will be included in the stack.
     // Predicates do not affect the ordering of the filter stack: we first
@@ -261,10 +261,11 @@ class ChannelInit {
 
    private:
     friend class ChannelInit;
+    const UniqueTypeName name_;
     const grpc_channel_filter* const filter_;
     const FilterAdder filter_adder_;
-    std::vector<const grpc_channel_filter*> after_;
-    std::vector<const grpc_channel_filter*> before_;
+    std::vector<UniqueTypeName> after_;
+    std::vector<UniqueTypeName> before_;
     std::vector<InclusionPredicate> predicates_;
     bool terminal_ = false;
     bool before_all_ = false;
@@ -282,14 +283,22 @@ class ChannelInit {
     // TODO(ctiller): remove in favor of the version that does not mention
     // grpc_channel_filter
     FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
+                                       UniqueTypeName name,
                                        const grpc_channel_filter* filter,
                                        FilterAdder filter_adder = nullptr,
                                        SourceLocation registration_source = {});
+    FilterRegistration& RegisterFilter(
+        grpc_channel_stack_type type, const grpc_channel_filter* filter,
+        SourceLocation registration_source = {}) {
+      CHECK(filter != nullptr);
+      return RegisterFilter(type, NameFromChannelFilter(filter), filter,
+                            nullptr, registration_source);
+    }
     template <typename Filter>
     FilterRegistration& RegisterFilter(
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
       return RegisterFilter(
-          type, &Filter::kFilter,
+          type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
           [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
           registration_source);
     }
@@ -298,8 +307,7 @@ class ChannelInit {
     template <typename Filter>
     FilterRegistration& RegisterV2Filter(
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
-      return RegisterFilter(type, &Filter::kFilter, nullptr,
-                            registration_source)
+      return RegisterFilter(type, &Filter::kFilter, registration_source)
           .SkipV3();
     }
 
@@ -341,15 +349,18 @@ class ChannelInit {
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
   struct Filter {
-    Filter(const grpc_channel_filter* filter, FilterAdder filter_adder,
-           std::vector<InclusionPredicate> predicates, Version version,
-           Ordering ordering, SourceLocation registration_source)
-        : filter(filter),
+    Filter(UniqueTypeName name, const grpc_channel_filter* filter,
+           FilterAdder filter_adder, std::vector<InclusionPredicate> predicates,
+           Version version, Ordering ordering,
+           SourceLocation registration_source)
+        : name(name),
+          filter(filter),
           filter_adder(filter_adder),
           predicates(std::move(predicates)),
           registration_source(registration_source),
           version(version),
           ordering(ordering) {}
+    UniqueTypeName name;
     const grpc_channel_filter* filter;
     const FilterAdder filter_adder;
     std::vector<InclusionPredicate> predicates;

@@ -70,13 +70,6 @@ class UniqueTypeName {
     std::string* name_;
   };
 
-  // Copyable.
-  UniqueTypeName(const UniqueTypeName& other) : name_(other.name_) {}
-  UniqueTypeName& operator=(const UniqueTypeName& other) {
-    name_ = other.name_;
-    return *this;
-  }
-
   bool operator==(const UniqueTypeName& other) const {
     return name_.data() == other.name_.data();
   }
