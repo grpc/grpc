@@ -379,7 +379,7 @@ class WorkSerializer::DispatchingWorkSerializer final
   CallbackVector incoming_ ABSL_GUARDED_BY(mu_);
 
 #ifdef GRPC_ENABLE_LATENT_SEE
-  absl::optional<grpc_core::latent_see::Flow> flow_;
+  absl::optional<latent_see::Flow> flow_;
 #endif
 
 #ifndef NDEBUG

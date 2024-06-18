@@ -2621,6 +2621,7 @@ add_library(grpc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_util.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   src/core/xds/grpc/certificate_provider_store.cc
   src/core/xds/grpc/file_watcher_certificate_provider_factory.cc
   src/core/xds/grpc/xds_audit_logger_registry.cc
@@ -3335,6 +3336,7 @@ add_library(grpc_unsecure
   src/core/util/json/json_object_loader.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -5412,6 +5414,7 @@ add_library(grpc_authorization_provider
   src/core/tsi/transport_security_grpc.cc
   src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
   third_party/upb/upb/mini_descriptor/internal/base92.c
@@ -6063,7 +6066,9 @@ add_executable(activity_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8625,6 +8630,7 @@ add_executable(call_filters_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/ref_counted_string.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
@@ -8655,6 +8661,7 @@ add_executable(call_filters_test
   src/core/lib/transport/parsed_metadata.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/util/latent_see.cc
   test/core/transport/call_filters_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -9150,6 +9157,7 @@ add_executable(call_utils_test
   src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   test/core/call/call_utils_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -9587,6 +9595,7 @@ add_executable(cancel_callback_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -9605,6 +9614,7 @@ add_executable(cancel_callback_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/cancel_callback_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -10695,6 +10705,7 @@ add_executable(chunked_vector_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -10713,6 +10724,7 @@ add_executable(chunked_vector_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/gprpp/chunked_vector_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -14005,6 +14017,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14017,6 +14030,7 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -14806,6 +14820,7 @@ add_executable(flow_control_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14825,6 +14840,7 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/util/latent_see.cc
   test/core/transport/chttp2/flow_control_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -14893,6 +14909,7 @@ add_executable(for_each_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -14911,6 +14928,7 @@ add_executable(for_each_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/for_each_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -18341,7 +18359,9 @@ add_executable(inter_activity_pipe_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -18620,6 +18640,7 @@ add_executable(interception_chain_test
   src/core/telemetry/stats_data.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/json/json_writer.cc
+  src/core/util/latent_see.cc
   test/core/transport/interception_chain_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -18695,6 +18716,7 @@ add_executable(interceptor_list_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -18713,6 +18735,7 @@ add_executable(interceptor_list_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/interceptor_list_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -19488,7 +19511,9 @@ add_executable(latch_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19907,6 +19932,7 @@ add_executable(map_pipe_test
   src/core/lib/experiments/experiments.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/gprpp/status_helper.cc
   src/core/lib/gprpp/time.cc
   src/core/lib/iomgr/closure.cc
@@ -19925,6 +19951,7 @@ add_executable(map_pipe_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/latent_see.cc
   test/core/promise/map_pipe_test.cc
   third_party/upb/upb/mini_descriptor/build_enum.c
   third_party/upb/upb/mini_descriptor/decode.c
@@ -20894,7 +20921,9 @@ add_executable(mpsc_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/mpsc_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21395,7 +21424,9 @@ add_executable(observable_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/observable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23278,7 +23309,9 @@ add_executable(promise_mutex_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33042,7 +33075,9 @@ add_executable(wait_for_callback_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/gprpp/dump_args.cc
   src/core/lib/gprpp/glob.cc
+  src/core/lib/gprpp/per_cpu.cc
   src/core/lib/promise/activity.cc
+  src/core/util/latent_see.cc
   test/core/promise/wait_for_callback_test.cc
 )
 if(WIN32 AND MSVC)
