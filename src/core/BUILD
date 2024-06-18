@@ -3475,6 +3475,7 @@ grpc_cc_library(
     hdrs = ["load_balancing/lb_policy.h"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
