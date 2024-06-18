@@ -65,11 +65,12 @@ int gpr_should_log(gpr_log_severity severity) {
       // MinLogLevel is. We could have saved this in a static const variable.
       // But decided against it just in case anyone programatically sets absl
       // min log level settings after this has been initialized.
+      // Same holds for VLOG_IS_ON(2).
       return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kInfo;
     case GPR_LOG_SEVERITY_DEBUG:
       return VLOG_IS_ON(2);
     default:
-      VLOG(2) << "Invalid gpr_log_severity.";
+      DLOG(ERROR) << "Invalid gpr_log_severity.";
       return true;
   }
 }
