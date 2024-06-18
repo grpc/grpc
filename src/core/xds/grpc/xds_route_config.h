@@ -170,16 +170,22 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
       absl::variant<ClusterName, std::vector<ClusterWeight>,
                     ClusterSpecifierPluginName>
           action;
+
       // Storing the timeout duration from route action:
       // RouteAction.max_stream_duration.grpc_timeout_header_max or
       // RouteAction.max_stream_duration.max_stream_duration if the former is
       // not set.
       absl::optional<Duration> max_stream_duration;
 
+      bool auto_host_rewrite = false;
+      bool append_x_forwarded_host = false;
+
       bool operator==(const RouteAction& other) const {
         return hash_policies == other.hash_policies &&
                retry_policy == other.retry_policy && action == other.action &&
-               max_stream_duration == other.max_stream_duration;
+               max_stream_duration == other.max_stream_duration &&
+               auto_host_rewrite == other.auto_host_rewrite &&
+               append_x_forwarded_host == other.append_x_forwarded_host;
       }
       std::string ToString() const;
     };
