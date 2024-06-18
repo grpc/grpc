@@ -384,23 +384,26 @@ std::vector<QueuedRead> MakeSchedule(
 
 Duration ScheduleReads(
     const fuzzer_input::NetworkInput& network_input,
-    grpc_endpoint* mock_endpoint,
+    std::shared_ptr<grpc_event_engine::experimental::MockEndpointControl>
+        mock_endpoint_control,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine) {
   int delay = 0;
   for (const auto& q : MakeSchedule(network_input)) {
     event_engine->RunAfterExactly(
         std::chrono::milliseconds(q.delay_ms),
-        [mock_endpoint, slices = q.slices.JoinIntoSlice()]() mutable {
+        [mock_endpoint_control, slices = q.slices.JoinIntoSlice()]() mutable {
           ExecCtx exec_ctx;
-          grpc_mock_endpoint_put_read(mock_endpoint, slices.TakeCSlice());
+          mock_endpoint_control->TriggerReadEvent(
+              std::move(grpc_event_engine::experimental::internal::SliceCast<
+                        grpc_event_engine::experimental::Slice>(slices)));
         });
     delay = std::max(delay, q.delay_ms);
   }
-  event_engine->RunAfterExactly(
-      std::chrono::milliseconds(delay + 1), [mock_endpoint] {
-        ExecCtx exec_ctx;
-        grpc_mock_endpoint_finish_put_reads(mock_endpoint);
-      });
+  event_engine->RunAfterExactly(std::chrono::milliseconds(delay + 1),
+                                [mock_endpoint_control] {
+                                  ExecCtx exec_ctx;
+                                  mock_endpoint_control->NoMoreReads();
+                                });
   return Duration::Milliseconds(delay + 2);
 }
 

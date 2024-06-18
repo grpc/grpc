@@ -68,10 +68,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     auto engine = GetDefaultEventEngine();
     grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(engine);
-
-    grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
-    grpc_mock_endpoint_finish_put_reads(mock_endpoint);
+    auto endpoint_control =
+        grpc_event_engine::experimental::grpc_mock_endpoint_get_control(
+            mock_endpoint);
+    endpoint_control->TriggerReadEvent(
+        grpc_event_engine::experimental::Slice::FromCopiedBuffer(
+            reinterpret_cast<const char*>(data), size));
+    endpoint_control->NoMoreReads();
 
     // Load key pair and establish server SSL credentials.
     std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);

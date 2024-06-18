@@ -43,7 +43,9 @@ class ConfigurationTest : public ::testing::Test {
   ConfigurationTest() {
     auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
     mock_endpoint_ = grpc_mock_endpoint_create(engine);
-    grpc_mock_endpoint_finish_put_reads(mock_endpoint_);
+    grpc_event_engine::experimental::grpc_mock_endpoint_get_control(
+        mock_endpoint_)
+        ->NoMoreReads();
     args_ = args_.SetObject(ResourceQuota::Default());
     args_ = args_.SetObject(std::move(engine));
   }

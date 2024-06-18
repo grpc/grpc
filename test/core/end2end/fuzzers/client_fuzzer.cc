@@ -58,8 +58,11 @@ class ClientFuzzer final : public BasicFuzzer {
   explicit ClientFuzzer(const fuzzer_input::Msg& msg)
       : BasicFuzzer(msg.event_engine_actions()) {
     ExecCtx exec_ctx;
-    UpdateMinimumRunTime(
-        ScheduleReads(msg.network_input()[0], mock_endpoint_, engine().get()));
+    UpdateMinimumRunTime(ScheduleReads(
+        msg.network_input()[0],
+        grpc_event_engine::experimental::grpc_mock_endpoint_get_control(
+            mock_endpoint_),
+        engine().get()));
     ChannelArgs args =
         CoreConfiguration::Get()
             .channel_args_preconditioning()

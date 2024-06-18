@@ -28,21 +28,49 @@
 
 grpc_endpoint* grpc_mock_endpoint_create(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine);
-void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice);
-void grpc_mock_endpoint_finish_put_reads(grpc_endpoint* ep);
 
 namespace grpc_event_engine {
 namespace experimental {
 
-class MockEndpoint : public EventEngine::Endpoint {
+// Internal controller object for mock endpoint operations.
+//
+// This helps avoid shared ownership issus. The endpoint itself may destroyed
+// while a fuzzer is still attempting to use it (e.g., the transport is closed,
+// and a fuzzer still wants to schedule reads).
+class MockEndpointControl {
  public:
-  explicit MockEndpoint(std::shared_ptr<EventEngine> engine);
-
-  ~MockEndpoint() override;
+  explicit MockEndpointControl(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)) {}
+  ~MockEndpointControl();
 
   // ---- mock methods ----
   void TriggerReadEvent(Slice read_data);
   void NoMoreReads();
+  void Read(absl::AnyInvocable<void(absl::Status)> on_read,
+            SliceBuffer* buffer);
+
+  // ---- accessors ----
+  EventEngine* engine() { return engine_.get(); }
+
+ private:
+  std::shared_ptr<EventEngine> engine_;
+  grpc_core::Mutex mu_;
+  bool reads_done_ ABSL_GUARDED_BY(mu_) = false;
+  SliceBuffer read_buffer_ ABSL_GUARDED_BY(mu_);
+  absl::AnyInvocable<void(absl::Status)> on_read_ ABSL_GUARDED_BY(mu_);
+  SliceBuffer* on_read_slice_buffer_ ABSL_GUARDED_BY(mu_) = nullptr;
+};
+
+class MockEndpoint : public EventEngine::Endpoint {
+ public:
+  explicit MockEndpoint(std::shared_ptr<EventEngine> engine);
+  ~MockEndpoint() override = default;
+
+  // ---- mock methods ----
+  // Get a reffed-added MockEndpointControl object.
+  std::shared_ptr<MockEndpointControl> endpoint_control() {
+    return endpoint_control_;
+  }
 
   // ---- overrides ----
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
@@ -53,15 +81,13 @@ class MockEndpoint : public EventEngine::Endpoint {
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
 
  private:
-  std::shared_ptr<EventEngine> engine_;
-  grpc_core::Mutex mu_;
-  SliceBuffer read_buffer_ ABSL_GUARDED_BY(mu_);
-  bool reads_done_ ABSL_GUARDED_BY(mu_) = false;
-  absl::AnyInvocable<void(absl::Status)> on_read_ ABSL_GUARDED_BY(mu_);
-  SliceBuffer* on_read_slice_buffer_ ABSL_GUARDED_BY(mu_) = nullptr;
+  std::shared_ptr<MockEndpointControl> endpoint_control_;
   EventEngine::ResolvedAddress peer_addr_;
   EventEngine::ResolvedAddress local_addr_;
 };
+
+std::shared_ptr<MockEndpointControl> grpc_mock_endpoint_get_control(
+    grpc_endpoint* ep);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
