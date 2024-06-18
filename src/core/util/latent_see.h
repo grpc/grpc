@@ -16,6 +16,7 @@
 #define LATENT_SEE_H
 
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "time_precise.h"
@@ -35,23 +36,32 @@ struct Metadata {
   const char* name;
 };
 
-enum class EventType : uint8_t { kBegin, kEnd };
+enum class EventType : uint8_t { kBegin, kEnd, kFlowStart, kFlowEnd, kMark };
 
 class Log {
  public:
   static void FlushThreadLog() {
     auto& log = Get();
-    auto batch_id = log.next_batch_id_.fetch_add(1, std::memory_order_relaxed);
+    const auto batch_id =
+        log.next_batch_id_.fetch_add(1, std::memory_order_relaxed);
     auto& fragment = log.fragments_.this_cpu();
-    MutexLock lock(&fragment.mu);
-    fragment.events.push_back(
-        Batch{thread_id_, batch_id, std::move(thread_events_)});
-    thread_events_.clear();
+    auto& thread_events = thread_events_;
+    const auto thread_id = thread_id_;
+    {
+      MutexLock lock(&fragment.mu);
+      for (auto event : thread_events) {
+        fragment.events.push_back(RecordedEvent{thread_id, batch_id, event});
+      }
+    }
+    thread_events.clear();
   }
 
-  static void Append(const Metadata* metadata, EventType type) {
-    thread_events_.push_back(Event{metadata, gpr_get_cycle_counter(), type});
+  static void Append(const Metadata* metadata, EventType type, uint64_t id) {
+    thread_events_.push_back(
+        Event{metadata, gpr_get_cycle_counter(), id, type});
   }
+
+  static std::string GenerateJson();
 
  private:
   Log() = default;
@@ -64,12 +74,13 @@ class Log {
   struct Event {
     const Metadata* metadata;
     gpr_cycle_counter timestamp;
+    uint64_t id;
     EventType type;
   };
-  struct Batch {
+  struct RecordedEvent {
     uint64_t thread_id;
     uint64_t batch_id;
-    std::vector<Event> events;
+    Event event;
   };
   std::atomic<uint64_t> next_thread_id_{0};
   std::atomic<uint64_t> next_batch_id_{0};
@@ -77,7 +88,7 @@ class Log {
   static thread_local uint64_t thread_id_;
   struct Fragment {
     Mutex mu;
-    std::vector<Batch> events ABSL_GUARDED_BY(mu);
+    std::vector<RecordedEvent> events ABSL_GUARDED_BY(mu);
   };
   PerCpu<Fragment> fragments_{PerCpuOptions()};
 };
@@ -85,15 +96,41 @@ class Log {
 class Scope {
  public:
   explicit Scope(const Metadata* metadata) : metadata_(metadata) {
-    Log::Append(metadata_, EventType::kBegin);
+    Log::Append(metadata_, EventType::kBegin, 0);
   }
-  ~Scope() { Log::Append(metadata_, EventType::kEnd); }
+  ~Scope() { Log::Append(metadata_, EventType::kEnd, 0); }
 
   Scope(const Scope&) = delete;
   Scope& operator=(const Scope&) = delete;
 
  private:
   const Metadata* const metadata_;
+};
+
+class Flow {
+ public:
+  explicit Flow(const Metadata* metadata) : metadata_(metadata) {
+    Log::Append(metadata_, EventType::kFlowStart, id_);
+  }
+  ~Flow() {
+    if (metadata_ != nullptr) Log::Append(metadata_, EventType::kFlowEnd, id_);
+  }
+
+  Flow(const Flow&) = delete;
+  Flow& operator=(const Flow&) = delete;
+  Flow(Flow&& other) noexcept
+      : metadata_(std::exchange(other.metadata_, nullptr)), id_(other.id_) {}
+  Flow& operator=(Flow&& other) noexcept {
+    if (metadata_ != nullptr) Log::Append(metadata_, EventType::kFlowEnd, id_);
+    metadata_ = std::exchange(other.metadata_, nullptr);
+    id_ = other.id_;
+    return *this;
+  }
+
+ private:
+  const Metadata* metadata_;
+  uint64_t id_{next_flow_id_.fetch_add(1, std::memory_order_relaxed)};
+  static std::atomic<uint64_t> next_flow_id_;
 };
 
 class ParentScope : public Scope {
