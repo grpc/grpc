@@ -35,12 +35,6 @@ std::string Log::GenerateJson() {
     MutexLock lock(&fragment.mu);
     events.insert(events.end(), fragment.events.begin(), fragment.events.end());
   }
-  /*
-  std::stable_sort(events.begin(), events.end(),
-                   [](const RecordedEvent& a, const RecordedEvent& b) {
-                     return a.batch_id < b.batch_id;
-                   });
-*/
   absl::optional<std::chrono::steady_clock::time_point> start_time;
   for (auto& event : events) {
     if (!start_time.has_value() || *start_time > event.event.timestamp) {

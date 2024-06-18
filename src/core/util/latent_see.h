@@ -15,17 +15,17 @@
 #ifndef LATENT_SEE_H
 #define LATENT_SEE_H
 
+#ifdef GRPC_ENABLE_LATENT_SEE
 #include <chrono>
 #include <cstdint>
 #include <utility>
 #include <vector>
 
+#include "absl/log/log.h"
+
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/sync.h"
 
-#define GRPC_ENABLE_LATENT_SEE
-
-#ifdef GRPC_ENABLE_LATENT_SEE
 namespace grpc_core {
 namespace latent_see {
 
@@ -52,6 +52,7 @@ class Log {
   static Log& Get() {
     static Log* log = []() {
       atexit([] {
+        LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
         FILE* f = fopen("latent_see.json", "w");
         if (f == nullptr) return;
         fprintf(f, "%s", log->GenerateJson().c_str());
@@ -154,14 +155,21 @@ class Flow {
                                                        #name};             \
     return &metadata;                                                      \
   }()
+// Parent scope: logs a begin and end event, and flushes the thread log on scope
+// exit.
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name)                       \
   grpc_core::latent_see::ParentScope latent_see_scope##__LINE__( \
       GRPC_LATENT_SEE_METADATA(name))
+// Scope: logs a begin and end event. Lighter weight than parent scope, but does
+// not flush the thread state - so should only be enclosed by a parent scope.
 #define GRPC_LATENT_SEE_SCOPE(name)                        \
   grpc_core::latent_see::Scope latent_see_scope##__LINE__( \
       GRPC_LATENT_SEE_METADATA(name))
+// Mark: logs a single event.
 #define GRPC_LATENT_SEE_MARK(name) \
   grpc_core::latent_see::Mark(GRPC_LATENT_SEE_METADATA(name))
+// Flow: creates a movable object that logs a flow start and end event -
+// potentially across threads.
 #define GRPC_LATENT_SEE_FLOW(name) \
   grpc_core::latent_see::Flow(GRPC_LATENT_SEE_METADATA(name))
 #else

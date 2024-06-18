@@ -223,8 +223,7 @@ void Party::RunLocked() {
     } else {
       // But if there's already a party queued, we're better off asking event
       // engine to run it so we can spread load.
-      event_engine()->Run([this, flow = GRPC_LATENT_SEE_FLOW(
-                                     "Party::RunLocked::Next")]() mutable {
+      event_engine()->Run([this]() mutable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         RunLocked();
