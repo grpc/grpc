@@ -14,6 +14,7 @@
 
 #include <benchmark/benchmark.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/grpc.h>
