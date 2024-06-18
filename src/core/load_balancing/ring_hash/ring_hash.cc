@@ -301,8 +301,7 @@ class RingHash final : public LoadBalancingPolicy {
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto* hash_attribute = static_cast<RequestHashAttribute*>(
-      call_state->GetCallAttribute(RequestHashAttribute::TypeName()));
+  auto* hash_attribute = call_state->GetCallAttribute<RequestHashAttribute>();
   if (hash_attribute == nullptr) {
     return PickResult::Fail(absl::InternalError("hash attribute not present"));
   }

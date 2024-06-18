@@ -49,6 +49,11 @@ namespace grpc_core {
 // LB policies to access internal call attributes.
 class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
  public:
+  template <typename A>
+  A* GetCallAttribute() const {
+    return static_cast<A*>(GetCallAttribute(A::TypeName()));
+  }
+
   virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const = 0;
   virtual ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const = 0;

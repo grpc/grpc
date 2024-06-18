@@ -210,11 +210,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       /// be used.
       std::unique_ptr<SubchannelCallTrackerInterface> subchannel_call_tracker;
 
+      /// If set, the ":authority" header for the RPC will be set to
+      /// this value, if not already explicitly set by the application.
+      // TODO(roth): Before making this API public, use some idiomatic C++
+      // slice type here.
+      grpc_slice authority_override;
+
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
-          std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr)
+          std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr,
+          grpc_slice authority = grpc_empty_slice())
           : subchannel(std::move(sc)),
-            subchannel_call_tracker(std::move(tracker)) {}
+            subchannel_call_tracker(std::move(tracker)),
+            authority_override(authority) {}
     };
 
     /// Pick cannot be completed until something changes on the control

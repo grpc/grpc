@@ -208,6 +208,12 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
           complete_pick->subchannel_call_tracker->Start();
           SetContext(complete_pick->subchannel_call_tracker.release());
         }
+        // Override authority if appropriate.
+        Slice authority_override(complete_pick->authority_override);
+        if (!authority_override.empty()) {
+          send_initial_metadata()->Set(HttpAuthorityMetadata(),
+                                       std::move(authority_override));
+        }
         // Return the connected subchannel.
         return call_destination;
       },

@@ -2716,6 +2716,12 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         if (lb_subchannel_call_tracker_ != nullptr) {
           lb_subchannel_call_tracker_->Start();
         }
+        // Override authority if appropriate.
+        Slice authority_override(complete_pick->authority_override);
+        if (!authority_override.empty()) {
+          send_initial_metadata()->Set(HttpAuthorityMetadata(),
+                                       std::move(authority_override));
+        }
         return true;
       },
       // QueuePick

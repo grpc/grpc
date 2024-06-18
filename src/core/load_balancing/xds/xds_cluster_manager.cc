@@ -228,8 +228,8 @@ class XdsClusterManagerLb final : public LoadBalancingPolicy {
 XdsClusterManagerLb::PickResult XdsClusterManagerLb::ClusterPicker::Pick(
     PickArgs args) {
   auto* call_state = static_cast<ClientChannelLbCallState*>(args.call_state);
-  auto* cluster_name_attribute = static_cast<XdsClusterAttribute*>(
-      call_state->GetCallAttribute(XdsClusterAttribute::TypeName()));
+  auto* cluster_name_attribute =
+      call_state->GetCallAttribute<XdsClusterAttribute>();
   absl::string_view cluster_name;
   if (cluster_name_attribute != nullptr) {
     cluster_name = cluster_name_attribute->cluster();

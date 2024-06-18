@@ -201,9 +201,10 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
 
     StatsSubchannelWrapper(
         RefCountedPtr<SubchannelInterface> wrapped_subchannel,
-        LocalityData locality_data)
+        LocalityData locality_data, std::string hostname)
         : DelegatingSubchannel(std::move(wrapped_subchannel)),
-          locality_data_(std::move(locality_data)) {}
+          locality_data_(std::move(locality_data)),
+          hostname_(std::move(hostname)) {}
 
     RefCountedStringValue locality() const {
       return Match(
@@ -225,8 +226,11 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
           });
     }
 
+    const std::string& hostname() const { return hostname_; }
+
    private:
     LocalityData locality_data_;
+    std::string hostname_;
   };
 
   // A picker that wraps the picker from the child to perform drops.
@@ -454,6 +458,14 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
       locality_stats = subchannel_wrapper->locality_stats()->Ref(
           DEBUG_LOCATION, "SubchannelCallTracker");
     }
+    // Handle authority rewriting.
+    auto* cluster_name_attribute =
+        call_state->GetCallAttribute<XdsClusterAttribute>();
+
+
+// FIXME
+
+
     // Unwrap subchannel to pass back up the stack.
     complete_pick->subchannel = subchannel_wrapper->wrapped_subchannel();
     // Inject subchannel call tracker to record call completion.
@@ -808,7 +820,8 @@ RefCountedPtr<SubchannelInterface> XdsClusterImplLb::Helper::CreateSubchannel(
   return MakeRefCounted<StatsSubchannelWrapper>(
       parent()->channel_control_helper()->CreateSubchannel(
           address, per_address_args, args),
-      std::move(locality_data));
+      std::move(locality_data),
+      per_address_args.GetOwnedString(GRPC_ARG_ADDRESS_NAME).value_or(""));
 }
 
 void XdsClusterImplLb::Helper::UpdateState(
