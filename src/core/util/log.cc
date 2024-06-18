@@ -59,8 +59,7 @@ const char* gpr_log_severity_string(gpr_log_severity severity) {
 int gpr_should_log(gpr_log_severity severity) {
   switch (severity) {
     case GPR_LOG_SEVERITY_ERROR:
-      //  This function is documentented to be inexpensive.
-      return VLOG_IS_ON(2);
+      return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kError;
     case GPR_LOG_SEVERITY_INFO:
       // There is no documentation about how expensive or inexpensive
       // MinLogLevel is. We could have saved this in a static const variable.
@@ -68,7 +67,7 @@ int gpr_should_log(gpr_log_severity severity) {
       // min log level settings after this has been initialized.
       return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kInfo;
     case GPR_LOG_SEVERITY_DEBUG:
-      return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kError;
+      return VLOG_IS_ON(2);
     default:
       VLOG(2) << "Invalid gpr_log_severity.";
       return true;
