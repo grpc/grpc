@@ -57,14 +57,22 @@ const char* gpr_log_severity_string(gpr_log_severity severity) {
 }
 
 int gpr_should_log(gpr_log_severity severity) {
-  static const absl::LogSeverityAtLeast absl_min_log_level =
-      absl::MinLogLevel();
-  if (severity == GPR_LOG_SEVERITY_ERROR) {
-    return absl_min_log_level <= absl::LogSeverityAtLeast::kError;
-  } else if (severity == GPR_LOG_SEVERITY_INFO) {
-    return absl_min_log_level <= absl::LogSeverityAtLeast::kInfo;
-  } else {
-    return VLOG_IS_ON(2);
+  // Concern : This may cause a slight performance degradation.
+  switch (severity) {
+    case GPR_LOG_SEVERITY_ERROR:
+      //  This function is documentented to be inexpensive.
+      return VLOG_IS_ON(2);
+    case GPR_LOG_SEVERITY_INFO:
+      // There is no documentation about how expensive or inexpensive
+      // MinLogLevel is. We could have saved this in a static const variable.
+      // But decided against it just in case anyone programatically sets absl
+      // min log level settings after this has been initialized.
+      return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kInfo;
+    case GPR_LOG_SEVERITY_DEBUG:
+      return absl::MinLogLevel() <= absl::LogSeverityAtLeast::kError;
+    default:
+      VLOG(2) << "Invalid gpr_log_severity.";
+      return true;
   }
 }
 
