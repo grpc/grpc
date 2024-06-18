@@ -30,7 +30,6 @@
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/gprpp/crash.h"
 
@@ -44,8 +43,8 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
   EventEngine::TaskHandle handle;
 
   void Run() override {
-    GRPC_EVENT_ENGINE_TRACE("CFEventEngine:%p executing callback:%s", engine,
-                            HandleToString(handle).c_str());
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "CFEventEngine:" << engine << " executing callback:" << handle;
     {
       grpc_core::MutexLock lock(&engine->task_mu_);
       engine->known_handles_.erase(handle);
@@ -145,9 +144,8 @@ bool CFEventEngine::CancelConnectInternal(ConnectionHandle handle,
   grpc_core::MutexLock lock(&conn_mu_);
 
   if (!conn_handles_.contains(handle)) {
-    GRPC_EVENT_ENGINE_TRACE(
-        "Unknown connection handle: %s",
-        HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "Unknown connection handle: " << handle;
     return false;
   }
   conn_handles_.erase(handle);
@@ -210,8 +208,8 @@ EventEngine::TaskHandle CFEventEngine::RunAfterInternal(
   grpc_core::MutexLock lock(&task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
-  GRPC_EVENT_ENGINE_TRACE("CFEventEngine:%p scheduling callback:%s", this,
-                          HandleToString(handle).c_str());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "CFEventEngine:" << this << " scheduling callback:" << handle;
   timer_manager_.TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
