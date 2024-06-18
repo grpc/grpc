@@ -100,7 +100,7 @@ other programming languages. While the minor versions are released in
 lock-step with other languages in the repo (e.g. 1.63.0 is guaranteed to exist
 for all languages), patch versions may be specific to only a single
 language. For example, if 1.63.1 is a C++-specific patch, 1.63.1 may not be
-uploaded to PyPi. As a result, it is _not_ a good assumption that the latest
+uploaded to PyPi. As a result, it is __not__ a good assumption that the latest
 patch for a given minor version on Github is also the latest patch for that
 same minor version on PyPi.
 
