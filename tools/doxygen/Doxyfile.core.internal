@@ -2733,6 +2733,7 @@ src/core/util/time.cc \
 src/core/util/time_precise.cc \
 src/core/util/time_precise.h \
 src/core/util/tmpfile.h \
+src/core/util/upb_utils.h \
 src/core/util/useful.h \
 src/core/util/windows/cpu.cc \
 src/core/util/windows/log.cc \
@@ -2745,7 +2746,6 @@ src/core/xds/grpc/certificate_provider_store.cc \
 src/core/xds/grpc/certificate_provider_store.h \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.cc \
 src/core/xds/grpc/file_watcher_certificate_provider_factory.h \
-src/core/xds/grpc/upb_utils.h \
 src/core/xds/grpc/xds_audit_logger_registry.cc \
 src/core/xds/grpc/xds_audit_logger_registry.h \
 src/core/xds/grpc/xds_bootstrap_grpc.cc \

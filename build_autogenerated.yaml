@@ -1218,9 +1218,9 @@ libs:
   - src/core/util/json/json_util.h
   - src/core/util/json/json_writer.h
   - src/core/util/spinlock.h
+  - src/core/util/upb_utils.h
   - src/core/xds/grpc/certificate_provider_store.h
   - src/core/xds/grpc/file_watcher_certificate_provider_factory.h
-  - src/core/xds/grpc/upb_utils.h
   - src/core/xds/grpc/xds_audit_logger_registry.h
   - src/core/xds/grpc/xds_bootstrap_grpc.h
   - src/core/xds/grpc/xds_certificate_provider.h
@@ -2690,7 +2690,7 @@ libs:
   - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/spinlock.h
-  - src/core/xds/grpc/upb_utils.h
+  - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
   - third_party/upb/upb/mini_descriptor/build_enum.h
   - third_party/upb/upb/mini_descriptor/decode.h

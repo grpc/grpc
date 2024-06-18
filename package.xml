@@ -1933,6 +1933,7 @@
     <file baseinstalldir="/" name="src/core/util/time_precise.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/tmpfile.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/useful.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/log.cc" role="src" />
@@ -1945,7 +1946,6 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/certificate_provider_store.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/file_watcher_certificate_provider_factory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/xds/grpc/upb_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_audit_logger_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_bootstrap_grpc.cc" role="src" />
