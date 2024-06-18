@@ -58,7 +58,7 @@ class ClientFuzzer final : public BasicFuzzer {
   explicit ClientFuzzer(const fuzzer_input::Msg& msg)
       : BasicFuzzer(msg.event_engine_actions()),
         mock_endpoint_control_(
-            grpc_event_engine::experimental::MockEndpointControl::Create(
+            grpc_event_engine::experimental::MockEndpointController::Create(
                 engine())) {
     ExecCtx exec_ctx;
     UpdateMinimumRunTime(ScheduleReads(msg.network_input()[0],
@@ -94,7 +94,7 @@ class ClientFuzzer final : public BasicFuzzer {
   grpc_server* server() override { return nullptr; }
   grpc_channel* channel() override { return channel_; }
 
-  std::shared_ptr<grpc_event_engine::experimental::MockEndpointControl>
+  std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
       mock_endpoint_control_;
   grpc_channel* channel_ = nullptr;
 };

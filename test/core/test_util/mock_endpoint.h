@@ -34,14 +34,14 @@ namespace experimental {
 // This helps avoid shared ownership issus. The endpoint itself may destroyed
 // while a fuzzer is still attempting to use it (e.g., the transport is closed,
 // and a fuzzer still wants to schedule reads).
-class MockEndpointControl
-    : public std::enable_shared_from_this<MockEndpointControl> {
+class MockEndpointController
+    : public std::enable_shared_from_this<MockEndpointController> {
  public:
   // Factory method ensures this class is always a shared_ptr.
-  static std::shared_ptr<MockEndpointControl> Create(
+  static std::shared_ptr<MockEndpointController> Create(
       std::shared_ptr<EventEngine> engine);
 
-  ~MockEndpointControl();
+  ~MockEndpointController();
 
   // ---- mock methods ----
   void TriggerReadEvent(Slice read_data);
@@ -55,7 +55,7 @@ class MockEndpointControl
   EventEngine* engine() { return engine_.get(); }
 
  private:
-  explicit MockEndpointControl(std::shared_ptr<EventEngine> engine);
+  explicit MockEndpointController(std::shared_ptr<EventEngine> engine);
 
   std::shared_ptr<EventEngine> engine_;
   grpc_core::Mutex mu_;
@@ -72,11 +72,7 @@ class MockEndpoint : public EventEngine::Endpoint {
   ~MockEndpoint() override = default;
 
   // ---- mock methods ----
-  // Get a reffed-added MockEndpointControl object.
-  std::shared_ptr<MockEndpointControl> endpoint_control() {
-    return endpoint_control_;
-  }
-  void SetController(std::shared_ptr<MockEndpointControl> endpoint_control) {
+  void SetController(std::shared_ptr<MockEndpointController> endpoint_control) {
     endpoint_control_ = std::move(endpoint_control);
   }
 
@@ -89,13 +85,10 @@ class MockEndpoint : public EventEngine::Endpoint {
   const EventEngine::ResolvedAddress& GetLocalAddress() const override;
 
  private:
-  std::shared_ptr<MockEndpointControl> endpoint_control_;
+  std::shared_ptr<MockEndpointController> endpoint_control_;
   EventEngine::ResolvedAddress peer_addr_;
   EventEngine::ResolvedAddress local_addr_;
 };
-
-std::shared_ptr<MockEndpointControl> grpc_mock_endpoint_get_control(
-    grpc_endpoint* ep);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

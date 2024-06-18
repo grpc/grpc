@@ -43,13 +43,13 @@ class ConfigurationTest : public ::testing::Test {
   ConfigurationTest() {
     auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
     mock_endpoint_control_ =
-        grpc_event_engine::experimental::MockEndpointControl::Create(engine);
+        grpc_event_engine::experimental::MockEndpointController::Create(engine);
     mock_endpoint_control_->NoMoreReads();
     args_ = args_.SetObject(ResourceQuota::Default());
     args_ = args_.SetObject(std::move(engine));
   }
 
-  std::shared_ptr<grpc_event_engine::experimental::MockEndpointControl>
+  std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
       mock_endpoint_control_;
   ChannelArgs args_;
 };

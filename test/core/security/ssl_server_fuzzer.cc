@@ -68,7 +68,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     auto engine = GetDefaultEventEngine();
     auto mock_endpoint_control =
-        grpc_event_engine::experimental::MockEndpointControl::Create(engine);
+        grpc_event_engine::experimental::MockEndpointController::Create(engine);
     mock_endpoint_control->TriggerReadEvent(
         grpc_event_engine::experimental::Slice::FromCopiedBuffer(
             reinterpret_cast<const char*>(data), size));
