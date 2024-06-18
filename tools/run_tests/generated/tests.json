@@ -8,9 +8,7 @@
     "benchmark": true,
     "ci_platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -21,9 +19,7 @@
     "name": "bm_call_spine",
     "platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": false
   },
@@ -34,9 +30,7 @@
     "benchmark": true,
     "ci_platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -47,9 +41,7 @@
     "name": "bm_client_call",
     "platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": false
   },
@@ -60,9 +52,7 @@
     "benchmark": true,
     "ci_platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -73,9 +63,7 @@
     "name": "bm_client_channel",
     "platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": false
   },
@@ -136,9 +124,7 @@
     "benchmark": true,
     "ci_platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -149,9 +135,7 @@
     "name": "bm_party",
     "platforms": [
       "linux",
-      "mac",
-      "posix",
-      "windows"
+      "posix"
     ],
     "uses_polling": false
   },

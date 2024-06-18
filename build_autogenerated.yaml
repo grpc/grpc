@@ -5142,6 +5142,9 @@ targets:
   - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: bm_client_call
   build: test
@@ -5156,6 +5159,9 @@ targets:
   - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: bm_client_channel
   build: test
@@ -5171,6 +5177,9 @@ targets:
   - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: bm_experiments
   build: test
@@ -5213,6 +5222,9 @@ targets:
   - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: fd_conservation_posix_test
   build: test
