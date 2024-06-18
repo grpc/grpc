@@ -67,14 +67,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
 
     auto engine = GetDefaultEventEngine();
-    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(engine);
-    auto endpoint_control =
-        grpc_event_engine::experimental::grpc_mock_endpoint_get_control(
-            mock_endpoint);
-    endpoint_control->TriggerReadEvent(
+    auto mock_endpoint_control =
+        grpc_event_engine::experimental::MockEndpointControl::Create(engine);
+    mock_endpoint_control->TriggerReadEvent(
         grpc_event_engine::experimental::Slice::FromCopiedBuffer(
             reinterpret_cast<const char*>(data), size));
-    endpoint_control->NoMoreReads();
+    mock_endpoint_control->NoMoreReads();
 
     // Load key pair and establish server SSL credentials.
     std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
@@ -100,9 +98,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     auto channel_args =
         grpc_core::ChannelArgs().SetObject<EventEngine>(std::move(engine));
     sc->add_handshakers(channel_args, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint, channel_args, deadline,
-                               nullptr /* acceptor */, on_handshake_done,
-                               &state);
+    handshake_mgr->DoHandshake(mock_endpoint_control->TakeCEndpoint(),
+                               channel_args, deadline, nullptr /* acceptor */,
+                               on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
 
     // If the given string happens to be part of the correct client hello, the

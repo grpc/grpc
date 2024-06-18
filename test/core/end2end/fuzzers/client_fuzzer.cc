@@ -56,20 +56,20 @@ namespace testing {
 class ClientFuzzer final : public BasicFuzzer {
  public:
   explicit ClientFuzzer(const fuzzer_input::Msg& msg)
-      : BasicFuzzer(msg.event_engine_actions()) {
+      : BasicFuzzer(msg.event_engine_actions()),
+        mock_endpoint_control_(
+            grpc_event_engine::experimental::MockEndpointControl::Create(
+                engine())) {
     ExecCtx exec_ctx;
-    UpdateMinimumRunTime(ScheduleReads(
-        msg.network_input()[0],
-        grpc_event_engine::experimental::grpc_mock_endpoint_get_control(
-            mock_endpoint_),
-        engine().get()));
+    UpdateMinimumRunTime(ScheduleReads(msg.network_input()[0],
+                                       mock_endpoint_control_, engine().get()));
     ChannelArgs args =
         CoreConfiguration::Get()
             .channel_args_preconditioning()
             .PreconditionChannelArgs(nullptr)
             .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
-    Transport* transport =
-        grpc_create_chttp2_transport(args, mock_endpoint_, true);
+    Transport* transport = grpc_create_chttp2_transport(
+        args, mock_endpoint_control_->TakeCEndpoint(), true);
     channel_ = ChannelCreate("test-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                              transport)
                    ->release()
@@ -94,7 +94,8 @@ class ClientFuzzer final : public BasicFuzzer {
   grpc_server* server() override { return nullptr; }
   grpc_channel* channel() override { return channel_; }
 
-  grpc_endpoint* mock_endpoint_ = grpc_mock_endpoint_create(engine());
+  std::shared_ptr<grpc_event_engine::experimental::MockEndpointControl>
+      mock_endpoint_control_;
   grpc_channel* channel_ = nullptr;
 };
 

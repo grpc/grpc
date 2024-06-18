@@ -36,10 +36,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-MockEndpoint::MockEndpoint(std::shared_ptr<EventEngine> engine)
-    : endpoint_control_(
-          std::make_shared<MockEndpointControl>(std::move(engine))),
-      peer_addr_(URIToResolvedAddress("ipv4:127.0.0.1:12345").value()),
+MockEndpoint::MockEndpoint()
+    : peer_addr_(URIToResolvedAddress("ipv4:127.0.0.1:12345").value()),
       local_addr_(URIToResolvedAddress("ipv4:127.0.0.1:6789").value()) {}
 
 MockEndpointControl::~MockEndpointControl() {
@@ -51,6 +49,17 @@ MockEndpointControl::~MockEndpointControl() {
     on_read_ = nullptr;
   }
 }
+
+std::shared_ptr<MockEndpointControl> MockEndpointControl::Create(
+    std::shared_ptr<EventEngine> engine) {
+  return std::shared_ptr<MockEndpointControl>(
+      new MockEndpointControl(std::move(engine)));
+}
+
+MockEndpointControl::MockEndpointControl(std::shared_ptr<EventEngine> engine)
+    : engine_(std::move(engine)),
+      mock_grpc_endpoint_(grpc_event_engine_endpoint_create(
+          std::make_unique<grpc_event_engine::experimental::MockEndpoint>())) {}
 
 void MockEndpointControl::TriggerReadEvent(Slice read_data) {
   grpc_core::MutexLock lock(&mu_);
@@ -91,6 +100,17 @@ void MockEndpointControl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   }
 }
 
+grpc_endpoint* MockEndpointControl::TakeCEndpoint() {
+  CHECK_NE(mock_grpc_endpoint_, nullptr)
+      << "The endpoint has already been taken";
+  grpc_core::DownCast<MockEndpoint*>(
+      grpc_get_wrapped_event_engine_endpoint(mock_grpc_endpoint_))
+      ->SetController(shared_from_this());
+  auto ret = mock_grpc_endpoint_;
+  mock_grpc_endpoint_ = nullptr;
+  return ret;
+}
+
 bool MockEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                         SliceBuffer* buffer, const ReadArgs* /* args */) {
   endpoint_control_->Read(std::move(on_read), buffer);
@@ -123,10 +143,3 @@ std::shared_ptr<MockEndpointControl> grpc_mock_endpoint_get_control(
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-grpc_endpoint* grpc_mock_endpoint_create(
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine) {
-  return grpc_event_engine_endpoint_create(
-      std::make_unique<grpc_event_engine::experimental::MockEndpoint>(
-          std::move(engine)));
-}
