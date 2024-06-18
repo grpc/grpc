@@ -27,7 +27,7 @@ namespace grpc_core {
 Duration ScheduleReads(
     const fuzzer_input::NetworkInput& network_input,
     std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
-        mock_endpoint_control,
+        mock_endpoint_controller,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine);
 
 Duration ScheduleConnection(

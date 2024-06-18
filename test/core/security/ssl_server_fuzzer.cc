@@ -67,12 +67,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
 
     auto engine = GetDefaultEventEngine();
-    auto mock_endpoint_control =
+    auto mock_endpoint_controller =
         grpc_event_engine::experimental::MockEndpointController::Create(engine);
-    mock_endpoint_control->TriggerReadEvent(
+    mock_endpoint_controller->TriggerReadEvent(
         grpc_event_engine::experimental::Slice::FromCopiedBuffer(
             reinterpret_cast<const char*>(data), size));
-    mock_endpoint_control->NoMoreReads();
+    mock_endpoint_controller->NoMoreReads();
 
     // Load key pair and establish server SSL credentials.
     std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
@@ -98,7 +98,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     auto channel_args =
         grpc_core::ChannelArgs().SetObject<EventEngine>(std::move(engine));
     sc->add_handshakers(channel_args, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint_control->TakeCEndpoint(),
+    handshake_mgr->DoHandshake(mock_endpoint_controller->TakeCEndpoint(),
                                channel_args, deadline, nullptr /* acceptor */,
                                on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
