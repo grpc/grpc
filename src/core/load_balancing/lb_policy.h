@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -33,6 +34,7 @@
 #include "absl/types/variant.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
@@ -116,27 +118,33 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     virtual ~MetadataInterface() = default;
 
-    //////////////////////////////////////////////////////////////////////////
-    // TODO(ctiller): DO NOT MAKE THIS A PUBLIC API YET
-    // This needs some API design to ensure we can add/remove/replace metadata
-    // keys... we're deliberately not doing so to save some time whilst
-    // cleaning up the internal metadata representation, but we should add
-    // something back before making this a public API.
-    //////////////////////////////////////////////////////////////////////////
-
-    /// Adds a key/value pair.
-    /// Does NOT take ownership of \a key or \a value.
-    /// Implementations must ensure that the key and value remain alive
-    /// until the call ends.  If desired, they may be allocated via
-    /// CallState::Alloc().
-    virtual void Add(absl::string_view key, absl::string_view value) = 0;
+    virtual absl::optional<absl::string_view> Lookup(
+        absl::string_view key, std::string* buffer) const = 0;
 
     /// Produce a vector of metadata key/value strings for tests.
     virtual std::vector<std::pair<std::string, std::string>>
     TestOnlyCopyToVector() = 0;
+  };
 
-    virtual absl::optional<absl::string_view> Lookup(
-        absl::string_view key, std::string* buffer) const = 0;
+  /// A list of metadata mutations to be returned along with a PickResult.
+  class MetadataMutations {
+   public:
+    /// Adds a key/value pair.  If the key is already present, the new
+    /// value will be appended with a comma delimiter.
+    void Add(absl::string_view key, absl::string_view value) {
+      Add(key, grpc_event_engine::experimental::Slice::FromCopiedString(value));
+    }
+    void Add(absl::string_view key,
+             grpc_event_engine::experimental::Slice value) {
+      additions_.push_back({key, std::move(value)});
+    }
+
+   private:
+    friend class MetadataMutationHandler;
+
+    absl::InlinedVector<
+        std::pair<absl::string_view, grpc_event_engine::experimental::Slice>, 3>
+        additions_;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -210,19 +218,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
       /// be used.
       std::unique_ptr<SubchannelCallTrackerInterface> subchannel_call_tracker;
 
-      /// If set, the ":authority" header for the RPC will be set to
-      /// this value, if not already explicitly set by the application.
-      // TODO(roth): Before making this API public, use some idiomatic C++
-      // slice type here.
-      grpc_slice authority_override;
+      /// Metadata mutations to be applied to the call.
+      MetadataMutations metadata_mutations;
 
       explicit Complete(
           RefCountedPtr<SubchannelInterface> sc,
           std::unique_ptr<SubchannelCallTrackerInterface> tracker = nullptr,
-          grpc_slice authority = grpc_empty_slice())
+          MetadataMutations md = MetadataMutations())
           : subchannel(std::move(sc)),
             subchannel_call_tracker(std::move(tracker)),
-            authority_override(authority) {}
+            metadata_mutations(std::move(md)) {}
     };
 
     /// Pick cannot be completed until something changes on the control

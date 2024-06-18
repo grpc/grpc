@@ -51,7 +51,7 @@
 #include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/string.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 

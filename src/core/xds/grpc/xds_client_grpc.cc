@@ -56,7 +56,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/telemetry/metrics.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_transport_grpc.h"
 #include "src/core/xds/xds_client/xds_api.h"
