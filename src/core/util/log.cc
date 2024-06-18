@@ -35,14 +35,8 @@
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/util/string.h"
 
-static constexpr gpr_atm GPR_LOG_SEVERITY_UNSET = GPR_LOG_SEVERITY_ERROR + 10;
-static constexpr gpr_atm GPR_LOG_SEVERITY_NONE = GPR_LOG_SEVERITY_ERROR + 11;
-
 void gpr_default_log(gpr_log_func_args* args);
 void gpr_platform_log(gpr_log_func_args* args);
-static gpr_atm g_log_func = reinterpret_cast<gpr_atm>(gpr_default_log);
-static gpr_atm g_min_severity_to_print = GPR_LOG_SEVERITY_UNSET;
-static gpr_atm g_min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_UNSET;
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
   grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),
@@ -62,10 +56,15 @@ const char* gpr_log_severity_string(gpr_log_severity severity) {
 }
 
 int gpr_should_log(gpr_log_severity severity) {
-  return static_cast<gpr_atm>(severity) >=
-                 gpr_atm_no_barrier_load(&g_min_severity_to_print)
-             ? 1
-             : 0;
+  static const absl::LogSeverityAtLeast absl_min_log_level =
+      absl::MinLogLevel();
+  if (severity == GPR_LOG_SEVERITY_ERROR) {
+    return true;
+  } else if (severity == GPR_LOG_SEVERITY_INFO) {
+    return absl_min_log_level >= absl::LogSeverityAtLeast::kInfo;
+  } else {
+    return VLOG_IS_ON(2);
+  }
 }
 
 void gpr_default_log(gpr_log_func_args* args) {
@@ -103,8 +102,8 @@ void gpr_log_message(const char* file, int line, gpr_log_severity severity,
 }
 
 void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
-  gpr_atm_no_barrier_store(&g_min_severity_to_print,
-                           (gpr_atm)min_severity_to_print);
+  LOG(ERROR)
+      << "This will not be set. Please set this via absl log level settings";
 }
 
 static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
@@ -115,7 +114,7 @@ static gpr_atm parse_log_severity(absl::string_view str, gpr_atm error_value) {
   return error_value;
 }
 
-void gpr_to_absl_verbosity_setting_init(void) {
+void gpr_log_verbosity_init(void) {
 // This is enabled in Github only.
 // This ifndef is converted to ifdef internally by copybara.
 // Internally grpc verbosity is managed using absl settings.
@@ -142,40 +141,11 @@ void gpr_to_absl_verbosity_setting_init(void) {
     absl::SetVLogLevel("*grpc*/*", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
   } else if (verbosity.empty()) {
-    // Do not set absl::MinLogLevel if verbosity has not been set. Note that the
-    // default gRPC min log severity that is printed will still be ERROR.
+    // Do not alter absl
   } else {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
 #endif  // GRPC_VERBOSITY_MACRO
-}
-
-void gpr_log_verbosity_init() {
-  // init verbosity when it hasn't been set
-  if ((gpr_atm_no_barrier_load(&g_min_severity_to_print)) ==
-      GPR_LOG_SEVERITY_UNSET) {
-    auto verbosity = grpc_core::ConfigVars::Get().Verbosity();
-    gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
-    if (!verbosity.empty()) {
-      min_severity_to_print =
-          parse_log_severity(verbosity, min_severity_to_print);
-    }
-    gpr_atm_no_barrier_store(&g_min_severity_to_print, min_severity_to_print);
-  }
-  // init stacktrace_minloglevel when it hasn't been set
-  if ((gpr_atm_no_barrier_load(&g_min_severity_to_print_stacktrace)) ==
-      GPR_LOG_SEVERITY_UNSET) {
-    auto stacktrace_minloglevel =
-        grpc_core::ConfigVars::Get().StacktraceMinloglevel();
-    gpr_atm min_severity_to_print_stacktrace = GPR_LOG_SEVERITY_NONE;
-    if (!stacktrace_minloglevel.empty()) {
-      min_severity_to_print_stacktrace = parse_log_severity(
-          stacktrace_minloglevel, min_severity_to_print_stacktrace);
-    }
-    gpr_atm_no_barrier_store(&g_min_severity_to_print_stacktrace,
-                             min_severity_to_print_stacktrace);
-  }
-  gpr_to_absl_verbosity_setting_init();
 }
 
 void gpr_set_log_function(gpr_log_func f) {
@@ -189,5 +159,4 @@ void gpr_set_log_function(gpr_log_func f) {
          "will be deleted in the next gRPC release. We strongly advice against "
          "using this function. You may create a new absl LogSink with similar "
          "functionality. gRFC: https://github.com/grpc/proposal/pull/425 ";
-  gpr_atm_no_barrier_store(&g_log_func, (gpr_atm)(f ? f : gpr_default_log));
 }

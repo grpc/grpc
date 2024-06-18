@@ -28,15 +28,8 @@
 extern "C" {
 #endif
 
-/** GPR log API.
-
-   Usage (within grpc):
-
-   int argument1 = 3;
-   char* argument2 = "hello";
-   gpr_log(GPR_DEBUG, "format string %d", argument1);
-   gpr_log(GPR_INFO, "hello world");
-   gpr_log(GPR_ERROR, "%d %s!!", argument1, argument2); */
+/** Logging functions in this file are deprecated. Please use absl LOG instead.
+ */
 
 /** The severity of a log message - use the #defines below when calling into
    gpr_log to additionally supply file and line data */
