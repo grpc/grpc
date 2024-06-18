@@ -57,7 +57,6 @@ const char* gpr_log_severity_string(gpr_log_severity severity) {
 }
 
 int gpr_should_log(gpr_log_severity severity) {
-  // Concern : This may cause a slight performance degradation.
   switch (severity) {
     case GPR_LOG_SEVERITY_ERROR:
       //  This function is documentented to be inexpensive.
