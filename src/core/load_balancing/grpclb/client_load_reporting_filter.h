@@ -36,6 +36,8 @@ class ClientLoadReportingFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "client_load_reporting"; }
+
   class Call {
    public:
     void OnClientInitialMetadata(ClientMetadata& client_initial_metadata);
