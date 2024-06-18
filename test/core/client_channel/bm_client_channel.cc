@@ -32,8 +32,8 @@ class ClientChannelTraits {
  public:
   RefCountedPtr<UnstartedCallDestination> CreateCallDestination(
       RefCountedPtr<UnstartedCallDestination> final_destination) {
-    call_destination_factory_.reset(
-        new TestCallDestinationFactory(std::move(final_destination)));
+    call_destination_factory_ = std::make_unique<TestCallDestinationFactory>(
+        std::move(final_destination));
     auto channel = ClientChannel::Create(
         "test:///target",
         ChannelArgs()
