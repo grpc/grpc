@@ -15,7 +15,6 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
 #define GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
 
-#include "absl/status/status.h"
 #include "benchmark/benchmark.h"
 
 #include "src/core/lib/event_engine/default_event_engine.h"
