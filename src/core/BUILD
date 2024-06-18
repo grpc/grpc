@@ -131,6 +131,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "latent_see",
+    srcs = [
+        "util/latent_see.cc",
+    ],
+    hdrs = [
+        "util/latent_see.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "per_cpu",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "transport_fwd",
     hdrs = [
         "lib/transport/transport_fwd.h",
@@ -568,16 +586,15 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
-        "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
     ],
     language = "c++",
     deps = [
         "activity",
-        "arena",
         "construct_destruct",
         "context",
+        "latent_see",
         "poll",
         "promise_factory",
         "ref_counted",

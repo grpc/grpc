@@ -15,11 +15,10 @@
 #ifndef LATENT_SEE_H
 #define LATENT_SEE_H
 
+#include <chrono>
 #include <cstdint>
 #include <utility>
 #include <vector>
-
-#include "time_precise.h"
 
 #include "src/core/lib/gprpp/per_cpu.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -40,40 +39,34 @@ enum class EventType : uint8_t { kBegin, kEnd, kFlowStart, kFlowEnd, kMark };
 
 class Log {
  public:
-  static void FlushThreadLog() {
-    auto& log = Get();
-    const auto batch_id =
-        log.next_batch_id_.fetch_add(1, std::memory_order_relaxed);
-    auto& fragment = log.fragments_.this_cpu();
-    auto& thread_events = thread_events_;
-    const auto thread_id = thread_id_;
-    {
-      MutexLock lock(&fragment.mu);
-      for (auto event : thread_events) {
-        fragment.events.push_back(RecordedEvent{thread_id, batch_id, event});
-      }
-    }
-    thread_events.clear();
-  }
+  static void FlushThreadLog();
 
   static void Append(const Metadata* metadata, EventType type, uint64_t id) {
     thread_events_.push_back(
-        Event{metadata, gpr_get_cycle_counter(), id, type});
+        Event{metadata, std::chrono::steady_clock::now(), id, type});
   }
-
-  static std::string GenerateJson();
 
  private:
   Log() = default;
 
   static Log& Get() {
-    static Log* log = new Log();
+    static Log* log = []() {
+      atexit([] {
+        FILE* f = fopen("latent_see.json", "w");
+        if (f == nullptr) return;
+        fprintf(f, "%s", log->GenerateJson().c_str());
+        fclose(f);
+      });
+      return new Log();
+    }();
     return *log;
   }
 
+  std::string GenerateJson();
+
   struct Event {
     const Metadata* metadata;
-    gpr_cycle_counter timestamp;
+    std::chrono::steady_clock::time_point timestamp;
     uint64_t id;
     EventType type;
   };
@@ -82,8 +75,8 @@ class Log {
     uint64_t batch_id;
     Event event;
   };
-  std::atomic<uint64_t> next_thread_id_{0};
-  std::atomic<uint64_t> next_batch_id_{0};
+  std::atomic<uint64_t> next_thread_id_{1};
+  std::atomic<uint64_t> next_batch_id_{1};
   static thread_local std::vector<Event> thread_events_;
   static thread_local uint64_t thread_id_;
   struct Fragment {
@@ -107,13 +100,34 @@ class Scope {
   const Metadata* const metadata_;
 };
 
+class ParentScope {
+ public:
+  explicit ParentScope(const Metadata* metadata) : metadata_(metadata) {
+    Log::Append(metadata_, EventType::kBegin, 0);
+  }
+  ~ParentScope() {
+    Log::Append(metadata_, EventType::kEnd, 0);
+    Log::FlushThreadLog();
+  }
+
+  ParentScope(const Scope&) = delete;
+  ParentScope& operator=(const Scope&) = delete;
+
+ private:
+  const Metadata* const metadata_;
+};
+
 class Flow {
  public:
   explicit Flow(const Metadata* metadata) : metadata_(metadata) {
     Log::Append(metadata_, EventType::kFlowStart, id_);
+    Log::FlushThreadLog();
   }
   ~Flow() {
-    if (metadata_ != nullptr) Log::Append(metadata_, EventType::kFlowEnd, id_);
+    if (metadata_ != nullptr) {
+      Log::Append(metadata_, EventType::kFlowEnd, id_);
+      Log::FlushThreadLog();
+    }
   }
 
   Flow(const Flow&) = delete;
@@ -132,29 +146,23 @@ class Flow {
   uint64_t id_{next_flow_id_.fetch_add(1, std::memory_order_relaxed)};
   static std::atomic<uint64_t> next_flow_id_;
 };
-
-class ParentScope : public Scope {
- public:
-  using Scope::Scope;
-  ~ParentScope() { Log::FlushThreadLog(); }
-};
 }  // namespace latent_see
 }  // namespace grpc_core
-#define GRPC_LATENT_SEE_CAPTURE_METADATA(name)                     \
-  static const grpc_core::latent_see::Metadata name##_metadata = { \
-      __FILE__, __LINE__, #name}
-#define GRPC_LATENT_SEE_METADATA(name) &name##_metadata
-#define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
-  GRPC_LATENT_SEE_CAPTURE_METADATA(name)   \
-  grpc_core::latent_see::ParentScope name(GRPC_LATENT_SEE_METADATA(name))
-#define GRPC_LATENT_SEE_SCOPE(name)      \
-  GRPC_LATENT_SEE_CAPTURE_METADATA(name) \
-  grpc_core::latent_see::Scope name(GRPC_LATENT_SEE_METADATA(name))
-#define GRPC_LATENT_SEE_MARK(name)       \
-  GRPC_LATENT_SEE_CAPTURE_METADATA(name) \
+#define GRPC_LATENT_SEE_METADATA(name)                                     \
+  []() {                                                                   \
+    static grpc_core::latent_see::Metadata metadata = {__FILE__, __LINE__, \
+                                                       #name};             \
+    return &metadata;                                                      \
+  }()
+#define GRPC_LATENT_SEE_PARENT_SCOPE(name)                       \
+  grpc_core::latent_see::ParentScope latent_see_scope##__LINE__( \
+      GRPC_LATENT_SEE_METADATA(name))
+#define GRPC_LATENT_SEE_SCOPE(name)                        \
+  grpc_core::latent_see::Scope latent_see_scope##__LINE__( \
+      GRPC_LATENT_SEE_METADATA(name))
+#define GRPC_LATENT_SEE_MARK(name) \
   grpc_core::latent_see::Mark(GRPC_LATENT_SEE_METADATA(name))
-#define GRPC_LATENT_SEE_FLOW(name)       \
-  GRPC_LATENT_SEE_CAPTURE_METADATA(name) \
+#define GRPC_LATENT_SEE_FLOW(name) \
   grpc_core::latent_see::Flow(GRPC_LATENT_SEE_METADATA(name))
 #else
 namespace grpc_core {

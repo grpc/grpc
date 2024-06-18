@@ -26,6 +26,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/util/latent_see.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
@@ -107,7 +108,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -211,6 +212,7 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 }
 
 void Party::RunLocked() {
+  GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked");
   // If there is a party running, then we don't run it immediately
   // but instead add it to the end of the list of parties to run.
   // This enables a fairly straightforward batching of work from a
@@ -221,7 +223,8 @@ void Party::RunLocked() {
     } else {
       // But if there's already a party queued, we're better off asking event
       // engine to run it so we can spread load.
-      event_engine()->Run([this]() {
+      event_engine()->Run([this, flow = GRPC_LATENT_SEE_FLOW(
+                                     "Party::RunLocked::Next")]() mutable {
         ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         RunLocked();
@@ -265,6 +268,7 @@ bool Party::RunParty() {
 }
 
 bool Party::RunOneParticipant(int i) {
+  GRPC_LATENT_SEE_SCOPE("Party::RunOneParticipant");
   // If the participant is null, skip.
   // This allows participants to complete whilst wakers still exist
   // somewhere.

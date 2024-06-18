@@ -2090,6 +2090,7 @@ grpc_cc_library(
         "//src/core:if",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
+        "//src/core:latent_see",
         "//src/core:loop",
         "//src/core:map",
         "//src/core:match",
@@ -3006,8 +3007,8 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/log",
         "absl/log:check",
-        "absl/log:log",
     ],
     language = "c++",
     visibility = ["@grpc:client_channel"],
@@ -3020,6 +3021,7 @@ grpc_cc_library(
         "orphanable",
         "stats",
         "//src/core:experiments",
+        "//src/core:latent_see",
         "//src/core:stats_data",
     ],
 )
