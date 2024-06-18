@@ -808,6 +808,7 @@ CORE_SOURCE_FILES = [
     'src/core/util/json/json_reader.cc',
     'src/core/util/json/json_util.cc',
     'src/core/util/json/json_writer.cc',
+    'src/core/util/latent_see.cc',
     'src/core/util/linux/cpu.cc',
     'src/core/util/linux/log.cc',
     'src/core/util/log.cc',
