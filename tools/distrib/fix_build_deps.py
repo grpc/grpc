@@ -413,6 +413,7 @@ for dirname in [
     "test/core/resource_quota",
     "test/core/transport/chaotic_good",
     "test/core/transport/test_suite",
+    "test/core/transport",
     "fuzztest",
     "fuzztest/core/channel",
     "fuzztest/core/transport/chttp2",
