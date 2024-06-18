@@ -864,7 +864,6 @@ libs:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
-  - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
@@ -2402,7 +2401,6 @@ libs:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
-  - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
@@ -4501,7 +4499,6 @@ libs:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
-  - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
@@ -6404,6 +6401,21 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: call_arena_allocator_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/call_arena_allocator_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: call_creds_test
   gtest: true
   build: test
@@ -6853,7 +6865,6 @@ targets:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
-  - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h
@@ -9614,6 +9625,7 @@ targets:
   - gtest
   - absl/functional:any_invocable
   - absl/log:check
+  - absl/strings:str_format
   uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
@@ -12576,7 +12588,6 @@ targets:
   - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
   - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
   - src/core/lib/event_engine/time_util.h
-  - src/core/lib/event_engine/trace.h
   - src/core/lib/event_engine/utils.h
   - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
   - src/core/lib/event_engine/windows/iocp.h

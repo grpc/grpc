@@ -1258,6 +1258,10 @@ class CallState {
         return "Terminated";
     }
   }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ClientToServerPullState state) {
+    out.Append(ClientToServerPullStateString(state));
+  }
   friend std::ostream& operator<<(std::ostream& out,
                                   ClientToServerPullState state) {
     return out << ClientToServerPullStateString(state);
@@ -1283,6 +1287,10 @@ class CallState {
       case ClientToServerPushState::kFinished:
         return "Finished";
     }
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ClientToServerPushState state) {
+    out.Append(ClientToServerPushStateString(state));
   }
   friend std::ostream& operator<<(std::ostream& out,
                                   ClientToServerPushState state) {
@@ -1334,6 +1342,10 @@ class CallState {
         return "Terminated";
     }
   }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ServerToClientPullState state) {
+    out.Append(ServerToClientPullStateString(state));
+  }
   friend std::ostream& operator<<(std::ostream& out,
                                   ServerToClientPullState state) {
     return out << ServerToClientPullStateString(state);
@@ -1367,6 +1379,10 @@ class CallState {
         return "Finished";
     }
   }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ServerToClientPushState state) {
+    out.Append(ServerToClientPushStateString(state));
+  }
   friend std::ostream& operator<<(std::ostream& out,
                                   ServerToClientPushState state) {
     return out << ServerToClientPushStateString(state);
@@ -1392,6 +1408,10 @@ class CallState {
       case ServerTrailingMetadataState::kPulledCancel:
         return "PulledCancel";
     }
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ServerTrailingMetadataState state) {
+    out.Append(ServerTrailingMetadataStateString(state));
   }
   friend std::ostream& operator<<(std::ostream& out,
                                   ServerTrailingMetadataState state) {

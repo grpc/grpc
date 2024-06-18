@@ -101,7 +101,6 @@ BANNED_EXCEPT = {
         "./src/core/lib/event_engine/cf_engine/cf_engine.cc",
         "./src/core/lib/event_engine/posix_engine/posix_engine.cc",
         "./src/core/lib/event_engine/posix_engine/timer_manager.cc",
-        "./src/core/lib/event_engine/trace.h",
         "./src/core/lib/event_engine/windows/windows_endpoint.cc",
         "./src/core/lib/event_engine/windows/windows_engine.cc",
         "./src/core/lib/experiments/config.cc",
