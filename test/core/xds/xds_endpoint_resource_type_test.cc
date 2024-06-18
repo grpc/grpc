@@ -742,8 +742,7 @@ TEST_F(XdsEndpointTest, EndpointHostname) {
   locality_name->set_sub_zone("mysubzone");
   auto* endpoint = locality->add_lb_endpoints()->mutable_endpoint();
   endpoint->set_hostname("server.example.com");
-  auto* socket_address =
-      endpoint->mutable_address()->mutable_socket_address();
+  auto* socket_address = endpoint->mutable_address()->mutable_socket_address();
   socket_address->set_address("127.0.0.1");
   socket_address->set_port_value(443);
   std::string serialized_resource;
@@ -770,12 +769,12 @@ TEST_F(XdsEndpointTest, EndpointHostname) {
   auto addr = grpc_sockaddr_to_string(&address.address(), /*normalize=*/false);
   ASSERT_TRUE(addr.ok()) << addr.status();
   EXPECT_EQ(*addr, "127.0.0.1:443");
-  EXPECT_EQ(address.args(), ChannelArgs()
-                                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
-                                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
-                                     XdsHealthStatus::HealthStatus::kUnknown)
-                                .Set(GRPC_ARG_ADDRESS_NAME,
-                                     "server.example.com"));
+  EXPECT_EQ(address.args(),
+            ChannelArgs()
+                .Set(GRPC_ARG_ADDRESS_WEIGHT, 1)
+                .Set(GRPC_ARG_XDS_HEALTH_STATUS,
+                     XdsHealthStatus::HealthStatus::kUnknown)
+                .Set(GRPC_ARG_ADDRESS_NAME, "server.example.com"));
   EXPECT_EQ(resource.drop_config, nullptr);
 }
 

@@ -879,8 +879,8 @@ absl::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
   if (XdsAuthorityRewriteEnabled() &&
       DownCast<const GrpcXdsBootstrap::GrpcXdsServer&>(context.server)
           .AllowAuthorityRewriting()) {
-    route_action.auto_host_rewrite = ParseBoolValue(
-        envoy_config_route_v3_RouteAction_auto_host_rewrite(
+    route_action.auto_host_rewrite =
+        ParseBoolValue(envoy_config_route_v3_RouteAction_auto_host_rewrite(
             route_action_proto));
     route_action.append_x_forwarded_host =
         envoy_config_route_v3_RouteAction_append_x_forwarded_host(
