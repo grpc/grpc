@@ -5176,9 +5176,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_xds_client",
+    name = "xds_file_watcher_certificate_provider_factory",
     srcs = [
         "xds/grpc/file_watcher_certificate_provider_factory.cc",
+    ],
+    hdrs = [
+        "xds/grpc/file_watcher_certificate_provider_factory.h",
+    ],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    language = "c++",
+    tags = ["nofixdeps"],
+    deps = [
+        "certificate_provider_factory",
+        "grpc_tls_credentials",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "time",
+        "validation_errors",
+        "//:config",
+        "//:gpr",
+        "//:grpc_base",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_client",
+    srcs = [
         "xds/grpc/xds_audit_logger_registry.cc",
         "xds/grpc/xds_bootstrap_grpc.cc",
         "xds/grpc/xds_client_grpc.cc",
@@ -5198,7 +5227,6 @@ grpc_cc_library(
         "xds/grpc/xds_transport_grpc.cc",
     ],
     hdrs = [
-        "xds/grpc/file_watcher_certificate_provider_factory.h",
         "xds/grpc/xds_audit_logger_registry.h",
         "xds/grpc/xds_bootstrap_grpc.h",
         "xds/grpc/xds_client_grpc.h",
@@ -5348,6 +5376,7 @@ grpc_cc_library(
         "xds_certificate_provider",
         "xds_certificate_provider_store",
         "xds_credentials",
+        "xds_file_watcher_certificate_provider_factory",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",
