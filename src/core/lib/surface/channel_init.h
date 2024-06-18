@@ -23,6 +23,7 @@
 
 #include <initializer_list>
 #include <memory>
+#include <ostream>
 #include <utility>
 #include <vector>
 
@@ -65,6 +66,53 @@ namespace grpc_core {
 extern UniqueTypeName (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 class ChannelInit {
+ private:
+  // Version constraints: filters can be registered against a specific version
+  // of the stack (V2 || V3), or registered for any stack.
+  enum class Version : uint8_t {
+    kAny,
+    kV2,
+    kV3,
+  };
+  static const char* VersionToString(Version version) {
+    switch (version) {
+      case Version::kAny:
+        return "Any";
+      case Version::kV2:
+        return "V2";
+      case Version::kV3:
+        return "V3";
+    }
+    return "Unknown";
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Version version) {
+    sink.Append(VersionToString(version));
+  }
+  friend std::ostream& operator<<(std::ostream& out, Version version) {
+    return out << VersionToString(version);
+  }
+  static bool SkipV3(Version version) {
+    switch (version) {
+      case Version::kAny:
+      case Version::kV3:
+        return false;
+      case Version::kV2:
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return false);
+  }
+  static bool SkipV2(Version version) {
+    switch (version) {
+      case Version::kAny:
+      case Version::kV2:
+        return false;
+      case Version::kV3:
+        return true;
+    }
+    GPR_UNREACHABLE_CODE(return false);
+  }
+
  public:
   // Predicate for if a filter registration applies
   using InclusionPredicate = absl::AnyInvocable<bool(const ChannelArgs&) const>;
@@ -80,6 +128,50 @@ class ChannelInit {
     kXdsChannelStackModifier,
     kCount
   };
+  static const char* PostProcessorSlotName(PostProcessorSlot slot) {
+    switch (slot) {
+      case PostProcessorSlot::kAuthSubstitution:
+        return "AuthSubstitution";
+      case PostProcessorSlot::kXdsChannelStackModifier:
+        return "XdsChannelStackModifier";
+      case PostProcessorSlot::kCount:
+        return "---count---";
+    }
+    return "Unknown";
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, PostProcessorSlot slot) {
+    sink.Append(PostProcessorSlotName(slot));
+  }
+  // Ordering priorities.
+  // Most filters should use the kDefault priority.
+  // Filters that need to appear before the default priority should use kTop,
+  // filters that need to appear later should use the kBottom priority.
+  // Explicit before/after ordering between filters dominates: eg, if a filter
+  // with kBottom priority is marked as *BEFORE* a kTop filter, then the first
+  // filter will appear before the second.
+  // It is an error to have two filters with kTop (or two with kBottom)
+  // available at the same time. If this occurs, the filters should be
+  // explicitly marked with a before/after relationship.
+  enum class Ordering : uint8_t { kTop, kDefault, kBottom };
+  static const char* OrderingToString(Ordering ordering) {
+    switch (ordering) {
+      case Ordering::kTop:
+        return "Top";
+      case Ordering::kDefault:
+        return "Default";
+      case Ordering::kBottom:
+        return "Bottom";
+    }
+    return "Unknown";
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, Ordering ordering) {
+    sink.Append(OrderingToString(ordering));
+  };
+  friend std::ostream& operator<<(std::ostream& out, Ordering ordering) {
+    return out << OrderingToString(ordering);
+  }
 
   class FilterRegistration {
    public:
@@ -157,7 +249,13 @@ class ChannelInit {
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
     FilterRegistration& SkipV3() {
-      skip_v3_ = true;
+      CHECK_EQ(version_, Version::kAny);
+      version_ = Version::kV2;
+      return *this;
+    }
+    FilterRegistration& SkipV2() {
+      CHECK_EQ(version_, Version::kAny);
+      version_ = Version::kV3;
       return *this;
     }
 
@@ -170,7 +268,8 @@ class ChannelInit {
     std::vector<InclusionPredicate> predicates_;
     bool terminal_ = false;
     bool before_all_ = false;
-    bool skip_v3_ = false;
+    Version version_ = Version::kAny;
+    Ordering ordering_ = Ordering::kDefault;
     SourceLocation registration_source_;
   };
 
@@ -243,18 +342,20 @@ class ChannelInit {
 
   struct Filter {
     Filter(const grpc_channel_filter* filter, FilterAdder filter_adder,
-           std::vector<InclusionPredicate> predicates, bool skip_v3,
-           SourceLocation registration_source)
+           std::vector<InclusionPredicate> predicates, Version version,
+           Ordering ordering, SourceLocation registration_source)
         : filter(filter),
           filter_adder(filter_adder),
           predicates(std::move(predicates)),
           registration_source(registration_source),
-          skip_v3(skip_v3) {}
+          version(version),
+          ordering(ordering) {}
     const grpc_channel_filter* filter;
     const FilterAdder filter_adder;
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
-    bool skip_v3 = false;
+    Version version;
+    Ordering ordering;
     bool CheckPredicates(const ChannelArgs& args) const;
   };
   struct StackConfig {

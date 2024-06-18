@@ -143,9 +143,11 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       CHECK(registration->after_.empty());
       CHECK(registration->before_.empty());
       CHECK(!registration->before_all_);
+      CHECK_EQ(registration->ordering_, Ordering::kDefault);
       terminal_filters.emplace_back(
           registration->filter_, nullptr, std::move(registration->predicates_),
-          registration->skip_v3_, registration->registration_source_);
+          registration->version_, registration->ordering_,
+          registration->registration_source_);
     } else {
       dependencies[registration->filter_];  // Ensure it's in the map.
     }
@@ -227,7 +229,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     auto* registration = filter_to_registration[filter];
     filters.emplace_back(filter, registration->filter_adder_,
                          std::move(registration->predicates_),
-                         registration->skip_v3_,
+                         registration->version_, registration->ordering_,
                          registration->registration_source_);
     for (auto& p : dependencies) {
       p.second.erase(filter);
@@ -314,10 +316,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                       std::string(NameFromChannelFilter(filter).name()));
                 }));
       }
-      const auto filter_str =
-          absl::StrCat("  ", loc_strs[filter.filter],
-                       NameFromChannelFilter(filter.filter), after_str);
-      LOG(INFO) << filter_str;
+      LOG(INFO) << "  " << loc_strs[filter.filter]
+                << NameFromChannelFilter(filter.filter) << after_str << " ["
+                << filter.ordering << "/" << filter.version << "]";
     }
     // Finally list out the terminal filters and where they were registered
     // from.
@@ -373,6 +374,7 @@ bool ChannelInit::Filter::CheckPredicates(const ChannelArgs& args) const {
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   const auto& stack_config = stack_configs_[builder->channel_stack_type()];
   for (const auto& filter : stack_config.filters) {
+    if (SkipV2(filter.version)) continue;
     if (!filter.CheckPredicates(builder->channel_args())) continue;
     builder->AppendFilter(filter.filter);
   }
@@ -417,7 +419,7 @@ void ChannelInit::AddToInterceptionChainBuilder(
   const auto& stack_config = stack_configs_[type];
   // Based on predicates build a list of filters to include in this segment.
   for (const auto& filter : stack_config.filters) {
-    if (filter.skip_v3) continue;
+    if (SkipV3(filter.version)) continue;
     if (!filter.CheckPredicates(builder.channel_args())) continue;
     if (filter.filter_adder == nullptr) {
       builder.Fail(absl::InvalidArgumentError(
