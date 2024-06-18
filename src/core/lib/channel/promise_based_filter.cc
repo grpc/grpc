@@ -1316,7 +1316,7 @@ ClientCallData::~ClientCallData() {
 }
 
 std::string ClientCallData::DebugTag() const {
-  return absl::StrFormat("PBF_CLIENT[%p]: [%s] ", this, elem()->filter->name);
+  return absl::StrFormat("PBF_CLIENT[%p]: [%v] ", this, elem()->filter->name);
 }
 
 // Activity implementation.
@@ -2012,7 +2012,7 @@ ServerCallData::~ServerCallData() {
 }
 
 std::string ServerCallData::DebugTag() const {
-  return absl::StrFormat("PBF_SERVER[%p]: [%s] ", this, elem()->filter->name);
+  return absl::StrFormat("PBF_SERVER[%p]: [%v] ", this, elem()->filter->name);
 }
 
 // Activity implementation.
