@@ -22,6 +22,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/call_spine.h"
 
 namespace grpc_core {

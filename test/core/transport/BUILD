@@ -221,6 +221,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:map",
         "//src/core:notification",
+        "//src/core:resource_quota",
     ],
 )
 
