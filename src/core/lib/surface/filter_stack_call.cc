@@ -298,7 +298,9 @@ void FilterStackCall::ExecuteBatch(grpc_transport_stream_op_batch* batch,
     auto* call =
         static_cast<FilterStackCall*>(batch->handler_private.extra_arg);
     grpc_call_element* elem = call->call_elem(0);
-    GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
+    GRPC_TRACE_LOG(channel, INFO)
+        << "OP[" << elem->filter->name << ":" << elem
+        << "]: " << grpc_transport_stream_op_batch_string(batch, false);
     elem->filter->start_transport_stream_op_batch(elem, batch);
   };
   batch->handler_private.extra_arg = this;

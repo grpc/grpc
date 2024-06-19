@@ -137,12 +137,12 @@ size_t MessageSizeParser::ParserIndex() {
 const grpc_channel_filter ClientMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ClientMessageSizeFilter, FilterEndpoint::kClient,
                            kFilterExaminesOutboundMessages |
-                               kFilterExaminesInboundMessages>("message_size");
+                               kFilterExaminesInboundMessages>();
 
 const grpc_channel_filter ServerMessageSizeFilter::kFilter =
     MakePromiseBasedFilter<ServerMessageSizeFilter, FilterEndpoint::kServer,
                            kFilterExaminesOutboundMessages |
-                               kFilterExaminesInboundMessages>("message_size");
+                               kFilterExaminesInboundMessages>();
 
 absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>>
 ClientMessageSizeFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
