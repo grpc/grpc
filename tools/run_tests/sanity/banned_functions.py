@@ -288,7 +288,9 @@ for root, dirs, files in os.walk("."):
             continue
         with open(path) as f:
             text = f.read()
-        for banned, exceptions in list(DEPRECATED_FUNCTION_TEMP_ALLOW_LIST.items()):
+        for banned, exceptions in list(
+            DEPRECATED_FUNCTION_TEMP_ALLOW_LIST.items()
+        ):
             if path in exceptions:
                 continue
             if banned in text:
