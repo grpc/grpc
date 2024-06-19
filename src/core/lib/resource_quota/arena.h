@@ -278,7 +278,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // for modern promise-based code -- however legacy filter stack based code
   // often needs to access these directly.
   template <typename T>
-  T* GetContext() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
     return static_cast<T*>(
         contexts()[arena_detail::ArenaContextTraits<T>::id()]);
   }
@@ -339,7 +339,9 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
 
   void* AllocZone(size_t size);
   void Destroy() const;
-  void** contexts() { return reinterpret_cast<void**>(this + 1); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void** contexts() {
+    return reinterpret_cast<void**>(this + 1);
+  }
 
   // Keep track of the total used size. We use this in our call sizing
   // hysteresis.
