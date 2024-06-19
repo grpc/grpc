@@ -43,7 +43,7 @@ static void init_num_cpus() {
 #ifndef GPR_MUSL_LIBC_COMPAT
   if (sched_getcpu() < 0) {
     LOG(ERROR) << "Error determining current CPU: "
-               << grpc_core::StrError(errno);
+               << grpc_core::StrError(errno) << "\n";
     ncpus = 1;
     return;
   }
@@ -74,7 +74,7 @@ unsigned gpr_cpu_current_cpu(void) {
   int cpu = sched_getcpu();
   if (cpu < 0) {
     LOG(ERROR) << "Error determining current CPU: "
-               << grpc_core::StrError(errno);
+               << grpc_core::StrError(errno) << "\n";
     return 0;
   }
   if (static_cast<unsigned>(cpu) >= gpr_cpu_num_cores()) {

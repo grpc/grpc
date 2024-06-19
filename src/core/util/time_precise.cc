@@ -25,7 +25,8 @@
 
 #include <algorithm>
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
+
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -110,7 +111,7 @@ void gpr_precise_clock_init(void) {
     last_freq = freq;
   }
   cycles_per_second = last_freq;
-  VLOG(2) << "... cycles_per_second = " << cycles_per_second;
+  VLOG(2) << "... cycles_per_second = " << cycles_per_second << "\n";
 }
 
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles) {
