@@ -32,6 +32,7 @@ struct BenchmarkCall {
   CallHandler handler;
 };
 
+// Unary call with one spawn on each end of the spine.
 template <typename Fixture>
 void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
   Fixture fixture;
@@ -92,6 +93,12 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
   }
 }
 
+// Unary call with one promise spawned per operation on the spine.
+// It's a little unclear what the optimum should be between the above variant
+// and this: whilst a spawn per end minimizes the number of spawns we need to
+// do, a spawn per operation can conceivably (but not at the time of writing)
+// minimize the number of internal wakeups in the parties.
+// For now we track both.
 template <typename Fixture>
 void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
   Fixture fixture;
