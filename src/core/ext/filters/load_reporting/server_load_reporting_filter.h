@@ -39,6 +39,8 @@ class ServerLoadReportingFilter
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "server_load_reporting"; }
+
   static absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 

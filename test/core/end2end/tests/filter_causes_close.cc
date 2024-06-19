@@ -52,6 +52,7 @@ namespace {
 class TestFilter : public ImplementChannelFilter<TestFilter> {
  public:
   static const grpc_channel_filter kFilter;
+  static absl::string_view TypeName() { return "filter_causes_close"; }
   static absl::StatusOr<std::unique_ptr<TestFilter>> Create(
       const ChannelArgs&, ChannelFilter::Args) {
     return std::make_unique<TestFilter>();
@@ -81,8 +82,7 @@ const NoInterceptor TestFilter::Call::OnServerToClientMessage;
 const NoInterceptor TestFilter::Call::OnFinalize;
 
 const grpc_channel_filter TestFilter::kFilter =
-    MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>(
-        "filter_causes_close");
+    MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>();
 
 CORE_END2END_TEST(CoreEnd2endTest, FilterCausesClose) {
   CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {

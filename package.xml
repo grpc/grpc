@@ -126,6 +126,8 @@
     <file baseinstalldir="/" name="src/core/client_channel/client_channel_service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/config_selector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/direct_channel.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/client_channel/direct_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/dynamic_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/dynamic_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/global_subchannel_pool.cc" role="src" />
@@ -1204,7 +1206,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/thready_event_engine/thready_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/time_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc" role="src" />

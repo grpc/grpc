@@ -36,7 +36,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -199,10 +198,9 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   auto path = GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
-              "environment variable: %s",
-              path->c_str());
+      LOG(INFO) << "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
+                   "environment variable: "
+                << *path;
     }
     auto contents = LoadFile(*path, /*add_null_terminator=*/true);
     if (!contents.ok()) return contents.status();
@@ -212,9 +210,8 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
   auto env_config = GetEnv("GRPC_XDS_BOOTSTRAP_CONFIG");
   if (env_config.has_value()) {
     if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-      gpr_log(GPR_INFO,
-              "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
-              "environment variable");
+      LOG(INFO) << "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
+                   "environment variable";
     }
     return std::move(*env_config);
   }
@@ -261,8 +258,7 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
   auto bootstrap_contents = GetBootstrapContents(g_fallback_bootstrap_config);
   if (!bootstrap_contents.ok()) return bootstrap_contents.status();
   if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
-            bootstrap_contents->c_str());
+    LOG(INFO) << "xDS bootstrap contents: " << *bootstrap_contents;
   }
   // Parse bootstrap.
   auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
@@ -274,8 +270,8 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       MakeOrphanable<GrpcXdsTransportFactory>(channel_args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
   if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
-    gpr_log(GPR_INFO, "[xds_client %p] Created xDS client for key %s",
-            xds_client.get(), std::string(key).c_str());
+    LOG(INFO) << "[xds_client " << xds_client.get()
+              << "] Created xDS client for key " << key;
   }
   return xds_client;
 }

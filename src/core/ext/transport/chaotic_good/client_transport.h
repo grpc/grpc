@@ -96,7 +96,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   uint32_t MakeStream(CallHandler call_handler);
   absl::optional<CallHandler> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
-  auto OnTransportActivityDone();
+  auto OnTransportActivityDone(absl::string_view what);
   auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call

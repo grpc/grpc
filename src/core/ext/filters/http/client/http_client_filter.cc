@@ -59,7 +59,7 @@ const NoInterceptor HttpClientFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpClientFilter::kFilter =
     MakePromiseBasedFilter<HttpClientFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>("http-client");
+                           kFilterExaminesServerInitialMetadata>();
 
 namespace {
 absl::Status CheckServerMetadata(ServerMetadata* b) {

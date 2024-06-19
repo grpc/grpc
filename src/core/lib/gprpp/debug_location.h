@@ -21,6 +21,8 @@
 
 #include <utility>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpc/support/port_platform.h>
 
 #if defined(__has_builtin)
@@ -55,6 +57,11 @@ class SourceLocation {
   const char* file_;
   int line_;
 };
+
+template <typename Sink>
+void AbslStringify(Sink& out, const SourceLocation& location) {
+  out.Append(absl::StrCat("[", location.file(), ":", location.line(), "]"));
+}
 
 // Used for tracking file and line where a call is made for debug builds.
 // No-op for non-debug builds.

@@ -318,6 +318,8 @@ class XdsResolver final : public Resolver {
    public:
     const static grpc_channel_filter kFilter;
 
+    static absl::string_view TypeName() { return "cluster_selection_filter"; }
+
     static absl::StatusOr<std::unique_ptr<ClusterSelectionFilter>> Create(
         const ChannelArgs& /* unused */,
         ChannelFilter::Args /* filter_args */) {
@@ -866,8 +868,7 @@ XdsResolver::XdsRouteStateAttributeImpl::LockAndGetCluster(
 
 const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
     MakePromiseBasedFilter<ClusterSelectionFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>(
-        "cluster_selection_filter");
+                           kFilterExaminesServerInitialMetadata>();
 
 void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata&) {
