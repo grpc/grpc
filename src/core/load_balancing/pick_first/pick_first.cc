@@ -1647,7 +1647,7 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
               << ", shutting_down=" << subchannel_list_->shutting_down_
               << ", pending_watcher=" << pending_watcher_
               << ", seen_transient_failure=" << seen_transient_failure_
-              << ", p->selected_=" << p->selected_->get()
+              << ", p->selected_=" << p->selected_
               << ", p->subchannel_list_=" << p->subchannel_list_.get()
               << ", p->latest_pending_subchannel_list_="
               << p->latest_pending_subchannel_list_.get();
