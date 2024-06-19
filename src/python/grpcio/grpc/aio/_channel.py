@@ -419,7 +419,10 @@ class Channel(_base_channel.Channel):
             # Locate ones created by `aio.Call`.
             frame = stack[0]
             candidate = frame.f_locals.get("self")
-            if candidate is not None:  # https://github.com/grpc/grpc/pull/36837
+            # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
+            # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
+            # might not always be the case.
+            if candidate is not None:
                 if isinstance(candidate, _base_call.Call):
                     if hasattr(candidate, "_channel"):
                         # For intercepted Call object
