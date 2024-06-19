@@ -194,6 +194,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_query_extensions",
         "//src/core:slice",
         "//test/core/iomgr:endpoint_tests",
         "//test/core/test_util:grpc_test_util",
