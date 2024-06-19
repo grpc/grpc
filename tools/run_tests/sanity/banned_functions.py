@@ -14,12 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Explicitly ban select functions from being used in gRPC."""
 
-# Any new instance of a deprecated function being used in the code will be flagged by the script. If there is a new instance of a deprecated function in a Pull Request, then the Sanity tests will fail for the Pul Request.
-# We are currently working on clearing out the usage of deprecated functions in the entire gRPC code base.
-# While our cleaning is in progress we have a temporary allow list. The allow list has a list of files where clean up of deprecated functions is pending. As we clean up the deprecated function from files, we will remove them from the allow list.
-# It would be wise to do the file clean up and the altering of the allow list int the same PR. This will make sure that any roll back of a clean up PR will alter the allow list and avoid build failures.
+# Explicitly ban select functions from being used in gRPC.
+#
+# Any new instance of a deprecated function being used in the code will be
+# flagged by the script. If there is a new instance of a deprecated function in
+# a Pull Request, then the Sanity tests will fail for the Pul Request.
+# We are currently working on clearing out the usage of deprecated functions in
+# the entire gRPC code base.
+# While our cleaning is in progress we have a temporary allow list. The allow
+# list has a list of files where clean up of deprecated functions is pending.
+# As we clean up the deprecated function from files, we will remove them from
+# the allow list.
+# It would be wise to do the file clean up and the altering of the allow list
+# int the same PR. This will make sure that any roll back of a clean up PR will
+# alter the allow list and avoid build failures.
 
 import os
 import sys
