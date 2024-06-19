@@ -255,9 +255,9 @@ BANNED_EXCEPT = {
         "./src/php/ext/grpc/php_grpc.c",
         "./test/core/end2end/tests/no_logging.cc",
     ],
-    "gpr_assertion_failed(": [],
-    "GPR_ASSERT(": [],
-    "GPR_DEBUG_ASSERT(": [],
+    "gpr_assertion_failed": [],
+    "GPR_ASSERT": [],
+    "GPR_DEBUG_ASSERT": [],
 }
 
 errors = 0
