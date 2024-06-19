@@ -914,8 +914,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
               << " success rate candidates and "
               << failure_percentage_ejection_candidates.size()
               << " failure percentage candidates; ejected_host_count="
-              << ejected_host_count
-              << "; success_rate_sum=" << success_rate_sum;
+              << ejected_host_count << "; success_rate_sum="
+              << absl::StrFormat("%.3f", success_rate_sum);
   }
   // success rate algorithm
   if (!success_rate_ejection_candidates.empty() &&
@@ -959,7 +959,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           LOG(INFO) << "[outlier_detection_lb " << parent_.get()
                     << "] random_key=" << random_key
                     << " ejected_host_count=" << ejected_host_count
-                    << " current_percent=" << current_percent;
+                    << " current_percent="
+                    << absl::StrFormat("%.3f", current_percent);
         }
         if (random_key < config.success_rate_ejection->enforcement_percentage &&
             (ejected_host_count == 0 ||
