@@ -748,9 +748,10 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   if (watcher_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
     LOG(INFO) << "[PF " << pick_first_.get() << "] subchannel state " << this
-              << " (subchannel " << subchannel_.get() << "): connectivity "
-              << "changed: new_state=" << ConnectivityStateName(new_state)
-              << ", status=" << status << ", watcher=" << watcher_
+              << " (subchannel " << subchannel_.get()
+              << "): connectivity changed: new_state="
+              << ConnectivityStateName(new_state) << ", status=" << status
+              << ", watcher=" << watcher_
               << ", subchannel_data_=" << subchannel_data_
               << ", pick_first_->selected_=" << pick_first_->selected_.get();
   }
@@ -959,8 +960,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
     PickFirst* p = subchannel_list_->policy_.get();
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
       LOG(INFO) << "Pick First " << p << " subchannel list " << subchannel_list_
-                << ": starting Connection "
-                << "Attempt Delay timer for "
+                << ": starting Connection Attempt Delay timer for "
                 << p->connection_attempt_delay_.millis() << "ms for index "
                 << index_;
     }
@@ -978,8 +978,8 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
                       LOG(INFO)
                           << "Pick First " << subchannel_list->policy_.get()
                           << " subchannel list " << subchannel_list.get()
-                          << ": Connection "
-                          << "Attempt Delay timer fired (shutting_down="
+                          << ": Connection Attempt Delay timer fired "
+                             "(shutting_down="
                           << subchannel_list->shutting_down_ << ", selected="
                           << subchannel_list->policy_->selected_ << ")";
                     }
@@ -1667,8 +1667,9 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   if (p->selected_ == this) {
     CHECK(subchannel_list_ == p->subchannel_list_.get());
     if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-      LOG(INFO) << "Pick First " << p << " selected subchannel connectivity "
-                << "changed to " << ConnectivityStateName(new_state);
+      LOG(INFO) << "Pick First " << p
+                << " selected subchannel connectivity changed to "
+                << ConnectivityStateName(new_state);
     }
     // Any state change is considered to be a failure of the existing
     // connection.

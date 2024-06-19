@@ -866,7 +866,8 @@ void RlsLb::ChildPolicyWrapper::StartUpdate() {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
     LOG(INFO) << "[rlslb " << lb_policy_.get()
               << "] ChildPolicyWrapper=" << this << " [" << target_
-              << "]: validating update, config: " << *child_policy_config;
+              << "]: validating update, config: "
+              << JsonDump(*child_policy_config);
   }
   auto config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
@@ -1715,7 +1716,7 @@ RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
       stale_header_data_(std::move(stale_header_data)) {
   if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
     LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
-              << ": RLS request created for key " << key_;
+              << ": RLS request created for key " << key_.ToString();
   }
   GRPC_CLOSURE_INIT(&call_complete_cb_, OnRlsCallComplete, this, nullptr);
   ExecCtx::Run(
@@ -1731,7 +1732,7 @@ void RlsLb::RlsRequest::Orphan() {
   if (call_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(rls_lb)) {
       LOG(INFO) << "[rlslb " << lb_policy_.get() << "] rls_request=" << this
-                << " " << key_ << ": cancelling RLS call";
+                << " " << key_.ToString() << ": cancelling RLS call";
     }
     grpc_call_cancel_internal(call_);
   }

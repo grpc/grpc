@@ -448,7 +448,7 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
   }
   if (weight == 0) {
     if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-      LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_
+      LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
                 << ": qps=" << qps << ", eps=" << eps
                 << ", utilization=" << utilization
                 << ": error_util_penalty=" << error_utilization_penalty
@@ -460,13 +460,14 @@ void WeightedRoundRobin::EndpointWeight::MaybeUpdateWeight(
   // Grab the lock and update the data.
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_
+    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
               << ": qps=" << qps << ", eps=" << eps
               << ", utilization=" << utilization
               << " error_util_penalty=" << error_utilization_penalty
               << " : setting weight=" << weight << " weight_=" << weight_
-              << " now=" << now << " last_update_time_=" << last_update_time_
-              << " non_empty_since_=" << non_empty_since_;
+              << " now=" << now.ToString()
+              << " last_update_time_=" << last_update_time_.ToString()
+              << " non_empty_since_=" << non_empty_since_.ToString();
   }
   if (non_empty_since_ == Timestamp::InfFuture()) non_empty_since_ = now;
   weight_ = weight;
@@ -478,12 +479,13 @@ float WeightedRoundRobin::EndpointWeight::GetWeight(
     uint64_t* num_not_yet_usable, uint64_t* num_stale) {
   MutexLock lock(&mu_);
   if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb)) {
-    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_
-              << ": getting weight: now=" << now
-              << " weight_expiration_period=" << weight_expiration_period
-              << " blackout_period=" << blackout_period
-              << " last_update_time_=" << last_update_time_
-              << " non_empty_since_=" << non_empty_since_
+    LOG(INFO) << "[WRR " << wrr_.get() << "] subchannel " << key_.ToString()
+              << ": getting weight: now=" << now.ToString()
+              << " weight_expiration_period="
+              << weight_expiration_period.ToString()
+              << " blackout_period=" << blackout_period.ToString()
+              << " last_update_time_=" << last_update_time_.ToString()
+              << " non_empty_since_=" << non_empty_since_.ToString()
               << " weight_=" << weight_;
   }
   // If the most recent update was longer ago than the expiration

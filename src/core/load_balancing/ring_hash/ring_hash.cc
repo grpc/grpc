@@ -572,8 +572,8 @@ void RingHash::RingHashEndpoint::OnStateUpdate(
     grpc_connectivity_state new_state, const absl::Status& status,
     RefCountedPtr<SubchannelPicker> picker) {
   if (GRPC_TRACE_FLAG_ENABLED(ring_hash_lb)) {
-    LOG(INFO) << "[RH " << ring_hash_.get() << "] connectivity changed for "
-              << "endpoint " << this << " ("
+    LOG(INFO) << "[RH " << ring_hash_.get()
+              << "] connectivity changed for endpoint " << this << " ("
               << ring_hash_->endpoints_[index_].ToString()
               << ", child_policy=" << child_policy_.get()
               << "): prev_state=" << ConnectivityStateName(connectivity_state_)
