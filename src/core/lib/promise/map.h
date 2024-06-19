@@ -80,7 +80,7 @@ template <typename Promise>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto CheckDelayed(Promise promise) {
   using P = promise_detail::PromiseLike<Promise>;
   return [delayed = false, promise = P(std::move(promise))]() mutable
-             -> Poll<std::tuple<typename P::Result, bool>> {
+         -> Poll<std::tuple<typename P::Result, bool>> {
     auto r = promise();
     if (r.pending()) {
       delayed = true;
