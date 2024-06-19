@@ -270,8 +270,7 @@ std::string FaultInjectionFilter::InjectionDecision::ToString() const {
 }
 
 const grpc_channel_filter FaultInjectionFilter::kFilter =
-    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>(
-        "fault_injection_filter");
+    MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>();
 
 void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
   FaultInjectionServiceConfigParser::Register(builder);

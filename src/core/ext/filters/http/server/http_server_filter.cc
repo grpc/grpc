@@ -55,7 +55,7 @@ const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata>("http-server");
+                           kFilterExaminesServerInitialMetadata>();
 
 namespace {
 void FilterOutgoingMetadata(ServerMetadata* md) {

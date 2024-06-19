@@ -36,6 +36,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_filters.h"
 #include "src/core/lib/transport/interception_chain.h"
@@ -61,7 +62,7 @@ namespace grpc_core {
 // TODO(ctiller): remove this. When we define a FilterFactory type, that type
 // can be specified with the right constraints to be depended upon by this code,
 // and that type can export a `string_view Name()` method.
-extern const char* (*NameFromChannelFilter)(const grpc_channel_filter*);
+extern UniqueTypeName (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 class ChannelInit {
  public:

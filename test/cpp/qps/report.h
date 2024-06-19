@@ -90,7 +90,7 @@ class CompositeReporter : public Reporter {
   std::vector<std::unique_ptr<Reporter> > reporters_;
 };
 
-/// Reporter to gpr_log(GPR_INFO).
+///  Reporter to LOG(INFO).
 class GprLogReporter : public Reporter {
  public:
   explicit GprLogReporter(const string& name) : Reporter(name) {}

@@ -267,7 +267,7 @@ const grpc_channel_filter kConnectedFilter{
     },
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
-    "connected",
+    GRPC_UNIQUE_TYPE_NAME_HERE("connected"),
 };
 
 // noop filter for the v3 stack: placeholder for now because other code requires
@@ -288,7 +288,7 @@ const grpc_channel_filter kPromiseBasedTransportFilter = {
     +[](grpc_channel_stack*, grpc_channel_element*) {},
     connected_channel_destroy_channel_elem,
     connected_channel_get_channel_info,
-    "connected",
+    GRPC_UNIQUE_TYPE_NAME_HERE("connected"),
 };
 
 bool TransportSupportsClientPromiseBasedCalls(const ChannelArgs& args) {

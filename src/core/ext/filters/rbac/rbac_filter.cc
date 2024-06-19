@@ -71,7 +71,7 @@ absl::Status RbacFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
 }
 
 const grpc_channel_filter RbacFilter::kFilterVtable =
-    MakePromiseBasedFilter<RbacFilter, FilterEndpoint::kServer>("rbac_filter");
+    MakePromiseBasedFilter<RbacFilter, FilterEndpoint::kServer>();
 
 RbacFilter::RbacFilter(size_t index,
                        EvaluateArgs::PerChannelArgs per_channel_evaluate_args)
