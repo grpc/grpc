@@ -981,7 +981,7 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
                           << ": Connection Attempt Delay timer fired "
                              "(shutting_down="
                           << subchannel_list->shutting_down_ << ", selected="
-                          << subchannel_list->policy_->selected_ << ")";
+                          << subchannel_list->policy_->selected_.get() << ")";
                     }
                     if (subchannel_list->shutting_down_) return;
                     if (subchannel_list->policy_->selected_ != nullptr) return;
@@ -1647,7 +1647,7 @@ void OldPickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
               << ", shutting_down=" << subchannel_list_->shutting_down_
               << ", pending_watcher=" << pending_watcher_
               << ", seen_transient_failure=" << seen_transient_failure_
-              << ", p->selected_=" << p->selected_.get()
+              << ", p->selected_=" << p->selected_->get()
               << ", p->subchannel_list_=" << p->subchannel_list_.get()
               << ", p->latest_pending_subchannel_list_="
               << p->latest_pending_subchannel_list_.get();
