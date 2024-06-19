@@ -16,13 +16,18 @@
 
 """Explicitly ban select functions from being used in gRPC."""
 
+# Any new instance of a deprecated function being used in the code will be flagged by the script. If there is a new instance of a deprecated function in a Pull Request, then the Sanity tests will fail for the Pul Request.
+# We are currently working on clearing out the usage of deprecated functions in the entire gRPC code base.
+# While our cleaning is in progress we have a temporary allow list. The allow list has a list of files where clean up of deprecated functions is pending. As we clean up the deprecated function from files, we will remove them from the allow list.
+# It would be wise to do the file clean up and the altering of the allow list int the same PR. This will make sure that any roll back of a clean up PR will alter the allow list and avoid build failures.
+
 import os
 import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 # map of banned function signature to allowlist
-BANNED_EXCEPT = {
+DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_severity": [
         "./include/grpc/support/log.h",
         "./src/core/lib/surface/call.h",
@@ -274,7 +279,7 @@ for root, dirs, files in os.walk("."):
             continue
         with open(path) as f:
             text = f.read()
-        for banned, exceptions in list(BANNED_EXCEPT.items()):
+        for banned, exceptions in list(DEPRECATED_FUNCTION_TEMP_ALLOW_LIST.items()):
             if path in exceptions:
                 continue
             if banned in text:
