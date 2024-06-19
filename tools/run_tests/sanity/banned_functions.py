@@ -34,7 +34,6 @@ BANNED_EXCEPT = {
         "./src/core/util/log.cc",
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
-        "./src/php/ext/grpc/php_grpc.c",
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.c",
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
         "./test/core/end2end/tests/no_logging.cc",

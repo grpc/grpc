@@ -247,6 +247,9 @@ void apply_ini_settings(TSRMLS_D) {
   }
 }
 
+
+/* {{{ PHP_MINIT_FUNCTION
+ */
 PHP_MINIT_FUNCTION(grpc) {
   REGISTER_INI_ENTRIES();
 
