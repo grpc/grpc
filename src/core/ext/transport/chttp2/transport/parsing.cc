@@ -717,7 +717,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       gpr_log(GPR_INFO,
               "[t:%p fd:%d peer:%s] Accepting new stream; "
               "num_incoming_streams_before_settings_ack=%u",
-              t, grpc_endpoint_get_fd(t->ep),
+              t, grpc_endpoint_get_fd(t->ep.get()),
               std::string(t->peer_string.as_string_view()).c_str(),
               t->num_incoming_streams_before_settings_ack);
     }

@@ -17,6 +17,7 @@
 //
 
 #include <chrono>
+#include <utility>
 
 #include <gtest/gtest.h>
 
@@ -118,14 +119,14 @@ class InProcessCHTTP2 {
     {
       grpc_core::Server* core_server =
           grpc_core::Server::FromC(server_->c_server());
-      grpc_endpoint* iomgr_server_endpoint =
-          grpc_event_engine_endpoint_create(std::move(listener_endpoint));
-      grpc_core::Transport* transport = grpc_create_chttp2_transport(
-          core_server->channel_args(), iomgr_server_endpoint,
-          /*is_client=*/false);
+      grpc_core::OrphanablePtr<grpc_endpoint> iomgr_server_endpoint(
+          grpc_event_engine_endpoint_create(std::move(listener_endpoint)));
       for (grpc_pollset* pollset : core_server->pollsets()) {
-        grpc_endpoint_add_to_pollset(iomgr_server_endpoint, pollset);
+        grpc_endpoint_add_to_pollset(iomgr_server_endpoint.get(), pollset);
       }
+      grpc_core::Transport* transport = grpc_create_chttp2_transport(
+          core_server->channel_args(), std::move(iomgr_server_endpoint),
+          /*is_client=*/false);
       CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
@@ -143,9 +144,10 @@ class InProcessCHTTP2 {
       args = args.Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, INT_MAX)
                  .Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, INT_MAX)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0);
+      grpc_core::OrphanablePtr<grpc_endpoint> endpoint(
+          grpc_event_engine_endpoint_create(std::move(client_endpoint)));
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
-          args, grpc_event_engine_endpoint_create(std::move(client_endpoint)),
-          /*is_client=*/true);
+          args, std::move(endpoint), /*is_client=*/true);
       CHECK(transport);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
