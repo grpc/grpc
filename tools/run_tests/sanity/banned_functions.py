@@ -45,7 +45,6 @@ BANNED_EXCEPT = {
         "./src/core/util/log.cc",
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
-        "./src/php/ext/grpc/php_grpc.c",
     ],
     "gpr_log(": [
         "./include/grpc/support/log.h",
@@ -257,14 +256,12 @@ BANNED_EXCEPT = {
         "./src/core/util/log.cc",
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
-        "./src/php/ext/grpc/php_grpc.c",
         "./test/core/end2end/tests/no_logging.cc",
         "./test/cpp/interop/stress_test.cc",
     ],
     "gpr_set_log_function(": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
-        "./src/php/ext/grpc/php_grpc.c",
         "./test/core/end2end/tests/no_logging.cc",
         "./test/cpp/interop/stress_test.cc",
     ],
