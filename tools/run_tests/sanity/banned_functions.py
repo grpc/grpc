@@ -163,6 +163,7 @@ BANNED_EXCEPT = {
         "./src/core/lib/transport/call_filters.h",
         "./src/core/lib/transport/connectivity_state.cc",
         "./src/core/lib/transport/transport.h",
+        "./src/core/load_balancing/outlier_detection/outlier_detection.cc",
         "./src/core/resolver/dns/c_ares/grpc_ares_wrapper.cc",
         "./src/core/resolver/dns/c_ares/grpc_ares_wrapper.h",
         "./src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.cc",
