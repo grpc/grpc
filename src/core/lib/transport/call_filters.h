@@ -1705,13 +1705,15 @@ class CallFilters {
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
           auto value = std::move(push_server_trailing_metadata_);
-          if (call_data_ == nullptr) return value;
-          for (auto it = stacks_.crbegin(); it != stacks_.crend(); ++it) {
-            value = filters_detail::RunServerTrailingMetadata(
-                it->stack->data_.server_trailing_metadata,
-                filters_detail::Offset(call_data_, it->call_data_offset),
-                std::move(value));
+          if (call_data_ != nullptr) {
+            for (auto it = stacks_.crbegin(); it != stacks_.crend(); ++it) {
+              value = filters_detail::RunServerTrailingMetadata(
+                  it->stack->data_.server_trailing_metadata,
+                  filters_detail::Offset(call_data_, it->call_data_offset),
+                  std::move(value));
+            }
           }
+          call_state_.FinishPullServerTrailingMetadata();
           return value;
         });
   }
