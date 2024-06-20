@@ -258,6 +258,20 @@ class ChannelInit {
       version_ = Version::kV3;
       return *this;
     }
+    // Request this filter be placed as high as possible in the stack (given
+    // before/after constraints).
+    FilterRegistration& FloatToTop() {
+      CHECK_EQ(ordering_, Ordering::kDefault);
+      ordering_ = Ordering::kTop;
+      return *this;
+    }
+    // Request this filter be placed as low as possible in the stack (given
+    // before/after constraints).
+    FilterRegistration& SinkToBottom() {
+      CHECK_EQ(ordering_, Ordering::kDefault);
+      ordering_ = Ordering::kBottom;
+      return *this;
+    }
 
    private:
     friend class ChannelInit;

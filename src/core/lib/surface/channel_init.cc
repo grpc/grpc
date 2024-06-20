@@ -160,7 +160,8 @@ class ChannelInit::DependencyTracker {
     }
     auto next = ready_dependencies_.top();
     ready_dependencies_.pop();
-    if (next.node->ordering() != Ordering::kDefault) {
+    if (!ready_dependencies_.empty() &&
+        next.node->ordering() != Ordering::kDefault) {
       // Constraint: if we use ordering other than default, then we must have an
       // unambiguous pick. If there is ambiguity, we must fix it by adding
       // explicit ordering constraints.
@@ -222,9 +223,9 @@ class ChannelInit::DependencyTracker {
       // Sort first on ordering, and then lexically on name.
       // The lexical sort means that the ordering is stable between builds
       // (UniqueTypeName ordering is not stable between builds).
-      return node->ordering() < other.node->ordering() ||
+      return node->ordering() > other.node->ordering() ||
              (node->ordering() == other.node->ordering() &&
-              node->name() < other.node->name());
+              node->name() > other.node->name());
     }
   };
   absl::flat_hash_map<UniqueTypeName, Node> nodes_;
