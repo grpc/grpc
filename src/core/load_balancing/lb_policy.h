@@ -142,6 +142,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    private:
     friend class MetadataMutationHandler;
 
+    // Avoid allocation if up to 3 additions per LB pick.  Most expected
+    // use cases should be no more than 2, so this gives us a bit of slack.
+    // But it should be cheap to increase this value if we start seeing use
+    // cases with more than 3 additions.
     absl::InlinedVector<
         std::pair<absl::string_view, grpc_event_engine::experimental::Slice>, 3>
         additions_;
