@@ -547,7 +547,7 @@ class PromiseActivity final
   }
 
   void WakeupAsync(WakeupMask) final {
-    GRPC_LATENT_SEE_SCOPE("PromiseActivity::WakeupAsync");
+    GRPC_LATENT_SEE_INNER_SCOPE("PromiseActivity::WakeupAsync");
     wakeup_flow_.emplace(GRPC_LATENT_SEE_METADATA("Activity::Wakeup"));
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.

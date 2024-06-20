@@ -267,7 +267,7 @@ bool Party::RunParty() {
 }
 
 bool Party::RunOneParticipant(int i) {
-  GRPC_LATENT_SEE_SCOPE("Party::RunOneParticipant");
+  GRPC_LATENT_SEE_INNER_SCOPE("Party::RunOneParticipant");
   // If the participant is null, skip.
   // This allows participants to complete whilst wakers still exist
   // somewhere.

@@ -109,16 +109,20 @@ class Scope {
   const Metadata* const metadata_;
 };
 
+using ParentScope = Scope<true>;
+using InnerScope = Scope<false>;
+
 class Flow {
  public:
-  explicit Flow(const Metadata* metadata) : metadata_(metadata) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Flow() : metadata_(nullptr) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Flow(const Metadata* metadata)
+      : metadata_(metadata) {
     Log::Append(metadata_, EventType::kFlowStart, id_);
     Log::FlushThreadLog();
   }
-  ~Flow() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Flow() {
     if (metadata_ != nullptr) {
       Log::Append(metadata_, EventType::kFlowEnd, id_);
-      Log::FlushThreadLog();
     }
   }
 
@@ -133,8 +137,17 @@ class Flow {
     return *this;
   }
 
-  bool has_value() const { return metadata_ != nullptr; }
-  void reset() { metadata_ = nullptr; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool has_value() const {
+    return metadata_ != nullptr;
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void reset() { emplace(nullptr); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void emplace(const Metadata* metadata) {
+    if (metadata_ != nullptr) Log::Append(metadata_, EventType::kFlowEnd, id_);
+    metadata_ = metadata;
+    if (metadata_ == nullptr) return;
+    id_ = next_flow_id_.fetch_add(1, std::memory_order_relaxed);
+    Log::Append(metadata_, EventType::kFlowStart, id_);
+  }
 
  private:
   const Metadata* metadata_;
@@ -158,12 +171,13 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
 // exit. Because the flush takes some time it's better to place one parent scope
 // at the top of the stack, and use lighter weight scopes within it.
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name)                       \
-  grpc_core::latent_see::Scope<true> latent_see_scope##__LINE__( \
+  grpc_core::latent_see::ParentScope latent_see_scope##__LINE__( \
       GRPC_LATENT_SEE_METADATA(name))
-// Scope: logs a begin and end event. Lighter weight than parent scope, but does
-// not flush the thread state - so should only be enclosed by a parent scope.
-#define GRPC_LATENT_SEE_SCOPE(name)                               \
-  grpc_core::latent_see::Scope<false> latent_see_scope##__LINE__( \
+// Inner scope: logs a begin and end event. Lighter weight than parent scope,
+// but does not flush the thread state - so should only be enclosed by a parent
+// scope.
+#define GRPC_LATENT_SEE_INNER_SCOPE(name)                       \
+  grpc_core::latent_see::InnerScope latent_see_scope##__LINE__( \
       GRPC_LATENT_SEE_METADATA(name))
 // Mark: logs a single event.
 #define GRPC_LATENT_SEE_MARK(name) \
@@ -187,8 +201,8 @@ struct Flow {
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
   do {                                     \
   } while (0)
-#define GRPC_LATENT_SEE_SCOPE(name) \
-  do {                              \
+#define GRPC_LATENT_SEE_INNER_SCOPE(name) \
+  do {                                    \
   } while (0)
 #define GRPC_LATENT_SEE_MARK(name) \
   do {                             \
