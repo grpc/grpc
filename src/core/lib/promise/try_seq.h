@@ -229,11 +229,15 @@ using TrySeqTraits = TrySeqTraitsWithSfinae<T>;
 template <typename P, typename... Fs>
 class TrySeq {
  public:
-  explicit TrySeq(P&& promise, Fs&&... factories, DebugLocation whence)
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit TrySeq(P&& promise,
+                                                       Fs&&... factories,
+                                                       DebugLocation whence)
       : state_(std::forward<P>(promise), std::forward<Fs>(factories)...,
                whence) {}
 
-  auto operator()() { return state_.PollOnce(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
+    return state_.PollOnce();
+  }
 
  private:
   SeqState<TrySeqTraits, P, Fs...> state_;
