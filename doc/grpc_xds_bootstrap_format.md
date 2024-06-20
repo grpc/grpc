@@ -242,7 +242,7 @@ protocol v3, and when support for xDS transport protocol v2 was dropped.
 
 | Bootstrap Field | Relevant gRFCs
 ------------------|---------------
-`xds_servers` | [A27](a27)
+`xds_servers` | [A27](a27), [A71](a71)
 `google_default` channel credentials | [A27](a27)
 `insecure` channel credentials | [A27](a27)
 `node` |  [A27](a27)
@@ -262,3 +262,4 @@ protocol v3, and when support for xDS transport protocol v2 was dropped.
 [a47]: https://github.com/grpc/proposal/blob/master/A47-xds-federation.md
 [a53]: https://github.com/grpc/proposal/blob/master/A53-xds-ignore-resource-deletion.md
 [a65]: https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md#proposal
+[a71]: https://github.com/grpc/proposal/blob/master/A71-xds-fallback.md
