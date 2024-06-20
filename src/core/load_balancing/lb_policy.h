@@ -23,7 +23,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
@@ -120,10 +119,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     virtual absl::optional<absl::string_view> Lookup(
         absl::string_view key, std::string* buffer) const = 0;
-
-    /// Produce a vector of metadata key/value strings for tests.
-    virtual std::vector<std::pair<std::string, std::string>>
-    TestOnlyCopyToVector() = 0;
   };
 
   /// A list of metadata mutations to be returned along with a PickResult.
