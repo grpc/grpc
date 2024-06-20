@@ -212,6 +212,4 @@ class TlsCertificateDistributor {
       ABSL_GUARDED_BY(mu_);
 };
 
-typedef TlsCertificateDistributor TlsCertificateDistributor;
-
 #endif  // GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_TLS_GRPC_TLS_CERTIFICATE_DISTRIBUTOR_H
