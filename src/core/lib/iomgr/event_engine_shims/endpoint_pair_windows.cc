@@ -33,6 +33,8 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"

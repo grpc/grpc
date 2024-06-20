@@ -64,7 +64,7 @@ void CreateSockets(int sv[2]) {
 }
 
 EndpointPair CreateEndpointPair(grpc_core::ChannelArgs& args,
-                                ThreadPool* thread_pool) {
+                                GRPC_UNUSED ThreadPool* thread_pool) {
   std::unique_ptr<EventEngine::Endpoint> client_endpoint = nullptr;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint = nullptr;
 

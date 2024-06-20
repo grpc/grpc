@@ -346,7 +346,7 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
-TEST(SecureEndpointTest, IomgrEndpointTest) {
+TEST(SecureEndpointTest, MainTest) {
   grpc_closure destroyed;
   grpc_init();
 
@@ -362,33 +362,13 @@ TEST(SecureEndpointTest, IomgrEndpointTest) {
     test_leftover(configs[2], 1);
     test_leftover(configs[3], 1);
 
-    GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
-                      grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(g_pollset, &destroyed);
-    g_thread_pool->Quiesce();
-  }
-
-  grpc_shutdown();
-
-  gpr_free(g_pollset);
-}
-
-TEST(SecureEndpointTest, EventEngineEndpointTest) {
-  g_event_engine_secure_endpoint_enabled = true;
-  grpc_closure destroyed;
-  grpc_init();
-
-  {
-    grpc_core::ExecCtx exec_ctx;
-    g_thread_pool = MakeThreadPool(8);
-    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(g_pollset, &g_mu);
-
     // Run tests with EventEngine-based secure endpoint.
+    g_event_engine_secure_endpoint_enabled = true;
     grpc_endpoint_tests(configs[0], g_pollset, g_mu);
     grpc_endpoint_tests(configs[1], g_pollset, g_mu);
     test_leftover(configs[2], 1);
     test_leftover(configs[3], 1);
+    g_event_engine_secure_endpoint_enabled = false;
 
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, g_pollset,
                       grpc_schedule_on_exec_ctx);
@@ -399,7 +379,6 @@ TEST(SecureEndpointTest, EventEngineEndpointTest) {
   grpc_shutdown();
 
   gpr_free(g_pollset);
-  g_event_engine_secure_endpoint_enabled = false;
 }
 
 int main(int argc, char** argv) {
