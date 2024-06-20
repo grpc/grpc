@@ -1542,6 +1542,7 @@ class CallFilters {
       if ((filters_->*input_location) != nullptr) {
         if (stack_current_ == stack_end_) {
           DCHECK_NE((filters_->*input_location).get(), nullptr);
+          (filters_->call_state_.*on_done)();
           return Output(std::move(filters_->*input_location));
         }
         return FinishStep(executor_.Start(
