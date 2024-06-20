@@ -20,6 +20,7 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "ref_counted_ptr.h"
 
 #include <grpc/support/port_platform.h>
 
@@ -78,6 +79,12 @@ class UniqueTypeName {
   }
   bool operator<(const UniqueTypeName& other) const {
     return name_.data() < other.name_.data();
+  }
+
+  template <typename H>
+  friend H AbslHashValue(H h, const UniqueTypeName& name) {
+    return H::combine(std::move(h),
+                      static_cast<const void*>(name.name_.data()));
   }
 
   int Compare(const UniqueTypeName& other) const {
