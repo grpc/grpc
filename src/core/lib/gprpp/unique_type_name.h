@@ -23,7 +23,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
 // Provides a type name that is unique by instance rather than by
