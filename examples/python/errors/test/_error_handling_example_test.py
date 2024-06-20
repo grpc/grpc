@@ -28,7 +28,7 @@ import unittest
 import grpc
 
 import google
-print(f">>>google.__file__: {google.__file__}")
+print(f">>>google: {google.__file__}")
 import google.protobuf
 print(f">>>google.protobuf: {google.protobuf.__file__}")
 
