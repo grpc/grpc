@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef LATENT_SEE_H
-#define LATENT_SEE_H
+#ifndef GRPC_SRC_CORE_UTIL_LATENT_SEE_H
+#define GRPC_SRC_CORE_UTIL_LATENT_SEE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -211,4 +211,4 @@ struct Flow {
   grpc_core::latent_see::Flow {}
 #endif  // GRPC_ENABLE_LATENT_SEE
 
-#endif
+#endif  // GRPC_SRC_CORE_UTIL_LATENT_SEE_H

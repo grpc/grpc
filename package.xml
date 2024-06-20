@@ -1911,6 +1911,8 @@
     <file baseinstalldir="/" name="src/core/util/json/json_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/json/json_writer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/json/json_writer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/latent_see.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/latent_see.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/linux/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/linux/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/log.cc" role="src" />
