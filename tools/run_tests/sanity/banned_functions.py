@@ -46,7 +46,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/util/log.cc",
         "./src/core/util/posix/log.cc",
         "./src/core/util/windows/log.cc",
-        "./src/php/ext/grpc/php_grpc.c",
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.c",
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
         "./test/core/end2end/tests/no_logging.cc",
@@ -54,7 +53,12 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_severity_string(": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
+<<<<<<< clean_allow_list_2024_06_19
         "./src/php/ext/grpc/php_grpc.c",
+=======
+        "./src/core/util/posix/log.cc",
+        "./src/core/util/windows/log.cc",
+>>>>>>> master
     ],
     "gpr_log(": [
         "./include/grpc/support/log.h",
@@ -102,8 +106,12 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/handshaker/http_connect/http_connect_handshaker.cc",
         "./src/core/handshaker/http_connect/http_proxy_mapper.cc",
         "./src/core/handshaker/security/secure_endpoint.cc",
+<<<<<<< clean_allow_list_2024_06_19
         "./src/core/lib/channel/promise_based_filter.cc",
         "./src/core/lib/debug/trace.cc",
+=======
+        "./src/core/lib/channel/channel_stack.cc",
+>>>>>>> master
         "./src/core/lib/event_engine/ares_resolver.h",
         "./src/core/lib/event_engine/cf_engine/cf_engine.cc",
         "./src/core/lib/event_engine/posix_engine/posix_engine.cc",
@@ -260,13 +268,17 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_func_args": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
+<<<<<<< clean_allow_list_2024_06_19
         "./src/php/ext/grpc/php_grpc.c",
+=======
+        "./src/core/util/posix/log.cc",
+        "./src/core/util/windows/log.cc",
+>>>>>>> master
         "./test/core/end2end/tests/no_logging.cc",
     ],
     "gpr_set_log_function(": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
-        "./src/php/ext/grpc/php_grpc.c",
         "./test/core/end2end/tests/no_logging.cc",
     ],
     "gpr_assertion_failed": [],
