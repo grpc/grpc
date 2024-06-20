@@ -27,6 +27,11 @@ import unittest
 
 import grpc
 
+import google
+print(f">>>google.__file__: {google.__file__}")
+import google.protobuf
+print(f">>>google.protobuf: {google.protobuf.__file__}")
+
 from examples.protos import helloworld_pb2_grpc
 from examples.python.errors import client as error_handling_client
 from examples.python.errors import server as error_handling_server
