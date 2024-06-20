@@ -49,14 +49,13 @@ FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   fd = mkstemp(filename_template);
   if (fd == -1) {
     LOG(ERROR) << "mkstemp failed for filename_template " << filename_template
-               << " with error " << grpc_core::StrError(errno).c_str();
+               << " with error " << grpc_core::StrError(errno);
     goto end;
   }
   result = fdopen(fd, "w+");
   if (result == nullptr) {
     LOG(ERROR) << "Could not open file " << filename_template << " from fd "
-               << fd << " (error = " << grpc_core::StrError(errno).c_str()
-               << ").";
+               << fd << " (error = " << grpc_core::StrError(errno) << ").";
     unlink(filename_template);
     close(fd);
     goto end;
