@@ -38,7 +38,8 @@
 void gpr_default_log(gpr_log_func_args* args);
 
 namespace grpc_core {
-
+// This test is currently broken.
+// The whole test will be re-written as a part of gpr to absl log conversion.
 class Verifier {
  public:
   Verifier() {
@@ -54,9 +55,11 @@ class Verifier {
     }
     grpc_tracer_set_enabled("all", 0);
     grpc_set_absl_verbosity_debug();
+    // This is broken. Replace with an absl log sink.
     gpr_set_log_function(DispatchLog);
   }
   ~Verifier() {
+    // This is broken. Replace with an absl log sink.
     gpr_set_log_function(gpr_default_log);
     saved_trace_flags_.Restore();
     gpr_set_log_verbosity(saved_severity_);
