@@ -1657,6 +1657,7 @@ class CallFilters {
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
           auto result = std::move(push_server_trailing_metadata_);
+          call_state_.FinishPullServerTrailingMetadata();
           if (call_data_ == nullptr) return result;
           return filters_detail::RunServerTrailingMetadata(
               stack_->data_.server_trailing_metadata, call_data_,
