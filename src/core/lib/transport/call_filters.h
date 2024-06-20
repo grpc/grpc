@@ -172,11 +172,10 @@ struct ResultOr {
 };
 
 // One filter operation metadata
-// Given a value of type V, produces a promise of type R.
-template <typename R, typename V>
+// Given a value of type T, produces a promise of type ResultOr<T>.
+template <typename T>
 struct Operator {
-  using Result = R;
-  using Arg = V;
+  using Arg = T;
   // Pointer to corresponding channel data for this filter
   void* channel_data;
   // Offset of the call data for this filter within the call data memory
@@ -184,13 +183,13 @@ struct Operator {
   // Initialize the promise data for this filter, and poll once.
   // Return the result of the poll.
   // If the promise finishes, also destroy the promise data!
-  Poll<R> (*promise_init)(void* promise_data, void* call_data,
-                          void* channel_data, V value);
+  Poll<ResultOr<T>> (*promise_init)(void* promise_data, void* call_data,
+                                    void* channel_data, T value);
   // Poll the promise data for this filter.
   // If the promise finishes, also destroy the promise data!
   // Note that if the promise always finishes on the first poll, then supplying
   // this method is unnecessary (as it will never be called).
-  Poll<R> (*poll)(void* promise_data);
+  Poll<ResultOr<T>> (*poll)(void* promise_data);
   // Destroy the promise data for this filter for an in-progress operation
   // before the promise finishes.
   // Note that if the promise always finishes on the first poll, then supplying
@@ -206,24 +205,19 @@ struct HalfCloseOperator {
   void (*half_close)(void* call_data, void* channel_data);
 };
 
+struct ServerTrailingMetadataOperator {
+  // Pointer to corresponding channel data for this filter
+  void* channel_data;
+  // Offset of the call data for this filter within the call data memory
+  size_t call_offset;
+  ServerMetadataHandle (*server_trailing_metadata)(
+      void* call_data, void* channel_data, ServerMetadataHandle metadata);
+};
+
 void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data);
-
-// We divide operations into fallible and infallible.
-// Fallible operations can fail, and that failure terminates the call.
-// Infallible operations cannot fail.
-// Fallible operations are used for client initial, and server initial metadata,
-// and messages.
-// Infallible operations are used for server trailing metadata.
-// (This is because server trailing metadata occurs when the call is finished -
-// and so we couldn't possibly become more finished - and also because it's the
-// preferred representation of failure anyway!)
-
-// An operation that could fail: takes a T argument, produces a ResultOr<T>
-template <typename T>
-using FallibleOperator = Operator<ResultOr<T>, T>;
-// And one that cannot: takes a T argument, produces a T
-template <typename T>
-using InfallibleOperator = Operator<T, T>;
+ServerMetadataHandle RunServerTrailingMetadata(
+    absl::Span<const ServerTrailingMetadataOperator> ops, void* call_data,
+    ServerMetadataHandle md);
 
 // One call finalizer
 struct Finalizer {
@@ -235,19 +229,20 @@ struct Finalizer {
 
 // A layout of operations for a given filter stack
 // This includes which operations, how much memory is required, what alignment.
-template <typename Op>
+template <typename T>
 struct Layout {
   size_t promise_size = 0;
   size_t promise_alignment = 0;
-  std::vector<Op> ops;
+  std::vector<Operator<T>> ops;
 
-  void Add(size_t filter_promise_size, size_t filter_promise_alignment, Op op) {
+  void Add(size_t filter_promise_size, size_t filter_promise_alignment,
+           Operator<T> op) {
     promise_size = std::max(promise_size, filter_promise_size);
     promise_alignment = std::max(promise_alignment, filter_promise_alignment);
     ops.push_back(op);
   }
 
-  void Reverse() { std::reverse(ops.begin(), ops.end()); }
+  void Reverse() { absl::c_reverse(ops); }
 };
 
 // AddOp and friends
@@ -267,16 +262,7 @@ struct AddOpImpl;
 
 template <typename FunctionImpl, FunctionImpl impl, typename FilterType,
           typename T>
-void AddOp(FilterType* channel_data, size_t call_offset,
-           Layout<FallibleOperator<T>>& to) {
-  AddOpImpl<FilterType, T, FunctionImpl, impl>::Add(channel_data, call_offset,
-                                                    to);
-}
-
-template <typename FunctionImpl, FunctionImpl impl, typename FilterType,
-          typename T>
-void AddOp(FilterType* channel_data, size_t call_offset,
-           Layout<InfallibleOperator<T>>& to) {
+void AddOp(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
   AddOpImpl<FilterType, T, FunctionImpl, impl>::Add(channel_data, call_offset,
                                                     to);
 }
@@ -307,24 +293,83 @@ template <typename FilterType>
 void AddHalfClose(FilterType*, size_t, const NoInterceptor*,
                   std::vector<HalfCloseOperator>&) {}
 
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    void (FilterType::Call::*)(ServerMetadata&),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void*, ServerMetadataHandle metadata) {
+        static_cast<typename FilterType::Call*>(call_data)
+            ->OnServerTrailingMetadata(*metadata);
+        return metadata;
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    void (FilterType::Call::*)(ServerMetadata&, FilterType*),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void* channel_data, ServerMetadataHandle metadata) {
+        static_cast<typename FilterType::Call*>(call_data)
+            ->OnServerTrailingMetadata(*metadata,
+                                       static_cast<FilterType*>(channel_data));
+        return metadata;
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    absl::Status (FilterType::Call::*)(ServerMetadata&),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void*, ServerMetadataHandle metadata) {
+        auto r = static_cast<typename FilterType::Call*>(call_data)
+                     ->OnServerTrailingMetadata(*metadata);
+        if (r.ok()) return metadata;
+        return CancelledServerMetadataFromStatus(r);
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(
+    FilterType* channel_data, size_t call_offset,
+    ServerMetadataHandle (FilterType::Call::*)(ServerMetadataHandle),
+    std::vector<ServerTrailingMetadataOperator>& to) {
+  to.push_back(ServerTrailingMetadataOperator{
+      channel_data, call_offset,
+      [](void* call_data, void* channel_data, ServerMetadataHandle metadata) {
+        return static_cast<typename FilterType::Call*>(call_data)
+            ->OnServerTrailingMetadata(std::move(metadata));
+      }});
+}
+
+template <typename FilterType>
+void AddServerTrailingMetadata(FilterType*, size_t, const NoInterceptor*,
+                               std::vector<ServerTrailingMetadataOperator>&) {}
+
 // const NoInterceptor $EVENT
 // These do nothing, and specifically DO NOT add an operation to the layout.
 // Supported for fallible & infallible operations.
 template <typename FilterType, typename T, const NoInterceptor* which>
 struct AddOpImpl<FilterType, T, const NoInterceptor*, which> {
-  static void Add(FilterType*, size_t, Layout<FallibleOperator<T>>&) {}
-  static void Add(FilterType*, size_t, Layout<InfallibleOperator<T>>&) {}
+  static void Add(FilterType*, size_t, Layout<T>&) {}
 };
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&)>
+          void (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  void (FilterType::Call::*)(typename T::element_type&), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(0, 0,
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -336,34 +381,18 @@ struct AddOpImpl<FilterType, T,
                nullptr,
            });
   }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(0, 0,
-           InfallibleOperator<T>{
-               channel_data,
-               call_offset,
-               [](void*, void* call_data, void*, T value) -> Poll<T> {
-                 (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                     *value);
-                 return std::move(value);
-               },
-               nullptr,
-               nullptr,
-           });
-  }
 };
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&,
-                                         FilterType*)>
+          void (FilterType::Call::* impl)(typename T::element_type&,
+                                          FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(0, 0,
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void*, void* call_data, void* channel_data,
@@ -376,33 +405,16 @@ struct AddOpImpl<
                nullptr,
            });
   }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data, T value) -> Poll<T> {
-              (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  *value, static_cast<FilterType*>(channel_data));
-              return std::move(value);
-            },
-            nullptr,
-            nullptr,
-        });
-  }
 };
 
 // $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          T (FilterType::Call::*impl)(T, FilterType*)>
+          T (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -416,37 +428,18 @@ struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
             nullptr,
         });
   }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void* channel_data, T value) -> Poll<T> {
-              (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  *value, static_cast<FilterType*>(channel_data));
-              return (
-                  static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                  std::move(value), static_cast<FilterType*>(channel_data));
-            },
-            nullptr,
-            nullptr,
-        });
-  }
 };
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -461,38 +454,19 @@ struct AddOpImpl<FilterType, T,
             nullptr,
         });
   }
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<InfallibleOperator<T>>& to) {
-    to.Add(
-        0, 0,
-        InfallibleOperator<T>{
-            channel_data,
-            call_offset,
-            [](void*, void* call_data, void*, T value) -> Poll<T> {
-              auto r =
-                  (static_cast<typename FilterType::Call*>(call_data)->*impl)(
-                      *value);
-              if (r.ok()) return std::move(value);
-              return StatusCast<ServerMetadataHandle>(std::move(r));
-            },
-            nullptr,
-            nullptr,
-        });
-  }
 };
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T,
     absl::Status (FilterType::Call::*)(const typename T::element_type&), impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -511,17 +485,16 @@ struct AddOpImpl<
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&,
-                                                 FilterType*)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&,
+                                                  FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&,
                                                     FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -541,17 +514,16 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(
                      const typename T::element_type&, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -571,15 +543,14 @@ struct AddOpImpl<FilterType, T,
 
 // absl::StatusOr<$VALUE_HANDLE> $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          absl::StatusOr<T> (FilterType::Call::*impl)(T, FilterType*)>
+          absl::StatusOr<T> (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::StatusOr<T> (FilterType::Call::*)(T, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -599,17 +570,16 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      typename T::element_type&),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -628,17 +598,16 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      const typename T::element_type&),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void*, T value) -> Poll<ResultOr<T>> {
@@ -657,17 +626,16 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      typename T::element_type&, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -687,17 +655,16 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
                      const typename T::element_type&, FilterType*),
                  impl> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
         0, 0,
-        FallibleOperator<T>{
+        Operator<T>{
             channel_data,
             call_offset,
             [](void*, void* call_data, void* channel_data,
@@ -717,12 +684,11 @@ struct AddOpImpl<FilterType, T,
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&)>
+          R (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T, R (FilterType::Call::*)(typename T::element_type&), impl,
     absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
       Promise(T value, typename FilterType::Call* call_data, FilterType*)
@@ -745,7 +711,7 @@ struct AddOpImpl<
       GPR_NO_UNIQUE_ADDRESS R impl_;
     };
     to.Add(sizeof(Promise), alignof(Promise),
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void* promise_data, void* call_data, void* channel_data,
@@ -768,14 +734,13 @@ struct AddOpImpl<
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&, FilterType*)>
+          R (FilterType::Call::* impl)(typename T::element_type&, FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
     absl::enable_if_t<!std::is_same<R, absl::Status>::value &&
                       std::is_same<absl::Status, PromiseResult<R>>::value>> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
       Promise(T value, typename FilterType::Call* call_data,
@@ -800,7 +765,7 @@ struct AddOpImpl<
       GPR_NO_UNIQUE_ADDRESS R impl_;
     };
     to.Add(sizeof(Promise), alignof(Promise),
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void* promise_data, void* call_data, void* channel_data,
@@ -824,12 +789,11 @@ struct AddOpImpl<
 // PROMISE_RETURNING(absl::StatusOr<$VALUE_HANDLE>)
 // $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(T, FilterType*)>
+          R (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  absl::enable_if_t<std::is_same<absl::StatusOr<T>,
                                                 PromiseResult<R>>::value>> {
-  static void Add(FilterType* channel_data, size_t call_offset,
-                  Layout<FallibleOperator<T>>& to) {
+  static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     class Promise {
      public:
       Promise(T value, typename FilterType::Call* call_data,
@@ -850,7 +814,7 @@ struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
       GPR_NO_UNIQUE_ADDRESS R impl_;
     };
     to.Add(sizeof(Promise), alignof(Promise),
-           FallibleOperator<T>{
+           Operator<T>{
                channel_data,
                call_offset,
                [](void* promise_data, void* call_data, void* channel_data,
@@ -892,12 +856,12 @@ struct StackData {
   // For each kind of operation, a layout of the operations for this call.
   // (there's some duplicate data here, and that's ok: we want to avoid
   // pointer chasing as much as possible when executing a call)
-  Layout<FallibleOperator<ClientMetadataHandle>> client_initial_metadata;
-  Layout<FallibleOperator<ServerMetadataHandle>> server_initial_metadata;
-  Layout<FallibleOperator<MessageHandle>> client_to_server_messages;
+  Layout<ClientMetadataHandle> client_initial_metadata;
+  Layout<ServerMetadataHandle> server_initial_metadata;
+  Layout<MessageHandle> client_to_server_messages;
   std::vector<HalfCloseOperator> client_to_server_half_close;
-  Layout<FallibleOperator<MessageHandle>> server_to_client_messages;
-  Layout<InfallibleOperator<ServerMetadataHandle>> server_trailing_metadata;
+  Layout<MessageHandle> server_to_client_messages;
+  std::vector<ServerTrailingMetadataOperator> server_trailing_metadata;
   // A list of finalizers for this call.
   // We use a bespoke data structure here because finalizers can never be
   // asynchronous.
@@ -1035,9 +999,9 @@ struct StackData {
   template <typename FilterType>
   void AddServerTrailingMetadataOp(FilterType* channel_data,
                                    size_t call_offset) {
-    AddOp<decltype(&FilterType::Call::OnServerTrailingMetadata),
-          &FilterType::Call::OnServerTrailingMetadata>(
-        channel_data, call_offset, server_trailing_metadata);
+    AddServerTrailingMetadata(channel_data, call_offset,
+                              &FilterType::Call::OnServerTrailingMetadata,
+                              server_trailing_metadata);
   }
 
   // Finalizer interception adders
@@ -1049,7 +1013,7 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1063,8 +1027,8 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*,
-                                                FilterType*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*,
+                                                 FilterType*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1109,8 +1073,7 @@ class OperationExecutor {
   // Start executing a layout. May allocate space to store the relevant promise.
   // Returns the result of the first poll.
   // If the promise finishes, also destroy the promise data.
-  Poll<ResultOr<T>> Start(const Layout<FallibleOperator<T>>* layout, T input,
-                          void* call_data);
+  Poll<ResultOr<T>> Start(const Layout<T>* layout, T input, void* call_data);
   // Continue executing a layout. Returns the result of the next poll.
   // If the promise finishes, also destroy the promise data.
   Poll<ResultOr<T>> Step(void* call_data);
@@ -1132,63 +1095,8 @@ class OperationExecutor {
   Poll<ResultOr<T>> ContinueStep(void* call_data);
 
   void* promise_data_ = nullptr;
-  const FallibleOperator<T>* ops_;
-  const FallibleOperator<T>* end_ops_;
-};
-
-// Per OperationExecutor, but for infallible operation sequences.
-template <typename T>
-class InfallibleOperationExecutor {
- public:
-  InfallibleOperationExecutor() = default;
-  ~InfallibleOperationExecutor();
-  InfallibleOperationExecutor(const InfallibleOperationExecutor&) = delete;
-  InfallibleOperationExecutor& operator=(const InfallibleOperationExecutor&) =
-      delete;
-  InfallibleOperationExecutor(InfallibleOperationExecutor&& other) noexcept
-      : ops_(other.ops_), end_ops_(other.end_ops_) {
-    // Movable iff we're not running.
-    DCHECK_EQ(other.promise_data_, nullptr);
-  }
-  InfallibleOperationExecutor& operator=(
-      InfallibleOperationExecutor&& other) noexcept {
-    DCHECK_EQ(other.promise_data_, nullptr);
-    DCHECK_EQ(promise_data_, nullptr);
-    ops_ = other.ops_;
-    end_ops_ = other.end_ops_;
-    return *this;
-  }
-
-  // IsRunning() is true if we're currently executing a sequence of operations.
-  bool IsRunning() const { return promise_data_ != nullptr; }
-  // Start executing a layout. May allocate space to store the relevant promise.
-  // Returns the result of the first poll.
-  // If the promise finishes, also destroy the promise data.
-  Poll<T> Start(const Layout<InfallibleOperator<T>>* layout, T input,
-                void* call_data);
-  // Continue executing a layout. Returns the result of the next poll.
-  // If the promise finishes, also destroy the promise data.
-  Poll<T> Step(void* call_data);
-
- private:
-  // Start polling on the current step of the layout.
-  // `input` is the current value (either the input to the first step, or the
-  // so far transformed value)
-  // `call_data` is the call data for the filter stack.
-  // If this op finishes immediately then we iterative move to the next step.
-  // If we reach the end up the ops, we return the overall poll result,
-  // otherwise we return Pending.
-  Poll<T> InitStep(T input, void* call_data);
-  // Continue polling on the current step of the layout.
-  // Called on the next poll after InitStep returns pending.
-  // If the promise is still pending, returns this.
-  // If the promise completes we call into InitStep to continue execution
-  // through the filters.
-  Poll<T> ContinueStep(void* call_data);
-
-  void* promise_data_ = nullptr;
-  const InfallibleOperator<T>* ops_;
-  const InfallibleOperator<T>* end_ops_;
+  const Operator<T>* ops_;
+  const Operator<T>* end_ops_;
 };
 
 class CallState {
@@ -1596,7 +1504,7 @@ class CallFilters {
   }
 
  private:
-  template <typename Output, void (filters_detail::CallState::*on_done)(),
+  template <typename Output, void (filters_detail::CallState::* on_done)(),
             typename Input>
   Poll<ValueOrFailure<Output>> FinishStep(
       Poll<filters_detail::ResultOr<Input>> p) {
@@ -1611,10 +1519,9 @@ class CallFilters {
   }
 
   template <typename Output, typename Input,
-            Input(CallFilters::*input_location),
-            filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
-                filters_detail::StackData::*layout),
-            void (filters_detail::CallState::*on_done)()>
+            Input(CallFilters::* input_location),
+            filters_detail::Layout<Input>(filters_detail::StackData::* layout),
+            void (filters_detail::CallState::* on_done)()>
   auto RunExecutor() {
     DCHECK_NE((this->*input_location).get(), nullptr);
     filters_detail::OperationExecutor<Input> executor;
@@ -1746,33 +1653,12 @@ class CallFilters {
   // Client: Fetch server trailing metadata
   // Returns a promise that resolves to ServerMetadataHandle
   GRPC_MUST_USE_RESULT auto PullServerTrailingMetadata() {
-    return Seq(
+    return Map(
         [this]() { return call_state_.PollServerTrailingMetadataAvailable(); },
         [this](Empty) {
-          filters_detail::InfallibleOperationExecutor<ServerMetadataHandle>
-              executor;
-          return [this, executor = std::move(
-                            executor)]() mutable -> Poll<ServerMetadataHandle> {
-            auto finish_step = [this](Poll<ServerMetadataHandle> p)
-                -> Poll<ServerMetadataHandle> {
-              auto* r = p.value_if_ready();
-              if (r == nullptr) return Pending{};
-              call_state_.FinishPullServerTrailingMetadata();
-              return std::move(*r);
-            };
-            if (push_server_trailing_metadata_ != nullptr) {
-              // If no stack has been set, we can just return the result of the
-              // call
-              if (stack_ == nullptr) {
-                call_state_.FinishPullServerTrailingMetadata();
-                return std::move(push_server_trailing_metadata_);
-              }
-              return finish_step(executor.Start(
-                  &(stack_->data_.server_trailing_metadata),
-                  std::move(push_server_trailing_metadata_), call_data_));
-            }
-            return finish_step(executor.Step(call_data_));
-          };
+          return filters_detail::RunServerTrailingMetadata(
+              stack_->data_.server_trailing_metadata, call_data_,
+              std::move(push_server_trailing_metadata_));
         });
   }
   // Server: Wait for server trailing metadata to have been sent
