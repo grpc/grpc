@@ -64,27 +64,13 @@ class HijackedCall final {
   CallHandler call_handler_;
 };
 
-namespace interception_chain_detail {
-
-inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
-                       RefCountedPtr<UnstartedCallDestination> destination,
-                       RefCountedPtr<CallFilters::Stack> stack) {
-  unstarted_call_handler.AddCallStack(std::move(stack));
-  auto call_handler = unstarted_call_handler.StartCall();
-  return Map(
-      call_handler.PullClientInitialMetadata(),
-      [call_handler,
-       destination](ValueOrFailure<ClientMetadataHandle> metadata) mutable
-          -> ValueOrFailure<HijackedCall> {
-        if (!metadata.ok()) return Failure{};
-        return HijackedCall(std::move(metadata.value()), std::move(destination),
-                            std::move(call_handler));
-      });
-}
-
-}  // namespace interception_chain_detail
-
 // A delegating UnstartedCallDestination for use as a hijacking filter.
+//
+// This class proveds the final StartCall method, and delegates to the
+// InterceptCall() method for the actual interception. It has the same semantics
+// as StartCall, but affords the implementation the ability to prepare the
+// UnstartedCallHandler appropriately.
+//
 // Implementations may look at the unprocessed initial metadata
 // and decide to do one of two things:
 //
@@ -93,29 +79,41 @@ inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
 //
 // 2. It can consume the call by calling `Consume`.
 //
-// Upon the StartCall call the UnstartedCallHandler will be from the last
-// *Interceptor* in the call chain (without having been processed by any
-// intervening filters) -- note that this is commonly not useful (not enough
-// guarantees), and so it's usually better to Hijack and examine the metadata.
+// 3. It can pass the call through to the next interceptor by calling
+//    `PassThrough`.
 class Interceptor : public UnstartedCallDestination {
+ public:
+  void StartCall(UnstartedCallHandler unstarted_call_handler) final {
+    unstarted_call_handler.AddCallStack(filter_stack_);
+    InterceptCall(std::move(unstarted_call_handler));
+  }
+
  protected:
+  virtual void InterceptCall(UnstartedCallHandler unstarted_call_handler) = 0;
+
   // Returns a promise that resolves to a HijackedCall instance.
   // Hijacking is the process of taking over a call and starting one or more new
   // ones.
   auto Hijack(UnstartedCallHandler unstarted_call_handler) {
-    return interception_chain_detail::HijackCall(
-        std::move(unstarted_call_handler), wrapped_destination_, filter_stack_);
+    auto call_handler = unstarted_call_handler.StartCall();
+    return Map(call_handler.PullClientInitialMetadata(),
+               [call_handler, destination = wrapped_destination_](
+                   ValueOrFailure<ClientMetadataHandle> metadata) mutable
+                   -> ValueOrFailure<HijackedCall> {
+                 if (!metadata.ok()) return Failure{};
+                 return HijackedCall(std::move(metadata.value()),
+                                     std::move(destination),
+                                     std::move(call_handler));
+               });
   }
 
   // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
-    unstarted_call_handler.AddCallStack(filter_stack_);
     return unstarted_call_handler.StartCall();
   }
 
   // Pass through this call to the next filter.
   void PassThrough(UnstartedCallHandler unstarted_call_handler) {
-    unstarted_call_handler.AddCallStack(filter_stack_);
     wrapped_destination_->StartCall(std::move(unstarted_call_handler));
   }
 
