@@ -23,16 +23,19 @@ gRFCs where support for appropriate fields was added.
   // The xDS server to talk to.  The value is an ordered array of server
   // configurations, to support failing over to a secondary xDS server if the
   // primary is down.
+  //
+  // Prior to gRFC A71, all but the first entry was ignored.
   "xds_servers": [
     {
 
-      "server_uri": <string containing URI of xds server>,
+      // A target URI string suitable for creating a gRPC channel.
+      "server_uri": <string containing the target URI of xds server>,
 
       // List of channel creds; client will stop at the first type it
       // supports.  This field is required and must contain at least one
       // channel creds type that the client supports.
       //
-      // [Supported Channel Credentials](#supported-channel-credentials)
+      // See section titled "Supported Channel Credentials".
       "channel_creds": [
         {
           "type": <string containing channel cred type>,
@@ -48,7 +51,7 @@ gRFCs where support for appropriate fields was added.
       // client will ignore any entry in the list that it does not
       // understand, regardless of type.
       // 
-      // [Supported Server Features](#supported-server-features)
+      // See section titled "Supported Server Features".
       "server_features": [ ... ]
     }
   ],
@@ -76,7 +79,7 @@ gRFCs where support for appropriate fields was added.
 
   // Map of supported certificate providers, keyed by the provider instance
   // name.
-  // [Supported certificate providers](#supported-certificate-provider-instances)
+  // See section titled "Supported certificate providers".
   "certificate_providers": {
 
     // Certificate provider instance name, specified by the
