@@ -378,9 +378,7 @@ class WorkSerializer::DispatchingWorkSerializer final
   // rate of mutex acquisitions per work item tends towards 1.
   CallbackVector incoming_ ABSL_GUARDED_BY(mu_);
 
-#ifdef GRPC_ENABLE_LATENT_SEE
-  absl::optional<grpc_core::latent_see::Flow> flow_;
-#endif
+  GPR_NO_UNIQUE_ADDRESS latent_see::Flow flow_;
 
 #ifndef NDEBUG
   static thread_local DispatchingWorkSerializer* running_work_serializer_;
@@ -434,9 +432,7 @@ void WorkSerializer::DispatchingWorkSerializer::Run(
 // Implementation of EventEngine::Closure::Run - our actual work loop
 void WorkSerializer::DispatchingWorkSerializer::Run() {
   GRPC_LATENT_SEE_PARENT_SCOPE("WorkSerializer::Run");
-#ifdef GRPC_ENABLE_LATENT_SEE
   flow_.reset();
-#endif
   // TODO(ctiller): remove these when we can deprecate ExecCtx
   ApplicationCallbackExecCtx app_exec_ctx;
   ExecCtx exec_ctx;
@@ -464,11 +460,9 @@ void WorkSerializer::DispatchingWorkSerializer::Run() {
   ++items_processed_during_run_;
   // Check if we've drained the queue and if so refill it.
   if (processing_.empty() && !Refill()) return;
-// There's still work in processing_, so schedule ourselves again on
-// EventEngine.
-#ifdef GRPC_ENABLE_LATENT_SEE
+  // There's still work in processing_, so schedule ourselves again on
+  // EventEngine.
   flow_.emplace(GRPC_LATENT_SEE_METADATA("WorkSerializer::Link"));
-#endif
   event_engine_->Run(this);
 }
 

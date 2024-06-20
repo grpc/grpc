@@ -15,6 +15,8 @@
 #ifndef LATENT_SEE_H
 #define LATENT_SEE_H
 
+#include <grpc/support/port_platform.h>
+
 #ifdef GRPC_ENABLE_LATENT_SEE
 #include <chrono>
 #include <cstdint>
@@ -41,7 +43,8 @@ class Log {
  public:
   static void FlushThreadLog();
 
-  static void Append(const Metadata* metadata, EventType type, uint64_t id) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static void Append(
+      const Metadata* metadata, EventType type, uint64_t id) {
     thread_events_.push_back(
         Event{metadata, std::chrono::steady_clock::now(), id, type});
   }
@@ -49,7 +52,7 @@ class Log {
  private:
   Log() = default;
 
-  static Log& Get() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Log& Get() {
     static Log* log = []() {
       atexit([] {
         LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
@@ -87,32 +90,20 @@ class Log {
   PerCpu<Fragment> fragments_{PerCpuOptions()};
 };
 
+template <bool kFlush>
 class Scope {
  public:
-  explicit Scope(const Metadata* metadata) : metadata_(metadata) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Scope(const Metadata* metadata)
+      : metadata_(metadata) {
     Log::Append(metadata_, EventType::kBegin, 0);
   }
-  ~Scope() { Log::Append(metadata_, EventType::kEnd, 0); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Scope() {
+    Log::Append(metadata_, EventType::kEnd, 0);
+    if (kFlush) Log::FlushThreadLog();
+  }
 
   Scope(const Scope&) = delete;
   Scope& operator=(const Scope&) = delete;
-
- private:
-  const Metadata* const metadata_;
-};
-
-class ParentScope {
- public:
-  explicit ParentScope(const Metadata* metadata) : metadata_(metadata) {
-    Log::Append(metadata_, EventType::kBegin, 0);
-  }
-  ~ParentScope() {
-    Log::Append(metadata_, EventType::kEnd, 0);
-    Log::FlushThreadLog();
-  }
-
-  ParentScope(const Scope&) = delete;
-  ParentScope& operator=(const Scope&) = delete;
 
  private:
   const Metadata* const metadata_;
@@ -142,11 +133,19 @@ class Flow {
     return *this;
   }
 
+  bool has_value() const { return metadata_ != nullptr; }
+  void reset() { metadata_ = nullptr; }
+
  private:
   const Metadata* metadata_;
   uint64_t id_{next_flow_id_.fetch_add(1, std::memory_order_relaxed)};
   static std::atomic<uint64_t> next_flow_id_;
 };
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
+  Log::Append(md, EventType::kMark, 0);
+}
+
 }  // namespace latent_see
 }  // namespace grpc_core
 #define GRPC_LATENT_SEE_METADATA(name)                                     \
@@ -156,14 +155,15 @@ class Flow {
     return &metadata;                                                      \
   }()
 // Parent scope: logs a begin and end event, and flushes the thread log on scope
-// exit.
+// exit. Because the flush takes some time it's better to place one parent scope
+// at the top of the stack, and use lighter weight scopes within it.
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name)                       \
-  grpc_core::latent_see::ParentScope latent_see_scope##__LINE__( \
+  grpc_core::latent_see::Scope<true> latent_see_scope##__LINE__( \
       GRPC_LATENT_SEE_METADATA(name))
 // Scope: logs a begin and end event. Lighter weight than parent scope, but does
 // not flush the thread state - so should only be enclosed by a parent scope.
-#define GRPC_LATENT_SEE_SCOPE(name)                        \
-  grpc_core::latent_see::Scope latent_see_scope##__LINE__( \
+#define GRPC_LATENT_SEE_SCOPE(name)                               \
+  grpc_core::latent_see::Scope<false> latent_see_scope##__LINE__( \
       GRPC_LATENT_SEE_METADATA(name))
 // Mark: logs a single event.
 #define GRPC_LATENT_SEE_MARK(name) \
@@ -175,9 +175,15 @@ class Flow {
 #else
 namespace grpc_core {
 namespace latent_see {
-struct Flow {};
+struct Metadata {};
+struct Flow {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool has_value() const { return false; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void reset();
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void emplace(Metadata*) {}
+};
 }  // namespace latent_see
 }  // namespace grpc_core
+#define GRPC_LATENT_SEE_METADATA(name) nullptr
 #define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
   do {                                     \
   } while (0)

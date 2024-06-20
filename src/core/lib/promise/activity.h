@@ -548,9 +548,7 @@ class PromiseActivity final
 
   void WakeupAsync(WakeupMask) final {
     GRPC_LATENT_SEE_SCOPE("PromiseActivity::WakeupAsync");
-#ifdef GRPC_ENABLE_LATENT_SEE
     wakeup_flow_.emplace(GRPC_LATENT_SEE_METADATA("Activity::Wakeup"));
-#endif
     if (!wakeup_scheduled_.exchange(true, std::memory_order_acq_rel)) {
       // Can't safely run, so ask to run later.
       this->ScheduleWakeup();
@@ -575,9 +573,7 @@ class PromiseActivity final
   // settles. Then check for completion, and if we have completed, call on_done.
   void Step() ABSL_LOCKS_EXCLUDED(mu()) {
     GRPC_LATENT_SEE_PARENT_SCOPE("PromiseActivity::Step");
-#ifdef GRPC_ENABLE_LATENT_SEE
     wakeup_flow_.reset();
-#endif
     // Poll the promise until things settle out under a lock.
     mu()->Lock();
     if (done_) {
@@ -654,9 +650,7 @@ class PromiseActivity final
     GPR_NO_UNIQUE_ADDRESS Promise promise;
   };
   GPR_NO_UNIQUE_ADDRESS PromiseHolder promise_holder_ ABSL_GUARDED_BY(mu());
-#ifdef GRPC_ENABLE_LATENT_SEE
-  absl::optional<latent_see::Flow> wakeup_flow_;
-#endif
+  GPR_NO_UNIQUE_ADDRESS latent_see::Flow wakeup_flow_;
 };
 
 }  // namespace promise_detail
