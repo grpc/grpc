@@ -118,7 +118,6 @@ class Flow {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Flow(const Metadata* metadata)
       : metadata_(metadata) {
     Log::Append(metadata_, EventType::kFlowStart, id_);
-    Log::FlushThreadLog();
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Flow() {
     if (metadata_ != nullptr) {
