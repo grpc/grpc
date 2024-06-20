@@ -209,7 +209,7 @@ class ForEach {
     return Pending();
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollAction() {
+  Poll<Result> PollAction() {
     if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%s PollAction", DebugTag().c_str());
     }
