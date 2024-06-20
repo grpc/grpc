@@ -69,12 +69,13 @@ namespace interception_chain_detail {
 inline auto HijackCall(UnstartedCallHandler unstarted_call_handler,
                        RefCountedPtr<UnstartedCallDestination> destination,
                        RefCountedPtr<CallFilters::Stack> stack) {
-  auto call_handler = unstarted_call_handler.StartCall(stack);
+  unstarted_call_handler.AddCallStack(std::move(stack));
+  auto call_handler = unstarted_call_handler.StartCall();
   return Map(
       call_handler.PullClientInitialMetadata(),
       [call_handler,
        destination](ValueOrFailure<ClientMetadataHandle> metadata) mutable
-      -> ValueOrFailure<HijackedCall> {
+          -> ValueOrFailure<HijackedCall> {
         if (!metadata.ok()) return Failure{};
         return HijackedCall(std::move(metadata.value()), std::move(destination),
                             std::move(call_handler));
@@ -108,12 +109,15 @@ class Interceptor : public UnstartedCallDestination {
 
   // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
-    return unstarted_call_handler.StartCall(filter_stack_);
+    unstarted_call_handler.AddCallStack(filter_stack_);
+    return unstarted_call_handler.StartCall();
   }
 
-  // TODO(ctiller): Consider a Passthrough() method that allows the call to be
-  // passed on to the next filter in the chain without any interception by the
-  // current filter.
+  // Pass through this call to the next filter.
+  void PassThrough(UnstartedCallHandler unstarted_call_handler) {
+    unstarted_call_handler.AddCallStack(filter_stack_);
+    wrapped_destination_->StartCall(std::move(unstarted_call_handler));
+  }
 
  private:
   friend class InterceptionChainBuilder;

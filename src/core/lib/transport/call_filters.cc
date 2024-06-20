@@ -23,16 +23,22 @@
 
 namespace grpc_core {
 
-namespace {
-void* Offset(void* base, size_t amt) { return static_cast<char*>(base) + amt; }
-}  // namespace
-
 namespace filters_detail {
 
 void RunHalfClose(absl::Span<const HalfCloseOperator> ops, void* call_data) {
   for (const auto& op : ops) {
     op.half_close(Offset(call_data, op.call_offset), op.channel_data);
   }
+}
+
+ServerMetadataHandle RunServerTrailingMetadata(
+    absl::Span<const ServerTrailingMetadataOperator> ops, void* call_data,
+    ServerMetadataHandle md) {
+  for (auto& op : ops) {
+    md = op.server_trailing_metadata(Offset(call_data, op.call_offset),
+                                     op.channel_data, std::move(md));
+  }
+  return md;
 }
 
 template <typename T>
@@ -44,8 +50,8 @@ OperationExecutor<T>::~OperationExecutor() {
 }
 
 template <typename T>
-Poll<ResultOr<T>> OperationExecutor<T>::Start(
-    const Layout<FallibleOperator<T>>* layout, T input, void* call_data) {
+Poll<ResultOr<T>> OperationExecutor<T>::Start(const Layout<T>* layout, T input,
+                                              void* call_data) {
   ops_ = layout->ops.data();
   end_ops_ = ops_ + layout->ops.size();
   if (layout->promise_size == 0) {
@@ -101,75 +107,11 @@ Poll<ResultOr<T>> OperationExecutor<T>::ContinueStep(void* call_data) {
   return Pending{};
 }
 
-template <typename T>
-InfallibleOperationExecutor<T>::~InfallibleOperationExecutor() {
-  if (promise_data_ != nullptr) {
-    ops_->early_destroy(promise_data_);
-    gpr_free_aligned(promise_data_);
-  }
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::Start(
-    const Layout<InfallibleOperator<T>>* layout, T input, void* call_data) {
-  ops_ = layout->ops.data();
-  end_ops_ = ops_ + layout->ops.size();
-  if (layout->promise_size == 0) {
-    // No call state ==> instantaneously ready
-    auto r = InitStep(std::move(input), call_data);
-    CHECK(r.ready());
-    return r;
-  }
-  promise_data_ =
-      gpr_malloc_aligned(layout->promise_size, layout->promise_alignment);
-  return InitStep(std::move(input), call_data);
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::InitStep(T input, void* call_data) {
-  while (true) {
-    if (ops_ == end_ops_) {
-      return input;
-    }
-    auto p =
-        ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
-                           ops_->channel_data, std::move(input));
-    if (auto* r = p.value_if_ready()) {
-      input = std::move(*r);
-      ++ops_;
-      continue;
-    }
-    return Pending{};
-  }
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::Step(void* call_data) {
-  DCHECK_NE(promise_data_, nullptr);
-  auto p = ContinueStep(call_data);
-  if (p.ready()) {
-    gpr_free_aligned(promise_data_);
-    promise_data_ = nullptr;
-  }
-  return p;
-}
-
-template <typename T>
-Poll<T> InfallibleOperationExecutor<T>::ContinueStep(void* call_data) {
-  auto p = ops_->poll(promise_data_);
-  if (auto* r = p.value_if_ready()) {
-    ++ops_;
-    return InitStep(std::move(*r), call_data);
-  }
-  return Pending{};
-}
-
 // Explicit instantiations of some types used in filters.h
 // We'll need to add ServerMetadataHandle to this when it becomes different
 // to ClientMetadataHandle
 template class OperationExecutor<ClientMetadataHandle>;
 template class OperationExecutor<MessageHandle>;
-template class InfallibleOperationExecutor<ServerMetadataHandle>;
 
 }  // namespace filters_detail
 
@@ -190,7 +132,7 @@ CallFilters::~CallFilters() {
   if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
     for (const auto& stack : stacks_) {
       for (const auto& destructor : stack.stack->data_.filter_destructor) {
-        destructor.call_destroy(Offset(
+        destructor.call_destroy(filters_detail::Offset(
             call_data_, stack.call_data_offset + destructor.call_offset));
       }
     }
@@ -223,7 +165,8 @@ void CallFilters::Start() {
   for (const auto& stack : stacks_) {
     for (const auto& constructor : stack.stack->data_.filter_constructor) {
       constructor.call_init(
-          Offset(call_data_, stack.call_data_offset + constructor.call_offset),
+          filters_detail::Offset(
+              call_data_, stack.call_data_offset + constructor.call_offset),
           constructor.channel_data);
     }
   }
@@ -234,7 +177,8 @@ void CallFilters::Finalize(const grpc_call_final_info* final_info) {
   for (auto& stack : stacks_) {
     for (auto& finalizer : stack.stack->data_.finalizers) {
       finalizer.final(
-          Offset(call_data_, stack.call_data_offset + finalizer.call_offset),
+          filters_detail::Offset(
+              call_data_, stack.call_data_offset + finalizer.call_offset),
           finalizer.channel_data, final_info);
     }
   }
@@ -306,7 +250,7 @@ RefCountedPtr<CallFilters::Stack> CallFilters::StackBuilder::Build() {
   // in the same order
   data_.server_initial_metadata.Reverse();
   data_.server_to_client_messages.Reverse();
-  data_.server_trailing_metadata.Reverse();
+  absl::c_reverse(data_.server_trailing_metadata);
   return RefCountedPtr<Stack>(new Stack(std::move(data_)));
 }
 
