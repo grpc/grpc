@@ -35,6 +35,8 @@ class HttpClientFilter : public ImplementChannelFilter<HttpClientFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "http-client"; }
+
   static absl::StatusOr<std::unique_ptr<HttpClientFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 

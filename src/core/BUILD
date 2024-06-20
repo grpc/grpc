@@ -1299,6 +1299,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
@@ -1341,6 +1342,7 @@ grpc_cc_library(
         "handshaker/endpoint_info/endpoint_info_handshaker.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
     ],
     language = "c++",
@@ -3073,6 +3075,7 @@ grpc_cc_library(
         "channel_fwd",
         "channel_stack_type",
         "interception_chain",
+        "unique_type_name",
         "//:channel_stack_builder",
         "//:debug_location",
         "//:gpr",
