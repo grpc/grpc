@@ -81,8 +81,7 @@ constexpr uint32_t
 
 const grpc_channel_filter OpenCensusClientFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<OpenCensusClientFilter,
-                                      grpc_core::FilterEndpoint::kClient, 0>(
-        "opencensus_client");
+                                      grpc_core::FilterEndpoint::kClient, 0>();
 
 absl::StatusOr<std::unique_ptr<OpenCensusClientFilter>>
 OpenCensusClientFilter::Create(const grpc_core::ChannelArgs& args,

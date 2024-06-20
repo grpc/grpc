@@ -779,7 +779,7 @@ const grpc_channel_filter Server::kServerTopFilter = {
     grpc_channel_stack_no_post_init,
     Server::ChannelData::DestroyChannelElement,
     grpc_channel_next_get_info,
-    "server",
+    GRPC_UNIQUE_TYPE_NAME_HERE("server"),
 };
 
 namespace {

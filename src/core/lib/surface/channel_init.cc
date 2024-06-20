@@ -43,13 +43,15 @@
 
 namespace grpc_core {
 
-const char* (*NameFromChannelFilter)(const grpc_channel_filter*);
+UniqueTypeName (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 namespace {
 struct CompareChannelFiltersByName {
   bool operator()(const grpc_channel_filter* a,
                   const grpc_channel_filter* b) const {
-    return strcmp(NameFromChannelFilter(a), NameFromChannelFilter(b)) < 0;
+    // Compare lexicographically instead of by pointer value so that different
+    // builds make the same choices.
+    return NameFromChannelFilter(a).name() < NameFromChannelFilter(b).name();
   }
 };
 }  // namespace
@@ -260,8 +262,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     auto add_loc_str = [&max_loc_str_len, &loc_strs, &filter_to_registration,
                         &max_filter_name_len](
                            const grpc_channel_filter* filter) {
-      max_filter_name_len =
-          std::max(strlen(NameFromChannelFilter(filter)), max_filter_name_len);
+      max_filter_name_len = std::max(
+          NameFromChannelFilter(filter).name().length(), max_filter_name_len);
       const auto registration =
           filter_to_registration[filter]->registration_source_;
       absl::string_view file = registration.file();
@@ -300,14 +302,16 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       std::string after_str;
       if (dep_it != original.end() && !dep_it->second.empty()) {
         after_str = absl::StrCat(
-            std::string(max_filter_name_len + 1 -
-                            strlen(NameFromChannelFilter(filter.filter)),
-                        ' '),
+            std::string(
+                max_filter_name_len + 1 -
+                    NameFromChannelFilter(filter.filter).name().length(),
+                ' '),
             "after ",
             absl::StrJoin(
                 dep_it->second, ", ",
                 [](std::string* out, const grpc_channel_filter* filter) {
-                  out->append(NameFromChannelFilter(filter));
+                  out->append(
+                      std::string(NameFromChannelFilter(filter).name()));
                 }));
       }
       const auto filter_str =
@@ -321,9 +325,10 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       const auto filter_str = absl::StrCat(
           "  ", loc_strs[terminal.filter],
           NameFromChannelFilter(terminal.filter),
-          std::string(max_filter_name_len + 1 -
-                          strlen(NameFromChannelFilter(terminal.filter)),
-                      ' '),
+          std::string(
+              max_filter_name_len + 1 -
+                  NameFromChannelFilter(terminal.filter).name().length(),
+              ' '),
           "[terminal]");
       LOG(INFO) << filter_str;
     }

@@ -62,8 +62,7 @@
 namespace grpc_core {
 
 const grpc_channel_filter ServerAuthFilter::kFilter =
-    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>(
-        "server-auth");
+    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>();
 
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;

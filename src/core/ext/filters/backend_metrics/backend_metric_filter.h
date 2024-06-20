@@ -35,6 +35,8 @@ class BackendMetricFilter : public ImplementChannelFilter<BackendMetricFilter> {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "backend_metric"; }
+
   static absl::StatusOr<std::unique_ptr<BackendMetricFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 
