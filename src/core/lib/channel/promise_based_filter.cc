@@ -2480,12 +2480,12 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
       CHECK(send_initial_metadata_->metadata_next_.has_value());
       auto p = (*send_initial_metadata_->metadata_next_)();
       if (GRPC_TRACE_FLAG_ENABLED(channel)) {
-        LOG(INFO)
-            << LogTag() << ": WakeInsideCombiner send_initial_metadata "
-            << "poll="
-            << PollToString(p, [](const NextResult<ServerMetadataHandle>& h) {
-                 return (*h)->DebugString();
-               }).c_str();
+        LOG(INFO) << LogTag()
+                  << ": WakeInsideCombiner send_initial_metadata poll="
+                  << PollToString(
+                         p, [](const NextResult<ServerMetadataHandle>& h) {
+                           return (*h)->DebugString();
+                         });
       }
       if (auto* nr = p.value_if_ready()) {
         ServerMetadataHandle md = std::move(nr->value());
