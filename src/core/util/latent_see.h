@@ -186,7 +186,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
 // potentially across threads.
 #define GRPC_LATENT_SEE_FLOW(name) \
   grpc_core::latent_see::Flow(GRPC_LATENT_SEE_METADATA(name))
-#else
+#else  // !def(GRPC_ENABLE_LATENT_SEE)
 namespace grpc_core {
 namespace latent_see {
 struct Metadata {};
@@ -209,6 +209,6 @@ struct Flow {
   } while (0)
 #define GRPC_LATENT_SEE_FLOW(name) \
   grpc_core::latent_see::Flow {}
-#endif
+#endif  // GRPC_ENABLE_LATENT_SEE
 
 #endif
