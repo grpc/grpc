@@ -93,6 +93,26 @@ TEST(UniqueTypeNameTest, CanUseAsMapKey) {
                                               ::testing::Pair(bar.type(), 2)));
 }
 
+struct Filter1 {
+  static absl::string_view TypeName() { return "Filter1"; }
+};
+
+struct Filter2 {
+  static absl::string_view TypeName() { return "Filter2"; }
+};
+
+TEST(UniqueTypeNameTest, UniqueTypeNameFor) {
+  EXPECT_EQ(UniqueTypeNameFor<Filter1>(), UniqueTypeNameFor<Filter1>());
+  EXPECT_NE(UniqueTypeNameFor<Filter1>(), UniqueTypeNameFor<Filter2>());
+}
+
+TEST(UniqueTypeNameTest, UniqueTypeNameHere) {
+  auto name1 = GRPC_UNIQUE_TYPE_NAME_HERE("name");
+  auto name2 = GRPC_UNIQUE_TYPE_NAME_HERE("name");
+  EXPECT_EQ(name1.name(), name2.name());
+  EXPECT_NE(name1, name2);
+}
+
 }  // namespace
 }  // namespace grpc_core
 
