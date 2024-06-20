@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_LIB_TRANSPORT_CALL_FILTERS_H
 
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <ostream>
 #include <type_traits>
@@ -318,7 +319,7 @@ struct AddOpImpl<FilterType, T, const NoInterceptor*, which> {
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&)>
+          void (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  void (FilterType::Call::*)(typename T::element_type&), impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
@@ -355,8 +356,8 @@ struct AddOpImpl<FilterType, T,
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&,
-                                         FilterType*)>
+          void (FilterType::Call::* impl)(typename T::element_type&,
+                                          FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
@@ -396,7 +397,7 @@ struct AddOpImpl<
 
 // $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          T (FilterType::Call::*impl)(T, FilterType*)>
+          T (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
   static void Add(FilterType* channel_data, size_t call_offset,
                   Layout<FallibleOperator<T>>& to) {
@@ -438,7 +439,7 @@ struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&),
                  impl> {
@@ -483,7 +484,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T,
@@ -511,8 +512,8 @@ struct AddOpImpl<
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&,
-                                                 FilterType*)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&,
+                                                  FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&,
                                                     FilterType*),
@@ -541,7 +542,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(
@@ -571,7 +572,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::StatusOr<$VALUE_HANDLE> $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          absl::StatusOr<T> (FilterType::Call::*impl)(T, FilterType*)>
+          absl::StatusOr<T> (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::StatusOr<T> (FilterType::Call::*)(T, FilterType*),
                  impl> {
@@ -599,7 +600,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -628,7 +629,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -657,7 +658,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -687,7 +688,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -717,7 +718,7 @@ struct AddOpImpl<FilterType, T,
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&)>
+          R (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T, R (FilterType::Call::*)(typename T::element_type&), impl,
     absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
@@ -768,7 +769,7 @@ struct AddOpImpl<
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&, FilterType*)>
+          R (FilterType::Call::* impl)(typename T::element_type&, FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
@@ -824,7 +825,7 @@ struct AddOpImpl<
 // PROMISE_RETURNING(absl::StatusOr<$VALUE_HANDLE>)
 // $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(T, FilterType*)>
+          R (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  absl::enable_if_t<std::is_same<absl::StatusOr<T>,
                                                 PromiseResult<R>>::value>> {
@@ -1049,7 +1050,7 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1063,8 +1064,8 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*,
-                                                FilterType*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*,
+                                                 FilterType*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1588,7 +1589,10 @@ class CallFilters {
   CallFilters(CallFilters&&) = delete;
   CallFilters& operator=(CallFilters&&) = delete;
 
-  void SetStack(RefCountedPtr<Stack> stack);
+  void AddStack(RefCountedPtr<Stack> stack) {
+    stacks_.emplace_back(std::move(stack));
+  }
+  void Start();
 
   // Access client initial metadata before it's processed
   ClientMetadata* unprocessed_client_initial_metadata() {
@@ -1596,48 +1600,71 @@ class CallFilters {
   }
 
  private:
-  template <typename Output, void (filters_detail::CallState::*on_done)(),
-            typename Input>
-  Poll<ValueOrFailure<Output>> FinishStep(
-      Poll<filters_detail::ResultOr<Input>> p) {
-    auto* r = p.value_if_ready();
-    if (r == nullptr) return Pending{};
-    (call_state_.*on_done)();
-    if (r->ok != nullptr) {
-      return ValueOrFailure<Output>{std::move(r->ok)};
+  template <
+      typename Output, typename Input, Input(CallFilters::* input_location),
+      filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
+          filters_detail::StackData::* layout),
+      void (filters_detail::CallState::* on_done)(), typename StackIterator>
+  class Executor {
+   public:
+    Executor(CallFilters* filters, StackIterator stack_begin,
+             StackIterator stack_end)
+        : stack_current_(stack_begin),
+          stack_end_(stack_end),
+          filters_(filters) {
+      DCHECK_NE((filters_->*input_location).get(), nullptr);
     }
-    PushServerTrailingMetadata(std::move(r->error));
-    return Failure{};
-  }
 
-  template <typename Output, typename Input,
-            Input(CallFilters::*input_location),
-            filters_detail::Layout<filters_detail::FallibleOperator<Input>>(
-                filters_detail::StackData::*layout),
-            void (filters_detail::CallState::*on_done)()>
-  auto RunExecutor() {
-    DCHECK_NE((this->*input_location).get(), nullptr);
-    filters_detail::OperationExecutor<Input> executor;
-    return [this, executor = std::move(executor)]() mutable {
-      if ((this->*input_location) != nullptr) {
-        return FinishStep<Output, on_done>(
-            executor.Start(&(stack_->data_.*layout),
-                           std::move(this->*input_location), call_data_));
+    ValueOrFailure<Output> operator()() {
+      if (stack_current_ == stack_end_) {
+        DCHECK_NE((filters_->*input_location).get(), nullptr);
+        return std::move(filters_->*input_location);
       }
-      return FinishStep<Output, on_done>(executor.Step(call_data_));
-    };
-  }
+      if ((filters_->*input_location) != nullptr) {
+        return FinishStep(executor_.Start(&(stack_current_->data_.*layout),
+                                          std::move(filters_->*input_location),
+                                          filters_->call_data_));
+      } else {
+        return FinishStep(executor_.Step(filters_->call_data_));
+      }
+    }
+
+   private:
+    ValueOrFailure<Output> FinishStep(Poll<filters_detail::ResultOr<Input>> p) {
+      auto* r = p.value_if_ready();
+      if (r == nullptr) return Pending{};
+      if (r->ok != nullptr) {
+        ++stack_current_;
+        if (stack_current_ == stack_end_) {
+          (filters_->call_state_.*on_done)();
+          return ValueOrFailure<Output>{std::move(r->ok)};
+        }
+        return FinishStep(executor_.Start(&(stack_current_->data_.*layout),
+                                          std::move(*r->ok),
+                                          filters_->call_data_));
+      }
+      (filters_->call_state_.*on_done)();
+      filters_->PushServerTrailingMetadata(std::move(r->error));
+      return Failure{};
+    }
+
+    StackIterator stack_current_;
+    StackIterator stack_end_;
+    CallFilters* filters_;
+    filters_detail::OperationExecutor<Input> executor_;
+  };
 
  public:
   // Client: Fetch client initial metadata
   // Returns a promise that resolves to ValueOrFailure<ClientMetadataHandle>
   GRPC_MUST_USE_RESULT auto PullClientInitialMetadata() {
     call_state_.BeginPullClientInitialMetadata();
-    return RunExecutor<
-        ClientMetadataHandle, ClientMetadataHandle,
-        &CallFilters::push_client_initial_metadata_,
-        &filters_detail::StackData::client_initial_metadata,
-        &filters_detail::CallState::FinishPullClientInitialMetadata>();
+    return Executor<ClientMetadataHandle, ClientMetadataHandle,
+                    &CallFilters::push_client_initial_metadata_,
+                    &filters_detail::StackData::client_initial_metadata,
+                    &filters_detail::CallState::FinishPullClientInitialMetadata,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
   }
   // Server: Push server initial metadata
   // Returns a promise that resolves to a StatusFlag indicating success
@@ -1657,13 +1684,15 @@ class CallFilters {
               has_server_initial_metadata,
               [this]() {
                 return Map(
-                    RunExecutor<
+                    Executor<
                         absl::optional<ServerMetadataHandle>,
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
                         &filters_detail::CallState::
-                            FinishPullServerInitialMetadata>(),
+                            FinishPullServerInitialMetadata,
+                        StacksVector::const_reverse_iterator>(
+                        this, stacks_.crbegin(), stacks_.crend()),
                     [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
                       if (r.ok()) return std::move(*r);
                       return absl::optional<ServerMetadataHandle>{};
@@ -1696,12 +1725,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_client_to_server_message_,
                     &filters_detail::StackData::client_to_server_messages,
-                    &filters_detail::CallState::
-                        FinishPullClientToServerMessage>();
+                    &filters_detail::CallState::FinishPullClientToServerMessage,
+                    StacksVector::const_iterator>(this, stacks_.cbegin(),
+                                                  stacks_.cend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1726,12 +1756,13 @@ class CallFilters {
           return If(
               message_available,
               [this]() {
-                return RunExecutor<
+                return Executor<
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_server_to_client_message_,
                     &filters_detail::StackData::server_to_client_messages,
-                    &filters_detail::CallState::
-                        FinishPullServerToClientMessage>();
+                    &filters_detail::CallState::FinishPullServerToClientMessage,
+                    StacksVector::const_reverse_iterator>(
+                    this, stacks_.crbegin(), stacks_.crend());
               },
               []() -> ValueOrFailure<absl::optional<MessageHandle>> {
                 return absl::optional<MessageHandle>();
@@ -1791,7 +1822,17 @@ class CallFilters {
  private:
   void CancelDueToFailedPipeOperation(SourceLocation but_where = {});
 
-  RefCountedPtr<Stack> stack_;
+  struct AddedStack {
+    explicit AddedStack(RefCountedPtr<Stack> stack)
+        : call_data_offset(std::numeric_limits<size_t>::max()),
+          stack(std::move(stack)) {}
+    size_t call_data_offset;
+    RefCountedPtr<Stack> stack;
+  };
+
+  using StacksVector = absl::InlinedVector<AddedStack, 2>;
+
+  StacksVector stacks_;
 
   filters_detail::CallState call_state_;
 
