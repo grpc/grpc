@@ -17,6 +17,7 @@
  */
 
 #include <ruby/ruby.h>
+#include <ruby/encoding.h>
 
 #include "rb_byte_buffer.h"
 
@@ -62,4 +63,14 @@ VALUE grpc_rb_slice_to_ruby_string(grpc_slice slice) {
   }
   return rb_str_new((char*)GRPC_SLICE_START_PTR(slice),
                     GRPC_SLICE_LENGTH(slice));
+}
+
+VALUE grpc_rb_slice_to_utf8_ruby_string(grpc_slice slice) {
+  if (GRPC_SLICE_START_PTR(slice) == NULL) {
+    rb_raise(rb_eRuntimeError,
+             "attempt to convert uninitialized grpc_slice to ruby string");
+  }
+  return rb_enc_str_new((char*)GRPC_SLICE_START_PTR(slice),
+                        GRPC_SLICE_LENGTH(slice),
+                        rb_utf8_encoding());
 }
