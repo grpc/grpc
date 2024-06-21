@@ -414,10 +414,8 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
     batch->Append(StringViewFromSlice(md->key), Slice(CSliceRef(md->value)),
                   [md](absl::string_view error, const Slice& value) {
                     VLOG(2)
-                        << "Append error: "
-                        << absl::StrCat("key=", StringViewFromSlice(md->key),
-                                        " error=", error,
-                                        " value=", value.as_string_view());
+                        << "Append error: key=" << StringViewFromSlice(md->key)
+                        << " error=" << error << " value=" << value;
                   });
   }
 
