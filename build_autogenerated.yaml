@@ -5188,12 +5188,16 @@ targets:
   src:
   - test/core/experiments/bm_experiments.cc
   deps:
-  - absl/container:btree
   - benchmark
-  - grpc++
   - grpc_test_util
+  args:
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_http_client_filter
   build: test
   language: c
@@ -5208,6 +5212,9 @@ targets:
   - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: bm_party
   build: test
@@ -5290,6 +5297,8 @@ targets:
   - absl/types:span
   - benchmark
   - gpr
+  args:
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
   platforms:
@@ -13756,6 +13765,8 @@ targets:
   - gtest
   - benchmark
   - grpc_test_util
+  args:
+  - --benchmark_min_time=0.001s
   benchmark: true
   defaults: benchmark
   platforms:
