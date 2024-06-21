@@ -338,7 +338,7 @@ void ChaoticGoodConnector::OnHandshakeDone(void* arg, grpc_error_handle error) {
                          status);
           }
         },
-        self->arena_, self->event_engine_.get());
+        self->arena_);
     MutexLock lock(&self->mu_);
     if (!self->is_shutdown_) {
       self->connect_activity_ = std::move(activity);

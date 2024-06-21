@@ -440,8 +440,7 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
           self->connection_->Done();
         }
       },
-      self->connection_->arena_.get(),
-      self->connection_->listener_->event_engine_.get());
+      self->connection_->arena_.get());
   MutexLock lock(&self->connection_->mu_);
   if (self->connection_->orphaned_) return;
   self->connection_->receive_settings_activity_ = std::move(activity);

@@ -771,7 +771,7 @@ grpc_call* ClientChannel::CreateCall(
     Slice path, absl::optional<Slice> authority, Timestamp deadline, bool) {
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
-                        compression_options(), event_engine_.get(),
+                        compression_options(),
                         call_arena_allocator()->MakeArena(), Ref());
 }
 
@@ -1272,8 +1272,7 @@ void ClientChannel::StartIdleTimer() {
               },
               DEBUG_LOCATION);
         }
-      },
-      GetContext<EventEngine>()));
+      }));
 }
 
 absl::Status ClientChannel::ApplyServiceConfigToCall(

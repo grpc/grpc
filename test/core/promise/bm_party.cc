@@ -18,63 +18,31 @@
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 namespace {
 
-class TestParty final : public Party {
- public:
-  TestParty() : Party(1) {}
-  ~TestParty() override {}
-  std::string DebugTag() const override { return "TestParty"; }
-
-  using Party::IncrementRefCount;
-  using Party::Unref;
-
-  bool RunParty() override {
-    promise_detail::Context<grpc_event_engine::experimental::EventEngine>
-        ee_ctx(ee_.get());
-    return Party::RunParty();
-  }
-
-  void PartyOver() override {
-    {
-      promise_detail::Context<grpc_event_engine::experimental::EventEngine>
-          ee_ctx(ee_.get());
-      CancelRemainingParticipants();
-    }
-    delete this;
-  }
-
- private:
-  grpc_event_engine::experimental::EventEngine* event_engine() const final {
-    return ee_.get();
-  }
-
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee_ =
-      grpc_event_engine::experimental::GetDefaultEventEngine();
-};
-
 void BM_PartyCreate(benchmark::State& state) {
+  auto arena = SimpleArenaAllocator()->MakeArena();
   for (auto _ : state) {
-    auto* party = new TestParty();
+    auto* party = new Party(arena);
     party->Unref();
   }
 }
 BENCHMARK(BM_PartyCreate);
 
 void BM_AddParticipant(benchmark::State& state) {
-  auto* party = new TestParty();
+  auto* party = new Party(SimpleArenaAllocator()->MakeArena());
   for (auto _ : state) {
-    party->Spawn(
-        "participant", []() { return Success{}; }, [](StatusFlag) {});
+    party->Spawn("participant", []() { return Success{}; }, [](StatusFlag) {});
   }
   party->Unref();
 }
 BENCHMARK(BM_AddParticipant);
 
 void BM_WakeupParticipant(benchmark::State& state) {
-  auto* party = new TestParty();
+  auto* party = new Party(SimpleArenaAllocator()->MakeArena());
   party->Spawn(
       "driver",
       [&state, w = IntraActivityWaiter()]() mutable -> Poll<StatusFlag> {

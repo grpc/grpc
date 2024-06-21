@@ -26,6 +26,7 @@
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/config/core_configuration.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"

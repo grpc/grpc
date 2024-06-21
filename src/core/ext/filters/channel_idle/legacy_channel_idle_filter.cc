@@ -206,14 +206,12 @@ void LegacyMaxAgeFilter::PostInit() {
             [this] {
               return Sleep(Timestamp::Now() + max_connection_age_grace_);
             }),
-        ExecCtxWakeupScheduler(),
-        [channel_stack, this](absl::Status status) {
+        ExecCtxWakeupScheduler(), [channel_stack, this](absl::Status status) {
           // OnDone -- close the connection if the promise completed
           // successfully.
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
-        },
-        channel_stack->EventEngine()));
+        }));
   }
 }
 
@@ -226,7 +224,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+          -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
@@ -270,12 +268,10 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
                     }
                   });
   });
-  activity_.Set(MakeActivity(
-      std::move(promise), ExecCtxWakeupScheduler{},
-      [channel_stack, this](absl::Status status) {
-        if (status.ok()) CloseChannel();
-      },
-      channel_stack->EventEngine()));
+  activity_.Set(MakeActivity(std::move(promise), ExecCtxWakeupScheduler{},
+                             [channel_stack, this](absl::Status status) {
+                               if (status.ok()) CloseChannel();
+                             }));
 }
 
 void LegacyChannelIdleFilter::CloseChannel() {

@@ -230,7 +230,7 @@ class InterceptionChainTest : public ::testing::Test {
 
   // Run a call through a UnstartedCallDestination until it's complete.
   FinishedCall RunCall(UnstartedCallDestination* destination) {
-    auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
+    auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(),
                              call_arena_allocator_->MakeArena());
     Poll<ServerMetadataHandle> trailing_md;
     call.initiator.SpawnInfallible(

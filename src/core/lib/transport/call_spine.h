@@ -54,7 +54,6 @@ class CallSpine final : public Party {
   ~CallSpine() override {}
 
   CallFilters& call_filters() { return call_filters_; }
-  Arena* arena() { return arena_.get(); }
 
   // Add a callback to be called when server trailing metadata is received.
   void OnDone(absl::AnyInvocable<void()> fn) {
@@ -186,11 +185,9 @@ class CallSpine final : public Party {
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
             RefCountedPtr<Arena> arena)
-      : Party(1),
-        arena_(std::move(arena)),
+      : Party(std::move(arena)),
         call_filters_(std::move(client_initial_metadata)) {}
 
-  const RefCountedPtr<Arena> arena_;
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
   absl::AnyInvocable<void()> on_done_{nullptr};

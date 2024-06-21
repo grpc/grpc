@@ -272,8 +272,8 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
           ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
               "test"),
           1024);
-  auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
-                           allocator->MakeArena());
+  auto call =
+      MakeCallPair(Arena::MakePooled<ClientMetadata>(), allocator->MakeArena());
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
   EXPECT_EQ(handled, 1);

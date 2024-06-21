@@ -369,6 +369,8 @@ class Party : public Activity, private Wakeable {
   };
 
  public:
+  explicit Party(RefCountedPtr<Arena> arena)
+      : sync_(1), arena_(std::move(arena)) {}
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
 
@@ -411,6 +413,8 @@ class Party : public Activity, private Wakeable {
     return RefCountedPtr<Party>(this);
   }
 
+  Arena* arena() { return arena_.get(); }
+
   // Return a promise that resolves to Empty{} when the current party poll is
   // complete.
   // This is useful for implementing batching and the like: we can hold some
@@ -443,7 +447,6 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
-  explicit Party(size_t initial_refs) : sync_(initial_refs) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
