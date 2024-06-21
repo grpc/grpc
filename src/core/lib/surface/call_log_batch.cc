@@ -106,10 +106,10 @@ static std::string grpc_op_string(const grpc_op* op) {
   return absl::StrJoin(parts, "");
 }
 
-void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
-                         const grpc_op* ops, size_t nops) {
+void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
+                         size_t nops) {
   for (size_t i = 0; i < nops; i++) {
-    gpr_log(file, line, severity, "ops[%" PRIuPTR "]: %s", i,
-            grpc_op_string(&ops[i]).c_str());
+    LOG(INFO).AtLocation(file, line)
+        << "ops[%" << i << "]: " << grpc_op_string(&ops[i]);
   }
 }

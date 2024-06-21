@@ -755,7 +755,7 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
     return GRPC_CALL_ERROR;
   }
 
-  GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
+  GRPC_CALL_LOG_BATCH(ops, nops);
 
   if (nops == 0) {
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
