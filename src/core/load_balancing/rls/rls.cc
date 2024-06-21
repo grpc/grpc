@@ -108,6 +108,7 @@
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
@@ -315,12 +316,12 @@ class RlsLb final : public LoadBalancingPolicy {
   struct ResponseInfo {
     absl::Status status;
     std::vector<std::string> targets;
-    std::string header_data;
+    grpc_event_engine::experimental::Slice header_data;
 
     std::string ToString() const {
       return absl::StrFormat("{status=%s, targets=[%s], header_data=\"%s\"}",
                              status.ToString(), absl::StrJoin(targets, ","),
-                             header_data);
+                             header_data.as_string_view());
     }
   };
 
@@ -464,7 +465,7 @@ class RlsLb final : public LoadBalancingPolicy {
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return data_expiration_time_;
       }
-      const std::string& header_data() const
+      const grpc_event_engine::experimental::Slice& header_data() const
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_) {
         return header_data_;
       }
@@ -543,7 +544,8 @@ class RlsLb final : public LoadBalancingPolicy {
       // RLS response states
       std::vector<RefCountedPtr<ChildPolicyWrapper>> child_policy_wrappers_
           ABSL_GUARDED_BY(&RlsLb::mu_);
-      std::string header_data_ ABSL_GUARDED_BY(&RlsLb::mu_);
+      grpc_event_engine::experimental::Slice header_data_
+          ABSL_GUARDED_BY(&RlsLb::mu_);
       Timestamp data_expiration_time_ ABSL_GUARDED_BY(&RlsLb::mu_) =
           Timestamp::InfPast();
       Timestamp stale_time_ ABSL_GUARDED_BY(&RlsLb::mu_) = Timestamp::InfPast();
@@ -702,7 +704,7 @@ class RlsLb final : public LoadBalancingPolicy {
                RefCountedPtr<RlsChannel> rls_channel,
                std::unique_ptr<BackOff> backoff_state,
                grpc_lookup_v1_RouteLookupRequest_Reason reason,
-               std::string stale_header_data);
+               grpc_event_engine::experimental::Slice stale_header_data);
     ~RlsRequest() override;
 
     // Shuts down the request.  If the request is still in flight, it is
@@ -730,7 +732,7 @@ class RlsLb final : public LoadBalancingPolicy {
     RefCountedPtr<RlsChannel> rls_channel_;
     std::unique_ptr<BackOff> backoff_state_;
     grpc_lookup_v1_RouteLookupRequest_Reason reason_;
-    std::string stale_header_data_;
+    grpc_event_engine::experimental::Slice stale_header_data_;
 
     // RLS call state.
     Timestamp deadline_;
@@ -1259,19 +1261,17 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
             child_policy_wrappers_.size(),
             ConnectivityStateName(child_policy_wrapper->connectivity_state()));
   }
-  // Add header data.
-  // Note that even if the target we're using is in TRANSIENT_FAILURE,
-  // the pick might still succeed (e.g., if the child is ring_hash), so
-  // we need to pass the right header info down in all cases.
-  if (!header_data_.empty()) {
-    char* copied_header_data =
-        static_cast<char*>(args.call_state->Alloc(header_data_.length() + 1));
-    strcpy(copied_header_data, header_data_.c_str());
-    args.initial_metadata->Add(kRlsHeaderKey, copied_header_data);
-  }
   auto pick_result = child_policy_wrapper->Pick(args);
   lb_policy_->MaybeExportPickCount(kMetricTargetPicks,
                                    child_policy_wrapper->target(), pick_result);
+  // Add header data.
+  if (!header_data_.empty()) {
+    auto* complete_pick =
+        absl::get_if<PickResult::Complete>(&pick_result.result);
+    if (complete_pick != nullptr) {
+      complete_pick->metadata_mutations.Add(kRlsHeaderKey, header_data_.Ref());
+    }
+  }
   return pick_result;
 }
 
@@ -1682,11 +1682,11 @@ void RlsLb::RlsChannel::StartRlsCall(const RequestKey& key,
   std::unique_ptr<BackOff> backoff_state;
   grpc_lookup_v1_RouteLookupRequest_Reason reason =
       grpc_lookup_v1_RouteLookupRequest_REASON_MISS;
-  std::string stale_header_data;
+  grpc_event_engine::experimental::Slice stale_header_data;
   if (stale_entry != nullptr) {
     backoff_state = stale_entry->TakeBackoffState();
     reason = grpc_lookup_v1_RouteLookupRequest_REASON_STALE;
-    stale_header_data = stale_entry->header_data();
+    stale_header_data = stale_entry->header_data().Ref();
   }
   lb_policy_->request_map_.emplace(
       key, MakeOrphanable<RlsRequest>(
@@ -1708,11 +1708,12 @@ void RlsLb::RlsChannel::ResetBackoff() {
 // RlsLb::RlsRequest
 //
 
-RlsLb::RlsRequest::RlsRequest(RefCountedPtr<RlsLb> lb_policy, RequestKey key,
-                              RefCountedPtr<RlsChannel> rls_channel,
-                              std::unique_ptr<BackOff> backoff_state,
-                              grpc_lookup_v1_RouteLookupRequest_Reason reason,
-                              std::string stale_header_data)
+RlsLb::RlsRequest::RlsRequest(
+    RefCountedPtr<RlsLb> lb_policy, RequestKey key,
+    RefCountedPtr<RlsChannel> rls_channel,
+    std::unique_ptr<BackOff> backoff_state,
+    grpc_lookup_v1_RouteLookupRequest_Reason reason,
+    grpc_event_engine::experimental::Slice stale_header_data)
     : InternallyRefCounted<RlsRequest>(
           GRPC_TRACE_FLAG_ENABLED(rls_lb) ? "RlsRequest" : nullptr),
       lb_policy_(std::move(lb_policy)),
@@ -1890,8 +1891,7 @@ grpc_byte_buffer* RlsLb::RlsRequest::MakeRequestProto() {
   grpc_lookup_v1_RouteLookupRequest_set_reason(req, reason_);
   if (!stale_header_data_.empty()) {
     grpc_lookup_v1_RouteLookupRequest_set_stale_header_data(
-        req, upb_StringView_FromDataAndSize(stale_header_data_.data(),
-                                            stale_header_data_.size()));
+        req, StdStringToUpbString(stale_header_data_.as_string_view()));
   }
   size_t len;
   char* buf =
@@ -1934,7 +1934,8 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
   upb_StringView header_data_strview =
       grpc_lookup_v1_RouteLookupResponse_header_data(response);
   response_info.header_data =
-      std::string(header_data_strview.data, header_data_strview.size);
+      grpc_event_engine::experimental::Slice::FromCopiedBuffer(
+          header_data_strview.data, header_data_strview.size);
   return response_info;
 }
 
