@@ -177,6 +177,9 @@ void LegacyMaxAgeFilter::PostInit() {
 
   // Start the max age timer
   if (max_connection_age_ != Duration::Infinity()) {
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        channel_stack->EventEngine());
     max_age_activity_.Set(MakeActivity(
         TrySeq(
             // First sleep until the max connection age
@@ -207,12 +210,14 @@ void LegacyMaxAgeFilter::PostInit() {
             [this] {
               return Sleep(Timestamp::Now() + max_connection_age_grace_);
             }),
-        ExecCtxWakeupScheduler(), [channel_stack, this](absl::Status status) {
+        ExecCtxWakeupScheduler(),
+        [channel_stack, this](absl::Status status) {
           // OnDone -- close the connection if the promise completed
           // successfully.
           // (if it did not, it was cancelled)
           if (status.ok()) CloseChannel();
-        }));
+        },
+        std::move(arena)));
   }
 }
 

@@ -45,6 +45,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -414,6 +415,9 @@ grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_compression_options compression_options,
                           RefCountedPtr<Arena> arena,
                           RefCountedPtr<UnstartedCallDestination> destination) {
+  DCHECK_NE(arena.get(), nullptr);
+  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
   return arena
       ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), registered_method, deadline,

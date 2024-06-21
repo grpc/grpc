@@ -108,7 +108,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -180,6 +180,7 @@ Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
   ScopedActivity activity(this);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (auto* p =
             participants_[i].exchange(nullptr, std::memory_order_acquire)) {
@@ -262,6 +263,7 @@ void Party::RunLocked() {
 
 bool Party::RunParty() {
   ScopedActivity activity(this);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
 }
 
