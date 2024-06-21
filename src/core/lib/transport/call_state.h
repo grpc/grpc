@@ -954,4 +954,4 @@ CallState::PollWasCancelled() {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_LIB_TRANSPORT_CALL_STATE_H
