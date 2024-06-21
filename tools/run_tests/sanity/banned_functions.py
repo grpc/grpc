@@ -35,7 +35,7 @@ import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
-# map of banned function signature to allowlist
+#  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_severity": [
         "./include/grpc/support/log.h",
@@ -269,16 +269,16 @@ for root, dirs, files in os.walk("."):
             continue
         with open(path) as f:
             text = f.read()
-        for banned, exceptions in list(
+        for deprecated, allowlist in list(
             DEPRECATED_FUNCTION_TEMP_ALLOW_LIST.items()
         ):
-            if path in exceptions:
+            if path in allowlist:
                 continue
-            if banned in text:
+            if deprecated in text:
                 print(
                     (
                         'Illegal use of "%s" in %s . Use absl functions instead.'
-                        % (banned, path)
+                        % (deprecated, path)
                     )
                 )
                 errors += 1
