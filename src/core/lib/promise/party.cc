@@ -107,7 +107,7 @@ class Party::Handle final : public Wakeable {
   }
 
   void WakeupGeneric(WakeupMask wakeup_mask,
-                     void (Party::*wakeup_method)(WakeupMask))
+                     void (Party::* wakeup_method)(WakeupMask))
       ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
     // Note that activity refcount can drop to zero, but we could win the lock
@@ -178,6 +178,7 @@ Party::Participant::~Participant() {
 Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
+  if (!sync_.has_participants()) return;
   ScopedActivity activity(this);
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (auto* p =
