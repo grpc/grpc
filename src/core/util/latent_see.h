@@ -191,7 +191,7 @@ namespace latent_see {
 struct Metadata {};
 struct Flow {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool has_value() const { return false; }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void reset();
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void reset() {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void emplace(Metadata*) {}
 };
 }  // namespace latent_see
