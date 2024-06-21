@@ -24,7 +24,7 @@ namespace grpc_core {
 
 template <>
 struct ArenaContextType<grpc_event_engine::experimental::EventEngine> {
-  static void Destroy(grpc_event_engine::experimental::EventEngine* ee) {}
+  static void Destroy(grpc_event_engine::experimental::EventEngine*) {}
 };
 
 }  // namespace grpc_core
