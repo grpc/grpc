@@ -160,7 +160,6 @@ BANNED_EXCEPT = {
         "./src/core/lib/transport/connectivity_state.cc",
         "./src/core/lib/transport/transport.h",
         "./src/core/load_balancing/grpclb/grpclb.cc",
-        "./src/core/load_balancing/outlier_detection/outlier_detection.cc",
         "./src/core/load_balancing/pick_first/pick_first.cc",
         "./src/core/load_balancing/priority/priority.cc",
         "./src/core/load_balancing/ring_hash/ring_hash.cc",
