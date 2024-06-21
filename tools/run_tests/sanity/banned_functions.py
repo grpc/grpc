@@ -255,12 +255,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_func_args": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
-<<<<<<< clean_allow_list_2024_06_19
-        "./src/php/ext/grpc/php_grpc.c",
-=======
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
->>>>>>> master
         "./test/core/end2end/tests/no_logging.cc",
     ],
     "gpr_set_log_function(": [
