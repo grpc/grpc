@@ -97,9 +97,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     auto channel_args =
         grpc_core::ChannelArgs().SetObject<EventEngine>(std::move(engine));
     sc->add_handshakers(channel_args, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(
-        mock_endpoint_controller->TakeCEndpoint(), channel_args, deadline,
-        nullptr /* acceptor */, on_handshake_done, &state);
+    handshake_mgr->DoHandshake(mock_endpoint_controller->TakeCEndpoint(),
+                               channel_args, deadline, nullptr /* acceptor */,
+                               on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
 
     // If the given string happens to be part of the correct client hello, the
