@@ -1207,9 +1207,12 @@ class CallState {
   enum class ServerToClientPullState : uint16_t {
     // Not yet started: cannot read
     kUnstarted,
+    kUnstartedReading,
     kStarted,
+    kStartedReading,
     // Processing server initial metadata
     kProcessingServerInitialMetadata,
+    kProcessingServerInitialMetadataReading,
     // Main call loop: not reading
     kIdle,
     // Main call loop: reading but no message available
@@ -1225,10 +1228,16 @@ class CallState {
     switch (state) {
       case ServerToClientPullState::kUnstarted:
         return "Unstarted";
+      case ServerToClientPullState::kUnstartedReading:
+        return "UnstartedReading";
       case ServerToClientPullState::kStarted:
         return "Started";
+      case ServerToClientPullState::kStartedReading:
+        return "StartedReading";
       case ServerToClientPullState::kProcessingServerInitialMetadata:
         return "ProcessingServerInitialMetadata";
+      case ServerToClientPullState::kProcessingServerInitialMetadataReading:
+        return "ProcessingServerInitialMetadataReading";
       case ServerToClientPullState::kIdle:
         return "Idle";
       case ServerToClientPullState::kReading:

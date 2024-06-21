@@ -59,9 +59,9 @@ class MockActivity : public Activity, public Wakeable {
   std::unique_ptr<ScopedActivity> scoped_activity_;
 };
 
-#define EXPECT_WAKEUP(activity, statement)    \
-  EXPECT_CALL((activity), WakeupRequested()); \
-  statement;                                  \
+#define EXPECT_WAKEUP(activity, statement)                                 \
+  EXPECT_CALL((activity), WakeupRequested()).Times(::testing::AtLeast(1)); \
+  statement;                                                               \
   Mock::VerifyAndClearExpectations(&(activity));
 
 }  // namespace

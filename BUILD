@@ -2116,6 +2116,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:transport_fwd",
         "//src/core:try_seq",
+        "//src/core:unique_type_name",
         "//src/core:useful",
     ],
 )
