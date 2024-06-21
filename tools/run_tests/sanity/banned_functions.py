@@ -14,21 +14,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Explicitly ban select functions from being used in gRPC."""
+
+# Explicitly ban select functions from being used in gRPC.
+#
+# Any new instance of a deprecated function being used in the code will be
+# flagged by the script. If there is a new instance of a deprecated function in
+# a Pull Request, then the Sanity tests will fail for the Pull Request.
+# We are currently working on clearing out the usage of deprecated functions in
+# the entire gRPC code base.
+# While our cleaning is in progress we have a temporary allow list. The allow
+# list has a list of files where clean up of deprecated functions is pending.
+# As we clean up the deprecated function from files, we will remove them from
+# the allow list.
+# It would be wise to do the file clean up and the altering of the allow list
+# in the same PR. This will make sure that any roll back of a clean up PR will
+# also alter the allow list and avoid build failures.
 
 import os
 import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
-# map of banned function signature to allowlist
-BANNED_EXCEPT = {
+#  Map of deprecated functions to allowlist files
+DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_severity": [
         "./include/grpc/support/log.h",
-        "./src/core/lib/channel/channel_stack.cc",
-        "./src/core/lib/channel/channel_stack.h",
-        "./src/core/lib/surface/call.h",
-        "./src/core/lib/surface/call_log_batch.cc",
         "./src/core/util/android/log.cc",
         "./src/core/util/linux/log.cc",
         "./src/core/util/log.cc",
@@ -40,11 +50,7 @@ BANNED_EXCEPT = {
     ],
     "gpr_log_severity_string(": [
         "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
         "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
     ],
     "gpr_log(": [
         "./include/grpc/support/log.h",
@@ -92,7 +98,6 @@ BANNED_EXCEPT = {
         "./src/core/handshaker/http_connect/http_connect_handshaker.cc",
         "./src/core/handshaker/http_connect/http_proxy_mapper.cc",
         "./src/core/handshaker/security/secure_endpoint.cc",
-        "./src/core/lib/channel/channel_stack.cc",
         "./src/core/lib/event_engine/ares_resolver.h",
         "./src/core/lib/event_engine/cf_engine/cf_engine.cc",
         "./src/core/lib/event_engine/posix_engine/posix_engine.cc",
@@ -147,20 +152,16 @@ BANNED_EXCEPT = {
         "./src/core/lib/slice/slice_refcount.h",
         "./src/core/lib/surface/api_trace.h",
         "./src/core/lib/surface/call.cc",
-        "./src/core/lib/surface/call_log_batch.cc",
         "./src/core/lib/surface/call_utils.cc",
         "./src/core/lib/surface/channel_init.cc",
         "./src/core/lib/surface/completion_queue.cc",
-        "./src/core/lib/surface/filter_stack_call.cc",
         "./src/core/lib/surface/legacy_channel.cc",
         "./src/core/lib/transport/bdp_estimator.cc",
         "./src/core/lib/transport/bdp_estimator.h",
         "./src/core/lib/transport/call_filters.cc",
-        "./src/core/lib/transport/call_filters.h",
         "./src/core/lib/transport/connectivity_state.cc",
         "./src/core/lib/transport/transport.h",
         "./src/core/load_balancing/grpclb/grpclb.cc",
-        "./src/core/load_balancing/outlier_detection/outlier_detection.cc",
         "./src/core/load_balancing/pick_first/pick_first.cc",
         "./src/core/load_balancing/priority/priority.cc",
         "./src/core/load_balancing/ring_hash/ring_hash.cc",
@@ -189,15 +190,8 @@ BANNED_EXCEPT = {
         "./src/core/tsi/ssl_transport_security.cc",
         "./src/core/tsi/ssl_transport_security_utils.cc",
         "./src/core/util/android/log.cc",
-        "./src/core/util/http_client/parser.cc",
-        "./src/core/util/linux/cpu.cc",
         "./src/core/util/linux/log.cc",
-        "./src/core/util/posix/cpu.cc",
         "./src/core/util/posix/log.cc",
-        "./src/core/util/posix/tmpfile.cc",
-        "./src/core/util/subprocess_posix.cc",
-        "./src/core/util/subprocess_windows.cc",
-        "./src/core/util/time_precise.cc",
         "./src/core/util/windows/log.cc",
         "./src/php/ext/grpc/call_credentials.c",
         "./src/php/ext/grpc/channel.c",
@@ -235,40 +229,19 @@ BANNED_EXCEPT = {
         "./src/core/util/windows/log.cc",
         "./test/core/end2end/tests/no_logging.cc",
     ],
-    "gpr_log_verbosity_init(": [
-        "./include/grpc/support/log.h",
-        "./src/core/lib/surface/init.cc",
-        "./src/core/util/log.cc",
-        "./test/core/promise/mpsc_test.cc",
-        "./test/core/promise/observable_test.cc",
-        "./test/core/resource_quota/memory_quota_fuzzer.cc",
-        "./test/core/resource_quota/memory_quota_test.cc",
-        "./test/core/resource_quota/periodic_update_test.cc",
-        "./test/core/test_util/test_config.cc",
-        "./test/core/transport/interception_chain_test.cc",
-    ],
     "gpr_log_func_args": [
         "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
         "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
         "./test/core/end2end/tests/no_logging.cc",
-        "./test/cpp/interop/stress_test.cc",
     ],
     "gpr_set_log_function(": [
         "./include/grpc/support/log.h",
         "./src/core/util/log.cc",
         "./test/core/end2end/tests/no_logging.cc",
-        "./test/cpp/interop/stress_test.cc",
     ],
-    "gpr_assertion_failed(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-    ],
-    "GPR_ASSERT(": [],
-    "GPR_DEBUG_ASSERT(": [],
+    "gpr_assertion_failed": [],
+    "GPR_ASSERT": [],
+    "GPR_DEBUG_ASSERT": [],
 }
 
 errors = 0
@@ -285,14 +258,16 @@ for root, dirs, files in os.walk("."):
             continue
         with open(path) as f:
             text = f.read()
-        for banned, exceptions in list(BANNED_EXCEPT.items()):
-            if path in exceptions:
+        for deprecated, allowlist in list(
+            DEPRECATED_FUNCTION_TEMP_ALLOW_LIST.items()
+        ):
+            if path in allowlist:
                 continue
-            if banned in text:
+            if deprecated in text:
                 print(
                     (
                         'Illegal use of "%s" in %s . Use absl functions instead.'
-                        % (banned, path)
+                        % (deprecated, path)
                     )
                 )
                 errors += 1
