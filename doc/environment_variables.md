@@ -53,7 +53,10 @@ If anyone wants to debug, we need to set verbose logs using absl.
 END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
 <!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
-`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO` and `ERROR`). If this environment variable is unset, only `ERROR` logs will be printed.
+  `GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO` and `ERROR`.
+
+  Our recommendation is to avoid using this flag and [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging). We only support this flag for legacy reasons. If this environment variable is set, then gRPC will set absl MinLogValue and absl SetVLogLevel. This will alter the log settings of the entire application, not just gRPC code. For that reason, it is not recommended.
+
   gRPC logging verbosity - one of:
   - DEBUG - log INFO, WARNING, ERROR and FATAL messages. Also sets absl VLOG(2) logs enabled. This is not recommended for production systems. This will be expensive for staging environments too, so it can be used when you want to debug a specific issue. 
   - INFO - log INFO, WARNING, ERROR and FATAL messages. This is not recommended for production systems. This may be slightly expensive for staging environments too. We recommend that you use your discretion for staging environments.

@@ -11,11 +11,14 @@ that gets printed to stderr.
 
 <!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION
 GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
-If anyone wants to debug, we need to set verbose logs using absl.
+If anyone wants to debug, we need to [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging).
+
 END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
 <!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
-`GRPC_VERBOSITY` is used to set the minimum level of log messages printed by gRPC (supported values are `DEBUG`, `INFO` and `ERROR`). If this environment variable is unset, only `ERROR` logs will be printed. `ERROR` is recomeded for production systems.
+Our recommendation is to avoid using this flag and [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging). We only support this flag for legacy reasons.
+
+`GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO` and `ERROR`. If this environment variable is unset, gRPC will not edit the absl settings. However if this environment variable is set, then gRPC will set absl MinLogValue and absl SetVLogLevel. This will alter the log settings of the entire application, not just gRPC code. For that reason, it is not recommended.
 <!-- END_OPEN_SOURCE_DOCUMENTATION -->
 
 ## GRPC_TRACE
