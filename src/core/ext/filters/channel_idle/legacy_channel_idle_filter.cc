@@ -51,6 +51,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/http2_errors.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -224,7 +225,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+          -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
@@ -268,10 +269,15 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
                     }
                   });
   });
-  activity_.Set(MakeActivity(std::move(promise), ExecCtxWakeupScheduler{},
-                             [channel_stack, this](absl::Status status) {
-                               if (status.ok()) CloseChannel();
-                             }));
+  auto arena = SimpleArenaAllocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      channel_stack_->EventEngine());
+  activity_.Set(MakeActivity(
+      std::move(promise), ExecCtxWakeupScheduler{},
+      [channel_stack, this](absl::Status status) {
+        if (status.ok()) CloseChannel();
+      },
+      std::move(arena)));
 }
 
 void LegacyChannelIdleFilter::CloseChannel() {
