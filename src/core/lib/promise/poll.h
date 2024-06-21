@@ -20,6 +20,7 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
@@ -303,7 +304,8 @@ void AbslStringify(Sink& sink, const Poll<absl::optional<T>>& poll) {
 
 // Hack to get metadata printing
 template <typename Sink, typename T, typename Deleter>
-void AbslStringify(Sink& sink, const Poll<absl::optional<std::unique_ptr<T, Deleter>>>& poll) {
+void AbslStringify(
+    Sink& sink, const Poll<absl::optional<std::unique_ptr<T, Deleter>>>& poll) {
   if (poll.pending()) {
     absl::Format(&sink, "<<pending>>");
     return;
@@ -315,7 +317,6 @@ void AbslStringify(Sink& sink, const Poll<absl::optional<std::unique_ptr<T, Dele
     sink.Append("nullopt");
   }
 }
-
 
 }  // namespace grpc_core
 
