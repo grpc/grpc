@@ -28,7 +28,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_internal.h"
@@ -110,6 +109,6 @@ void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
                          size_t nops) {
   for (size_t i = 0; i < nops; i++) {
     LOG(INFO).AtLocation(file, line)
-        << "ops[%" << i << "]: " << grpc_op_string(&ops[i]);
+        << "ops[" << i << "]: " << grpc_op_string(&ops[i]);
   }
 }
