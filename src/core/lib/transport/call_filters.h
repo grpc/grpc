@@ -1595,8 +1595,20 @@ class CallFilters {
     filters_detail::StackData data_;
   };
 
-  explicit CallFilters(ClientMetadataHandle client_initial_metadata);
-  ~CallFilters();
+  explicit CallFilters(ClientMetadataHandle client_initial_metadata)
+      : call_data_(nullptr),
+        push_client_initial_metadata_(std::move(client_initial_metadata)) {}
+  ~CallFilters() {
+    if (call_data_ != nullptr && call_data_ != &g_empty_call_data_) {
+      for (const auto& stack : stacks_) {
+        for (const auto& destructor : stack.stack->data_.filter_destructor) {
+          destructor.call_destroy(filters_detail::Offset(
+              call_data_, stack.call_data_offset + destructor.call_offset));
+        }
+      }
+      gpr_free_aligned(call_data_);
+    }
+  };
 
   CallFilters(const CallFilters&) = delete;
   CallFilters& operator=(const CallFilters&) = delete;
@@ -1845,6 +1857,8 @@ class CallFilters {
   MessageHandle push_client_to_server_message_;
   MessageHandle push_server_to_client_message_;
   ServerMetadataHandle push_server_trailing_metadata_;
+
+  static char g_empty_call_data_;
 };
 
 }  // namespace grpc_core

@@ -22,30 +22,12 @@
 #include "src/core/lib/transport/metadata.h"
 
 namespace grpc_core {
-namespace {
 // Call data for those calls that don't have any call data
 // (we form pointers to this that aren't allowed to be nullptr)
-char g_empty_call_data;
-}  // namespace
+char CallFilters::g_empty_call_data_;
 
 ///////////////////////////////////////////////////////////////////////////////
 // CallFilters
-
-CallFilters::CallFilters(ClientMetadataHandle client_initial_metadata)
-    : call_data_(nullptr),
-      push_client_initial_metadata_(std::move(client_initial_metadata)) {}
-
-CallFilters::~CallFilters() {
-  if (call_data_ != nullptr && call_data_ != &g_empty_call_data) {
-    for (const auto& stack : stacks_) {
-      for (const auto& destructor : stack.stack->data_.filter_destructor) {
-        destructor.call_destroy(filters_detail::Offset(
-            call_data_, stack.call_data_offset + destructor.call_offset));
-      }
-    }
-    gpr_free_aligned(call_data_);
-  }
-}
 
 void CallFilters::Start() {
   CHECK_EQ(call_data_, nullptr);
@@ -67,7 +49,7 @@ void CallFilters::Start() {
   if (call_data_size != 0) {
     call_data_ = gpr_malloc_aligned(call_data_size, call_data_alignment);
   } else {
-    call_data_ = &g_empty_call_data;
+    call_data_ = &g_empty_call_data_;
   }
   for (const auto& stack : stacks_) {
     for (const auto& constructor : stack.stack->data_.filter_constructor) {
