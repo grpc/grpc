@@ -504,6 +504,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = [
@@ -522,6 +523,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
@@ -2438,7 +2440,6 @@ grpc_cc_library(
         "posix_event_engine_timer_manager",
         "ref_counted_dns_resolver_interface",
         "useful",
-        "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
@@ -2857,6 +2858,7 @@ grpc_cc_library(
         "resolved_address",
         "slice",
         "windows_iocp",
+        "//:config_vars",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",

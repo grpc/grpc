@@ -16,6 +16,8 @@
 
 #include <utility>
 
+#include "absl/status/status.h"
+
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -29,7 +31,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -146,4 +147,9 @@ extern void (*event_engine_grpc_ares_test_only_inject_config)(
 extern bool g_event_engine_grpc_ares_test_only_force_tcp;
 
 #endif  // GRPC_ARES == 1
+
+bool ShouldUseAresDnsResolver();
+absl::Status AresInit();
+void AresShutdown();
+
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H

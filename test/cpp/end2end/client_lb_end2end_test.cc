@@ -580,22 +580,23 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   static std::string MakeConnectionFailureRegex(absl::string_view prefix) {
-    return absl::StrCat(prefix,
-                        "; last error: (UNKNOWN|UNAVAILABLE): "
-                        // IP address
-                        "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                        // Prefixes added for context
-                        "(Failed to connect to remote host: )?"
-                        "(Timeout occurred: )?"
-                        // Syscall
-                        "((connect|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
-                        // strerror() output or other message
-                        "(Connection refused"
-                        "|Connection reset by peer"
-                        "|Socket closed"
-                        "|FD shutdown)"
-                        // errno value
-                        "( \\([0-9]+\\))?");
+    return absl::StrCat(
+        prefix,
+        "; last error: (UNKNOWN|UNAVAILABLE): "
+        // IP address
+        "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+        // Prefixes added for context
+        "(Failed to connect to remote host: )?"
+        "(Timeout occurred: )?"
+        // Syscall
+        "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
+        // strerror() output or other message
+        "(Connection refused"
+        "|Connection reset by peer"
+        "|Socket closed"
+        "|FD shutdown)"
+        // errno value
+        "( \\([0-9]+\\))?");
   }
 
   const std::string server_host_;
