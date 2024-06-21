@@ -415,7 +415,8 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
                   [md](absl::string_view error, const Slice& value) {
                     VLOG(2)
                         << "Append error: key=" << StringViewFromSlice(md->key)
-                        << " error=" << error << " value=" << value;
+                        << " error=" << error
+                        << " value=" << value.as_string_view();
                   });
   }
 
