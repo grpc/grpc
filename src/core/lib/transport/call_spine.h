@@ -254,6 +254,7 @@ class CallInitiator {
   }
 
   Arena* arena() { return spine_->arena(); }
+  Party* party() { return spine_.get(); }
 
  private:
   RefCountedPtr<CallSpine> spine_;
@@ -314,6 +315,7 @@ class CallHandler {
   }
 
   Arena* arena() { return spine_->arena(); }
+  Party* party() { return spine_.get(); }
 
  private:
   RefCountedPtr<CallSpine> spine_;

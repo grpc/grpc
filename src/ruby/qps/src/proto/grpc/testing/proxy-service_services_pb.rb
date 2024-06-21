@@ -24,15 +24,15 @@ module Grpc
     module ProxyClientService
       class Service
 
-        include GRPC::GenericService
+        include ::GRPC::GenericService
 
         self.marshal_class_method = :encode
         self.unmarshal_class_method = :decode
         self.service_name = 'grpc.testing.ProxyClientService'
 
-        rpc :GetConfig, Void, ClientConfig
-        rpc :ReportTime, stream(ProxyStat), Void
-        rpc :ReportHist, stream(HistogramData), Void
+        rpc :GetConfig, ::Grpc::Testing::Void, ::Grpc::Testing::ClientConfig
+        rpc :ReportTime, stream(::Grpc::Testing::ProxyStat), ::Grpc::Testing::Void
+        rpc :ReportHist, stream(::Grpc::Testing::HistogramData), ::Grpc::Testing::Void
       end
 
       Stub = Service.rpc_stub_class

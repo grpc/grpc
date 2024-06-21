@@ -743,6 +743,13 @@ void grpc_resolver_dns_ares_shutdown() {
   }
 }
 
+void grpc_resolver_dns_ares_reset_dns_resolver() {
+  if (grpc_core::ShouldUseAresDnsResolver(
+          grpc_core::ConfigVars::Get().DnsResolver())) {
+    grpc_core::ResetDNSResolver(std::make_unique<grpc_core::AresDNSResolver>());
+  }
+}
+
 #else  // GRPC_ARES == 1
 
 namespace grpc_core {
@@ -755,5 +762,7 @@ void RegisterAresDnsResolver(CoreConfiguration::Builder*) {}
 void grpc_resolver_dns_ares_init() {}
 
 void grpc_resolver_dns_ares_shutdown() {}
+
+void grpc_resolver_dns_ares_reset_dns_resolver() {}
 
 #endif  // GRPC_ARES == 1
