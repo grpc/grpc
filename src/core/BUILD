@@ -1318,7 +1318,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
@@ -1361,7 +1360,6 @@ grpc_cc_library(
         "handshaker/endpoint_info/endpoint_info_handshaker.h",
     ],
     external_deps = [
-        "absl/functional:any_invocable",
         "absl/status",
     ],
     language = "c++",
@@ -2459,7 +2457,6 @@ grpc_cc_library(
         "posix_event_engine_timer_manager",
         "ref_counted_dns_resolver_interface",
         "useful",
-        "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
@@ -2878,6 +2875,7 @@ grpc_cc_library(
         "resolved_address",
         "slice",
         "windows_iocp",
+        "//:config_vars",
         "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:gpr",
