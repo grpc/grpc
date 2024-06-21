@@ -123,6 +123,9 @@ Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
     : arena_(std::move(arena)),
       send_deadline_(send_deadline),
       is_client_(is_client) {
+  DCHECK_NE(arena_.get(), nullptr);
+  DCHECK_NE(arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
   arena_->SetContext<Call>(this);
 }
 

@@ -46,6 +46,7 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -108,6 +109,8 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
       channel_stack->call_stack_size;
 
   RefCountedPtr<Arena> arena = channel->call_arena_allocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      args->channel->event_engine());
   call = new (arena->Alloc(call_alloc_size)) FilterStackCall(arena, *args);
   DCHECK(FromC(call->c_ptr()) == call);
   DCHECK(FromCallStack(call->call_stack()) == call);
