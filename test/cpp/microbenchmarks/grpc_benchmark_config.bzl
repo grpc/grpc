@@ -40,9 +40,6 @@ def grpc_cc_benchmark(name, external_deps = [], tags = [], uses_polling = False,
         uses_polling: per grpc_cc_test, but defaulted False
         uses_event_engine: per grpc_cc_test, but defaulted False
         **kwargs: per grpc_cc_test
-
-    Returns:
-        A list of dictionaries containing modified values of name, srcs, deps, tags, and args.
     """
     grpc_cc_test(
         name = name,

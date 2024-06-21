@@ -306,7 +306,6 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
-    language = "C++",
     deps = [
         ":helpers_secure",
         "//:grpc_opencensus_plugin",
@@ -345,7 +344,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_callback_unary_ping_pong",
     size = "large",
     srcs = [
@@ -373,7 +372,7 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_callback_streaming_ping_pong",
     srcs = [
         "bm_callback_streaming_ping_pong.cc",
@@ -386,7 +385,7 @@ grpc_cc_test(
 )
 
 # TODO(hork): Generalize this for other work queue implementations
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_basic_work_queue",
     srcs = ["bm_basic_work_queue.cc"],
     external_deps = [
@@ -396,7 +395,6 @@ grpc_cc_test(
         "manual",
         "notap",
     ],
-    uses_event_engine = False,
     deps = [
         "//:gpr",
         "//src/core:common_event_engine_closures",
