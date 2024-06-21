@@ -239,7 +239,8 @@ class FilterFixture {
   BenchmarkCall MakeCall() {
     auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
                           event_engine_.get(), arena_allocator_->MakeArena());
-    return {std::move(p.initiator), p.handler.StartCall(stack_)};
+    p.handler.AddCallStack(stack_);
+    return {std::move(p.initiator), p.handler.StartCall()};
   }
 
   ServerMetadataHandle MakeServerInitialMetadata() {
