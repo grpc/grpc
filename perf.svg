@@ -1,0 +1,1125 @@
+<?xml version="1.0" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" width="2000" height="470" onload="init(evt)" viewBox="0 0 2000 470" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<!-- Flame graph stack visualization. See https://github.com/brendangregg/FlameGraph for latest version, and http://www.brendangregg.com/flamegraphs.html for examples. -->
+<!-- NOTES:  -->
+<defs>
+	<linearGradient id="background" y1="0" y2="1" x1="0" x2="0" >
+		<stop stop-color="#eeeeee" offset="5%" />
+		<stop stop-color="#eeeeb0" offset="95%" />
+	</linearGradient>
+</defs>
+<style type="text/css">
+	text { font-family:Verdana; font-size:12px; fill:rgb(0,0,0); }
+	#search, #ignorecase { opacity:0.1; cursor:pointer; }
+	#search:hover, #search.show, #ignorecase:hover, #ignorecase.show { opacity:1; }
+	#subtitle { text-anchor:middle; font-color:rgb(160,160,160); }
+	#title { text-anchor:middle; font-size:17px}
+	#unzoom { cursor:pointer; }
+	#frames > *:hover { stroke:black; stroke-width:0.5; cursor:pointer; }
+	.hide { display:none; }
+	.parent { opacity:0.5; }
+</style>
+<script type="text/ecmascript">
+<![CDATA[
+	"use strict";
+	var details, searchbtn, unzoombtn, matchedtxt, svg, searching, currentSearchTerm, ignorecase, ignorecaseBtn;
+	function init(evt) {
+		details = document.getElementById("details").firstChild;
+		searchbtn = document.getElementById("search");
+		ignorecaseBtn = document.getElementById("ignorecase");
+		unzoombtn = document.getElementById("unzoom");
+		matchedtxt = document.getElementById("matched");
+		svg = document.getElementsByTagName("svg")[0];
+		searching = 0;
+		currentSearchTerm = null;
+
+		// use GET parameters to restore a flamegraphs state.
+		var params = get_params();
+		if (params.x && params.y)
+			zoom(find_group(document.querySelector('[x="' + params.x + '"][y="' + params.y + '"]')));
+                if (params.s) search(params.s);
+	}
+
+	// event listeners
+	window.addEventListener("click", function(e) {
+		var target = find_group(e.target);
+		if (target) {
+			if (target.nodeName == "a") {
+				if (e.ctrlKey === false) return;
+				e.preventDefault();
+			}
+			if (target.classList.contains("parent")) unzoom(true);
+			zoom(target);
+			if (!document.querySelector('.parent')) {
+				// we have basically done a clearzoom so clear the url
+				var params = get_params();
+				if (params.x) delete params.x;
+				if (params.y) delete params.y;
+				history.replaceState(null, null, parse_params(params));
+				unzoombtn.classList.add("hide");
+				return;
+			}
+
+			// set parameters for zoom state
+			var el = target.querySelector("rect");
+			if (el && el.attributes && el.attributes.y && el.attributes._orig_x) {
+				var params = get_params()
+				params.x = el.attributes._orig_x.value;
+				params.y = el.attributes.y.value;
+				history.replaceState(null, null, parse_params(params));
+			}
+		}
+		else if (e.target.id == "unzoom") clearzoom();
+		else if (e.target.id == "search") search_prompt();
+		else if (e.target.id == "ignorecase") toggle_ignorecase();
+	}, false)
+
+	// mouse-over for info
+	// show
+	window.addEventListener("mouseover", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = "Function: " + g_to_text(target);
+	}, false)
+
+	// clear
+	window.addEventListener("mouseout", function(e) {
+		var target = find_group(e.target);
+		if (target) details.nodeValue = ' ';
+	}, false)
+
+	// ctrl-F for search
+	// ctrl-I to toggle case-sensitive search
+	window.addEventListener("keydown",function (e) {
+		if (e.keyCode === 114 || (e.ctrlKey && e.keyCode === 70)) {
+			e.preventDefault();
+			search_prompt();
+		}
+		else if (e.ctrlKey && e.keyCode === 73) {
+			e.preventDefault();
+			toggle_ignorecase();
+		}
+	}, false)
+
+	// functions
+	function get_params() {
+		var params = {};
+		var paramsarr = window.location.search.substr(1).split('&');
+		for (var i = 0; i < paramsarr.length; ++i) {
+			var tmp = paramsarr[i].split("=");
+			if (!tmp[0] || !tmp[1]) continue;
+			params[tmp[0]]  = decodeURIComponent(tmp[1]);
+		}
+		return params;
+	}
+	function parse_params(params) {
+		var uri = "?";
+		for (var key in params) {
+			uri += key + '=' + encodeURIComponent(params[key]) + '&';
+		}
+		if (uri.slice(-1) == "&")
+			uri = uri.substring(0, uri.length - 1);
+		if (uri == '?')
+			uri = window.location.href.split('?')[0];
+		return uri;
+	}
+	function find_child(node, selector) {
+		var children = node.querySelectorAll(selector);
+		if (children.length) return children[0];
+	}
+	function find_group(node) {
+		var parent = node.parentElement;
+		if (!parent) return;
+		if (parent.id == "frames") return node;
+		return find_group(parent);
+	}
+	function orig_save(e, attr, val) {
+		if (e.attributes["_orig_" + attr] != undefined) return;
+		if (e.attributes[attr] == undefined) return;
+		if (val == undefined) val = e.attributes[attr].value;
+		e.setAttribute("_orig_" + attr, val);
+	}
+	function orig_load(e, attr) {
+		if (e.attributes["_orig_"+attr] == undefined) return;
+		e.attributes[attr].value = e.attributes["_orig_" + attr].value;
+		e.removeAttribute("_orig_"+attr);
+	}
+	function g_to_text(e) {
+		var text = find_child(e, "title").firstChild.nodeValue;
+		return (text)
+	}
+	function g_to_func(e) {
+		var func = g_to_text(e);
+		// if there's any manipulation we want to do to the function
+		// name before it's searched, do it here before returning.
+		return (func);
+	}
+	function update_text(e) {
+		var r = find_child(e, "rect");
+		var t = find_child(e, "text");
+		var w = parseFloat(r.attributes.width.value) -3;
+		var txt = find_child(e, "title").textContent.replace(/\([^(]*\)$/,"");
+		t.attributes.x.value = parseFloat(r.attributes.x.value) + 3;
+
+		// Smaller than this size won't fit anything
+		if (w < 2 * 12 * 0.59) {
+			t.textContent = "";
+			return;
+		}
+
+		t.textContent = txt;
+		var sl = t.getSubStringLength(0, txt.length);
+		// check if only whitespace or if we can fit the entire string into width w
+		if (/^ *$/.test(txt) || sl < w)
+			return;
+
+		// this isn't perfect, but gives a good starting point
+		// and avoids calling getSubStringLength too often
+		var start = Math.floor((w/sl) * txt.length);
+		for (var x = start; x > 0; x = x-2) {
+			if (t.getSubStringLength(0, x + 2) <= w) {
+				t.textContent = txt.substring(0, x) + "..";
+				return;
+			}
+		}
+		t.textContent = "";
+	}
+
+	// zoom
+	function zoom_reset(e) {
+		if (e.attributes != undefined) {
+			orig_load(e, "x");
+			orig_load(e, "width");
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_reset(c[i]);
+		}
+	}
+	function zoom_child(e, x, ratio) {
+		if (e.attributes != undefined) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = (parseFloat(e.attributes.x.value) - x - 10) * ratio + 10;
+				if (e.tagName == "text")
+					e.attributes.x.value = find_child(e.parentNode, "rect[x]").attributes.x.value + 3;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseFloat(e.attributes.width.value) * ratio;
+			}
+		}
+
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_child(c[i], x - 10, ratio);
+		}
+	}
+	function zoom_parent(e) {
+		if (e.attributes) {
+			if (e.attributes.x != undefined) {
+				orig_save(e, "x");
+				e.attributes.x.value = 10;
+			}
+			if (e.attributes.width != undefined) {
+				orig_save(e, "width");
+				e.attributes.width.value = parseInt(svg.width.baseVal.value) - (10 * 2);
+			}
+		}
+		if (e.childNodes == undefined) return;
+		for (var i = 0, c = e.childNodes; i < c.length; i++) {
+			zoom_parent(c[i]);
+		}
+	}
+	function zoom(node) {
+		var attr = find_child(node, "rect").attributes;
+		var width = parseFloat(attr.width.value);
+		var xmin = parseFloat(attr.x.value);
+		var xmax = parseFloat(xmin + width);
+		var ymin = parseFloat(attr.y.value);
+		var ratio = (svg.width.baseVal.value - 2 * 10) / width;
+
+		// XXX: Workaround for JavaScript float issues (fix me)
+		var fudge = 0.0001;
+
+		unzoombtn.classList.remove("hide");
+
+		var el = document.getElementById("frames").children;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var a = find_child(e, "rect").attributes;
+			var ex = parseFloat(a.x.value);
+			var ew = parseFloat(a.width.value);
+			var upstack;
+			// Is it an ancestor
+			if (0 == 0) {
+				upstack = parseFloat(a.y.value) > ymin;
+			} else {
+				upstack = parseFloat(a.y.value) < ymin;
+			}
+			if (upstack) {
+				// Direct ancestor
+				if (ex <= xmin && (ex+ew+fudge) >= xmax) {
+					e.classList.add("parent");
+					zoom_parent(e);
+					update_text(e);
+				}
+				// not in current path
+				else
+					e.classList.add("hide");
+			}
+			// Children maybe
+			else {
+				// no common path
+				if (ex < xmin || ex + fudge >= xmax) {
+					e.classList.add("hide");
+				}
+				else {
+					zoom_child(e, xmin, ratio);
+					update_text(e);
+				}
+			}
+		}
+		search();
+	}
+	function unzoom(dont_update_text) {
+		unzoombtn.classList.add("hide");
+		var el = document.getElementById("frames").children;
+		for(var i = 0; i < el.length; i++) {
+			el[i].classList.remove("parent");
+			el[i].classList.remove("hide");
+			zoom_reset(el[i]);
+			if(!dont_update_text) update_text(el[i]);
+		}
+		search();
+	}
+	function clearzoom() {
+		unzoom();
+
+		// remove zoom state
+		var params = get_params();
+		if (params.x) delete params.x;
+		if (params.y) delete params.y;
+		history.replaceState(null, null, parse_params(params));
+	}
+
+	// search
+	function toggle_ignorecase() {
+		ignorecase = !ignorecase;
+		if (ignorecase) {
+			ignorecaseBtn.classList.add("show");
+		} else {
+			ignorecaseBtn.classList.remove("show");
+		}
+		reset_search();
+		search();
+	}
+	function reset_search() {
+		var el = document.querySelectorAll("#frames rect");
+		for (var i = 0; i < el.length; i++) {
+			orig_load(el[i], "fill")
+		}
+		var params = get_params();
+		delete params.s;
+		history.replaceState(null, null, parse_params(params));
+	}
+	function search_prompt() {
+		if (!searching) {
+			var term = prompt("Enter a search term (regexp " +
+			    "allowed, eg: ^ext4_)"
+			    + (ignorecase ? ", ignoring case" : "")
+			    + "\nPress Ctrl-i to toggle case sensitivity", "");
+			if (term != null) search(term);
+		} else {
+			reset_search();
+			searching = 0;
+			currentSearchTerm = null;
+			searchbtn.classList.remove("show");
+			searchbtn.firstChild.nodeValue = "Search"
+			matchedtxt.classList.add("hide");
+			matchedtxt.firstChild.nodeValue = ""
+		}
+	}
+	function search(term) {
+		if (term) currentSearchTerm = term;
+
+		var re = new RegExp(currentSearchTerm, ignorecase ? 'i' : '');
+		var el = document.getElementById("frames").children;
+		var matches = new Object();
+		var maxwidth = 0;
+		for (var i = 0; i < el.length; i++) {
+			var e = el[i];
+			var func = g_to_func(e);
+			var rect = find_child(e, "rect");
+			if (func == null || rect == null)
+				continue;
+
+			// Save max width. Only works as we have a root frame
+			var w = parseFloat(rect.attributes.width.value);
+			if (w > maxwidth)
+				maxwidth = w;
+
+			if (func.match(re)) {
+				// highlight
+				var x = parseFloat(rect.attributes.x.value);
+				orig_save(rect, "fill");
+				rect.attributes.fill.value = "rgb(230,0,230)";
+
+				// remember matches
+				if (matches[x] == undefined) {
+					matches[x] = w;
+				} else {
+					if (w > matches[x]) {
+						// overwrite with parent
+						matches[x] = w;
+					}
+				}
+				searching = 1;
+			}
+		}
+		if (!searching)
+			return;
+		var params = get_params();
+		params.s = currentSearchTerm;
+		history.replaceState(null, null, parse_params(params));
+
+		searchbtn.classList.add("show");
+		searchbtn.firstChild.nodeValue = "Reset Search";
+
+		// calculate percent matched, excluding vertical overlap
+		var count = 0;
+		var lastx = -1;
+		var lastw = 0;
+		var keys = Array();
+		for (k in matches) {
+			if (matches.hasOwnProperty(k))
+				keys.push(k);
+		}
+		// sort the matched frames by their x location
+		// ascending, then width descending
+		keys.sort(function(a, b){
+			return a - b;
+		});
+		// Step through frames saving only the biggest bottom-up frames
+		// thanks to the sort order. This relies on the tree property
+		// where children are always smaller than their parents.
+		var fudge = 0.0001;	// JavaScript floating point
+		for (var k in keys) {
+			var x = parseFloat(keys[k]);
+			var w = matches[keys[k]];
+			if (x >= lastx + lastw - fudge) {
+				count += w;
+				lastx = x;
+				lastw = w;
+			}
+		}
+		// display matched percent
+		matchedtxt.classList.remove("hide");
+		var pct = 100 * count / maxwidth;
+		if (pct != 100) pct = pct.toFixed(1)
+		matchedtxt.firstChild.nodeValue = "Matched: " + pct + "%";
+	}
+]]>
+</script>
+<rect x="0.0" y="0" width="2000.0" height="470.0" fill="url(#background)"  />
+<text id="title" x="1000.00" y="24" >Flame Graph</text>
+<text id="details" x="10.00" y="453" > </text>
+<text id="unzoom" x="10.00" y="24" class="hide">Reset Zoom</text>
+<text id="search" x="1890.00" y="24" >Search</text>
+<text id="ignorecase" x="1974.00" y="24" >ic</text>
+<text id="matched" x="1890.00" y="453" > </text>
+<g id="frames">
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="261" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="271.5" ></text>
+</g>
+<g >
+<title>absl::lts_20240116::Mutex::Lock (322,711,636 samples, 0.38%)</title><rect x="192.5" y="245" width="7.5" height="15.0" fill="rgb(208,17,4)" rx="2" ry="2" />
+<text  x="195.48" y="255.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="69" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="79.5" ></text>
+</g>
+<g >
+<title>bm_call_spine (85,111,562,745 samples, 100.00%)</title><rect x="10.0" y="405" width="1979.9" height="15.0" fill="rgb(229,113,27)" rx="2" ry="2" />
+<text  x="13.00" y="415.5" >bm_call_spine</text>
+</g>
+<g >
+<title>grpc_core::GrpcMemoryAllocatorImpl::Release (40,273,961 samples, 0.05%)</title><rect x="616.3" y="197" width="0.9" height="15.0" fill="rgb(241,167,39)" rx="2" ry="2" />
+<text  x="619.27" y="207.5" ></text>
+</g>
+<g >
+<title>_ZN9grpc_core5TableIJNS_15metadata_detail5ValueINS_17LbCostBinMetadataEvEENS2_INS_17GrpcStatusContextEvEENS2_INS_18XEnvoyPeerMetadataEvEENS2_INS_15LbTokenMetadataEvEENS2_INS_10PeerStringEvEENS2_INS_19GrpcTagsBinMetadataEvEENS2_INS_20GrpcTraceBinMetadataEvEENS2_INS_26GrpcServerStatsBinMetadataEvEENS2_INS_30EndpointLoadMetricsBinMetadataEvEENS2_INS_12HostMetadataEvEENS2_INS_19GrpcMessageMetadataEvEENS2_INS_17UserAgentMetadataEvEENS2_INS_21HttpAuthorityMetadataEvEENS2_INS_16HttpPathMetadataEvEENS2_INS_27GrpcRetryPushbackMsMetadataEvEENS2_INS_19GrpcTimeoutMetadataEvEENS2_INS_25GrpcLbClientStatsMetadataEvEENS2_INS_20GrpcRegisteredMethodEvEENS2_INS_27GrpcInternalEncodingRequestEvEENS2_INS_20GrpcEncodingMetadataEvEENS2_INS_18HttpStatusMetadataEvEENS2_INS_31GrpcPreviousRpcAttemptsMetadataEvEENS2_INS_18GrpcStatusMetadataEvEENS2_INS_12WaitForReadyEvEENS2_INS_18GrpcStatusFromWireEvEENS2_INS_26GrpcAcceptEncodingMetadataEvEENS2_INS_16GrpcTrailersOnlyEvEENS2_INS_18IsTransparentRetryEvEENS2_INS_10TeMetadataEvEENS2_INS_19ContentTypeMetadataEvEENS2_INS_18HttpSchemeMetadataEvEENS2_INS_22GrpcStreamNetworkStateEvEENS2_INS_18HttpMethodMetadataEvEENS2_INS_10GrpcTarPitEvEENS2_INS_20GrpcCallWasCancelledEvEEEE8DestructIJLm0ELm1ELm2ELm3ELm4ELm5ELm6ELm7ELm8ELm9ELm10ELm11ELm12ELm13ELm14ELm15ELm16ELm17ELm18ELm19ELm20ELm21ELm22ELm23ELm24ELm25ELm26ELm27ELm28ELm29ELm30ELm31ELm32ELm33ELm34EEEEvSt16integer_sequenceImJXspT_EEE (605,270,922 samples, 0.71%)</title><rect x="1783.9" y="117" width="14.1" height="15.0" fill="rgb(252,217,52)" rx="2" ry="2" />
+<text  x="1786.90" y="127.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::ParticipantImpl&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (121,018,305 samples, 0.14%)</title><rect x="774.5" y="165" width="2.8" height="15.0" fill="rgb(243,175,42)" rx="2" ry="2" />
+<text  x="777.49" y="175.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (443,133,771 samples, 0.52%)</title><rect x="898.4" y="133" width="10.3" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="901.38" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpine::RunParty (32,180,452,395 samples, 37.81%)</title><rect x="1117.9" y="181" width="748.6" height="15.0" fill="rgb(228,106,25)" rx="2" ry="2" />
+<text  x="1120.86" y="191.5" >grpc_core::CallSpine::RunParty</text>
+</g>
+<g >
+<title>grpc_core::MetadataMap&lt;grpc_metadata_batch, grpc_core::HttpPathMetadata, grpc_core::HttpAuthorityMetadata, grpc_core::HttpMethodMetadata, grpc_core::HttpStatusMetadata, grpc_core::HttpSchemeMetadata, grpc_core::ContentTypeMetadata, grpc_core::TeMetadata, grpc_core::GrpcEncodingMetadata, grpc_core::GrpcInternalEncodingRequest, grpc_core::GrpcAcceptEncodingMetadata, grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata, grpc_core::GrpcPreviousRpcAttemptsMetadata, grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata, grpc_core::EndpointLoadMetricsBinMetadata, grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata, grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata, grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata, grpc_core::XEnvoyPeerMetadata, grpc_core::GrpcStreamNetworkState, grpc_core::PeerString, grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire, grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady, grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit, grpc_core::GrpcRegisteredMethod&gt;::~MetadataMap (443,581,543 samples, 0.52%)</title><rect x="1000.6" y="133" width="10.3" height="15.0" fill="rgb(215,46,11)" rx="2" ry="2" />
+<text  x="1003.62" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::RunParty (11,575,369,689 samples, 13.60%)</title><rect x="777.3" y="165" width="269.3" height="15.0" fill="rgb(223,83,19)" rx="2" ry="2" />
+<text  x="780.31" y="175.5" >grpc_core::Party::RunParty</text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="85" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="95.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::CurrentParticipant (403,185,335 samples, 0.47%)</title><rect x="1798.0" y="133" width="9.4" height="15.0" fill="rgb(220,73,17)" rx="2" ry="2" />
+<text  x="1800.98" y="143.5" ></text>
+</g>
+<g >
+<title>all (85,114,538,466 samples, 100%)</title><rect x="10.0" y="421" width="1980.0" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<text  x="13.00" y="431.5" ></text>
+</g>
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="325" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="335.5" ></text>
+</g>
+<g >
+<title>malloc (161,288,034 samples, 0.19%)</title><rect x="1847.7" y="133" width="3.7" height="15.0" fill="rgb(230,119,28)" rx="2" ry="2" />
+<text  x="1850.68" y="143.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="101" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="111.5" ></text>
+</g>
+<g >
+<title>grpc_core::ExecCtx::~ExecCtx (40,265,737 samples, 0.05%)</title><rect x="70.2" y="261" width="1.0" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
+<text  x="73.24" y="271.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::RunLocked (12,583,278,644 samples, 14.78%)</title><rect x="755.7" y="197" width="292.8" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
+<text  x="758.74" y="207.5" >grpc_core::Party::RunLocked</text>
+</g>
+<g >
+<title>grpc_core::Arena::~Arena (3,053,723,332 samples, 3.59%)</title><rect x="533.0" y="197" width="71.1" height="15.0" fill="rgb(235,138,33)" rx="2" ry="2" />
+<text  x="536.05" y="207.5" >grpc_cor..</text>
+</g>
+<g >
+<title>grpc_core::Party::ForceImmediateRepoll (483,840,817 samples, 0.57%)</title><rect x="1691.1" y="117" width="11.2" height="15.0" fill="rgb(229,112,26)" rx="2" ry="2" />
+<text  x="1694.07" y="127.5" ></text>
+</g>
+<g >
+<title>cfree@GLIBC_2.2.5 (2,217,781,699 samples, 2.61%)</title><rect x="1894.7" y="389" width="51.5" height="15.0" fill="rgb(233,131,31)" rx="2" ry="2" />
+<text  x="1897.65" y="399.5" >cfree..</text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="149" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpine::PushClientToServerMessage (846,303,522 samples, 0.99%)</title><rect x="1671.4" y="117" width="19.7" height="15.0" fill="rgb(210,26,6)" rx="2" ry="2" />
+<text  x="1674.38" y="127.5" ></text>
+</g>
+<g >
+<title>grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (5,968,095,761 samples, 7.01%)</title><rect x="1567.2" y="133" width="138.9" height="15.0" fill="rgb(246,190,45)" rx="2" ry="2" />
+<text  x="1570.24" y="143.5" >grpc_core::BM_Una..</text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="117" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="127.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullServerInitialMetadata (483,433,203 samples, 0.57%)</title><rect x="1712.6" y="133" width="11.3" height="15.0" fill="rgb(246,188,45)" rx="2" ry="2" />
+<text  x="1715.64" y="143.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (1,170,062,233 samples, 1.37%)</title><rect x="165.3" y="245" width="27.2" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="168.26" y="255.5" >_..</text>
+</g>
+<g >
+<title>malloc (483,957,022 samples, 0.57%)</title><rect x="656.6" y="245" width="11.3" height="15.0" fill="rgb(230,119,28)" rx="2" ry="2" />
+<text  x="659.60" y="255.5" ></text>
+</g>
+<g >
+<title>read (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="389" width="0.5" height="15.0" fill="rgb(252,216,51)" rx="2" ry="2" />
+<text  x="1992.37" y="399.5" ></text>
+</g>
+<g >
+<title>benchmark::internal::BenchmarkInstance::Run (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="277" width="1803.7" height="15.0" fill="rgb(228,110,26)" rx="2" ry="2" />
+<text  x="72.31" y="287.5" >benchmark::internal::BenchmarkInstance::Run</text>
+</g>
+<g >
+<title>grpc_core::Party::Participant::~Participant (120,987,160 samples, 0.14%)</title><rect x="1813.0" y="133" width="2.8" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
+<text  x="1815.99" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::promise_detail::Map&lt;grpc_core::promise_detail::AllOk&lt;grpc_core::StatusFlag, grpc_core::promise_detail::Map&lt;grpc_core::CallFilters::Executor&lt;std::unique_ptr&lt;grpc_metadata_batch, grpc_core::Arena::PooledDeleter&gt;, std::unique_ptr&lt;grpc_metadata_batch, grpc_core::Arena::PooledDeleter&gt;, &amp;grpc_core::CallFilters::push_client_initial_metadata_, &amp;grpc_core::filters_detail::StackData::client_initial_metadata, &amp;grpc_core::CallState::FinishPullClientInitialMetadata, grpc_core::CallFilters::AddedStack const*&gt;, grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (40,428,462 samples, 0.05%)</title><rect x="1043.8" y="149" width="0.9" height="15.0" fill="rgb(245,184,44)" rx="2" ry="2" />
+<text  x="1046.77" y="159.5" ></text>
+</g>
+<g >
+<title>TLS init function for grpc_core::Timestamp::thread_local_time_source_ (40,513,487 samples, 0.05%)</title><rect x="416.0" y="229" width="0.9" height="15.0" fill="rgb(227,101,24)" rx="2" ry="2" />
+<text  x="418.98" y="239.5" ></text>
+</g>
+<g >
+<title>void grpc_core::Party::Spawn&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (40,381,614 samples, 0.05%)</title><rect x="1869.3" y="245" width="0.9" height="15.0" fill="rgb(249,204,48)" rx="2" ry="2" />
+<text  x="1872.29" y="255.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::ParticipantImpl&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (322,728,307 samples, 0.38%)</title><rect x="1123.5" y="165" width="7.5" height="15.0" fill="rgb(243,175,42)" rx="2" ry="2" />
+<text  x="1126.50" y="175.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned (80,581,131 samples, 0.09%)</title><rect x="896.5" y="133" width="1.9" height="15.0" fill="rgb(222,82,19)" rx="2" ry="2" />
+<text  x="899.51" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_combiner_continue_exec_ctx (959,490,118 samples, 1.13%)</title><rect x="440.4" y="213" width="22.3" height="15.0" fill="rgb(225,92,22)" rx="2" ry="2" />
+<text  x="443.36" y="223.5" >g..</text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullServerTrailingMetadata (1,450,904,794 samples, 1.70%)</title><rect x="1735.1" y="133" width="33.8" height="15.0" fill="rgb(222,80,19)" rx="2" ry="2" />
+<text  x="1738.13" y="143.5" >gr..</text>
+</g>
+<g >
+<title>malloc (1,853,982,088 samples, 2.18%)</title><rect x="1946.2" y="389" width="43.2" height="15.0" fill="rgb(230,119,28)" rx="2" ry="2" />
+<text  x="1949.25" y="399.5" >malloc</text>
+</g>
+<g >
+<title>operator new (149,932,916 samples, 0.18%)</title><rect x="715.7" y="229" width="3.5" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="718.68" y="239.5" ></text>
+</g>
+<g >
+<title>void grpc_core::CallInitiator::SpawnInfallible&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (35,285,007,174 samples, 41.46%)</title><rect x="1048.5" y="245" width="820.8" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<text  x="1051.46" y="255.5" >void grpc_core::CallInitiator::SpawnInfallible&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt;</text>
+</g>
+<g >
+<title>void grpc_core::CallInitiator::SpawnInfallible&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (120,947,301 samples, 0.14%)</title><rect x="1870.2" y="261" width="2.8" height="15.0" fill="rgb(213,39,9)" rx="2" ry="2" />
+<text  x="1873.23" y="271.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::CurrentParticipant (120,972,266 samples, 0.14%)</title><rect x="1284.0" y="149" width="2.8" height="15.0" fill="rgb(220,73,17)" rx="2" ry="2" />
+<text  x="1287.00" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullServerToClientMessage (483,540,828 samples, 0.57%)</title><rect x="1723.9" y="133" width="11.2" height="15.0" fill="rgb(221,77,18)" rx="2" ry="2" />
+<text  x="1726.89" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpineFixture::MakeCall (7,059,909,514 samples, 8.29%)</title><rect x="247.1" y="245" width="164.2" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
+<text  x="250.06" y="255.5" >grpc_core::CallSpineF..</text>
+</g>
+<g >
+<title>grpc_core::Arena::Destroy (3,658,189,946 samples, 4.30%)</title><rect x="532.1" y="213" width="85.1" height="15.0" fill="rgb(225,95,22)" rx="2" ry="2" />
+<text  x="535.11" y="223.5" >grpc_core:..</text>
+</g>
+<g >
+<title>gpr_malloc_aligned (40,238,273 samples, 0.05%)</title><rect x="258.4" y="229" width="0.9" height="15.0" fill="rgb(251,212,50)" rx="2" ry="2" />
+<text  x="261.39" y="239.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="85" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="95.5" ></text>
+</g>
+<g >
+<title>void grpc_core::Party::Spawn&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (34,156,009,024 samples, 40.13%)</title><rect x="1074.7" y="229" width="794.6" height="15.0" fill="rgb(249,204,48)" rx="2" ry="2" />
+<text  x="1077.72" y="239.5" >void grpc_core::Party::Spawn&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt;</text>
+</g>
+<g >
+<title>[unknown] (40,242,142 samples, 0.05%)</title><rect x="68.4" y="357" width="0.9" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="71.37" y="367.5" ></text>
+</g>
+<g >
+<title>malloc (80,581,111 samples, 0.09%)</title><rect x="713.8" y="229" width="1.9" height="15.0" fill="rgb(230,119,28)" rx="2" ry="2" />
+<text  x="716.80" y="239.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned_erms (1,652,569,563 samples, 1.94%)</title><rect x="1493.1" y="133" width="38.5" height="15.0" fill="rgb(223,84,20)" rx="2" ry="2" />
+<text  x="1496.14" y="143.5" >__m..</text>
+</g>
+<g >
+<title>grpc_core::Party::ParticipantImpl&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (24,029,351,503 samples, 28.23%)</title><rect x="1297.1" y="149" width="559.0" height="15.0" fill="rgb(243,175,42)" rx="2" ry="2" />
+<text  x="1300.13" y="159.5" >grpc_core::Party::ParticipantImpl&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_co..</text>
+</g>
+<g >
+<title>[unknown] (2,549,356,175 samples, 3.00%)</title><rect x="10.0" y="389" width="59.3" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="13.00" y="399.5" >[unkno..</text>
+</g>
+<g >
+<title>operator new (282,236,547 samples, 0.33%)</title><rect x="667.9" y="245" width="6.5" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="670.85" y="255.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpine::PushServerInitialMetadata (604,980,616 samples, 0.71%)</title><rect x="944.3" y="117" width="14.1" height="15.0" fill="rgb(234,137,32)" rx="2" ry="2" />
+<text  x="947.33" y="127.5" ></text>
+</g>
+<g >
+<title>absl::lts_20240116::Mutex::Unlock (1,008,043,461 samples, 1.18%)</title><rect x="1543.8" y="133" width="23.4" height="15.0" fill="rgb(242,172,41)" rx="2" ry="2" />
+<text  x="1546.79" y="143.5" >a..</text>
+</g>
+<g >
+<title>void grpc_core::CallHandler::SpawnInfallible&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (16,078,962,853 samples, 18.89%)</title><rect x="674.4" y="245" width="374.1" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
+<text  x="677.42" y="255.5" >void grpc_core::CallHandler::SpawnInfallible&lt;grpc_..</text>
+</g>
+<g >
+<title>absl::lts_20240116::Mutex::Lock (524,257,016 samples, 0.62%)</title><rect x="1531.6" y="133" width="12.2" height="15.0" fill="rgb(208,17,4)" rx="2" ry="2" />
+<text  x="1534.59" y="143.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="101" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="111.5" ></text>
+</g>
+<g >
+<title>grpc_core::GrpcMemoryAllocatorImpl::Reserve (323,564,753 samples, 0.38%)</title><rect x="320.3" y="213" width="7.5" height="15.0" fill="rgb(216,54,13)" rx="2" ry="2" />
+<text  x="323.28" y="223.5" ></text>
+</g>
+<g >
+<title>cfree@GLIBC_2.2.5 (40,262,838 samples, 0.05%)</title><rect x="474.9" y="229" width="0.9" height="15.0" fill="rgb(233,131,31)" rx="2" ry="2" />
+<text  x="477.88" y="239.5" ></text>
+</g>
+<g >
+<title>grpc_slice_buffer_destroy (241,818,141 samples, 0.28%)</title><rect x="1842.1" y="133" width="5.6" height="15.0" fill="rgb(225,94,22)" rx="2" ry="2" />
+<text  x="1845.06" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullServerToClientMessage (40,311,448 samples, 0.05%)</title><rect x="1278.4" y="149" width="0.9" height="15.0" fill="rgb(221,77,18)" rx="2" ry="2" />
+<text  x="1281.37" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PushServerToClientMessage (121,070,729 samples, 0.14%)</title><rect x="849.6" y="149" width="2.8" height="15.0" fill="rgb(252,218,52)" rx="2" ry="2" />
+<text  x="852.60" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::ForceImmediateRepoll (201,563,955 samples, 0.24%)</title><rect x="1666.7" y="101" width="4.7" height="15.0" fill="rgb(229,112,26)" rx="2" ry="2" />
+<text  x="1669.69" y="111.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullClientToServerMessage (282,386,166 samples, 0.33%)</title><rect x="1706.1" y="133" width="6.5" height="15.0" fill="rgb(221,77,18)" rx="2" ry="2" />
+<text  x="1709.07" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::promise_detail::AllOk&lt;grpc_core::StatusFlag, grpc_core::promise_detail::Map&lt;grpc_core::CallFilters::PushClientToServerMessage (363,004,603 samples, 0.43%)</title><rect x="1815.8" y="133" width="8.4" height="15.0" fill="rgb(213,40,9)" rx="2" ry="2" />
+<text  x="1818.80" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PushServerToClientMessage (322,595,030 samples, 0.38%)</title><rect x="1768.9" y="133" width="7.5" height="15.0" fill="rgb(252,218,52)" rx="2" ry="2" />
+<text  x="1771.89" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_combiner_continue_exec_ctx (161,210,257 samples, 0.19%)</title><rect x="427.2" y="229" width="3.8" height="15.0" fill="rgb(225,92,22)" rx="2" ry="2" />
+<text  x="430.23" y="239.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="149" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="159.5" ></text>
+</g>
+<g >
+<title>benchmark::internal::BenchmarkRunner::DoOneRepetition (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="325" width="1803.7" height="15.0" fill="rgb(212,33,8)" rx="2" ry="2" />
+<text  x="72.31" y="335.5" >benchmark::internal::BenchmarkRunner::DoOneRepetition</text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="117" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="127.5" ></text>
+</g>
+<g >
+<title>malloc@plt (40,317,284 samples, 0.05%)</title><rect x="1851.4" y="133" width="1.0" height="15.0" fill="rgb(246,192,46)" rx="2" ry="2" />
+<text  x="1854.43" y="143.5" ></text>
+</g>
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="293" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="303.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpine::RunParty (12,260,780,050 samples, 14.41%)</title><rect x="761.4" y="181" width="285.2" height="15.0" fill="rgb(228,106,25)" rx="2" ry="2" />
+<text  x="764.36" y="191.5" >grpc_core::CallSpine::RunParty</text>
+</g>
+<g >
+<title>absl::lts_20240116::internal_any_invocable::EmptyManager (161,294,970 samples, 0.19%)</title><rect x="471.1" y="229" width="3.8" height="15.0" fill="rgb(232,125,29)" rx="2" ry="2" />
+<text  x="474.12" y="239.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned (322,652,670 samples, 0.38%)</title><rect x="1485.6" y="133" width="7.5" height="15.0" fill="rgb(222,82,19)" rx="2" ry="2" />
+<text  x="1488.64" y="143.5" ></text>
+</g>
+<g >
+<title>operator delete (80,576,592 samples, 0.09%)</title><rect x="1044.7" y="149" width="1.9" height="15.0" fill="rgb(247,196,46)" rx="2" ry="2" />
+<text  x="1047.71" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::Participant::~Participant (80,579,210 samples, 0.09%)</title><rect x="1295.3" y="149" width="1.8" height="15.0" fill="rgb(246,189,45)" rx="2" ry="2" />
+<text  x="1298.26" y="159.5" ></text>
+</g>
+<g >
+<title>benchmark::internal::(anonymous namespace)::RunInThread (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="293" width="1803.7" height="15.0" fill="rgb(208,15,3)" rx="2" ry="2" />
+<text  x="72.31" y="303.5" >benchmark::internal::(anonymous namespace)::RunInThread</text>
+</g>
+<g >
+<title>grpc_core::Party::RunParty (121,124,467 samples, 0.14%)</title><rect x="1866.5" y="181" width="2.8" height="15.0" fill="rgb(223,83,19)" rx="2" ry="2" />
+<text  x="1869.47" y="191.5" ></text>
+</g>
+<g >
+<title>gpr_free_aligned (40,266,645 samples, 0.05%)</title><rect x="531.2" y="213" width="0.9" height="15.0" fill="rgb(233,131,31)" rx="2" ry="2" />
+<text  x="534.17" y="223.5" ></text>
+</g>
+<g >
+<title>grpc_core::Arena::Create (2,944,099,500 samples, 3.46%)</title><rect x="259.3" y="229" width="68.5" height="15.0" fill="rgb(244,183,43)" rx="2" ry="2" />
+<text  x="262.32" y="239.5" >grpc_co..</text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="197" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="207.5" ></text>
+</g>
+<g >
+<title>benchmark::RunSpecifiedBenchmarks (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="341" width="1803.7" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
+<text  x="72.31" y="351.5" >benchmark::RunSpecifiedBenchmarks</text>
+</g>
+<g >
+<title>grpc_core::Party::CurrentParticipant (725,918,974 samples, 0.85%)</title><rect x="1010.9" y="133" width="16.9" height="15.0" fill="rgb(220,73,17)" rx="2" ry="2" />
+<text  x="1013.93" y="143.5" ></text>
+</g>
+<g >
+<title>__libc_start_call_main (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="389" width="1803.7" height="15.0" fill="rgb(210,26,6)" rx="2" ry="2" />
+<text  x="72.31" y="399.5" >__libc_start_call_main</text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="181" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="191.5" ></text>
+</g>
+<g >
+<title>grpc_core::PartySyncUsingAtomics::UnreffedLast (80,656,573 samples, 0.09%)</title><rect x="71.2" y="261" width="1.9" height="15.0" fill="rgb(240,161,38)" rx="2" ry="2" />
+<text  x="74.18" y="271.5" ></text>
+</g>
+<g >
+<title>grpc_core::ExecCtx::Flush (120,886,384 samples, 0.14%)</title><rect x="416.9" y="245" width="2.8" height="15.0" fill="rgb(250,208,49)" rx="2" ry="2" />
+<text  x="419.92" y="255.5" ></text>
+</g>
+<g >
+<title>absl::lts_20240116::CondVar::SignalAll (40,319,022 samples, 0.05%)</title><rect x="1619.8" y="117" width="0.9" height="15.0" fill="rgb(222,81,19)" rx="2" ry="2" />
+<text  x="1622.78" y="127.5" ></text>
+</g>
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="373" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="383.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PushServerTrailingMetadata (1,048,321,525 samples, 1.23%)</title><rect x="1647.0" y="117" width="24.4" height="15.0" fill="rgb(253,221,52)" rx="2" ry="2" />
+<text  x="1649.99" y="127.5" >g..</text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="133" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="143.5" ></text>
+</g>
+<g >
+<title>_ZN9grpc_core5TableIJNS_15metadata_detail5ValueINS_17LbCostBinMetadataEvEENS2_INS_17GrpcStatusContextEvEENS2_INS_18XEnvoyPeerMetadataEvEENS2_INS_15LbTokenMetadataEvEENS2_INS_10PeerStringEvEENS2_INS_19GrpcTagsBinMetadataEvEENS2_INS_20GrpcTraceBinMetadataEvEENS2_INS_26GrpcServerStatsBinMetadataEvEENS2_INS_30EndpointLoadMetricsBinMetadataEvEENS2_INS_12HostMetadataEvEENS2_INS_19GrpcMessageMetadataEvEENS2_INS_17UserAgentMetadataEvEENS2_INS_21HttpAuthorityMetadataEvEENS2_INS_16HttpPathMetadataEvEENS2_INS_27GrpcRetryPushbackMsMetadataEvEENS2_INS_19GrpcTimeoutMetadataEvEENS2_INS_25GrpcLbClientStatsMetadataEvEENS2_INS_20GrpcRegisteredMethodEvEENS2_INS_27GrpcInternalEncodingRequestEvEENS2_INS_20GrpcEncodingMetadataEvEENS2_INS_18HttpStatusMetadataEvEENS2_INS_31GrpcPreviousRpcAttemptsMetadataEvEENS2_INS_18GrpcStatusMetadataEvEENS2_INS_12WaitForReadyEvEENS2_INS_18GrpcStatusFromWireEvEENS2_INS_26GrpcAcceptEncodingMetadataEvEENS2_INS_16GrpcTrailersOnlyEvEENS2_INS_18IsTransparentRetryEvEENS2_INS_10TeMetadataEvEENS2_INS_19ContentTypeMetadataEvEENS2_INS_18HttpSchemeMetadataEvEENS2_INS_22GrpcStreamNetworkStateEvEENS2_INS_18HttpMethodMetadataEvEENS2_INS_10GrpcTarPitEvEENS2_INS_20GrpcCallWasCancelledEvEEEE8DestructIJLm0ELm1ELm2ELm3ELm4ELm5ELm6ELm7ELm8ELm9ELm10ELm11ELm12ELm13ELm14ELm15ELm16ELm17ELm18ELm19ELm20ELm21ELm22ELm23ELm24ELm25ELm26ELm27ELm28ELm29ELm30ELm31ELm32ELm33ELm34EEEEvSt16integer_sequenceImJXspT_EEE (443,581,543 samples, 0.52%)</title><rect x="1000.6" y="117" width="10.3" height="15.0" fill="rgb(252,217,52)" rx="2" ry="2" />
+<text  x="1003.62" y="127.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="165" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="175.5" ></text>
+</g>
+<g >
+<title>grpc_core::promise_detail::AllOk&lt;grpc_core::StatusFlag, grpc_core::promise_detail::Map&lt;grpc_core::CallFilters::PushClientToServerMessage (40,329,831 samples, 0.05%)</title><rect x="1856.1" y="149" width="1.0" height="15.0" fill="rgb(213,40,9)" rx="2" ry="2" />
+<text  x="1859.12" y="159.5" ></text>
+</g>
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="277" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="287.5" ></text>
+</g>
+<g >
+<title>grpc_core::promise_detail::AllOk&lt;grpc_core::StatusFlag, grpc_core::promise_detail::Map&lt;grpc_core::CallFilters::PushClientToServerMessage (161,124,793 samples, 0.19%)</title><rect x="1702.3" y="117" width="3.8" height="15.0" fill="rgb(213,40,9)" rx="2" ry="2" />
+<text  x="1705.32" y="127.5" ></text>
+</g>
+<g >
+<title>malloc (201,506,552 samples, 0.24%)</title><rect x="1036.3" y="133" width="4.7" height="15.0" fill="rgb(230,119,28)" rx="2" ry="2" />
+<text  x="1039.26" y="143.5" ></text>
+</g>
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="341" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="351.5" ></text>
+</g>
+<g >
+<title>absl::lts_20240116::Mutex::Unlock (40,313,538 samples, 0.05%)</title><rect x="1246.5" y="149" width="0.9" height="15.0" fill="rgb(242,172,41)" rx="2" ry="2" />
+<text  x="1249.48" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpine::PartyOver (7,448,889,362 samples, 8.75%)</title><rect x="475.8" y="229" width="173.3" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
+<text  x="478.81" y="239.5" >grpc_core::CallSpine::..</text>
+</g>
+<g >
+<title>benchmark::internal::BenchmarkRunner::DoNIterations (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="309" width="1803.7" height="15.0" fill="rgb(238,153,36)" rx="2" ry="2" />
+<text  x="72.31" y="319.5" >benchmark::internal::BenchmarkRunner::DoNIterations</text>
+</g>
+<g >
+<title>benchmark::RunSpecifiedBenchmarks (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="357" width="1803.7" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
+<text  x="72.31" y="367.5" >benchmark::RunSpecifiedBenchmarks</text>
+</g>
+<g >
+<title>_int_free (2,549,152,348 samples, 2.99%)</title><rect x="10.0" y="373" width="59.3" height="15.0" fill="rgb(247,196,46)" rx="2" ry="2" />
+<text  x="13.00" y="383.5" >_int_f..</text>
+</g>
+<g >
+<title>main (77,537,436,941 samples, 91.10%)</title><rect x="69.3" y="373" width="1803.7" height="15.0" fill="rgb(243,179,42)" rx="2" ry="2" />
+<text  x="72.31" y="383.5" >main</text>
+</g>
+<g >
+<title>grpc_core::CallSpineFixture::MakeCall (40,354,160 samples, 0.05%)</title><rect x="69.3" y="261" width="0.9" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
+<text  x="72.31" y="271.5" ></text>
+</g>
+<g >
+<title>grpc_core::GrpcMemoryAllocatorImpl::Release (927,592,243 samples, 1.09%)</title><rect x="582.5" y="181" width="21.6" height="15.0" fill="rgb(241,167,39)" rx="2" ry="2" />
+<text  x="585.51" y="191.5" >g..</text>
+</g>
+<g >
+<title>free@plt (80,568,437 samples, 0.09%)</title><rect x="1275.6" y="149" width="1.8" height="15.0" fill="rgb(229,112,26)" rx="2" ry="2" />
+<text  x="1278.56" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::MakeCallPair (3,507,903,544 samples, 4.12%)</title><rect x="329.7" y="229" width="81.6" height="15.0" fill="rgb(209,21,5)" rx="2" ry="2" />
+<text  x="332.69" y="239.5" >grpc_core..</text>
+</g>
+<g >
+<title>grpc_core::CallArenaAllocator::FinalizeArena (523,893,555 samples, 0.62%)</title><rect x="604.1" y="197" width="12.2" height="15.0" fill="rgb(208,17,4)" rx="2" ry="2" />
+<text  x="607.09" y="207.5" ></text>
+</g>
+<g >
+<title>operator new (161,174,771 samples, 0.19%)</title><rect x="1852.4" y="133" width="3.7" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="1855.37" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::Arena::Arena (2,337,841,356 samples, 2.75%)</title><rect x="265.9" y="213" width="54.4" height="15.0" fill="rgb(248,202,48)" rx="2" ry="2" />
+<text  x="268.90" y="223.5" >grpc_..</text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="37" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="47.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="213" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="223.5" ></text>
+</g>
+<g >
+<title>void grpc_core::Party::Spawn&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (14,155,432,433 samples, 16.63%)</title><rect x="719.2" y="229" width="329.3" height="15.0" fill="rgb(249,204,48)" rx="2" ry="2" />
+<text  x="722.17" y="239.5" >void grpc_core::Party::Spawn&lt;grpc_core::BM_U..</text>
+</g>
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="309" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="319.5" ></text>
+</g>
+<g >
+<title>operator new (40,335,069 samples, 0.05%)</title><rect x="1073.8" y="229" width="0.9" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="1076.79" y="239.5" ></text>
+</g>
+<g >
+<title>grpc_core::ExecCtx::~ExecCtx (1,846,026,590 samples, 2.17%)</title><rect x="419.7" y="245" width="43.0" height="15.0" fill="rgb(236,144,34)" rx="2" ry="2" />
+<text  x="422.73" y="255.5" >grpc..</text>
+</g>
+<g >
+<title>[unknown] (23,939,728 samples, 0.03%)</title><rect x="1989.4" y="357" width="0.5" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="1992.37" y="367.5" ></text>
+</g>
+<g >
+<title>grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (2,661,177,315 samples, 3.13%)</title><rect x="908.7" y="133" width="61.9" height="15.0" fill="rgb(246,190,45)" rx="2" ry="2" />
+<text  x="911.69" y="143.5" >grpc_c..</text>
+</g>
+<g >
+<title>grpc_core::promise_detail::Map&lt;grpc_core::promise_detail::AllOk&lt;grpc_core::StatusFlag, grpc_core::promise_detail::Map&lt;grpc_core::CallFilters::Executor&lt;std::unique_ptr&lt;grpc_metadata_batch, grpc_core::Arena::PooledDeleter&gt;, std::unique_ptr&lt;grpc_metadata_batch, grpc_core::Arena::PooledDeleter&gt;, &amp;grpc_core::CallFilters::push_client_initial_metadata_, &amp;grpc_core::filters_detail::StackData::client_initial_metadata, &amp;grpc_core::CallState::FinishPullClientInitialMetadata, grpc_core::CallFilters::AddedStack const*&gt;, grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (161,294,052 samples, 0.19%)</title><rect x="1027.8" y="133" width="3.8" height="15.0" fill="rgb(245,184,44)" rx="2" ry="2" />
+<text  x="1030.82" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::AddParticipants (13,873,127,421 samples, 16.30%)</title><rect x="725.7" y="213" width="322.8" height="15.0" fill="rgb(239,160,38)" rx="2" ry="2" />
+<text  x="728.73" y="223.5" >grpc_core::Party::AddParticipants</text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="197" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="207.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpine::PushServerToClientMessage (524,335,939 samples, 0.62%)</title><rect x="958.4" y="117" width="12.2" height="15.0" fill="rgb(210,26,6)" rx="2" ry="2" />
+<text  x="961.40" y="127.5" ></text>
+</g>
+<g >
+<title>cfree@GLIBC_2.2.5 (1,209,699,150 samples, 1.42%)</title><rect x="1247.4" y="149" width="28.2" height="15.0" fill="rgb(233,131,31)" rx="2" ry="2" />
+<text  x="1250.42" y="159.5" >c..</text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="53" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="63.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::PartyIsOver (7,932,904,588 samples, 9.32%)</title><rect x="464.6" y="245" width="184.5" height="15.0" fill="rgb(243,176,42)" rx="2" ry="2" />
+<text  x="467.55" y="255.5" >grpc_core::Party::PartyI..</text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PushServerToClientMessage (443,403,553 samples, 0.52%)</title><rect x="987.5" y="133" width="10.3" height="15.0" fill="rgb(252,218,52)" rx="2" ry="2" />
+<text  x="990.49" y="143.5" ></text>
+</g>
+<g >
+<title>operator new (121,165,677 samples, 0.14%)</title><rect x="1041.0" y="133" width="2.8" height="15.0" fill="rgb(216,51,12)" rx="2" ry="2" />
+<text  x="1043.95" y="143.5" ></text>
+</g>
+<g >
+<title>absl::lts_20240116::Mutex::Unlock (1,862,285,431 samples, 2.19%)</title><rect x="200.0" y="245" width="43.3" height="15.0" fill="rgb(242,172,41)" rx="2" ry="2" />
+<text  x="202.98" y="255.5" >absl..</text>
+</g>
+<g >
+<title>grpc_core::CallSpine::PushServerInitialMetadata (80,590,893 samples, 0.09%)</title><rect x="997.8" y="133" width="1.9" height="15.0" fill="rgb(234,137,32)" rx="2" ry="2" />
+<text  x="1000.80" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_slice_buffer_destroy (40,371,846 samples, 0.05%)</title><rect x="1857.1" y="149" width="0.9" height="15.0" fill="rgb(225,94,22)" rx="2" ry="2" />
+<text  x="1860.06" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::ExecCtx::ExecCtx (241,970,710 samples, 0.28%)</title><rect x="411.3" y="245" width="5.6" height="15.0" fill="rgb(250,208,49)" rx="2" ry="2" />
+<text  x="414.29" y="255.5" ></text>
+</g>
+<g >
+<title>operator delete (364,128,151 samples, 0.43%)</title><rect x="1858.0" y="149" width="8.5" height="15.0" fill="rgb(247,196,46)" rx="2" ry="2" />
+<text  x="1861.00" y="159.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="181" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="191.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullClientToServerMessage (40,347,650 samples, 0.05%)</title><rect x="1277.4" y="149" width="1.0" height="15.0" fill="rgb(221,77,18)" rx="2" ry="2" />
+<text  x="1280.44" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallSpine::PushServerToClientMessage (40,315,123 samples, 0.05%)</title><rect x="999.7" y="133" width="0.9" height="15.0" fill="rgb(210,26,6)" rx="2" ry="2" />
+<text  x="1002.68" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::MakeCallPair (80,638,379 samples, 0.09%)</title><rect x="462.7" y="245" width="1.9" height="15.0" fill="rgb(209,21,5)" rx="2" ry="2" />
+<text  x="465.68" y="255.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::ParticipantImpl&lt;grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (8,225,768,839 samples, 9.66%)</title><rect x="852.4" y="149" width="191.4" height="15.0" fill="rgb(243,175,42)" rx="2" ry="2" />
+<text  x="855.42" y="159.5" >grpc_core::Party::Partici..</text>
+</g>
+<g >
+<title>grpc_core::MetadataMap&lt;grpc_metadata_batch, grpc_core::HttpPathMetadata, grpc_core::HttpAuthorityMetadata, grpc_core::HttpMethodMetadata, grpc_core::HttpStatusMetadata, grpc_core::HttpSchemeMetadata, grpc_core::ContentTypeMetadata, grpc_core::TeMetadata, grpc_core::GrpcEncodingMetadata, grpc_core::GrpcInternalEncodingRequest, grpc_core::GrpcAcceptEncodingMetadata, grpc_core::GrpcStatusMetadata, grpc_core::GrpcTimeoutMetadata, grpc_core::GrpcPreviousRpcAttemptsMetadata, grpc_core::GrpcRetryPushbackMsMetadata, grpc_core::UserAgentMetadata, grpc_core::GrpcMessageMetadata, grpc_core::HostMetadata, grpc_core::EndpointLoadMetricsBinMetadata, grpc_core::GrpcServerStatsBinMetadata, grpc_core::GrpcTraceBinMetadata, grpc_core::GrpcTagsBinMetadata, grpc_core::GrpcLbClientStatsMetadata, grpc_core::LbCostBinMetadata, grpc_core::LbTokenMetadata, grpc_core::XEnvoyPeerMetadata, grpc_core::GrpcStreamNetworkState, grpc_core::PeerString, grpc_core::GrpcStatusContext, grpc_core::GrpcStatusFromWire, grpc_core::GrpcCallWasCancelled, grpc_core::WaitForReady, grpc_core::IsTransparentRetry, grpc_core::GrpcTrailersOnly, grpc_core::GrpcTarPit, grpc_core::GrpcRegisteredMethod&gt;::~MetadataMap (927,898,345 samples, 1.09%)</title><rect x="1776.4" y="133" width="21.6" height="15.0" fill="rgb(215,46,11)" rx="2" ry="2" />
+<text  x="1779.39" y="143.5" >g..</text>
+</g>
+<g >
+<title>grpc_core::Party::ForceImmediateRepoll (242,030,519 samples, 0.28%)</title><rect x="1807.4" y="133" width="5.6" height="15.0" fill="rgb(229,112,26)" rx="2" ry="2" />
+<text  x="1810.36" y="143.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,351,891 samples, 0.05%)</title><rect x="461.7" y="133" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="464.74" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::Arena::DestroyManagedNewObjects (443,499,633 samples, 0.52%)</title><rect x="617.2" y="213" width="10.3" height="15.0" fill="rgb(213,38,9)" rx="2" ry="2" />
+<text  x="620.21" y="223.5" ></text>
+</g>
+<g >
+<title>[unknown] (40,305,039 samples, 0.05%)</title><rect x="439.4" y="165" width="1.0" height="15.0" fill="rgb(210,24,5)" rx="2" ry="2" />
+<text  x="442.42" y="175.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::~CallFilters (927,128,463 samples, 1.09%)</title><rect x="627.5" y="213" width="21.6" height="15.0" fill="rgb(248,201,48)" rx="2" ry="2" />
+<text  x="630.53" y="223.5" >g..</text>
+</g>
+<g >
+<title>grpc_core::Party::ForceImmediateRepoll (362,996,792 samples, 0.43%)</title><rect x="1286.8" y="149" width="8.5" height="15.0" fill="rgb(229,112,26)" rx="2" ry="2" />
+<text  x="1289.81" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::promise_detail::Map&lt;grpc_core::promise_detail::AllOk&lt;grpc_core::StatusFlag, grpc_core::promise_detail::Map&lt;grpc_core::CallFilters::Executor&lt;std::unique_ptr&lt;grpc_metadata_batch, grpc_core::Arena::PooledDeleter&gt;, std::unique_ptr&lt;grpc_metadata_batch, grpc_core::Arena::PooledDeleter&gt;, &amp;grpc_core::CallFilters::push_client_initial_metadata_, &amp;grpc_core::filters_detail::StackData::client_initial_metadata, &amp;grpc_core::CallState::FinishPullClientInitialMetadata, grpc_core::CallFilters::AddedStack const*&gt;, grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (765,731,965 samples, 0.90%)</title><rect x="1824.2" y="133" width="17.9" height="15.0" fill="rgb(245,184,44)" rx="2" ry="2" />
+<text  x="1827.24" y="143.5" ></text>
+</g>
+<g >
+<title>malloc (40,285,635 samples, 0.05%)</title><rect x="1072.8" y="229" width="1.0" height="15.0" fill="rgb(230,119,28)" rx="2" ry="2" />
+<text  x="1075.85" y="239.5" ></text>
+</g>
+<g >
+<title>cfree@GLIBC_2.2.5 (566,801,804 samples, 0.67%)</title><rect x="836.4" y="149" width="13.2" height="15.0" fill="rgb(233,131,31)" rx="2" ry="2" />
+<text  x="839.41" y="159.5" ></text>
+</g>
+<g >
+<title>grpc_core::GrpcMemoryAllocatorImpl::TryReserve (362,715,670 samples, 0.43%)</title><rect x="311.8" y="181" width="8.5" height="15.0" fill="rgb(206,5,1)" rx="2" ry="2" />
+<text  x="314.84" y="191.5" ></text>
+</g>
+<g >
+<title>__memset_avx2_unaligned (80,690,443 samples, 0.09%)</title><rect x="163.4" y="245" width="1.9" height="15.0" fill="rgb(222,82,19)" rx="2" ry="2" />
+<text  x="166.38" y="255.5" ></text>
+</g>
+<g >
+<title>_int_free (927,679,914 samples, 1.09%)</title><rect x="1873.1" y="389" width="21.5" height="15.0" fill="rgb(247,196,46)" rx="2" ry="2" />
+<text  x="1876.06" y="399.5" >_..</text>
+</g>
+<g >
+<title>grpc_core::Party::RunLocked (32,341,807,568 samples, 38.00%)</title><rect x="1116.9" y="197" width="752.4" height="15.0" fill="rgb(246,192,45)" rx="2" ry="2" />
+<text  x="1119.93" y="207.5" >grpc_core::Party::RunLocked</text>
+</g>
+<g >
+<title>grpc_core::Party::RunParty (80,669,156 samples, 0.09%)</title><rect x="1046.6" y="181" width="1.9" height="15.0" fill="rgb(223,83,19)" rx="2" ry="2" />
+<text  x="1049.58" y="191.5" ></text>
+</g>
+<g >
+<title>grpc_core::Party::RunParty (31,615,556,108 samples, 37.14%)</title><rect x="1131.0" y="165" width="735.5" height="15.0" fill="rgb(223,83,19)" rx="2" ry="2" />
+<text  x="1134.00" y="175.5" >grpc_core::Party::RunParty</text>
+</g>
+<g >
+<title>grpc_core::Party::AddParticipants (33,551,505,268 samples, 39.42%)</title><rect x="1088.8" y="213" width="780.5" height="15.0" fill="rgb(239,160,38)" rx="2" ry="2" />
+<text  x="1091.79" y="223.5" >grpc_core::Party::AddParticipants</text>
+</g>
+<g >
+<title>absl::lts_20240116::Mutex::Lock (887,527,657 samples, 1.04%)</title><rect x="1620.7" y="117" width="20.7" height="15.0" fill="rgb(208,17,4)" rx="2" ry="2" />
+<text  x="1623.72" y="127.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::Start (80,764,109 samples, 0.09%)</title><rect x="327.8" y="229" width="1.9" height="15.0" fill="rgb(228,110,26)" rx="2" ry="2" />
+<text  x="330.81" y="239.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullServerTrailingMetadata (201,528,774 samples, 0.24%)</title><rect x="1279.3" y="149" width="4.7" height="15.0" fill="rgb(222,80,19)" rx="2" ry="2" />
+<text  x="1282.31" y="159.5" ></text>
+</g>
+<g >
+<title>absl::lts_20240116::Mutex::Unlock (242,007,168 samples, 0.28%)</title><rect x="1641.4" y="117" width="5.6" height="15.0" fill="rgb(242,172,41)" rx="2" ry="2" />
+<text  x="1644.36" y="127.5" ></text>
+</g>
+<g >
+<title>void grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt; (77,255,213,170 samples, 90.77%)</title><rect x="73.1" y="261" width="1797.1" height="15.0" fill="rgb(236,143,34)" rx="2" ry="2" />
+<text  x="76.06" y="271.5" >void grpc_core::BM_UnaryWithSpawnPerEnd&lt;grpc_core::CallSpineFixture&gt;</text>
+</g>
+<g >
+<title>grpc_core::CallSpine::PartyOver (161,282,292 samples, 0.19%)</title><rect x="243.3" y="245" width="3.8" height="15.0" fill="rgb(212,36,8)" rx="2" ry="2" />
+<text  x="246.31" y="255.5" ></text>
+</g>
+<g >
+<title>TLS init function for grpc_core::Timestamp::thread_local_time_source_ (483,743,018 samples, 0.57%)</title><rect x="152.1" y="245" width="11.3" height="15.0" fill="rgb(227,101,24)" rx="2" ry="2" />
+<text  x="155.13" y="255.5" ></text>
+</g>
+<g >
+<title>grpc_slice_buffer_init (201,591,688 samples, 0.24%)</title><rect x="1031.6" y="133" width="4.7" height="15.0" fill="rgb(234,136,32)" rx="2" ry="2" />
+<text  x="1034.57" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::GrpcMemoryAllocatorImpl::Reserve (1,087,960,286 samples, 1.28%)</title><rect x="295.0" y="197" width="25.3" height="15.0" fill="rgb(216,54,13)" rx="2" ry="2" />
+<text  x="297.97" y="207.5" >g..</text>
+</g>
+<g >
+<title>grpc_core::Party::ForceImmediateRepoll (161,407,368 samples, 0.19%)</title><rect x="1687.3" y="101" width="3.8" height="15.0" fill="rgb(229,112,26)" rx="2" ry="2" />
+<text  x="1690.31" y="111.5" ></text>
+</g>
+<g >
+<title>grpc_core::CallFilters::PullClientToServerMessage (726,001,544 samples, 0.85%)</title><rect x="970.6" y="133" width="16.9" height="15.0" fill="rgb(221,77,18)" rx="2" ry="2" />
+<text  x="973.60" y="143.5" ></text>
+</g>
+<g >
+<title>grpc_core::ExecCtx::Flush (1,362,699,508 samples, 1.60%)</title><rect x="431.0" y="229" width="31.7" height="15.0" fill="rgb(250,208,49)" rx="2" ry="2" />
+<text  x="433.98" y="239.5" >gr..</text>
+</g>
+<g >
+<title>grpc_core::PartySyncUsingAtomics::UnreffedLast (322,486,930 samples, 0.38%)</title><rect x="649.1" y="245" width="7.5" height="15.0" fill="rgb(240,161,38)" rx="2" ry="2" />
+<text  x="652.09" y="255.5" ></text>
+</g>
+</g>
+</svg>
