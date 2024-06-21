@@ -274,7 +274,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline CallState::CallState()
 }
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void CallState::Start() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] Start: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
@@ -302,7 +302,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void CallState::Start() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::BeginPushClientToServerMessage() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] BeginPushClientToServerMessage: "
       << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
   switch (client_to_server_push_state_) {
@@ -324,7 +324,7 @@ CallState::BeginPushClientToServerMessage() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
 CallState::PollPushClientToServerMessage() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollPushClientToServerMessage: "
       << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
   switch (client_to_server_push_state_) {
@@ -342,7 +342,7 @@ CallState::PollPushClientToServerMessage() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::ClientToServerHalfClose() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] ClientToServerHalfClose: "
       << GRPC_DUMP_ARGS(this, client_to_server_push_state_);
   switch (client_to_server_push_state_) {
@@ -365,7 +365,7 @@ CallState::ClientToServerHalfClose() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::BeginPullClientInitialMetadata() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] BeginPullClientInitialMetadata: "
       << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
   switch (client_to_server_pull_state_) {
@@ -386,7 +386,7 @@ CallState::BeginPullClientInitialMetadata() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::FinishPullClientInitialMetadata() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] FinishPullClientInitialMetadata: "
       << GRPC_DUMP_ARGS(this, client_to_server_pull_state_);
   switch (client_to_server_pull_state_) {
@@ -409,7 +409,7 @@ CallState::FinishPullClientInitialMetadata() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ValueOrFailure<bool>>
 CallState::PollPullClientToServerMessageAvailable() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollPullClientToServerMessageAvailable: "
       << GRPC_DUMP_ARGS(this, client_to_server_pull_state_,
                         client_to_server_push_state_);
@@ -449,7 +449,7 @@ CallState::PollPullClientToServerMessageAvailable() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::FinishPullClientToServerMessage() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] FinishPullClientToServerMessage: "
       << GRPC_DUMP_ARGS(this, client_to_server_pull_state_,
                         client_to_server_push_state_);
@@ -492,7 +492,7 @@ CallState::FinishPullClientToServerMessage() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline StatusFlag
 CallState::PushServerInitialMetadata() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PushServerInitialMetadata: "
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_,
                         server_trailing_metadata_state_);
@@ -509,7 +509,7 @@ CallState::PushServerInitialMetadata() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::BeginPushServerToClientMessage() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] BeginPushServerToClientMessage: "
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
   switch (server_to_client_push_state_) {
@@ -539,7 +539,7 @@ CallState::BeginPushServerToClientMessage() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<StatusFlag>
 CallState::PollPushServerToClientMessage() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollPushServerToClientMessage: "
       << GRPC_DUMP_ARGS(this, server_to_client_push_state_);
   switch (server_to_client_push_state_) {
@@ -562,7 +562,7 @@ CallState::PollPushServerToClientMessage() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool
 CallState::PushServerTrailingMetadata(bool cancel) {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PushServerTrailingMetadata: "
       << GRPC_DUMP_ARGS(this, cancel, server_trailing_metadata_state_,
                         server_to_client_push_state_,
@@ -618,7 +618,7 @@ CallState::PushServerTrailingMetadata(bool cancel) {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<bool>
 CallState::PollPullServerInitialMetadataAvailable() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollPullServerInitialMetadataAvailable: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
                         server_to_client_push_state_);
@@ -680,7 +680,7 @@ CallState::PollPullServerInitialMetadataAvailable() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::FinishPullServerInitialMetadata() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] FinishPullServerInitialMetadata: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_);
   switch (server_to_client_pull_state_) {
@@ -733,7 +733,7 @@ CallState::FinishPullServerInitialMetadata() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<ValueOrFailure<bool>>
 CallState::PollPullServerToClientMessageAvailable() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollPullServerToClientMessageAvailable: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
                         server_to_client_push_state_,
@@ -804,7 +804,7 @@ CallState::PollPullServerToClientMessageAvailable() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::FinishPullServerToClientMessage() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] FinishPullServerToClientMessage: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
                         server_to_client_push_state_);
@@ -854,7 +854,7 @@ CallState::FinishPullServerToClientMessage() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<Empty>
 CallState::PollServerTrailingMetadataAvailable() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollServerTrailingMetadataAvailable: "
       << GRPC_DUMP_ARGS(this, server_to_client_pull_state_,
                         server_to_client_push_state_,
@@ -910,7 +910,7 @@ CallState::PollServerTrailingMetadataAvailable() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void
 CallState::FinishPullServerTrailingMetadata() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] FinishPullServerTrailingMetadata: "
       << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_,
                         server_trailing_metadata_waiter_.DebugString());
@@ -935,7 +935,7 @@ CallState::FinishPullServerTrailingMetadata() {
 
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<bool>
 CallState::PollWasCancelled() {
-  GRPC_TRACE_LOG(call, INFO)
+  GRPC_TRACE_LOG(call_state, INFO)
       << "[call_state] PollWasCancelled: "
       << GRPC_DUMP_ARGS(this, server_trailing_metadata_state_);
   switch (server_trailing_metadata_state_) {
