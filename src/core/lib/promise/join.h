@@ -33,11 +33,11 @@ struct JoinTraits {
   template <typename T>
   using ResultType = absl::remove_reference_t<T>;
   template <typename T>
-  static bool IsOk(const T&) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static bool IsOk(const T&) {
     return true;
   }
   template <typename T>
-  static T Unwrapped(T x) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static T Unwrapped(T x) {
     return x;
   }
   template <typename R, typename T>
@@ -45,7 +45,8 @@ struct JoinTraits {
     abort();
   }
   template <typename... A>
-  static std::tuple<A...> FinalReturn(A... a) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static std::tuple<A...> FinalReturn(
+      A... a) {
     return std::make_tuple(std::move(a)...);
   }
 };
@@ -53,8 +54,11 @@ struct JoinTraits {
 template <typename... Promises>
 class Join {
  public:
-  explicit Join(Promises... promises) : state_(std::move(promises)...) {}
-  auto operator()() { return state_.PollOnce(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Join(Promises... promises)
+      : state_(std::move(promises)...) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto operator()() {
+    return state_.PollOnce();
+  }
 
  private:
   JoinState<JoinTraits, Promises...> state_;
@@ -62,7 +66,7 @@ class Join {
 
 struct WrapInTuple {
   template <typename T>
-  std::tuple<T> operator()(T x) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION std::tuple<T> operator()(T x) {
     return std::make_tuple(std::move(x));
   }
 };
@@ -72,12 +76,13 @@ struct WrapInTuple {
 /// Combinator to run all promises to completion, and return a tuple
 /// of their results.
 template <typename... Promise>
-promise_detail::Join<Promise...> Join(Promise... promises) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Join<Promise...> Join(
+    Promise... promises) {
   return promise_detail::Join<Promise...>(std::move(promises)...);
 }
 
 template <typename F>
-auto Join(F promise) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Join(F promise) {
   return Map(std::move(promise), promise_detail::WrapInTuple{});
 }
 

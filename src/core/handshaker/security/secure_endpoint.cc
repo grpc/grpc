@@ -23,7 +23,6 @@
 #include <algorithm>
 #include <atomic>
 #include <memory>
-#include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
@@ -44,11 +43,9 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -67,18 +64,17 @@ static void on_read(void* user_data, grpc_error_handle error);
 static void on_write(void* user_data, grpc_error_handle error);
 
 namespace {
-struct secure_endpoint : public grpc_endpoint {
-  secure_endpoint(const grpc_endpoint_vtable* vtbl,
+struct secure_endpoint {
+  secure_endpoint(const grpc_endpoint_vtable* vtable,
                   tsi_frame_protector* protector,
                   tsi_zero_copy_grpc_protector* zero_copy_protector,
-                  grpc_core::OrphanablePtr<grpc_endpoint> endpoint,
-                  grpc_slice* leftover_slices,
+                  grpc_endpoint* transport, grpc_slice* leftover_slices,
                   const grpc_channel_args* channel_args,
                   size_t leftover_nslices)
-      : wrapped_ep(std::move(endpoint)),
+      : wrapped_ep(transport),
         protector(protector),
         zero_copy_protector(zero_copy_protector) {
-    this->vtable = vtbl;
+    base.vtable = vtable;
     gpr_mu_init(&protector_mu);
     GRPC_CLOSURE_INIT(&on_read, ::on_read, this, grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_write, ::on_write, this, grpc_schedule_on_exec_ctx);
@@ -121,7 +117,8 @@ struct secure_endpoint : public grpc_endpoint {
     gpr_mu_destroy(&protector_mu);
   }
 
-  grpc_core::OrphanablePtr<grpc_endpoint> wrapped_ep;
+  grpc_endpoint base;
+  grpc_endpoint* wrapped_ep;
   struct tsi_frame_protector* protector;
   struct tsi_zero_copy_grpc_protector* zero_copy_protector;
   gpr_mu protector_mu;
@@ -368,8 +365,8 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_read(ep->wrapped_ep.get(), &ep->source_buffer, &ep->on_read,
-                     urgent, /*min_progress_size=*/ep->min_progress_size);
+  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent,
+                     /*min_progress_size=*/ep->min_progress_size);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
@@ -503,52 +500,52 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   // output_buffer at any time until the write completes.
   SECURE_ENDPOINT_REF(ep, "write");
   ep->write_cb = cb;
-  grpc_endpoint_write(ep->wrapped_ep.get(), &ep->output_buffer, &ep->on_write,
-                      arg, max_frame_size);
+  grpc_endpoint_write(ep->wrapped_ep, &ep->output_buffer, &ep->on_write, arg,
+                      max_frame_size);
 }
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  ep->wrapped_ep.reset();
+  grpc_endpoint_destroy(ep->wrapped_ep);
   SECURE_ENDPOINT_UNREF(ep, "destroy");
 }
 
 static void endpoint_add_to_pollset(grpc_endpoint* secure_ep,
                                     grpc_pollset* pollset) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  grpc_endpoint_add_to_pollset(ep->wrapped_ep.get(), pollset);
+  grpc_endpoint_add_to_pollset(ep->wrapped_ep, pollset);
 }
 
 static void endpoint_add_to_pollset_set(grpc_endpoint* secure_ep,
                                         grpc_pollset_set* pollset_set) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  grpc_endpoint_add_to_pollset_set(ep->wrapped_ep.get(), pollset_set);
+  grpc_endpoint_add_to_pollset_set(ep->wrapped_ep, pollset_set);
 }
 
 static void endpoint_delete_from_pollset_set(grpc_endpoint* secure_ep,
                                              grpc_pollset_set* pollset_set) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  grpc_endpoint_delete_from_pollset_set(ep->wrapped_ep.get(), pollset_set);
+  grpc_endpoint_delete_from_pollset_set(ep->wrapped_ep, pollset_set);
 }
 
 static absl::string_view endpoint_get_peer(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  return grpc_endpoint_get_peer(ep->wrapped_ep.get());
+  return grpc_endpoint_get_peer(ep->wrapped_ep);
 }
 
 static absl::string_view endpoint_get_local_address(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  return grpc_endpoint_get_local_address(ep->wrapped_ep.get());
+  return grpc_endpoint_get_local_address(ep->wrapped_ep);
 }
 
 static int endpoint_get_fd(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  return grpc_endpoint_get_fd(ep->wrapped_ep.get());
+  return grpc_endpoint_get_fd(ep->wrapped_ep);
 }
 
 static bool endpoint_can_track_err(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
-  return grpc_endpoint_can_track_err(ep->wrapped_ep.get());
+  return grpc_endpoint_can_track_err(ep->wrapped_ep);
 }
 
 static const grpc_endpoint_vtable vtable = {endpoint_read,
@@ -562,13 +559,13 @@ static const grpc_endpoint_vtable vtable = {endpoint_read,
                                             endpoint_get_fd,
                                             endpoint_can_track_err};
 
-grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
+grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_frame_protector* protector,
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
-    grpc_core::OrphanablePtr<grpc_endpoint> to_wrap,
-    grpc_slice* leftover_slices, const grpc_channel_args* channel_args,
-    size_t leftover_nslices) {
-  return grpc_core::MakeOrphanable<secure_endpoint>(
-      &vtable, protector, zero_copy_protector, std::move(to_wrap),
-      leftover_slices, channel_args, leftover_nslices);
+    grpc_endpoint* to_wrap, grpc_slice* leftover_slices,
+    const grpc_channel_args* channel_args, size_t leftover_nslices) {
+  secure_endpoint* ep =
+      new secure_endpoint(&vtable, protector, zero_copy_protector, to_wrap,
+                          leftover_slices, channel_args, leftover_nslices);
+  return &ep->base;
 }
