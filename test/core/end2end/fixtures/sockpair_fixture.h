@@ -79,12 +79,11 @@ class SockpairFixture : public CoreTestFixture {
     auto server_channel_args = CoreConfiguration::Get()
                                    .channel_args_preconditioning()
                                    .PreconditionChannelArgs(args.ToC().get());
-    OrphanablePtr<grpc_endpoint> server_endpoint(
-        std::exchange(ep_.server, nullptr));
+    auto* server_endpoint = std::exchange(ep_.server, nullptr);
     EXPECT_NE(server_endpoint, nullptr);
-    grpc_endpoint_add_to_pollset(server_endpoint.get(), grpc_cq_pollset(cq));
     transport = grpc_create_chttp2_transport(server_channel_args,
-                                             std::move(server_endpoint), false);
+                                             server_endpoint, false);
+    grpc_endpoint_add_to_pollset(server_endpoint, grpc_cq_pollset(cq));
     Server* core_server = Server::FromC(server);
     grpc_error_handle error = core_server->SetupTransport(
         transport, nullptr, core_server->channel_args(), nullptr);
@@ -107,11 +106,9 @@ class SockpairFixture : public CoreTestFixture {
                             .ToC()
                             .get());
     Transport* transport;
-    OrphanablePtr<grpc_endpoint> client_endpoint(
-        std::exchange(ep_.client, nullptr));
+    auto* client_endpoint = std::exchange(ep_.client, nullptr);
     EXPECT_NE(client_endpoint, nullptr);
-    transport =
-        grpc_create_chttp2_transport(args, std::move(client_endpoint), true);
+    transport = grpc_create_chttp2_transport(args, client_endpoint, true);
     auto channel = ChannelCreate("socketpair-target", args,
                                  GRPC_CLIENT_DIRECT_CHANNEL, transport);
     grpc_channel* client;
