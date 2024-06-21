@@ -1322,6 +1322,11 @@ class MetadataMap {
     return builder.TakeOutput();
   }
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const MetadataMap& map) {
+    sink.Append(map.DebugString());
+  }
+
   // Get the pointer to the value of some known metadata.
   // Returns nullptr if the metadata is not present.
   // Causes a compilation error if Which is not an element of Traits.

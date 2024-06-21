@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -44,7 +45,6 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/text/encode.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
@@ -293,8 +293,8 @@ void MaybeLogHttpConnectionManager(
     upb_TextEncode(
         reinterpret_cast<const upb_Message*>(http_connection_manager_config),
         msg_type, nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] HttpConnectionManager: %s",
-            context.client, buf);
+    VLOG(2) << "[xds_client " << context.client
+            << "] HttpConnectionManager: " << buf;
   }
 }
 
@@ -1091,7 +1091,7 @@ void MaybeLogListener(const XdsResourceType::DecodeContext& context,
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(listener), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] Listener: %s", context.client, buf);
+    VLOG(2) << "[xds_client " << context.client << "] Listener: " << buf;
   }
 }
 
@@ -1116,16 +1116,14 @@ XdsResourceType::DecodeResult XdsListenerResourceType::Decode(
   auto listener = LdsResourceParse(context, resource);
   if (!listener.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
-      gpr_log(GPR_ERROR, "[xds_client %p] invalid Listener %s: %s",
-              context.client, result.name->c_str(),
-              listener.status().ToString().c_str());
+      LOG(ERROR) << "[xds_client " << context.client << "] invalid Listener "
+                 << *result.name << ": " << listener.status();
     }
     result.resource = listener.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
-      gpr_log(GPR_INFO, "[xds_client %p] parsed Listener %s: %s",
-              context.client, result.name->c_str(),
-              (*listener)->ToString().c_str());
+      LOG(INFO) << "[xds_client " << context.client << "] parsed Listener "
+                << *result.name << ": " << (*listener)->ToString();
     }
     result.resource = std::move(*listener);
   }

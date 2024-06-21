@@ -33,8 +33,7 @@ class LbMetadata : public LoadBalancingPolicy::MetadataInterface {
   absl::optional<absl::string_view> Lookup(absl::string_view key,
                                            std::string* buffer) const override;
 
-  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector()
-      override;
+  std::vector<std::pair<std::string, std::string>> TestOnlyCopyToVector() const;
 
  private:
   grpc_metadata_batch* batch_;

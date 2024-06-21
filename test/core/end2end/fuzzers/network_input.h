@@ -20,12 +20,14 @@
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
+#include "test/core/test_util/mock_endpoint.h"
 
 namespace grpc_core {
 
 Duration ScheduleReads(
     const fuzzer_input::NetworkInput& network_input,
-    grpc_endpoint* mock_endpoint,
+    std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
+        mock_endpoint_controller,
     grpc_event_engine::experimental::FuzzingEventEngine* event_engine);
 
 Duration ScheduleConnection(

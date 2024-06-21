@@ -1685,7 +1685,6 @@ grpc_cc_library(
         "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
-        "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:examine_stack",
         "//src/core:experiments",
@@ -2117,6 +2116,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:transport_fwd",
         "//src/core:try_seq",
+        "//src/core:unique_type_name",
         "//src/core:useful",
     ],
 )
@@ -3128,6 +3128,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "debug_location",
+    external_deps = ["absl/strings"],
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
     visibility = ["@grpc:debug_location"],

@@ -1258,6 +1258,10 @@ class CallState {
         return "Terminated";
     }
   }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ClientToServerPullState state) {
+    out.Append(ClientToServerPullStateString(state));
+  }
   friend std::ostream& operator<<(std::ostream& out,
                                   ClientToServerPullState state) {
     return out << ClientToServerPullStateString(state);
@@ -1284,6 +1288,10 @@ class CallState {
         return "Finished";
     }
   }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ClientToServerPushState state) {
+    out.Append(ClientToServerPushStateString(state));
+  }
   friend std::ostream& operator<<(std::ostream& out,
                                   ClientToServerPushState state) {
     return out << ClientToServerPushStateString(state);
@@ -1291,9 +1299,12 @@ class CallState {
   enum class ServerToClientPullState : uint16_t {
     // Not yet started: cannot read
     kUnstarted,
+    kUnstartedReading,
     kStarted,
+    kStartedReading,
     // Processing server initial metadata
     kProcessingServerInitialMetadata,
+    kProcessingServerInitialMetadataReading,
     // Main call loop: not reading
     kIdle,
     // Main call loop: reading but no message available
@@ -1309,10 +1320,16 @@ class CallState {
     switch (state) {
       case ServerToClientPullState::kUnstarted:
         return "Unstarted";
+      case ServerToClientPullState::kUnstartedReading:
+        return "UnstartedReading";
       case ServerToClientPullState::kStarted:
         return "Started";
+      case ServerToClientPullState::kStartedReading:
+        return "StartedReading";
       case ServerToClientPullState::kProcessingServerInitialMetadata:
         return "ProcessingServerInitialMetadata";
+      case ServerToClientPullState::kProcessingServerInitialMetadataReading:
+        return "ProcessingServerInitialMetadataReading";
       case ServerToClientPullState::kIdle:
         return "Idle";
       case ServerToClientPullState::kReading:
@@ -1324,6 +1341,10 @@ class CallState {
       case ServerToClientPullState::kTerminated:
         return "Terminated";
     }
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ServerToClientPullState state) {
+    out.Append(ServerToClientPullStateString(state));
   }
   friend std::ostream& operator<<(std::ostream& out,
                                   ServerToClientPullState state) {
@@ -1358,6 +1379,10 @@ class CallState {
         return "Finished";
     }
   }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ServerToClientPushState state) {
+    out.Append(ServerToClientPushStateString(state));
+  }
   friend std::ostream& operator<<(std::ostream& out,
                                   ServerToClientPushState state) {
     return out << ServerToClientPushStateString(state);
@@ -1383,6 +1408,10 @@ class CallState {
       case ServerTrailingMetadataState::kPulledCancel:
         return "PulledCancel";
     }
+  }
+  template <typename Sink>
+  friend void AbslStringify(Sink& out, ServerTrailingMetadataState state) {
+    out.Append(ServerTrailingMetadataStateString(state));
   }
   friend std::ostream& operator<<(std::ostream& out,
                                   ServerTrailingMetadataState state) {

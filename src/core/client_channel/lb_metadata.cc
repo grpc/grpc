@@ -61,7 +61,7 @@ absl::optional<absl::string_view> LbMetadata::Lookup(
 }
 
 std::vector<std::pair<std::string, std::string>>
-LbMetadata::TestOnlyCopyToVector() {
+LbMetadata::TestOnlyCopyToVector() const {
   if (batch_ == nullptr) return {};
   Encoder encoder;
   batch_->Encode(&encoder);

@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,22 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+require 'spec_helper'
+require 'logger'
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_microbenchmark_diff.sh"
-timeout_mins: 120
-before_action {
-  fetch_keystore {
-    keystore_resource {
-      keystore_config_id: 73836
-      keyname: "grpc_checks_private_key"
-    }
-  }
-}
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
+describe GRPC do
+  describe '.logger=' do
+    it 'sets logger' do
+      noop_logger = GRPC::DefaultLogger::NoopLogger.new
+      GRPC.logger = noop_logger
+      expect(GRPC.logger).to be(noop_logger)
+
+      custom_logger = Logger.new(STDOUT)
+      GRPC.logger = custom_logger
+      expect(GRPC.logger).to be(custom_logger)
+    end
+  end
+end

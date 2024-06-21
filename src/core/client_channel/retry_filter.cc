@@ -147,7 +147,7 @@ const grpc_channel_filter RetryFilter::kVtable = {
     grpc_channel_stack_no_post_init,
     RetryFilter::Destroy,
     RetryFilter::GetChannelInfo,
-    "retry_filter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("retry_filter"),
 };
 
 }  // namespace grpc_core

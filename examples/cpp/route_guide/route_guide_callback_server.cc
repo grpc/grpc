@@ -24,6 +24,10 @@
 #include <string>
 #include <thread>
 
+#include "absl/flags/parse.h"
+#include "absl/log/globals.h"
+#include "absl/log/initialize.h"
+#include "absl/log/log.h"
 #include "helper.h"
 
 #include <grpc/grpc.h>
@@ -88,6 +92,30 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
     routeguide::ParseDb(db, &feature_list_);
   }
 
+  grpc::ServerUnaryReactor* GetFeature(grpc::CallbackServerContext* context,
+                                       const Point* point,
+                                       Feature* feature) override {
+    class Reactor : public grpc::ServerUnaryReactor {
+     public:
+      Reactor(const Point& point, const std::vector<Feature>& feature_list,
+              Feature* feature) {
+        feature->set_name(GetFeatureName(point, feature_list));
+        *feature->mutable_location() = point;
+        Finish(grpc::Status::OK);
+      }
+
+     private:
+      void OnDone() override {
+        LOG(INFO) << "RPC Completed";
+        delete this;
+      }
+
+      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
+    };
+    return new Reactor(*point, feature_list_, feature);
+  }
+
+  /* Alternate simple implementation of GetFeature that uses the DefaultReactor.
   grpc::ServerUnaryReactor* GetFeature(CallbackServerContext* context,
                                        const Point* point,
                                        Feature* feature) override {
@@ -97,6 +125,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
     reactor->Finish(Status::OK);
     return reactor;
   }
+*/
 
   grpc::ServerWriteReactor<Feature>* ListFeatures(
       CallbackServerContext* context,
@@ -117,8 +146,20 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
             next_feature_(feature_list_->begin()) {
         NextWrite();
       }
-      void OnDone() override { delete this; }
-      void OnWriteDone(bool /*ok*/) override { NextWrite(); }
+
+      void OnWriteDone(bool ok) override {
+        if (!ok) {
+          Finish(Status(grpc::StatusCode::UNKNOWN, "Unexpected Failure"));
+        }
+        NextWrite();
+      }
+
+      void OnDone() override {
+        LOG(INFO) << "RPC Completed";
+        delete this;
+      }
+
+      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
 
      private:
       void NextWrite() {
@@ -156,7 +197,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
             feature_list_(feature_list) {
         StartRead(&point_);
       }
-      void OnDone() override { delete this; }
+
       void OnReadDone(bool ok) override {
         if (ok) {
           point_count_++;
@@ -179,6 +220,13 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
         }
       }
 
+      void OnDone() override {
+        LOG(INFO) << "RPC Completed";
+        delete this;
+      }
+
+      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
+
      private:
       system_clock::time_point start_time_;
       RouteSummary* summary_;
@@ -200,7 +248,7 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           : mu_(mu), received_notes_(received_notes) {
         StartRead(&note_);
       }
-      void OnDone() override { delete this; }
+
       void OnReadDone(bool ok) override {
         if (ok) {
           // Unlike the other example in this directory that's not using
@@ -228,6 +276,13 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
       }
       void OnWriteDone(bool /*ok*/) override { NextWrite(); }
 
+      void OnDone() override {
+        LOG(INFO) << "RPC Completed";
+        delete this;
+      }
+
+      void OnCancel() override { LOG(ERROR) << "RPC Cancelled"; }
+
      private:
       void NextWrite() {
         if (notes_iterator_ != to_send_notes_.end()) {
@@ -240,9 +295,10 @@ class RouteGuideImpl final : public RouteGuide::CallbackService {
           StartRead(&note_);
         }
       }
+
       RouteNote note_;
       absl::Mutex* mu_;
-      std::vector<RouteNote>* received_notes_;
+      std::vector<RouteNote>* received_notes_ ABSL_GUARDED_BY(mu_);
       std::vector<RouteNote> to_send_notes_;
       std::vector<RouteNote>::iterator notes_iterator_;
     };
@@ -263,11 +319,14 @@ void RunServer(const std::string& db_path) {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+  LOG(INFO) << "Server listening on " << server_address;
   server->Wait();
 }
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
+  absl::InitializeLog();
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = routeguide::GetDbFileContent(argc, argv);
   RunServer(db);

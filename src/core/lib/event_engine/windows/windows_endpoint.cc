@@ -26,7 +26,6 @@
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/status_helper.h"
@@ -74,11 +73,12 @@ WindowsEndpoint::WindowsEndpoint(
 
 WindowsEndpoint::~WindowsEndpoint() {
   io_state_->socket->Shutdown(DEBUG_LOCATION, "~WindowsEndpoint");
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("~WindowsEndpoint::%p", this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO) << "~WindowsEndpoint::" << this;
 }
 
 void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p reading", endpoint);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "WindowsEndpoint::" << endpoint << " reading";
   if (socket->IsShutdown()) {
     socket->read_info()->SetErrorStatus(
         absl::InternalError("Socket is shutting down."));
@@ -148,7 +148,8 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 
 bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                             SliceBuffer* data, const WriteArgs* /* args */) {
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p writing", this);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "WindowsEndpoint::" << this << " writing";
   if (io_state_->socket->IsShutdown()) {
     io_state_->thread_pool->Run(
         [on_writable = std::move(on_writable)]() mutable {
@@ -278,8 +279,8 @@ void WindowsEndpoint::HandleReadClosure::Run() {
   // Deletes the shared_ptr when this closure returns
   // Note that the endpoint may have already been destroyed.
   auto io_state = std::move(io_state_);
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Read Event",
-                                   io_state->endpoint);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "WindowsEndpoint::" << io_state->endpoint << " Handling Read Event";
   const auto result = io_state->socket->read_info()->result();
   if (!result.error_status.ok()) {
     buffer_->Clear();
@@ -339,8 +340,8 @@ void WindowsEndpoint::HandleReadClosure::DonateSpareSlices(
 void WindowsEndpoint::HandleWriteClosure::Run() {
   // Deletes the shared_ptr when this closure returns
   auto io_state = std::move(io_state_);
-  GRPC_EVENT_ENGINE_ENDPOINT_TRACE("WindowsEndpoint::%p Handling Write Event",
-                                   io_state->endpoint);
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "WindowsEndpoint::" << io_state->endpoint << " Handling Write Event";
   const auto result = io_state->socket->write_info()->result();
   if (!result.error_status.ok()) {
     buffer_->Clear();
