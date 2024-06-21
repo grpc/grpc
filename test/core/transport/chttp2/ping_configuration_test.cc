@@ -29,7 +29,6 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/test_util/mock_endpoint.h"
@@ -42,20 +41,24 @@ class ConfigurationTest : public ::testing::Test {
  protected:
   ConfigurationTest() {
     auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-    mock_endpoint_ = grpc_mock_endpoint_create(engine);
-    grpc_mock_endpoint_finish_put_reads(mock_endpoint_);
+    mock_endpoint_controller_ =
+        grpc_event_engine::experimental::MockEndpointController::Create(engine);
+    mock_endpoint_controller_->NoMoreReads();
     args_ = args_.SetObject(ResourceQuota::Default());
     args_ = args_.SetObject(std::move(engine));
   }
 
-  grpc_endpoint* mock_endpoint_ = nullptr;
+  std::shared_ptr<grpc_event_engine::experimental::MockEndpointController>
+      mock_endpoint_controller_;
   ChannelArgs args_;
 };
 
 TEST_F(ConfigurationTest, ClientKeepaliveDefaults) {
   ExecCtx exec_ctx;
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/true));
+      grpc_create_chttp2_transport(
+          args_, mock_endpoint_controller_->TakeCEndpoint(),
+          /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Infinity());
   EXPECT_EQ(t->keepalive_timeout, Duration::Infinity());
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
@@ -70,7 +73,9 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
   args_ = args_.Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true);
   args_ = args_.Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 3);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/true));
+      grpc_create_chttp2_transport(
+          args_, mock_endpoint_controller_->TakeCEndpoint(),
+          /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
@@ -81,7 +86,9 @@ TEST_F(ConfigurationTest, ClientKeepaliveExplicitArgs) {
 TEST_F(ConfigurationTest, ServerKeepaliveDefaults) {
   ExecCtx exec_ctx;
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/false));
+      grpc_create_chttp2_transport(
+          args_, mock_endpoint_controller_->TakeCEndpoint(),
+          /*is_client=*/false));
   EXPECT_EQ(t->keepalive_time, Duration::Hours(2));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_permit_without_calls, false);
@@ -103,7 +110,9 @@ TEST_F(ConfigurationTest, ServerKeepaliveExplicitArgs) {
       args_.Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 20000);
   args_ = args_.Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, 0);
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/false));
+      grpc_create_chttp2_transport(
+          args_, mock_endpoint_controller_->TakeCEndpoint(),
+          /*is_client=*/false));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
@@ -130,7 +139,9 @@ TEST_F(ConfigurationTest, ModifyClientDefaults) {
   // Note that we are using the original args_ object for creating the transport
   // which does not override the defaults.
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/true));
+      grpc_create_chttp2_transport(
+          args_, mock_endpoint_controller_->TakeCEndpoint(),
+          /*is_client=*/true));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);
@@ -155,7 +166,9 @@ TEST_F(ConfigurationTest, ModifyServerDefaults) {
   // Note that we are using the original args_ object for creating the transport
   // which does not override the defaults.
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(
-      grpc_create_chttp2_transport(args_, mock_endpoint_, /*is_client=*/false));
+      grpc_create_chttp2_transport(
+          args_, mock_endpoint_controller_->TakeCEndpoint(),
+          /*is_client=*/false));
   EXPECT_EQ(t->keepalive_time, Duration::Seconds(20));
   EXPECT_EQ(t->keepalive_timeout, Duration::Seconds(10));
   EXPECT_EQ(t->keepalive_permit_without_calls, true);

@@ -37,6 +37,8 @@ class GrpcServerAuthzFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "grpc-server-authz"; }
+
   static absl::StatusOr<std::unique_ptr<GrpcServerAuthzFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 

@@ -66,8 +66,7 @@ void ClientAuthorityFilter::Call::OnClientInitialMetadata(
 }
 
 const grpc_channel_filter ClientAuthorityFilter::kFilter =
-    MakePromiseBasedFilter<ClientAuthorityFilter, FilterEndpoint::kClient>(
-        "authority");
+    MakePromiseBasedFilter<ClientAuthorityFilter, FilterEndpoint::kClient>();
 
 namespace {
 bool NeedsClientAuthorityFilter(const ChannelArgs& args) {
