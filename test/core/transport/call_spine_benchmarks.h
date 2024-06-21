@@ -15,6 +15,8 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
 #define GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
 
+#include <memory>
+
 #include "benchmark/benchmark.h"
 
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -275,7 +277,7 @@ template <class Traits>
 class UnstartedCallDestinationFixture {
  public:
   BenchmarkCall MakeCall() {
-    auto p = MakeCallPair(traits_.MakeClientInitialMetadata(),
+    auto p = MakeCallPair(traits_->MakeClientInitialMetadata(),
                           event_engine_.get(), arena_allocator_->MakeArena());
     top_destination_->StartCall(std::move(p.handler));
     auto handler = bottom_destination_->TakeHandler();
@@ -291,14 +293,25 @@ class UnstartedCallDestinationFixture {
     return {std::move(p.initiator), std::move(*started_handler)};
   }
 
-  ServerMetadataHandle MakeServerInitialMetadata() {
-    return traits_.MakeServerInitialMetadata();
+  ~UnstartedCallDestinationFixture() {
+    // TODO(ctiller): entire destructor can be deleted once ExecCtx is gone.
+    ExecCtx exec_ctx;
+    stack_.reset();
+    top_destination_.reset();
+    bottom_destination_.reset();
+    arena_allocator_.reset();
+    event_engine_.reset();
+    traits_.reset();
   }
 
-  MessageHandle MakePayload() { return traits_.MakePayload(); }
+  ServerMetadataHandle MakeServerInitialMetadata() {
+    return traits_->MakeServerInitialMetadata();
+  }
+
+  MessageHandle MakePayload() { return traits_->MakePayload(); }
 
   ServerMetadataHandle MakeServerTrailingMetadata() {
-    return traits_.MakeServerTrailingMetadata();
+    return traits_->MakeServerTrailingMetadata();
   }
 
  private:
@@ -327,7 +340,8 @@ class UnstartedCallDestinationFixture {
     absl::optional<UnstartedCallHandler> handler_ ABSL_GUARDED_BY(mu_);
   };
 
-  Traits traits_;
+  // TODO(ctiller): no need for unique_ptr once ExecCtx is gone
+  std::unique_ptr<Traits> traits_ = std::make_unique<Traits>();
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
       grpc_event_engine::experimental::GetDefaultEventEngine();
   RefCountedPtr<CallArenaAllocator> arena_allocator_ =
@@ -338,7 +352,7 @@ class UnstartedCallDestinationFixture {
   RefCountedPtr<SinkDestination> bottom_destination_ =
       MakeRefCounted<SinkDestination>();
   RefCountedPtr<UnstartedCallDestination> top_destination_ =
-      traits_.CreateCallDestination(bottom_destination_);
+      traits_->CreateCallDestination(bottom_destination_);
   RefCountedPtr<CallFilters::Stack> stack_ =
       CallFilters::StackBuilder().Build();
 };
