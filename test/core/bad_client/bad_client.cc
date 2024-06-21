@@ -227,7 +227,7 @@ void grpc_run_bad_client_test(
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(server_args.ToC().get()),
-      grpc_core::OrphanablePtr<grpc_endpoint>(sfd.server), false);
+      sfd.server, false);
   server_setup_transport(&a, transport);
   grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                       nullptr);

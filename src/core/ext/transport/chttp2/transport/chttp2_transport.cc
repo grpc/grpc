@@ -84,7 +84,6 @@
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -379,6 +378,8 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
     channelz_socket.reset();
   }
 
+  if (ep != nullptr) grpc_endpoint_destroy(ep);
+
   grpc_slice_buffer_destroy(&qbuf);
 
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
@@ -494,7 +495,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
           .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            std::string(grpc_endpoint_get_local_address(t->ep.get())),
+            std::string(grpc_endpoint_get_local_address(t->ep)),
             std::string(t->peer_string.as_string_view()),
             absl::StrCat(t->GetTransportName(), " ",
                          t->peer_string.as_string_view()),
@@ -588,11 +589,11 @@ using grpc_event_engine::experimental::QueryExtension;
 using grpc_event_engine::experimental::TcpTraceExtension;
 
 grpc_chttp2_transport::grpc_chttp2_transport(
-    const grpc_core::ChannelArgs& channel_args,
-    grpc_core::OrphanablePtr<grpc_endpoint> endpoint, bool is_client)
-    : ep(std::move(endpoint)),
+    const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
+    bool is_client)
+    : ep(ep),
       peer_string(
-          grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep.get()))),
+          grpc_core::Slice::FromCopiedString(grpc_endpoint_get_peer(ep))),
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
@@ -616,11 +617,10 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   context_list = new grpc_core::ContextList();
 
   if (channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false) &&
-      grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
-          ep.get())) {
+      grpc_event_engine::experimental::grpc_is_event_engine_endpoint(ep)) {
     auto epte = QueryExtension<TcpTraceExtension>(
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
-            ep.get()));
+            ep));
     if (epte != nullptr) {
       epte->InitializeAndReturnTcpTracer();
     }
@@ -763,16 +763,17 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     CHECK(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
     if (t->interested_parties_until_recv_settings != nullptr) {
       grpc_endpoint_delete_from_pollset_set(
-          t->ep.get(), t->interested_parties_until_recv_settings);
+          t->ep, t->interested_parties_until_recv_settings);
       t->interested_parties_until_recv_settings = nullptr;
     }
     grpc_core::MutexLock lock(&t->ep_destroy_mu);
-    t->ep.reset();
+    grpc_endpoint_destroy(t->ep);
+    t->ep = nullptr;
   }
   if (t->notify_on_receive_settings != nullptr) {
     if (t->interested_parties_until_recv_settings != nullptr) {
       grpc_endpoint_delete_from_pollset_set(
-          t->ep.get(), t->interested_parties_until_recv_settings);
+          t->ep, t->interested_parties_until_recv_settings);
       t->interested_parties_until_recv_settings = nullptr;
     }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
@@ -1060,7 +1061,7 @@ static void write_action(grpc_chttp2_transport* t) {
       << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
       << t->outbuf.Length() << " bytes";
   t->write_size_policy.BeginWrite(t->outbuf.Length());
-  grpc_endpoint_write(t->ep.get(), t->outbuf.c_slice_buffer(),
+  grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
                           t->Ref(), &t->write_action_end_locked),
                       cl, max_frame_size);
@@ -1938,13 +1939,13 @@ static void perform_transport_op_locked(void* stream_op,
 
   if (op->bind_pollset) {
     if (t->ep != nullptr) {
-      grpc_endpoint_add_to_pollset(t->ep.get(), op->bind_pollset);
+      grpc_endpoint_add_to_pollset(t->ep, op->bind_pollset);
     }
   }
 
   if (op->bind_pollset_set) {
     if (t->ep != nullptr) {
-      grpc_endpoint_add_to_pollset_set(t->ep.get(), op->bind_pollset_set);
+      grpc_endpoint_add_to_pollset_set(t->ep, op->bind_pollset_set);
     }
   }
 
@@ -2762,7 +2763,7 @@ static void continue_read_action_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t) {
   const bool urgent = !t->goaway_error.ok();
   auto* tp = t.get();
-  grpc_endpoint_read(tp->ep.get(), &tp->read_buffer,
+  grpc_endpoint_read(tp->ep, &tp->read_buffer,
                      grpc_core::InitTransportClosure<read_action>(
                          std::move(t), &tp->read_action_locked),
                      urgent, grpc_chttp2_min_read_progress_size(tp));
@@ -3025,7 +3026,7 @@ void grpc_chttp2_transport::SetPollset(grpc_stream* /*gs*/,
   // actually uses pollsets.
   if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
   grpc_core::MutexLock lock(&ep_destroy_mu);
-  if (ep != nullptr) grpc_endpoint_add_to_pollset(ep.get(), pollset);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset(ep, pollset);
 }
 
 void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
@@ -3035,7 +3036,7 @@ void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
   // actually uses pollsets.
   if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
   grpc_core::MutexLock lock(&ep_destroy_mu);
-  if (ep != nullptr) grpc_endpoint_add_to_pollset_set(ep.get(), pollset_set);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset_set(ep, pollset_set);
 }
 
 //
@@ -3214,9 +3215,9 @@ grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport) {
 }
 
 grpc_core::Transport* grpc_create_chttp2_transport(
-    const grpc_core::ChannelArgs& channel_args,
-    grpc_core::OrphanablePtr<grpc_endpoint> ep, bool is_client) {
-  return new grpc_chttp2_transport(channel_args, std::move(ep), is_client);
+    const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
+    bool is_client) {
+  return new grpc_chttp2_transport(channel_args, ep, is_client);
 }
 
 void grpc_chttp2_transport_start_reading(
@@ -3227,6 +3228,7 @@ void grpc_chttp2_transport_start_reading(
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
+    gpr_free(read_buffer);
   }
   auto* tp = t.get();
   tp->combiner->Run(
@@ -3238,7 +3240,7 @@ void grpc_chttp2_transport_start_reading(
             if (t->ep != nullptr &&
                 interested_parties_until_recv_settings != nullptr) {
               grpc_endpoint_delete_from_pollset_set(
-                  t->ep.get(), interested_parties_until_recv_settings);
+                  t->ep, interested_parties_until_recv_settings);
             }
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
                                     t->closed_with_error);
