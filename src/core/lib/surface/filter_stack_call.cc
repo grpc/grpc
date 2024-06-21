@@ -83,7 +83,7 @@ using GrpcClosure = Closure;
 FilterStackCall::FilterStackCall(RefCountedPtr<Arena> arena,
                                  const grpc_call_create_args& args)
     : Call(args.server_transport_data == nullptr, args.send_deadline,
-           std::move(arena), args.channel->event_engine()),
+           std::move(arena)),
       channel_(args.channel->RefAsSubclass<Channel>()),
       cq_(args.cq),
       stream_op_payload_{} {}

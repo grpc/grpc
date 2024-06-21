@@ -45,11 +45,10 @@ class CallSpine final : public Party {
  public:
   static RefCountedPtr<CallSpine> Create(
       ClientMetadataHandle client_initial_metadata,
-      grpc_event_engine::experimental::EventEngine* event_engine,
       RefCountedPtr<Arena> arena) {
     Arena* arena_ptr = arena.get();
     return RefCountedPtr<CallSpine>(arena_ptr->New<CallSpine>(
-        std::move(client_initial_metadata), event_engine, std::move(arena)));
+        std::move(client_initial_metadata), std::move(arena)));
   }
 
   ~CallSpine() override {}
@@ -114,10 +113,6 @@ class CallSpine final : public Party {
 
   ClientMetadata& UnprocessedClientInitialMetadata() {
     return *call_filters().unprocessed_client_initial_metadata();
-  }
-
-  grpc_event_engine::experimental::EventEngine* event_engine() const override {
-    return event_engine_;
   }
 
   // Wrap a promise so that if it returns failure it automatically cancels
@@ -190,45 +185,14 @@ class CallSpine final : public Party {
  private:
   friend class Arena;
   CallSpine(ClientMetadataHandle client_initial_metadata,
-            grpc_event_engine::experimental::EventEngine* event_engine,
             RefCountedPtr<Arena> arena)
       : Party(1),
         arena_(std::move(arena)),
-        call_filters_(std::move(client_initial_metadata)),
-        event_engine_(event_engine) {}
-
-  class ScopedContext : public ScopedActivity,
-                        public promise_detail::Context<Arena>,
-                        public promise_detail::Context<
-                            grpc_event_engine::experimental::EventEngine> {
-   public:
-    explicit ScopedContext(CallSpine* spine)
-        : ScopedActivity(spine),
-          Context<Arena>(spine->arena_.get()),
-          Context<grpc_event_engine::experimental::EventEngine>(
-              spine->event_engine()) {}
-  };
-
-  bool RunParty() override {
-    ScopedContext context(this);
-    return Party::RunParty();
-  }
-
-  void PartyOver() override {
-    auto arena = arena_;
-    {
-      ScopedContext context(this);
-      CancelRemainingParticipants();
-      arena->DestroyManagedNewObjects();
-    }
-    this->~CallSpine();
-  }
+        call_filters_(std::move(client_initial_metadata)) {}
 
   const RefCountedPtr<Arena> arena_;
   // Call filters/pipes part of the spine
   CallFilters call_filters_;
-  // Event engine associated with this call
-  grpc_event_engine::experimental::EventEngine* const event_engine_;
   absl::AnyInvocable<void()> on_done_{nullptr};
 };
 
@@ -291,10 +255,6 @@ class CallInitiator {
 
   Arena* arena() { return spine_->arena(); }
 
-  grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return spine_->event_engine();
-  }
-
  private:
   RefCountedPtr<CallSpine> spine_;
 };
@@ -354,10 +314,6 @@ class CallHandler {
   }
 
   Arena* arena() { return spine_->arena(); }
-
-  grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return spine_->event_engine();
-  }
 
  private:
   RefCountedPtr<CallSpine> spine_;
@@ -428,9 +384,7 @@ struct CallInitiatorAndHandler {
 };
 
 CallInitiatorAndHandler MakeCallPair(
-    ClientMetadataHandle client_initial_metadata,
-    grpc_event_engine::experimental::EventEngine* event_engine,
-    RefCountedPtr<Arena> arena);
+    ClientMetadataHandle client_initial_metadata, RefCountedPtr<Arena> arena);
 
 template <typename CallHalf>
 auto OutgoingMessages(CallHalf h) {

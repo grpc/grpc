@@ -112,8 +112,10 @@ class InprocServerTransport final : public ServerTransport {
       case ConnectionState::kReady:
         break;
     }
-    auto server_call = MakeCallPair(std::move(md), event_engine_.get(),
-                                    call_arena_allocator_->MakeArena());
+    auto arena = call_arena_allocator_->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    auto server_call = MakeCallPair(std::move(md), std::move(arena));
     unstarted_call_handler_->StartCall(std::move(server_call.handler));
     return std::move(server_call.initiator);
   }

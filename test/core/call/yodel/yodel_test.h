@@ -23,6 +23,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -363,9 +364,10 @@ class YodelTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    return MakeCallPair(std::move(client_initial_metadata),
-                        state_->event_engine.get(),
-                        state_->call_arena_allocator->MakeArena());
+    auto arena = state_->call_arena_allocator->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        state_->event_engine.get());
+    return MakeCallPair(std::move(client_initial_metadata), std::move(arena));
   }
 
   void WaitForAllPendingWork();
