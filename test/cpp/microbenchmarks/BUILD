@@ -12,27 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_benchmark_args")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
 grpc_package(name = "test/cpp/microbenchmarks")
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "noop-benchmark",
     srcs = ["noop-benchmark.cc"],
-    external_deps = [
-        "benchmark",
-    ],
     deps = ["//test/core/test_util:grpc_test_util"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_channel_args",
     srcs = ["bm_channel_args.cc"],
     external_deps = [
-        "benchmark",
         "absl/container:btree",
     ],
     deps = [
@@ -42,11 +38,10 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_rng",
     srcs = ["bm_rng.cc"],
     external_deps = [
-        "benchmark",
         "absl/container:btree",
     ],
     deps = [
@@ -56,46 +51,33 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_exec_ctx",
     srcs = ["bm_exec_ctx.cc"],
-    args = grpc_benchmark_args(),
-    external_deps = [
-        "benchmark",
-    ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_event_engine_run",
-    size = "small",
     srcs = ["bm_event_engine_run.cc"],
-    args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
         "absl/debugging:leak_check",
-        "benchmark",
     ],
-    uses_polling = False,
     deps = [
         ":helpers",
         "//src/core:common_event_engine_closures",
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_thread_pool",
-    size = "small",
     srcs = ["bm_thread_pool.cc"],
-    args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
-        "benchmark",
     ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [
         ":helpers",
         "//src/core:common_event_engine_closures",
@@ -147,27 +129,19 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
     deps = [
         ":helpers",
         "//src/core:closure",
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_huffman_decode",
     srcs = ["bm_huffman_decode.cc"],
-    args = grpc_benchmark_args(),
     tags = [
-        "no_mac",
-        "no_windows",
         "nomsan",
         "notsan",
         "noubsan",
@@ -178,36 +152,25 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_alarm",
     srcs = ["bm_alarm.cc"],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_arena",
-    size = "large",
     srcs = ["bm_arena.cc"],
-    args = grpc_benchmark_args(),
     tags = [
-        "no_mac",
-        "no_windows",
         "notsan",
     ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_byte_buffer",
     srcs = ["bm_byte_buffer.cc"],
-    args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
     ],
@@ -216,50 +179,36 @@ grpc_cc_test(
         "no_windows",
     ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_channel",
     srcs = ["bm_channel.cc"],
-    args = grpc_benchmark_args(),
     tags = [
         "no_mac",
         "no_windows",
     ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_cq",
     srcs = ["bm_cq.cc"],
-    args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
-    ],
-    tags = [
-        "no_mac",
-        "no_windows",
     ],
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_cq_multiple_threads",
     srcs = ["bm_cq_multiple_threads.cc"],
-    args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
     ],
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [":helpers"],
 )
 
@@ -279,18 +228,13 @@ grpc_cc_library(
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_fullstack_streaming_ping_pong",
     size = "large",
     srcs = [
         "bm_fullstack_streaming_ping_pong.cc",
     ],
-    args = grpc_benchmark_args(),
     flaky = True,
-    tags = [
-        "no_mac",  # to emulate "excluded_poll_engines: poll"
-        "no_windows",
-    ],
     deps = [":fullstack_streaming_ping_pong_h"],
 )
 
@@ -306,15 +250,10 @@ grpc_cc_library(
     deps = [":helpers"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_fullstack_streaming_pump",
     srcs = [
         "bm_fullstack_streaming_pump.cc",
-    ],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",  # to emulate "excluded_poll_engines: poll"
-        "no_windows",
     ],
     deps = [":fullstack_streaming_pump_h"],
 )
@@ -331,30 +270,19 @@ grpc_cc_library(
     deps = [":helpers_secure"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_fullstack_unary_ping_pong",
     size = "large",
     srcs = [
         "bm_fullstack_unary_ping_pong.cc",
     ],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",  # to emulate "excluded_poll_engines: poll"
-        "no_windows",
-    ],
     deps = [":fullstack_unary_ping_pong_h"],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_fullstack_unary_ping_pong_chaotic_good",
-    size = "large",
     srcs = [
         "bm_fullstack_unary_ping_pong_chaotic_good.cc",
-    ],
-    args = grpc_benchmark_args(),
-    tags = [
-        "no_mac",  # to emulate "excluded_poll_engines: poll"
-        "no_windows",
     ],
     deps = [
         ":fullstack_unary_ping_pong_h",
@@ -362,30 +290,22 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_chttp2_hpack",
     srcs = ["bm_chttp2_hpack.cc"],
-    args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
     ],
-    tags = [
-        "no_mac",
-        "no_windows",
-    ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [
         ":helpers",
         "//src/core:slice",
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
-    args = grpc_benchmark_args(),
-    language = "C++",
     deps = [
         ":helpers_secure",
         "//:grpc_opencensus_plugin",
@@ -424,17 +344,14 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_callback_unary_ping_pong",
     size = "large",
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],
-    args = grpc_benchmark_args(),
     tags = [
         "manual",
-        "no_mac",
-        "no_windows",
         "notap",
     ],
     deps = [":callback_unary_ping_pong_h"],
@@ -455,38 +372,29 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_callback_streaming_ping_pong",
-    size = "large",
     srcs = [
         "bm_callback_streaming_ping_pong.cc",
     ],
-    args = grpc_benchmark_args(),
     tags = [
         "manual",
-        "no_mac",
-        "no_windows",
         "notap",
     ],
     deps = [":callback_streaming_ping_pong_h"],
 )
 
 # TODO(hork): Generalize this for other work queue implementations
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_basic_work_queue",
     srcs = ["bm_basic_work_queue.cc"],
-    args = grpc_benchmark_args(),
     external_deps = [
         "absl/log:check",
-        "benchmark",
     ],
     tags = [
         "manual",
-        "no_windows",
         "notap",
     ],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//src/core:common_event_engine_closures",
