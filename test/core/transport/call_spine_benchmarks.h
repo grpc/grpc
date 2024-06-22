@@ -34,9 +34,13 @@ struct BenchmarkCall {
   CallHandler handler;
 };
 
+}  // namespace grpc_core
+
 // Unary call with one spawn on each end of the spine.
 template <typename Fixture>
 void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
+  using namespace grpc_core;
+
   Fixture fixture;
   for (auto _ : state) {
     Notification handler_done;
@@ -103,6 +107,8 @@ void BM_UnaryWithSpawnPerEnd(benchmark::State& state) {
 // For now we track both.
 template <typename Fixture>
 void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
+  using namespace grpc_core;
+
   Fixture fixture;
   for (auto _ : state) {
     BenchmarkCall call = fixture.MakeCall();
@@ -172,6 +178,8 @@ void BM_UnaryWithSpawnPerOp(benchmark::State& state) {
 
 template <typename Fixture>
 void BM_ClientToServerStreaming(benchmark::State& state) {
+  using namespace grpc_core;
+
   Fixture fixture;
   BenchmarkCall call = fixture.MakeCall();
   Notification handler_metadata_done;
@@ -229,6 +237,7 @@ void BM_ClientToServerStreaming(benchmark::State& state) {
   });
 }
 
+namespace grpc_core {
 // Base class for fixtures that wrap a single filter.
 // Traits should have MakeClientInitialMetadata, MakeServerInitialMetadata,
 // MakePayload, MakeServerTrailingMetadata, MakeChannelArgs and a type named
@@ -359,9 +368,9 @@ class UnstartedCallDestinationFixture {
 
 }  // namespace grpc_core
 
-#define GRPC_CALL_SPINE_BENCHMARK(Fixture)                \
-  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerEnd<Fixture>); \
-  BENCHMARK(grpc_core::BM_UnaryWithSpawnPerOp<Fixture>);  \
-  BENCHMARK(grpc_core::BM_ClientToServerStreaming<Fixture>)
+#define GRPC_CALL_SPINE_BENCHMARK(Fixture)     \
+  BENCHMARK(BM_UnaryWithSpawnPerEnd<Fixture>); \
+  BENCHMARK(BM_UnaryWithSpawnPerOp<Fixture>);  \
+  BENCHMARK(BM_ClientToServerStreaming<Fixture>)
 
 #endif  // GRPC_TEST_CORE_TRANSPORT_CALL_SPINE_BENCHMARKS_H
