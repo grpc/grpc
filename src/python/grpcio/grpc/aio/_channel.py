@@ -62,11 +62,9 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
+    base_options: Sequence[ChannelArgumentType], compression: Optional[grpc.Compression]
 ):
-    compression_channel_argument = _compression.create_channel_option(
-        compression
-    )
+    compression_channel_argument = _compression.create_channel_option(compression)
     user_agent_channel_argument = (
         (
             cygrpc.ChannelArgKey.primary_user_agent_string,
@@ -74,9 +72,7 @@ def _augment_channel_arguments(
         ),
     )
     return (
-        tuple(base_options)
-        + compression_channel_argument
-        + user_agent_channel_argument
+        tuple(base_options) + compression_channel_argument + user_agent_channel_argument
     )
 
 
@@ -126,9 +122,7 @@ class _BaseMultiCallable:
         if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
             metadata = Metadata.from_tuple(metadata)
         if compression:
-            metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
-            )
+            metadata = Metadata(*_compression.augment_metadata(metadata, compression))
         return metadata
 
 
@@ -324,7 +318,7 @@ class Channel(_base_channel.Channel):
     def __init__(
         self,
         target: str,
-        options: ChannelArgumentType,
+        options: Sequence[ChannelArgumentType],
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
@@ -458,9 +452,7 @@ class Channel(_base_channel.Channel):
             if not self._channel.closed():
                 self._channel.close()
 
-    def get_state(
-        self, try_to_connect: bool = False
-    ) -> grpc.ChannelConnectivity:
+    def get_state(self, try_to_connect: bool = False) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
 
@@ -566,7 +558,7 @@ class Channel(_base_channel.Channel):
 
 def insecure_channel(
     target: str,
-    options: Optional[ChannelArgumentType] = None,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
@@ -596,7 +588,7 @@ def insecure_channel(
 def secure_channel(
     target: str,
     credentials: grpc.ChannelCredentials,
-    options: Optional[ChannelArgumentType] = None,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
