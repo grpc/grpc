@@ -23,11 +23,9 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "test/core/transport/call_spine_benchmarks.h"
 
-namespace grpc_core {
+using namespace grpc_core;
 
-namespace {
 const Slice kTestPath = Slice::FromExternalString("/foo/bar");
-}
 
 class ClientChannelTraits {
  public:
@@ -112,7 +110,6 @@ class ClientChannelTraits {
 };
 GRPC_CALL_SPINE_BENCHMARK(UnstartedCallDestinationFixture<ClientChannelTraits>);
 
-namespace {
 class TestResolver final : public Resolver {
  public:
   explicit TestResolver(ChannelArgs args,
@@ -174,9 +171,6 @@ void BM_CreateClientChannel(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateClientChannel);
 
-}  // namespace
-}  // namespace grpc_core
-
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
 namespace benchmark {
@@ -185,11 +179,10 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
-  grpc_core::CoreConfiguration::RegisterBuilder(
-      [](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->resolver_registry()->RegisterResolverFactory(
-            std::make_unique<grpc_core::TestResolverFactory>());
-      });
+  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    builder->resolver_registry()->RegisterResolverFactory(
+        std::make_unique<TestResolverFactory>());
+  });
   grpc_init();
   {
     auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();

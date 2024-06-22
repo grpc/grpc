@@ -20,7 +20,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/transport/call_spine_benchmarks.h"
 
-namespace grpc_core {
+using namespace grpc_core;
 
 class CallSpineFixture {
  public:
@@ -100,8 +100,6 @@ class ForwardCallFixture {
       CallFilters::StackBuilder().Build();
 };
 GRPC_CALL_SPINE_BENCHMARK(ForwardCallFixture);
-
-}  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
