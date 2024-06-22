@@ -21390,6 +21390,7 @@ targets:
   - test/core/gprpp/unique_type_name_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/strings:str_format
   uses_polling: false
 - name: unknown_frame_bad_client_test
