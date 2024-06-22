@@ -81,7 +81,7 @@ TEST(MetadataMapTest, SimpleOps) {
 // EXPECT_EQ it later.
 class FakeEncoder {
  public:
-  std::string output() { return output_; }
+  const std::string& output() { return output_; }
 
   void Encode(const Slice& key, const Slice& value) {
     output_ += absl::StrCat("UNKNOWN METADATUM: key=", key.as_string_view(),
@@ -126,6 +126,26 @@ TEST(MetadataMapTest, NonEncodableTrait) {
   EncoderWithNoTraitEncodeFunctions encoder;
   map.Encode(&encoder);
   EXPECT_EQ(map.DebugString(), "GrpcStreamNetworkState: not sent on wire");
+}
+
+TEST(MetadataMapTest, NonTraitKeyWithMultipleValues) {
+  FakeEncoder encoder;
+  TimeoutOnlyMetadataMap map;
+  const absl::string_view kKey = "key";
+  map.Append(kKey, Slice::FromStaticString("value1"),
+             [](absl::string_view error, const Slice& value) {
+               LOG(ERROR) << error << " value:" << value.as_string_view();
+             });
+  map.Append(kKey, Slice::FromStaticString("value2"),
+             [](absl::string_view error, const Slice& value) {
+               LOG(ERROR) << error << " value:" << value.as_string_view();
+             });
+  map.Encode(&encoder);
+  EXPECT_EQ(encoder.output(),
+            "UNKNOWN METADATUM: key=key value=value1\n"
+            "UNKNOWN METADATUM: key=key value=value2\n");
+  std::string buffer;
+  EXPECT_EQ(map.GetStringValue(kKey, &buffer), "value1,value2");
 }
 
 TEST(DebugStringBuilderTest, OneAddAfterRedaction) {

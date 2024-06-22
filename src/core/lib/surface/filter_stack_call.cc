@@ -41,7 +41,6 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
@@ -414,11 +413,10 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
     }
     batch->Append(StringViewFromSlice(md->key), Slice(CSliceRef(md->value)),
                   [md](absl::string_view error, const Slice& value) {
-                    gpr_log(GPR_DEBUG, "Append error: %s",
-                            absl::StrCat("key=", StringViewFromSlice(md->key),
-                                         " error=", error,
-                                         " value=", value.as_string_view())
-                                .c_str());
+                    VLOG(2)
+                        << "Append error: key=" << StringViewFromSlice(md->key)
+                        << " error=" << error
+                        << " value=" << value.as_string_view();
                   });
   }
 
@@ -749,13 +747,12 @@ grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
   if (!is_client() &&
       (seen_ops & (1u << GRPC_OP_SEND_STATUS_FROM_SERVER)) != 0 &&
       (seen_ops & (1u << GRPC_OP_RECV_MESSAGE)) != 0) {
-    gpr_log(GPR_ERROR,
-            "******************* SEND_STATUS WITH RECV_MESSAGE "
-            "*******************");
+    LOG(ERROR) << "******************* SEND_STATUS WITH RECV_MESSAGE "
+                  "*******************";
     return GRPC_CALL_ERROR;
   }
 
-  GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
+  GRPC_CALL_LOG_BATCH(ops, nops);
 
   if (nops == 0) {
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
