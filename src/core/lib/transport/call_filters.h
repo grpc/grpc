@@ -349,7 +349,7 @@ void AddServerTrailingMetadata(
     std::vector<ServerTrailingMetadataOperator>& to) {
   to.push_back(ServerTrailingMetadataOperator{
       channel_data, call_offset,
-      [](void* call_data, void* channel_data, ServerMetadataHandle metadata) {
+      [](void* call_data, void*, ServerMetadataHandle metadata) {
         return static_cast<typename FilterType::Call*>(call_data)
             ->OnServerTrailingMetadata(std::move(metadata));
       }});
