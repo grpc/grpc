@@ -1168,6 +1168,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_poll_posix.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/ev_poll_posix.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/event_handle_pool.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.h )
