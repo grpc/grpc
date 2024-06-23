@@ -40,8 +40,7 @@ class GreeterServiceImpl final : public Greeter::Service {
   }
 };
 
-void RunServer() {
-  std::string server_address("unix:/tmp/server");
+void RunServer(std::string server_address) {
   GreeterServiceImpl service;
 
   grpc::EnableDefaultHealthCheckService(true);
@@ -62,7 +61,30 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
-  RunServer();
+  // The only expected argument is "--listen=", which designate where to listen
+  std::string listen_str;
+  std::string arg_str("--listen");
+  if (argc > 1) {
+    std::string arg_val = argv[1];
+    size_t start_pos = arg_val.find(arg_str);
+    if (start_pos != std::string::npos) {
+      start_pos += arg_str.size();
+      if (arg_val[start_pos] == '=') {
+        listen_str = arg_val.substr(start_pos + 1);
+      } else {
+        std::cout << "The only correct argument syntax is --listen="
+                  << std::endl;
+        return 0;
+      }
+    } else {
+      std::cout << "The only acceptable argument is --listen=" << std::endl;
+      return 0;
+    }
+  } else {
+    listen_str = "unix:///tmp/server";
+  }
+
+  RunServer(listen_str);
 
   return 0;
 }
