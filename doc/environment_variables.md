@@ -62,9 +62,8 @@ some configuration as environment variables that can be set.
   - If nothing is set as GRPC_VERBOSITY, then the setting of the exernal application will be honoured.
   - If nothing is set by the external application also, the default set by absl will be honoured.
 
-* GRPC_STACKTRACE_MINLOGLEVEL
-  Minimum loglevel to print the stack-trace - one of DEBUG, INFO, ERROR, and NONE.
-  NONE is a default value.
+* GRPC_STACKTRACE_MINLOGLEVEL (DEPRECATED)
+  This will not work anymore.
 
 * GRPC_TRACE_FUZZER
   if set, the fuzzers will output trace (it is usually suppressed).
