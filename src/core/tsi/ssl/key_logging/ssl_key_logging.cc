@@ -17,8 +17,8 @@
 #include <map>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/crash.h"
@@ -54,10 +54,8 @@ TlsSessionKeyLoggerCache::TlsSessionKeyLogger::TlsSessionKeyLogger(
   fd_ = fopen(tls_session_key_log_file_path_.c_str(), "a");
   if (fd_ == nullptr) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fopen");
-    gpr_log(GPR_ERROR,
-            "Ignoring TLS Key logging. ERROR Opening TLS Keylog "
-            "file: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "Ignoring TLS Key logging. ERROR Opening TLS Keylog file: "
+               << grpc_core::StatusToString(error);
   }
   cache_->tls_session_key_logger_map_.emplace(tls_session_key_log_file_path_,
                                               this);
@@ -89,8 +87,8 @@ void TlsSessionKeyLoggerCache::TlsSessionKeyLogger::LogSessionKeys(
 
   if (err) {
     grpc_error_handle error = GRPC_OS_ERROR(errno, "fwrite");
-    gpr_log(GPR_ERROR, "Error Appending to TLS session key log file: %s",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "Error Appending to TLS session key log file: "
+               << grpc_core::StatusToString(error);
     fclose(fd_);
     fd_ = nullptr;  // disable future attempts to write to this file
   } else {
