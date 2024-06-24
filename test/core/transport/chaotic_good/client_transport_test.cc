@@ -102,8 +102,8 @@ ChannelArgs MakeChannelArgs() {
 }
 
 TEST_F(TransportTest, AddOneStream) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1000);
+  MockPromiseEndpoint data_endpoint(1001);
   control_endpoint.ExpectRead(
       {SerializedFrameHeader(FrameType::kFragment, 7, 1, 26, 8, 56, 15),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
@@ -183,8 +183,8 @@ TEST_F(TransportTest, AddOneStream) {
 }
 
 TEST_F(TransportTest, AddOneStreamMultipleMessages) {
-  MockPromiseEndpoint control_endpoint;
-  MockPromiseEndpoint data_endpoint;
+  MockPromiseEndpoint control_endpoint(1000);
+  MockPromiseEndpoint data_endpoint(1001);
   control_endpoint.ExpectRead(
       {SerializedFrameHeader(FrameType::kFragment, 3, 1, 26, 8, 56, 0),
        EventEngineSlice::FromCopiedBuffer(kPathDemoServiceStep,
