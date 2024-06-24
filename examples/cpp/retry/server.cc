@@ -43,6 +43,8 @@ class GreeterServiceImpl final : public Greeter::Service {
   Status SayHello(ServerContext* context, const HelloRequest* request,
                   HelloReply* reply) override {
     if (++request_counter_ % request_modulo_ != 0) {
+      // Return an OK status for every request_modulo_ number of requests,
+      // return UNAVAILABLE otherwise.
       std::cout << "return UNAVAILABLE" << std::endl;
       return Status(StatusCode::UNAVAILABLE, "");
     }
