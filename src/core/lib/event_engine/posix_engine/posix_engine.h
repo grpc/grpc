@@ -58,14 +58,14 @@ class AsyncConnect {
  public:
   AsyncConnect(EventEngine::OnConnectCallback on_connect,
                std::shared_ptr<EventEngine> engine, ThreadPool* executor,
-               grpc_event_engine::experimental::EventHandle* fd,
+               grpc_event_engine::experimental::EventHandleRef fd,
                MemoryAllocator&& allocator,
                const grpc_event_engine::experimental::PosixTcpOptions& options,
                std::string resolved_addr_str, int64_t connection_handle)
       : on_connect_(std::move(on_connect)),
         engine_(engine),
         executor_(executor),
-        fd_(fd),
+        fd_(std::move(fd)),
         allocator_(std::move(allocator)),
         options_(options),
         resolved_addr_str_(resolved_addr_str),
@@ -88,7 +88,7 @@ class AsyncConnect {
   ThreadPool* executor_;
   EventEngine::TaskHandle alarm_handle_;
   int refs_{2};
-  grpc_event_engine::experimental::EventHandle* fd_;
+  grpc_event_engine::experimental::EventHandleRef fd_;
   MemoryAllocator allocator_;
   grpc_event_engine::experimental::PosixTcpOptions options_;
   std::string resolved_addr_str_;
