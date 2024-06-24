@@ -17,6 +17,7 @@
 
 #include <stdint.h>
 
+#include <atomic>
 #include <string>
 
 #include "absl/base/thread_annotations.h"
@@ -69,6 +70,10 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
+    void RecordIncomingBytes(
+        const TransportByteSize& transport_byte_size) override;
+    void RecordOutgoingBytes(
+        const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view annotation) override;
@@ -97,6 +102,12 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
         optional_labels_array_;
     std::vector<Label> labels_from_peer_;
     bool is_trailers_only_ = false;
+    // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
+    // to promises, after which we can ensure that the transport invokes
+    // the RecordIncomingBytes() and RecordOutgoingBytes() methods inside
+    // the call's party.
+    std::atomic<uint64_t> incoming_bytes_{0};
+    std::atomic<uint64_t> outgoing_bytes_{0};
   };
 
   explicit PythonOpenCensusCallTracer(
