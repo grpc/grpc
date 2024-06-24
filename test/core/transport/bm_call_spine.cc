@@ -100,6 +100,7 @@ class ForwardCallFixture {
       CallFilters::StackBuilder().Build();
 };
 GRPC_CALL_SPINE_BENCHMARK(ForwardCallFixture);
+
 }  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,

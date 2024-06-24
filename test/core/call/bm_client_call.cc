@@ -26,6 +26,7 @@
 #include "src/core/lib/transport/call_arena_allocator.h"
 
 namespace grpc_core {
+namespace {
 
 class TestCallDestination : public UnstartedCallDestination {
  public:
@@ -170,6 +171,7 @@ void BM_Unary(benchmark::State& state) {
 }
 BENCHMARK(BM_Unary);
 
+}  // namespace
 }  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,

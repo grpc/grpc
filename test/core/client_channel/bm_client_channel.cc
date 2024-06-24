@@ -25,7 +25,9 @@
 
 namespace grpc_core {
 
+namespace {
 const Slice kTestPath = Slice::FromExternalString("/foo/bar");
+}
 
 class ClientChannelTraits {
  public:
@@ -110,6 +112,7 @@ class ClientChannelTraits {
 };
 GRPC_CALL_SPINE_BENCHMARK(UnstartedCallDestinationFixture<ClientChannelTraits>);
 
+namespace {
 class TestResolver final : public Resolver {
  public:
   explicit TestResolver(ChannelArgs args,
@@ -171,6 +174,7 @@ void BM_CreateClientChannel(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateClientChannel);
 
+}  // namespace
 }  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
