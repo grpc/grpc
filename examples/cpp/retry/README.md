@@ -47,9 +47,11 @@ Greeter received: Hello world
 Retry is enabled via the service config, which can be provided by the name resolver or
 a [GRPC_ARG_SERVICE_CONFIG](https://github.com/grpc/grpc/blob/master/include/grpc/impl/channel_arg_names.h#L207-L209) channel argument.  In the below config, we set retry policy for the "helloworld.Greeter" service.
 
-maxAttempts: how many times to attempt the RPC before failing.
-initialBackoff, maxBackoff, backoffMultiplier: configures delay between attempts.
-retryableStatusCodes: Retry only when receiving these status codes.
+`maxAttempts`: how many times to attempt the RPC before failing.
+
+`initialBackoff`, `maxBackoff`, `backoffMultiplier`: configures delay between attempts.
+
+`retryableStatusCodes`: Retry only when receiving these status codes.
 
 ```c++
 constexpr absl::string_view kRetryPolicy =
