@@ -7,18 +7,24 @@ This guide is for troubleshooting gRPC implementations based on C core library (
 Extra logging can be very useful for diagnosing problems. It can be used to increase the amount of information
 that gets printed to stderr.
 
+## Setting logging severity and verbosity
+
+https://abseil.io/docs/cpp/guides/logging
+
+gRPC uses absl logging. Verbosity can be set using absl flags such as
+`--minloglevel`, `--v` and `--vmodule`.
+
+These can also be programmatically set using
+[these absl APIs.](https://github.com/abseil/abseil-cpp/blob/master/absl/log/globals.h)
+
 ## GRPC_VERBOSITY (DEPRECATED)
 
-<!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
-Our recommendation is to avoid using this flag and [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging). We only support this flag for legacy reasons.
-
-`GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO` and `ERROR`. If this environment variable is unset, gRPC will not edit the absl settings. However if this environment variable is set, then gRPC will set absl MinLogValue and absl SetVLogLevel. This will alter the log settings of the entire application, not just gRPC code. For that reason, it is not recommended.
-<!-- END_OPEN_SOURCE_DOCUMENTATION -->
+[Environment Variables Overview](doc/environment_variables.md)
 
 ## GRPC_TRACE
 
 `GRPC_TRACE` can be used to enable extra logging for some internal gRPC components. Enabling the right traces can be invaluable
-for diagnosing for what is going wrong when things aren't working as intended. Possible values for `GRPC_TRACE` are listed in [Environment Variables Overview](doc/environment_variables.md).
+for diagnosing for what is going wrong when things aren't working as intended. Possible values for `GRPC_TRACE` are listed in [Environment Variables Overview](doc/trace_flags.md).
 Multiple traces can be enabled at once (use comma as separator).
 
 ```
