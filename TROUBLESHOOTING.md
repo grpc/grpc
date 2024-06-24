@@ -7,11 +7,10 @@ This guide is for troubleshooting gRPC implementations based on C core library (
 Extra logging can be very useful for diagnosing problems. It can be used to increase the amount of information
 that gets printed to stderr.
 
-## Setting logging severity and verbosity
+## Setting Logging Severity and Verbosity
 
-https://abseil.io/docs/cpp/guides/logging
-
-gRPC uses absl logging. Verbosity can be set using absl flags such as
+[gRPC uses absl logging](https://abseil.io/docs/cpp/guides/logging).
+Verbosity can be set using absl flags such as
 `--minloglevel`, `--v` and `--vmodule`.
 
 These can also be programmatically set using
@@ -24,25 +23,25 @@ These can also be programmatically set using
 ## GRPC_TRACE
 
 `GRPC_TRACE` can be used to enable extra logging for some internal gRPC components. Enabling the right traces can be invaluable
-for diagnosing for what is going wrong when things aren't working as intended. Possible values for `GRPC_TRACE` are listed in [Environment Variables Overview](doc/trace_flags.md).
+for diagnosing for what is going wrong when things aren't working as intended. Possible values for `GRPC_TRACE` are [listed here](doc/trace_flags.md).
 Multiple traces can be enabled at once (use comma as separator).
 
 ```
 # Enable debug logs for an application
-GRPC_VERBOSITY=debug ./helloworld_application_using_grpc
+./helloworld_application_using_grpc --v=2 --minloglevel=0
 ```
 
 ```
 # Print information about invocations of low-level C core API.
 # Note that trace logs of log level DEBUG won't be displayed.
-# Also note that most tracers user log level INFO, so without setting
-# GPRC_VERBOSITY accordingly, no traces will be printed.
-GRPC_VERBOSITY=info GRPC_TRACE=api ./helloworld_application_using_grpc
+# Also note that many tracers user log level INFO,
+# so without setting absl verbosity accordingly, no traces will be printed.
+GRPC_TRACE=api ./helloworld_application_using_grpc --v=-1 --minloglevel=0
 ```
 
 ```
-# Print info from 3 different tracers, including tracing logs with log level DEBUG
-GRPC_VERBOSITY=debug GRPC_TRACE=tcp,http,api ./helloworld_application_using_grpc
+# Print info from 3 different tracers, including tracing logs
+GRPC_TRACE=tcp,http,api ./helloworld_application_using_grpc  --v=2 --minloglevel=0
 ```
 
 Known limitations: `GPRC_TRACE=tcp` is currently not implemented for Windows (you won't see any tcp traces).

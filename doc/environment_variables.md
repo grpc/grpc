@@ -48,7 +48,7 @@ some configuration as environment variables that can be set.
 
 * GRPC_VERBOSITY (DEPRECATED)
 
-  `GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO` and `ERROR`.
+  `GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO`, `ERROR` and `NONE`.
 
   We only support this flag for legacy reasons. If this environment variable is set, then gRPC will set absl MinLogValue and absl SetVLogLevel. This will alter the log settings of the entire application, not just gRPC code. For that reason, it is not recommended. Our recommendation is to avoid using this flag and [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging).
 
