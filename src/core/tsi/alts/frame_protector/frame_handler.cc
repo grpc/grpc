@@ -24,6 +24,8 @@
 
 #include <algorithm>
 
+#include "absl/log/log.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 

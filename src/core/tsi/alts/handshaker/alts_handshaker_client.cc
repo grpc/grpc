@@ -471,10 +471,9 @@ static void on_status_received(void* arg, grpc_error_handle error) {
     char* status_details =
         grpc_slice_to_c_string(client->handshake_status_details);
     LOG(INFO) << "alts_grpc_handshaker_client:" << client
-              << " on_status_received "
-                 "status:"
-              << client->handshake_status_code << " details:|" << status_details
-              << "| error:|" << grpc_core::StatusToString(error).c_str() << "|";
+              << " on_status_received status:" << client->handshake_status_code
+              << " details:|" << status_details << "| error:|"
+              << grpc_core::StatusToString(error) << "|";
     gpr_free(status_details);
   }
   maybe_complete_tsi_next(client, true /* receive_status_finished */,

@@ -96,8 +96,8 @@ tsi_result alts_grpc_record_protocol_init(alts_grpc_record_protocol* rp,
                                           bool is_integrity_only,
                                           bool is_protect) {
   if (rp == nullptr || crypter == nullptr) {
-    LOG(ERROR) << "Invalid nullptr arguments to alts_grpc_record_protocol "
-                  "init.";
+    LOG(ERROR)
+        << "Invalid nullptr arguments to alts_grpc_record_protocol init.";
     return TSI_INVALID_ARGUMENT;
   }
   // Creates alts_iovec_record_protocol.
