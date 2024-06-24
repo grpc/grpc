@@ -1520,7 +1520,7 @@ static tsi_result ssl_handshaker_result_create_frame_protector(
   protector_impl->buffer =
       static_cast<unsigned char*>(gpr_malloc(protector_impl->buffer_size));
   if (protector_impl->buffer == nullptr) {
-    LOG(ERROR) << "Could not allocated buffer for tsi_ssl_frame_protector.";
+    LOG(ERROR) << "Could not allocate buffer for tsi_ssl_frame_protector.";
     gpr_free(protector_impl);
     return TSI_INTERNAL_ERROR;
   }
