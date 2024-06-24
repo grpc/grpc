@@ -39,8 +39,6 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
     "gpr_log_severity": [
         "./include/grpc/support/log.h",
-        "./src/core/lib/surface/call.h",
-        "./src/core/lib/surface/call_log_batch.cc",
         "./src/core/util/android/log.cc",
         "./src/core/util/linux/log.cc",
         "./src/core/util/log.cc",
@@ -50,10 +48,7 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
         "./test/core/end2end/tests/no_logging.cc",
     ],
-    "gpr_log_severity_string(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-    ],
+    "gpr_log_severity_string": [],
     "gpr_log(": [
         "./include/grpc/support/log.h",
         "./src/core/ext/filters/backend_metrics/backend_metric_filter.cc",
@@ -154,11 +149,9 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/lib/slice/slice_refcount.h",
         "./src/core/lib/surface/api_trace.h",
         "./src/core/lib/surface/call.cc",
-        "./src/core/lib/surface/call_log_batch.cc",
         "./src/core/lib/surface/call_utils.cc",
         "./src/core/lib/surface/channel_init.cc",
         "./src/core/lib/surface/completion_queue.cc",
-        "./src/core/lib/surface/filter_stack_call.cc",
         "./src/core/lib/surface/legacy_channel.cc",
         "./src/core/lib/transport/bdp_estimator.cc",
         "./src/core/lib/transport/bdp_estimator.h",
