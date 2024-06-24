@@ -7,13 +7,7 @@ This guide is for troubleshooting gRPC implementations based on C core library (
 Extra logging can be very useful for diagnosing problems. It can be used to increase the amount of information
 that gets printed to stderr.
 
-## GRPC_VERBOSITY
-
-<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION
-GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
-If anyone wants to debug, we need to [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging).
-
-END_GOOGLE_INTERNAL_DOCUMENTATION -->
+## GRPC_VERBOSITY (DEPRECATED)
 
 <!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
 Our recommendation is to avoid using this flag and [set log verbosity using absl](https://abseil.io/docs/cpp/guides/logging). We only support this flag for legacy reasons.
@@ -22,11 +16,6 @@ Our recommendation is to avoid using this flag and [set log verbosity using absl
 <!-- END_OPEN_SOURCE_DOCUMENTATION -->
 
 ## GRPC_TRACE
-
-<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION
-GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
-If anyone wants to debug, we need to set verbose logs using absl.
-END_GOOGLE_INTERNAL_DOCUMENTATION -->
 
 `GRPC_TRACE` can be used to enable extra logging for some internal gRPC components. Enabling the right traces can be invaluable
 for diagnosing for what is going wrong when things aren't working as intended. Possible values for `GRPC_TRACE` are listed in [Environment Variables Overview](doc/environment_variables.md).

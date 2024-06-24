@@ -46,12 +46,7 @@ some configuration as environment variables that can be set.
   Available tracers and their usage can be found in
   [gRPC Trace Flags](trace_flags.md)
 
-* GRPC_VERBOSITY
-<!-- BEGIN_GOOGLE_INTERNAL_DOCUMENTATION"
-GRPC_VERBOSITY has been disabled for internal usage and will not work anymore.
-If anyone wants to debug, we need to set verbose logs using absl.
-END_GOOGLE_INTERNAL_DOCUMENTATION -->
-
+* GRPC_VERBOSITY (DEPRECATED)
 <!-- BEGIN_OPEN_SOURCE_DOCUMENTATION -->
   `GRPC_VERBOSITY` is used to set the minimum level of log messages printed. Supported values are `DEBUG`, `INFO` and `ERROR`.
 
