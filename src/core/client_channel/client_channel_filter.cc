@@ -2454,12 +2454,11 @@ ClientChannelFilter::LoadBalancedCall::~LoadBalancedCall() {
 
 void ClientChannelFilter::LoadBalancedCall::RecordCallCompletion(
     absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-    grpc_transport_stream_stats* transport_stream_stats,
     absl::string_view peer_address) {
   // If we have a tracer, notify it.
   if (call_attempt_tracer() != nullptr) {
     call_attempt_tracer()->RecordReceivedTrailingMetadata(
-        status, recv_trailing_metadata, transport_stream_stats);
+        status, recv_trailing_metadata);
   }
   // If the LB policy requested a callback for trailing metadata, invoke
   // the callback.
@@ -2718,8 +2717,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::Orphan() {
   // about call completion here, as best we can.  We assume status
   // CANCELLED in this case.
   if (recv_trailing_metadata_ == nullptr) {
-    RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr,
-                         nullptr, "");
+    RecordCallCompletion(absl::CancelledError("call cancelled"), nullptr, "");
   }
   RecordLatency();
   // Delegate to parent.
@@ -2876,8 +2874,6 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
   if (batch->recv_trailing_metadata) {
     recv_trailing_metadata_ =
         batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-    transport_stream_stats_ =
-        batch->payload->recv_trailing_metadata.collect_stats;
     original_recv_trailing_metadata_ready_ =
         batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
@@ -2999,7 +2995,7 @@ void ClientChannelFilter::FilterBasedLoadBalancedCall::
       peer_string = self->peer_string_->as_string_view();
     }
     self->RecordCallCompletion(status, self->recv_trailing_metadata_,
-                               self->transport_stream_stats_, peer_string);
+                               peer_string);
   }
   // Chain to original callback.
   if (!self->failure_error_.ok()) {

@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <utility>
@@ -154,6 +155,11 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
   void RecordEnd(const grpc_call_final_info* final_info) override;
 
+  void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) override;
+  void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) override;
+
   void RecordAnnotation(absl::string_view annotation) override {
     if (!context_.Span().IsRecording()) {
       return;
@@ -193,6 +199,12 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   // Buffer needed for grpc_slice to reference it when adding metatdata to
   // response.
   char stats_buf_[kMaxServerStatsLen];
+  // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
+  // to promises, after which we can ensure that the transport invokes
+  // the RecordIncomingBytes() and RecordOutgoingBytes() methods inside
+  // the call's party.
+  std::atomic<uint64_t> incoming_bytes_{0};
+  std::atomic<uint64_t> outgoing_bytes_{0};
 };
 
 void OpenCensusServerCallTracer::RecordReceivedInitialMetadata(
@@ -236,8 +248,6 @@ void OpenCensusServerCallTracer::RecordSendTrailingMetadata(
 void OpenCensusServerCallTracer::RecordEnd(
     const grpc_call_final_info* final_info) {
   if (OpenCensusStatsEnabled()) {
-    const uint64_t request_size = GetOutgoingDataSize(final_info);
-    const uint64_t response_size = GetIncomingDataSize(final_info);
     double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();
@@ -246,8 +256,10 @@ void OpenCensusServerCallTracer::RecordEnd(
         ServerStatusTagKey(),
         std::string(StatusCodeToString(final_info->final_status)));
     ::opencensus::stats::Record(
-        {{RpcServerSentBytesPerRpc(), static_cast<double>(response_size)},
-         {RpcServerReceivedBytesPerRpc(), static_cast<double>(request_size)},
+        {{RpcServerSentBytesPerRpc(),
+          static_cast<double>(incoming_bytes_.load())},
+         {RpcServerReceivedBytesPerRpc(),
+          static_cast<double>(outgoing_bytes_.load())},
          {RpcServerServerLatency(), elapsed_time_ms},
          {RpcServerSentMessagesPerRpc(), sent_message_count_},
          {RpcServerReceivedMessagesPerRpc(), recv_message_count_}},
@@ -256,6 +268,16 @@ void OpenCensusServerCallTracer::RecordEnd(
   if (OpenCensusTracingEnabled()) {
     context_.EndSpan();
   }
+}
+
+void OpenCensusServerCallTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenCensusServerCallTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 //

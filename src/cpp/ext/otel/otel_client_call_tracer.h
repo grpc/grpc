@@ -84,8 +84,12 @@ class OpenTelemetryPluginImpl::ClientCallTracer
     void RecordReceivedDecompressedMessage(
         const grpc_core::SliceBuffer& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* /*recv_trailing_metadata*/,
-        const grpc_transport_stream_stats* transport_stream_stats) override;
+        absl::Status status,
+        grpc_metadata_batch* recv_trailing_metadata) override;
+    void RecordIncomingBytes(
+        const TransportByteSize& transport_byte_size) override;
+    void RecordOutgoingBytes(
+        const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view /*annotation*/) override;
@@ -109,6 +113,12 @@ class OpenTelemetryPluginImpl::ClientCallTracer
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
     bool is_trailers_only_ = false;
+    // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
+    // to promises, after which we can ensure that the transport invokes
+    // the RecordIncomingBytes() and RecordOutgoingBytes() methods inside
+    // the call's party.
+    std::atomic<uint64_t> incoming_bytes_{0};
+    std::atomic<uint64_t> outgoing_bytes_{0};
   };
 
   ClientCallTracer(

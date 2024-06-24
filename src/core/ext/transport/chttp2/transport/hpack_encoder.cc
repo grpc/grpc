@@ -87,7 +87,7 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
   if (options.is_end_of_stream) {
     flags |= GRPC_CHTTP2_DATA_FLAG_END_STREAM;
   }
-  options.stats->header_bytes += raw.Length();
+  options.call_tracer->RecordOutgoingBytes({0, 0, raw.Length()});
   while (frame_type == GRPC_CHTTP2_FRAME_HEADER || raw.Length() > 0) {
     // per the HTTP/2 spec:
     //   A HEADERS frame without the END_HEADERS flag set MUST be followed by
@@ -101,7 +101,7 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     }
     FillHeader(grpc_slice_buffer_tiny_add(output, kHeadersFrameHeaderSize),
                frame_type, options.stream_id, len, flags);
-    options.stats->framing_bytes += kHeadersFrameHeaderSize;
+    options.call_tracer->RecordOutgoingBytes({kHeadersFrameHeaderSize, 0, 0});
     grpc_slice_buffer_move_first(raw.c_slice_buffer(), len, output);
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;

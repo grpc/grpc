@@ -71,12 +71,6 @@ void GenerateServerContext(absl::string_view tracing, absl::string_view method,
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
                            CensusContext* parent_ctx);
 
-// Returns the incoming data size from the grpc call final info.
-uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info);
-
-// Returns the outgoing data size from the grpc call final info.
-uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info);
-
 // These helper functions return the SpanContext and Span, respectively
 // associated with the census_context* stored by grpc. The user will need to
 // call this for manual propagation of tracing data.

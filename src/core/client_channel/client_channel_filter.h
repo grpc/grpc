@@ -407,7 +407,6 @@ class ClientChannelFilter::LoadBalancedCall
 
   void RecordCallCompletion(absl::Status status,
                             grpc_metadata_batch* recv_trailing_metadata,
-                            grpc_transport_stream_stats* transport_stream_stats,
                             absl::string_view peer_address);
 
   void RecordLatency();
@@ -556,7 +555,6 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
 
   // For intercepting recv_trailing_metadata_ready.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
-  grpc_transport_stream_stats* transport_stream_stats_ = nullptr;
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 

@@ -140,8 +140,7 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats* transport_stream_stats) {
+        absl::Status status, grpc_metadata_batch* recv_trailing_metadata) {
   if (is_trailers_only_) {
     PopulateLabelInjectors(recv_trailing_metadata);
   }
@@ -165,19 +164,25 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
   if (parent_->otel_plugin_->client_.attempt
           .sent_total_compressed_message_size != nullptr) {
     parent_->otel_plugin_->client_.attempt.sent_total_compressed_message_size
-        ->Record(transport_stream_stats != nullptr
-                     ? transport_stream_stats->outgoing.data_bytes
-                     : 0,
-                 labels, opentelemetry::context::Context{});
+        ->Record(outgoing_bytes_.load(), labels,
+                 opentelemetry::context::Context{});
   }
   if (parent_->otel_plugin_->client_.attempt
           .rcvd_total_compressed_message_size != nullptr) {
     parent_->otel_plugin_->client_.attempt.rcvd_total_compressed_message_size
-        ->Record(transport_stream_stats != nullptr
-                     ? transport_stream_stats->incoming.data_bytes
-                     : 0,
-                 labels, opentelemetry::context::Context{});
+        ->Record(incoming_bytes_.load(), labels,
+                 opentelemetry::context::Context{});
   }
+}
+
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordIncomingBytes(const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordOutgoingBytes(const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::RecordCancel(

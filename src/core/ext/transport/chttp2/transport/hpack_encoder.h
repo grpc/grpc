@@ -42,6 +42,7 @@
 #include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
@@ -355,7 +356,7 @@ class HPackCompressor {
     bool is_end_of_stream;
     bool use_true_binary_metadata;
     size_t max_frame_size;
-    grpc_transport_one_way_stats* stats;
+    CallTracerInterface* call_tracer;
   };
 
   template <typename HeaderSet>

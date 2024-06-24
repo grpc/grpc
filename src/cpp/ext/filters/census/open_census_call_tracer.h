@@ -21,6 +21,7 @@
 
 #include <stdint.h>
 
+#include <atomic>
 #include <memory>
 #include <string>
 
@@ -94,8 +95,12 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordReceivedDecompressedMessage(
         const grpc_core::SliceBuffer& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats* transport_stream_stats) override;
+        absl::Status status,
+        grpc_metadata_batch* recv_trailing_metadata) override;
+    void RecordIncomingBytes(
+        const TransportByteSize& transport_byte_size) override;
+    void RecordOutgoingBytes(
+        const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd(const gpr_timespec& /*latency*/) override;
     void RecordAnnotation(absl::string_view annotation) override;
@@ -121,6 +126,12 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     uint64_t sent_message_count_ = 0;
     // End status code
     absl::StatusCode status_code_;
+    // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
+    // to promises, after which we can ensure that the transport invokes
+    // the RecordIncomingBytes() and RecordOutgoingBytes() methods inside
+    // the call's party.
+    std::atomic<uint64_t> incoming_bytes_{0};
+    std::atomic<uint64_t> outgoing_bytes_{0};
   };
 
   explicit OpenCensusCallTracer(grpc_core::Slice path, grpc_core::Arena* arena,

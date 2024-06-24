@@ -123,15 +123,23 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordEnd(
   if (otel_plugin_->server_.call.sent_total_compressed_message_size !=
       nullptr) {
     otel_plugin_->server_.call.sent_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.outgoing.data_bytes, labels,
-        opentelemetry::context::Context{});
+        outgoing_bytes_.load(), labels, opentelemetry::context::Context{});
   }
   if (otel_plugin_->server_.call.rcvd_total_compressed_message_size !=
       nullptr) {
     otel_plugin_->server_.call.rcvd_total_compressed_message_size->Record(
-        final_info->stats.transport_stream_stats.incoming.data_bytes, labels,
-        opentelemetry::context::Context{});
+        incoming_bytes_.load(), labels, opentelemetry::context::Context{});
   }
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 }  // namespace internal

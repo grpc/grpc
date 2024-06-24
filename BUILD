@@ -4682,6 +4682,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "call_tracer",
         "chttp2_bin_encoder",
         "chttp2_legacy_frame",
         "chttp2_varint",

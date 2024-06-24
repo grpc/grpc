@@ -110,6 +110,19 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   virtual void RecordReceivedDecompressedMessage(
       const SliceBuffer& recv_decompressed_message) = 0;
   virtual void RecordCancel(grpc_error_handle cancel_error) = 0;
+
+  struct TransportByteSize {
+    uint64_t framing_bytes = 0;
+    uint64_t data_bytes = 0;
+    uint64_t header_bytes = 0;
+
+    TransportByteSize& operator+=(const TransportByteSize& other);
+  };
+  virtual void RecordIncomingBytes(
+      const TransportByteSize& transport_byte_size) = 0;
+  virtual void RecordOutgoingBytes(
+      const TransportByteSize& transport_byte_size) = 0;
+
   // Traces a new TCP transport attempt for this call attempt. Note the TCP
   // transport may finish tracing and unref the TCP tracer before or after the
   // call completion in gRPC core. No TCP tracing when null is returned.
@@ -143,8 +156,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
     // was started, recv_trailing_metadata and transport_stream_stats
     // will be null.
     virtual void RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats* transport_stream_stats) = 0;
+        absl::Status status, grpc_metadata_batch* recv_trailing_metadata) = 0;
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
     virtual void RecordEnd(const gpr_timespec& latency) = 0;

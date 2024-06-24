@@ -201,8 +201,7 @@ void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     RecordReceivedTrailingMetadata(
-        absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
-        const grpc_transport_stream_stats* transport_stream_stats) {
+        absl::Status status, grpc_metadata_batch* recv_trailing_metadata) {
   status_code_ = status.code();
   if (OpenCensusStatsEnabled()) {
     uint64_t elapsed_time = 0;
@@ -215,22 +214,26 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::
     tags.emplace_back(ClientStatusTagKey(),
                       absl::StatusCodeToString(status_code_));
     ::opencensus::stats::Record(
-        // TODO(yashykt): Recording zeros here when transport_stream_stats is
-        // nullptr is unfortunate and should be fixed.
         {{RpcClientSentBytesPerRpc(),
-          static_cast<double>(transport_stream_stats != nullptr
-                                  ? transport_stream_stats->outgoing.data_bytes
-                                  : 0)},
+          static_cast<double>(outgoing_bytes_.load())},
          {RpcClientReceivedBytesPerRpc(),
-          static_cast<double>(transport_stream_stats != nullptr
-                                  ? transport_stream_stats->incoming.data_bytes
-                                  : 0)},
+          static_cast<double>(incoming_bytes_.load())},
          {RpcClientServerLatency(),
           ToDoubleMilliseconds(absl::Nanoseconds(elapsed_time))},
          {RpcClientRoundtripLatency(),
           absl::ToDoubleMilliseconds(absl::Now() - start_time_)}},
         tags);
   }
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordIncomingBytes(
+    const TransportByteSize& transport_byte_size) {
+  incoming_bytes_.fetch_add(transport_byte_size.data_bytes);
+}
+
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordOutgoingBytes(
+    const TransportByteSize& transport_byte_size) {
+  outgoing_bytes_.fetch_add(transport_byte_size.data_bytes);
 }
 
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(

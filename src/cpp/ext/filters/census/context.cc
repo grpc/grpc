@@ -127,14 +127,6 @@ size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
       absl::string_view(buf, buf_size), server_elapsed_time);
 }
 
-uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info) {
-  return final_info->stats.transport_stream_stats.incoming.data_bytes;
-}
-
-uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info) {
-  return final_info->stats.transport_stream_stats.outgoing.data_bytes;
-}
-
 SpanContext SpanContextFromCensusContext(const census_context* ctxt) {
   return reinterpret_cast<const CensusContext*>(ctxt)->Context();
 }
