@@ -20,6 +20,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <atomic>
 #include <functional>
 #include <new>
 #include <set>
@@ -73,6 +74,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -599,6 +601,12 @@ std::string GetDefaultAuthorityFromChannelArgs(const ChannelArgs& channel_args,
     return std::move(*default_authority);
   }
 }
+
+RefCountedPtr<Party> MakeChannelParty(EventEngine* event_engine) {
+  auto arena = SimpleArenaAllocator(0)->MakeArena();
+  arena->SetContext<EventEngine>(event_engine);
+  return MakeRefCounted<Party>(std::move(arena));
+}
 }  // namespace
 
 ClientChannel::ClientChannel(
@@ -618,6 +626,7 @@ ClientChannel::ClientChannel(
           GetDefaultAuthorityFromChannelArgs(channel_args_, this->target())),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
+      party_(MakeChannelParty(event_engine_.get())),
       resolver_data_for_calls_(ResolverDataForCalls{}),
       picker_(nullptr),
       call_destination_(
@@ -662,7 +671,7 @@ void ClientChannel::Orphaned() {
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
   idle_state_.IncreaseCallCount();
-  idle_activity_.Reset();
+  party_.reset();
 }
 
 grpc_connectivity_state ClientChannel::CheckConnectivityState(
@@ -769,10 +778,12 @@ grpc_call* ClientChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
     Slice path, absl::optional<Slice> authority, Timestamp deadline, bool) {
+  auto arena = call_arena_allocator()->MakeArena();
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine());
   return MakeClientCall(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), false, deadline,
-                        compression_options(), event_engine_.get(),
-                        call_arena_allocator()->MakeArena(), Ref());
+                        compression_options(), std::move(arena), Ref());
 }
 
 void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
@@ -1243,6 +1254,7 @@ void ClientChannel::UpdateStateAndPickerLocked(
 }
 
 void ClientChannel::StartIdleTimer() {
+  if (started_idle_timer_.exchange(true, std::memory_order_relaxed)) return;
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << this << ": idle timer started";
   auto self = WeakRefAsSubclass<ClientChannel>();
@@ -1256,24 +1268,20 @@ void ClientChannel::StartIdleTimer() {
                     }
                   });
   });
-  idle_activity_.Set(MakeActivity(
-      std::move(promise), ExecCtxWakeupScheduler{},
-      [self = std::move(self)](absl::Status status) mutable {
-        if (status.ok()) {
-          self->work_serializer_->Run(
-              [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
-                self->DestroyResolverAndLbPolicyLocked();
-                self->UpdateStateAndPickerLocked(
-                    GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                    "channel entering IDLE", nullptr);
-                // TODO(roth): In case there's a race condition, we
-                // might need to check for any calls that are queued
-                // waiting for a resolver result or an LB pick.
-              },
-              DEBUG_LOCATION);
-        }
-      },
-      GetContext<EventEngine>()));
+  party_->Spawn("idle_timer", std::move(promise), [self](absl::Status status) {
+    if (!status.ok()) return;
+    self->work_serializer_->Run(
+        [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+          self->DestroyResolverAndLbPolicyLocked();
+          self->UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                                           "channel entering IDLE", nullptr);
+          // TODO(roth): In case there's a race condition, we
+          // might need to check for any calls that are
+          // queued waiting for a resolver result or an LB
+          // pick.
+        },
+        DEBUG_LOCATION);
+  });
 }
 
 absl::Status ClientChannel::ApplyServiceConfigToCall(

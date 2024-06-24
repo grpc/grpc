@@ -67,11 +67,13 @@ class ClientCallTest : public YodelTest {
 
   grpc_call* InitCall(const CallOptions& options) {
     CHECK_EQ(call_, nullptr);
-    call_ = MakeClientCall(nullptr, 0, cq_, options.path(), options.authority(),
-                           options.registered_method(),
-                           options.timeout() + Timestamp::Now(),
-                           options.compression_options(), event_engine().get(),
-                           SimpleArenaAllocator()->MakeArena(), destination_);
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    call_ = MakeClientCall(
+        nullptr, 0, cq_, options.path(), options.authority(),
+        options.registered_method(), options.timeout() + Timestamp::Now(),
+        options.compression_options(), std::move(arena), destination_);
     return call_;
   }
 

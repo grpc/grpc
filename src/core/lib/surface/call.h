@@ -85,7 +85,7 @@ class Call : public CppImplOf<Call, grpc_call>,
              public grpc_event_engine::experimental::EventEngine::
                  Closure /* for deadlines */ {
  public:
-  Arena* arena() { return arena_.get(); }
+  Arena* arena() const { return arena_.get(); }
   bool is_client() const { return is_client_; }
 
   virtual bool Completed() = 0;
@@ -119,11 +119,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   // This should return nullptr for the promise stack (and alternative means
   // for that functionality be invented)
   virtual grpc_call_stack* call_stack() = 0;
-
-  // Return the EventEngine used for this call's async execution.
-  grpc_event_engine::experimental::EventEngine* event_engine() const {
-    return event_engine_;
-  }
 
   // Implementation of EventEngine::Closure, called when deadline expires
   void Run() final;
@@ -162,8 +157,7 @@ class Call : public CppImplOf<Call, grpc_call>,
     Call* sibling_prev = nullptr;
   };
 
-  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena,
-       grpc_event_engine::experimental::EventEngine* event_engine);
+  Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena);
   ~Call() override = default;
 
   ParentCall* GetOrCreateParentCall();
@@ -233,7 +227,6 @@ class Call : public CppImplOf<Call, grpc_call>,
   Timestamp deadline_ ABSL_GUARDED_BY(deadline_mu_) = Timestamp::InfFuture();
   grpc_event_engine::experimental::EventEngine::TaskHandle ABSL_GUARDED_BY(
       deadline_mu_) deadline_task_;
-  grpc_event_engine::experimental::EventEngine* const event_engine_;
   gpr_cycle_counter start_time_ = gpr_get_cycle_counter();
 };
 

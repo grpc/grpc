@@ -23,6 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -180,6 +181,7 @@ Party::~Party() {}
 void Party::CancelRemainingParticipants() {
   if (!sync_.has_participants()) return;
   ScopedActivity activity(this);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (auto* p =
             participants_[i].exchange(nullptr, std::memory_order_acquire)) {
@@ -222,11 +224,12 @@ void Party::RunLocked() {
     } else {
       // But if there's already a party queued, we're better off asking event
       // engine to run it so we can spread load.
-      event_engine()->Run([this]() {
-        ApplicationCallbackExecCtx app_exec_ctx;
-        ExecCtx exec_ctx;
-        RunLocked();
-      });
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+          [this]() {
+            ApplicationCallbackExecCtx app_exec_ctx;
+            ExecCtx exec_ctx;
+            RunLocked();
+          });
     }
     return;
   }
@@ -238,8 +241,7 @@ void Party::RunLocked() {
     DCHECK(g_current_party_run_next == &run_next);
     g_current_party_run_next = nullptr;
     if (done) {
-      ScopedActivity activity(this);
-      PartyOver();
+      PartyIsOver();
     }
     if (run_next != nullptr) {
       run_next->RunLocked();
@@ -262,6 +264,7 @@ void Party::RunLocked() {
 
 bool Party::RunParty() {
   ScopedActivity activity(this);
+  promise_detail::Context<Arena> arena_ctx(arena_.get());
   return sync_.RunParty([this](int i) { return RunOneParticipant(i); });
 }
 
@@ -325,12 +328,13 @@ void Party::Wakeup(WakeupMask wakeup_mask) {
 
 void Party::WakeupAsync(WakeupMask wakeup_mask) {
   if (sync_.ScheduleWakeup(wakeup_mask)) {
-    event_engine()->Run([this]() {
-      ApplicationCallbackExecCtx app_exec_ctx;
-      ExecCtx exec_ctx;
-      RunLocked();
-      Unref();
-    });
+    arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+        [this]() {
+          ApplicationCallbackExecCtx app_exec_ctx;
+          ExecCtx exec_ctx;
+          RunLocked();
+          Unref();
+        });
   } else {
     Unref();
   }
@@ -339,8 +343,14 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
 void Party::Drop(WakeupMask) { Unref(); }
 
 void Party::PartyIsOver() {
-  ScopedActivity activity(this);
-  PartyOver();
+  auto arena = arena_;
+  {
+    ScopedActivity activity(this);
+    promise_detail::Context<Arena> arena_ctx(arena_.get());
+    CancelRemainingParticipants();
+    arena->DestroyManagedNewObjects();
+  }
+  this->~Party();
 }
 
 }  // namespace grpc_core

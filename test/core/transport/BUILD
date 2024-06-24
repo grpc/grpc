@@ -65,7 +65,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//:grpc_base",
+        "//:grpc",
         "//src/core:interception_chain",
         "//src/core:resource_quota",
         "//test/core/promise:poll_matcher",

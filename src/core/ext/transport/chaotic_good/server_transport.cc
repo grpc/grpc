@@ -34,6 +34,7 @@
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
@@ -239,13 +240,15 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     ChaoticGoodTransport& transport) {
   ClientFragmentFrame fragment_frame;
   RefCountedPtr<Arena> arena(call_arena_allocator_->MakeArena());
+  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+      event_engine_.get());
   absl::Status status = transport.DeserializeFrame(
       frame_header, std::move(buffers), arena.get(), fragment_frame,
       FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
-    auto call = MakeCallPair(std::move(fragment_frame.headers),
-                             event_engine_.get(), std::move(arena));
+    auto call =
+        MakeCallPair(std::move(fragment_frame.headers), std::move(arena));
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {

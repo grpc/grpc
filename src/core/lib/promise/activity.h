@@ -33,7 +33,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/no_destruct.h"

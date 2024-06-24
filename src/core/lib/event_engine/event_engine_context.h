@@ -18,12 +18,14 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
 
 namespace grpc_core {
 
 template <>
-struct ContextType<grpc_event_engine::experimental::EventEngine> {};
+struct ArenaContextType<grpc_event_engine::experimental::EventEngine> {
+  static void Destroy(grpc_event_engine::experimental::EventEngine*) {}
+};
 
 }  // namespace grpc_core
 
