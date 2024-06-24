@@ -70,6 +70,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/step_timer.h"
 
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS "grpc.server.max_pending_requests"
 #define GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT \
@@ -234,6 +235,7 @@ class Server : public ServerInterface,
   class AllocatingRequestMatcherBase;
   class AllocatingRequestMatcherBatch;
   class AllocatingRequestMatcherRegistered;
+  class MaxAgeFilter;
 
   class ChannelData final {
    public:
@@ -515,12 +517,15 @@ class Server : public ServerInterface,
   absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
-  absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_
+  absl::flat_hash_map<uint64_t, OrphanablePtr<ServerTransport>> connections_
       ABSL_GUARDED_BY(mu_global_);
   size_t connections_open_ ABSL_GUARDED_BY(mu_global_) = 0;
+  std::atomic<uint64_t> next_connection_id_{0};
 
   std::list<Listener> listeners_;
   size_t listeners_destroyed_ = 0;
+  StepTimer max_age_timer_;
+  StepTimer max_age_grace_timer_;
 
   // The last time we printed a shutdown progress message.
   gpr_timespec last_shutdown_message_time_;
