@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -114,8 +115,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveParticipant) {
                 participants[slot].exchange(nullptr, std::memory_order_acquire);
             if (participant == done.get()) run_me = true;
             if (participant == nullptr) {
-              gpr_log(GPR_ERROR,
-                      "Participant was null (spurious wakeup observed)");
+              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
               return false;
             }
             participant->store(true, std::memory_order_release);
@@ -165,8 +165,7 @@ TYPED_TEST(PartySyncTest, AddAndRemoveTwoParticipants) {
                 participants[slot].exchange(nullptr, std::memory_order_acquire);
             if (participant == done.get()) run_me++;
             if (participant == nullptr) {
-              gpr_log(GPR_ERROR,
-                      "Participant was null (spurious wakeup observed)");
+              LOG(ERROR) << "Participant was null (spurious wakeup observed)";
               return false;
             }
             participant->fetch_sub(1, std::memory_order_release);
@@ -231,17 +230,9 @@ TYPED_TEST(PartySyncTest, UnrefWhileRunning) {
 ///////////////////////////////////////////////////////////////////////////////
 // PartyTest
 
-class AllocatorOwner {
- protected:
-  ~AllocatorOwner() { arena_->Destroy(); }
-  MemoryAllocator memory_allocator_ = MemoryAllocator(
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator("test"));
-  Arena* arena_ = Arena::Create(1024, &memory_allocator_);
-};
-
-class TestParty final : public AllocatorOwner, public Party {
+class TestParty final : public Party {
  public:
-  TestParty() : Party(AllocatorOwner::arena_, 1) {}
+  TestParty() : Party(1) {}
   ~TestParty() override {}
   std::string DebugTag() const override { return "TestParty"; }
 

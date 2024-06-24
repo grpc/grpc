@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 
 #include <string.h>
@@ -22,6 +20,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -29,20 +28,22 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/http_client/httpcli_ssl_credentials.h"
+#include "src/core/util/http_client/parser.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 
 namespace grpc_core {
 
@@ -167,7 +168,7 @@ void UrlExternalAccountCredentials::RetrieveSubjectToken(
   grpc_http_response_destroy(&ctx_->response);
   ctx_->response = {};
   GRPC_CLOSURE_INIT(&ctx_->closure, OnRetrieveSubjectToken, this, nullptr);
-  GPR_ASSERT(http_request_ == nullptr);
+  CHECK(http_request_ == nullptr);
   RefCountedPtr<grpc_channel_credentials> http_request_creds;
   if (url_.scheme() == "http") {
     http_request_creds = RefCountedPtr<grpc_channel_credentials>(

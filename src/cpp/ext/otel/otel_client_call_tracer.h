@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <memory>
@@ -31,10 +29,9 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/call_tracer.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -42,18 +39,20 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 
 namespace grpc {
 namespace internal {
 
-class OpenTelemetryPlugin::ClientCallTracer
+class OpenTelemetryPluginImpl::ClientCallTracer
     : public grpc_core::ClientCallTracer {
  public:
   class CallAttemptTracer
       : public grpc_core::ClientCallTracer::CallAttemptTracer {
    public:
-    CallAttemptTracer(const OpenTelemetryPlugin::ClientCallTracer* parent,
+    CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
                       bool arena_allocated);
 
     std::string TraceId() override {
@@ -92,28 +91,30 @@ class OpenTelemetryPlugin::ClientCallTracer
     void RecordAnnotation(absl::string_view /*annotation*/) override;
     void RecordAnnotation(const Annotation& /*annotation*/) override;
     std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
-    void AddOptionalLabels(OptionalLabelComponent component,
-                           std::shared_ptr<std::map<std::string, std::string>>
-                               optional_labels) override;
+    void SetOptionalLabel(OptionalLabelKey key,
+                          grpc_core::RefCountedStringValue value) override;
 
    private:
+    void PopulateLabelInjectors(grpc_metadata_batch* metadata);
+
     const ClientCallTracer* parent_;
     const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
-    // The indices of the array correspond to the OptionalLabelComponent enum.
-    std::array<std::shared_ptr<std::map<std::string, std::string>>,
-               static_cast<size_t>(OptionalLabelComponent::kSize)>
-        optional_labels_array_;
+    // Avoid std::map to avoid per-call allocations.
+    std::array<grpc_core::RefCountedStringValue,
+               static_cast<size_t>(OptionalLabelKey::kSize)>
+        optional_labels_;
     std::vector<std::unique_ptr<LabelsIterable>>
         injected_labels_from_plugin_options_;
+    bool is_trailers_only_ = false;
   };
 
   ClientCallTracer(
       const grpc_core::Slice& path, grpc_core::Arena* arena,
-      bool registered_method, OpenTelemetryPlugin* otel_plugin,
-      std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config);
+      bool registered_method, OpenTelemetryPluginImpl* otel_plugin,
+      std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config);
   ~ClientCallTracer() override;
 
   std::string TraceId() override {
@@ -142,8 +143,8 @@ class OpenTelemetryPlugin::ClientCallTracer
   grpc_core::Slice path_;
   grpc_core::Arena* arena_;
   const bool registered_method_;
-  OpenTelemetryPlugin* otel_plugin_;
-  std::shared_ptr<OpenTelemetryPlugin::ClientScopeConfig> scope_config_;
+  OpenTelemetryPluginImpl* otel_plugin_;
+  std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
   // Non-transparent attempts per call
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;

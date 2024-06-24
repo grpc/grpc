@@ -26,11 +26,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/thd.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/useful.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(CombinerTest, TestNoOp) {
   grpc_core::ExecCtx exec_ctx;

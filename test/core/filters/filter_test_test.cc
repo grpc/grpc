@@ -49,9 +49,9 @@ class NoOpFilter final : public ChannelFilter {
     return next(std::move(args));
   }
 
-  static absl::StatusOr<NoOpFilter> Create(const ChannelArgs&,
-                                           ChannelFilter::Args) {
-    return NoOpFilter();
+  static absl::StatusOr<std::unique_ptr<NoOpFilter>> Create(
+      const ChannelArgs&, ChannelFilter::Args) {
+    return std::make_unique<NoOpFilter>();
   }
 };
 using NoOpFilterTest = FilterTest<NoOpFilter>;
@@ -70,9 +70,9 @@ class DelayStartFilter final : public ChannelFilter {
         next);
   }
 
-  static absl::StatusOr<DelayStartFilter> Create(const ChannelArgs&,
-                                                 ChannelFilter::Args) {
-    return DelayStartFilter();
+  static absl::StatusOr<std::unique_ptr<DelayStartFilter>> Create(
+      const ChannelArgs&, ChannelFilter::Args) {
+    return std::make_unique<DelayStartFilter>();
   }
 };
 using DelayStartFilterTest = FilterTest<DelayStartFilter>;
@@ -86,9 +86,9 @@ class AddClientInitialMetadataFilter final : public ChannelFilter {
     return next(std::move(args));
   }
 
-  static absl::StatusOr<AddClientInitialMetadataFilter> Create(
+  static absl::StatusOr<std::unique_ptr<AddClientInitialMetadataFilter>> Create(
       const ChannelArgs&, ChannelFilter::Args) {
-    return AddClientInitialMetadataFilter();
+    return absl::make_unique<AddClientInitialMetadataFilter>();
   }
 };
 using AddClientInitialMetadataFilterTest =
@@ -104,9 +104,9 @@ class AddServerTrailingMetadataFilter final : public ChannelFilter {
     });
   }
 
-  static absl::StatusOr<AddServerTrailingMetadataFilter> Create(
-      const ChannelArgs&, ChannelFilter::Args) {
-    return AddServerTrailingMetadataFilter();
+  static absl::StatusOr<std::unique_ptr<AddServerTrailingMetadataFilter>>
+  Create(const ChannelArgs&, ChannelFilter::Args) {
+    return absl::make_unique<AddServerTrailingMetadataFilter>();
   }
 };
 using AddServerTrailingMetadataFilterTest =
@@ -122,10 +122,9 @@ class AddServerInitialMetadataFilter final : public ChannelFilter {
     });
     return next(std::move(args));
   }
-
-  static absl::StatusOr<AddServerInitialMetadataFilter> Create(
+  static absl::StatusOr<std::unique_ptr<AddServerInitialMetadataFilter>> Create(
       const ChannelArgs&, ChannelFilter::Args) {
-    return AddServerInitialMetadataFilter();
+    return absl::make_unique<AddServerInitialMetadataFilter>();
   }
 };
 using AddServerInitialMetadataFilterTest =

@@ -17,10 +17,10 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_AWS_REQUEST_SIGNER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_CREDENTIALS_EXTERNAL_AWS_REQUEST_SIGNER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/uri/uri_parser.h"

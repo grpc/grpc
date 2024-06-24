@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 #define PFX_STR                                                            \
   "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
@@ -116,12 +118,12 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo/bar"), 0);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -144,12 +146,12 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.host, "localhost"));
-  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo/bar"));
+  CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo/bar"), 0);
 
   grpc_op* op;
   grpc_op ops[6];
@@ -176,13 +178,13 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == error);
+  CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Verify();
 
   // If the call had an error, `was_cancelled` would be 1.
-  // GPR_ASSERT(was_cancelled == 1);
+  // CHECK_EQ(was_cancelled, 1);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_details_destroy(&call_details);
@@ -192,9 +194,9 @@ static void VerifyRpcDoesNotGetCanceled(grpc_server* server,
 static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
                              void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    GPR_ASSERT(grpc_completion_queue_next(
-                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-                   .type == GRPC_QUEUE_TIMEOUT);
+    CHECK(grpc_completion_queue_next(
+              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 

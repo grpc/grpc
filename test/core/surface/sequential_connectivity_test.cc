@@ -22,22 +22,23 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -93,8 +94,8 @@ static grpc_channel* create_test_channel(const char* addr,
 }
 
 static void run_test(const test_fixture* fixture, bool share_subchannel) {
-  gpr_log(GPR_INFO, "TEST: %s sharing subchannel: %d", fixture->name,
-          share_subchannel);
+  LOG(INFO) << "TEST: " << fixture->name
+            << " sharing subchannel: " << share_subchannel;
 
   std::string addr =
       grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());

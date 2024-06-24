@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -37,9 +35,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/avl/avl.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -47,6 +45,7 @@
 #include "src/core/lib/gprpp/ref_counted_string.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "src/core/util/useful.h"
 
 // TODO(hork): When we're ready to allow setting via a channel arg from the
 // application, replace this with a macro in
@@ -84,6 +83,16 @@ inline int PointerCompare(void* a_ptr, const grpc_arg_pointer_vtable* a_vtable,
 // before the crt refcount base class.
 template <typename T>
 using RefType = absl::remove_cvref_t<decltype(*std::declval<T>().Ref())>;
+
+template <typename T, typename Ignored = void /* for SFINAE */>
+struct IsRawPointerTagged {
+  static constexpr bool kValue = false;
+};
+template <typename T>
+struct IsRawPointerTagged<T,
+                          absl::void_t<typename T::RawPointerChannelArgTag>> {
+  static constexpr bool kValue = true;
+};
 }  // namespace channel_args_detail
 
 // Specialization for ref-counted pointers.
@@ -92,13 +101,14 @@ using RefType = absl::remove_cvref_t<decltype(*std::declval<T>().Ref())>;
 template <typename T>
 struct ChannelArgTypeTraits<
     T, absl::enable_if_t<
-           std::is_base_of<RefCounted<channel_args_detail::RefType<T>>,
-                           channel_args_detail::RefType<T>>::value ||
-               std::is_base_of<RefCounted<channel_args_detail::RefType<T>,
-                                          NonPolymorphicRefCount>,
-                               channel_args_detail::RefType<T>>::value ||
-               std::is_base_of<DualRefCounted<channel_args_detail::RefType<T>>,
-                               channel_args_detail::RefType<T>>::value,
+           !channel_args_detail::IsRawPointerTagged<T>::kValue &&
+               (std::is_base_of<RefCounted<channel_args_detail::RefType<T>>,
+                                channel_args_detail::RefType<T>>::value ||
+                std::is_base_of<RefCounted<channel_args_detail::RefType<T>,
+                                           NonPolymorphicRefCount>,
+                                channel_args_detail::RefType<T>>::value ||
+                std::is_base_of<DualRefCounted<channel_args_detail::RefType<T>>,
+                                channel_args_detail::RefType<T>>::value),
            void>> {
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
@@ -547,6 +557,11 @@ class ChannelArgs {
 
   bool WantMinimalStack() const;
   std::string ToString() const;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const ChannelArgs& args) {
+    sink.Append(args.ToString());
+  }
 
  private:
   explicit ChannelArgs(AVL<RefCountedStringValue, Value> args);

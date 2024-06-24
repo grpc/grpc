@@ -21,6 +21,8 @@
 
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -28,7 +30,6 @@
 
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -44,9 +45,9 @@
 
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
 // CRL Providers not supported for <1.1
@@ -101,7 +102,7 @@ class CrlProviderTest : public ::testing::Test {
     options.set_cert_request_type(
         GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
     auto server_credentials = grpc::experimental::TlsServerCredentials(options);
-    GPR_ASSERT(server_credentials.get() != nullptr);
+    CHECK_NE(server_credentials.get(), nullptr);
 
     grpc::ServerBuilder builder;
     TestServiceImpl service_;
@@ -146,8 +147,8 @@ void DoRpc(const std::string& server_addr,
   if (expect_success) {
     EXPECT_TRUE(result.ok());
     if (!result.ok()) {
-      gpr_log(GPR_ERROR, "%s, %s", result.error_message().c_str(),
-              result.error_details().c_str());
+      LOG(ERROR) << result.error_message().c_str() << ", "
+                 << result.error_details().c_str();
     }
     EXPECT_EQ(response.message(), kMessage);
   } else {

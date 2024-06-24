@@ -11,14 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -35,7 +34,7 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
   grpc_core::ExecCtx exec_ctx;
 #ifndef NDEBUG
   closure->scheduled = false;
-  if (grpc_trace_closure.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(closure)) {
     gpr_log(GPR_DEBUG,
             "EventEngine: running closure %p: created [%s:%d]: %s [%s:%d]",
             closure, closure->file_created, closure->line_created,
@@ -45,7 +44,7 @@ void RunEventEngineClosure(grpc_closure* closure, grpc_error_handle error) {
 #endif
   closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-  if (grpc_trace_closure.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(closure)) {
     gpr_log(GPR_DEBUG, "EventEngine: closure %p finished", closure);
   }
 #endif

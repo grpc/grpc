@@ -22,8 +22,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/port.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
@@ -36,9 +36,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "absl/log/log.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -74,8 +75,6 @@ static void finish_connection() {
 static void must_succeed(void* /*arg*/, grpc_error_handle error) {
   ASSERT_NE(g_connecting, nullptr);
   ASSERT_TRUE(error.ok());
-  grpc_endpoint_shutdown(g_connecting,
-                         GRPC_ERROR_CREATE("must_succeed called"));
   grpc_endpoint_destroy(g_connecting);
   g_connecting = nullptr;
   finish_connection();
@@ -88,7 +87,7 @@ static void must_fail(void* /*arg*/, grpc_error_handle error) {
 }
 
 void test_succeeds(void) {
-  gpr_log(GPR_ERROR, "---- starting test_succeeds() ----");
+  LOG(ERROR) << "---- starting test_succeeds() ----";
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
@@ -153,11 +152,11 @@ void test_succeeds(void) {
   // A cancellation attempt should fail because connect already succeeded.
   ASSERT_EQ(grpc_tcp_client_cancel_connect(connection_handle), false);
 
-  gpr_log(GPR_ERROR, "---- finished test_succeeds() ----");
+  LOG(ERROR) << "---- finished test_succeeds() ----";
 }
 
 void test_fails(void) {
-  gpr_log(GPR_ERROR, "---- starting test_fails() ----");
+  LOG(ERROR) << "---- starting test_fails() ----";
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
@@ -207,11 +206,11 @@ void test_fails(void) {
   // A cancellation attempt should fail because connect already failed.
   ASSERT_EQ(grpc_tcp_client_cancel_connect(connection_handle), false);
 
-  gpr_log(GPR_ERROR, "---- finished test_fails() ----");
+  LOG(ERROR) << "---- finished test_fails() ----";
 }
 
 void test_connect_cancellation_succeeds(void) {
-  gpr_log(GPR_ERROR, "---- starting test_connect_cancellation_succeeds() ----");
+  LOG(ERROR) << "---- starting test_connect_cancellation_succeeds() ----";
   auto target_ipv6_addr_uri = *grpc_core::URI::Parse(absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die())));
   auto target_ipv4_addr_uri = *grpc_core::URI::Parse(absl::StrCat(
@@ -242,9 +241,8 @@ void test_connect_cancellation_succeeds(void) {
       if (svr_fd >= 0) {
         close(svr_fd);
       }
-      gpr_log(GPR_ERROR,
-              "Skipping test. Failed to create a phony server bound to ipv6 or "
-              "ipv4 address");
+      LOG(ERROR) << "Skipping test. Failed to create a phony server bound to "
+                    "ipv6 or ipv4 address";
       return;
     }
   }
@@ -310,11 +308,11 @@ void test_connect_cancellation_succeeds(void) {
     close(sock);
   }
   close(svr_fd);
-  gpr_log(GPR_ERROR, "---- finished test_connect_cancellation_succeeds() ----");
+  LOG(ERROR) << "---- finished test_connect_cancellation_succeeds() ----";
 }
 
 void test_fails_bad_addr_no_leak(void) {
-  gpr_log(GPR_ERROR, "---- starting test_fails_bad_addr_no_leak() ----");
+  LOG(ERROR) << "---- starting test_fails_bad_addr_no_leak() ----";
   grpc_resolved_address resolved_addr;
   struct sockaddr_in* addr =
       reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
@@ -355,7 +353,7 @@ void test_fails_bad_addr_no_leak(void) {
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
-  gpr_log(GPR_ERROR, "---- finished test_fails_bad_addr_no_leak() ----");
+  LOG(ERROR) << "---- finished test_fails_bad_addr_no_leak() ----";
 }
 
 static void destroy_pollset(void* p, grpc_error_handle /*error*/) {

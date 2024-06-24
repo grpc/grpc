@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/http/format_request.h"
+#include "src/core/util/http_client/format_request.h"
 
 #include <string.h>
 
@@ -24,9 +24,9 @@
 
 #include "gtest/gtest.h"
 
-#include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "test/core/util/test_config.h"
+#include "src/core/util/http_client/httpcli.h"
+#include "test/core/test_util/test_config.h"
 
 TEST(FormatRequestTest, FormatGetRequest) {
   grpc_http_header hdr = {const_cast<char*>("x-yz"), const_cast<char*>("abc")};

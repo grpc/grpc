@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
@@ -30,6 +28,7 @@
 #include "absl/base/thread_annotations.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -40,13 +39,9 @@
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
-extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
-
-extern grpc_core::TraceFlag grpc_trace_cares_resolver;
-
 #define GRPC_CARES_TRACE_LOG(format, ...)                           \
   do {                                                              \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver)) {       \
+    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {                  \
       gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
     }                                                               \
   } while (0)

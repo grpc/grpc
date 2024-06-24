@@ -18,6 +18,8 @@
 
 #include "test/cpp/util/metrics_server.h"
 
+#include "absl/log/log.h"
+
 #include <grpc/support/log.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -54,7 +56,7 @@ long QpsGauge::Get() {
 grpc::Status MetricsServiceImpl::GetAllGauges(
     ServerContext* /*context*/, const EmptyMessage* /*request*/,
     ServerWriter<GaugeResponse>* writer) {
-  gpr_log(GPR_DEBUG, "GetAllGauges called");
+  VLOG(2) << "GetAllGauges called";
 
   std::lock_guard<std::mutex> lock(mu_);
   for (auto it = qps_gauges_.begin(); it != qps_gauges_.end(); it++) {
@@ -99,7 +101,7 @@ std::shared_ptr<QpsGauge> MetricsServiceImpl::CreateQpsGauge(
 // Starts the metrics server and returns the grpc::Server instance. Call Wait()
 // on the returned server instance.
 std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
-  gpr_log(GPR_INFO, "Building metrics server..");
+  LOG(INFO) << "Building metrics server..";
 
   const std::string address = "0.0.0.0:" + std::to_string(port);
 
@@ -108,8 +110,8 @@ std::unique_ptr<grpc::Server> MetricsServiceImpl::StartServer(int port) {
   builder.RegisterService(this);
 
   std::unique_ptr<grpc::Server> server(builder.BuildAndStart());
-  gpr_log(GPR_INFO, "Metrics server %s started. Ready to receive requests..",
-          address.c_str());
+  LOG(INFO) << "Metrics server " << address
+            << " started. Ready to receive requests..";
 
   return server;
 }

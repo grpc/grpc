@@ -18,7 +18,7 @@
 
 // Benchmark gRPC end2end in various configurations
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/fullstack_unary_ping_pong.h"
 #include "test/cpp/util/test_config.h"
 

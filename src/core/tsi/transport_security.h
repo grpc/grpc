@@ -19,14 +19,12 @@
 #ifndef GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_H
 #define GRPC_SRC_CORE_TSI_TRANSPORT_SECURITY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdbool.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/transport_security_interface.h"
-
-extern grpc_core::TraceFlag tsi_tracing_enabled;
 
 // Base for tsi_frame_protector implementations.
 // See transport_security_interface.h for documentation.

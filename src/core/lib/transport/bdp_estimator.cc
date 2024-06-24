@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/bdp_estimator.h"
 
 #include <inttypes.h>
@@ -25,7 +23,9 @@
 
 #include <algorithm>
 
-grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
+#include "absl/log/check.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -46,18 +46,18 @@ Timestamp BdpEstimator::CompletePing() {
               1e-9 * static_cast<double>(dt_ts.tv_nsec);
   double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
   Duration start_inter_ping_delay = inter_ping_delay_;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
     gpr_log(GPR_INFO,
             "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
             " dt=%lf bw=%lfMbs bw_est=%lfMbs",
             std::string(name_).c_str(), accumulator_, estimate_, dt,
             bw / 125000.0, bw_est_ / 125000.0);
   }
-  GPR_ASSERT(ping_state_ == PingState::STARTED);
+  CHECK(ping_state_ == PingState::STARTED);
   if (accumulator_ > 2 * estimate_ / 3 && bw > bw_est_) {
     estimate_ = std::max(accumulator_, estimate_ * 2);
     bw_est_ = bw;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
       gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64,
               std::string(name_).c_str(), estimate_);
     }
@@ -73,7 +73,7 @@ Timestamp BdpEstimator::CompletePing() {
   }
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_bdp_estimator_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(bdp_estimator)) {
       gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %" PRId64 "ms",
               std::string(name_).c_str(), inter_ping_delay_.millis());
     }

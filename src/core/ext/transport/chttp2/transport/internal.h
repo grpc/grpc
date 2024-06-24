@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
@@ -39,8 +37,10 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -57,10 +57,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
-#include "src/core/lib/channel/call_tracer.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/channel/tcp_tracer.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -80,6 +77,8 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 
 // Flag that this closure barrier may be covering a write in a pollset, and so
 //   we should not complete this closure until we can prove that the write got
@@ -224,17 +223,18 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
-struct grpc_chttp2_transport final
-    : public grpc_core::Transport,
-      public grpc_core::FilterStackTransport,
-      public grpc_core::RefCounted<grpc_chttp2_transport,
-                                   grpc_core::NonPolymorphicRefCount>,
-      public grpc_core::KeepsGrpcInitialized {
+struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
+                                     public grpc_core::KeepsGrpcInitialized {
   grpc_chttp2_transport(const grpc_core::ChannelArgs& channel_args,
                         grpc_endpoint* ep, bool is_client);
   ~grpc_chttp2_transport() override;
 
   void Orphan() override;
+
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> Ref() {
+    return grpc_core::FilterStackTransport::RefAsSubclass<
+        grpc_chttp2_transport>();
+  }
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override;
@@ -256,9 +256,10 @@ struct grpc_chttp2_transport final
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
-  grpc_endpoint* GetEndpoint() override;
 
   grpc_endpoint* ep;
+  grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
+
   grpc_core::Slice peer_string;
 
   grpc_core::MemoryOwner memory_owner;
@@ -268,6 +269,14 @@ struct grpc_chttp2_transport final
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
   absl::BitGen bitgen;
+
+  // On the client side, when the transport is first created, the
+  // endpoint will already have been added to this pollset_set, and it
+  // needs to stay there until the notify_on_receive_settings callback
+  // is invoked.  After that, the polling will be coordinated via the
+  // bind_pollset_set transport op, sent by the subchannel when it
+  // starts a connectivity watch.
+  grpc_pollset_set* interested_parties_until_recv_settings = nullptr;
 
   grpc_closure* notify_on_receive_settings = nullptr;
   grpc_closure* notify_on_close = nullptr;
@@ -467,7 +476,7 @@ struct grpc_chttp2_transport final
   grpc_chttp2_keepalive_state keepalive_state;
   // Soft limit on max header size.
   uint32_t max_header_list_size_soft_limit = 0;
-  grpc_core::ContextList* cl = nullptr;
+  grpc_core::ContextList* context_list = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
   /// The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
@@ -549,9 +558,9 @@ struct grpc_chttp2_stream {
                      const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
-  void* context = nullptr;
   const grpc_core::RefCountedPtr<grpc_chttp2_transport> t;
   grpc_stream_refcount* refcount;
+  grpc_core::Arena* const arena;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
@@ -644,7 +653,7 @@ struct grpc_chttp2_stream {
   int64_t write_counter = 0;
 
   /// Only set when enabled.
-  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
 
   /// Only set when enabled.
   std::shared_ptr<grpc_core::TcpTracerInterface> tcp_tracer;
@@ -798,13 +807,12 @@ void grpc_chttp2_settings_timeout(
 #define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
   (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
-// extern grpc_core::TraceFlag grpc_flowctl_trace;
-
-#define GRPC_CHTTP2_IF_TRACING(stmt)                \
-  do {                                              \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) { \
-      (stmt);                                       \
-    }                                               \
+//
+#define GRPC_CHTTP2_IF_TRACING(stmt)     \
+  do {                                   \
+    if (GRPC_TRACE_FLAG_ENABLED(http)) { \
+      (stmt);                            \
+    }                                    \
   } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,

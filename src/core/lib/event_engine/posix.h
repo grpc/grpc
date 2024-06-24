@@ -14,12 +14,11 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"

@@ -31,16 +31,17 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/config.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/useful.h"
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/resource_quota/memory_quota_fuzzer.pb.h"
-#include "test/core/util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/test_config.h"
 
 bool squelch = true;
 bool leak_check = true;
@@ -187,10 +188,10 @@ class Fuzzer {
 }  // namespace testing
 }  // namespace grpc_core
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 DEFINE_PROTO_FUZZER(const memory_quota_fuzzer::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
   gpr_log_verbosity_init();

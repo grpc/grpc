@@ -22,8 +22,9 @@
 #include <string>
 
 #include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
-#include <grpc/support/log.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -54,20 +55,19 @@ int main(int argc, char** argv) {
       std::ostringstream msg;
       msg << "Hello " << i;
       request.set_message(msg.str());
-      GPR_ASSERT(stream->Write(request));
-      GPR_ASSERT(stream->Read(&response));
-      GPR_ASSERT(response.message() == request.message());
+      CHECK(stream->Write(request));
+      CHECK(stream->Read(&response));
+      CHECK(response.message() == request.message());
     }
   } else if (absl::GetFlag(FLAGS_mode) == "response") {
     EchoRequest request;
     request.set_message("Hello");
     auto stream = stub->ResponseStream(&context, request);
     for (;;) {
-      GPR_ASSERT(stream->Read(&response));
+      CHECK(stream->Read(&response));
     }
   } else {
-    gpr_log(GPR_ERROR, "invalid test mode '%s'",
-            absl::GetFlag(FLAGS_mode).c_str());
+    LOG(ERROR) << "invalid test mode '" << absl::GetFlag(FLAGS_mode) << "'";
     return 1;
   }
 }

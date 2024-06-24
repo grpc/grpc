@@ -16,21 +16,21 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
 #include <algorithm>
 #include <cstdint>
 
+#include "absl/log/check.h"
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/trace.h"
@@ -62,7 +62,7 @@ static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
   // max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
   // which has a max allowable value of 16777215 (see chttp_transport.cc).
   // Thus, the following assert can be a debug assert.
-  GPR_DEBUG_ASSERT(len <= 16777216);
+  DCHECK_LE(len, 16777216u);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);
@@ -117,7 +117,7 @@ void HPackCompressor::SetMaxUsableSize(uint32_t max_table_size) {
 void HPackCompressor::SetMaxTableSize(uint32_t max_table_size) {
   if (table_.SetMaxSize(std::min(max_usable_size_, max_table_size))) {
     advertise_table_size_change_ = true;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(http)) {
       gpr_log(GPR_INFO, "set max table size from encoder to %d",
               max_table_size);
     }
@@ -377,7 +377,8 @@ void Compressor<HttpSchemeMetadata, HttpSchemeCompressor>::EncodeWith(
       encoder->EmitIndexed(7);  // :scheme: https
       break;
     case HttpSchemeMetadata::ValueType::kInvalid:
-      Crash("invalid http scheme encoding");
+      LOG(ERROR) << "Not encoding bad http scheme";
+      encoder->NoteEncodingError();
       break;
   }
 }
@@ -434,7 +435,8 @@ void Compressor<HttpMethodMetadata, HttpMethodCompressor>::EncodeWith(
           Slice::FromStaticString(":method"), Slice::FromStaticString("PUT"));
       break;
     case HttpMethodMetadata::ValueType::kInvalid:
-      Crash("invalid http method encoding");
+      LOG(ERROR) << "Not encoding bad http method";
+      encoder->NoteEncodingError();
       break;
   }
 }

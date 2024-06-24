@@ -22,6 +22,8 @@
 #include <regex>
 #include <tuple>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 
@@ -29,7 +31,6 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/gprpp/no_destruct.h"
@@ -59,24 +60,6 @@ Slice RandomBinarySlice(size_t length) {
   }
   return Slice::FromCopiedBuffer(output);
 }
-
-ByteBufferUniquePtr ByteBufferFromSlice(Slice slice) {
-  return ByteBufferUniquePtr(
-      grpc_raw_byte_buffer_create(const_cast<grpc_slice*>(&slice.c_slice()), 1),
-      grpc_byte_buffer_destroy);
-}
-
-namespace {
-absl::optional<std::string> FindInMetadataArray(const grpc_metadata_array& md,
-                                                absl::string_view key) {
-  for (size_t i = 0; i < md.count; i++) {
-    if (key == StringViewFromSlice(md.metadata[i].key)) {
-      return std::string(StringViewFromSlice(md.metadata[i].value));
-    }
-  }
-  return absl::nullopt;
-}
-}  // namespace
 
 void CoreEnd2endTest::SetUp() {
   CoreConfiguration::Reset();
@@ -116,188 +99,12 @@ void CoreEnd2endTest::TearDown() {
     // This will wait until gRPC shutdown has actually happened to make sure
     // no gRPC resources (such as thread) are active. (timeout = 10s)
     if (!grpc_wait_until_shutdown(10)) {
-      gpr_log(GPR_ERROR, "Timeout in waiting for gRPC shutdown");
+      LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
     }
   }
-  GPR_ASSERT(client_ == nullptr);
-  GPR_ASSERT(server_ == nullptr);
+  CHECK_EQ(client_, nullptr);
+  CHECK_EQ(server_, nullptr);
   initialized_ = false;
-}
-
-absl::optional<std::string> CoreEnd2endTest::IncomingMetadata::Get(
-    absl::string_view key) const {
-  return FindInMetadataArray(*metadata_, key);
-}
-
-grpc_op CoreEnd2endTest::IncomingMetadata::MakeOp() {
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_INITIAL_METADATA;
-  op.data.recv_initial_metadata.recv_initial_metadata = metadata_.get();
-  return op;
-}
-
-std::string CoreEnd2endTest::IncomingMetadata::GetSuccessfulStateString() {
-  std::string out = "incoming_metadata: {";
-  for (size_t i = 0; i < metadata_->count; i++) {
-    absl::StrAppend(&out, StringViewFromSlice(metadata_->metadata[i].key), ":",
-                    StringViewFromSlice(metadata_->metadata[i].value), ",");
-  }
-  return out + "}";
-}
-
-std::string CoreEnd2endTest::IncomingMessage::payload() const {
-  Slice out;
-  if (payload_->data.raw.compression > GRPC_COMPRESS_NONE) {
-    grpc_slice_buffer decompressed_buffer;
-    grpc_slice_buffer_init(&decompressed_buffer);
-    GPR_ASSERT(grpc_msg_decompress(payload_->data.raw.compression,
-                                   &payload_->data.raw.slice_buffer,
-                                   &decompressed_buffer));
-    grpc_byte_buffer* rbb = grpc_raw_byte_buffer_create(
-        decompressed_buffer.slices, decompressed_buffer.count);
-    grpc_byte_buffer_reader reader;
-    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, rbb));
-    out = Slice(grpc_byte_buffer_reader_readall(&reader));
-    grpc_byte_buffer_reader_destroy(&reader);
-    grpc_byte_buffer_destroy(rbb);
-    grpc_slice_buffer_destroy(&decompressed_buffer);
-  } else {
-    grpc_byte_buffer_reader reader;
-    GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, payload_));
-    out = Slice(grpc_byte_buffer_reader_readall(&reader));
-    grpc_byte_buffer_reader_destroy(&reader);
-  }
-  return std::string(out.begin(), out.end());
-}
-
-grpc_op CoreEnd2endTest::IncomingMessage::MakeOp() {
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_MESSAGE;
-  op.data.recv_message.recv_message = &payload_;
-  return op;
-}
-
-absl::optional<std::string>
-CoreEnd2endTest::IncomingStatusOnClient::GetTrailingMetadata(
-    absl::string_view key) const {
-  return FindInMetadataArray(data_->trailing_metadata, key);
-}
-
-std::string
-CoreEnd2endTest::IncomingStatusOnClient::GetSuccessfulStateString() {
-  std::string out = absl::StrCat(
-      "status_on_client: status=", data_->status,
-      " msg=", data_->status_details.as_string_view(), " trailing_metadata={");
-  for (size_t i = 0; i < data_->trailing_metadata.count; i++) {
-    absl::StrAppend(
-        &out, StringViewFromSlice(data_->trailing_metadata.metadata[i].key),
-        ": ", StringViewFromSlice(data_->trailing_metadata.metadata[i].value),
-        ",");
-  }
-  return out + "}";
-}
-
-std::string CoreEnd2endTest::IncomingMessage::GetSuccessfulStateString() {
-  if (payload_ == nullptr) return "message: empty";
-  return absl::StrCat("message: ", payload().size(), "b uncompressed");
-}
-
-grpc_op CoreEnd2endTest::IncomingStatusOnClient::MakeOp() {
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
-  op.data.recv_status_on_client.trailing_metadata = &data_->trailing_metadata;
-  op.data.recv_status_on_client.status = &data_->status;
-  op.data.recv_status_on_client.status_details =
-      const_cast<grpc_slice*>(&data_->status_details.c_slice());
-  op.data.recv_status_on_client.error_string = &data_->error_string;
-  return op;
-}
-
-grpc_op CoreEnd2endTest::IncomingCloseOnServer::MakeOp() {
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
-  op.data.recv_close_on_server.cancelled = &cancelled_;
-  return op;
-}
-
-CoreEnd2endTest::BatchBuilder&
-CoreEnd2endTest::BatchBuilder::SendInitialMetadata(
-    std::initializer_list<std::pair<absl::string_view, absl::string_view>> md,
-    uint32_t flags, absl::optional<grpc_compression_level> compression_level) {
-  auto& v = Make<std::vector<grpc_metadata>>();
-  for (const auto& p : md) {
-    grpc_metadata m;
-    m.key = Make<Slice>(Slice::FromCopiedString(p.first)).c_slice();
-    m.value = Make<Slice>(Slice::FromCopiedString(p.second)).c_slice();
-    v.push_back(m);
-  }
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_INITIAL_METADATA;
-  op.flags = flags;
-  op.data.send_initial_metadata.count = v.size();
-  op.data.send_initial_metadata.metadata = v.data();
-  if (compression_level.has_value()) {
-    op.data.send_initial_metadata.maybe_compression_level.is_set = 1;
-    op.data.send_initial_metadata.maybe_compression_level.level =
-        compression_level.value();
-  }
-  ops_.push_back(op);
-  return *this;
-}
-
-CoreEnd2endTest::BatchBuilder& CoreEnd2endTest::BatchBuilder::SendMessage(
-    Slice payload, uint32_t flags) {
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message =
-      Make<ByteBufferUniquePtr>(ByteBufferFromSlice(std::move(payload))).get();
-  op.flags = flags;
-  ops_.push_back(op);
-  return *this;
-}
-
-CoreEnd2endTest::BatchBuilder&
-CoreEnd2endTest::BatchBuilder::SendCloseFromClient() {
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
-  ops_.push_back(op);
-  return *this;
-}
-
-CoreEnd2endTest::BatchBuilder&
-CoreEnd2endTest::BatchBuilder::SendStatusFromServer(
-    grpc_status_code status, absl::string_view message,
-    std::initializer_list<std::pair<absl::string_view, absl::string_view>> md) {
-  auto& v = Make<std::vector<grpc_metadata>>();
-  for (const auto& p : md) {
-    grpc_metadata m;
-    m.key = Make<Slice>(Slice::FromCopiedString(p.first)).c_slice();
-    m.value = Make<Slice>(Slice::FromCopiedString(p.second)).c_slice();
-    v.push_back(m);
-  }
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-  op.data.send_status_from_server.trailing_metadata_count = v.size();
-  op.data.send_status_from_server.trailing_metadata = v.data();
-  op.data.send_status_from_server.status = status;
-  op.data.send_status_from_server.status_details = &Make<grpc_slice>(
-      Make<Slice>(Slice::FromCopiedString(message)).c_slice());
-  ops_.push_back(op);
-  return *this;
-}
-
-CoreEnd2endTest::BatchBuilder::~BatchBuilder() {
-  grpc_call_error err = grpc_call_start_batch(call_, ops_.data(), ops_.size(),
-                                              CqVerifier::tag(tag_), nullptr);
-  EXPECT_EQ(err, GRPC_CALL_OK) << grpc_call_error_to_string(err);
 }
 
 CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
@@ -322,7 +129,7 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
 CoreEnd2endTest::ServerRegisteredMethod::ServerRegisteredMethod(
     CoreEnd2endTest* test, absl::string_view name,
     grpc_server_register_method_payload_handling payload_handling) {
-  GPR_ASSERT(test->server_ == nullptr);
+  CHECK_EQ(test->server_, nullptr);
   test->pre_server_start_ = [old = std::move(test->pre_server_start_),
                              handle = handle_, name = std::string(name),
                              payload_handling](grpc_server* server) mutable {
@@ -350,8 +157,8 @@ CoreEnd2endTest::IncomingCall::IncomingCall(CoreEnd2endTest& test, void* method,
   EXPECT_EQ(grpc_server_request_registered_call(
                 test.server(), method, impl_->call.call_ptr(),
                 &impl_->call_details.deadline, &impl_->request_metadata,
-                message == nullptr ? nullptr : &message->payload_, test.cq(),
-                test.cq(), CqVerifier::tag(tag)),
+                message == nullptr ? nullptr : message->raw_payload_ptr(),
+                test.cq(), test.cq(), CqVerifier::tag(tag)),
             GRPC_CALL_OK);
 }
 
@@ -374,14 +181,14 @@ void CoreEnd2endTestRegistry::RegisterTest(absl::string_view suite,
                                            SourceLocation) {
   if (absl::StartsWith(name, "DISABLED_")) return;
   auto& tests = tests_by_suite_[suite];
-  GPR_ASSERT(tests.count(name) == 0);
+  CHECK_EQ(tests.count(name), 0u);
   tests[name] = std::move(make_test);
 }
 
 void CoreEnd2endTestRegistry::RegisterSuite(
     absl::string_view suite, std::vector<const CoreTestConfiguration*> configs,
     SourceLocation) {
-  GPR_ASSERT(suites_.count(suite) == 0);
+  CHECK_EQ(suites_.count(suite), 0u);
   suites_[suite] = std::move(configs);
 }
 

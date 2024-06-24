@@ -35,7 +35,7 @@ _GRPC_ENABLE_FORK_SUPPORT = (
 
 _fork_handler_failed = False
 
-cdef void __prefork() nogil:
+cdef void __prefork() noexcept nogil:
     with gil:
         global _fork_handler_failed
         _fork_handler_failed = False
@@ -49,14 +49,14 @@ cdef void __prefork() nogil:
             _fork_handler_failed = True
 
 
-cdef void __postfork_parent() nogil:
+cdef void __postfork_parent() noexcept nogil:
     with gil:
         with _fork_state.fork_in_progress_condition:
             _fork_state.fork_in_progress = False
             _fork_state.fork_in_progress_condition.notify_all()
 
 
-cdef void __postfork_child() nogil:
+cdef void __postfork_child() noexcept nogil:
     with gil:
         try:
             if _fork_handler_failed:
@@ -79,11 +79,15 @@ cdef void __postfork_child() nogil:
             _LOGGER.error('Exiting child due to raised exception')
             _LOGGER.error(sys.exc_info()[0])
             os._exit(os.EX_USAGE)
-
-    if grpc_is_initialized() > 0:
-        with gil:
-            _LOGGER.error('Failed to shutdown gRPC Core after fork()')
-            os._exit(os.EX_USAGE)
+        # Give ~2s to shutdown asynchronously.
+        wait_ms = 10
+        while wait_ms < 1500:
+            if grpc_is_initialized() == 0:
+                return
+            time.sleep(wait_ms / 1000)
+            wait_ms = wait_ms * 2
+        _LOGGER.error('Failed to shutdown gRPC Core after fork()')
+        os._exit(os.EX_USAGE)
 
 
 def fork_handlers_and_grpc_init():
@@ -153,7 +157,7 @@ def get_fork_epoch():
 def is_fork_support_enabled():
     return _GRPC_ENABLE_FORK_SUPPORT
 
-    
+
 def fork_register_channel(channel):
     if _GRPC_ENABLE_FORK_SUPPORT:
         _fork_state.channels.add(channel)

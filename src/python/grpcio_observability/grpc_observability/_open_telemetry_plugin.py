@@ -12,70 +12,79 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import abc
-from typing import Callable, Dict, Iterable, List, Optional
+from typing import AnyStr, Callable, Dict, Iterable, List, Optional
 
 # pytype: disable=pyi-error
 from grpc_observability import _open_telemetry_observability
+from grpc_observability._observability import OptionalLabelType
 from opentelemetry.metrics import MeterProvider
 
+GRPC_METHOD_LABEL = "grpc.method"
+GRPC_TARGET_LABEL = "grpc.target"
+GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
+GRPC_OTHER_LABEL_VALUE = "other"
 
-class OpenTelemetryLabelInjector(abc.ABC):
+
+class OpenTelemetryLabelInjector:
     """
     An interface that allows you to add additional labels on the calls traced.
-
-    Please note that this class is still work in progress and NOT READY to be used.
     """
 
-    _labels: List[Dict[str, str]]
+    def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
+        """
+        Get labels used for metadata exchange.
 
-    def __init__(self):
-        # Calls Python OTel API to detect resource and get labels, save
-        # those lables to OpenTelemetryLabelInjector.labels.
-        pass
-
-    @abc.abstractmethod
-    def get_labels(self):
-        # Get additional labels for this OpenTelemetryLabelInjector.
+        Returns:
+          A dict of labels, with a string as key representing label name, string or bytes
+        as value representing label value.
+        """
         raise NotImplementedError()
 
+    def get_additional_labels(
+        self, include_exchange_labels: bool
+    ) -> Dict[str, str]:
+        """
+        Get additional labels added by this injector.
 
-class OpenTelemetryPluginOption(abc.ABC):
+        The return value from this method will be added directly to metric data.
+
+        Args:
+          include_exchange_labels: Whether to add additional metadata exchange related labels.
+
+        Returns:
+          A dict of labels.
+        """
+        raise NotImplementedError()
+
+    # pylint: disable=no-self-use
+    def deserialize_labels(
+        self, labels: Dict[str, AnyStr]
+    ) -> Dict[str, AnyStr]:
+        """
+        Deserialize the labels if required.
+
+        If this injector added labels for metadata exchange, this method will be called to
+        deserialize the exchanged labels.
+
+        For example, if this injector added xds_peer_metadata_label for exchange:
+
+            labels: {"labelA": b"valueA", "xds_peer_metadata_label": b"exchanged_bytes"}
+
+        This method should deserialize xds_peer_metadata_label and return labels as:
+
+            labels: {"labelA": b"valueA", "xds_label_A": "xds_label_A",
+                     "xds_label_B": "xds_label_B"}
+
+        Returns:
+          A dict of deserialized labels.
+        """
+        return labels
+
+
+class OpenTelemetryPluginOption:
     """
     An interface that allows you to add additional function to OpenTelemetryPlugin.
-
-    Please note that this class is still work in progress and NOT READY to be used.
     """
-
-    @abc.abstractmethod
-    def is_active_on_method(self, method: str) -> bool:
-        """Determines whether this plugin option is active on a given method.
-
-        Args:
-          method: Required. The RPC method, for example: `/helloworld.Greeter/SayHello`.
-
-        Returns:
-          True if this this plugin option is active on the giving method, false otherwise.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def is_active_on_server(self, channel_args: List[str]) -> bool:
-        """Determines whether this plugin option is active on a given server.
-
-        Args:
-          channel_args: Required. The channel args used for server.
-          TODO(xuanwn): detail on what channel_args will contain.
-
-        Returns:
-          True if this this plugin option is active on the server, false otherwise.
-        """
-        raise NotImplementedError()
-
-    @abc.abstractmethod
-    def get_label_injector(self) -> Optional[OpenTelemetryLabelInjector]:
-        # Returns the LabelsInjector used by this plugin option, or None.
-        raise NotImplementedError()
 
 
 # pylint: disable=no-self-use
@@ -86,7 +95,7 @@ class OpenTelemetryPlugin:
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
-    _plugin: _open_telemetry_observability._OpenTelemetryPlugin
+    _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
 
     def __init__(
         self,
@@ -102,8 +111,10 @@ class OpenTelemetryPlugin:
         enabled for this OpenTelemetryPlugin.
           meter_provider: A MeterProvider which will be used to collect telemetry data,
         or None which means no metrics will be collected.
-          target_attribute_filter: Once provided, this will be called per channel to decide
-        whether to record the target attribute on client or to replace it with "other".
+          target_attribute_filter: [DEPRECATED] This attribute is deprecated and should
+        not be used.
+        Once provided, this will be called per channel to decide whether to record the
+        target attribute on client or to replace it with "other".
         This helps reduce the cardinality on metrics in cases where many channels
         are created with different targets in the same binary (which might happen
         for example, if the channel target string uses IP addresses directly).
@@ -118,17 +129,15 @@ class OpenTelemetryPlugin:
         """
         self.plugin_options = plugin_options
         self.meter_provider = meter_provider
-        if target_attribute_filter:
-            self.target_attribute_filter = target_attribute_filter
-        else:
-            self.target_attribute_filter = lambda target: True
-        if generic_method_attribute_filter:
-            self.generic_method_attribute_filter = (
-                generic_method_attribute_filter
-            )
-        else:
-            self.generic_method_attribute_filter = lambda method: False
-        self._plugin = _open_telemetry_observability._OpenTelemetryPlugin(self)
+        self.target_attribute_filter = target_attribute_filter or (
+            lambda target: True
+        )
+        self.generic_method_attribute_filter = (
+            generic_method_attribute_filter or (lambda target: False)
+        )
+        self._plugins = [
+            _open_telemetry_observability._OpenTelemetryPlugin(self)
+        ]
 
     def register_global(self) -> None:
         """
@@ -138,7 +147,7 @@ class OpenTelemetryPlugin:
             RuntimeError: If a global plugin was already registered.
         """
         _open_telemetry_observability.start_open_telemetry_observability(
-            plugins=[self._plugin]
+            plugins=self._plugins
         )
 
     def deregister_global(self) -> None:
@@ -152,8 +161,11 @@ class OpenTelemetryPlugin:
 
     def __enter__(self) -> None:
         _open_telemetry_observability.start_open_telemetry_observability(
-            plugins=[self._plugin]
+            plugins=self._plugins
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         _open_telemetry_observability.end_open_telemetry_observability()
+
+    def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
+        return []

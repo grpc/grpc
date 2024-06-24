@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -38,9 +36,9 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -56,6 +54,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/call_spine.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -164,8 +163,6 @@ using NextPromiseFactory =
 // for a stream.
 typedef struct grpc_stream grpc_stream;
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount;
-
 typedef struct grpc_stream_refcount {
   grpc_core::RefCount refs;
   grpc_closure destroy;
@@ -193,7 +190,7 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #ifndef NDEBUG
 inline void grpc_stream_ref(grpc_stream_refcount* refcount,
                             const char* reason) {
-  if (grpc_trace_stream_refcount.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
     gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
   }
@@ -210,7 +207,7 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 #ifndef NDEBUG
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
                               const char* reason) {
-  if (grpc_trace_stream_refcount.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(stream_refcount)) {
     gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
   }
@@ -319,9 +316,6 @@ struct grpc_transport_stream_op_batch {
 };
 
 struct grpc_transport_stream_op_batch_payload {
-  explicit grpc_transport_stream_op_batch_payload(
-      grpc_call_context_element* context)
-      : context(context) {}
   struct {
     grpc_metadata_batch* send_initial_metadata = nullptr;
   } send_initial_metadata;
@@ -411,9 +405,6 @@ struct grpc_transport_stream_op_batch_payload {
     // initial metadata.
     bool tarpit = false;
   } cancel_stream;
-
-  // Indexes correspond to grpc_context_index enum values
-  grpc_call_context_element* context;
 };
 
 /// Transport op: a set of operations to perform on a transport as a whole
@@ -482,6 +473,15 @@ typedef struct grpc_transport_op {
   grpc_handler_private_op_data handler_private;
 } grpc_transport_op;
 
+// Allocate a grpc_transport_op, and preconfigure the on_complete closure to
+// \a on_complete and then delete the returned transport op
+grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
+// Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
+// closure
+// to \a on_complete and then delete the returned transport op
+grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
+    grpc_closure* on_complete);
+
 void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner);
@@ -499,7 +499,68 @@ std::string grpc_transport_op_string(grpc_transport_op* op);
 
 namespace grpc_core {
 
-class FilterStackTransport {
+class FilterStackTransport;
+class ClientTransport;
+class ServerTransport;
+
+class Transport : public InternallyRefCounted<Transport> {
+ public:
+  struct RawPointerChannelArgTag {};
+  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
+
+  using InternallyRefCounted<Transport>::InternallyRefCounted;
+
+  // Though internally ref counted transports expose their "Ref" method to
+  // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
+  // singleton decision maker on whether the transport should be destroyed or
+  // not.
+  // TODO(ctiller): consider moving to a DualRefCounted model (with the
+  // disadvantage that we would accidentally have many strong owners which is
+  // unnecessary for this type).
+  RefCountedPtr<Transport> Ref() {
+    return InternallyRefCounted<Transport>::Ref();
+  }
+  template <typename T>
+  RefCountedPtr<T> RefAsSubclass() {
+    return InternallyRefCounted<Transport>::RefAsSubclass<T>();
+  }
+
+  virtual FilterStackTransport* filter_stack_transport() = 0;
+  virtual ClientTransport* client_transport() = 0;
+  virtual ServerTransport* server_transport() = 0;
+
+  // name of this transport implementation
+  virtual absl::string_view GetTransportName() const = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollset(grpc_stream* stream, grpc_pollset* pollset) = 0;
+
+  // implementation of grpc_transport_set_pollset
+  virtual void SetPollsetSet(grpc_stream* stream,
+                             grpc_pollset_set* pollset_set) = 0;
+
+  void SetPollingEntity(grpc_stream* stream,
+                        grpc_polling_entity* pollset_or_pollset_set);
+
+  // implementation of grpc_transport_perform_op
+  virtual void PerformOp(grpc_transport_op* op) = 0;
+
+  void StartConnectivityWatch(
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->start_connectivity_watch = std::move(watcher);
+    PerformOp(op);
+  }
+
+  void DisconnectWithError(grpc_error_handle error) {
+    CHECK(!error.ok()) << error;
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->disconnect_with_error = error;
+    PerformOp(op);
+  }
+};
+
+class FilterStackTransport : public Transport {
  public:
   // Memory required for a single stream element - this is allocated by upper
   // layers and initialized by the transport
@@ -537,81 +598,30 @@ class FilterStackTransport {
                              grpc_closure* then_schedule_closure) = 0;
 
  protected:
-  ~FilterStackTransport() = default;
+  ~FilterStackTransport() override = default;
 };
 
-class ClientTransport {
+class ClientTransport : public Transport {
  public:
+  using Transport::Transport;
   virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
-  ~ClientTransport() = default;
+  ~ClientTransport() override = default;
 };
 
-class ServerTransport {
+class ServerTransport : public Transport {
  public:
-  // Acceptor helps transports create calls.
-  class Acceptor {
-   public:
-    // Returns an arena that can be used to allocate memory for initial metadata
-    // parsing, and later passed to CreateCall() as the underlying arena for
-    // that call.
-    virtual Arena* CreateArena() = 0;
-    // Create a call at the server (or fail)
-    // arena must have been previously allocated by CreateArena()
-    virtual absl::StatusOr<CallInitiator> CreateCall(
-        ClientMetadata& client_initial_metadata, Arena* arena) = 0;
-
-   protected:
-    ~Acceptor() = default;
-  };
-
+  using Transport::Transport;
   // Called once slightly after transport setup to register the accept function.
-  virtual void SetAcceptor(Acceptor* acceptor) = 0;
+  virtual void SetCallDestination(
+      RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;
 
  protected:
-  ~ServerTransport() = default;
-};
-
-class Transport : public Orphanable {
- public:
-  struct RawPointerChannelArgTag {};
-  static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
-
-  virtual FilterStackTransport* filter_stack_transport() = 0;
-  virtual ClientTransport* client_transport() = 0;
-  virtual ServerTransport* server_transport() = 0;
-
-  // name of this transport implementation
-  virtual absl::string_view GetTransportName() const = 0;
-
-  // implementation of grpc_transport_set_pollset
-  virtual void SetPollset(grpc_stream* stream, grpc_pollset* pollset) = 0;
-
-  // implementation of grpc_transport_set_pollset
-  virtual void SetPollsetSet(grpc_stream* stream,
-                             grpc_pollset_set* pollset_set) = 0;
-
-  void SetPollingEntity(grpc_stream* stream,
-                        grpc_polling_entity* pollset_or_pollset_set);
-
-  // implementation of grpc_transport_perform_op
-  virtual void PerformOp(grpc_transport_op* op) = 0;
-
-  // implementation of grpc_transport_get_endpoint
-  virtual grpc_endpoint* GetEndpoint() = 0;
+  ~ServerTransport() override = default;
 };
 
 }  // namespace grpc_core
-
-// Allocate a grpc_transport_op, and preconfigure the on_complete closure to
-// \a on_complete and then delete the returned transport op
-grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete);
-// Allocate a grpc_transport_stream_op_batch, and preconfigure the on_complete
-// closure
-// to \a on_complete and then delete the returned transport op
-grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
-    grpc_closure* on_complete);
 
 namespace grpc_core {
 // This is the key to be used for loading/storing keepalive_throttling in the

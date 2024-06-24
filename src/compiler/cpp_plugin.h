@@ -65,6 +65,8 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     generator_parameters.use_system_headers = true;
     generator_parameters.generate_mock_code = false;
     generator_parameters.include_import_headers = false;
+    generator_parameters.allow_sync_server_api = true;
+    generator_parameters.allow_cq_api = true;
 
     ProtoBufFile pbfile(file);
 
@@ -92,6 +94,24 @@ class CppGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           if (param[1] == "true") {
             generator_parameters.generate_mock_code = true;
           } else if (param[1] != "false") {
+            *error = std::string("Invalid parameter: ") + *parameter_string;
+            return false;
+          }
+        } else if (param[0] == "allow_sync_server_api") {
+          if (param[1] == "true") {
+            generator_parameters.allow_sync_server_api = true;
+          } else if (param[1] == "false") {
+            generator_parameters.allow_sync_server_api = false;
+          } else {
+            *error = std::string("Invalid parameter: ") + *parameter_string;
+            return false;
+          }
+        } else if (param[0] == "allow_cq_api") {
+          if (param[1] == "true") {
+            generator_parameters.allow_cq_api = true;
+          } else if (param[1] == "false") {
+            generator_parameters.allow_cq_api = false;
+          } else {
             *error = std::string("Invalid parameter: ") + *parameter_string;
             return false;
           }

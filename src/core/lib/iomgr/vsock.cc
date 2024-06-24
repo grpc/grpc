@@ -15,9 +15,9 @@
 // limitations under the License.
 //
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/vsock.h"
+
+#include <grpc/support/port_platform.h>
 
 #ifdef GRPC_HAVE_VSOCK
 
@@ -31,10 +31,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/useful.h"
 
 absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_vsock_address(
     absl::string_view name) {

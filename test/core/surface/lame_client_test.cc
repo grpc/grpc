@@ -40,7 +40,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 class Watcher : public grpc_core::ConnectivityStateWatcherInterface {
  public:
@@ -123,12 +123,7 @@ TEST(LameClientTest, MainTest) {
                                 grpc_core::CqVerifier::tag(1), nullptr);
   ASSERT_EQ(GRPC_CALL_OK, error);
 
-  // Filter stack code considers this a failed to receive initial metadata
-  // result, where as promise based code interprets this as a trailers only
-  // failed request. Both are rational interpretations, so we accept the one
-  // that is implemented for each stack.
-  cqv.Expect(grpc_core::CqVerifier::tag(1),
-             grpc_core::IsPromiseBasedClientCallEnabled());
+  cqv.Expect(grpc_core::CqVerifier::tag(1), false);
   cqv.Verify();
 
   memset(ops, 0, sizeof(ops));

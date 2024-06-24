@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/event_string.h"
 
 #include <algorithm>
@@ -25,6 +23,8 @@
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+
+#include <grpc/support/port_platform.h>
 
 static void addhdr(grpc_event* ev, std::vector<std::string>* buf) {
   buf->push_back(absl::StrFormat("tag:%p", ev->tag));

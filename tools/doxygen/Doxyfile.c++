@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.63.0-dev
+PROJECT_NUMBER         = 1.66.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -797,6 +797,7 @@ doc/service_config.md \
 doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
+doc/trace_flags.md \
 doc/unit_testing.md \
 doc/versioning.md \
 doc/wait-for-ready.md \
@@ -880,6 +881,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/credentials.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
 include/grpc/event_engine/extensible.h \
@@ -927,6 +929,7 @@ include/grpc/impl/grpc_types.h \
 include/grpc/impl/propagation_bits.h \
 include/grpc/impl/slice_type.h \
 include/grpc/load_reporting.h \
+include/grpc/passive_listener.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -939,6 +942,7 @@ include/grpc/support/cpu.h \
 include/grpc/support/json.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
+include/grpc/support/metrics.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
 include/grpc/support/sync.h \
@@ -961,7 +965,9 @@ include/grpcpp/ext/call_metric_recorder.h \
 include/grpcpp/ext/health_check_service_server_builder_option.h \
 include/grpcpp/ext/server_metric_recorder.h \
 include/grpcpp/generic/async_generic_service.h \
+include/grpcpp/generic/callback_generic_service.h \
 include/grpcpp/generic/generic_stub.h \
+include/grpcpp/generic/generic_stub_callback.h \
 include/grpcpp/grpcpp.h \
 include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
@@ -1022,6 +1028,7 @@ include/grpcpp/impl/codegen/time.h \
 include/grpcpp/impl/completion_queue_tag.h \
 include/grpcpp/impl/create_auth_context.h \
 include/grpcpp/impl/delegating_channel.h \
+include/grpcpp/impl/generic_stub_internal.h \
 include/grpcpp/impl/grpc_library.h \
 include/grpcpp/impl/intercepted_channel.h \
 include/grpcpp/impl/interceptor_common.h \
@@ -1038,6 +1045,7 @@ include/grpcpp/impl/server_initializer.h \
 include/grpcpp/impl/service_type.h \
 include/grpcpp/impl/status.h \
 include/grpcpp/impl/sync.h \
+include/grpcpp/passive_listener.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/audit_logging.h \
 include/grpcpp/security/auth_context.h \

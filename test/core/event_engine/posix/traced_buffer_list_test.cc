@@ -18,16 +18,17 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "gtest/gtest.h"
 
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/useful.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 
@@ -45,7 +46,7 @@ constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
 
 gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
-  GPR_ASSERT(clock_type != GPR_TIMESPAN);
+  CHECK(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
   ts.clock_type = clock_type;
   return ts;

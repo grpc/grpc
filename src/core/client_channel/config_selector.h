@@ -24,6 +24,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -32,13 +33,15 @@
 
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/service_config/service_config.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/util/useful.h"
 
 // Channel arg key for ConfigSelector.
 #define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
@@ -49,34 +52,32 @@ namespace grpc_core {
 // MethodConfig and provide input to LB policies on a per-call basis.
 class ConfigSelector : public RefCounted<ConfigSelector> {
  public:
-  struct GetCallConfigArgs {
-    grpc_metadata_batch* initial_metadata;
-    Arena* arena;
-    ClientChannelServiceConfigCallData* service_config_call_data;
-  };
-
   ~ConfigSelector() override = default;
 
-  virtual const char* name() const = 0;
+  virtual UniqueTypeName name() const = 0;
 
   static bool Equals(const ConfigSelector* cs1, const ConfigSelector* cs2) {
     if (cs1 == nullptr) return cs2 == nullptr;
     if (cs2 == nullptr) return false;
-    if (strcmp(cs1->name(), cs2->name()) != 0) return false;
+    if (cs1->name() != cs2->name()) return false;
     return cs1->Equals(cs2);
   }
 
   // The channel will call this when the resolver returns a new ConfigSelector
   // to determine what set of dynamic filters will be configured.
+  virtual void AddFilters(InterceptionChainBuilder& /*builder*/) {}
+  // TODO(roth): Remove this once the legacy filter stack goes away.
   virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
 
-  // Returns the call config to use for the call, or a status to fail
-  // the call with.
+  // Gets the configuration for the call and stores it in service config
+  // call data.
+  struct GetCallConfigArgs {
+    grpc_metadata_batch* initial_metadata;
+    Arena* arena;
+    ClientChannelServiceConfigCallData* service_config_call_data;
+  };
   virtual absl::Status GetCallConfig(GetCallConfigArgs args) = 0;
 
-  grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<ConfigSelector> GetFromChannelArgs(
-      const grpc_channel_args& args);
   static absl::string_view ChannelArgName() { return GRPC_ARG_CONFIG_SELECTOR; }
   static int ChannelArgsCompare(const ConfigSelector* a,
                                 const ConfigSelector* b) {
@@ -90,21 +91,24 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 };
 
 // Default ConfigSelector that gets the MethodConfig from the service config.
-class DefaultConfigSelector : public ConfigSelector {
+class DefaultConfigSelector final : public ConfigSelector {
  public:
   explicit DefaultConfigSelector(RefCountedPtr<ServiceConfig> service_config)
       : service_config_(std::move(service_config)) {
     // The client channel code ensures that this will never be null.
     // If neither the resolver nor the client application provide a
     // config, a default empty config will be used.
-    GPR_DEBUG_ASSERT(service_config_ != nullptr);
+    DCHECK(service_config_ != nullptr);
   }
 
-  const char* name() const override { return "default"; }
+  UniqueTypeName name() const override {
+    static UniqueTypeName::Factory kFactory("default");
+    return kFactory.Create();
+  }
 
   absl::Status GetCallConfig(GetCallConfigArgs args) override {
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
-    GPR_ASSERT(path != nullptr);
+    CHECK_NE(path, nullptr);
     auto* parsed_method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
     args.service_config_call_data->SetServiceConfig(service_config_,

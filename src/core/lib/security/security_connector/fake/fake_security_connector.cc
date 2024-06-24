@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/fake/fake_security_connector.h"
 
 #include <stdlib.h>
@@ -26,6 +24,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -36,11 +36,12 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -55,11 +56,11 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/transport/security_handshaker.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/string.h"
+#include "src/core/util/useful.h"
 
 namespace {
 class grpc_fake_channel_security_connector final
@@ -142,7 +143,7 @@ class grpc_fake_channel_security_connector final
 
  private:
   bool fake_check_target(const char* target, const char* set_str) const {
-    GPR_ASSERT(target != nullptr);
+    CHECK_NE(target, nullptr);
     char** set = nullptr;
     size_t set_size = 0;
     gpr_string_split(set_str, ",", &set, &set_size);
@@ -165,28 +166,30 @@ class grpc_fake_channel_security_connector final
     gpr_string_split(expected_targets_->c_str(), ";", &lbs_and_backends,
                      &lbs_and_backends_size);
     if (lbs_and_backends_size > 2 || lbs_and_backends_size == 0) {
-      gpr_log(GPR_ERROR, "Invalid expected targets arg value: '%s'",
-              expected_targets_->c_str());
+      LOG(ERROR) << "Invalid expected targets arg value: '"
+                 << expected_targets_->c_str() << "'";
       goto done;
     }
     if (is_lb_channel_) {
       if (lbs_and_backends_size != 2) {
-        gpr_log(GPR_ERROR,
-                "Invalid expected targets arg value: '%s'. Expectations for LB "
-                "channels must be of the form 'be1,be2,be3,...;lb1,lb2,...",
-                expected_targets_->c_str());
+        LOG(ERROR) << "Invalid expected targets arg value: '"
+                   << expected_targets_->c_str()
+                   << "'. Expectations for LB channels must be of the form "
+                      "'be1,be2,be3,...;lb1,lb2,...";
         goto done;
       }
       if (!fake_check_target(target_, lbs_and_backends[1])) {
-        gpr_log(GPR_ERROR, "LB target '%s' not found in expected set '%s'",
-                target_, lbs_and_backends[1]);
+        LOG(ERROR) << "LB target '" << target_
+                   << "' not found in expected set '" << lbs_and_backends[1]
+                   << "'";
         goto done;
       }
       success = true;
     } else {
       if (!fake_check_target(target_, lbs_and_backends[0])) {
-        gpr_log(GPR_ERROR, "Backend target '%s' not found in expected set '%s'",
-                target_, lbs_and_backends[0]);
+        LOG(ERROR) << "Backend target '" << target_
+                   << "' not found in expected set '" << lbs_and_backends[0]
+                   << "'";
         goto done;
       }
       success = true;

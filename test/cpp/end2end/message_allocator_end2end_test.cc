@@ -28,7 +28,9 @@
 #include <google/protobuf/arena.h>
 #include <gtest/gtest.h>
 
-#include <grpc/support/log.h>
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -40,8 +42,8 @@
 
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
@@ -97,7 +99,7 @@ std::ostream& operator<<(std::ostream& out, const TestScenario& scenario) {
 void TestScenario::Log() const {
   std::ostringstream out;
   out << *this;
-  gpr_log(GPR_INFO, "%s", out.str().c_str());
+  LOG(INFO) << out.str();
 }
 
 class MessageAllocatorEnd2endTestBase
@@ -173,7 +175,7 @@ class MessageAllocatorEnd2endTestBase
       stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
-            GPR_ASSERT(s.ok());
+            CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             std::lock_guard<std::mutex> l(mu);
@@ -324,13 +326,11 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
     class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
-        set_request(
-            google::protobuf::Arena::CreateMessage<EchoRequest>(&arena_));
-        set_response(
-            google::protobuf::Arena::CreateMessage<EchoResponse>(&arena_));
+        set_request(google::protobuf::Arena::Create<EchoRequest>(&arena_));
+        set_response(google::protobuf::Arena::Create<EchoResponse>(&arena_));
       }
       void Release() override { delete this; }
-      void FreeRequest() override { GPR_ASSERT(0); }
+      void FreeRequest() override { CHECK(0); }
 
      private:
       google::protobuf::Arena arena_;
@@ -365,7 +365,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  GPR_ASSERT(!credentials_types.empty());
+  CHECK(!credentials_types.empty());
 
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {

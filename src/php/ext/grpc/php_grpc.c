@@ -28,6 +28,7 @@
 #include "server_credentials.h"
 #include "completion_queue.h"
 #include <inttypes.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -89,8 +90,6 @@ ZEND_GET_MODULE(grpc)
                      grpc_verbosity, zend_grpc_globals, grpc_globals)
    STD_PHP_INI_ENTRY("grpc.grpc_trace", NULL, PHP_INI_SYSTEM, OnUpdateString,
                      grpc_trace, zend_grpc_globals, grpc_globals)
-   STD_PHP_INI_ENTRY("grpc.log_filename", NULL, PHP_INI_SYSTEM, OnUpdateString,
-                     log_filename, zend_grpc_globals, grpc_globals)
    PHP_INI_END()
 /* }}} */
 
@@ -248,38 +247,6 @@ void apply_ini_settings(TSRMLS_D) {
   }
 }
 
-static void custom_logger(gpr_log_func_args* args) {
-  TSRMLS_FETCH();
-
-  const char* final_slash;
-  const char* display_file;
-  char* prefix;
-  char* final;
-  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
-
-  final_slash = strrchr(args->file, '/');
-  if (final_slash) {
-    display_file = final_slash + 1;
-  } else {
-    display_file = args->file;
-  }
-
-  FILE *fp = fopen(GRPC_G(log_filename), "ab");
-  if (!fp) {
-    return;
-  }
-
-  gpr_asprintf(&prefix, "%s%" PRId64 ".%09" PRId32 " %s:%d]",
-               gpr_log_severity_string(args->severity), now.tv_sec,
-               now.tv_nsec, display_file, args->line);
-
-  gpr_asprintf(&final, "%-60s %s\n", prefix, args->message);
-
-  fprintf(fp, "%s", final);
-  fclose(fp);
-  gpr_free(prefix);
-  gpr_free(final);
-}
 
 /* {{{ PHP_MINIT_FUNCTION
  */
@@ -595,9 +562,6 @@ PHP_MINFO_FUNCTION(grpc) {
 PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
     apply_ini_settings(TSRMLS_C);
-    if (GRPC_G(log_filename)) {
-      gpr_set_log_function(custom_logger);
-    }
     grpc_init();
     register_fork_handlers();
     grpc_php_init_completion_queue(TSRMLS_C);
@@ -615,7 +579,6 @@ static PHP_GINIT_FUNCTION(grpc) {
   grpc_globals->poll_strategy = NULL;
   grpc_globals->grpc_verbosity = NULL;
   grpc_globals->grpc_trace = NULL;
-  grpc_globals->log_filename = NULL;
 }
 /* }}} */
 

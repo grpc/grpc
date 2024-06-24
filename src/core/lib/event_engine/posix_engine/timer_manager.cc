@@ -16,17 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -35,8 +35,6 @@ static thread_local bool g_timer_thread;
 
 namespace grpc_event_engine {
 namespace experimental {
-
-grpc_core::DebugOnlyTraceFlag grpc_event_engine_timer_trace(false, "timer");
 
 void TimerManager::RunSomeTimers(
     std::vector<experimental::EventEngine::Closure*> timers) {
@@ -69,8 +67,8 @@ void TimerManager::MainLoop() {
   grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
   absl::optional<std::vector<experimental::EventEngine::Closure*>>
       check_result = timer_list_->TimerCheck(&next);
-  GPR_ASSERT(check_result.has_value() &&
-             "ERROR: More than one MainLoop is running.");
+  CHECK(check_result.has_value())
+      << "ERROR: More than one MainLoop is running.";
   bool timers_found = !check_result->empty();
   if (timers_found) {
     RunSomeTimers(std::move(*check_result));
@@ -101,7 +99,7 @@ grpc_core::Timestamp TimerManager::Host::Now() {
 
 void TimerManager::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                              experimental::EventEngine::Closure* closure) {
-  if (grpc_event_engine_timer_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_) {
       gpr_log(GPR_ERROR,
@@ -121,7 +119,7 @@ void TimerManager::Shutdown() {
   {
     grpc_core::MutexLock lock(&mu_);
     if (shutdown_) return;
-    if (grpc_event_engine_timer_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(timer)) {
       gpr_log(GPR_DEBUG, "TimerManager::%p shutting down", this);
     }
     shutdown_ = true;
@@ -129,7 +127,7 @@ void TimerManager::Shutdown() {
     cv_wait_.Signal();
   }
   main_loop_exit_signal_->WaitForNotification();
-  if (grpc_event_engine_timer_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
     gpr_log(GPR_DEBUG, "TimerManager::%p shutdown complete", this);
   }
 }
@@ -146,8 +144,8 @@ void TimerManager::Kick() {
 
 void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
-  GPR_ASSERT(GPR_LIKELY(shutdown_));
-  if (grpc_event_engine_timer_trace.enabled()) {
+  CHECK(GPR_LIKELY(shutdown_));
+  if (GRPC_TRACE_FLAG_ENABLED(timer)) {
     gpr_log(GPR_DEBUG, "TimerManager::%p restarting after shutdown", this);
   }
   shutdown_ = false;

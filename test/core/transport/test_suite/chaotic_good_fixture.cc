@@ -14,6 +14,7 @@
 
 #include <memory>
 
+#include "absl/log/check.h"
 #include "gmock/gmock.h"
 
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
@@ -22,7 +23,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-#include "test/core/transport/test_suite/fixture.h"
+#include "test/core/transport/test_suite/transport_test.h"
 
 using grpc_event_engine::experimental::EndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
@@ -67,13 +68,13 @@ EndpointPair CreateEndpointPair(
       [](absl::Status) {}, endpoint_config,
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
           resource_quota->memory_quota()));
-  GPR_ASSERT(listener->Bind(resolved_address).ok());
-  GPR_ASSERT(listener->Start().ok());
+  CHECK_OK(listener->Bind(resolved_address));
+  CHECK_OK(listener->Start());
 
   event_engine->Connect(
       [&client_endpoint](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        GPR_ASSERT(endpoint.ok());
+        CHECK_OK(endpoint);
         client_endpoint = std::move(endpoint).value();
       },
       resolved_address, endpoint_config,

@@ -14,25 +14,26 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/channel.h"
+
+#include "absl/log/check.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/channelz/channel_trace.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/compression/compression_internal.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
 
 namespace grpc_core {
 
@@ -64,7 +65,12 @@ Channel::RegisteredCall::~RegisteredCall() {}
 Channel::Channel(std::string target, const ChannelArgs& channel_args)
     : target_(std::move(target)),
       channelz_node_(channel_args.GetObjectRef<channelz::ChannelNode>()),
-      compression_options_(CompressionOptionsFromChannelArgs(channel_args)) {}
+      compression_options_(CompressionOptionsFromChannelArgs(channel_args)),
+      call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
+          channel_args.GetObject<ResourceQuota>()
+              ->memory_quota()
+              ->CreateMemoryOwner(),
+          1024)) {}
 
 Channel::RegisteredCall* Channel::RegisterCall(const char* method,
                                                const char* host) {
@@ -99,7 +105,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_completion_queue* completion_queue,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
@@ -117,7 +123,7 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GRPC_API_TRACE(
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->RegisterCall(method, host);
@@ -140,7 +146,7 @@ grpc_call* grpc_channel_create_registered_call(
       (channel, parent_call, (unsigned)propagation_mask, completion_queue,
        registered_call_handle, deadline.tv_sec, deadline.tv_nsec,
        (int)deadline.clock_type, reserved));
-  GPR_ASSERT(!reserved);
+  CHECK(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
@@ -214,6 +220,6 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_channel_ping(channel=%p, cq=%p, tag=%p, reserved=%p)", 4,
                  (channel, cq, tag, reserved));
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   grpc_core::Channel::FromC(channel)->Ping(cq, tag);
 }

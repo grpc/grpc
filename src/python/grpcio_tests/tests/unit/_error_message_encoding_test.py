@@ -30,7 +30,8 @@ _UNICODE_ERROR_MESSAGES = [
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"
 
-_UNARY_UNARY = "/test/UnaryUnary"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
@@ -49,19 +50,14 @@ class _MethodHandler(grpc.RpcMethodHandler):
         return _RESPONSE
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def __init__(self, test):
-        self._test = test
-
-    def service(self, handler_call_details):
-        return _MethodHandler()
+_METHOD_HANDLERS = {_UNARY_UNARY: _MethodHandler()}
 
 
 class ErrorMessageEncodingTest(unittest.TestCase):
     def setUp(self):
         self._server = test_common.test_server()
-        self._server.add_generic_rpc_handlers(
-            (_GenericHandler(weakref.proxy(self)),)
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, _METHOD_HANDLERS
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.start()
@@ -74,7 +70,9 @@ class ErrorMessageEncodingTest(unittest.TestCase):
     def testMessageEncoding(self):
         for message in _UNICODE_ERROR_MESSAGES:
             multi_callable = self._channel.unary_unary(
-                _UNARY_UNARY,
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _UNARY_UNARY
+                ),
                 _registered_method=True,
             )
             with self.assertRaises(grpc.RpcError) as cm:

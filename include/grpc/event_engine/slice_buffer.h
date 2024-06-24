@@ -15,8 +15,6 @@
 #ifndef GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 #define GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 #include <cstdint>
@@ -31,6 +29,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_event_engine {
 namespace experimental {

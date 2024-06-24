@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <algorithm>
@@ -26,13 +24,18 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -119,6 +122,11 @@ class Waker {
 
   std::string ActivityDebugTag() {
     return wakeable_and_arg_.ActivityDebugTag();
+  }
+
+  std::string DebugString() {
+    return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
+                           wakeable_and_arg_.wakeup_mask);
   }
 
   // This is for tests to assert that a waker is occupied or not.
@@ -283,6 +291,19 @@ class ContextHolder<std::unique_ptr<Context, Deleter>> {
   std::unique_ptr<Context, Deleter> value_;
 };
 
+template <typename Context>
+class ContextHolder<RefCountedPtr<Context>> {
+ public:
+  using ContextType = Context;
+
+  explicit ContextHolder(RefCountedPtr<Context> value)
+      : value_(std::move(value)) {}
+  Context* GetContext() { return value_.get(); }
+
+ private:
+  RefCountedPtr<Context> value_;
+};
+
 template <>
 class Context<Activity> {
  public:
@@ -290,19 +311,23 @@ class Context<Activity> {
 };
 
 template <typename HeldContext>
-using ContextTypeFromHeld = typename ContextHolder<HeldContext>::ContextType;
+using ContextTypeFromHeld = typename ContextHolder<
+    typename std::remove_reference<HeldContext>::type>::ContextType;
 
 template <typename... Contexts>
-class ActivityContexts : public ContextHolder<Contexts>... {
+class ActivityContexts
+    : public ContextHolder<typename std::remove_reference<Contexts>::type>... {
  public:
   explicit ActivityContexts(Contexts&&... contexts)
-      : ContextHolder<Contexts>(std::forward<Contexts>(contexts))... {}
+      : ContextHolder<typename std::remove_reference<Contexts>::type>(
+            std::forward<Contexts>(contexts))... {}
 
   class ScopedContext : public Context<ContextTypeFromHeld<Contexts>>... {
    public:
     explicit ScopedContext(ActivityContexts* contexts)
         : Context<ContextTypeFromHeld<Contexts>>(
-              static_cast<ContextHolder<Contexts>*>(contexts)
+              static_cast<ContextHolder<
+                  typename std::remove_reference<Contexts>::type>*>(contexts)
                   ->GetContext())... {
       // Silence `unused-but-set-parameter` in case of Contexts = {}
       (void)contexts;
@@ -468,11 +493,11 @@ class PromiseActivity final
     // We shouldn't destruct without calling Cancel() first, and that must get
     // us to be done_, so we assume that and have no logic to destruct the
     // promise here.
-    GPR_ASSERT(done_);
+    CHECK(done_);
   }
 
   void RunScheduledWakeup() {
-    GPR_ASSERT(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
+    CHECK(wakeup_scheduled_.exchange(false, std::memory_order_acq_rel));
     Step();
     WakeupComplete();
   }
@@ -536,7 +561,7 @@ class PromiseActivity final
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
   void MarkDone() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    GPR_ASSERT(!std::exchange(done_, true));
+    CHECK(!std::exchange(done_, true));
     ScopedContext contexts(this);
     Destruct(&promise_holder_.promise);
   }
@@ -581,10 +606,10 @@ class PromiseActivity final
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
   absl::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    GPR_ASSERT(is_current());
+    CHECK(is_current());
     while (true) {
       // Run the promise.
-      GPR_ASSERT(!done_);
+      CHECK(!done_);
       auto r = promise_holder_.promise();
       if (auto* status = r.value_if_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.
@@ -639,7 +664,11 @@ ActivityPtr MakeActivity(Factory promise_factory,
 }
 
 inline Pending IntraActivityWaiter::pending() {
-  wakeups_ |= GetContext<Activity>()->CurrentParticipant();
+  const auto new_wakeups = GetContext<Activity>()->CurrentParticipant();
+  GRPC_TRACE_LOG(promise_primitives, INFO)
+      << "IntraActivityWaiter::pending: "
+      << GRPC_DUMP_ARGS(this, new_wakeups, wakeups_);
+  wakeups_ |= new_wakeups;
   return Pending();
 }
 

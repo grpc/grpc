@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
 package(default_visibility = ["//visibility:public"])
 
 py_library(
@@ -21,6 +24,11 @@ py_library(
 py_library(
     name = "_from_observability_import_star",
     srcs = ["_from_observability_import_star.py"],
+)
+
+py_library(
+    name = "_from_csm_observability_import_star",
+    srcs = ["_from_csm_observability_import_star.py"],
 )
 
 py_test(
@@ -34,6 +42,39 @@ py_test(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_observability/grpc_observability:pyobservability",
         "//src/python/grpcio_tests/tests/testing",
+        requirement("opentelemetry-sdk"),
+    ],
+)
+
+py_test(
+    name = "_observability_plugin_test",
+    size = "small",
+    srcs = ["_observability_plugin_test.py"],
+    imports = ["../../"],
+    main = "_observability_plugin_test.py",
+    deps = [
+        ":test_server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_observability/grpc_observability:pyobservability",
+        "//src/python/grpcio_tests/tests/testing",
+        requirement("protobuf"),
+        requirement("opentelemetry-sdk"),
+    ],
+)
+
+py_test(
+    name = "_csm_observability_plugin_test",
+    size = "small",
+    srcs = ["_csm_observability_plugin_test.py"],
+    imports = ["../../"],
+    main = "_csm_observability_plugin_test.py",
+    deps = [
+        ":test_server",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
+        "//src/python/grpcio_tests/tests/testing",
+        requirement("protobuf"),
+        requirement("opentelemetry-sdk"),
     ],
 )
 
@@ -44,8 +85,10 @@ py_test(
     imports = ["../../"],
     main = "_observability_api_test.py",
     deps = [
+        ":_from_csm_observability_import_star",
         ":_from_observability_import_star",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_csm_observability/grpc_csm_observability:csm_observability",
         "//src/python/grpcio_observability/grpc_observability:pyobservability",
         "//src/python/grpcio_tests/tests/testing",
     ],

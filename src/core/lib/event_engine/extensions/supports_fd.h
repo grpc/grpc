@@ -15,13 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_SUPPORTS_FD_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -112,6 +111,13 @@ class EventEngineSupportsFdExtension {
   virtual std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
       int fd, const EndpointConfig& config,
       MemoryAllocator memory_allocator) = 0;
+
+  /// Creates an EventEngine::Endpoint from an fd which is already assumed to be
+  /// connected to a remote peer. See \a CreatePosixEndpointFromFd for details.
+  /// This has the same behavior, but the \a memory_allocator is taken from the
+  /// EndpointConfig's resource quota.
+  virtual std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
+      int fd, const EndpointConfig& config) = 0;
 
   /// Called when the posix listener has accepted a new client connection.
   /// \a listener_fd - The listening socket fd that accepted the new client

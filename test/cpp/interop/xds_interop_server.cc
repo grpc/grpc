@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include "absl/flags/flag.h"
+#include "absl/log/log.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -28,7 +29,7 @@
 #include <grpcpp/health_check_service_interface.h>
 
 #include "src/core/lib/iomgr/gethostname.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/xds_interop_server_lib.h"
 #include "test/cpp/util/test_config.h"
 
@@ -44,7 +45,7 @@ ABSL_FLAG(bool, enable_csm_observability, false,
           "Whether to enable CSM Observability");
 
 grpc::CsmObservability EnableCsmObservability() {
-  gpr_log(GPR_DEBUG, "Registering Prometheus exporter");
+  VLOG(2) << "Registering Prometheus exporter";
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE
   // pods
@@ -85,10 +86,9 @@ int main(int argc, char** argv) {
   if (enable_csm_observability) {
     observability = EnableCsmObservability();
   }
-  grpc::testing::RunServer(absl::GetFlag(FLAGS_secure_mode),
-                           enable_csm_observability, port, maintenance_port,
-                           hostname, absl::GetFlag(FLAGS_server_id),
-                           [](grpc::Server* /* unused */) {});
+  grpc::testing::RunServer(
+      absl::GetFlag(FLAGS_secure_mode), port, maintenance_port, hostname,
+      absl::GetFlag(FLAGS_server_id), [](grpc::Server* /* unused */) {});
 
   return 0;
 }

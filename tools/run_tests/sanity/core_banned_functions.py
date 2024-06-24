@@ -24,7 +24,10 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
 # map of banned function signature to allowlist
 BANNED_EXCEPT = {
-    "grpc_slice_from_static_buffer(": ["src/core/lib/slice/slice.cc"],
+    "grpc_slice_from_static_buffer(": [
+        "src/core/lib/slice/slice.cc",
+        "src/core/load_balancing/grpclb/grpclb.cc",
+    ],
     "grpc_resource_quota_ref(": ["src/core/lib/resource_quota/api.cc"],
     "grpc_resource_quota_unref(": [
         "src/core/lib/resource_quota/api.cc",
@@ -82,8 +85,8 @@ BANNED_EXCEPT = {
         "src/core/load_balancing/rls/rls.cc",
         "src/core/resolver/google_c2p/google_c2p_resolver.cc",
     ],
-    # use 'grpc_core::Crash' instead
-    "GPR_ASSERT(false": [],
+    # use 'absl CHECK' instead
+    "GPR_ASSERT": [],
     # Use `std::exchange()` instead.
     "absl::exchange": [],
     # Use `std::make_unique()` instead.
@@ -110,8 +113,11 @@ for root, dirs, files in os.walk("src/core"):
                 errors += 1
 
 assert errors == 0
+if errors > 0:
+    print(("Number of errors : %d " % (errors)))
+
 # This check comes about from this issue:
 # https://github.com/grpc/grpc/issues/15381
 # Basically, a change rendered this script useless and we did not realize it.
-# This dumb check ensures that this type of issue doesn't occur again.
-assert num_files > 300  # we definitely have more than 300 files
+# This check ensures that this type of issue doesn't occur again.
+assert num_files > 1900  # we have more than 1900 files

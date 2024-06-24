@@ -27,8 +27,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -39,10 +37,11 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/time_precise.h"
 
 namespace grpc_core {
 
-class DynamicFilters : public RefCounted<DynamicFilters> {
+class DynamicFilters final : public RefCounted<DynamicFilters> {
  public:
   // Implements the interface of RefCounted<>.
   class Call {
@@ -54,7 +53,6 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       gpr_cycle_counter start_time;
       Timestamp deadline;
       Arena* arena;
-      grpc_call_context_element* context;
       CallCombiner* call_combiner;
     };
 

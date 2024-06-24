@@ -37,6 +37,8 @@
 
 #include <string>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -57,7 +59,7 @@ int grpc_inet_pton(int af, const char* src, void* dst) {
 }
 
 const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  GPR_ASSERT(size <= (socklen_t)-1);
+  CHECK(size <= (socklen_t)-1);
   return inet_ntop(af, src, dst, static_cast<socklen_t>(size));
 }
 

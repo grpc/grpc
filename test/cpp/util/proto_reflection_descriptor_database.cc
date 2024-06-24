@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#include <grpc/support/log.h>
+#include "absl/log/log.h"
 
 #include "src/core/lib/gprpp/crash.h"
 
@@ -86,23 +86,19 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
-      gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileByName(%s)",
-              filename.c_str());
+      LOG(INFO) << "NOT_FOUND from server for FindFileByName(" << filename
+                << ")";
     } else {
-      gpr_log(GPR_INFO,
-              "Error on FindFileByName(%s)\n\tError code: %d\n"
-              "\tError Message: %s",
-              filename.c_str(), error.error_code(),
-              error.error_message().c_str());
+      LOG(INFO) << "Error on FindFileByName(" << filename
+                << ")\n\tError code: " << error.error_code()
+                << "\n\tError Message: " << error.error_message();
     }
   } else {
-    gpr_log(
-        GPR_INFO,
-        "Error on FindFileByName(%s) response type\n"
-        "\tExpecting: %d\n\tReceived: %d",
-        filename.c_str(),
-        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
-        response.message_response_case());
+    LOG(INFO) << "Error on FindFileByName(" << filename
+              << ") response type\n\tExpecting: "
+              << ServerReflectionResponse::MessageResponseCase::
+                     kFileDescriptorResponse
+              << "\n\tReceived: " << response.message_response_case();
   }
 
   return cached_db_.FindFileByName(filename, output);
@@ -134,24 +130,19 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       missing_symbols_.insert(symbol_name);
-      gpr_log(GPR_INFO,
-              "NOT_FOUND from server for FindFileContainingSymbol(%s)",
-              symbol_name.c_str());
+      LOG(INFO) << "NOT_FOUND from server for FindFileContainingSymbol("
+                << symbol_name << ")";
     } else {
-      gpr_log(GPR_INFO,
-              "Error on FindFileContainingSymbol(%s)\n"
-              "\tError code: %d\n\tError Message: %s",
-              symbol_name.c_str(), error.error_code(),
-              error.error_message().c_str());
+      LOG(INFO) << "Error on FindFileContainingSymbol(" << symbol_name
+                << ")\n\tError code: " << error.error_code()
+                << "\n\tError Message: " << error.error_message();
     }
   } else {
-    gpr_log(
-        GPR_INFO,
-        "Error on FindFileContainingSymbol(%s) response type\n"
-        "\tExpecting: %d\n\tReceived: %d",
-        symbol_name.c_str(),
-        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
-        response.message_response_case());
+    LOG(INFO) << "Error on FindFileContainingSymbol(" << symbol_name
+              << ") response type\n\tExpecting: "
+              << ServerReflectionResponse::MessageResponseCase::
+                     kFileDescriptorResponse
+              << "\n\tReceived: " << response.message_response_case();
   }
   return cached_db_.FindFileContainingSymbol(symbol_name, output);
 }
@@ -167,7 +158,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
   if (missing_extensions_.find(containing_type) != missing_extensions_.end() &&
       missing_extensions_[containing_type].find(field_number) !=
           missing_extensions_[containing_type].end()) {
-    gpr_log(GPR_INFO, "nested map.");
+    LOG(INFO) << "nested map.";
     return false;
   }
 
@@ -194,24 +185,20 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
         missing_extensions_[containing_type] = {};
       }
       missing_extensions_[containing_type].insert(field_number);
-      gpr_log(GPR_INFO,
-              "NOT_FOUND from server for FindFileContainingExtension(%s, %d)",
-              containing_type.c_str(), field_number);
+      LOG(INFO) << "NOT_FOUND from server for FindFileContainingExtension("
+                << containing_type << ", " << field_number << ")";
     } else {
-      gpr_log(GPR_INFO,
-              "Error on FindFileContainingExtension(%s, %d)\n"
-              "\tError code: %d\n\tError Message: %s",
-              containing_type.c_str(), field_number, error.error_code(),
-              error.error_message().c_str());
+      LOG(INFO) << "Error on FindFileContainingExtension(" << containing_type
+                << ", " << field_number
+                << ")\n\tError code: " << error.error_code()
+                << "\n\tError Message: " << error.error_message();
     }
   } else {
-    gpr_log(
-        GPR_INFO,
-        "Error on FindFileContainingExtension(%s, %d) response type\n"
-        "\tExpecting: %d\n\tReceived: %d",
-        containing_type.c_str(), field_number,
-        ServerReflectionResponse::MessageResponseCase::kFileDescriptorResponse,
-        response.message_response_case());
+    LOG(INFO) << "Error on FindFileContainingExtension(" << containing_type
+              << ", " << field_number << ") response type\n\tExpecting: "
+              << ServerReflectionResponse::MessageResponseCase::
+                     kFileDescriptorResponse
+              << "\n\tReceived: " << response.message_response_case();
   }
 
   return cached_db_.FindFileContainingExtension(containing_type, field_number,
@@ -245,14 +232,12 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
-      gpr_log(GPR_INFO, "NOT_FOUND from server for FindAllExtensionNumbers(%s)",
-              extendee_type.c_str());
+      LOG(INFO) << "NOT_FOUND from server for FindAllExtensionNumbers("
+                << extendee_type << ")";
     } else {
-      gpr_log(GPR_INFO,
-              "Error on FindAllExtensionNumbersExtension(%s)\n"
-              "\tError code: %d\n\tError Message: %s",
-              extendee_type.c_str(), error.error_code(),
-              error.error_message().c_str());
+      LOG(INFO) << "Error on FindAllExtensionNumbersExtension(" << extendee_type
+                << ")\n\tError code: " << error.error_code()
+                << "\n\tError Message: " << error.error_message();
     }
   }
   return false;
@@ -278,16 +263,13 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
-    gpr_log(GPR_INFO,
-            "Error on GetServices()\n\tError code: %d\n"
-            "\tError Message: %s",
-            error.error_code(), error.error_message().c_str());
+    LOG(INFO) << "Error on GetServices()\n\tError code: " << error.error_code()
+              << "\n\tError Message: " << error.error_message();
   } else {
-    gpr_log(
-        GPR_INFO,
-        "Error on GetServices() response type\n\tExpecting: %d\n\tReceived: %d",
-        ServerReflectionResponse::MessageResponseCase::kListServicesResponse,
-        response.message_response_case());
+    LOG(INFO)
+        << "Error on GetServices() response type\n\tExpecting: "
+        << ServerReflectionResponse::MessageResponseCase::kListServicesResponse
+        << "\n\tReceived: " << response.message_response_case();
   }
   return false;
 }

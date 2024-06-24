@@ -14,6 +14,7 @@
 
 #include <string>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 
@@ -29,15 +30,15 @@
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/tls_utils.h"
 
 namespace grpc_core {
 namespace {
 
 void TestAllowAuthorizedRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -46,7 +47,7 @@ void TestAllowAuthorizedRequest(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(GRPC_STATUS_OK, "xyz", {})
@@ -59,8 +60,8 @@ void TestAllowAuthorizedRequest(CoreEnd2endTest& test) {
 
 void TestDenyUnauthorizedRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -100,7 +101,7 @@ class InitWithTempFile {
     provider_ = grpc_authorization_policy_provider_file_watcher_create(
         tmp_file_.name().c_str(), /*refresh_interval_sec=*/1, &code,
         &error_details);
-    GPR_ASSERT(GRPC_STATUS_OK == code);
+    CHECK_EQ(code, GRPC_STATUS_OK);
     InitWithPolicy(test, provider_);
   }
 

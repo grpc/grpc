@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 
 #include <string.h>
@@ -30,18 +28,18 @@
 
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/useful.h"
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
   *out++ = static_cast<uint8_t>(length >> 16);
@@ -110,6 +108,11 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             grpc_chttp2_initiate_write(t,
                                        GRPC_CHTTP2_INITIATE_WRITE_SETTINGS_ACK);
             if (t->notify_on_receive_settings != nullptr) {
+              if (t->interested_parties_until_recv_settings != nullptr) {
+                grpc_endpoint_delete_from_pollset_set(
+                    t->ep, t->interested_parties_until_recv_settings);
+                t->interested_parties_until_recv_settings = nullptr;
+              }
               grpc_core::ExecCtx::Run(DEBUG_LOCATION,
                                       t->notify_on_receive_settings,
                                       absl::OkStatus());
@@ -167,8 +170,8 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           t->initial_window_update +=
               static_cast<int64_t>(parser->value) -
               parser->incoming_settings->initial_window_size();
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-              GRPC_TRACE_FLAG_ENABLED(grpc_flowctl_trace)) {
+          if (GRPC_TRACE_FLAG_ENABLED(http) ||
+              GRPC_TRACE_FLAG_ENABLED(flowctl)) {
             gpr_log(GPR_INFO, "%p[%s] adding %d for initial_window change", t,
                     t->is_client ? "cli" : "svr",
                     static_cast<int>(t->initial_window_update));
@@ -184,7 +187,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
               "invalid value %u passed for %s", parser->value,
               grpc_core::Http2Settings::WireIdToName(parser->id).c_str()));
         }
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+        if (GRPC_TRACE_FLAG_ENABLED(http)) {
           gpr_log(GPR_INFO, "CHTTP2:%s:%s: got setting %s = %d",
                   t->is_client ? "CLI" : "SVR",
                   std::string(t->peer_string.as_string_view()).c_str(),

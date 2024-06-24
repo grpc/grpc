@@ -20,14 +20,11 @@
 #define GRPC_SRC_CORE_LIB_IOMGR_POLLSET_H
 
 #include <grpc/support/port_platform.h>
-
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
-
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount;
 
 // A grpc_pollset is a set of file descriptors that a higher level item is
 // interested in. For example:

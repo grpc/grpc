@@ -21,8 +21,9 @@ cc_library(
     name = "observability",
     srcs = [
         "client_call_tracer.cc",
+        "metadata_exchange.cc",
         "observability_util.cc",
-        "python_census_context.cc",
+        "python_observability_context.cc",
         "rpc_encoding.cc",
         "sampler.cc",
         "server_call_tracer.cc",
@@ -30,8 +31,9 @@ cc_library(
     hdrs = [
         "client_call_tracer.h",
         "constants.h",
+        "metadata_exchange.h",
         "observability_util.h",
-        "python_census_context.h",
+        "python_observability_context.h",
         "rpc_encoding.h",
         "sampler.h",
         "server_call_tracer.h",
@@ -53,7 +55,7 @@ pyx_library(
     ],
 )
 
-# Since `opentelemetry-sdk` and `opentelemetry-api` are non-hermetic,
+# Since `opentelemetry-api` is non-hermetic,
 # pyobservability is for internal use only.
 py_library(
     name = "_opentelemetry_observability",
@@ -63,7 +65,6 @@ py_library(
         "_open_telemetry_plugin.py",
     ],
     deps = [
-        requirement("opentelemetry-sdk"),
         requirement("opentelemetry-api"),
     ],
 )

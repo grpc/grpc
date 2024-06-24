@@ -18,6 +18,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -28,7 +29,7 @@ TEST(SingleSetPtrTest, NoOp) { SingleSetPtr<int>(); }
 TEST(SingleSetPtrTest, CanSet) {
   SingleSetPtr<int> p;
   EXPECT_FALSE(p.is_set());
-  EXPECT_DEATH_IF_SUPPORTED(gpr_log(GPR_ERROR, "%d", *p), "");
+  EXPECT_DEATH_IF_SUPPORTED({ LOG(ERROR) << *p; }, "");
   p.Set(new int(42));
   EXPECT_EQ(*p, 42);
 }

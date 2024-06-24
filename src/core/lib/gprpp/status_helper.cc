@@ -16,14 +16,13 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/status_helper.h"
 
 #include <string.h>
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
@@ -37,6 +36,7 @@
 #include "upb/mem/arena.hpp"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
@@ -60,30 +60,16 @@ const absl::string_view kChildrenPropertyUrl = TYPE_URL(TYPE_CHILDREN_TAG);
 
 const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
-    case StatusIntProperty::kErrorNo:
-      return TYPE_URL(TYPE_INT_TAG "errno");
     case StatusIntProperty::kFileLine:
       return TYPE_URL(TYPE_INT_TAG "file_line");
     case StatusIntProperty::kStreamId:
       return TYPE_URL(TYPE_INT_TAG "stream_id");
     case StatusIntProperty::kRpcStatus:
       return TYPE_URL(TYPE_INT_TAG "grpc_status");
-    case StatusIntProperty::kOffset:
-      return TYPE_URL(TYPE_INT_TAG "offset");
-    case StatusIntProperty::kIndex:
-      return TYPE_URL(TYPE_INT_TAG "index");
-    case StatusIntProperty::kSize:
-      return TYPE_URL(TYPE_INT_TAG "size");
     case StatusIntProperty::kHttp2Error:
       return TYPE_URL(TYPE_INT_TAG "http2_error");
-    case StatusIntProperty::kTsiCode:
-      return TYPE_URL(TYPE_INT_TAG "tsi_code");
-    case StatusIntProperty::kWsaError:
-      return TYPE_URL(TYPE_INT_TAG "wsa_error");
     case StatusIntProperty::kFd:
       return TYPE_URL(TYPE_INT_TAG "fd");
-    case StatusIntProperty::kHttpStatus:
-      return TYPE_URL(TYPE_INT_TAG "http_status");
     case StatusIntProperty::kOccurredDuringWrite:
       return TYPE_URL(TYPE_INT_TAG "occurred_during_write");
     case StatusIntProperty::ChannelConnectivityState:
@@ -100,24 +86,8 @@ const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
       return TYPE_URL(TYPE_STR_TAG "description");
     case StatusStrProperty::kFile:
       return TYPE_URL(TYPE_STR_TAG "file");
-    case StatusStrProperty::kOsError:
-      return TYPE_URL(TYPE_STR_TAG "os_error");
-    case StatusStrProperty::kSyscall:
-      return TYPE_URL(TYPE_STR_TAG "syscall");
-    case StatusStrProperty::kTargetAddress:
-      return TYPE_URL(TYPE_STR_TAG "target_address");
     case StatusStrProperty::kGrpcMessage:
       return TYPE_URL(TYPE_STR_TAG "grpc_message");
-    case StatusStrProperty::kRawBytes:
-      return TYPE_URL(TYPE_STR_TAG "raw_bytes");
-    case StatusStrProperty::kTsiError:
-      return TYPE_URL(TYPE_STR_TAG "tsi_error");
-    case StatusStrProperty::kFilename:
-      return TYPE_URL(TYPE_STR_TAG "filename");
-    case StatusStrProperty::kKey:
-      return TYPE_URL(TYPE_STR_TAG "key");
-    case StatusStrProperty::kValue:
-      return TYPE_URL(TYPE_STR_TAG "value");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -154,7 +124,7 @@ std::vector<absl::Status> ParseChildren(absl::Cord children) {
   while (buf.size() - cur >= sizeof(uint32_t)) {
     size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
     cur += sizeof(uint32_t);
-    GPR_ASSERT(buf.size() - cur >= msg_size);
+    CHECK(buf.size() - cur >= msg_size);
     google_rpc_Status* msg =
         google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
     cur += msg_size;
@@ -346,6 +316,17 @@ std::string StatusToString(const absl::Status& status) {
   }
   return kvs.empty() ? head
                      : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
+}
+
+absl::Status AddMessagePrefix(absl::string_view prefix, absl::Status status) {
+  absl::Status new_status(status.code(),
+                          absl::StrCat(prefix, ": ", status.message()));
+  // TODO(roth): Remove this once we elimiate all status attributes.
+  status.ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        new_status.SetPayload(type_url, payload);
+      });
+  return new_status;
 }
 
 namespace internal {

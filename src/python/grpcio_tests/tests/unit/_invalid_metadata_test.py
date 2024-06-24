@@ -25,19 +25,23 @@ _DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) // 2 :]
 _SERIALIZE_RESPONSE = lambda bytestring: bytestring * 3
 _DESERIALIZE_RESPONSE = lambda bytestring: bytestring[: len(bytestring) // 3]
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(_UNARY_UNARY, _registered_method=True)
+    return channel.unary_unary(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        _registered_method=True,
+    )
 
 
 def _unary_stream_multi_callable(channel):
     return channel.unary_stream(
-        _UNARY_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
@@ -46,7 +50,7 @@ def _unary_stream_multi_callable(channel):
 
 def _stream_unary_multi_callable(channel):
     return channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
@@ -55,7 +59,7 @@ def _stream_unary_multi_callable(channel):
 
 def _stream_stream_multi_callable(channel):
     return channel.stream_stream(
-        _STREAM_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
         _registered_method=True,
     )
 

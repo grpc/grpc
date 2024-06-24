@@ -71,32 +71,30 @@ const uint8_t kGrpcStatus0[] = {0x40, 0x0b, 0x67, 0x72, 0x70, 0x63, 0x2d, 0x73,
                                 0x74, 0x61, 0x74, 0x75, 0x73, 0x01, 0x30};
 
 ServerMetadataHandle TestInitialMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto md = Arena::MakePooled<ServerMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
 
 ServerMetadataHandle TestTrailingMetadata() {
-  auto md =
-      GetContext<Arena>()->MakePooled<ServerMetadata>(GetContext<Arena>());
+  auto md = Arena::MakePooled<ServerMetadata>();
   md->Set(GrpcStatusMetadata(), GRPC_STATUS_OK);
   return md;
 }
 
-class MockAcceptor : public ServerTransport::Acceptor {
+class MockCallDestination : public UnstartedCallDestination {
  public:
-  virtual ~MockAcceptor() = default;
-  MOCK_METHOD(Arena*, CreateArena, (), (override));
-  MOCK_METHOD(absl::StatusOr<CallInitiator>, CreateCall,
-              (ClientMetadata & client_initial_metadata, Arena* arena),
+  ~MockCallDestination() override = default;
+  MOCK_METHOD(void, Orphaned, (), (override));
+  MOCK_METHOD(void, StartCall, (UnstartedCallHandler unstarted_call_handler),
               (override));
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
   MockPromiseEndpoint control_endpoint;
   MockPromiseEndpoint data_endpoint;
-  StrictMock<MockAcceptor> acceptor;
+  auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
+  EXPECT_CALL(*call_destination, Orphaned()).Times(1);
   auto transport = MakeOrphanable<ChaoticGoodServerTransport>(
       CoreConfiguration::Get()
           .channel_args_preconditioning()
@@ -114,19 +112,60 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
   data_endpoint.ExpectRead(
       {EventEngineSlice::FromCopiedString("12345678"), Zeros(56)}, nullptr);
   // Once that's read we'll create a new call
-  auto* call_arena = Arena::Create(1024, memory_allocator());
-  CallInitiatorAndHandler call = MakeCall(event_engine().get(), call_arena);
-  EXPECT_CALL(acceptor, CreateArena).WillOnce(Return(call_arena));
-  EXPECT_CALL(acceptor, CreateCall(_, call_arena))
-      .WillOnce(WithArgs<0>([call_initiator = std::move(call.initiator)](
-                                ClientMetadata& client_initial_metadata) {
-        EXPECT_EQ(client_initial_metadata.get_pointer(HttpPathMetadata())
+  StrictMock<MockFunction<void()>> on_done;
+  auto control_address =
+      grpc_event_engine::experimental::URIToResolvedAddress("ipv4:1.2.3.4:5678")
+          .value();
+  EXPECT_CALL(*control_endpoint.endpoint, GetPeerAddress)
+      .WillRepeatedly([&control_address]() { return control_address; });
+  EXPECT_CALL(*call_destination, StartCall(_))
+      .WillOnce(WithArgs<0>([&on_done](
+                                UnstartedCallHandler unstarted_call_handler) {
+        EXPECT_EQ(unstarted_call_handler.UnprocessedClientInitialMetadata()
+                      .get_pointer(HttpPathMetadata())
                       ->as_string_view(),
                   "/demo.Service/Step");
-        return call_initiator;
+        auto handler = unstarted_call_handler.StartWithEmptyFilterStack();
+        handler.SpawnInfallible("test-io", [&on_done, handler]() mutable {
+          return Seq(
+              handler.PullClientInitialMetadata(),
+              [](ValueOrFailure<ClientMetadataHandle> md) {
+                EXPECT_TRUE(md.ok());
+                EXPECT_EQ(md.value()
+                              ->get_pointer(HttpPathMetadata())
+                              ->as_string_view(),
+                          "/demo.Service/Step");
+                return Empty{};
+              },
+              [handler]() mutable { return handler.PullMessage(); },
+              [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                EXPECT_TRUE(msg.ok());
+                EXPECT_TRUE(msg.value().has_value());
+                EXPECT_EQ(msg.value().value()->payload()->JoinIntoString(),
+                          "12345678");
+                return Empty{};
+              },
+              [handler]() mutable { return handler.PullMessage(); },
+              [](ValueOrFailure<absl::optional<MessageHandle>> msg) {
+                EXPECT_TRUE(msg.ok());
+                EXPECT_FALSE(msg.value().has_value());
+                return Empty{};
+              },
+              [handler]() mutable {
+                return handler.PushServerInitialMetadata(TestInitialMetadata());
+              },
+              [handler]() mutable {
+                return handler.PushMessage(Arena::MakePooled<Message>(
+                    SliceBuffer(Slice::FromCopiedString("87654321")), 0));
+              },
+              [handler, &on_done]() mutable {
+                handler.PushServerTrailingMetadata(TestTrailingMetadata());
+                on_done.Call();
+                return Empty{};
+              });
+        });
       }));
-  transport->SetAcceptor(&acceptor);
-  StrictMock<MockFunction<void()>> on_done;
+  transport->SetCallDestination(call_destination);
   EXPECT_CALL(on_done, Call());
   EXPECT_CALL(*control_endpoint.endpoint, Read)
       .InSequence(control_endpoint.read_sequence)
@@ -147,39 +186,6 @@ TEST_F(TransportTest, ReadAndWriteOneMessage) {
                              sizeof(kGrpcStatus0)),
        EventEngineSlice::FromCopiedBuffer(kGrpcStatus0, sizeof(kGrpcStatus0))},
       nullptr);
-  call.handler.SpawnInfallible(
-      "test-io", [&on_done, handler = call.handler]() mutable {
-        return Seq(
-            handler.PullClientInitialMetadata(),
-            [](ValueOrFailure<ServerMetadataHandle> md) {
-              EXPECT_TRUE(md.ok());
-              EXPECT_EQ(
-                  md.value()->get_pointer(HttpPathMetadata())->as_string_view(),
-                  "/demo.Service/Step");
-              return Empty{};
-            },
-            handler.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_TRUE(msg.has_value());
-              EXPECT_EQ(msg.value()->payload()->JoinIntoString(), "12345678");
-              return Empty{};
-            },
-            handler.PullMessage(),
-            [](NextResult<MessageHandle> msg) {
-              EXPECT_FALSE(msg.has_value());
-              return Empty{};
-            },
-            handler.PushServerInitialMetadata(TestInitialMetadata()),
-            handler.PushMessage(Arena::MakePooled<Message>(
-                SliceBuffer(Slice::FromCopiedString("87654321")), 0)),
-            [handler]() mutable {
-              return handler.PushServerTrailingMetadata(TestTrailingMetadata());
-            },
-            [&on_done]() mutable {
-              on_done.Call();
-              return Empty{};
-            });
-      });
   // Wait until ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();

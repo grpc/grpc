@@ -17,6 +17,7 @@
 #include <map>
 
 #include "absl/algorithm/container.h"
+#include "absl/log/check.h"
 #include "absl/strings/ascii.h"
 
 namespace grpc {
@@ -140,7 +141,7 @@ LoadBalancerStatsResponse XdsStatsWatcher::WaitForRpcStatsResponse(
     } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
       method_name = "UnaryCall";
     } else {
-      GPR_ASSERT(0);
+      CHECK(0);
     }
     // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
     // and UNARY_CALL we will just use the name of the enum instead of the

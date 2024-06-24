@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
 #include <stdint.h>
 
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
@@ -40,8 +40,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
-
-extern TraceFlag grpc_authz_trace;
 
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 StaticDataAuthorizationPolicyProvider::Create(absl::string_view authz_policy) {
@@ -83,8 +81,8 @@ gpr_timespec TimeoutSecondsToDeadline(int64_t seconds) {
 absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
 FileWatcherAuthorizationPolicyProvider::Create(
     absl::string_view authz_policy_path, unsigned int refresh_interval_sec) {
-  GPR_ASSERT(!authz_policy_path.empty());
-  GPR_ASSERT(refresh_interval_sec > 0);
+  CHECK(!authz_policy_path.empty());
+  CHECK_GT(refresh_interval_sec, 0u);
   absl::Status status;
   auto provider = MakeRefCounted<FileWatcherAuthorizationPolicyProvider>(
       authz_policy_path, refresh_interval_sec, &status);
@@ -106,7 +104,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
   auto thread_lambda = [](void* arg) {
     WeakRefCountedPtr<FileWatcherAuthorizationPolicyProvider> provider(
         static_cast<FileWatcherAuthorizationPolicyProvider*>(arg));
-    GPR_ASSERT(provider != nullptr);
+    CHECK(provider != nullptr);
     while (true) {
       void* value = gpr_event_wait(
           &provider->shutdown_event_,
@@ -115,7 +113,7 @@ FileWatcherAuthorizationPolicyProvider::FileWatcherAuthorizationPolicyProvider(
         return;
       }
       absl::Status status = provider->ForceUpdate();
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace) && !status.ok()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api) && !status.ok()) {
         gpr_log(GPR_ERROR,
                 "authorization policy reload status. code=%d error_details=%s",
                 static_cast<int>(status.code()),
@@ -170,7 +168,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   if (cb_ != nullptr) {
     cb_(contents_changed, absl::OkStatus());
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
     gpr_log(GPR_INFO,
             "authorization policy reload status: successfully loaded new "
             "policy\n%s",
@@ -179,7 +177,7 @@ absl::Status FileWatcherAuthorizationPolicyProvider::ForceUpdate() {
   return absl::OkStatus();
 }
 
-void FileWatcherAuthorizationPolicyProvider::Orphan() {
+void FileWatcherAuthorizationPolicyProvider::Orphaned() {
   gpr_event_set(&shutdown_event_, reinterpret_cast<void*>(1));
   if (refresh_thread_ != nullptr) {
     refresh_thread_->Join();
@@ -194,7 +192,7 @@ grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_static_data_create(
     const char* authz_policy, grpc_status_code* code,
     const char** error_details) {
-  GPR_ASSERT(authz_policy != nullptr);
+  CHECK_NE(authz_policy, nullptr);
   auto provider_or =
       grpc_core::StaticDataAuthorizationPolicyProvider::Create(authz_policy);
   if (!provider_or.ok()) {
@@ -210,7 +208,7 @@ grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_file_watcher_create(
     const char* authz_policy_path, unsigned int refresh_interval_sec,
     grpc_status_code* code, const char** error_details) {
-  GPR_ASSERT(authz_policy_path != nullptr);
+  CHECK_NE(authz_policy_path, nullptr);
   auto provider_or = grpc_core::FileWatcherAuthorizationPolicyProvider::Create(
       authz_policy_path, refresh_interval_sec);
   if (!provider_or.ok()) {

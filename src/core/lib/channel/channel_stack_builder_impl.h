@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_IMPL_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_BUILDER_IMPL_H
 
-#include <grpc/support/port_platform.h>
-
 #include "absl/status/statusor.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
@@ -33,8 +33,6 @@ namespace grpc_core {
 class ChannelStackBuilderImpl final : public ChannelStackBuilder {
  public:
   using ChannelStackBuilder::ChannelStackBuilder;
-
-  bool IsPromising() const override;
 
   // Build the channel stack.
   // After success, *result holds the new channel stack,

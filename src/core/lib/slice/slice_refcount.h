@@ -15,19 +15,16 @@
 #ifndef GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
 #define GRPC_SRC_CORE_LIB_SLICE_SLICE_REFCOUNT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <inttypes.h>
 #include <stddef.h>
 
 #include <atomic>
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
-
-extern GRPC_DLL grpc_core::DebugOnlyTraceFlag grpc_slice_refcount_trace;
 
 // grpc_slice_refcount : A reference count for grpc_slice.
 struct grpc_slice_refcount {
@@ -50,14 +47,14 @@ struct grpc_slice_refcount {
 
   void Ref(grpc_core::DebugLocation location) {
     auto prev_refs = ref_.fetch_add(1, std::memory_order_relaxed);
-    if (grpc_slice_refcount_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(slice_refcount)) {
       gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_INFO,
               "REF %p %" PRIdPTR "->%" PRIdPTR, this, prev_refs, prev_refs + 1);
     }
   }
   void Unref(grpc_core::DebugLocation location) {
     auto prev_refs = ref_.fetch_sub(1, std::memory_order_acq_rel);
-    if (grpc_slice_refcount_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(slice_refcount)) {
       gpr_log(location.file(), location.line(), GPR_LOG_SEVERITY_INFO,
               "UNREF %p %" PRIdPTR "->%" PRIdPTR, this, prev_refs,
               prev_refs - 1);

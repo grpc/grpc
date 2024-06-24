@@ -53,7 +53,9 @@ def generate_run_tests_portability_tests(name):
     # C and C++ under different compilers
     for language in ["c", "c++"]:
         compiler_configs = [
-            ["gcc_7", "", "tools/dockerfile/test/cxx_gcc_8_x64.current_version"],
+            # TODO(https://github.com/grpc/grpc/issues/36751): Replace gcc_8 with gcc_7 once it's fixed.
+            # ["gcc_7", "", "tools/dockerfile/test/cxx_gcc_7_x64.current_version"],
+            ["gcc_8", "", "tools/dockerfile/test/cxx_gcc_8_x64.current_version"],
             ["gcc_12", "--cmake_configure_extra_args=-DCMAKE_CXX_STANDARD=20", "tools/dockerfile/test/cxx_gcc_12_x64.current_version"],
             ["gcc10.2_openssl102", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl102_x64.current_version"],
             ["gcc10.2_openssl111", "--cmake_configure_extra_args=-DgRPC_SSL_PROVIDER=package", "tools/dockerfile/test/cxx_debian11_openssl111_x64.current_version"],

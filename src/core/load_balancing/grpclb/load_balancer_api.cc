@@ -16,19 +16,18 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/grpclb/load_balancer_api.h"
 
 #include <string.h>
 
 #include <algorithm>
 
+#include "absl/log/log.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "upb/base/string_view.h"
 
-#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -146,9 +145,8 @@ bool ParseServerList(const grpc_lb_v1_LoadBalanceResponse& response,
       } else if (token.size <= GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE) {
         memcpy(cur.load_balance_token, token.data, token.size);
       } else {
-        gpr_log(GPR_ERROR,
-                "grpc_lb_v1_LoadBalanceResponse has too long token. len=%zu",
-                token.size);
+        LOG(ERROR) << "grpc_lb_v1_LoadBalanceResponse has too long token. len="
+                   << token.size;
       }
       cur.drop = grpc_lb_v1_Server_drop(servers[i]);
     }

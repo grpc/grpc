@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_LATCH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_LATCH_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <string>
@@ -25,11 +23,12 @@
 #include "absl/strings/str_cat.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 #include "src/core/lib/promise/wait_set.h"
 
 namespace grpc_core {
@@ -46,7 +45,7 @@ class InterActivityLatch {
   auto Wait() {
     return [this]() -> Poll<T> {
       MutexLock lock(&mu_);
-      if (grpc_trace_promise_primitives.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -62,7 +61,7 @@ class InterActivityLatch {
   // Set the latch.
   void Set(T value) {
     MutexLock lock(&mu_);
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
     is_set_ = true;
@@ -104,7 +103,7 @@ class InterActivityLatch<void> {
   auto Wait() {
     return [this]() -> Poll<Empty> {
       MutexLock lock(&mu_);
-      if (grpc_trace_promise_primitives.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
         gpr_log(GPR_INFO, "%sPollWait %s", DebugTag().c_str(),
                 StateString().c_str());
       }
@@ -120,7 +119,7 @@ class InterActivityLatch<void> {
   // Set the latch.
   void Set() {
     MutexLock lock(&mu_);
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%sSet %s", DebugTag().c_str(), StateString().c_str());
     }
     is_set_ = true;

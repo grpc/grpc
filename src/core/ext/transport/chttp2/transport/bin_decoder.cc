@@ -16,14 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 
 #include "absl/base/attributes.h"
+#include "absl/log/check.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice.h"
 
@@ -199,8 +199,8 @@ grpc_slice grpc_chttp2_base64_decode(const grpc_slice& input) {
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
-  GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
-  GPR_ASSERT(ctx.input_cur == GRPC_SLICE_END_PTR(input));
+  CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  CHECK(ctx.input_cur == GRPC_SLICE_END_PTR(input));
   return output;
 }
 
@@ -246,7 +246,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(const grpc_slice& input,
     grpc_core::CSliceUnref(output);
     return grpc_empty_slice();
   }
-  GPR_ASSERT(ctx.output_cur == GRPC_SLICE_END_PTR(output));
-  GPR_ASSERT(ctx.input_cur <= GRPC_SLICE_END_PTR(input));
+  CHECK(ctx.output_cur == GRPC_SLICE_END_PTR(output));
+  CHECK(ctx.input_cur <= GRPC_SLICE_END_PTR(input));
   return output;
 }

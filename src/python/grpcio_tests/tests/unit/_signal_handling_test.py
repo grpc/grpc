@@ -47,7 +47,7 @@ _HOST = "localhost"
 _GEVENT_ARG = ("--gevent",) if test_common.running_under_gevent() else ()
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
+class _GenericHandler:
     def __init__(self):
         self._connected_clients_lock = threading.RLock()
         self._connected_clients_event = threading.Event()
@@ -107,13 +107,12 @@ class _GenericHandler(grpc.GenericRpcHandler):
         stop_event.wait()
         yield request
 
-    def service(self, handler_call_details):
-        if handler_call_details.method == _signal_client.UNARY_UNARY:
-            return self._unary_unary_handler
-        elif handler_call_details.method == _signal_client.UNARY_STREAM:
-            return self._unary_stream_handler
-        else:
-            return None
+
+def get_method_handlers(handler):
+    return {
+        _signal_client.UNARY_UNARY: handler._unary_unary_handler,
+        _signal_client.UNARY_STREAM: handler._unary_stream_handler,
+    }
 
 
 def _read_stream(stream):
@@ -135,7 +134,9 @@ class SignalHandlingTest(unittest.TestCase):
         self._server = test_common.test_server()
         self._port = self._server.add_insecure_port("{}:0".format(_HOST))
         self._handler = _GenericHandler()
-        self._server.add_generic_rpc_handlers((self._handler,))
+        self._server.add_registered_method_handlers(
+            _signal_client._SERVICE_NAME, get_method_handlers(self._handler)
+        )
         self._server.start()
 
     def tearDown(self):

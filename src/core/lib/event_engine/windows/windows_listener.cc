@@ -15,11 +15,12 @@
 
 #ifdef GPR_WINDOWS
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
@@ -47,13 +48,12 @@ WindowsEventEngineListener::SinglePortSocketListener::AsyncIOState::
 
 void WindowsEventEngineListener::SinglePortSocketListener::
     OnAcceptCallbackWrapper::Run() {
-  GPR_ASSERT(io_state_ != nullptr);
+  CHECK_NE(io_state_, nullptr);
   grpc_core::ReleasableMutexLock lock(&io_state_->mu);
   if (io_state_->listener_socket->IsShutdown()) {
-    GRPC_EVENT_ENGINE_TRACE(
-        "SinglePortSocketListener::%p listener socket is shut down. Shutting "
-        "down listener.",
-        io_state_->port_listener);
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "SinglePortSocketListener::" << io_state_->port_listener
+        << " listener socket is shut down. Shutting down listener.";
     lock.Release();
     io_state_.reset();
     return;
@@ -101,7 +101,7 @@ WindowsEventEngineListener::SinglePortSocketListener::
   io_state_->listener_socket->Shutdown(DEBUG_LOCATION,
                                        "~SinglePortSocketListener");
   UnlinkIfUnixDomainSocket(listener_sockname());
-  GRPC_EVENT_ENGINE_TRACE("~SinglePortSocketListener::%p", this);
+  GRPC_TRACE_LOG(event_engine, INFO) << "~SinglePortSocketListener::" << this;
 }
 
 absl::StatusOr<
@@ -124,7 +124,7 @@ WindowsEventEngineListener::SinglePortSocketListener::Create(
   }
   auto result = SinglePortSocketListener::PrepareListenerSocket(sock, addr);
   GRPC_RETURN_IF_ERROR(result.status());
-  GPR_ASSERT(result->port >= 0);
+  CHECK_GE(result->port, 0);
   // Using `new` to access non-public constructor
   return absl::WrapUnique(new SinglePortSocketListener(
       listener, AcceptEx, /*win_socket=*/listener->iocp_->Watch(sock),
@@ -177,9 +177,9 @@ WindowsEventEngineListener::SinglePortSocketListener::StartLocked() {
     }
   }
   io_state_->accept_socket = accept_socket;
-  GRPC_EVENT_ENGINE_TRACE(
-      "SinglePortSocketListener::%p listening. listener_socket::%p", this,
-      io_state_->listener_socket.get());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "SinglePortSocketListener::" << this
+      << " listening. listener_socket::" << io_state_->listener_socket.get();
   return absl::OkStatus();
 }
 
@@ -190,17 +190,14 @@ void WindowsEventEngineListener::SinglePortSocketListener::
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(io_state_->mu) {
             if (do_close_socket) closesocket(io_state_->accept_socket);
             io_state_->accept_socket = INVALID_SOCKET;
-            GPR_ASSERT(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
-                                         StartLocked()));
+            CHECK(GRPC_LOG_IF_ERROR("SinglePortSocketListener::Start",
+                                    StartLocked()));
           };
   const auto& overlapped_result =
       io_state_->listener_socket->read_info()->result();
   if (overlapped_result.wsa_error != 0) {
-    gpr_log(GPR_ERROR, "%s",
-            GRPC_WSA_ERROR(overlapped_result.wsa_error,
-                           "Skipping on_accept due to error")
-                .ToString()
-                .c_str());
+    LOG(ERROR) << GRPC_WSA_ERROR(overlapped_result.wsa_error,
+                                 "Skipping on_accept due to error");
     return close_socket_and_restart();
   }
   SOCKET tmp_listener_socket = io_state_->listener_socket->raw_socket();
@@ -209,8 +206,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
                  reinterpret_cast<char*>(&tmp_listener_socket),
                  sizeof(tmp_listener_socket));
   if (err != 0) {
-    gpr_log(GPR_ERROR, "%s",
-            GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt").ToString().c_str());
+    LOG(ERROR) << GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt");
     return close_socket_and_restart();
   }
   EventEngine::ResolvedAddress peer_address;
@@ -219,9 +215,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
                     const_cast<sockaddr*>(peer_address.address()),
                     &peer_name_len);
   if (err != 0) {
-    gpr_log(
-        GPR_ERROR, "%s",
-        GRPC_WSA_ERROR(WSAGetLastError(), "getpeername").ToString().c_str());
+    LOG(ERROR) << GRPC_WSA_ERROR(WSAGetLastError(), "getpeername");
     return close_socket_and_restart();
   }
   peer_address =
@@ -230,8 +224,7 @@ void WindowsEventEngineListener::SinglePortSocketListener::
   std::string peer_name = "unknown";
   if (!addr_uri.ok()) {
     // TODO(hork): test an early exit/restart here with end2end tests
-    gpr_log(GPR_ERROR, "invalid peer name: %s",
-            addr_uri.status().ToString().c_str());
+    LOG(ERROR) << "invalid peer name: " << addr_uri.status();
   } else {
     peer_name = *addr_uri;
   }
@@ -265,14 +258,10 @@ absl::StatusOr<WindowsEventEngineListener::SinglePortSocketListener::
 WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     SOCKET sock, const EventEngine::ResolvedAddress& addr) {
   auto fail = [&](absl::Status error) -> absl::Status {
-    GPR_ASSERT(!error.ok());
-    auto addr_uri = ResolvedAddressToURI(addr);
+    CHECK(!error.ok());
     error = grpc_error_set_int(
-        grpc_error_set_str(
-            GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
-                                          &error, 1),
-            grpc_core::StatusStrProperty::kTargetAddress,
-            addr_uri.ok() ? *addr_uri : addr_uri.status().ToString()),
+        GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket", &error,
+                                      1),
         grpc_core::StatusIntProperty::kFd, static_cast<intptr_t>(sock));
     if (sock != INVALID_SOCKET) closesocket(sock);
     return error;
@@ -320,8 +309,7 @@ WindowsEventEngineListener::WindowsEventEngineListener(
       on_shutdown_(std::move(on_shutdown)) {}
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
-  GRPC_EVENT_ENGINE_TRACE(
-      "%s", absl::StrFormat("~WindowsEventEngineListener::%p", this).c_str());
+  GRPC_TRACE_LOG(event_engine, INFO) << "~WindowsEventEngineListener::" << this;
   ShutdownListeners();
   on_shutdown_(absl::OkStatus());
 }
@@ -374,7 +362,7 @@ absl::StatusOr<int> WindowsEventEngineListener::Bind(
 }
 
 absl::Status WindowsEventEngineListener::Start() {
-  GPR_ASSERT(!started_.exchange(true));
+  CHECK(!started_.exchange(true));
   grpc_core::MutexLock lock(&port_listeners_mu_);
   for (auto& port_listener : port_listeners_) {
     GRPC_RETURN_IF_ERROR(port_listener->Start());
@@ -401,11 +389,10 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
   grpc_core::MutexLock lock(&port_listeners_mu_);
   port_listeners_.emplace_back(std::move(*single_port_listener));
   if (started_.load()) {
-    gpr_log(GPR_ERROR,
-            "WindowsEventEngineListener::%p Bind was called concurrently while "
-            "the Listener was starting. This is invalid usage, all ports must "
-            "be bound before the Listener is started.",
-            this);
+    LOG(ERROR) << "WindowsEventEngineListener::" << this
+               << " Bind was called concurrently while the Listener was "
+                  "starting. This is invalid usage, all ports must be bound "
+                  "before the Listener is started.";
     GRPC_RETURN_IF_ERROR(single_port_listener_ptr->Start());
   }
   return single_port_listener_ptr;

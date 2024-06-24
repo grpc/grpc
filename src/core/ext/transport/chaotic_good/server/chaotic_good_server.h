@@ -15,8 +15,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -29,11 +27,13 @@
 #include "absl/status/statusor.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -44,15 +44,12 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/server.h"
-#include "src/core/lib/transport/handshaker.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/server/server.h"
 
 namespace grpc_core {
 namespace chaotic_good {
-class ChaoticGoodServerListener final
-    : public Server::ListenerInterface,
-      public RefCounted<ChaoticGoodServerListener> {
+class ChaoticGoodServerListener final : public Server::ListenerInterface {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
     return [bitgen = absl::BitGen()]() mutable {
@@ -109,8 +106,6 @@ class ChaoticGoodServerListener final
 
       static void OnHandshakeDone(void* arg, grpc_error_handle error);
       Timestamp GetConnectionDeadline();
-      const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
-          memory_allocator_;
       const RefCountedPtr<ActiveConnection> connection_;
       const RefCountedPtr<HandshakeManager> handshake_mgr_;
     };
@@ -118,9 +113,7 @@ class ChaoticGoodServerListener final
    private:
     void Done(absl::optional<absl::string_view> error = absl::nullopt);
     void NewConnectionID();
-    const std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
-        memory_allocator_;
-    ScopedArenaPtr arena_ = MakeScopedArena(1024, memory_allocator_.get());
+    RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
     const RefCountedPtr<ChaoticGoodServerListener> listener_;
     RefCountedPtr<HandshakingState> handshaking_state_;
     Mutex mu_;
@@ -164,11 +157,6 @@ class ChaoticGoodServerListener final
   absl::AnyInvocable<std::string()> connection_id_generator_
       ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
-  std::shared_ptr<grpc_event_engine::experimental::MemoryAllocator>
-      memory_allocator_ =
-          std::make_shared<grpc_event_engine::experimental::MemoryAllocator>(
-              ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-                  "server_connection"));
 };
 
 }  // namespace chaotic_good

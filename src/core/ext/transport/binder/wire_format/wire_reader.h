@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_BINDER_WIRE_FORMAT_WIRE_READER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/binder/wire_format/binder.h"
 #include "src/core/ext/transport/binder/wire_format/wire_writer.h"

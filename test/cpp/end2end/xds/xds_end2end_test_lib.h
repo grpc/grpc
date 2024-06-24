@@ -25,6 +25,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -46,7 +48,7 @@
 #include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
-#include "test/core/util/port.h"
+#include "test/core/test_util/port.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
@@ -113,6 +115,11 @@ class XdsTestType {
     return *this;
   }
 
+  XdsTestType& set_xds_server_uses_tls_creds(bool value) {
+    xds_server_uses_tls_creds_ = value;
+    return *this;
+  }
+
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
@@ -128,6 +135,7 @@ class XdsTestType {
   rbac_audit_condition() const {
     return rbac_audit_condition_;
   }
+  bool xds_server_uses_tls_creds() const { return xds_server_uses_tls_creds_; }
 
   std::string AsString() const {
     std::string retval = "V3";
@@ -156,6 +164,9 @@ class XdsTestType {
                                  RBAC_AuditLoggingOptions_AuditCondition_Name(
                                      rbac_audit_condition_));
     }
+    if (xds_server_uses_tls_creds_) {
+      retval += "XdsServerUsesTlsCreds";
+    }
     return retval;
   }
 
@@ -176,6 +187,7 @@ class XdsTestType {
   ::envoy::config::rbac::v3::RBAC_AuditLoggingOptions_AuditCondition
       rbac_audit_condition_ = ::envoy::config::rbac::v3::
           RBAC_AuditLoggingOptions_AuditCondition_NONE;
+  bool xds_server_uses_tls_creds_ = false;
 };
 
 // A base class for xDS end-to-end tests.
@@ -239,7 +251,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
           port_(grpc_pick_unused_port_or_die()),
           use_xds_enabled_server_(use_xds_enabled_server) {}
 
-    virtual ~ServerThread() { Shutdown(); }
+    virtual ~ServerThread() {
+      // Shutdown should be called manually. Shutdown calls virtual methods and
+      // can't be called from the base class destructor.
+      CHECK(!running_);
+    }
 
     void Start();
     void Shutdown();
@@ -248,6 +264,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       return std::make_shared<SecureServerCredentials>(
           grpc_fake_transport_security_server_credentials_create());
     }
+
+    std::string target() const { return absl::StrCat("localhost:", port_); }
 
     int port() const { return port_; }
 
@@ -398,10 +416,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // A server thread for the xDS server.
   class BalancerServerThread : public ServerThread {
    public:
-    explicit BalancerServerThread(XdsEnd2endTest* test_obj);
+    explicit BalancerServerThread(XdsEnd2endTest* test_obj,
+                                  absl::string_view debug_label);
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
     LrsServiceImpl* lrs_service() { return lrs_service_.get(); }
+
+    // If XdsTestType::xds_server_uses_tls_creds() is true,
+    // returns TlsServerCredentials.
+    // Otherwise, returns fake credentials.
+    std::shared_ptr<ServerCredentials> Credentials() override;
 
    private:
     const char* Type() override { return "Balancer"; }
@@ -439,7 +463,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // Creates and starts a new balancer, running in its own thread.
   // Most tests will not need to call this; instead, they can use
   // balancer_, which is already populated with default resources.
-  std::unique_ptr<BalancerServerThread> CreateAndStartBalancer();
+  std::unique_ptr<BalancerServerThread> CreateAndStartBalancer(
+      absl::string_view debug_label = "");
 
   // Sets the Listener and RouteConfiguration resource on the specified
   // balancer.  If RDS is in use, they will be set as separate resources;
@@ -568,7 +593,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // All tests must call this exactly once at the start of the test.
   void InitClient(absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
                   std::string lb_expected_authority = "",
-                  int xds_resource_does_not_exist_timeout_ms = 0);
+                  int xds_resource_does_not_exist_timeout_ms = 0,
+                  std::string balancer_authority_override = "");
 
   XdsBootstrapBuilder MakeBootstrapBuilder() {
     return XdsBootstrapBuilder().SetServers(
@@ -932,14 +958,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // use a uniform distribution instead. We need a better estimate of how many
   // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
-    GPR_ASSERT(p >= 0 && p <= 1);
+    CHECK_GE(p, 0);
+    CHECK_LE(p, 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
     num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.
-    gpr_log(GPR_INFO,
-            "Sending %" PRIuPTR
-            " RPCs for percentage=%.3f error_tolerance=%.3f",
-            num_rpcs, p, error_tolerance);
+    LOG(INFO) << "Sending " << num_rpcs << " RPCs for percentage=" << p
+              << " error_tolerance=" << error_tolerance;
     return num_rpcs;
   }
 

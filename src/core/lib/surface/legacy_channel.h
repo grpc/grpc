@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_LEGACY_CHANNEL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_LEGACY_CHANNEL_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 
 #include "absl/status/statusor.h"
@@ -28,6 +26,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -39,28 +38,24 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_factory.h"
+#include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 
-class LegacyChannel : public Channel {
+class LegacyChannel final : public Channel {
  public:
-  static absl::StatusOr<OrphanablePtr<Channel>> Create(
+  static absl::StatusOr<RefCountedPtr<Channel>> Create(
       std::string target, ChannelArgs args,
       grpc_channel_stack_type channel_stack_type);
 
   // Do not instantiate directly -- use Create() instead.
-  LegacyChannel(bool is_client, bool is_promising, std::string target,
+  LegacyChannel(bool is_client, std::string target,
                 const ChannelArgs& channel_args,
                 RefCountedPtr<grpc_channel_stack> channel_stack);
 
-  void Orphan() override;
-
-  Arena* CreateArena() override { return call_factory_->CreateArena(); }
-  void DestroyArena(Arena* arena) override {
-    return call_factory_->DestroyArena(arena);
-  }
+  void Orphaned() override;
 
   bool IsLame() const override;
 
@@ -69,6 +64,10 @@ class LegacyChannel : public Channel {
                         grpc_pollset_set* pollset_set_alternative, Slice path,
                         absl::optional<Slice> authority, Timestamp deadline,
                         bool registered_method) override;
+
+  void StartCall(UnstartedCallHandler) override {
+    Crash("StartCall() not supported on LegacyChannel");
+  }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const override {
     return channel_stack_->EventEngine();
@@ -95,7 +94,6 @@ class LegacyChannel : public Channel {
   void Ping(grpc_completion_queue* cq, void* tag) override;
 
   bool is_client() const override { return is_client_; }
-  bool is_promising() const override { return is_promising_; }
   grpc_channel_stack* channel_stack() const override {
     return channel_stack_.get();
   }
@@ -108,9 +106,7 @@ class LegacyChannel : public Channel {
   ClientChannelFilter* GetClientChannelFilter() const;
 
   const bool is_client_;
-  const bool is_promising_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
-  const RefCountedPtr<CallFactory> call_factory_;
 };
 
 }  // namespace grpc_core

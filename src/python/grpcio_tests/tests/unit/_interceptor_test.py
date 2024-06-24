@@ -36,10 +36,11 @@ _DESERIALIZE_RESPONSE = lambda bytestring: bytestring[: len(bytestring) // 3]
 
 _EXCEPTION_REQUEST = b"\x09\x0a"
 
-_UNARY_UNARY = "/test/UnaryUnary"
-_UNARY_STREAM = "/test/UnaryStream"
-_STREAM_UNARY = "/test/StreamUnary"
-_STREAM_STREAM = "/test/StreamStream"
+_SERVICE_NAME = "test"
+_UNARY_UNARY = "UnaryUnary"
+_UNARY_STREAM = "UnaryStream"
+_STREAM_UNARY = "StreamUnary"
+_STREAM_STREAM = "StreamStream"
 
 _TEST_CONTEXT_VAR: ContextVar[str] = ContextVar("")
 
@@ -177,66 +178,61 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_stream = stream_stream
 
 
-class _GenericHandler(grpc.GenericRpcHandler):
-    def __init__(self, handler):
-        self._handler = handler
-
-    def service(self, handler_call_details):
-        if handler_call_details.method == _UNARY_UNARY:
-            return _MethodHandler(
-                False,
-                False,
-                None,
-                None,
-                self._handler.handle_unary_unary,
-                None,
-                None,
-                None,
-            )
-        elif handler_call_details.method == _UNARY_STREAM:
-            return _MethodHandler(
-                False,
-                True,
-                _DESERIALIZE_REQUEST,
-                _SERIALIZE_RESPONSE,
-                None,
-                self._handler.handle_unary_stream,
-                None,
-                None,
-            )
-        elif handler_call_details.method == _STREAM_UNARY:
-            return _MethodHandler(
-                True,
-                False,
-                _DESERIALIZE_REQUEST,
-                _SERIALIZE_RESPONSE,
-                None,
-                None,
-                self._handler.handle_stream_unary,
-                None,
-            )
-        elif handler_call_details.method == _STREAM_STREAM:
-            return _MethodHandler(
-                True,
-                True,
-                None,
-                None,
-                None,
-                None,
-                None,
-                self._handler.handle_stream_stream,
-            )
-        else:
-            return None
+def get_method_handlers(handler):
+    return {
+        _UNARY_UNARY: _MethodHandler(
+            False,
+            False,
+            None,
+            None,
+            handler.handle_unary_unary,
+            None,
+            None,
+            None,
+        ),
+        _UNARY_STREAM: _MethodHandler(
+            False,
+            True,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            handler.handle_unary_stream,
+            None,
+            None,
+        ),
+        _STREAM_UNARY: _MethodHandler(
+            True,
+            False,
+            _DESERIALIZE_REQUEST,
+            _SERIALIZE_RESPONSE,
+            None,
+            None,
+            handler.handle_stream_unary,
+            None,
+        ),
+        _STREAM_STREAM: _MethodHandler(
+            True,
+            True,
+            None,
+            None,
+            None,
+            None,
+            None,
+            handler.handle_stream_stream,
+        ),
+    }
 
 
 def _unary_unary_multi_callable(channel):
-    return channel.unary_unary(_UNARY_UNARY, _registered_method=True)
+    return channel.unary_unary(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_UNARY),
+        _registered_method=True,
+    )
 
 
 def _unary_stream_multi_callable(channel):
     return channel.unary_stream(
-        _UNARY_STREAM,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _UNARY_STREAM),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
@@ -245,7 +241,7 @@ def _unary_stream_multi_callable(channel):
 
 def _stream_unary_multi_callable(channel):
     return channel.stream_unary(
-        _STREAM_UNARY,
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_UNARY),
         request_serializer=_SERIALIZE_REQUEST,
         response_deserializer=_DESERIALIZE_RESPONSE,
         _registered_method=True,
@@ -253,7 +249,10 @@ def _stream_unary_multi_callable(channel):
 
 
 def _stream_stream_multi_callable(channel):
-    return channel.stream_stream(_STREAM_STREAM, _registered_method=True)
+    return channel.stream_stream(
+        grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_STREAM),
+        _registered_method=True,
+    )
 
 
 class _ClientCallDetails(
@@ -342,7 +341,11 @@ class _LoggingInterceptor(
         self.record.append(self.tag + message + context_var_value)
 
     def intercept_service(self, continuation, handler_call_details):
-        self._append_to_log(":intercept_service")
+        if "check_handler_call_details" in self.tag:
+            self._append_to_log(f":method={handler_call_details.method}")
+        else:
+            self._append_to_log(":intercept_service")
+
         return continuation(handler_call_details)
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
@@ -466,18 +469,31 @@ class InterceptorTest(unittest.TestCase):
             _LoggingInterceptor("s3", self._record),
         )
 
+        conditional_interceptor_check_handler_call_details = (
+            _filter_server_interceptor(
+                lambda x: ("test_case", "check_handler_call_details")
+                in x.invocation_metadata,
+                _LoggingInterceptor(
+                    "s4:check_handler_call_details", self._record
+                ),
+            )
+        )
+
         self._server = grpc.server(
             self._server_pool,
             options=(("grpc.so_reuseport", 0),),
             interceptors=(
                 _LoggingInterceptor("s1", self._record),
                 conditional_interceptor,
+                conditional_interceptor_check_handler_call_details,
                 _ContextVarSettingInterceptor("context-var-value"),
                 _LoggingInterceptor("s2", self._record),
             ),
         )
         port = self._server.add_insecure_port("[::]:0")
-        self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
+        self._server.add_registered_method_handlers(
+            _SERVICE_NAME, get_method_handlers(self._handler)
+        )
         self._server.start()
 
         self._channel = grpc.insecure_channel("localhost:%d" % port)
@@ -941,6 +957,36 @@ class InterceptorTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             exception.result()
         self.assertIsInstance(exception.exception(), grpc.RpcError)
+
+    def testServerInterceptorWithCorrectHandlerCallDetails(self):
+        request = b"\x07\x08"
+
+        self._record[:] = []
+
+        channel = grpc.intercept_channel(
+            self._channel,
+            _append_request_header_interceptor(
+                "test_case", "check_handler_call_details"
+            ),
+        )
+
+        multi_callable = _unary_unary_multi_callable(channel)
+        multi_callable(
+            request,
+            metadata=(
+                ("test", "InterceptedUnaryRequestBlockingUnaryResponse"),
+            ),
+        )
+
+        self.assertSequenceEqual(
+            self._record,
+            [
+                "s1:intercept_service",
+                "s4:check_handler_call_details:method=/test/UnaryUnary",
+                "s2:intercept_service[context-var-value]",
+                "handler:handle_unary_unary[context-var-value]",
+            ],
+        )
 
 
 if __name__ == "__main__":

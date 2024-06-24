@@ -16,7 +16,7 @@
 //
 //
 
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/callback_streaming_ping_pong.h"
 #include "test/cpp/util/test_config.h"
 

@@ -16,30 +16,30 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/context/security_context.h"
 
 #include <string.h>
 
 #include <algorithm>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
-
-grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount(
-    false, "auth_context_refcount");
 
 // --- grpc_call ---
 
@@ -50,15 +50,15 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
   GRPC_API_TRACE("grpc_call_set_credentials(call=%p, creds=%p)", 2,
                  (call, creds));
   if (!grpc_call_is_client(call)) {
-    gpr_log(GPR_ERROR, "Method is client-side only.");
+    LOG(ERROR) << "Method is client-side only.";
     return GRPC_CALL_ERROR_NOT_ON_SERVER;
   }
-  ctx = static_cast<grpc_client_security_context*>(
-      grpc_call_context_get(call, GRPC_CONTEXT_SECURITY));
+  auto* arena = grpc_call_get_arena(call);
+  ctx = grpc_core::DownCast<grpc_client_security_context*>(
+      arena->GetContext<grpc_core::SecurityContext>());
   if (ctx == nullptr) {
-    ctx = grpc_client_security_context_create(grpc_call_get_arena(call), creds);
-    grpc_call_context_set(call, GRPC_CONTEXT_SECURITY, ctx,
-                          grpc_client_security_context_destroy);
+    ctx = grpc_client_security_context_create(arena, creds);
+    arena->SetContext<grpc_core::SecurityContext>(ctx);
   } else {
     ctx->creds = creds != nullptr ? creds->Ref() : nullptr;
   }
@@ -67,11 +67,12 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
 }
 
 grpc_auth_context* grpc_call_auth_context(grpc_call* call) {
-  void* sec_ctx = grpc_call_context_get(call, GRPC_CONTEXT_SECURITY);
+  auto* sec_ctx =
+      grpc_call_get_arena(call)->GetContext<grpc_core::SecurityContext>();
   GRPC_API_TRACE("grpc_call_auth_context(call=%p)", 1, (call));
   if (sec_ctx == nullptr) return nullptr;
   if (grpc_call_is_client(call)) {
-    auto* sc = static_cast<grpc_client_security_context*>(sec_ctx);
+    auto* sc = grpc_core::DownCast<grpc_client_security_context*>(sec_ctx);
     if (sc->auth_context == nullptr) {
       return nullptr;
     } else {
@@ -80,7 +81,7 @@ grpc_auth_context* grpc_call_auth_context(grpc_call* call) {
           .release();
     }
   } else {
-    auto* sc = static_cast<grpc_server_security_context*>(sec_ctx);
+    auto* sc = grpc_core::DownCast<grpc_server_security_context*>(sec_ctx);
     if (sc->auth_context == nullptr) {
       return nullptr;
     } else {
@@ -193,7 +194,7 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
     while (it->index < it->ctx->properties().count) {
       const grpc_auth_property* prop =
           &it->ctx->properties().array[it->index++];
-      GPR_ASSERT(prop->name != nullptr);
+      CHECK_NE(prop->name, nullptr);
       if (strcmp(it->name, prop->name) == 0) {
         return prop;
       }

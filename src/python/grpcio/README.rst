@@ -10,7 +10,7 @@ Package for gRPC Python.
 
 Supported Python Versions
 -------------------------
-Python >= 3.7
+Python >= 3.8
 
 Installation
 ------------
@@ -59,6 +59,10 @@ package named :code:`python-dev`).
   $ cd $REPO_ROOT
   $ git submodule update --init
 
+  # To include systemd socket-activation feature in the build,
+  # first install the `libsystemd-dev` package, then :
+  $ export GRPC_PYTHON_BUILD_WITH_SYSTEMD=1
+
   # For the next two commands do `sudo pip install` if you get permission-denied errors
   $ pip install -r requirements.txt
   $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
@@ -86,4 +90,17 @@ Help, I ...
   ::
 
     sudo apt-get install python-dev
+
+
+Versioning
+~~~~~~~~~~
+
+gRPC Python is developed in a monorepo shared with implementations of gRPC in
+other programming languages. While the minor versions are released in
+lock-step with other languages in the repo (e.g. 1.63.0 is guaranteed to exist
+for all languages), patch versions may be specific to only a single
+language. For example, if 1.63.1 is a C++-specific patch, 1.63.1 may not be
+uploaded to PyPi. As a result, it is __not__ a good assumption that the latest
+patch for a given minor version on Github is also the latest patch for that
+same minor version on PyPi.
 

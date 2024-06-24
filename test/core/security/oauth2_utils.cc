@@ -20,11 +20,13 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
+
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
@@ -49,12 +51,8 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   auto pops = grpc_polling_entity_create_from_pollset(pollset);
   bool is_done = false;
   grpc_core::Notification done;
-  grpc_core::MemoryAllocator memory_allocator =
-      grpc_core::MemoryAllocator(grpc_core::ResourceQuota::Default()
-                                     ->memory_quota()
-                                     ->CreateMemoryAllocator("test"));
-  auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
-  grpc_metadata_batch initial_metadata{arena.get()};
+  auto arena = grpc_core::SimpleArenaAllocator()->MakeArena();
+  grpc_metadata_batch initial_metadata;
   char* token = nullptr;
 
   auto activity = grpc_core::MakeActivity(
@@ -73,8 +71,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
       [&is_done, &done, &token, &initial_metadata](absl::Status result) {
         is_done = true;
         if (!result.ok()) {
-          gpr_log(GPR_ERROR, "Fetching token failed: %s",
-                  result.ToString().c_str());
+          LOG(ERROR) << "Fetching token failed: " << result;
         } else {
           std::string buffer;
           token = gpr_strdup(

@@ -23,6 +23,7 @@
 #include <dns_sd.h>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
 
 #include <grpc/event_engine/event_engine.h>
 
@@ -47,7 +48,7 @@ class DNSServiceResolverImpl
   explicit DNSServiceResolverImpl(std::shared_ptr<CFEventEngine> engine)
       : engine_(std::move((engine))) {}
   ~DNSServiceResolverImpl() override {
-    GPR_ASSERT(requests_.empty());
+    CHECK(requests_.empty());
     dispatch_release(queue_);
   }
 

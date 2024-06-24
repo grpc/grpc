@@ -74,13 +74,7 @@ grpc_error_handle init_channel_elem(grpc_channel_element* /*elem*/,
 void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter test_filter = {
-    grpc_call_next_op,
-    [](grpc_channel_element*, CallArgs,
-       NextPromiseFactory) -> ArenaPromise<ServerMetadataHandle> {
-      return Immediate(ServerMetadataFromStatus(
-          absl::PermissionDeniedError("access denied")));
-    },
-    nullptr, grpc_channel_next_op, 0, init_call_elem,
+    grpc_call_next_op, grpc_channel_next_op, 0, init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set, destroy_call_elem, 0,
     init_channel_elem, grpc_channel_stack_no_post_init, destroy_channel_elem,
     grpc_channel_next_get_info,
@@ -91,7 +85,7 @@ const grpc_channel_filter test_filter = {
     // last one.
     // Filter ordering code falls back to lexical ordering in the absense of
     // other dependencies, so name this appropriately.
-    "zzzzzz_filter_init_fails"};
+    GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_filter_init_fails")};
 
 void RegisterFilter(grpc_channel_stack_type type) {
   CoreConfiguration::RegisterBuilder(
@@ -101,13 +95,13 @@ void RegisterFilter(grpc_channel_stack_type type) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
   InitServer(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello")
@@ -127,12 +121,12 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ServerFilterChannelInitFails) {
 
 CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
   SKIP_IF_FUZZING();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
 
   RegisterFilter(GRPC_SERVER_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello")
@@ -147,14 +141,14 @@ CORE_END2END_TEST(CoreEnd2endTest, ServerFilterCallInitFails) {
 };
 
 CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello")
@@ -167,15 +161,15 @@ CORE_END2END_TEST(CoreEnd2endTest, DISABLED_ClientFilterChannelInitFails) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   SKIP_IF_FUZZING();
 
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello")
@@ -190,14 +184,14 @@ CORE_END2END_TEST(CoreEnd2endTest, ClientFilterCallInitFails) {
 
 CORE_END2END_TEST(CoreClientChannelTest,
                   DISABLED_SubchannelFilterChannelInitFails) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello")
@@ -211,9 +205,9 @@ CORE_END2END_TEST(CoreClientChannelTest,
   // client_channel.c than subsequent calls on the same channel, and we need to
   // test both.)
   auto c2 = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status2;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata2;
-  CoreEnd2endTest::IncomingMessage server_message2;
+  IncomingStatusOnClient server_status2;
+  IncomingMetadata server_initial_metadata2;
+  IncomingMessage server_message2;
   c2.NewBatch(2)
       .SendInitialMetadata({})
       .SendMessage("hi again")
@@ -226,12 +220,12 @@ CORE_END2END_TEST(CoreClientChannelTest,
 }
 
 CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello")
@@ -246,9 +240,9 @@ CORE_END2END_TEST(CoreClientChannelTest, SubchannelFilterCallInitFails) {
   // client_channel.c than subsequent calls on the same channel, and we need to
   // test both.)
   auto c2 = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status2;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata2;
-  CoreEnd2endTest::IncomingMessage server_message2;
+  IncomingStatusOnClient server_status2;
+  IncomingMetadata server_initial_metadata2;
+  IncomingMessage server_message2;
   c2.NewBatch(2)
       .SendInitialMetadata({})
       .SendMessage("hi again")

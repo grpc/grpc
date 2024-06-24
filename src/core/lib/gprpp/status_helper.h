@@ -19,8 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H
 #define GRPC_SRC_CORE_LIB_GPRPP_STATUS_HELPER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stdint.h>
 
 #include <string>
@@ -30,6 +28,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/debug_location.h"
 
@@ -48,8 +48,6 @@ namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
 enum class StatusIntProperty {
-  /// 'errno' from the operating system
-  kErrorNo,
   /// __LINE__ from the call site creating the error
   kFileLine,
   /// stream identifier: for errors that are associated with an individual
@@ -58,23 +56,10 @@ enum class StatusIntProperty {
   /// grpc status code representing this error
   // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
   kRpcStatus,
-  /// offset into some binary blob (usually represented by
-  /// RAW_BYTES) where the error occurred
-  kOffset,
-  /// context sensitive index associated with the error
-  kIndex,
-  /// context sensitive size associated with the error
-  kSize,
   /// http2 error code associated with the error (see the HTTP2 RFC)
   kHttp2Error,
-  /// TSI status code associated with the error
-  kTsiCode,
-  /// WSAGetLastError() reported when this error occurred
-  kWsaError,
   /// File descriptor associated with this error
   kFd,
-  /// HTTP status (i.e. 404)
-  kHttpStatus,
   /// chttp2: did the error occur while a write was in progress
   kOccurredDuringWrite,
   /// channel connectivity state associated with the error
@@ -89,24 +74,8 @@ enum class StatusStrProperty {
   kDescription,
   /// source file in which this error occurred
   kFile,
-  /// operating system description of this error
-  kOsError,
-  /// syscall that generated this error
-  kSyscall,
   /// peer that we were trying to communicate when this error occurred
-  kTargetAddress,
-  /// grpc status message associated with this error
   kGrpcMessage,
-  /// hex dump (or similar) with the data that generated this error
-  kRawBytes,
-  /// tsi error string associated with this error
-  kTsiError,
-  /// filename that we were trying to read/write when this error occurred
-  kFilename,
-  /// key associated with the error
-  kKey,
-  /// value associated with the error
-  kValue,
 };
 
 /// This enum should have the same value of grpc_error_times
@@ -157,6 +126,9 @@ GRPC_MUST_USE_RESULT std::vector<absl::Status> StatusGetChildren(
 /// e.g.
 ///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
 GRPC_MUST_USE_RESULT std::string StatusToString(const absl::Status& status);
+
+/// Adds prefix to the message of status.
+absl::Status AddMessagePrefix(absl::string_view prefix, absl::Status status);
 
 namespace internal {
 

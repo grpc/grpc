@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/transport/promise_endpoint.h"
 
 #include <atomic>
@@ -21,6 +19,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
 
@@ -28,6 +27,7 @@
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -39,7 +39,7 @@ PromiseEndpoint::PromiseEndpoint(
         endpoint,
     SliceBuffer already_received)
     : endpoint_(std::move(endpoint)) {
-  GPR_ASSERT(endpoint_ != nullptr);
+  CHECK_NE(endpoint_, nullptr);
   read_state_->endpoint = endpoint_;
   // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
   // available.
@@ -73,7 +73,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     // Appends `pending_buffer` to `buffer`.
     pending_buffer.MoveFirstNBytesIntoSliceBuffer(pending_buffer.Length(),
                                                   buffer);
-    GPR_DEBUG_ASSERT(pending_buffer.Count() == 0u);
+    DCHECK(pending_buffer.Count() == 0u);
     if (buffer.Length() < num_bytes_requested) {
       // A further read is needed.
       // Set read args with number of bytes needed as hint.

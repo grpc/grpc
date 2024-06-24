@@ -26,7 +26,9 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 # Needed for building binary distribution wheels -- bdist_wheel
-"${PYTHON}" -m pip install --upgrade pip wheel setuptools
+"${PYTHON}" -m pip install --upgrade pip
+# Ping to a single version to make sure we're building the same artifacts
+"${PYTHON}" -m pip install setuptools==69.5.1 wheel==0.43.0
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -90,6 +92,7 @@ ancillary_package_dir=(
   "src/python/grpcio_status/"
   "src/python/grpcio_testing/"
   "src/python/grpcio_observability/"
+  "src/python/grpcio_csm_observability/"
 )
 
 # Copy license to ancillary package directories so it will be distributed.
@@ -238,6 +241,13 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
     cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
   fi
   cp -r src/python/grpcio_observability/dist/*.tar.gz "$ARTIFACT_DIR"
+
+  # Build grpcio_csm_observability distribution
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csm_observability/setup.py \
+        sdist bdist_wheel
+    cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
+  fi
 fi
 
 # We need to use the built grpcio-tools/grpcio to compile the health proto
@@ -250,6 +260,7 @@ then
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then
+    # shellcheck disable=SC2261
     "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
   fi
 

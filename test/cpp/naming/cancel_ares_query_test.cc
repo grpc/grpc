@@ -23,10 +23,12 @@
 
 #include <gmock/gmock.h>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/byte_buffer.h>
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -36,13 +38,11 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/debug/stats.h"
-#include "src/core/lib/debug/stats_data.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -52,12 +52,15 @@
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/stats_data.h"
+#include "src/core/util/string.h"
 #include "test/core/end2end/cq_verifier.h"
-#include "test/core/util/cmdline.h"
-#include "test/core/util/fake_udp_and_tcp_server.h"
-#include "test/core/util/port.h"
-#include "test/core/util/socket_use_after_close_detector.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/cmdline.h"
+#include "test/core/test_util/fake_udp_and_tcp_server.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/socket_use_after_close_detector.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 
 #ifdef GPR_WINDOWS
@@ -116,6 +119,10 @@ void ArgsInit(ArgsStruct* args) {
 void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
+  grpc_core::Notification notification;
+  args->lock->Run([&notification]() { notification.Notify(); }, DEBUG_LOCATION);
+  args->lock.reset();
+  notification.WaitForNotification();
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;
@@ -294,7 +301,7 @@ void TestCancelDuringActiveQuery(
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, rpc_deadline, nullptr);
-  GPR_ASSERT(call);
+  CHECK(call);
   grpc_metadata_array initial_metadata_recv;
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;

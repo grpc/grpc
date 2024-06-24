@@ -29,7 +29,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
                                            grpc_channel_element_args* args) {
@@ -82,8 +82,6 @@ static void free_call(void* arg, grpc_error_handle /*error*/) {
 TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_channel_filter filter = {
       call_func,
-      nullptr,
-      nullptr,
       channel_func,
       sizeof(int),
       call_init_func,
@@ -94,7 +92,7 @@ TEST(ChannelStackTest, CreateChannelStack) {
       grpc_channel_stack_no_post_init,
       channel_destroy_func,
       grpc_channel_next_get_info,
-      "some_test_filter"};
+      GRPC_UNIQUE_TYPE_NAME_HERE("some_test_filter")};
   const grpc_channel_filter* filters = &filter;
   grpc_channel_stack* channel_stack;
   grpc_call_stack* call_stack;
@@ -125,7 +123,6 @@ TEST(ChannelStackTest, CreateChannelStack) {
   const grpc_call_element_args args = {
       call_stack,                         // call_stack
       nullptr,                            // server_transport_data
-      nullptr,                            // context
       path,                               // path
       gpr_get_cycle_counter(),            // start_time
       grpc_core::Timestamp::InfFuture(),  // deadline

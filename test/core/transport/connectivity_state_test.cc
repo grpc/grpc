@@ -22,8 +22,8 @@
 
 #include <grpc/grpc.h>
 
-#include "test/core/util/test_config.h"
-#include "test/core/util/tracer_util.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tracer_util.h"
 
 namespace grpc_core {
 namespace {
@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   grpc_core::testing::grpc_tracer_enable_flag(
-      &grpc_core::grpc_connectivity_state_trace);
+      &grpc_core::connectivity_state_trace);
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;

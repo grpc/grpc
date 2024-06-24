@@ -34,8 +34,8 @@ namespace {
 
 void TestMaxMessageLengthOnClientOnRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/service/method").Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello world")
@@ -51,8 +51,8 @@ void TestMaxMessageLengthOnClientOnRequest(CoreEnd2endTest& test) {
 
 void TestMaxMessageLengthOnServerOnRequest(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/service/method").Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendMessage("hello world")
@@ -62,8 +62,8 @@ void TestMaxMessageLengthOnServerOnRequest(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingCloseOnServer client_close;
+  IncomingMessage client_message;
   s.NewBatch(102).RecvCloseOnServer(client_close).RecvMessage(client_message);
   test.Expect(102, true);
   test.Expect(1, true);
@@ -77,9 +77,9 @@ void TestMaxMessageLengthOnServerOnRequest(CoreEnd2endTest& test) {
 
 void TestMaxMessageLengthOnClientOnResponse(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/service/method").Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -89,7 +89,7 @@ void TestMaxMessageLengthOnClientOnResponse(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .RecvCloseOnServer(client_close)
@@ -106,9 +106,9 @@ void TestMaxMessageLengthOnClientOnResponse(CoreEnd2endTest& test) {
 
 void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
   auto c = test.NewClientCall("/service/method").Create();
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -118,7 +118,7 @@ void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .RecvCloseOnServer(client_close)
@@ -136,7 +136,7 @@ void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
 CORE_END2END_TEST(CoreEnd2endTest,
                   MaxMessageLengthOnClientOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnRequest(*this);
@@ -146,7 +146,7 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -165,7 +165,7 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -183,7 +183,7 @@ CORE_END2END_TEST(
 CORE_END2END_TEST(CoreEnd2endTest,
                   MaxMessageLengthOnServerOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnRequest(*this);
@@ -192,7 +192,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
 CORE_END2END_TEST(CoreEnd2endTest,
                   MaxMessageLengthOnClientOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnResponse(*this);
@@ -202,7 +202,7 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -221,7 +221,7 @@ CORE_END2END_TEST(
     CoreEnd2endTest,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -239,7 +239,7 @@ CORE_END2END_TEST(
 CORE_END2END_TEST(CoreEnd2endTest,
                   MaxMessageLengthOnServerOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnResponse(*this);
@@ -247,7 +247,7 @@ CORE_END2END_TEST(CoreEnd2endTest,
 
 CORE_END2END_TEST(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   // Set limit via channel args.
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
@@ -284,7 +284,7 @@ CORE_END2END_TEST(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
 CORE_END2END_TEST(Http2Test,
                   MaxMessageLengthOnClientOnResponseWithCompression) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   // Set limit via channel args.
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));

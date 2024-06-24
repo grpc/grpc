@@ -43,8 +43,10 @@ class XdsBootstrapBuilder {
     servers_ = std::vector<std::string>(servers.begin(), servers.end());
     return *this;
   }
-  XdsBootstrapBuilder& SetXdsChannelCredentials(const std::string& type) {
+  XdsBootstrapBuilder& SetXdsChannelCredentials(
+      const std::string& type, const std::string& config = "") {
     xds_channel_creds_type_ = type;
+    xds_channel_creds_config_ = config;
     return *this;
   }
   XdsBootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
@@ -62,7 +64,15 @@ class XdsBootstrapBuilder {
   XdsBootstrapBuilder& AddAuthority(
       const std::string& authority, const std::string& server = "",
       const std::string& client_listener_resource_name_template = "") {
-    authorities_[authority] = {server, client_listener_resource_name_template};
+    return AddAuthority(authority,
+                        server.empty() ? std::vector<std::string>()
+                                       : std::vector<std::string>({server}),
+                        client_listener_resource_name_template);
+  }
+  XdsBootstrapBuilder& AddAuthority(
+      const std::string& authority, const std::vector<std::string>& servers,
+      const std::string& client_listener_resource_name_template = "") {
+    authorities_[authority] = {servers, client_listener_resource_name_template};
     return *this;
   }
   XdsBootstrapBuilder& SetServerListenerResourceNameTemplate(
@@ -80,7 +90,7 @@ class XdsBootstrapBuilder {
     std::string plugin_config;
   };
   struct AuthorityInfo {
-    std::string server;
+    std::vector<std::string> servers;
     std::string client_listener_resource_name_template;
   };
 
@@ -92,6 +102,7 @@ class XdsBootstrapBuilder {
   bool ignore_resource_deletion_ = false;
   std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
+  std::string xds_channel_creds_config_;
   std::string client_default_listener_resource_name_template_;
   std::map<std::string /*key*/, PluginInfo> plugins_;
   std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;

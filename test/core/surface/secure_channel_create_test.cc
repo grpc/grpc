@@ -29,7 +29,7 @@
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/channel.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 void test_unknown_scheme_target(void) {
   grpc_channel_credentials* creds =
@@ -37,7 +37,7 @@ void test_unknown_scheme_target(void) {
   grpc_channel* chan = grpc_channel_create("blah://blah", creds, nullptr);
   grpc_channel_element* elem = grpc_channel_stack_element(
       grpc_core::Channel::FromC(chan)->channel_stack(), 0);
-  ASSERT_STREQ(elem->filter->name, "lame-client");
+  ASSERT_EQ(elem->filter->name.name(), "lame-client");
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Channel::FromC(chan)->Unref();
   creds->Unref();
@@ -51,7 +51,7 @@ void test_security_connector_already_in_arg(void) {
   grpc_channel* chan = grpc_channel_create(nullptr, nullptr, &args);
   grpc_channel_element* elem = grpc_channel_stack_element(
       grpc_core::Channel::FromC(chan)->channel_stack(), 0);
-  ASSERT_STREQ(elem->filter->name, "lame-client");
+  ASSERT_EQ(elem->filter->name.name(), "lame-client");
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Channel::FromC(chan)->Unref();
 }
@@ -60,7 +60,7 @@ void test_null_creds(void) {
   grpc_channel* chan = grpc_channel_create(nullptr, nullptr, nullptr);
   grpc_channel_element* elem = grpc_channel_stack_element(
       grpc_core::Channel::FromC(chan)->channel_stack(), 0);
-  ASSERT_STREQ(elem->filter->name, "lame-client");
+  ASSERT_EQ(elem->filter->name.name(), "lame-client");
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Channel::FromC(chan)->Unref();
 }

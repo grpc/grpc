@@ -44,18 +44,18 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
 const NoInterceptor HttpServerFilter::Call::OnClientToServerMessage;
+const NoInterceptor HttpServerFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor HttpServerFilter::Call::OnServerToClientMessage;
 const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata>("http-server");
+                           kFilterExaminesServerInitialMetadata>();
 
 namespace {
 void FilterOutgoingMetadata(ServerMetadata* md) {
@@ -67,7 +67,7 @@ void FilterOutgoingMetadata(ServerMetadata* md) {
 
 ServerMetadataHandle MalformedRequest(absl::string_view explanation) {
   auto* arena = GetContext<Arena>();
-  auto hdl = arena->MakePooled<ServerMetadata>(arena);
+  auto hdl = arena->MakePooled<ServerMetadata>();
   hdl->Set(GrpcStatusMetadata(), GRPC_STATUS_UNKNOWN);
   hdl->Set(GrpcMessageMetadata(), Slice::FromStaticString(explanation));
   hdl->Set(GrpcTarPit(), Empty());
@@ -139,7 +139,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 }
 
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[http-server] Write metadata",
             GetContext<Activity>()->DebugTag().c_str());
   }
@@ -152,9 +152,9 @@ void HttpServerFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   FilterOutgoingMetadata(&md);
 }
 
-absl::StatusOr<HttpServerFilter> HttpServerFilter::Create(
+absl::StatusOr<std::unique_ptr<HttpServerFilter>> HttpServerFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
-  return HttpServerFilter(
+  return std::make_unique<HttpServerFilter>(
       args.GetBool(GRPC_ARG_SURFACE_USER_AGENT).value_or(true),
       args.GetBool(
               GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS)

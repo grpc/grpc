@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <atomic>
 #include <cstddef>
@@ -25,19 +23,21 @@
 #include <memory>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -56,17 +56,16 @@
 #include "src/core/lib/security/transport/auth_filters.h"  // IWYU pragma: keep
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
 const grpc_channel_filter ServerAuthFilter::kFilter =
-    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>(
-        "server-auth");
+    MakePromiseBasedFilter<ServerAuthFilter, FilterEndpoint::kServer>();
 
 const NoInterceptor ServerAuthFilter::Call::OnClientToServerMessage;
+const NoInterceptor ServerAuthFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor ServerAuthFilter::Call::OnServerToClientMessage;
 const NoInterceptor ServerAuthFilter::Call::OnServerInitialMetadata;
 const NoInterceptor ServerAuthFilter::Call::OnServerTrailingMetadata;
@@ -132,7 +131,7 @@ struct ServerAuthFilter::RunApplicationCode::State {
 ServerAuthFilter::RunApplicationCode::RunApplicationCode(
     ServerAuthFilter* filter, ClientMetadata& metadata)
     : state_(GetContext<Arena>()->ManagedNew<State>(metadata)) {
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_ERROR,
             "%s[server-auth]: Delegate to application: filter=%p this=%p "
             "auth_ctx=%p",
@@ -201,11 +200,7 @@ ServerAuthFilter::Call::Call(ServerAuthFilter* filter) {
       grpc_server_security_context_create(GetContext<Arena>());
   server_ctx->auth_context =
       filter->auth_context_->Ref(DEBUG_LOCATION, "server_auth_filter");
-  grpc_call_context_element& context =
-      GetContext<grpc_call_context_element>()[GRPC_CONTEXT_SECURITY];
-  if (context.value != nullptr) context.destroy(context.value);
-  context.value = server_ctx;
-  context.destroy = grpc_server_security_context_destroy;
+  SetContext<SecurityContext>(server_ctx);
 }
 
 ServerAuthFilter::ServerAuthFilter(
@@ -213,12 +208,13 @@ ServerAuthFilter::ServerAuthFilter(
     RefCountedPtr<grpc_auth_context> auth_context)
     : server_credentials_(server_credentials), auth_context_(auth_context) {}
 
-absl::StatusOr<ServerAuthFilter> ServerAuthFilter::Create(
+absl::StatusOr<std::unique_ptr<ServerAuthFilter>> ServerAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
-  GPR_ASSERT(auth_context != nullptr);
+  CHECK(auth_context != nullptr);
   auto creds = args.GetObjectRef<grpc_server_credentials>();
-  return ServerAuthFilter(std::move(creds), std::move(auth_context));
+  return std::make_unique<ServerAuthFilter>(std::move(creds),
+                                            std::move(auth_context));
 }
 
 }  // namespace grpc_core

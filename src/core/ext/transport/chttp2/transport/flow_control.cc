@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 
 #include <inttypes.h>
@@ -29,18 +27,18 @@
 #include <tuple>
 #include <vector>
 
+#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-
-grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
+#include "src/core/util/useful.h"
 
 namespace grpc_core {
 namespace chttp2 {
@@ -235,7 +233,7 @@ void TransportFlowControl::UpdateSetting(
     FlowControlAction& (FlowControlAction::*set)(FlowControlAction::Urgency,
                                                  uint32_t)) {
   if (new_desired_value != *desired_value) {
-    if (grpc_flowctl_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(flowctl)) {
       gpr_log(GPR_INFO, "[flowctl] UPDATE SETTING %s from %" PRId64 " to %d",
               std::string(name).c_str(), *desired_value, new_desired_value);
     }
@@ -337,7 +335,7 @@ void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = absl::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  GPR_ASSERT(DesiredAnnounceSize() == 0);
+  CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 
@@ -387,7 +385,7 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
-  GPR_ASSERT(pending_size >= 0);
+  CHECK_GE(pending_size, 0);
   sfc_->pending_size_ = pending_size;
 }
 

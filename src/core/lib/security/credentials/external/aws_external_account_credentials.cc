@@ -13,8 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 
 #include <string.h>
@@ -22,6 +20,7 @@
 #include <map>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -30,21 +29,23 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
+#include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/http_client/httpcli_ssl_credentials.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -228,8 +229,8 @@ void AwsExternalAccountCredentials::OnRetrieveImdsV2SessionTokenInternal(
 void AwsExternalAccountCredentials::AddMetadataRequestHeaders(
     grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
-    GPR_ASSERT(request->hdr_count == 0);
-    GPR_ASSERT(request->hdrs == nullptr);
+    CHECK_EQ(request->hdr_count, 0u);
+    CHECK_EQ(request->hdrs, nullptr);
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
     headers[0].key = gpr_strdup("x-aws-ec2-metadata-token");

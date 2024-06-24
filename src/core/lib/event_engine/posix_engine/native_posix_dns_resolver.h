@@ -15,11 +15,11 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_POSIX_DNS_RESOLVER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_NATIVE_POSIX_DNS_RESOLVER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 
 #include "absl/strings/string_view.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 

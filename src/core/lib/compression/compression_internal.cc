@@ -16,8 +16,6 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/compression/compression_internal.h"
 
 #include <stdlib.h>
@@ -25,12 +23,14 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/log/check.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
 #include <grpc/compression.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -121,7 +121,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     return GRPC_COMPRESS_NONE;
   }
 
-  GPR_ASSERT(level > 0);
+  CHECK_GT(level, 0);
 
   // Establish a "ranking" or compression algorithms in increasing order of
   // compression.

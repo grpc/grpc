@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/gprpp/uuid_v4.h"
 
 #include "absl/strings/str_format.h"
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

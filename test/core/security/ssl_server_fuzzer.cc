@@ -15,18 +15,21 @@
 // limitations under the License.
 //
 //
+#include "absl/log/check.h"
 
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
-#include "test/core/util/mock_endpoint.h"
-#include "test/core/util/tls_utils.h"
+#include "test/core/test_util/mock_endpoint.h"
+#include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -40,12 +43,8 @@ bool squelch = true;
 // Turning this on will fail the leak check.
 bool leak_check = false;
 
-static void discard_write(grpc_slice /*slice*/) {}
-
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 struct handshake_state {
-  bool done_callback_called;
+  grpc_core::Notification done_signal;
 };
 
 static void on_handshake_done(void* arg, grpc_error_handle error) {
@@ -53,23 +52,26 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
       static_cast<grpc_core::HandshakerArgs*>(arg);
   struct handshake_state* state =
       static_cast<struct handshake_state*>(args->user_data);
-  GPR_ASSERT(state->done_callback_called == false);
-  state->done_callback_called = true;
   // The fuzzer should not pass the handshake.
-  GPR_ASSERT(!error.ok());
+  CHECK(!error.ok());
+  state->done_signal.Notify();
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
 
-    grpc_endpoint* mock_endpoint = grpc_mock_endpoint_create(discard_write);
-
-    grpc_mock_endpoint_put_read(
-        mock_endpoint, grpc_slice_from_copied_buffer((const char*)data, size));
-    grpc_mock_endpoint_finish_put_reads(mock_endpoint);
+    auto engine = GetDefaultEventEngine();
+    auto mock_endpoint_controller =
+        grpc_event_engine::experimental::MockEndpointController::Create(engine);
+    mock_endpoint_controller->TriggerReadEvent(
+        grpc_event_engine::experimental::Slice::FromCopiedBuffer(
+            reinterpret_cast<const char*>(data), size));
+    mock_endpoint_controller->NoMoreReads();
 
     // Load key pair and establish server SSL credentials.
     std::string ca_cert = grpc_core::testing::GetFileContents(CA_CERT_PATH);
@@ -85,31 +87,28 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(grpc_core::ChannelArgs());
-    GPR_ASSERT(sc != nullptr);
+    CHECK(sc != nullptr);
     grpc_core::Timestamp deadline =
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
     struct handshake_state state;
-    state.done_callback_called = false;
     auto handshake_mgr =
         grpc_core::MakeRefCounted<grpc_core::HandshakeManager>();
-    auto channel_args = grpc_core::ChannelArgs().SetObject<EventEngine>(
-        GetDefaultEventEngine());
+    auto channel_args =
+        grpc_core::ChannelArgs().SetObject<EventEngine>(std::move(engine));
     sc->add_handshakers(channel_args, nullptr, handshake_mgr.get());
-    handshake_mgr->DoHandshake(mock_endpoint, channel_args, deadline,
-                               nullptr /* acceptor */, on_handshake_done,
-                               &state);
+    handshake_mgr->DoHandshake(mock_endpoint_controller->TakeCEndpoint(),
+                               channel_args, deadline, nullptr /* acceptor */,
+                               on_handshake_done, &state);
     grpc_core::ExecCtx::Get()->Flush();
 
     // If the given string happens to be part of the correct client hello, the
     // server will wait for more data. Explicitly fail the server by shutting
-    // down the endpoint.
-    if (!state.done_callback_called) {
-      grpc_endpoint_shutdown(mock_endpoint,
-                             GRPC_ERROR_CREATE("Explicit close"));
-      grpc_core::ExecCtx::Get()->Flush();
+    // down the handshake manager.
+    if (!state.done_signal.WaitForNotificationWithTimeout(absl::Seconds(3))) {
+      handshake_mgr->Shutdown(
+          absl::DeadlineExceededError("handshake did not fail as expected"));
     }
-    GPR_ASSERT(state.done_callback_called);
 
     sc.reset(DEBUG_LOCATION, "test");
     grpc_server_credentials_release(creds);

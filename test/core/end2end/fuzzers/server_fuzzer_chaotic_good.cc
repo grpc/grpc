@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/log/check.h"
+
 #include <grpc/grpc_security.h>
 
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -33,8 +35,8 @@ DEFINE_PROTO_FUZZER(const fuzzer_input::Msg& msg) {
             grpc_event_engine::experimental::URIToResolvedAddress(
                 absl::StrCat("ipv4:0.0.0.0:", port_num))
                 .value());
-        GPR_ASSERT(port.ok());
-        GPR_ASSERT(port.value() == port_num);
+        CHECK_OK(port);
+        CHECK_EQ(port.value(), port_num);
         grpc_core::Server::FromC(server)->AddListener(
             grpc_core::OrphanablePtr<
                 grpc_core::chaotic_good::ChaoticGoodServerListener>(listener));

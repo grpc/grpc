@@ -12,96 +12,120 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "src/core/lib/transport/call_spine.h"
+
+#include "absl/functional/any_invocable.h"
+
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/transport/call_spine.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
 
 void ForwardCall(CallHandler call_handler, CallInitiator call_initiator,
-                 ClientMetadataHandle client_initial_metadata) {
-  // Send initial metadata.
-  call_initiator.SpawnGuarded(
-      "send_initial_metadata",
-      [client_initial_metadata = std::move(client_initial_metadata),
-       call_initiator]() mutable {
-        return call_initiator.PushClientInitialMetadata(
-            std::move(client_initial_metadata));
-      });
+                 absl::AnyInvocable<void(ServerMetadata&)>
+                     on_server_trailing_metadata_from_initiator) {
   // Read messages from handler into initiator.
-  call_handler.SpawnGuarded("read_messages", [call_handler,
-                                              call_initiator]() mutable {
-    return Seq(ForEach(OutgoingMessages(call_handler),
-                       [call_initiator](MessageHandle msg) mutable {
-                         // Need to spawn a job into the initiator's activity to
-                         // push the message in.
-                         return call_initiator.SpawnWaitable(
-                             "send_message",
-                             [msg = std::move(msg), call_initiator]() mutable {
-                               return call_initiator.CancelIfFails(
-                                   call_initiator.PushMessage(std::move(msg)));
-                             });
-                       }),
-               [call_initiator](StatusFlag result) mutable {
-                 if (result.ok()) {
-                   call_initiator.SpawnInfallible(
-                       "finish-downstream-ok", [call_initiator]() mutable {
-                         call_initiator.FinishSends();
-                         return Empty{};
-                       });
-                 } else {
-                   call_initiator.SpawnInfallible("finish-downstream-fail",
-                                                  [call_initiator]() mutable {
-                                                    call_initiator.Cancel();
-                                                    return Empty{};
-                                                  });
-                 }
-                 return result;
-               });
-  });
-  call_initiator.SpawnInfallible("read_the_things", [call_initiator,
-                                                     call_handler]() mutable {
-    return Seq(
-        call_initiator.CancelIfFails(TrySeq(
-            call_initiator.PullServerInitialMetadata(),
-            [call_handler,
-             call_initiator](absl::optional<ServerMetadataHandle> md) mutable {
-              const bool has_md = md.has_value();
-              call_handler.SpawnGuarded(
-                  "recv_initial_metadata",
-                  [md = std::move(md), call_handler]() mutable {
-                    return call_handler.PushServerInitialMetadata(
-                        std::move(md));
-                  });
-              return If(
-                  has_md,
-                  ForEach(OutgoingMessages(call_initiator),
-                          [call_handler](MessageHandle msg) mutable {
-                            return call_handler.SpawnWaitable(
-                                "recv_message",
-                                [msg = std::move(msg), call_handler]() mutable {
-                                  return call_handler.CancelIfFails(
-                                      call_handler.PushMessage(std::move(msg)));
-                                });
-                          }),
-                  []() -> StatusFlag { return Success{}; });
-            })),
-        call_initiator.PullServerTrailingMetadata(),
-        [call_handler](ServerMetadataHandle md) mutable {
-          call_handler.SpawnGuarded(
-              "recv_trailing_metadata",
-              [md = std::move(md), call_handler]() mutable {
-                return call_handler.PushServerTrailingMetadata(std::move(md));
-              });
-          return Empty{};
+  call_handler.SpawnInfallible(
+      "read_messages", [call_handler, call_initiator]() mutable {
+        return Seq(
+            ForEach(OutgoingMessages(call_handler),
+                    [call_initiator](MessageHandle msg) mutable {
+                      // Need to spawn a job into the initiator's activity to
+                      // push the message in.
+                      return call_initiator.SpawnWaitable(
+                          "send_message",
+                          [msg = std::move(msg), call_initiator]() mutable {
+                            return call_initiator.PushMessage(std::move(msg));
+                          });
+                    }),
+            [call_initiator](StatusFlag result) mutable {
+              if (result.ok()) {
+                call_initiator.SpawnInfallible("finish-downstream-ok",
+                                               [call_initiator]() mutable {
+                                                 call_initiator.FinishSends();
+                                                 return Empty{};
+                                               });
+              }
+              return Empty{};
+            });
+      });
+  call_handler.SpawnInfallible(
+      "check_cancellation", [call_handler, call_initiator]() mutable {
+        return Map(call_handler.WasCancelled(), [call_initiator =
+                                                     std::move(call_initiator)](
+                                                    bool cancelled) mutable {
+          if (cancelled) {
+            call_initiator.SpawnInfallible("propagate_handler_cancel",
+                                           [call_initiator]() mutable {
+                                             call_initiator.Cancel();
+                                             return Empty();
+                                           });
+          }
+          return Empty();
         });
-  });
+      });
+  call_initiator.SpawnInfallible(
+      "read_the_things",
+      [call_initiator, call_handler,
+       on_server_trailing_metadata_from_initiator =
+           std::move(on_server_trailing_metadata_from_initiator)]() mutable {
+        return Seq(
+            call_initiator.CancelIfFails(TrySeq(
+                call_initiator.PullServerInitialMetadata(),
+                [call_handler, call_initiator](
+                    absl::optional<ServerMetadataHandle> md) mutable {
+                  const bool has_md = md.has_value();
+                  return If(
+                      has_md,
+                      [&call_handler, &call_initiator,
+                       md = std::move(md)]() mutable {
+                        call_handler.SpawnGuarded(
+                            "recv_initial_metadata",
+                            [md = std::move(*md), call_handler]() mutable {
+                              return call_handler.PushServerInitialMetadata(
+                                  std::move(md));
+                            });
+                        return ForEach(
+                            OutgoingMessages(call_initiator),
+                            [call_handler](MessageHandle msg) mutable {
+                              return call_handler.SpawnWaitable(
+                                  "recv_message", [msg = std::move(msg),
+                                                   call_handler]() mutable {
+                                    return call_handler.CancelIfFails(
+                                        call_handler.PushMessage(
+                                            std::move(msg)));
+                                  });
+                            });
+                      },
+                      []() -> StatusFlag { return Success{}; });
+                })),
+            call_initiator.PullServerTrailingMetadata(),
+            [call_handler,
+             on_server_trailing_metadata_from_initiator =
+                 std::move(on_server_trailing_metadata_from_initiator)](
+                ServerMetadataHandle md) mutable {
+              on_server_trailing_metadata_from_initiator(*md);
+              call_handler.SpawnInfallible(
+                  "recv_trailing",
+                  [call_handler, md = std::move(md)]() mutable {
+                    call_handler.PushServerTrailingMetadata(std::move(md));
+                    return Empty{};
+                  });
+              return Empty{};
+            });
+      });
 }
 
-CallInitiatorAndHandler MakeCall(
-    grpc_event_engine::experimental::EventEngine* event_engine, Arena* arena) {
-  auto spine = CallSpine::Create(event_engine, arena);
-  return {CallInitiator(spine), CallHandler(spine)};
+CallInitiatorAndHandler MakeCallPair(
+    ClientMetadataHandle client_initial_metadata,
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    RefCountedPtr<Arena> arena) {
+  CHECK_NE(arena.get(), nullptr);
+  auto spine = CallSpine::Create(std::move(client_initial_metadata),
+                                 event_engine, std::move(arena));
+  return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 
 }  // namespace grpc_core

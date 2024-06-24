@@ -101,7 +101,6 @@ CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -442,7 +441,7 @@ DEFINE_MACROS += (("GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER", 1),)
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.
-# <inttypes.h> was included in core/lib/channel/call_tracer.h.
+# <inttypes.h> was included in core/telemetry/call_tracer.h.
 # This macro should already be defined in grpc/grpc.h through port_platform.h,
 # but we're still having issue in aarch64, so we manually define the macro here.
 # TODO(xuanwn): Figure out what's going on in the aarch64 build so we can support
@@ -545,7 +544,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=0.23,<3.0.0rc1",)
+        SETUP_REQUIRES += ("cython>=3.0.0",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,
@@ -597,7 +596,7 @@ setuptools.setup(
     packages=list(PACKAGES),
     package_dir=PACKAGE_DIRECTORIES,
     package_data=PACKAGE_DATA,
-    python_requires=">=3.7",
+    python_requires=">=3.8",
     install_requires=INSTALL_REQUIRES,
     extras_require=EXTRAS_REQUIRES,
     setup_requires=SETUP_REQUIRES,

@@ -32,7 +32,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 absl::once_flag once;

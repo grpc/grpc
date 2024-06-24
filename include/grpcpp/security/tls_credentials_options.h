@@ -103,6 +103,8 @@ class TlsCredentialsOptions {
   // call is covered by the cert that the peer presented.
   // We will perform such checks by default. This should be disabled if
   // verifiers other than the host name verifier is used.
+  // Deprecated: This function will be removed in the 1.66 release. This will be
+  // replaced by and handled within the custom verifier settings.
   void set_check_call_host(bool check_call_host);
 
   // Deprecated in favor of set_crl_provider. The
@@ -111,6 +113,8 @@ class TlsCredentialsOptions {
   // If set, gRPC will read all hashed x.509 CRL files in the directory and
   // enforce the CRL files on all TLS handshakes. Only supported for OpenSSL
   // version > 1.1.
+  // Deprecated: This function will be removed in the 1.66 release. Use the
+  // set_crl_provider function instead.
   void set_crl_directory(const std::string& path);
 
   void set_crl_provider(std::shared_ptr<CrlProvider> crl_provider);
@@ -184,6 +188,7 @@ class TlsServerCredentialsOptions final : public TlsCredentialsOptions {
   // WARNING: This API is extremely dangerous and should not be used. If the
   // server's trust bundle is too large, then the TLS server will be unable to
   // form a ServerHello, and hence will be unusable.
+  // Deprecated: This function will be removed in the 1.66 release.
   void set_send_client_ca_list(bool send_client_ca_list);
 
  private:

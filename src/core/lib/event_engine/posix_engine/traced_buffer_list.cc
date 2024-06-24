@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix_engine/traced_buffer_list.h"
 
 #include <stddef.h>
@@ -24,8 +22,10 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
 
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/sync.h"
@@ -49,7 +49,7 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
 
 void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
                                absl::Status /*shudown_err*/) {
-  gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
+  VLOG(2) << "Timestamps callback has not been registered";
 }
 
 // The saved callback function that will be invoked when we get all the

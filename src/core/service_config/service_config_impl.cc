@@ -14,8 +14,6 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/service_config/service_config_impl.h"
 
 #include <string.h>
@@ -28,17 +26,19 @@
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/validation_errors.h"
-#include "src/core/lib/json/json.h"
-#include "src/core/lib/json/json_args.h"
-#include "src/core/lib/json/json_object_loader.h"
-#include "src/core/lib/json/json_reader.h"
-#include "src/core/lib/json/json_writer.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_args.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 

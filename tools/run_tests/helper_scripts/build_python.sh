@@ -178,6 +178,7 @@ if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
   pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
+  pip_install_dir_and_deps "$ROOT/src/python/grpcio_csm_observability"
 fi
 
 # Build/install Channelz
@@ -215,9 +216,10 @@ pip_install_dir "$ROOT/src/python/grpcio_admin"
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
+# shellcheck disable=SC2261
 pip_install coverage==7.2.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
-            googleapis-common-protos>=1.5.5 rsa==4.0 absl-py==1.4.0 \
+            rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos

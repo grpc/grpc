@@ -26,6 +26,7 @@ grpc_cc_library(
     srcs = ["transport_security_test_lib.cc"],
     hdrs = ["transport_security_test_lib.h"],
     external_deps = [
+        "absl/log:check",
         "libssl",
         "libcrypto",
     ],
@@ -43,7 +44,7 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -51,13 +52,14 @@ grpc_cc_test(
     name = "ssl_session_cache_test",
     srcs = ["ssl_session_cache_test.cc"],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -82,14 +84,14 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
-        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "ssl_transport_security_test",
-    timeout = "long",
+    timeout = "eternal",
     srcs = ["ssl_transport_security_test.cc"],
     data = [
         "//src/core/tsi/test_creds:badclient.key",
@@ -109,16 +111,18 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
     ],
     external_deps = [
+        "absl/log:log",
         "absl/strings",
         "gtest",
     ],
     language = "C++",
+    shard_count = 5,
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -147,6 +151,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls_missing_root:b9322cac.r0",
     ],
     external_deps = [
+        "absl/log:check",
         "gtest",
     ],
     language = "C++",
@@ -156,18 +161,21 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:tsi",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "transport_security_test",
     srcs = ["transport_security_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

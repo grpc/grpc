@@ -16,16 +16,17 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/combiner.h"
 
 #include <assert.h>
 #include <inttypes.h>
 #include <string.h>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -33,13 +34,11 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
-
-#define GRPC_COMBINER_TRACE(fn)          \
-  do {                                   \
-    if (grpc_combiner_trace.enabled()) { \
-      fn;                                \
-    }                                    \
+#define GRPC_COMBINER_TRACE(fn)              \
+  do {                                       \
+    if (GRPC_TRACE_FLAG_ENABLED(combiner)) { \
+      fn;                                    \
+    }                                        \
   } while (0)
 
 #define STATE_UNORPHANED 1
@@ -65,7 +64,7 @@ grpc_core::Combiner* grpc_combiner_create(
 
 static void really_destroy(grpc_core::Combiner* lock) {
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p really_destroy", lock));
-  GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
+  CHECK_EQ(gpr_atm_no_barrier_load(&lock->state), 0);
   delete lock;
 }
 
@@ -80,7 +79,7 @@ static void start_destroy(grpc_core::Combiner* lock) {
 
 #ifndef NDEBUG
 #define GRPC_COMBINER_DEBUG_SPAM(op, delta)                                \
-  if (grpc_combiner_trace.enabled()) {                                     \
+  if (GRPC_TRACE_FLAG_ENABLED(combiner)) {                                 \
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,                            \
             "C:%p %s %" PRIdPTR " --> %" PRIdPTR " %s", lock, (op),        \
             gpr_atm_no_barrier_load(&lock->refs.count),                    \
@@ -149,7 +148,7 @@ static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
       gpr_atm_no_barrier_store(&lock->initiating_exec_ctx_or_null, 0);
     }
   }
-  GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
+  CHECK(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
   assert(cl->cb);
   cl->error_data.error = grpc_core::internal::StatusAllocHeapPtr(error);
   lock->queue.Push(cl->next_data.mpscq_node.get());
@@ -231,7 +230,7 @@ bool grpc_combiner_continue_exec_ctx() {
     cl->cb(cl->cb_arg, std::move(cl_err));
   } else {
     grpc_closure* c = lock->final_list.head;
-    GPR_ASSERT(c != nullptr);
+    CHECK_NE(c, nullptr);
     grpc_closure_list_init(&lock->final_list);
     int loops = 0;
     while (c != nullptr) {
@@ -294,7 +293,7 @@ static void enqueue_finally(void* closure, grpc_error_handle error);
 static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure,
                                   grpc_error_handle error) {
-  GPR_ASSERT(lock != nullptr);
+  CHECK_NE(lock, nullptr);
   GRPC_COMBINER_TRACE(gpr_log(
       GPR_INFO, "C:%p grpc_combiner_execute_finally c=%p; ac=%p", lock, closure,
       grpc_core::ExecCtx::Get()->combiner_data()->active_combiner));

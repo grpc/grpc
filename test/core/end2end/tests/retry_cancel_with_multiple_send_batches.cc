@@ -41,7 +41,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
-#include "test/core/util/test_config.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
@@ -86,9 +86,9 @@ void TestRetryCancelWithMultipleSendBatches(
   // Start a batch containing send_trailing_metadata.
   c.NewBatch(3).SendCloseFromClient();
   // Start a batch containing recv ops.
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingMetadata server_incoming_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMessage server_message;
+  IncomingMetadata server_incoming_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(4)
       .RecvInitialMetadata(server_incoming_metadata)
       .RecvMessage(server_message)
@@ -162,8 +162,6 @@ class FailSendOpsFilter {
 
 grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
-    nullptr,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -174,7 +172,7 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailSendOpsFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailSendOpsFilter"),
 };
 
 void RegisterFilter() {

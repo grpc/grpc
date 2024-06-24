@@ -15,23 +15,23 @@
 #ifndef GRPC_SRC_CORE_LIB_GPRPP_CONSTRUCT_DESTRUCT_H
 #define GRPC_SRC_CORE_LIB_GPRPP_CONSTRUCT_DESTRUCT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <new>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
 // Call the destructor of p without having to name the type of p.
 template <typename T>
-void Destruct(T* p) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Destruct(T* p) {
   p->~T();
 }
 
 // Call the constructor of p without having to name the type of p and forward
 // any arguments
 template <typename T, typename... Args>
-void Construct(T* p, Args&&... args) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Construct(T* p, Args&&... args) {
   new (p) T(std::forward<Args>(args)...);
 }
 

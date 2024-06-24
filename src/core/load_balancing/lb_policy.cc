@@ -16,9 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/load_balancing/lb_policy.h"
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -27,18 +27,15 @@
 
 namespace grpc_core {
 
-DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
-
 //
 // LoadBalancingPolicy
 //
 
 LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
-    : InternallyRefCounted(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
-              ? "LoadBalancingPolicy"
-              : nullptr,
-          initial_refcount),
+    : InternallyRefCounted(GRPC_TRACE_FLAG_ENABLED(lb_policy_refcount)
+                               ? "LoadBalancingPolicy"
+                               : nullptr,
+                           initial_refcount),
       work_serializer_(std::move(args.work_serializer)),
       interested_parties_(grpc_pollset_set_create()),
       channel_control_helper_(std::move(args.channel_control_helper)),
@@ -58,7 +55,7 @@ void LoadBalancingPolicy::Orphan() {
 //
 
 LoadBalancingPolicy::SubchannelPicker::SubchannelPicker()
-    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_trace_lb_policy_refcount)
+    : DualRefCounted(GRPC_TRACE_FLAG_ENABLED(lb_policy_refcount)
                          ? "SubchannelPicker"
                          : nullptr) {}
 

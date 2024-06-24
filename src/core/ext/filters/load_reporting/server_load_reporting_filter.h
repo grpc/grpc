@@ -39,7 +39,9 @@ class ServerLoadReportingFilter
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::StatusOr<ServerLoadReportingFilter> Create(
+  static absl::string_view TypeName() { return "server_load_reporting"; }
+
+  static absl::StatusOr<std::unique_ptr<ServerLoadReportingFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 
   // Getters.
@@ -54,6 +56,7 @@ class ServerLoadReportingFilter
     void OnServerTrailingMetadata(ServerMetadata& md,
                                   ServerLoadReportingFilter* filter);
     static const NoInterceptor OnClientToServerMessage;
+    static const NoInterceptor OnClientToServerHalfClose;
     static const NoInterceptor OnServerToClientMessage;
     void OnFinalize(const grpc_call_final_info* final_info,
                     ServerLoadReportingFilter* filter);

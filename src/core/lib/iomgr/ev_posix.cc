@@ -16,9 +16,8 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -26,6 +25,7 @@
 
 #include <string.h>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 
@@ -35,25 +35,19 @@
 
 #include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
-
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling");  // Disabled by default
+#include "src/core/util/useful.h"
 
 // Traces fd create/close operations
-grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
-grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
-grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
 // Polling API trace only enabled in debug builds
 #ifndef NDEBUG
 #define GRPC_POLLING_API_TRACE(format, ...)                  \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_api_trace)) {     \
+  if (GRPC_TRACE_FLAG_ENABLED(polling_api)) {                \
     gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
   }
 #else
@@ -110,7 +104,7 @@ static void try_engine(absl::string_view engine) {
     if (g_vtables[i] != nullptr && is(engine, g_vtables[i]->name) &&
         g_vtables[i]->check_engine_available(engine == g_vtables[i]->name)) {
       g_event_engine = g_vtables[i];
-      gpr_log(GPR_DEBUG, "Using polling engine: %s", g_event_engine->name);
+      VLOG(2) << "Using polling engine: " << g_event_engine->name;
       return;
     }
   }
@@ -339,5 +333,9 @@ bool grpc_add_closure_to_background_poller(grpc_closure* closure,
 void grpc_shutdown_background_closure(void) {
   g_event_engine->shutdown_background_closure();
 }
+
+#else  // GRPC_POSIX_SOCKET_EV
+
+const char* grpc_get_poll_strategy_name() { return ""; }
 
 #endif  // GRPC_POSIX_SOCKET_EV

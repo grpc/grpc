@@ -17,14 +17,13 @@
 #ifndef GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
 #define GRPC_SRC_CORE_SERVICE_CONFIG_SERVICE_CONFIG_CALL_DATA_H
 
-#include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <memory>
 #include <utility>
 
-#include "src/core/lib/channel/context.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gprpp/chunked_vector.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
@@ -49,11 +48,7 @@ class ServiceConfigCallData {
     virtual UniqueTypeName type() const = 0;
   };
 
-  ServiceConfigCallData(Arena* arena, grpc_call_context_element* call_context)
-      : call_attributes_(arena) {
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value = this;
-    call_context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].destroy = Destroy;
-  }
+  explicit ServiceConfigCallData(Arena* arena);
 
   virtual ~ServiceConfigCallData() = default;
 
@@ -101,15 +96,22 @@ class ServiceConfigCallData {
   }
 
  private:
-  static void Destroy(void* ptr) {
-    auto* self = static_cast<ServiceConfigCallData*>(ptr);
-    self->~ServiceConfigCallData();
-  }
-
   RefCountedPtr<ServiceConfig> service_config_;
   const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
   ChunkedVector<CallAttributeInterface*, 4> call_attributes_;
 };
+
+template <>
+struct ArenaContextType<ServiceConfigCallData> {
+  static void Destroy(ServiceConfigCallData* ptr) {
+    ptr->~ServiceConfigCallData();
+  }
+};
+
+inline ServiceConfigCallData::ServiceConfigCallData(Arena* arena)
+    : call_attributes_(arena) {
+  arena->SetContext<ServiceConfigCallData>(this);
+}
 
 }  // namespace grpc_core
 

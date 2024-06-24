@@ -64,6 +64,8 @@ EXTERNAL_DEPS = {
     "absl/functional/bind_front.h": "absl/functional:bind_front",
     "absl/functional/function_ref.h": "absl/functional:function_ref",
     "absl/hash/hash.h": "absl/hash",
+    "absl/log/check.h": "absl/log:check",
+    "absl/log/log.h": "absl/log",
     "absl/memory/memory.h": "absl/memory",
     "absl/meta/type_traits.h": "absl/meta:type_traits",
     "absl/numeric/int128.h": "absl/numeric:int128",
@@ -95,6 +97,7 @@ EXTERNAL_DEPS = {
     "absl/types/span.h": "absl/types:span",
     "absl/types/variant.h": "absl/types:variant",
     "absl/utility/utility.h": "absl/utility",
+    "benchmark/benchmark.h": "benchmark",
     "address_sorting/address_sorting.h": "address_sorting",
     "google/cloud/opentelemetry/resource_detector.h": "google_cloud_cpp:opentelemetry",
     "opentelemetry/common/attribute_value.h": "otel/api",
@@ -170,7 +173,6 @@ EXTERNAL_DEPS = {
     "upb/mem/arena.hpp": "upb_mem_lib",
     "upb/text/encode.h": "upb_textformat_lib",
     "upb/reflection/def.hpp": "upb_reflection",
-    "upb/upb.h": "upb_amalgamation_lib",
     "xxhash.h": "xxhash",
     "zlib.h": "madler_zlib",
 }
@@ -261,40 +263,44 @@ def grpc_cc_library(
     global num_opted_out_cc_libraries
     global parsing_path
     assert parsing_path is not None
-    name = "//%s:%s" % (parsing_path, name)
-    num_cc_libraries += 1
-    if select_deps or "nofixdeps" in tags:
-        if args.whats_left and not select_deps and "nofixdeps" not in tags:
-            num_opted_out_cc_libraries += 1
-            print("Not opted in: {}".format(name))
-        no_update.add(name)
-    scores[name] = len(public_hdrs + hdrs)
-    # avoid_dep is the internal way of saying prefer something else
-    # we add grpc_avoid_dep to allow internal grpc-only stuff to avoid each
-    # other, whilst not biasing dependent projects
-    if "avoid_dep" in tags or "grpc_avoid_dep" in tags:
-        avoidness[name] += 10
-    if proto:
-        proto_hdr = "%s%s" % (
-            (parsing_path + "/" if parsing_path else ""),
-            proto.replace(".proto", ".pb.h"),
-        )
-        skip_headers[name].add(proto_hdr)
+    try:
+        name = "//%s:%s" % (parsing_path, name)
+        num_cc_libraries += 1
+        if select_deps or "nofixdeps" in tags:
+            if args.whats_left and not select_deps and "nofixdeps" not in tags:
+                num_opted_out_cc_libraries += 1
+                print("Not opted in: {}".format(name))
+            no_update.add(name)
+        scores[name] = len(public_hdrs + hdrs)
+        # avoid_dep is the internal way of saying prefer something else
+        # we add grpc_avoid_dep to allow internal grpc-only stuff to avoid each
+        # other, whilst not biasing dependent projects
+        if "avoid_dep" in tags or "grpc_avoid_dep" in tags:
+            avoidness[name] += 10
+        if proto:
+            proto_hdr = "%s%s" % (
+                (parsing_path + "/" if parsing_path else ""),
+                proto.replace(".proto", ".pb.h"),
+            )
+            skip_headers[name].add(proto_hdr)
 
-    for hdr in hdrs + public_hdrs:
-        vendors[_get_filename(hdr, parsing_path)].append(name)
-    inc = set()
-    original_deps[name] = frozenset(deps)
-    original_external_deps[name] = frozenset(external_deps)
-    for src in hdrs + public_hdrs + srcs:
-        for line in open(_get_filename(src, parsing_path)):
-            m = re.search(r"^#include <(.*)>", line)
-            if m:
-                inc.add(m.group(1))
-            m = re.search(r'^#include "(.*)"', line)
-            if m:
-                inc.add(m.group(1))
-    consumes[name] = list(inc)
+        for hdr in hdrs + public_hdrs:
+            vendors[_get_filename(hdr, parsing_path)].append(name)
+        inc = set()
+        original_deps[name] = frozenset(deps)
+        original_external_deps[name] = frozenset(external_deps)
+        for src in hdrs + public_hdrs + srcs:
+            for line in open(_get_filename(src, parsing_path)):
+                m = re.search(r"^#include <(.*)>", line)
+                if m:
+                    inc.add(m.group(1))
+                m = re.search(r'^#include "(.*)"', line)
+                if m:
+                    inc.add(m.group(1))
+        consumes[name] = list(inc)
+    except:
+        print("Error while parsing ", name)
+        raise
 
 
 def grpc_proto_library(name, srcs, **kwargs):
@@ -394,9 +400,12 @@ for dirname in [
     "src/cpp/ext/csm",
     "src/cpp/ext/otel",
     "test/core/backoff",
+    "test/core/call",
+    "test/core/call/yodel",
+    "test/core/client_channel",
     "test/core/experiments",
     "test/core/uri",
-    "test/core/util",
+    "test/core/test_util",
     "test/core/end2end",
     "test/core/event_engine",
     "test/core/filters",
@@ -404,6 +413,7 @@ for dirname in [
     "test/core/resource_quota",
     "test/core/transport/chaotic_good",
     "test/core/transport/test_suite",
+    "test/core/transport",
     "fuzztest",
     "fuzztest/core/channel",
     "fuzztest/core/transport/chttp2",
@@ -424,7 +434,10 @@ for dirname in [
             "grpc_cc_library": grpc_cc_library,
             "grpc_cc_test": grpc_cc_library,
             "grpc_core_end2end_test": lambda **kwargs: None,
+            "grpc_filegroup": lambda **kwargs: None,
             "grpc_transport_test": lambda **kwargs: None,
+            "grpc_yodel_test": lambda **kwargs: None,
+            "grpc_yodel_simple_test": lambda **kwargs: None,
             "grpc_fuzzer": grpc_cc_library,
             "grpc_fuzz_test": grpc_cc_library,
             "grpc_proto_fuzzer": grpc_cc_library,
@@ -440,6 +453,8 @@ for dirname in [
             "filegroup": lambda name, **kwargs: None,
             "sh_library": lambda name, **kwargs: None,
             "platform": lambda name, **kwargs: None,
+            "grpc_clang_cl_settings": lambda **kwargs: None,
+            "grpc_benchmark_args": lambda **kwargs: [],
         },
         {},
     )
@@ -544,9 +559,11 @@ def make_library(library):
     # once EventEngine lands we can clean this up
     deps = Choices(
         library,
-        {"//:grpc_base": ["//:grpc", "//:grpc_unsecure"]}
-        if library.startswith("//test/")
-        else {},
+        (
+            {"//:grpc_base": ["//:grpc", "//:grpc_unsecure"]}
+            if library.startswith("//test/")
+            else {}
+        ),
     )
     external_deps = Choices(None, {})
     for hdr in hdrs:

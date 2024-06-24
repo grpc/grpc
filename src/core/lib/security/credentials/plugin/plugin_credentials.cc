@@ -16,19 +16,20 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 
 #include <atomic>
 #include <memory>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -38,8 +39,6 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
-
-grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
 
 grpc_plugin_credentials::~grpc_plugin_credentials() {
   if (plugin_.state != nullptr && plugin_.destroy != nullptr) {
@@ -83,7 +82,7 @@ grpc_plugin_credentials::PendingRequest::ProcessPluginResult(
                  !GRPC_LOG_IF_ERROR(
                      "validate_metadata_from_plugin",
                      grpc_validate_header_nonbin_value_is_legal(md[i].value))) {
-        gpr_log(GPR_ERROR, "Plugin added invalid metadata value.");
+        LOG(ERROR) << "Plugin added invalid metadata value.";
         seen_illegal_header = true;
         break;
       }
@@ -124,7 +123,7 @@ void grpc_plugin_credentials::PendingRequest::RequestMetadataReady(
                               GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_core::RefCountedPtr<grpc_plugin_credentials::PendingRequest> r(
       static_cast<grpc_plugin_credentials::PendingRequest*>(request));
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "asynchronously",
@@ -155,7 +154,7 @@ grpc_plugin_credentials::GetRequestMetadata(
       RefAsSubclass<grpc_plugin_credentials>(), std::move(initial_metadata),
       args);
   // Invoke the plugin.  The callback holds a ref to us.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
     gpr_log(GPR_INFO, "plugin_credentials[%p]: request %p: invoking plugin",
             this, request.get());
   }
@@ -173,7 +172,7 @@ grpc_plugin_credentials::GetRequestMetadata(
                             child_request.get(), creds_md, &num_creds_md,
                             &status, &error_details)) {
     child_request.release();
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
       gpr_log(GPR_INFO,
               "plugin_credentials[%p]: request %p: plugin will return "
               "asynchronously",
@@ -182,7 +181,7 @@ grpc_plugin_credentials::GetRequestMetadata(
     return [request] { return request->PollAsyncResult(); };
   }
   // Synchronous return.
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(plugin_credentials)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
             "synchronously",
@@ -210,6 +209,6 @@ grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_security_level min_security_level, void* reserved) {
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
-  GPR_ASSERT(reserved == nullptr);
+  CHECK_EQ(reserved, nullptr);
   return new grpc_plugin_credentials(plugin, min_security_level);
 }

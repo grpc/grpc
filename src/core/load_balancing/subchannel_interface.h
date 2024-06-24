@@ -17,14 +17,13 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_SUBCHANNEL_INTERFACE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
 
 #include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -63,8 +62,6 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
 
   ~SubchannelInterface() override = default;
 
-  void Orphan() override {}
-
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered ~immediately.
   // Subsequent callbacks will be delivered as the subchannel's state
@@ -100,6 +97,9 @@ class SubchannelInterface : public DualRefCounted<SubchannelInterface> {
 
   // Cancels a data watch.
   virtual void CancelDataWatcher(DataWatcherInterface* watcher) = 0;
+
+ protected:
+  void Orphaned() override {}
 };
 
 // A class that delegates to another subchannel, to be used in cases

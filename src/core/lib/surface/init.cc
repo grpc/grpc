@@ -16,16 +16,16 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/surface/init.h"
 
 #include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
@@ -34,6 +34,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/experiments/config.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -51,6 +52,10 @@
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);
 void grpc_resolver_dns_ares_shutdown(void);
+void grpc_resolver_dns_ares_reset_dns_resolver(void);
+
+extern absl::Status AresInit();
+extern void AresShutdown();
 
 #define MAX_PLUGINS 128
 
@@ -67,10 +72,10 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
-      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
-      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      ->RegisterV2Filter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
@@ -109,7 +114,17 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
-    grpc_resolver_dns_ares_init();
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      auto status = AresInit();
+      if (!status.ok()) {
+        VLOG(2) << "AresInit failed: " << status.message();
+      } else {
+        // TODO(yijiem): remove this once we remove the iomgr dns system.
+        grpc_resolver_dns_ares_reset_dns_resolver();
+      }
+    } else {
+      grpc_resolver_dns_ares_init();
+    }
     grpc_iomgr_start();
   }
 
@@ -122,7 +137,11 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    grpc_resolver_dns_ares_shutdown();
+    if (grpc_core::IsEventEngineDnsEnabled()) {
+      AresShutdown();
+    } else {
+      grpc_resolver_dns_ares_shutdown();
+    }
     grpc_iomgr_shutdown();
   }
   g_shutting_down = false;
@@ -138,7 +157,7 @@ void grpc_shutdown_from_cleanup_thread(void* /*ignored*/) {
     return;
   }
   grpc_shutdown_internal_locked();
-  gpr_log(GPR_DEBUG, "grpc_shutdown from cleanup thread done");
+  VLOG(2) << "grpc_shutdown from cleanup thread done";
 }
 
 void grpc_shutdown(void) {
@@ -156,14 +175,14 @@ void grpc_shutdown(void) {
              0) &&
         grpc_core::ExecCtx::Get() == nullptr) {
       // just run clean-up when this is called on non-executor thread.
-      gpr_log(GPR_DEBUG, "grpc_shutdown starts clean-up now");
+      VLOG(2) << "grpc_shutdown starts clean-up now";
       g_shutting_down = true;
       grpc_shutdown_internal_locked();
-      gpr_log(GPR_DEBUG, "grpc_shutdown done");
+      VLOG(2) << "grpc_shutdown done";
     } else {
       // spawn a detached thread to do the actual clean up in case we are
       // currently in an executor thread.
-      gpr_log(GPR_DEBUG, "grpc_shutdown spawns clean-up thread");
+      VLOG(2) << "grpc_shutdown spawns clean-up thread";
       g_initializations++;
       g_shutting_down = true;
       grpc_core::Thread cleanup_thread(

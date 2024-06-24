@@ -19,11 +19,10 @@
 #ifndef GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
 #define GRPC_SRC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/pollset_set.h"

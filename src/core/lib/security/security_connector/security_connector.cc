@@ -16,23 +16,21 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 #include <string.h>
 
 #include <utility>
 
+#include "absl/log/check.h"
+
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/security/credentials/credentials.h"
-
-grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
-    false, "security_connector_refcount");
+#include "src/core/util/useful.h"
 
 grpc_channel_security_connector::grpc_channel_security_connector(
     absl::string_view url_scheme,
@@ -46,8 +44,8 @@ int grpc_channel_security_connector::channel_security_connector_cmp(
     const grpc_channel_security_connector* other) const {
   const grpc_channel_security_connector* other_sc =
       static_cast<const grpc_channel_security_connector*>(other);
-  GPR_ASSERT(channel_creds() != nullptr);
-  GPR_ASSERT(other_sc->channel_creds() != nullptr);
+  CHECK_NE(channel_creds(), nullptr);
+  CHECK_NE(other_sc->channel_creds(), nullptr);
   int c = channel_creds()->cmp(other_sc->channel_creds());
   if (c != 0) return c;
   return grpc_core::QsortCompare(request_metadata_creds(),
@@ -68,8 +66,8 @@ int grpc_server_security_connector::server_security_connector_cmp(
     const grpc_server_security_connector* other) const {
   const grpc_server_security_connector* other_sc =
       static_cast<const grpc_server_security_connector*>(other);
-  GPR_ASSERT(server_creds() != nullptr);
-  GPR_ASSERT(other_sc->server_creds() != nullptr);
+  CHECK_NE(server_creds(), nullptr);
+  CHECK_NE(other_sc->server_creds(), nullptr);
   return grpc_core::QsortCompare(server_creds(), other_sc->server_creds());
 }
 

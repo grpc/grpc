@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/lib/channel/channelz.h"
+#include "src/core/channelz/channelz.h"
 
 #include <string>
 
@@ -29,7 +29,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/surface/server.h"
+#include "src/core/server/server.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using testing::HasSubstr;
@@ -40,8 +40,8 @@ namespace {
 
 void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingStatusOnClient server_status;
   c.NewBatch(1)
       .SendInitialMetadata({})
       .SendCloseFromClient()
@@ -50,7 +50,7 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   auto s = test.RequestCall(101);
   test.Expect(101, true);
   test.Step();
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
       .SendStatusFromServer(
@@ -65,7 +65,7 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
                   .Set(GRPC_ARG_ENABLE_CHANNELZ, true);
@@ -119,7 +119,7 @@ CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto args =
       ChannelArgs()
           .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024 * 1024)
@@ -149,7 +149,7 @@ CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTest, ChannelzDisabled) {
-  SKIP_IF_CHAOTIC_GOOD();
+  SKIP_IF_V3();
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
                   .Set(GRPC_ARG_ENABLE_CHANNELZ, false);
