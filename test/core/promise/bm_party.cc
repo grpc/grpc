@@ -34,7 +34,8 @@ BENCHMARK(BM_PartyCreate);
 void BM_AddParticipant(benchmark::State& state) {
   auto party = Party::Make(SimpleArenaAllocator()->MakeArena());
   for (auto _ : state) {
-    party->Spawn("participant", []() { return Success{}; }, [](StatusFlag) {});
+    party->Spawn(
+        "participant", []() { return Success{}; }, [](StatusFlag) {});
   }
 }
 BENCHMARK(BM_AddParticipant);
