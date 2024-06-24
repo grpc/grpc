@@ -20,6 +20,7 @@
 #include <limits.h>
 
 #include <algorithm>
+#include <atomic>
 #include <functional>
 #include <new>
 #include <set>
@@ -600,6 +601,12 @@ std::string GetDefaultAuthorityFromChannelArgs(const ChannelArgs& channel_args,
     return std::move(*default_authority);
   }
 }
+
+RefCountedPtr<Party> MakeChannelParty(EventEngine* event_engine) {
+  auto arena = SimpleArenaAllocator(0)->MakeArena();
+  arena->SetContext<EventEngine>(event_engine);
+  return MakeRefCounted<Party>(std::move(arena));
+}
 }  // namespace
 
 ClientChannel::ClientChannel(
@@ -619,6 +626,7 @@ ClientChannel::ClientChannel(
           GetDefaultAuthorityFromChannelArgs(channel_args_, this->target())),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
+      party_(MakeChannelParty(event_engine_.get())),
       resolver_data_for_calls_(ResolverDataForCalls{}),
       picker_(nullptr),
       call_destination_(
@@ -663,7 +671,7 @@ void ClientChannel::Orphaned() {
   // IncreaseCallCount() introduces a phony call and prevents the idle
   // timer from being reset by other threads.
   idle_state_.IncreaseCallCount();
-  idle_activity_.Reset();
+  party_.reset();
 }
 
 grpc_connectivity_state ClientChannel::CheckConnectivityState(
@@ -1246,6 +1254,7 @@ void ClientChannel::UpdateStateAndPickerLocked(
 }
 
 void ClientChannel::StartIdleTimer() {
+  if (started_idle_timer_.exchange(true, std::memory_order_relaxed)) return;
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << this << ": idle timer started";
   auto self = WeakRefAsSubclass<ClientChannel>();
@@ -1259,28 +1268,20 @@ void ClientChannel::StartIdleTimer() {
                     }
                   });
   });
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine());
-  idle_activity_.Set(MakeActivity(
-      std::move(promise), ExecCtxWakeupScheduler{},
-      [self = std::move(self)](absl::Status status) mutable {
-        if (status.ok()) {
-          self->work_serializer_->Run(
-              [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
-                self->DestroyResolverAndLbPolicyLocked();
-                self->UpdateStateAndPickerLocked(
-                    GRPC_CHANNEL_IDLE, absl::OkStatus(),
-                    "channel entering IDLE", nullptr);
-                // TODO(roth): In case there's a race condition, we
-                // might need to check for any calls that are
-                // queued waiting for a resolver result or an LB
-                // pick.
-              },
-              DEBUG_LOCATION);
-        }
-      },
-      std::move(arena)));
+  party_->Spawn("idle_timer", std::move(promise), [self](absl::Status status) {
+    if (!status.ok()) return;
+    self->work_serializer_->Run(
+        [self]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) {
+          self->DestroyResolverAndLbPolicyLocked();
+          self->UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE, absl::OkStatus(),
+                                           "channel entering IDLE", nullptr);
+          // TODO(roth): In case there's a race condition, we
+          // might need to check for any calls that are
+          // queued waiting for a resolver result or an LB
+          // pick.
+        },
+        DEBUG_LOCATION);
+  });
 }
 
 absl::Status ClientChannel::ApplyServiceConfigToCall(

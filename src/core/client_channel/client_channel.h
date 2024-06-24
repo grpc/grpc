@@ -186,7 +186,10 @@ class ClientChannel : public Channel {
   //
   const Duration idle_timeout_;
   IdleFilterState idle_state_{false};
-  SingleSetPtr<Activity, typename ActivityPtr::deleter_type> idle_activity_;
+  std::atomic<bool> started_idle_timer_{false};
+
+  // Party for containing various background control-plane operations.
+  RefCountedPtr<Party> party_;
 
   //
   // Fields related to name resolution.
