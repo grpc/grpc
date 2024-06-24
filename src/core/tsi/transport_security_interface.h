@@ -96,10 +96,6 @@ typedef enum {
 const char* tsi_result_to_string(tsi_result result);
 const char* tsi_security_level_to_string(tsi_security_level security_level);
 
-// --- tsi tracing ---
-
-extern grpc_core::TraceFlag tsi_tracing_enabled;
-
 // -- tsi_zero_copy_grpc_protector object --
 
 // This object protects and unprotects grpc slice buffers with zero or minimized

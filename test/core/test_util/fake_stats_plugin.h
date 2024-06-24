@@ -210,7 +210,8 @@ class FakeStatsPlugin : public StatsPlugin {
           bool(const experimental::StatsPluginChannelScope& /*scope*/) const>
           channel_filter = nullptr,
       bool use_disabled_by_default_metrics = false)
-      : channel_filter_(std::move(channel_filter)) {
+      : channel_filter_(std::move(channel_filter)),
+        use_disabled_by_default_metrics_(use_disabled_by_default_metrics) {
     GlobalInstrumentsRegistry::ForEach(
         [&](const GlobalInstrumentsRegistry::GlobalInstrumentDescriptor&
                 descriptor) {
@@ -268,6 +269,14 @@ class FakeStatsPlugin : public StatsPlugin {
   std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& /*args*/) const override {
     return {true, nullptr};
+  }
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& /*scope*/) const override {
+    return nullptr;
+  }
+  std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const ChannelArgs& /*args*/) const override {
+    return nullptr;
   }
 
   void AddCounter(
@@ -358,6 +367,12 @@ class FakeStatsPlugin : public StatsPlugin {
   ServerCallTracer* GetServerCallTracer(
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
+  }
+  bool IsInstrumentEnabled(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const override {
+    const auto& descriptor =
+        GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
+    return use_disabled_by_default_metrics_ || descriptor.enable_by_default;
   }
 
   absl::optional<uint64_t> GetUInt64CounterValue(
@@ -600,6 +615,7 @@ class FakeStatsPlugin : public StatsPlugin {
   absl::AnyInvocable<bool(
       const experimental::StatsPluginChannelScope& /*scope*/) const>
       channel_filter_;
+  bool use_disabled_by_default_metrics_;
   // Instruments.
   Mutex mu_;
   absl::flat_hash_map<uint32_t, Counter<uint64_t>> uint64_counters_

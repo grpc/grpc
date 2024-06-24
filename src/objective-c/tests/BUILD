@@ -336,7 +336,6 @@ grpc_objc_ios_unit_test(
 grpc_objc_testing_library(
     name = "EventEngineClientTests-lib",
     srcs = ["EventEngineTests/CFEventEngineClientTests.mm"],
-    # defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
     deps = [
         "//src/core:cf_event_engine",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
@@ -347,7 +346,6 @@ grpc_objc_testing_library(
 grpc_objc_testing_library(
     name = "EventEngineUnitTests-lib",
     srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
-    defines = ["GRPC_IOS_EVENT_ENGINE_CLIENT=1"],
     deps = [
         "//src/core:cf_event_engine",
         "//test/core/event_engine/cf:cf_engine_unit_test_lib",

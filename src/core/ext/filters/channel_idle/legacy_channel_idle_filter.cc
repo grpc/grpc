@@ -68,12 +68,11 @@ const auto kDefaultMaxConnectionAgeGrace = Duration::Infinity();
 const auto kDefaultMaxConnectionIdle = Duration::Infinity();
 const auto kMaxConnectionAgeJitter = 0.1;
 
-TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 }  // namespace
 
 #define GRPC_IDLE_FILTER_LOG(format, ...)                               \
   do {                                                                  \
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_client_idle_filter)) {       \
+    if (GRPC_TRACE_FLAG_ENABLED(client_idle_filter)) {                  \
       gpr_log(GPR_INFO, "(client idle filter) " format, ##__VA_ARGS__); \
     }                                                                   \
   } while (0)
@@ -290,11 +289,9 @@ void LegacyChannelIdleFilter::CloseChannel() {
 }
 
 const grpc_channel_filter LegacyClientIdleFilter::kFilter =
-    MakePromiseBasedFilter<LegacyClientIdleFilter, FilterEndpoint::kClient>(
-        "client_idle");
+    MakePromiseBasedFilter<LegacyClientIdleFilter, FilterEndpoint::kClient>();
 const grpc_channel_filter LegacyMaxAgeFilter::kFilter =
-    MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>(
-        "max_age");
+    MakePromiseBasedFilter<LegacyMaxAgeFilter, FilterEndpoint::kServer>();
 
 void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
   builder->channel_init()
@@ -303,15 +300,13 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
-  if (!IsChaoticGoodEnabled()) {
-    builder->channel_init()
-        ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
-        .ExcludeFromMinimalStack()
-        .If([](const ChannelArgs& channel_args) {
-          return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
-              .enable();
-        });
-  }
+  builder->channel_init()
+      ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+      .ExcludeFromMinimalStack()
+      .If([](const ChannelArgs& channel_args) {
+        return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)
+            .enable();
+      });
 }
 
 LegacyMaxAgeFilter::LegacyMaxAgeFilter(grpc_channel_stack* channel_stack,

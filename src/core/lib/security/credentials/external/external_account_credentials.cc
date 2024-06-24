@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -41,19 +42,18 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/http/httpcli_ssl_credentials.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/external/aws_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/file_external_account_credentials.h"
 #include "src/core/lib/security/credentials/external/url_external_account_credentials.h"
 #include "src/core/lib/security/util/json_util.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/http_client/httpcli_ssl_credentials.h"
+#include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 
@@ -588,9 +588,8 @@ grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string) {
   auto json = grpc_core::JsonParse(json_string);
   if (!json.ok()) {
-    gpr_log(GPR_ERROR,
-            "External account credentials creation failed. Error: %s.",
-            json.status().ToString().c_str());
+    LOG(ERROR) << "External account credentials creation failed. Error: "
+               << json.status();
     return nullptr;
   }
   std::vector<std::string> scopes = absl::StrSplit(scopes_string, ',');
@@ -599,9 +598,8 @@ grpc_call_credentials* grpc_external_account_credentials_create(
                    *json, std::move(scopes), &error)
                    .release();
   if (!error.ok()) {
-    gpr_log(GPR_ERROR,
-            "External account credentials creation failed. Error: %s.",
-            grpc_core::StatusToString(error).c_str());
+    LOG(ERROR) << "External account credentials creation failed. Error: "
+               << grpc_core::StatusToString(error);
     return nullptr;
   }
   return creds;

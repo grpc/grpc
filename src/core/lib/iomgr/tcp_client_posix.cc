@@ -56,8 +56,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/string.h"
 
-extern grpc_core::TraceFlag grpc_tcp_trace;
-
 using ::grpc_event_engine::experimental::EndpointConfig;
 
 struct async_connect {
@@ -144,7 +142,7 @@ done:
 static void tc_on_alarm(void* acp, grpc_error_handle error) {
   int done;
   async_connect* ac = static_cast<async_connect*>(acp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
@@ -183,7 +181,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
   std::string addr_str = ac->addr_str;
   grpc_fd* fd;
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_writable: error=%s",
             ac->addr_str.c_str(), grpc_core::StatusToString(error).c_str());
   }
@@ -199,8 +197,7 @@ static void on_writable(void* acp, grpc_error_handle error) {
 
   gpr_mu_lock(&ac->mu);
   if (!error.ok()) {
-    error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kOsError,
-                               "Timeout occurred");
+    error = grpc_core::AddMessagePrefix("Timeout occurred", error);
     goto finish;
   }
 
@@ -281,8 +278,6 @@ finish:
         absl::StrCat("Failed to connect to remote host: ", str);
     error = grpc_error_set_str(
         error, grpc_core::StatusStrProperty::kDescription, description);
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kTargetAddress, addr_str);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
@@ -347,7 +342,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     return 0;
   }
 
-  std::string name = absl::StrCat("tcp-client:", addr_uri.value());
+  std::string name = absl::StrCat("tcp-client:", *addr_uri);
   grpc_fd* fdobj = grpc_fd_create(fd, name.c_str(), true);
   int64_t connection_id = 0;
   if (connect_errno == EWOULDBLOCK || connect_errno == EINPROGRESS) {
@@ -358,7 +353,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   if (err >= 0) {
     // Connection already succeded. Return 0 to discourage any cancellation
     // attempts.
-    *ep = grpc_tcp_client_create_from_fd(fdobj, options, addr_uri.value());
+    *ep = grpc_tcp_client_create_from_fd(fdobj, options, *addr_uri);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, absl::OkStatus());
     return 0;
   }
@@ -366,8 +361,6 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
     // Connection already failed. Return 0 to discourage any cancellation
     // attempts.
     grpc_error_handle error = GRPC_OS_ERROR(connect_errno, "connect");
-    error = grpc_error_set_str(
-        error, grpc_core::StatusStrProperty::kTargetAddress, addr_uri.value());
     grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
     return 0;
@@ -389,7 +382,7 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
                     grpc_schedule_on_exec_ctx);
   ac->options = options;
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: asynchronously connecting fd %p",
             ac->addr_str.c_str(), fdobj);
   }

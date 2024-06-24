@@ -31,6 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -40,7 +41,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/trace.h"
 
 // Two implementations of party synchronization are provided: one using a single
 // atomic, the other using a mutex and a set of state variables.
@@ -51,8 +51,6 @@
 // the mutex version - however we keep it around as a just in case measure.
 // There's a thought of fuzzing the two implementations against each other as
 // a correctness check of both, but that's not implemented yet.
-
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_party_state;
 
 #define GRPC_PARTY_SYNC_USING_ATOMICS
 // #define GRPC_PARTY_SYNC_USING_MUTEX
@@ -231,7 +229,7 @@ class PartySyncUsingAtomics {
 
   void LogStateChange(const char* op, uint64_t prev_state, uint64_t new_state,
                       DebugLocation loc = {}) {
-    if (grpc_trace_party_state.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
       gpr_log(loc.file(), loc.line(), GPR_LOG_SEVERITY_INFO,
               "Party %p %30s: %016" PRIx64 " -> %016" PRIx64, this, op,
               prev_state, new_state);
@@ -646,10 +644,9 @@ struct ContextSubclass<Party> {
 template <typename Factory, typename OnComplete>
 void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
                                OnComplete on_complete) {
-  if (grpc_trace_promise_primitives.enabled()) {
-    gpr_log(GPR_DEBUG, "%s[bulk_spawn] On %p queue %s",
-            party_->DebugTag().c_str(), this, std::string(name).c_str());
-  }
+  GRPC_TRACE_LOG(promise_primitives, INFO)
+      << party_->DebugTag() << "[bulk_spawn] On " << this << " queue " << name
+      << " (" << sizeof(ParticipantImpl<Factory, OnComplete>) << " bytes)";
   participants_[num_participants_++] = new ParticipantImpl<Factory, OnComplete>(
       name, std::move(promise_factory), std::move(on_complete));
 }

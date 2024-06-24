@@ -43,6 +43,7 @@
 #include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/proto_bit_gen.h"
+#include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
@@ -50,10 +51,10 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* /*args*/) {}
-
 DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
-  if (squelch) gpr_set_log_function(dont_log);
+  if (squelch) {
+    grpc_disable_all_absl_logs();
+  }
   grpc_core::ProtoBitGen proto_bit_src(msg.random_numbers());
   grpc_core::ApplyFuzzConfigVars(msg.config_vars());
   grpc_core::TestOnlyReloadExperimentsFromConfigVariables();
@@ -69,7 +70,7 @@ DEFINE_PROTO_FUZZER(const hpack_parser_fuzzer::Msg& msg) {
     bool can_update_max_length = true;
     bool can_add_priority = true;
     for (int i = 0; i < msg.frames_size(); i++) {
-      auto arena = grpc_core::MakeScopedArena(1024, &memory_allocator);
+      auto arena = grpc_core::SimpleArenaAllocator()->MakeArena();
       grpc_core::ExecCtx exec_ctx;
       grpc_metadata_batch b;
       const auto& frame = msg.frames(i);

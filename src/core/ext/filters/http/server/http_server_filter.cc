@@ -44,7 +44,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/surface/call_trace.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
@@ -56,7 +55,7 @@ const NoInterceptor HttpServerFilter::Call::OnFinalize;
 
 const grpc_channel_filter HttpServerFilter::kFilter =
     MakePromiseBasedFilter<HttpServerFilter, FilterEndpoint::kServer,
-                           kFilterExaminesServerInitialMetadata>("http-server");
+                           kFilterExaminesServerInitialMetadata>();
 
 namespace {
 void FilterOutgoingMetadata(ServerMetadata* md) {
@@ -140,7 +139,7 @@ ServerMetadataHandle HttpServerFilter::Call::OnClientInitialMetadata(
 }
 
 void HttpServerFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  if (grpc_call_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(call)) {
     gpr_log(GPR_INFO, "%s[http-server] Write metadata",
             GetContext<Activity>()->DebugTag().c_str());
   }

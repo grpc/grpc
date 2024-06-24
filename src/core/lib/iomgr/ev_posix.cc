@@ -42,18 +42,12 @@
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/util/useful.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling");  // Disabled by default
-
 // Traces fd create/close operations
-grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
-grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
-grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
 // Polling API trace only enabled in debug builds
 #ifndef NDEBUG
 #define GRPC_POLLING_API_TRACE(format, ...)                  \
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_api_trace)) {     \
+  if (GRPC_TRACE_FLAG_ENABLED(polling_api)) {                \
     gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
   }
 #else
@@ -339,5 +333,9 @@ bool grpc_add_closure_to_background_poller(grpc_closure* closure,
 void grpc_shutdown_background_closure(void) {
   g_event_engine->shutdown_background_closure();
 }
+
+#else  // GRPC_POSIX_SOCKET_EV
+
+const char* grpc_get_poll_strategy_name() { return ""; }
 
 #endif  // GRPC_POSIX_SOCKET_EV

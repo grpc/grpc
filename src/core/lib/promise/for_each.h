@@ -27,13 +27,13 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/promise/trace.h"
 
 namespace grpc_core {
 
@@ -47,14 +47,17 @@ struct Done;
 
 template <>
 struct Done<absl::Status> {
-  static absl::Status Make(bool cancelled) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static absl::Status Make(
+      bool cancelled) {
     return cancelled ? absl::CancelledError() : absl::OkStatus();
   }
 };
 
 template <>
 struct Done<StatusFlag> {
-  static StatusFlag Make(bool cancelled) { return StatusFlag(!cancelled); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static StatusFlag Make(bool cancelled) {
+    return StatusFlag(!cancelled);
+  }
 };
 
 template <typename T, typename SfinaeVoid = void>
@@ -70,20 +73,23 @@ template <typename T>
 struct NextValueTraits<T, absl::void_t<typename T::value_type>> {
   using Value = typename T::value_type;
 
-  static NextValueType Type(const T& t) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(const T& t) {
     if (t.has_value()) return NextValueType::kValue;
     if (t.cancelled()) return NextValueType::kError;
     return NextValueType::kEndOfStream;
   }
 
-  static Value& MutableValue(T& t) { return *t; }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(T& t) {
+    return *t;
+  }
 };
 
 template <typename T>
 struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
   using Value = T;
 
-  static NextValueType Type(const ValueOrFailure<absl::optional<T>>& t) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static NextValueType Type(
+      const ValueOrFailure<absl::optional<T>>& t) {
     if (t.ok()) {
       if (t.value().has_value()) return NextValueType::kValue;
       return NextValueType::kEndOfStream;
@@ -91,7 +97,8 @@ struct NextValueTraits<ValueOrFailure<absl::optional<T>>> {
     return NextValueType::kError;
   }
 
-  static Value& MutableValue(ValueOrFailure<absl::optional<T>>& t) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Value& MutableValue(
+      ValueOrFailure<absl::optional<T>>& t) {
     return **t;
   }
 };
@@ -110,13 +117,14 @@ class ForEach {
  public:
   using Result =
       typename PollTraits<decltype(std::declval<ActionPromise>()())>::Type;
-  ForEach(Reader reader, Action action, DebugLocation whence = {})
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ForEach(Reader reader, Action action,
+                                               DebugLocation whence = {})
       : reader_(std::move(reader)),
         action_factory_(std::move(action)),
         whence_(whence) {
     Construct(&reader_next_, reader_.Next());
   }
-  ~ForEach() {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~ForEach() {
     if (reading_next_) {
       Destruct(&reader_next_);
     } else {
@@ -163,15 +171,15 @@ class ForEach {
                         ":", whence_.line(), "]: ");
   }
 
-  Poll<Result> PollReaderNext() {
-    if (grpc_trace_promise_primitives.enabled()) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollReaderNext() {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%s PollReaderNext", DebugTag().c_str());
     }
     auto r = reader_next_();
     if (auto* p = r.value_if_ready()) {
       switch (NextValueTraits<ReaderResult>::Type(*p)) {
         case NextValueType::kValue: {
-          if (grpc_trace_promise_primitives.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
             gpr_log(GPR_INFO, "%s PollReaderNext: got value",
                     DebugTag().c_str());
           }
@@ -183,14 +191,14 @@ class ForEach {
           return PollAction();
         }
         case NextValueType::kEndOfStream: {
-          if (grpc_trace_promise_primitives.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
             gpr_log(GPR_INFO, "%s PollReaderNext: got end of stream",
                     DebugTag().c_str());
           }
           return Done<Result>::Make(false);
         }
         case NextValueType::kError: {
-          if (grpc_trace_promise_primitives.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
             gpr_log(GPR_INFO, "%s PollReaderNext: got error",
                     DebugTag().c_str());
           }
@@ -202,7 +210,7 @@ class ForEach {
   }
 
   Poll<Result> PollAction() {
-    if (grpc_trace_promise_primitives.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
       gpr_log(GPR_INFO, "%s PollAction", DebugTag().c_str());
     }
     auto r = in_action_.promise();
@@ -233,8 +241,8 @@ class ForEach {
 
 /// For each item acquired by calling Reader::Next, run the promise Action.
 template <typename Reader, typename Action>
-for_each_detail::ForEach<Reader, Action> ForEach(Reader reader, Action action,
-                                                 DebugLocation whence = {}) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION for_each_detail::ForEach<Reader, Action>
+ForEach(Reader reader, Action action, DebugLocation whence = {}) {
   return for_each_detail::ForEach<Reader, Action>(std::move(reader),
                                                   std::move(action), whence);
 }

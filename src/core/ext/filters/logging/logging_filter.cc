@@ -53,7 +53,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/time.h"
@@ -418,7 +417,7 @@ const grpc_channel_filter ClientLoggingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoggingFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("logging");
+                               kFilterExaminesOutboundMessages>();
 
 absl::StatusOr<std::unique_ptr<ServerLoggingFilter>>
 ServerLoggingFilter::Create(const ChannelArgs& /*args*/,
@@ -484,7 +483,7 @@ const grpc_channel_filter ServerLoggingFilter::kFilter =
     MakePromiseBasedFilter<ServerLoggingFilter, FilterEndpoint::kServer,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("logging");
+                               kFilterExaminesOutboundMessages>();
 
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;

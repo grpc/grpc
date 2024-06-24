@@ -36,7 +36,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/channel/channel_stack_trace.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -44,13 +43,15 @@
 
 namespace grpc_core {
 
-const char* (*NameFromChannelFilter)(const grpc_channel_filter*);
+UniqueTypeName (*NameFromChannelFilter)(const grpc_channel_filter*);
 
 namespace {
 struct CompareChannelFiltersByName {
   bool operator()(const grpc_channel_filter* a,
                   const grpc_channel_filter* b) const {
-    return strcmp(NameFromChannelFilter(a), NameFromChannelFilter(b)) < 0;
+    // Compare lexicographically instead of by pointer value so that different
+    // builds make the same choices.
+    return NameFromChannelFilter(a).name() < NameFromChannelFilter(b).name();
   }
 };
 }  // namespace
@@ -241,7 +242,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     post_processor_functions.emplace_back(std::move(post_processors[i]));
   }
   // Log out the graph we built if that's been requested.
-  if (grpc_trace_channel_stack.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     // It can happen that multiple threads attempt to construct a core config at
     // once.
     // This is benign - the first one wins and others are discarded.
@@ -251,8 +252,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     MutexLock lock(m);
     // List the channel stack type (since we'll be repeatedly printing graphs in
     // this loop).
-    gpr_log(GPR_INFO,
-            "ORDERED CHANNEL STACK %s:", grpc_channel_stack_type_string(type));
+    LOG(INFO) << "ORDERED CHANNEL STACK "
+              << grpc_channel_stack_type_string(type) << ":";
     // First build up a map of filter -> file:line: strings, because it helps
     // the readability of this log to get later fields aligned vertically.
     std::map<const grpc_channel_filter*, std::string> loc_strs;
@@ -261,8 +262,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     auto add_loc_str = [&max_loc_str_len, &loc_strs, &filter_to_registration,
                         &max_filter_name_len](
                            const grpc_channel_filter* filter) {
-      max_filter_name_len =
-          std::max(strlen(NameFromChannelFilter(filter)), max_filter_name_len);
+      max_filter_name_len = std::max(
+          NameFromChannelFilter(filter).name().length(), max_filter_name_len);
       const auto registration =
           filter_to_registration[filter]->registration_source_;
       absl::string_view file = registration.file();
@@ -301,14 +302,16 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       std::string after_str;
       if (dep_it != original.end() && !dep_it->second.empty()) {
         after_str = absl::StrCat(
-            std::string(max_filter_name_len + 1 -
-                            strlen(NameFromChannelFilter(filter.filter)),
-                        ' '),
+            std::string(
+                max_filter_name_len + 1 -
+                    NameFromChannelFilter(filter.filter).name().length(),
+                ' '),
             "after ",
             absl::StrJoin(
                 dep_it->second, ", ",
                 [](std::string* out, const grpc_channel_filter* filter) {
-                  out->append(NameFromChannelFilter(filter));
+                  out->append(
+                      std::string(NameFromChannelFilter(filter).name()));
                 }));
       }
       const auto filter_str =
@@ -322,9 +325,10 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       const auto filter_str = absl::StrCat(
           "  ", loc_strs[terminal.filter],
           NameFromChannelFilter(terminal.filter),
-          std::string(max_filter_name_len + 1 -
-                          strlen(NameFromChannelFilter(terminal.filter)),
-                      ' '),
+          std::string(
+              max_filter_name_len + 1 -
+                  NameFromChannelFilter(terminal.filter).name().length(),
+              ' '),
           "[terminal]");
       LOG(INFO) << filter_str;
     }

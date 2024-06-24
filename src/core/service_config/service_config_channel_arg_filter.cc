@@ -35,7 +35,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -58,6 +57,8 @@ class ServiceConfigChannelArgFilter final
     : public ImplementChannelFilter<ServiceConfigChannelArgFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "service_config_channel_arg"; }
 
   static absl::StatusOr<std::unique_ptr<ServiceConfigChannelArgFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
@@ -113,16 +114,14 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
         md.get_pointer(HttpPathMetadata())->c_slice());
   }
   auto* arena = GetContext<Arena>();
-  auto* service_config_call_data = arena->New<ServiceConfigCallData>(
-      arena, GetContext<grpc_call_context_element>());
+  auto* service_config_call_data = arena->New<ServiceConfigCallData>(arena);
   service_config_call_data->SetServiceConfig(filter->service_config_,
                                              method_configs);
 }
 
 const grpc_channel_filter ServiceConfigChannelArgFilter::kFilter =
     MakePromiseBasedFilter<ServiceConfigChannelArgFilter,
-                           FilterEndpoint::kClient>(
-        "service_config_channel_arg");
+                           FilterEndpoint::kClient>();
 
 }  // namespace
 

@@ -44,6 +44,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
+#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 // Forward declaration to avoid dependency loop.
@@ -54,7 +55,7 @@ namespace grpc_core {
 // Forward declaration to avoid dependency loop.
 class Transport;
 
-class Channel : public InternallyRefCounted<Channel>,
+class Channel : public UnstartedCallDestination,
                 public CppImplOf<Channel, grpc_channel> {
  public:
   struct RegisteredCall {
@@ -67,18 +68,6 @@ class Channel : public InternallyRefCounted<Channel>,
 
     ~RegisteredCall();
   };
-
-  // Though internally ref counted channels expose their "Ref" method to
-  // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
-  // singleton decision maker on whether the channel should be destroyed or
-  // not.
-  // TODO(ctiller): in a future change (I have it written) these will be removed
-  // and substituted with DualRefCounted<Channel> as a base.
-  RefCountedPtr<Channel> Ref() { return InternallyRefCounted<Channel>::Ref(); }
-  template <typename T>
-  RefCountedPtr<T> RefAsSubclass() {
-    return InternallyRefCounted<Channel>::RefAsSubclass<T>();
-  }
 
   virtual bool IsLame() const = 0;
 
@@ -134,11 +123,13 @@ class Channel : public InternallyRefCounted<Channel>,
   virtual void Ping(grpc_completion_queue* cq, void* tag) = 0;
 
   // TODO(roth): Remove these methods when LegacyChannel goes away.
-  Arena* CreateArena();
-  void DestroyArena(Arena* arena);
   virtual grpc_channel_stack* channel_stack() const { return nullptr; }
   virtual bool is_client() const { return true; }
   virtual bool is_promising() const { return true; }
+
+  CallArenaAllocator* call_arena_allocator() const {
+    return call_arena_allocator_.get();
+  }
 
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
@@ -148,16 +139,13 @@ class Channel : public InternallyRefCounted<Channel>,
   const RefCountedPtr<channelz::ChannelNode> channelz_node_;
   const grpc_compression_options compression_options_;
 
-  // TODO(ctiller): move to use CallArenaAllocator
-  CallSizeEstimator call_size_estimator_;
-  MemoryAllocator allocator_;
-
   Mutex mu_;
   // The map key needs to be owned strings rather than unowned char*'s to
   // guarantee that it outlives calls on the core channel (which may outlast
   // the C++ or other wrapped language Channel that registered these calls).
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       registration_table_ ABSL_GUARDED_BY(mu_);
+  const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
 };
 
 }  // namespace grpc_core
@@ -165,7 +153,7 @@ class Channel : public InternallyRefCounted<Channel>,
 /// The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
 /// is safe to use from within core.
 inline void grpc_channel_destroy_internal(grpc_channel* channel) {
-  grpc_core::Channel::FromC(channel)->Orphan();
+  grpc_core::Channel::FromC(channel)->Unref();
 }
 
 // Return the channel's compression options.

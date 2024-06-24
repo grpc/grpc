@@ -37,9 +37,6 @@
 
 #define MAX_CB 30
 
-extern grpc_core::TraceFlag grpc_timer_trace;
-extern grpc_core::TraceFlag grpc_timer_check_trace;
-
 static int cb_called[MAX_CB][2];
 static const int64_t kHoursIn25Days = 25 * 24;
 static const grpc_core::Duration k25Days =
@@ -57,8 +54,8 @@ static void add_test(void) {
   LOG(INFO) << "add_test";
 
   grpc_timer_list_init();
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_core::timer_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_core::timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_core::Timestamp start = grpc_core::Timestamp::Now();
@@ -127,8 +124,8 @@ void destruction_test(void) {
   grpc_core::ExecCtx::Get()->TestOnlySetNow(
       grpc_core::Timestamp::FromMillisecondsAfterProcessEpoch(0));
   grpc_timer_list_init();
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_core::timer_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_core::timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_timer_init(
@@ -184,8 +181,8 @@ void long_running_service_cleanup_test(void) {
   grpc_core::Timestamp now = grpc_core::Timestamp::Now();
   CHECK(now.milliseconds_after_process_epoch() >= k25Days.millis());
   grpc_timer_list_init();
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_trace);
-  grpc_core::testing::grpc_tracer_enable_flag(&grpc_timer_check_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_core::timer_trace);
+  grpc_core::testing::grpc_tracer_enable_flag(&grpc_core::timer_check_trace);
   memset(cb_called, 0, sizeof(cb_called));
 
   grpc_timer_init(
@@ -240,7 +237,7 @@ int main(int argc, char** argv) {
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+    grpc_set_absl_verbosity_debug();
     add_test();
     destruction_test();
     grpc_iomgr_platform_shutdown();
@@ -259,7 +256,7 @@ int main(int argc, char** argv) {
     grpc_core::ExecCtx exec_ctx;
     grpc_set_default_iomgr_platform();
     grpc_iomgr_platform_init();
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+    grpc_set_absl_verbosity_debug();
     long_running_service_cleanup_test();
     add_test();
     destruction_test();

@@ -26,7 +26,6 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/call_destination.h"
@@ -58,9 +57,8 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
 // Internal type for ServiceConfigCallData.  Handles call commits.
 class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
  public:
-  ClientChannelServiceConfigCallData(Arena* arena,
-                                     grpc_call_context_element* call_context)
-      : ServiceConfigCallData(arena, call_context) {}
+  explicit ClientChannelServiceConfigCallData(Arena* arena)
+      : ServiceConfigCallData(arena) {}
 
   void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
     CHECK(on_commit_ == nullptr);
@@ -74,6 +72,11 @@ class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
 
  private:
   absl::AnyInvocable<void()> on_commit_;
+};
+
+template <>
+struct ContextSubclass<ClientChannelServiceConfigCallData> {
+  using Base = ServiceConfigCallData;
 };
 
 class SubchannelInterfaceWithCallDestination : public SubchannelInterface {

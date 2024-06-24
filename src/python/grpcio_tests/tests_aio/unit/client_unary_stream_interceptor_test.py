@@ -223,6 +223,54 @@ class TestUnaryStreamClientInterceptor(AioTestBase):
 
         await channel.close()
 
+    async def test_too_many_reads(self):
+        for interceptor_class in (
+            [_UnaryStreamInterceptorEmpty],
+            [_UnaryStreamInterceptorWithResponseIterator],
+            [],
+        ):
+            with self.subTest(name=interceptor_class):
+                if interceptor_class:
+                    interceptor = interceptor_class[0]()
+                    channel = aio.insecure_channel(
+                        self._server_target, interceptors=[interceptor]
+                    )
+                else:
+                    channel = aio.insecure_channel(self._server_target)
+                stub = test_pb2_grpc.TestServiceStub(channel)
+
+                request = messages_pb2.StreamingOutputCallRequest()
+                request.response_parameters.extend(
+                    [
+                        messages_pb2.ResponseParameters(
+                            size=_RESPONSE_PAYLOAD_SIZE
+                        )
+                    ]
+                    * _NUM_STREAM_RESPONSES
+                )
+
+                call = stub.StreamingOutputCall(request)
+
+                response_cnt = 0
+                for response in range(_NUM_STREAM_RESPONSES):
+                    response = await call.read()
+                    response_cnt += 1
+                    self.assertIs(
+                        type(response), messages_pb2.StreamingOutputCallResponse
+                    )
+                    self.assertEqual(
+                        _RESPONSE_PAYLOAD_SIZE, len(response.payload.body)
+                    )
+
+                # Additional read() should return EOF
+                self.assertIs(await call.read(), aio.EOF)
+
+                self.assertEqual(await call.code(), grpc.StatusCode.OK)
+                # After the RPC finished, the read should also produce EOF
+                self.assertIs(await call.read(), aio.EOF)
+
+                await channel.close()
+
     async def test_multiple_interceptors_response_iterator(self):
         for interceptor_class in (
             _UnaryStreamInterceptorEmpty,

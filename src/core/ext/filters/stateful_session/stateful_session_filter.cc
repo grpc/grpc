@@ -41,7 +41,6 @@
 
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -58,7 +57,6 @@
 
 namespace grpc_core {
 
-TraceFlag grpc_stateful_session_filter_trace(false, "stateful_session_filter");
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
 const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
 const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
@@ -71,8 +69,7 @@ UniqueTypeName XdsOverrideHostAttribute::TypeName() {
 
 const grpc_channel_filter StatefulSessionFilter::kFilter =
     MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>(
-        "stateful_session_filter");
+                           kFilterExaminesServerInitialMetadata>();
 
 absl::StatusOr<std::unique_ptr<StatefulSessionFilter>>
 StatefulSessionFilter::Create(const ChannelArgs&,
@@ -225,10 +222,7 @@ bool IsConfiguredPath(absl::string_view configured_path,
 void StatefulSessionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, StatefulSessionFilter* filter) {
   // Get config.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      GetContext<
-          grpc_call_context_element>()[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
-          .value);
+  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   CHECK_NE(service_config_call_data, nullptr);
   auto* method_params = static_cast<StatefulSessionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(

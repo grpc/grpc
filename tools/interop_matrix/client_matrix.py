@@ -53,7 +53,7 @@ def should_build_docker_interop_image_from_release_tag(lang):
 # Dictionary of default runtimes per language
 LANG_RUNTIME_MATRIX = {
     "cxx": ["cxx"],  # This is actually debian8.
-    "go": ["go1.8", "go1.11", "go1.16", "go1.19"],
+    "go": ["go1.x"],
     "java": ["java"],
     "python": ["python", "pythonasyncio"],
     "node": ["node"],
@@ -132,8 +132,8 @@ LANG_RELEASE_MATRIX = {
             ("v1.60.0", ReleaseInfo()),
             ("v1.61.0", ReleaseInfo()),
             ("v1.62.0", ReleaseInfo()),
-            ("v1.63.0", ReleaseInfo()),
-            ("v1.64.0", ReleaseInfo()),
+            ("v1.63.1", ReleaseInfo()),
+            ("v1.64.1", ReleaseInfo()),
         ]
     ),
     "go": OrderedDict(
@@ -301,6 +301,7 @@ LANG_RELEASE_MATRIX = {
             ("v1.61.2", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.62.2", ReleaseInfo(runtimes=["go1.19"])),
             ("v1.63.2", ReleaseInfo(runtimes=["go1.19"])),
+            ("v1.64.0", ReleaseInfo()),
         ]
     ),
     "java": OrderedDict(
@@ -791,7 +792,7 @@ LANG_RELEASE_MATRIX = {
                 ),
             ),
             (
-                "v1.64.0",
+                "v1.64.1",
                 ReleaseInfo(
                     runtimes=["python"], testcases_file="python__master"
                 ),

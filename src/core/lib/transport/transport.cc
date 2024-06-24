@@ -40,9 +40,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_stream_refcount(false,
-                                                         "stream_refcount");
-
 void grpc_stream_destroy(grpc_stream_refcount* refcount) {
   if ((grpc_core::ExecCtx::Get()->flags() &
        GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP)) {
@@ -81,8 +78,8 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
   GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
 
   new (&refcount->refs) grpc_core::RefCount(
-      1, GRPC_TRACE_FLAG_ENABLED(grpc_trace_stream_refcount) ? "stream_refcount"
-                                                             : nullptr);
+      1,
+      GRPC_TRACE_FLAG_ENABLED(stream_refcount) ? "stream_refcount" : nullptr);
 }
 
 namespace grpc_core {
@@ -192,7 +189,7 @@ struct made_transport_stream_op {
   grpc_closure outer_on_complete;
   grpc_closure* inner_on_complete = nullptr;
   grpc_transport_stream_op_batch op;
-  grpc_transport_stream_op_batch_payload payload{nullptr};
+  grpc_transport_stream_op_batch_payload payload;
 };
 static void destroy_made_transport_stream_op(void* arg,
                                              grpc_error_handle error) {

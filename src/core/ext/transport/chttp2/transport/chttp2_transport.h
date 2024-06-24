@@ -40,11 +40,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 
-extern grpc_core::TraceFlag grpc_keepalive_trace;
-extern grpc_core::TraceFlag grpc_trace_http2_stream_state;
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_refcount;
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser;
-
 /// Creates a CHTTP2 Transport. This takes ownership of a \a resource_user ref
 /// from the caller; if the caller still needs the resource_user after creating
 /// a transport, the caller must take another ref.
@@ -59,9 +54,14 @@ grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport);
 /// leftover bytes previously read from the endpoint (e.g., by handshakers).
 /// If non-null, \a notify_on_receive_settings will be scheduled when
 /// HTTP/2 settings are received from the peer.
+/// If non-null, the endpoint will be removed from
+/// interested_parties_until_recv_settings before
+/// notify_on_receive_settings is invoked.
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close);
+    grpc_closure* notify_on_receive_settings,
+    grpc_pollset_set* interested_parties_until_recv_settings,
+    grpc_closure* notify_on_close);
 
 namespace grpc_core {
 typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
@@ -83,7 +83,7 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
 
 typedef void (*WriteTimestampsCallback)(void*, Timestamps*,
                                         grpc_error_handle error);
-typedef void* (*CopyContextFn)(void*);
+typedef void* (*CopyContextFn)(Arena*);
 
 void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn);
 void GrpcHttp2SetCopyContextFn(CopyContextFn fn);

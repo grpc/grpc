@@ -64,7 +64,7 @@ class UniqueTypeName {
     Factory(const Factory&) = delete;
     Factory& operator=(const Factory&) = delete;
 
-    UniqueTypeName Create() { return UniqueTypeName(*name_); }
+    UniqueTypeName Create() const { return UniqueTypeName(*name_); }
 
    private:
     std::string* name_;
@@ -93,12 +93,33 @@ class UniqueTypeName {
 
   absl::string_view name() const { return name_; }
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const UniqueTypeName& name) {
+    sink.Append(name.name_);
+  }
+
  private:
   explicit UniqueTypeName(absl::string_view name) : name_(name) {}
 
   absl::string_view name_;
 };
 
+// Given a type with a member `static absl::string_view TypeName()`, returns a
+// UniqueTypeName instance who's string value is the value of TypeName.
+template <typename T>
+UniqueTypeName UniqueTypeNameFor() {
+  static UniqueTypeName::Factory factory(T::TypeName());
+  return factory.Create();
+}
+
 }  // namespace grpc_core
+
+// Creates a one-off UniqueTypeName in-place.
+// Duplicate calls yield different UniqueTypeName instances.
+#define GRPC_UNIQUE_TYPE_NAME_HERE(name)                               \
+  ([] {                                                                \
+    static const ::grpc_core::UniqueTypeName::Factory factory((name)); \
+    return factory.Create();                                           \
+  }())
 
 #endif  // GRPC_SRC_CORE_LIB_GPRPP_UNIQUE_TYPE_NAME_H

@@ -16,6 +16,8 @@
 // is % allowed in string
 //
 
+#include <limits.h>
+
 #include <memory>
 #include <string>
 #include <thread>
@@ -24,6 +26,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
+#include "absl/log/globals.h"
 #include "absl/log/log.h"
 
 #include <grpc/support/time.h>
@@ -38,8 +41,6 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
-
-extern void gpr_default_log(gpr_log_func_args* args);
 
 ABSL_FLAG(int32_t, metrics_port, 8081, "The metrics server port.");
 
@@ -93,11 +94,14 @@ ABSL_FLAG(std::string, test_cases, "",
           " 'large_unary', 10% of the time and 'empty_stream' the remaining"
           " 70% of the time");
 
-ABSL_FLAG(int32_t, log_level, GPR_LOG_SEVERITY_INFO,
-          "Severity level of messages that should be logged. Any messages "
-          "greater than or equal to the level set here will be logged. "
-          "The choices are: 0 (GPR_LOG_SEVERITY_DEBUG), 1 "
-          "(GPR_LOG_SEVERITY_INFO) and 2 (GPR_LOG_SEVERITY_ERROR)");
+ABSL_FLAG(
+    int32_t, absl_min_log_level,
+    static_cast<int32_t>(absl::LogSeverityAtLeast::kInfo),
+    "Severity level of messages that should be logged by absl::SetMinLogLevel");
+
+ABSL_FLAG(int32_t, absl_vlog_level, -1,
+          "Severity level of messages that should be logged. Set using "
+          "absl::SetVLogLevel");
 
 ABSL_FLAG(bool, do_not_abort_on_transient_failures, true,
           "If set to 'true', abort() is not called in case of transient "
@@ -123,15 +127,9 @@ using grpc::testing::transport_security;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
 
-static int log_level = GPR_LOG_SEVERITY_DEBUG;
-
-// A simple wrapper to grp_default_log() function. This only logs messages at or
-// above the current log level (set in 'log_level' variable)
-void TestLogFunction(gpr_log_func_args* args) {
-  if (args->severity >= log_level) {
-    gpr_default_log(args);
-  }
-}
+static int absl_vlog_level = -1;
+static absl::LogSeverityAtLeast absl_min_log_level =
+    absl::LogSeverityAtLeast::kInfo;
 
 TestCaseType GetTestTypeFromName(const std::string& test_name) {
   TestCaseType test_case = UNKNOWN_TEST;
@@ -208,7 +206,9 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
             << absl::GetFlag(FLAGS_num_channels_per_server);
   LOG(INFO) << "num_stubs_per_channel: "
             << absl::GetFlag(FLAGS_num_stubs_per_channel);
-  LOG(INFO) << "log_level: " << absl::GetFlag(FLAGS_log_level);
+  LOG(INFO) << "absl_vlog_level: " << absl::GetFlag(FLAGS_absl_vlog_level);
+  LOG(INFO) << "absl_min_log_level: "
+            << absl::GetFlag(FLAGS_absl_min_log_level);
   LOG(INFO) << "do_not_abort_on_transient_failures: "
             << (absl::GetFlag(FLAGS_do_not_abort_on_transient_failures)
                     ? "true"
@@ -228,21 +228,23 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
   }
 }
 
+void SetLogLevels() {
+  absl_vlog_level = absl::GetFlag(FLAGS_absl_vlog_level);
+  CHECK_LE(-1, absl_vlog_level);
+  CHECK_LE(absl_vlog_level, (INT_MAX - 1));
+  absl::SetVLogLevel("*grpc*/*", absl_vlog_level);
+
+  absl_min_log_level = static_cast<absl::LogSeverityAtLeast>(
+      absl::GetFlag(FLAGS_absl_min_log_level));
+  CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
+  CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
+  absl::SetMinLogLevel(absl_min_log_level);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
 
-  if (absl::GetFlag(FLAGS_log_level) > GPR_LOG_SEVERITY_ERROR ||
-      absl::GetFlag(FLAGS_log_level) < GPR_LOG_SEVERITY_DEBUG) {
-    LOG(ERROR) << "log_level should be an integer between "
-               << GPR_LOG_SEVERITY_DEBUG << " and " << GPR_LOG_SEVERITY_ERROR;
-    return 1;
-  }
-
-  // Change the default log function to TestLogFunction which respects the
-  // log_level setting.
-  log_level = absl::GetFlag(FLAGS_log_level);
-  gpr_set_log_function(TestLogFunction);
-
+  SetLogLevels();
   srand(time(nullptr));
 
   // Parse the server addresses

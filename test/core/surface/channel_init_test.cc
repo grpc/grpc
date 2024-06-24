@@ -37,11 +37,15 @@ const grpc_channel_filter* FilterNamed(const char* name) {
       new std::map<absl::string_view, const grpc_channel_filter*>;
   auto it = filters->find(name);
   if (it != filters->end()) return it->second;
+  static auto* name_factories =
+      new std::vector<std::unique_ptr<UniqueTypeName::Factory>>();
+  name_factories->emplace_back(std::make_unique<UniqueTypeName::Factory>(name));
+  auto unique_type_name = name_factories->back()->Create();
   return filters
       ->emplace(name,
-                new grpc_channel_filter{nullptr, nullptr, nullptr, nullptr, 0,
-                                        nullptr, nullptr, nullptr, 0, nullptr,
-                                        nullptr, nullptr, nullptr, name})
+                new grpc_channel_filter{nullptr, nullptr, 0, nullptr, nullptr,
+                                        nullptr, 0, nullptr, nullptr, nullptr,
+                                        nullptr, unique_type_name})
       .first->second;
 }
 
@@ -52,7 +56,7 @@ std::vector<std::string> GetFilterNames(const ChannelInit& init,
   if (!init.CreateStack(&b)) return {};
   std::vector<std::string> names;
   for (auto f : b.stack()) {
-    names.push_back(f->name);
+    names.push_back(std::string(f->name.name()));
   }
   EXPECT_NE(names, std::vector<std::string>());
   return names;
@@ -240,8 +244,9 @@ class TestFilter1 {
 };
 
 const grpc_channel_filter TestFilter1::kFilter = {
-    nullptr, nullptr, nullptr, nullptr, 0,       nullptr, nullptr,
-    nullptr, 0,       nullptr, nullptr, nullptr, nullptr, "test_filter1"};
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, 0,       nullptr,
+    nullptr, nullptr, nullptr, GRPC_UNIQUE_TYPE_NAME_HERE("test_filter1")};
 const NoInterceptor TestFilter1::Call::OnClientInitialMetadata;
 const NoInterceptor TestFilter1::Call::OnServerInitialMetadata;
 const NoInterceptor TestFilter1::Call::OnServerTrailingMetadata;
@@ -268,7 +273,7 @@ TEST(ChannelInitTest, CanCreateFilterWithCall) {
               "test"),
           1024);
   auto call = MakeCallPair(Arena::MakePooled<ClientMetadata>(), nullptr,
-                           allocator->MakeArena(), allocator, nullptr);
+                           allocator->MakeArena());
   (*stack)->StartCall(std::move(call.handler));
   EXPECT_EQ(p, 1);
   EXPECT_EQ(handled, 1);

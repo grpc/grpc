@@ -60,7 +60,7 @@
 
 namespace grpc_core {
 
-absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
+absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type) {
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
@@ -92,27 +92,45 @@ absl::StatusOr<OrphanablePtr<Channel>> LegacyChannel::Create(
   if (channel_stack_type == GRPC_SERVER_CHANNEL) {
     *(*r)->stats_plugin_group =
         GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+    // Add per-server stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        (*r)->stats_plugin_group->AddStatsPlugin(
+            plugin, plugin->GetServerScopeConfig(args));
+      }
+    }
   } else {
     std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
                                 .value_or(CoreConfiguration::Get()
                                               .resolver_registry()
                                               .GetDefaultAuthority(target));
+    experimental::StatsPluginChannelScope scope(target, authority);
     *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-            experimental::StatsPluginChannelScope(target, authority));
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+    // Add per-channel stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        (*r)->stats_plugin_group->AddStatsPlugin(
+            plugin, plugin->GetChannelScopeConfig(scope));
+      }
+    }
   }
-  return MakeOrphanable<LegacyChannel>(
+  return MakeRefCounted<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
-      builder.IsPromising(), std::move(target), args, std::move(*r));
+      std::move(target), args, std::move(*r));
 }
 
-LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
-                             std::string target,
+LegacyChannel::LegacyChannel(bool is_client, std::string target,
                              const ChannelArgs& channel_args,
                              RefCountedPtr<grpc_channel_stack> channel_stack)
     : Channel(std::move(target), channel_args),
       is_client_(is_client),
-      is_promising_(is_promising),
       channel_stack_(std::move(channel_stack)) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
@@ -144,13 +162,12 @@ LegacyChannel::LegacyChannel(bool is_client, bool is_promising,
   };
 }
 
-void LegacyChannel::Orphan() {
+void LegacyChannel::Orphaned() {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = GRPC_ERROR_CREATE("Channel Destroyed");
   grpc_channel_element* elem =
       grpc_channel_stack_element(channel_stack_.get(), 0);
   elem->filter->start_transport_op(elem, op);
-  Unref();
 }
 
 bool LegacyChannel::IsLame() const {
@@ -167,7 +184,7 @@ grpc_call* LegacyChannel::CreateCall(
   CHECK(is_client_);
   CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
-  args.channel = Ref();
+  args.channel = RefAsSubclass<LegacyChannel>();
   args.server = nullptr;
   args.parent = parent_call;
   args.propagation_mask = propagation_mask;
@@ -204,9 +221,9 @@ bool LegacyChannel::SupportsConnectivityWatcher() const {
 // A fire-and-forget object to handle external connectivity state watches.
 class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
  public:
-  StateWatcher(RefCountedPtr<LegacyChannel> channel, grpc_completion_queue* cq,
-               void* tag, grpc_connectivity_state last_observed_state,
-               Timestamp deadline)
+  StateWatcher(WeakRefCountedPtr<LegacyChannel> channel,
+               grpc_completion_queue* cq, void* tag,
+               grpc_connectivity_state last_observed_state, Timestamp deadline)
       : channel_(std::move(channel)),
         cq_(cq),
         tag_(tag),
@@ -287,7 +304,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
 
   static void WatchComplete(void* arg, grpc_error_handle error) {
     RefCountedPtr<StateWatcher> self(static_cast<StateWatcher*>(arg));
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
+    if (GRPC_TRACE_FLAG_ENABLED(op_failure)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", error);
     }
     MutexLock lock(&self->mu_);
@@ -313,7 +330,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
     self->WeakUnref();
   }
 
-  RefCountedPtr<LegacyChannel> channel_;
+  WeakRefCountedPtr<LegacyChannel> channel_;
   grpc_completion_queue* cq_;
   void* tag_;
 
@@ -333,8 +350,8 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
 void LegacyChannel::WatchConnectivityState(
     grpc_connectivity_state last_observed_state, Timestamp deadline,
     grpc_completion_queue* cq, void* tag) {
-  new StateWatcher(RefAsSubclass<LegacyChannel>(), cq, tag, last_observed_state,
-                   deadline);
+  new StateWatcher(WeakRefAsSubclass<LegacyChannel>(), cq, tag,
+                   last_observed_state, deadline);
 }
 
 void LegacyChannel::AddConnectivityWatcher(
@@ -401,8 +418,7 @@ void LegacyChannel::Ping(grpc_completion_queue* cq, void* tag) {
 ClientChannelFilter* LegacyChannel::GetClientChannelFilter() const {
   grpc_channel_element* elem =
       grpc_channel_stack_last_element(channel_stack_.get());
-  if (elem->filter != &ClientChannelFilter::kFilterVtableWithPromises &&
-      elem->filter != &ClientChannelFilter::kFilterVtableWithoutPromises) {
+  if (elem->filter != &ClientChannelFilter::kFilter) {
     return nullptr;
   }
   return static_cast<ClientChannelFilter*>(elem->channel_data);

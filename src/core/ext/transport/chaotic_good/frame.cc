@@ -218,10 +218,12 @@ absl::Status SettingsFrame::Deserialize(HPackParser* parser,
   return deserializer.Finish();
 }
 
-BufferPair SettingsFrame::Serialize(HPackCompressor* encoder) const {
+BufferPair SettingsFrame::Serialize(HPackCompressor* encoder,
+                                    bool& saw_encoding_errors) const {
   FrameSerializer serializer(FrameType::kSettings, 0);
   if (headers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
   return serializer.Finish();
 }
@@ -275,11 +277,13 @@ absl::Status ClientFragmentFrame::Deserialize(HPackParser* parser,
   return deserializer.Finish();
 }
 
-BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder) const {
+BufferPair ClientFragmentFrame::Serialize(HPackCompressor* encoder,
+                                          bool& saw_encoding_errors) const {
   CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
   if (message.has_value()) {
     serializer.AddMessage(message.value());
@@ -354,17 +358,20 @@ absl::Status ServerFragmentFrame::Deserialize(HPackParser* parser,
   return deserializer.Finish();
 }
 
-BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder) const {
+BufferPair ServerFragmentFrame::Serialize(HPackCompressor* encoder,
+                                          bool& saw_encoding_errors) const {
   CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kFragment, stream_id);
   if (headers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*headers.get(), serializer.AddHeaders());
   }
   if (message.has_value()) {
     serializer.AddMessage(message.value());
   }
   if (trailers.get() != nullptr) {
-    encoder->EncodeRawHeaders(*trailers.get(), serializer.AddTrailers());
+    saw_encoding_errors |=
+        !encoder->EncodeRawHeaders(*trailers.get(), serializer.AddTrailers());
   }
   return serializer.Finish();
 }
@@ -399,7 +406,7 @@ absl::Status CancelFrame::Deserialize(HPackParser*, const FrameHeader& header,
   return deserializer.Finish();
 }
 
-BufferPair CancelFrame::Serialize(HPackCompressor*) const {
+BufferPair CancelFrame::Serialize(HPackCompressor*, bool&) const {
   CHECK_NE(stream_id, 0u);
   FrameSerializer serializer(FrameType::kCancel, stream_id);
   return serializer.Finish();

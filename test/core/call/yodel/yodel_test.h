@@ -37,6 +37,8 @@ namespace grpc_core {
 
 class YodelTest;
 
+extern bool g_yodel_fuzzing;
+
 namespace yodel_detail {
 
 // Capture the name and location of a test step.
@@ -361,10 +363,9 @@ class YodelTest : public ::testing::Test {
   }
 
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
-    auto* arena = state_->call_arena_allocator->MakeArena();
     return MakeCallPair(std::move(client_initial_metadata),
-                        state_->event_engine.get(), arena,
-                        state_->call_arena_allocator, nullptr);
+                        state_->event_engine.get(),
+                        state_->call_arena_allocator->MakeArena());
   }
 
   void WaitForAllPendingWork();
@@ -391,7 +392,6 @@ class YodelTest : public ::testing::Test {
  private:
   class WatchDog;
   struct State {
-    grpc::testing::TestGrpcScope grpc_scope;
     std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>
         event_engine;
     RefCountedPtr<CallArenaAllocator> call_arena_allocator;

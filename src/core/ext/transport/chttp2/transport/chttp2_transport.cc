@@ -64,7 +64,6 @@
 #include "src/core/ext/transport/chttp2/transport/frame_rst_stream.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http_trace.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/max_concurrent_streams_policy.h"
@@ -74,7 +73,9 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
+#include "src/core/lib/config/config_vars.h"
+#include "src/core/lib/event_engine/extensions/tcp_trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/bitset.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -82,9 +83,10 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/port.h"
@@ -92,7 +94,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/resource_quota/trace.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -108,12 +109,9 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/http_client/parser.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
-
-#ifdef GRPC_POSIX_SOCKET_TCP
-#include "src/core/lib/iomgr/ev_posix.h"
-#endif
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -143,7 +141,6 @@ static bool g_default_server_keepalive_permit_without_calls = false;
 #define GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS "grpc.http.tarpit_max_duration_ms"
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
-grpc_core::TraceFlag grpc_keepalive_trace(false, "http_keepalive");
 
 // forward declarations of various callbacks that we'll build closures around
 static void write_action_begin_locked(
@@ -227,14 +224,13 @@ namespace {
 
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 
-grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
-  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+grpc_core::CallTracerAnnotationInterface* CallTracerIfSampled(
+    grpc_chttp2_stream* s) {
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_tracer = static_cast<grpc_core::CallTracerInterface*>(
-      static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE]
-          .value);
+  auto* call_tracer =
+      s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   if (call_tracer == nullptr || !call_tracer->IsSampled()) {
     return nullptr;
   }
@@ -243,13 +239,11 @@ grpc_core::CallTracerInterface* CallTracerIfSampled(grpc_chttp2_stream* s) {
 
 std::shared_ptr<grpc_core::TcpTracerInterface> TcpTracerIfSampled(
     grpc_chttp2_stream* s) {
-  if (s->context == nullptr || !grpc_core::IsTraceRecordCallopsEnabled()) {
+  if (!grpc_core::IsTraceRecordCallopsEnabled()) {
     return nullptr;
   }
-  auto* call_attempt_tracer = static_cast<grpc_core::CallTracerInterface*>(
-      static_cast<grpc_call_context_element*>(
-          s->context)[GRPC_CONTEXT_CALL_TRACER]
-          .value);
+  auto* call_attempt_tracer =
+      s->arena->GetContext<grpc_core::CallTracerInterface>();
   if (call_attempt_tracer == nullptr || !call_attempt_tracer->IsSampled()) {
     return nullptr;
   }
@@ -384,17 +378,17 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
     channelz_socket.reset();
   }
 
-  grpc_endpoint_destroy(ep);
+  if (ep != nullptr) grpc_endpoint_destroy(ep);
 
   grpc_slice_buffer_destroy(&qbuf);
 
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
   // ContextList::Execute follows semantics of a callback function and does not
   // take a ref on error
-  if (cl != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(cl, nullptr, error);
+  if (context_list != nullptr) {
+    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
   }
-  cl = nullptr;
+  context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
   grpc_chttp2_goaway_parser_destroy(&goaway_parser);
@@ -591,6 +585,9 @@ static void init_keepalive_pings_if_enabled_locked(
   }
 }
 
+using grpc_event_engine::experimental::QueryExtension;
+using grpc_event_engine::experimental::TcpTraceExtension;
+
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args, grpc_endpoint* ep,
     bool is_client)
@@ -617,7 +614,18 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           &memory_owner),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0),
       is_client(is_client) {
-  cl = new grpc_core::ContextList();
+  context_list = new grpc_core::ContextList();
+
+  if (channel_args.GetBool(GRPC_ARG_TCP_TRACING_ENABLED).value_or(false) &&
+      grpc_event_engine::experimental::grpc_is_event_engine_endpoint(ep)) {
+    auto epte = QueryExtension<TcpTraceExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep));
+    if (epte != nullptr) {
+      epte->InitializeAndReturnTcpTracer();
+    }
+  }
+
   CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
         GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
@@ -753,9 +761,21 @@ static void close_transport_locked(grpc_chttp2_transport* t,
       GRPC_CHTTP2_STREAM_UNREF(s, "chttp2_writing:close");
     }
     CHECK(t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE);
-    grpc_endpoint_shutdown(t->ep, error);
+    if (t->interested_parties_until_recv_settings != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(
+          t->ep, t->interested_parties_until_recv_settings);
+      t->interested_parties_until_recv_settings = nullptr;
+    }
+    grpc_core::MutexLock lock(&t->ep_destroy_mu);
+    grpc_endpoint_destroy(t->ep);
+    t->ep = nullptr;
   }
   if (t->notify_on_receive_settings != nullptr) {
+    if (t->interested_parties_until_recv_settings != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(
+          t->ep, t->interested_parties_until_recv_settings);
+      t->interested_parties_until_recv_settings = nullptr;
+    }
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
                             error);
     t->notify_on_receive_settings = nullptr;
@@ -784,7 +804,8 @@ void grpc_chttp2_stream_unref(grpc_chttp2_stream* s) {
 
 grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
                                        grpc_stream_refcount* refcount,
-                                       const void* server_data)
+                                       const void* server_data,
+                                       grpc_core::Arena* arena)
     : t(t->Ref()),
       refcount([refcount]() {
 // We reserve one 'active stream' that's dropped when the stream is
@@ -798,14 +819,14 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
 #endif
         return refcount;
       }()),
+      arena(arena),
       flow_control(&t->flow_control) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
-    if (grpc_http_trace.enabled()) {
-      VLOG(2) << "HTTP:" << t << "/" << this << " creating accept stream " << id
-              << " [from " << server_data << "]";
-    }
+    GRPC_TRACE_VLOG(http, 2)
+        << "HTTP:" << t << "/" << this << " creating accept stream " << id
+        << " [from " << server_data << "]";
     *t->accepting_stream = this;
     t->stream_map.emplace(id, this);
     post_destructive_reclaimer(t);
@@ -855,8 +876,8 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
 void grpc_chttp2_transport::InitStream(grpc_stream* gs,
                                        grpc_stream_refcount* refcount,
                                        const void* server_data,
-                                       grpc_core::Arena*) {
-  new (gs) grpc_chttp2_stream(this, refcount, server_data);
+                                       grpc_core::Arena* arena) {
+  new (gs) grpc_chttp2_stream(this, refcount, server_data, arena);
 }
 
 static void destroy_stream_locked(void* sp, grpc_error_handle /*error*/) {
@@ -1015,13 +1036,13 @@ static void write_action_begin_locked(
 }
 
 static void write_action(grpc_chttp2_transport* t) {
-  void* cl = t->cl;
-  if (!t->cl->empty()) {
+  void* cl = t->context_list;
+  if (!t->context_list->empty()) {
     // Transfer the ownership of the context list to the endpoint and create and
     // associate a new context list with the transport.
     // The old context list is stored in the cl local variable which is passed
     // to the endpoint. Its upto the endpoint to manage its lifetime.
-    t->cl = new grpc_core::ContextList();
+    t->context_list = new grpc_core::ContextList();
   } else {
     // t->cl is Empty. There is nothing to trace in this endpoint_write. set cl
     // to nullptr.
@@ -1036,10 +1057,9 @@ static void write_action(grpc_chttp2_transport* t) {
   if (max_frame_size == 0) {
     max_frame_size = INT_MAX;
   }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
-              << t->outbuf.Length() << " bytes";
-  }
+  GRPC_TRACE_LOG(http2_ping, INFO)
+      << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
+      << t->outbuf.Length() << " bytes";
   t->write_size_policy.BeginWrite(t->outbuf.Length());
   grpc_endpoint_write(t->ep, t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
@@ -1050,10 +1070,8 @@ static void write_action(grpc_chttp2_transport* t) {
 static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
                              grpc_error_handle error) {
   auto* tp = t.get();
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace)) {
-    LOG(INFO) << (t->is_client ? "CLIENT" : "SERVER") << "[" << t.get()
-              << "]: Finish write";
-  }
+  GRPC_TRACE_LOG(http2_ping, INFO) << (t->is_client ? "CLIENT" : "SERVER")
+                                   << "[" << t.get() << "]: Finish write";
   tp->combiner->Run(grpc_core::InitTransportClosure<write_action_end_locked>(
                         std::move(t), &tp->write_action_end_locked),
                     error);
@@ -1123,19 +1141,16 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      uint32_t last_stream_id,
                                      absl::string_view goaway_text) {
-  t->goaway_error = grpc_error_set_str(
+  t->goaway_error = grpc_error_set_int(
       grpc_error_set_int(
-          grpc_error_set_int(
-              grpc_core::StatusCreate(
-                  absl::StatusCode::kUnavailable,
-                  absl::StrFormat(
-                      "GOAWAY received; Error code: %u; Debug Text: %s",
-                      goaway_error, goaway_text),
-                  DEBUG_LOCATION, {}),
-              grpc_core::StatusIntProperty::kHttp2Error,
-              static_cast<intptr_t>(goaway_error)),
-          grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE),
-      grpc_core::StatusStrProperty::kRawBytes, goaway_text);
+          grpc_core::StatusCreate(
+              absl::StatusCode::kUnavailable,
+              absl::StrFormat("GOAWAY received; Error code: %u; Debug Text: %s",
+                              goaway_error, goaway_text),
+              DEBUG_LOCATION, {}),
+          grpc_core::StatusIntProperty::kHttp2Error,
+          static_cast<intptr_t>(goaway_error)),
+      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "transport %p got goaway with last stream id %d", t,
@@ -1273,7 +1288,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     return;
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(
         GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
@@ -1293,12 +1308,10 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
     if (cl_err.ok()) {
       cl_err = GRPC_ERROR_CREATE(absl::StrCat(
           "Error in HTTP transport completing operation: ", desc,
-          " write_state=", write_state_name(t->write_state), " refs=",
-          closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT, " flags=",
-          closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT));
-      cl_err = grpc_error_set_str(cl_err,
-                                  grpc_core::StatusStrProperty::kTargetAddress,
-                                  std::string(t->peer_string.as_string_view()));
+          " write_state=", write_state_name(t->write_state),
+          " refs=", closure->next_data.scratch / CLOSURE_BARRIER_FIRST_REF_BIT,
+          " flags=", closure->next_data.scratch % CLOSURE_BARRIER_FIRST_REF_BIT,
+          " peer_address=", t->peer_string.as_string_view()));
     }
     cl_err = grpc_error_add_child(cl_err, error);
     closure->error_data.error = grpc_core::internal::StatusAllocHeapPtr(cl_err);
@@ -1342,11 +1355,10 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_transport_stream_op_batch_payload* op_payload = op->payload;
   grpc_chttp2_transport* t = s->t.get();
 
-  s->context = op->payload->context;
   s->traced = op->is_traced;
   s->call_tracer = CallTracerIfSampled(s);
   s->tcp_tracer = TcpTracerIfSampled(s);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO,
             "perform_stream_op_locked[s=%p; op=%p]: %s; on_complete = %p", s,
             op, grpc_transport_stream_op_batch_string(op, false).c_str(),
@@ -1376,7 +1388,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    if (s->call_tracer) {
+    if (s->call_tracer != nullptr) {
       s->call_tracer->RecordAnnotation(
           grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
                                     gpr_now(GPR_CLOCK_REALTIME))
@@ -1613,7 +1625,7 @@ void grpc_chttp2_transport::PerformStreamOp(
     }
   }
 
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "perform_stream_op[s=%p; op=%p]: %s", s, op,
             grpc_transport_stream_op_batch_string(op, false).c_str());
   }
@@ -1926,11 +1938,15 @@ static void perform_transport_op_locked(void* stream_op,
   }
 
   if (op->bind_pollset) {
-    grpc_endpoint_add_to_pollset(t->ep, op->bind_pollset);
+    if (t->ep != nullptr) {
+      grpc_endpoint_add_to_pollset(t->ep, op->bind_pollset);
+    }
   }
 
   if (op->bind_pollset_set) {
-    grpc_endpoint_add_to_pollset_set(t->ep, op->bind_pollset_set);
+    if (t->ep != nullptr) {
+      grpc_endpoint_add_to_pollset_set(t->ep, op->bind_pollset_set);
+    }
   }
 
   if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
@@ -1957,7 +1973,7 @@ static void perform_transport_op_locked(void* stream_op,
 }
 
 void grpc_chttp2_transport::PerformOp(grpc_transport_op* op) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", this,
             grpc_transport_op_string(op).c_str());
   }
@@ -2010,7 +2026,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
   // Lambda is immediately invoked as a big scoped section that can be
   // exited out of at any point by returning.
   [&]() {
-    if (grpc_http_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(http)) {
       gpr_log(GPR_DEBUG,
               "maybe_complete_recv_message %p final_metadata_requested=%d "
               "seen_error=%d",
@@ -2026,7 +2042,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
           int64_t min_progress_size;
           auto r = grpc_deframe_unprocessed_incoming_frames(
               s, &min_progress_size, &**s->recv_message, s->recv_message_flags);
-          if (grpc_http_trace.enabled()) {
+          if (GRPC_TRACE_FLAG_ENABLED(http)) {
             gpr_log(GPR_DEBUG, "Deframe data frame: %s",
                     grpc_core::PollToString(r, [](absl::Status r) {
                       return r.ToString();
@@ -2082,7 +2098,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
   grpc_chttp2_maybe_complete_recv_message(t, s);
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_DEBUG,
             "maybe_complete_recv_trailing_metadata cli=%d s=%p closure=%p "
             "read_closed=%d "
@@ -2293,7 +2309,7 @@ grpc_chttp2_transport::RemovedStreamHandle grpc_chttp2_mark_stream_closed(
     grpc_chttp2_transport* t, grpc_chttp2_stream* s, int close_reads,
     int close_writes, grpc_error_handle error) {
   grpc_chttp2_transport::RemovedStreamHandle rsh;
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(
         GPR_DEBUG, "MARK_STREAM_CLOSED: t=%p s=%p(id=%d) %s [%s]", t, s, s->id,
         (close_reads && close_writes)
@@ -2613,9 +2629,9 @@ static grpc_error_handle try_http_parsing(grpc_chttp2_transport* t) {
   if (parse_error.ok() &&
       (parse_error = grpc_http_parser_eof(&parser)) == absl::OkStatus()) {
     error = grpc_error_set_int(
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE("Trying to connect an http1.x server"),
-            grpc_core::StatusIntProperty::kHttpStatus, response.status),
+        GRPC_ERROR_CREATE(
+            absl::StrCat("Trying to connect an http1.x server (HTTP status ",
+                         response.status, ")")),
         grpc_core::StatusIntProperty::kRpcStatus,
         grpc_http2_status_to_grpc_status(response.status));
   }
@@ -2724,8 +2740,8 @@ static void read_action_locked(
   // got an incoming read, cancel any pending keepalive timers
   t->keepalive_incoming_data_wanted = false;
   if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_ping_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(http2_ping) ||
+        GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
       gpr_log(GPR_INFO,
               "%s[%p]: Clear keepalive timer because data was received",
               t->is_client ? "CLIENT" : "SERVER", t.get());
@@ -2778,7 +2794,7 @@ static void start_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void start_bdp_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "%s: Start BDP ping err=%s",
             std::string(t->peer_string.as_string_view()).c_str(),
             grpc_core::StatusToString(error).c_str());
@@ -2805,7 +2821,7 @@ static void finish_bdp_ping(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
 static void finish_bdp_ping_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
     grpc_error_handle error) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(http)) {
     gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s",
             std::string(t->peer_string.as_string_view()).c_str(),
             grpc_core::StatusToString(error).c_str());
@@ -2949,8 +2965,8 @@ static void finish_keepalive_ping_locked(
     grpc_error_handle error) {
   if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_PINGING) {
     if (error.ok()) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-          GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+      if (GRPC_TRACE_FLAG_ENABLED(http) ||
+          GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
         gpr_log(GPR_INFO, "%s: Finish keepalive ping",
                 std::string(t->peer_string.as_string_view()).c_str());
       }
@@ -2971,8 +2987,8 @@ static void maybe_reset_keepalive_ping_timer_locked(grpc_chttp2_transport* t) {
       t->event_engine->Cancel(t->keepalive_ping_timer_handle)) {
     // Cancel succeeds, resets the keepalive ping timer. Note that we don't
     // need to Ref or Unref here since we still hold the Ref.
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace) ||
-        GRPC_TRACE_FLAG_ENABLED(grpc_keepalive_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(http) ||
+        GRPC_TRACE_FLAG_ENABLED(http_keepalive)) {
       gpr_log(GPR_INFO, "%s: Keepalive ping cancelled. Resetting timer.",
               std::string(t->peer_string.as_string_view()).c_str());
     }
@@ -3005,12 +3021,22 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
 
 void grpc_chttp2_transport::SetPollset(grpc_stream* /*gs*/,
                                        grpc_pollset* pollset) {
-  grpc_endpoint_add_to_pollset(ep, pollset);
+  // We don't want the overhead of acquiring the mutex unless we're
+  // using the "poll" polling engine, which is the only one that
+  // actually uses pollsets.
+  if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
+  grpc_core::MutexLock lock(&ep_destroy_mu);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset(ep, pollset);
 }
 
 void grpc_chttp2_transport::SetPollsetSet(grpc_stream* /*gs*/,
                                           grpc_pollset_set* pollset_set) {
-  grpc_endpoint_add_to_pollset_set(ep, pollset_set);
+  // We don't want the overhead of acquiring the mutex unless we're
+  // using the "poll" polling engine, which is the only one that
+  // actually uses pollsets.
+  if (strcmp(grpc_get_poll_strategy_name(), "poll") != 0) return;
+  grpc_core::MutexLock lock(&ep_destroy_mu);
+  if (ep != nullptr) grpc_endpoint_add_to_pollset_set(ep, pollset_set);
 }
 
 //
@@ -3061,7 +3087,7 @@ static void benign_reclaimer_locked(
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
       gpr_log(GPR_INFO, "HTTP2: %s - send goaway to free memory",
               std::string(t->peer_string.as_string_view()).c_str());
     }
@@ -3070,7 +3096,7 @@ static void benign_reclaimer_locked(
                                    grpc_core::StatusIntProperty::kHttp2Error,
                                    GRPC_HTTP2_ENHANCE_YOUR_CALM),
                 /*immediate_disconnect_hint=*/true);
-  } else if (error.ok() && GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+  } else if (error.ok() && GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
     gpr_log(GPR_INFO,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
@@ -3090,7 +3116,7 @@ static void destructive_reclaimer_locked(
   if (error.ok() && !t->stream_map.empty()) {
     // As stream_map is a hash map, this selects effectively a random stream.
     grpc_chttp2_stream* s = t->stream_map.begin()->second;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
+    if (GRPC_TRACE_FLAG_ENABLED(resource_quota)) {
       gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d",
               std::string(t->peer_string.as_string_view()).c_str(), s->id);
     }
@@ -3196,7 +3222,9 @@ grpc_core::Transport* grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close) {
+    grpc_closure* notify_on_receive_settings,
+    grpc_pollset_set* interested_parties_until_recv_settings,
+    grpc_closure* notify_on_close) {
   auto t = reinterpret_cast<grpc_chttp2_transport*>(transport)->Ref();
   if (read_buffer != nullptr) {
     grpc_slice_buffer_move_into(read_buffer, &t->read_buffer);
@@ -3205,9 +3233,15 @@ void grpc_chttp2_transport_start_reading(
   auto* tp = t.get();
   tp->combiner->Run(
       grpc_core::NewClosure([t = std::move(t), notify_on_receive_settings,
+                             interested_parties_until_recv_settings,
                              notify_on_close](grpc_error_handle) mutable {
         if (!t->closed_with_error.ok()) {
           if (notify_on_receive_settings != nullptr) {
+            if (t->ep != nullptr &&
+                interested_parties_until_recv_settings != nullptr) {
+              grpc_endpoint_delete_from_pollset_set(
+                  t->ep, interested_parties_until_recv_settings);
+            }
             grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify_on_receive_settings,
                                     t->closed_with_error);
           }
@@ -3217,6 +3251,8 @@ void grpc_chttp2_transport_start_reading(
           }
           return;
         }
+        t->interested_parties_until_recv_settings =
+            interested_parties_until_recv_settings;
         t->notify_on_receive_settings = notify_on_receive_settings;
         t->notify_on_close = notify_on_close;
         read_action_locked(std::move(t), absl::OkStatus());

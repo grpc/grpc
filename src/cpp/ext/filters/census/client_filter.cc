@@ -53,7 +53,6 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -82,8 +81,7 @@ constexpr uint32_t
 
 const grpc_channel_filter OpenCensusClientFilter::kFilter =
     grpc_core::MakePromiseBasedFilter<OpenCensusClientFilter,
-                                      grpc_core::FilterEndpoint::kClient, 0>(
-        "opencensus_client");
+                                      grpc_core::FilterEndpoint::kClient, 0>();
 
 absl::StatusOr<std::unique_ptr<OpenCensusClientFilter>>
 OpenCensusClientFilter::Create(const grpc_core::ChannelArgs& args,
@@ -100,17 +98,14 @@ OpenCensusClientFilter::MakeCallPromise(
     grpc_core::NextPromiseFactory next_promise_factory) {
   auto* path = call_args.client_initial_metadata->get_pointer(
       grpc_core::HttpPathMetadata());
-  auto* call_context = grpc_core::GetContext<grpc_call_context_element>();
-  auto* tracer =
-      grpc_core::GetContext<grpc_core::Arena>()
-          ->ManagedNew<OpenCensusCallTracer>(
-              call_context, path != nullptr ? path->Ref() : grpc_core::Slice(),
-              grpc_core::GetContext<grpc_core::Arena>(),
-              OpenCensusTracingEnabled() && tracing_enabled_);
-  DCHECK(call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value ==
-         nullptr);
-  call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].value = tracer;
-  call_context[GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE].destroy = nullptr;
+  auto* arena = grpc_core::GetContext<grpc_core::Arena>();
+  auto* tracer = arena->ManagedNew<OpenCensusCallTracer>(
+      path != nullptr ? path->Ref() : grpc_core::Slice(),
+      grpc_core::GetContext<grpc_core::Arena>(),
+      OpenCensusTracingEnabled() && tracing_enabled_);
+  DCHECK_EQ(arena->GetContext<grpc_core::CallTracerAnnotationInterface>(),
+            nullptr);
+  grpc_core::SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
   return next_promise_factory(std::move(call_args));
 }
 
@@ -306,16 +301,15 @@ OpenCensusCallTracer::OpenCensusCallAttemptTracer::StartNewTcpTrace() {
 // OpenCensusCallTracer
 //
 
-OpenCensusCallTracer::OpenCensusCallTracer(
-    grpc_call_context_element* call_context, grpc_core::Slice path,
-    grpc_core::Arena* arena, bool tracing_enabled)
-    : call_context_(call_context),
-      path_(std::move(path)),
+OpenCensusCallTracer::OpenCensusCallTracer(grpc_core::Slice path,
+                                           grpc_core::Arena* arena,
+                                           bool tracing_enabled)
+    : path_(std::move(path)),
       method_(GetMethod(path_)),
       arena_(arena),
       tracing_enabled_(tracing_enabled) {
-  auto* parent_context = reinterpret_cast<CensusContext*>(
-      call_context_[GRPC_CONTEXT_TRACING].value);
+  auto* parent_context =
+      reinterpret_cast<CensusContext*>(arena->GetContext<census_context>());
   GenerateClientContext(tracing_enabled_ ? absl::StrCat("Sent.", method_) : "",
                         &context_,
                         (parent_context == nullptr) ? nullptr : parent_context);
@@ -424,9 +418,9 @@ class OpenCensusClientInterceptor : public grpc::experimental::Interceptor {
       grpc::experimental::InterceptorBatchMethods* methods) override {
     if (methods->QueryInterceptionHookPoint(
             grpc::experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
-      auto* tracer = static_cast<OpenCensusCallTracer*>(
-          grpc_call_context_get(info_->client_context()->c_call(),
-                                GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE));
+      auto* tracer = grpc_core::DownCast<OpenCensusCallTracer*>(
+          grpc_call_get_arena(info_->client_context()->c_call())
+              ->GetContext<grpc_core::CallTracerAnnotationInterface>());
       if (tracer != nullptr) {
         tracer->RecordApiLatency(absl::Now() - start_time_,
                                  static_cast<absl::StatusCode>(

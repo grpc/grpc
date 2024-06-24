@@ -30,7 +30,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/time.h"
@@ -212,6 +211,8 @@ class GlobalInstrumentsRegistry {
       absl::FunctionRef<void(const GlobalInstrumentDescriptor&)> f);
   static const GlobalInstrumentDescriptor& GetInstrumentDescriptor(
       GlobalInstrumentHandle handle);
+  static absl::optional<GlobalInstrumentsRegistry::GlobalInstrumentHandle>
+  FindInstrumentByName(absl::string_view name);
 
  private:
   friend class GlobalInstrumentsRegistryTestPeer;
@@ -290,6 +291,14 @@ class StatsPlugin {
   // configure the ServerCallTracer in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
+  // Gets a scope config for the client channel specified by \a scope. Note that
+  // the stats plugin should have been enabled for the channel.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetChannelScopeConfig(
+      const experimental::StatsPluginChannelScope& scope) const = 0;
+  // Gets a scope config for the server specified by \a args. Note that the
+  // stats plugin should have been enabled for the server.
+  virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
+      const ChannelArgs& args) const = 0;
 
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with
@@ -329,6 +338,9 @@ class StatsPlugin {
   // Removes a callback previously added via AddCallback().  The stats
   // plugin may not use the callback after this method returns.
   virtual void RemoveCallback(RegisteredMetricCallback* callback) = 0;
+  // Returns true if instrument \a handle is enabled.
+  virtual bool IsInstrumentEnabled(
+      GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const = 0;
 
   // Gets a ClientCallTracer associated with this stats plugin which can be used
   // in a call.
@@ -424,6 +436,17 @@ class GlobalStatsPluginRegistry {
                                       optional_values);
       }
     }
+    // Returns true if any of the stats plugins in the group have enabled \a
+    // handle.
+    bool IsInstrumentEnabled(
+        GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const {
+      for (auto& state : plugins_state_) {
+        if (state.plugin->IsInstrumentEnabled(handle)) {
+          return true;
+        }
+      }
+      return false;
+    }
 
     // Registers a callback to be used to populate callback metrics.
     // The callback will update the specified metrics.  The callback
@@ -450,10 +473,10 @@ class GlobalStatsPluginRegistry {
     // Adds all available client call tracers associated with the stats plugins
     // within the group to \a call_context.
     void AddClientCallTracers(const Slice& path, bool registered_method,
-                              grpc_call_context_element* call_context);
+                              Arena* arena);
     // Adds all available server call tracers associated with the stats plugins
     // within the group to \a call_context.
-    void AddServerCallTracers(grpc_call_context_element* call_context);
+    void AddServerCallTracers(Arena* arena);
 
    private:
     friend class RegisteredMetricCallback;

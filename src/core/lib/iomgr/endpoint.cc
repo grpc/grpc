@@ -20,8 +20,6 @@
 
 #include <grpc/support/port_platform.h>
 
-grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
-
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                         grpc_closure* cb, bool urgent, int min_progress_size) {
   ep->vtable->read(ep, slices, cb, urgent, min_progress_size);
@@ -44,10 +42,6 @@ void grpc_endpoint_add_to_pollset_set(grpc_endpoint* ep,
 void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
                                            grpc_pollset_set* pollset_set) {
   ep->vtable->delete_from_pollset_set(ep, pollset_set);
-}
-
-void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
-  ep->vtable->shutdown(ep, why);
 }
 
 void grpc_endpoint_destroy(grpc_endpoint* ep) { ep->vtable->destroy(ep); }

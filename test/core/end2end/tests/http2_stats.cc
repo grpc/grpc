@@ -31,7 +31,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/context.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -204,11 +203,11 @@ CORE_END2END_TEST(Http2FullstackSingleHopTest, StreamStats) {
       std::make_shared<NewFakeStatsPlugin>());
   auto send_from_client = RandomSlice(10);
   auto send_from_server = RandomSlice(20);
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
-  CoreEnd2endTest::IncomingMessage client_message;
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
+  IncomingMessage client_message;
+  IncomingCloseOnServer client_close;
   {
     auto c = NewClientCall("/foo").Timeout(Duration::Minutes(5)).Create();
     c.NewBatch(1)

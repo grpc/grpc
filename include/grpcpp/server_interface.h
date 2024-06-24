@@ -19,7 +19,7 @@
 #ifndef GRPCPP_SERVER_INTERFACE_H
 #define GRPCPP_SERVER_INTERFACE_H
 
-#include "absl/log/check.h"
+#include "absl/log/absl_check.h"
 
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
@@ -320,7 +320,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq, void* tag,
                         Message* message) {
-    CHECK(method);
+    ABSL_CHECK(method);
     new PayloadAsyncRequest<Message>(method, this, context, stream, call_cq,
                                      notification_cq, tag, message);
   }
@@ -331,7 +331,7 @@ class ServerInterface : public internal::CallHook {
                         grpc::CompletionQueue* call_cq,
                         grpc::ServerCompletionQueue* notification_cq,
                         void* tag) {
-    CHECK(method);
+    ABSL_CHECK(method);
     new NoPayloadAsyncRequest(method, this, context, stream, call_cq,
                               notification_cq, tag);
   }

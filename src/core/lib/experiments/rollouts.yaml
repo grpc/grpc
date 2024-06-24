@@ -58,7 +58,7 @@
     # not tested on iOS at all
     ios: broken
     posix: false
-    windows: false
+    windows: true
 - name: event_engine_dns
   default:
     # not tested on iOS at all

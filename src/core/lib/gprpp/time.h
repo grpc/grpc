@@ -24,6 +24,7 @@
 #include "absl/types/optional.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -168,6 +169,11 @@ class Timestamp {
 
   std::string ToString() const;
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Timestamp& t) {
+    sink.Append(t.ToString());
+  }
+
  private:
   explicit constexpr Timestamp(int64_t millis) : millis_(millis) {}
 
@@ -292,6 +298,11 @@ class Duration {
   // https://developers.google.com/protocol-buffers/docs/proto3#json
   std::string ToJsonString() const;
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Duration& t) {
+    sink.Append(t.ToString());
+  }
+
  private:
   explicit constexpr Duration(int64_t millis) : millis_(millis) {}
 
@@ -375,9 +386,6 @@ inline Timestamp& Timestamp::operator+=(Duration duration) {
 }
 
 void TestOnlySetProcessEpoch(gpr_timespec epoch);
-
-std::ostream& operator<<(std::ostream& out, Timestamp timestamp);
-std::ostream& operator<<(std::ostream& out, Duration duration);
 
 }  // namespace grpc_core
 

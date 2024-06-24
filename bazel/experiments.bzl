@@ -32,9 +32,7 @@ EXPERIMENT_ENABLES = {
     "multiping": "multiping",
     "peer_state_based_framing": "peer_state_based_framing",
     "pick_first_new": "pick_first_new",
-    "promise_based_client_call": "event_engine_client,event_engine_listener,promise_based_client_call",
-    "chaotic_good": "chaotic_good,event_engine_client,event_engine_listener,promise_based_client_call",
-    "promise_based_inproc_transport": "event_engine_client,event_engine_listener,promise_based_client_call,promise_based_inproc_transport",
+    "promise_based_inproc_transport": "promise_based_inproc_transport",
     "rstpit": "rstpit",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_privacy": "server_privacy",
@@ -44,7 +42,6 @@ EXPERIMENT_ENABLES = {
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
     "work_serializer_clears_time_cache": "work_serializer_clears_time_cache",
     "work_serializer_dispatch": "event_engine_client,work_serializer_dispatch",
-    "call_v3": "call_v3,event_engine_client,event_engine_listener,work_serializer_dispatch",
 }
 
 EXPERIMENT_POLLERS = [
@@ -58,15 +55,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "core_end2end_test": [
-                "event_engine_client",
-            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "event_engine_client_test": [
-                "event_engine_client",
             ],
             "flow_control_test": [
                 "multiping",
@@ -85,10 +76,14 @@ EXPERIMENTS = {
                 "event_engine_dns",
             ],
             "core_end2end_test": [
+                "event_engine_client",
                 "event_engine_listener",
             ],
             "cpp_lb_end2end_test": [
                 "pick_first_new",
+            ],
+            "event_engine_client_test": [
+                "event_engine_client",
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
@@ -141,9 +136,7 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "chaotic_good",
                 "event_engine_client",
-                "promise_based_client_call",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -158,9 +151,6 @@ EXPERIMENTS = {
                 "rstpit",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "lame_client_test": [
-                "promise_based_client_call",
             ],
             "resource_quota_test": [
                 "free_large_allocator",

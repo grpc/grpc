@@ -74,28 +74,31 @@ auto ChaoticGoodServerTransport::PushFragmentIntoCall(
     CallInitiator call_initiator, ClientFragmentFrame frame,
     uint32_t stream_id) {
   DCHECK(frame.headers == nullptr);
-  if (grpc_chaotic_good_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: PushFragmentIntoCall: frame=%s",
             frame.ToString().c_str());
   }
-  return TrySeq(If(
-                    frame.message.has_value(),
-                    [&call_initiator, &frame]() mutable {
-                      return call_initiator.PushMessage(
-                          std::move(frame.message->message));
-                    },
-                    []() -> StatusFlag { return Success{}; }),
-                [this, call_initiator, end_of_stream = frame.end_of_stream,
-                 stream_id]() mutable -> StatusFlag {
-                  if (end_of_stream) {
-                    call_initiator.FinishSends();
-                    // We have received end_of_stream. It is now safe to remove
-                    // the call from the stream map.
-                    MutexLock lock(&mu_);
-                    stream_map_.erase(stream_id);
-                  }
-                  return Success{};
-                });
+  return Seq(If(
+                 frame.message.has_value(),
+                 [&call_initiator, &frame]() mutable {
+                   return call_initiator.PushMessage(
+                       std::move(frame.message->message));
+                 },
+                 []() -> StatusFlag { return Success{}; }),
+             [this, call_initiator, end_of_stream = frame.end_of_stream,
+              stream_id](StatusFlag status) mutable -> StatusFlag {
+               if (!status.ok() && GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
+                 gpr_log(GPR_INFO, "CHAOTIC_GOOD: Failed PushFragmentIntoCall");
+               }
+               if (end_of_stream || !status.ok()) {
+                 call_initiator.FinishSends();
+                 // We have received end_of_stream. It is now safe to remove
+                 // the call from the stream map.
+                 MutexLock lock(&mu_);
+                 stream_map_.erase(stream_id);
+               }
+               return Success{};
+             });
 }
 
 auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
@@ -132,7 +135,7 @@ auto ChaoticGoodServerTransport::MaybePushFragmentIntoCall(
 auto ChaoticGoodServerTransport::SendFragment(
     ServerFragmentFrame frame, MpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
-  if (grpc_chaotic_good_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
     gpr_log(GPR_INFO, "CHAOTIC_GOOD: SendFragment: frame=%s",
             frame.ToString().c_str());
   }
@@ -184,7 +187,7 @@ auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
       call_initiator.PullServerInitialMetadata(),
       [stream_id, outgoing_frames, call_initiator,
        this](absl::optional<ServerMetadataHandle> md) mutable {
-        if (grpc_chaotic_good_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
           gpr_log(GPR_INFO,
                   "CHAOTIC_GOOD: SendCallInitialMetadataAndBody: md=%s",
                   md.has_value() ? (*md)->DebugString().c_str() : "null");
@@ -210,7 +213,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
   return Seq(Map(SendCallInitialMetadataAndBody(stream_id, outgoing_frames,
                                                 call_initiator),
                  [stream_id](absl::Status main_body_result) {
-                   if (grpc_chaotic_good_trace.enabled()) {
+                   if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
                      gpr_log(GPR_DEBUG,
                              "CHAOTIC_GOOD: CallOutboundLoop: stream_id=%d "
                              "main_body_result=%s",
@@ -235,15 +238,14 @@ auto ChaoticGoodServerTransport::DeserializeAndPushFragmentToNewCall(
     FrameHeader frame_header, BufferPair buffers,
     ChaoticGoodTransport& transport) {
   ClientFragmentFrame fragment_frame;
-  ScopedArenaPtr arena(call_arena_allocator_->MakeArena());
+  RefCountedPtr<Arena> arena(call_arena_allocator_->MakeArena());
   absl::Status status = transport.DeserializeFrame(
       frame_header, std::move(buffers), arena.get(), fragment_frame,
       FrameLimits{1024 * 1024 * 1024, aligned_bytes_ - 1});
   absl::optional<CallInitiator> call_initiator;
   if (status.ok()) {
-    auto call =
-        MakeCallPair(std::move(fragment_frame.headers), event_engine_.get(),
-                     arena.release(), call_arena_allocator_, nullptr);
+    auto call = MakeCallPair(std::move(fragment_frame.headers),
+                             event_engine_.get(), std::move(arena));
     call_initiator.emplace(std::move(call.initiator));
     auto add_result = NewStream(frame_header.stream_id, *call_initiator);
     if (add_result.ok()) {
@@ -341,13 +343,14 @@ auto ChaoticGoodServerTransport::TransportReadLoop(
 
 auto ChaoticGoodServerTransport::OnTransportActivityDone(
     absl::string_view activity) {
-  return [this, activity](absl::Status status) {
-    if (grpc_chaotic_good_trace.enabled()) {
+  return [self = RefAsSubclass<ChaoticGoodServerTransport>(),
+          activity](absl::Status status) {
+    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
       gpr_log(GPR_INFO,
               "CHAOTIC_GOOD: OnTransportActivityDone: activity=%s status=%s",
               std::string(activity).c_str(), status.ToString().c_str());
     }
-    AbortWithError();
+    self->AbortWithError();
   };
 }
 

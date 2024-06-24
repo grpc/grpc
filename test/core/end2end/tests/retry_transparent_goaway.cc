@@ -29,6 +29,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -115,8 +116,6 @@ class FailFirstCallFilter {
 
 grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     CallData::StartTransportStreamOpBatch,
-    nullptr,
-    nullptr,
     grpc_channel_next_op,
     sizeof(CallData),
     CallData::Init,
@@ -127,7 +126,7 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstCallFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailFirstCallFilter"),
 };
 
 // Tests transparent retries when the call was never sent out on the wire.
@@ -148,9 +147,9 @@ CORE_END2END_TEST(RetryTest, TransparentGoaway) {
       .SendMessage("foo")
       .SendCloseFromClient();
   // Start a batch containing recv ops.
-  CoreEnd2endTest::IncomingStatusOnClient server_status;
-  CoreEnd2endTest::IncomingMetadata server_initial_metadata;
-  CoreEnd2endTest::IncomingMessage server_message;
+  IncomingStatusOnClient server_status;
+  IncomingMetadata server_initial_metadata;
+  IncomingMessage server_message;
   c.NewBatch(2)
       .RecvInitialMetadata(server_initial_metadata)
       .RecvMessage(server_message)
@@ -163,12 +162,12 @@ CORE_END2END_TEST(RetryTest, TransparentGoaway) {
   Expect(101, true);
   Step();
   // Server receives the request.
-  CoreEnd2endTest::IncomingMessage client_message;
+  IncomingMessage client_message;
   s.NewBatch(102).RecvMessage(client_message);
   Expect(102, true);
   Step();
   // Server sends a response with status OK.
-  CoreEnd2endTest::IncomingCloseOnServer client_close;
+  IncomingCloseOnServer client_close;
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendInitialMetadata({})

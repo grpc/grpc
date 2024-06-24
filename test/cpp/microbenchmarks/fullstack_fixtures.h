@@ -95,6 +95,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   ~FullstackFixture() override {
+    channel_.reset();
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
@@ -189,7 +190,7 @@ class EndpointPairFixture : public BaseFixture {
                                                     server_transport_, nullptr,
                                                     server_args, nullptr)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
-                                          nullptr);
+                                          nullptr, nullptr);
     }
 
     // create channel
@@ -215,7 +216,7 @@ class EndpointPairFixture : public BaseFixture {
               ->release()
               ->c_ptr();
       grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr,
-                                          nullptr);
+                                          nullptr, nullptr);
 
       channel_ = grpc::CreateChannelInternal(
           "", channel,

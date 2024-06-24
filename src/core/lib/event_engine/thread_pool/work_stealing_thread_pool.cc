@@ -32,14 +32,13 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
 
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_local.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "src/core/lib/event_engine/work_queue/work_queue.h"
 #include "src/core/lib/gprpp/crash.h"
@@ -157,11 +156,10 @@ std::atomic<size_t> g_reported_dump_count{0};
 void DumpSignalHandler(int /* sig */) {
   const auto trace = grpc_core::GetCurrentStackTrace();
   if (!trace.has_value()) {
-    gpr_log(GPR_ERROR, "DumpStack::%" PRIdPTR ": Stack trace not available",
-            gpr_thd_currentid());
+    LOG(ERROR) << "DumpStack::" << gpr_thd_currentid()
+               << ": Stack trace not available";
   } else {
-    gpr_log(GPR_ERROR, "DumpStack::%" PRIdPTR ": %s", gpr_thd_currentid(),
-            trace->c_str());
+    LOG(ERROR) << "DumpStack::" << gpr_thd_currentid() << ": " << trace.value();
   }
   g_reported_dump_count.fetch_add(1);
   grpc_core::Thread::Kill(gpr_thd_currentid());
@@ -176,8 +174,8 @@ thread_local WorkQueue* g_local_queue = nullptr;
 WorkStealingThreadPool::WorkStealingThreadPool(size_t reserve_threads)
     : pool_{std::make_shared<WorkStealingThreadPoolImpl>(reserve_threads)} {
   if (g_log_verbose_failures) {
-    GRPC_EVENT_ENGINE_TRACE(
-        "%s", "WorkStealingThreadPool verbose failures are enabled");
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "WorkStealingThreadPool verbose failures are enabled";
   }
   pool_->Start();
 }
@@ -268,7 +266,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
-  LOG(INFO) << "WorkStealingThreadPoolImpl::Quiesce";
   SetShutdown(true);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
@@ -351,10 +348,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::UntrackThread(
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::DumpStacksAndCrash() {
   grpc_core::MutexLock lock(&thd_set_mu_);
-  gpr_log(GPR_ERROR,
-          "Pool did not quiesce in time, gRPC will not shut down cleanly. "
-          "Dumping all %zu thread stacks.",
-          thds_.size());
+  LOG(ERROR) << "Pool did not quiesce in time, gRPC will not shut down "
+                "cleanly. Dumping all "
+             << thds_.size() << " thread stacks.";
   for (const auto tid : thds_) {
     grpc_core::Thread::Signal(tid, kDumpStackSignal);
   }
@@ -459,10 +455,9 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
   // TODO(hork): new threads may spawn when there is no work in the global
   // queue, nor any work to steal. Add more sophisticated logic about when to
   // start a thread.
-  GRPC_EVENT_ENGINE_TRACE(
-      "Starting new ThreadPool thread due to backlog (total threads: %" PRIuPTR
-      ")",
-      living_thread_count + 1);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "Starting new ThreadPool thread due to backlog (total threads: "
+      << living_thread_count + 1;
   pool_->StartThread();
   // Tell the lifeguard to monitor the pool more closely.
   backoff_.Reset();
