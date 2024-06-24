@@ -3,7 +3,8 @@
  *     envoy/type/matcher/v3/filter_state.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_MINITABLE_H_
 #define ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_MINITABLE_H_

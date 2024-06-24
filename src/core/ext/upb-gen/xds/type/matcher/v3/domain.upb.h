@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/domain.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_TYPE_MATCHER_V3_DOMAIN_PROTO_UPB_H_
 #define XDS_TYPE_MATCHER_V3_DOMAIN_PROTO_UPB_H_
@@ -244,7 +245,7 @@ UPB_INLINE bool xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_add_domains(
 }
 UPB_INLINE void xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_set_on_match(xds_type_matcher_v3_ServerNameMatcher_DomainMatcher *msg, struct xds_type_matcher_v3_Matcher_OnMatch* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_Matcher_OnMatch* xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_mutable_on_match(xds_type_matcher_v3_ServerNameMatcher_DomainMatcher* msg, upb_Arena* arena) {
   struct xds_type_matcher_v3_Matcher_OnMatch* sub = (struct xds_type_matcher_v3_Matcher_OnMatch*)xds_type_matcher_v3_ServerNameMatcher_DomainMatcher_on_match(msg);

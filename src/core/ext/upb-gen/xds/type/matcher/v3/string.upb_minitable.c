@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/string.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -31,6 +32,9 @@ const upb_MiniTable xds__type__matcher__v3__StringMatcher_msg_init = {
   &xds_type_matcher_v3_StringMatcher_submsgs[0],
   &xds_type_matcher_v3_StringMatcher__fields[0],
   UPB_SIZE(24, 32), 6, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.StringMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0010000c0100000a, &upb_pos_1bt},
@@ -55,6 +59,9 @@ const upb_MiniTable xds__type__matcher__v3__ListStringMatcher_msg_init = {
   &xds_type_matcher_v3_ListStringMatcher_submsgs[0],
   &xds_type_matcher_v3_ListStringMatcher__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.type.matcher.v3.ListStringMatcher",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},

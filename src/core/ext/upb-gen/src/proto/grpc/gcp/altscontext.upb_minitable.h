@@ -3,7 +3,8 @@
  *     src/proto/grpc/gcp/altscontext.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_MINITABLE_H_
 #define SRC_PROTO_GRPC_GCP_ALTSCONTEXT_PROTO_UPB_MINITABLE_H_

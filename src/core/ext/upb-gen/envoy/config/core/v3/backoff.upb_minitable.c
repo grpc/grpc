@@ -3,7 +3,8 @@
  *     envoy/config/core/v3/backoff.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -30,6 +31,9 @@ const upb_MiniTable envoy__config__core__v3__BackoffStrategy_msg_init = {
   &envoy_config_core_v3_BackoffStrategy_submsgs[0],
   &envoy_config_core_v3_BackoffStrategy__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.BackoffStrategy",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

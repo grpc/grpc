@@ -3,7 +3,8 @@
  *     envoy/extensions/upstreams/http/v3/http_protocol_options.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPBDEFS_H_
 #define ENVOY_EXTENSIONS_UPSTREAMS_HTTP_V3_HTTP_PROTOCOL_OPTIONS_PROTO_UPBDEFS_H_

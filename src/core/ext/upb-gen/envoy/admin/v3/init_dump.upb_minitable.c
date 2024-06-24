@@ -3,7 +3,8 @@
  *     envoy/admin/v3/init_dump.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -25,6 +26,9 @@ const upb_MiniTable envoy__admin__v3__UnreadyTargetsDumps_msg_init = {
   &envoy_admin_v3_UnreadyTargetsDumps_submsgs[0],
   &envoy_admin_v3_UnreadyTargetsDumps__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.UnreadyTargetsDumps",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -40,6 +44,9 @@ const upb_MiniTable envoy__admin__v3__UnreadyTargetsDumps__UnreadyTargetsDump_ms
   NULL,
   &envoy_admin_v3_UnreadyTargetsDumps_UnreadyTargetsDump__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.UnreadyTargetsDumps.UnreadyTargetsDump",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},

@@ -3,7 +3,8 @@
  *     envoy/type/http/v3/path_transformation.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/type/http/v3/path_transformation.upbdefs.h"

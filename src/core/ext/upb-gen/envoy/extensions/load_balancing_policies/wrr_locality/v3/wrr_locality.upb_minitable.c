@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -27,6 +28,9 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__wrr_0locality_
   &envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality_submsgs[0],
   &envoy_extensions_load_balancing_policies_wrr_locality_v3_WrrLocality__fields[0],
   UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.extensions.load_balancing_policies.wrr_locality.v3.WrrLocality",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

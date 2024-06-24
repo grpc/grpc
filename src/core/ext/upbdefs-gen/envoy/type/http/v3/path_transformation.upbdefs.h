@@ -3,7 +3,8 @@
  *     envoy/type/http/v3/path_transformation.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPBDEFS_H_
 #define ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPBDEFS_H_

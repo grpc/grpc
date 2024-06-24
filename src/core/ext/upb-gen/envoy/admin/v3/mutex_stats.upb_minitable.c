@@ -3,7 +3,8 @@
  *     envoy/admin/v3/mutex_stats.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -24,6 +25,9 @@ const upb_MiniTable envoy__admin__v3__MutexStats_msg_init = {
   NULL,
   &envoy_admin_v3_MutexStats__fields[0],
   32, 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.MutexStats",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv8_1bt},

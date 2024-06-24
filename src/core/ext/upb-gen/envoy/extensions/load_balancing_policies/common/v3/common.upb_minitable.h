@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/common/v3/common.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_MINITABLE_H_
 #define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_MINITABLE_H_

@@ -3,7 +3,8 @@
  *     envoy/data/accesslog/v3/accesslog.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -36,6 +37,9 @@ const upb_MiniTable envoy__data__accesslog__v3__TCPAccessLogEntry_msg_init = {
   &envoy_data_accesslog_v3_TCPAccessLogEntry_submsgs[0],
   &envoy_data_accesslog_v3_TCPAccessLogEntry__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.TCPAccessLogEntry",
+#endif
 };
 
 static const upb_MiniTableSub envoy_data_accesslog_v3_HTTPAccessLogEntry_submsgs[3] = {
@@ -55,6 +59,9 @@ const upb_MiniTable envoy__data__accesslog__v3__HTTPAccessLogEntry_msg_init = {
   &envoy_data_accesslog_v3_HTTPAccessLogEntry_submsgs[0],
   &envoy_data_accesslog_v3_HTTPAccessLogEntry__fields[0],
   UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.HTTPAccessLogEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -72,6 +79,9 @@ const upb_MiniTable envoy__data__accesslog__v3__ConnectionProperties_msg_init = 
   NULL,
   &envoy_data_accesslog_v3_ConnectionProperties__fields[0],
   24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.ConnectionProperties",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv8_1bt},
@@ -142,6 +152,9 @@ const upb_MiniTable envoy__data__accesslog__v3__AccessLogCommon_msg_init = {
   &envoy_data_accesslog_v3_AccessLogCommon_submsgs[0],
   &envoy_data_accesslog_v3_AccessLogCommon__fields[0],
   UPB_SIZE(192, 312), 33, kUpb_ExtMode_NonExtendable, 33, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.AccessLogCommon",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001800003f000009, &upb_psf8_1bt},
@@ -191,6 +204,9 @@ const upb_MiniTable envoy__data__accesslog__v3__AccessLogCommon__FilterStateObje
   &envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry_submsgs[0],
   &envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.AccessLogCommon.FilterStateObjectsEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -206,6 +222,9 @@ const upb_MiniTable envoy__data__accesslog__v3__AccessLogCommon__CustomTagsEntry
   NULL,
   &envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.AccessLogCommon.CustomTagsEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -252,6 +271,9 @@ const upb_MiniTable envoy__data__accesslog__v3__ResponseFlags_msg_init = {
   &envoy_data_accesslog_v3_ResponseFlags_submsgs[0],
   &envoy_data_accesslog_v3_ResponseFlags__fields[0],
   48, 27, kUpb_ExtMode_NonExtendable, 27, UPB_FASTTABLE_MASK(248), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.ResponseFlags",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000900003f000008, &upb_psb1_1bt},
@@ -296,6 +318,9 @@ const upb_MiniTable envoy__data__accesslog__v3__ResponseFlags__Unauthorized_msg_
   NULL,
   &envoy_data_accesslog_v3_ResponseFlags_Unauthorized__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.ResponseFlags.Unauthorized",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},
@@ -322,6 +347,9 @@ const upb_MiniTable envoy__data__accesslog__v3__TLSProperties_msg_init = {
   &envoy_data_accesslog_v3_TLSProperties_submsgs[0],
   &envoy_data_accesslog_v3_TLSProperties__fields[0],
   UPB_SIZE(56, 88), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.TLSProperties",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
@@ -348,6 +376,9 @@ const upb_MiniTable envoy__data__accesslog__v3__TLSProperties__CertificateProper
   &envoy_data_accesslog_v3_TLSProperties_CertificateProperties_submsgs[0],
   &envoy_data_accesslog_v3_TLSProperties_CertificateProperties__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.TLSProperties.CertificateProperties",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -365,6 +396,9 @@ const upb_MiniTable envoy__data__accesslog__v3__TLSProperties__CertificateProper
   NULL,
   &envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.TLSProperties.CertificateProperties.SubjectAltName",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},
@@ -400,6 +434,9 @@ const upb_MiniTable envoy__data__accesslog__v3__HTTPRequestProperties_msg_init =
   &envoy_data_accesslog_v3_HTTPRequestProperties_submsgs[0],
   &envoy_data_accesslog_v3_HTTPRequestProperties__fields[0],
   UPB_SIZE(120, 192), 15, kUpb_ExtMode_NonExtendable, 15, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.HTTPRequestProperties",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000c00003f000008, &upb_psv4_1bt},
@@ -429,6 +466,9 @@ const upb_MiniTable envoy__data__accesslog__v3__HTTPRequestProperties__RequestHe
   NULL,
   &envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.HTTPRequestProperties.RequestHeadersEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -458,6 +498,9 @@ const upb_MiniTable envoy__data__accesslog__v3__HTTPResponseProperties_msg_init 
   &envoy_data_accesslog_v3_HTTPResponseProperties_submsgs[0],
   &envoy_data_accesslog_v3_HTTPResponseProperties__fields[0],
   UPB_SIZE(64, 88), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.HTTPResponseProperties",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -487,6 +530,9 @@ const upb_MiniTable envoy__data__accesslog__v3__HTTPResponseProperties__Response
   NULL,
   &envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.HTTPResponseProperties.ResponseHeadersEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -504,6 +550,9 @@ const upb_MiniTable envoy__data__accesslog__v3__HTTPResponseProperties__Response
   NULL,
   &envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.data.accesslog.v3.HTTPResponseProperties.ResponseTrailersEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

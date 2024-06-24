@@ -3,7 +3,8 @@
  *     envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_MINITABLE_H_
 #define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_WRR_LOCALITY_V3_WRR_LOCALITY_PROTO_UPB_MINITABLE_H_

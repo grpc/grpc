@@ -3,7 +3,8 @@
  *     validate/validate.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef VALIDATE_VALIDATE_PROTO_UPBDEFS_H_
 #define VALIDATE_VALIDATE_PROTO_UPBDEFS_H_

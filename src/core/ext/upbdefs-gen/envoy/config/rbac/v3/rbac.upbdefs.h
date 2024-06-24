@@ -3,7 +3,8 @@
  *     envoy/config/rbac/v3/rbac.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_RBAC_V3_RBAC_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_RBAC_V3_RBAC_PROTO_UPBDEFS_H_

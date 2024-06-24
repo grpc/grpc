@@ -3,7 +3,8 @@
  *     envoy/config/listener/v3/quic_config.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -49,6 +50,9 @@ const upb_MiniTable envoy__config__listener__v3__QuicProtocolOptions_msg_init = 
   &envoy_config_listener_v3_QuicProtocolOptions_submsgs[0],
   &envoy_config_listener_v3_QuicProtocolOptions__fields[0],
   UPB_SIZE(48, 88), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.listener.v3.QuicProtocolOptions",
+#endif
 };
 
 static const upb_MiniTable *messages_layout[1] = {

@@ -3,7 +3,8 @@
  *     envoy/config/metrics/v3/metrics_service.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -35,6 +36,9 @@ const upb_MiniTable envoy__config__metrics__v3__MetricsServiceConfig_msg_init = 
   &envoy_config_metrics_v3_MetricsServiceConfig_submsgs[0],
   &envoy_config_metrics_v3_MetricsServiceConfig__fields[0],
   UPB_SIZE(32, 40), 5, kUpb_ExtMode_NonExtendable, 5, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.metrics.v3.MetricsServiceConfig",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},

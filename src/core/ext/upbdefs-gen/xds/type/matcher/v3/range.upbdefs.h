@@ -3,7 +3,8 @@
  *     xds/type/matcher/v3/range.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPBDEFS_H_
 #define XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPBDEFS_H_

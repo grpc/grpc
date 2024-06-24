@@ -3,7 +3,8 @@
  *     envoy/admin/v3/mutex_stats.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_ADMIN_V3_MUTEX_STATS_PROTO_UPB_H_
 #define ENVOY_ADMIN_V3_MUTEX_STATS_PROTO_UPB_H_
@@ -101,15 +102,15 @@ UPB_INLINE uint64_t envoy_admin_v3_MutexStats_lifetime_wait_cycles(const envoy_a
 
 UPB_INLINE void envoy_admin_v3_MutexStats_set_num_contentions(envoy_admin_v3_MutexStats *msg, uint64_t value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_MutexStats_set_current_wait_cycles(envoy_admin_v3_MutexStats *msg, uint64_t value) {
   const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_MutexStats_set_lifetime_wait_cycles(envoy_admin_v3_MutexStats *msg, uint64_t value) {
   const upb_MiniTableField field = {3, 24, 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

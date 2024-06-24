@@ -3,7 +3,8 @@
  *     google/api/httpbody.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -27,6 +28,9 @@ const upb_MiniTable google__api__HttpBody_msg_init = {
   &google_api_HttpBody_submsgs[0],
   &google_api_HttpBody__fields[0],
   UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "google.api.HttpBody",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},

@@ -3,7 +3,8 @@
  *     envoy/config/trace/v3/opencensus.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_TRACE_V3_OPENCENSUS_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_TRACE_V3_OPENCENSUS_PROTO_UPBDEFS_H_

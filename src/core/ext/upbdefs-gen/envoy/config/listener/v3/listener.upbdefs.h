@@ -3,7 +3,8 @@
  *     envoy/config/listener/v3/listener.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPBDEFS_H_
 #define ENVOY_CONFIG_LISTENER_V3_LISTENER_PROTO_UPBDEFS_H_

@@ -28,7 +28,7 @@ import python_utils.report_utils as report_utils
 _ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), "../.."))
 os.chdir(_ROOT)
 
-_DEFAULT_RUNTESTS_TIMEOUT = 1 * 60 * 60
+_DEFAULT_RUNTESTS_TIMEOUT = 2 * 60 * 60
 
 # C/C++ tests can take long time
 _CPP_RUNTESTS_TIMEOUT = 4 * 60 * 60

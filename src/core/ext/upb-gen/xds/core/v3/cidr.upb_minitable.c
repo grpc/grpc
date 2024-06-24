@@ -3,7 +3,8 @@
  *     xds/core/v3/cidr.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -28,6 +29,9 @@ const upb_MiniTable xds__core__v3__CidrRange_msg_init = {
   &xds_core_v3_CidrRange_submsgs[0],
   &xds_core_v3_CidrRange__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.core.v3.CidrRange",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

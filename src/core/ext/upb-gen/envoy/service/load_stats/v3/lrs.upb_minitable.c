@@ -3,7 +3,8 @@
  *     envoy/service/load_stats/v3/lrs.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -31,6 +32,9 @@ const upb_MiniTable envoy__service__load_0stats__v3__LoadStatsRequest_msg_init =
   &envoy_service_load_stats_v3_LoadStatsRequest_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsRequest__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.load_stats.v3.LoadStatsRequest",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -54,6 +58,9 @@ const upb_MiniTable envoy__service__load_0stats__v3__LoadStatsResponse_msg_init 
   &envoy_service_load_stats_v3_LoadStatsResponse_submsgs[0],
   &envoy_service_load_stats_v3_LoadStatsResponse__fields[0],
   UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.service.load_stats.v3.LoadStatsResponse",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_prs_1bt},

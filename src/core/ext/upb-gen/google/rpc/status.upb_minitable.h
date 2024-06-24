@@ -3,7 +3,8 @@
  *     google/rpc/status.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #ifndef GOOGLE_RPC_STATUS_PROTO_UPB_MINITABLE_H_
 #define GOOGLE_RPC_STATUS_PROTO_UPB_MINITABLE_H_
