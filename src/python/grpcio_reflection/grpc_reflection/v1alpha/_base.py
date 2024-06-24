@@ -28,7 +28,7 @@ def _not_found_error(original_request):
             error_code=grpc.StatusCode.NOT_FOUND.value[0],
             error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
         ),
-        original_request=original_request
+        original_request=original_request,
     )
 
 
@@ -56,7 +56,7 @@ def _file_descriptor_response(descriptor, original_request):
         file_descriptor_response=_reflection_pb2.FileDescriptorResponse(
             file_descriptor_proto=(serialized_proto_list)
         ),
-        original_request=original_request
+        original_request=original_request,
     )
 
 
@@ -91,7 +91,9 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor, request)
 
-    def _file_containing_extension(self, request, containing_type, extension_number):
+    def _file_containing_extension(
+        self, request, containing_type, extension_number
+    ):
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type
@@ -128,7 +130,7 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
                     base_type_name=message_descriptor.full_name,
                     extension_number=extension_numbers,
                 ),
-                original_request=request
+                original_request=request,
             )
 
     def _list_services(self, request):
@@ -139,7 +141,7 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
                     for service_name in self._service_names
                 ]
             ),
-            original_request=request
+            original_request=request,
         )
 
 
