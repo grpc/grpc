@@ -25,7 +25,7 @@
 #include "src/core/lib/surface/client_call.h"
 #include "src/core/lib/transport/call_arena_allocator.h"
 
-using namespace grpc_core;
+namespace grpc_core {
 
 class TestCallDestination : public UnstartedCallDestination {
  public:
@@ -169,6 +169,8 @@ void BM_Unary(benchmark::State& state) {
   grpc_byte_buffer_destroy(request_payload);
 }
 BENCHMARK(BM_Unary);
+
+}  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.

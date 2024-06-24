@@ -23,7 +23,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "test/core/transport/call_spine_benchmarks.h"
 
-using namespace grpc_core;
+namespace grpc_core {
 
 const Slice kTestPath = Slice::FromExternalString("/foo/bar");
 
@@ -171,6 +171,8 @@ void BM_CreateClientChannel(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateClientChannel);
 
+}  // namespace grpc_core
+
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
 namespace benchmark {
@@ -179,10 +181,11 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->resolver_registry()->RegisterResolverFactory(
-        std::make_unique<TestResolverFactory>());
-  });
+  grpc_core::CoreConfiguration::RegisterBuilder(
+      [](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->resolver_registry()->RegisterResolverFactory(
+            std::make_unique<grpc_core::TestResolverFactory>());
+      });
   grpc_init();
   {
     auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();

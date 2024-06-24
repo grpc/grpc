@@ -25,7 +25,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "test/core/transport/call_spine_benchmarks.h"
 
-using namespace grpc_core;
+namespace grpc_core {
 
 class HttpClientFilterTraits {
  public:
@@ -65,6 +65,8 @@ class HttpClientFilterTraits {
   FakeTransport transport_;
 };
 GRPC_CALL_SPINE_BENCHMARK(FilterFixture<HttpClientFilterTraits>);
+
+}  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
