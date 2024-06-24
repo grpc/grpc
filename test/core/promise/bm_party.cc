@@ -26,24 +26,21 @@ namespace {
 void BM_PartyCreate(benchmark::State& state) {
   auto arena = SimpleArenaAllocator()->MakeArena();
   for (auto _ : state) {
-    auto* party = new Party(arena);
-    party->Unref();
+    Party::Make(arena);
   }
 }
 BENCHMARK(BM_PartyCreate);
 
 void BM_AddParticipant(benchmark::State& state) {
-  auto* party = new Party(SimpleArenaAllocator()->MakeArena());
+  auto party = Party::Make(SimpleArenaAllocator()->MakeArena());
   for (auto _ : state) {
-    party->Spawn(
-        "participant", []() { return Success{}; }, [](StatusFlag) {});
+    party->Spawn("participant", []() { return Success{}; }, [](StatusFlag) {});
   }
-  party->Unref();
 }
 BENCHMARK(BM_AddParticipant);
 
 void BM_WakeupParticipant(benchmark::State& state) {
-  auto* party = new Party(SimpleArenaAllocator()->MakeArena());
+  auto party = Party::Make(SimpleArenaAllocator()->MakeArena());
   party->Spawn(
       "driver",
       [&state, w = IntraActivityWaiter()]() mutable -> Poll<StatusFlag> {
@@ -54,7 +51,7 @@ void BM_WakeupParticipant(benchmark::State& state) {
         }
         return Success{};
       },
-      [party](StatusFlag) { party->Unref(); });
+      [party](StatusFlag) {});
 }
 BENCHMARK(BM_WakeupParticipant);
 

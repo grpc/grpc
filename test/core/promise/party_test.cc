@@ -238,7 +238,7 @@ class PartyTest : public ::testing::Test {
     auto arena = SimpleArenaAllocator()->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         event_engine_.get());
-    return MakeRefCounted<Party>(std::move(arena));
+    return Party::Make(std::move(arena));
   }
 
  private:

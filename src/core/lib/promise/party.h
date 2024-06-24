@@ -369,10 +369,12 @@ class Party : public Activity, private Wakeable {
   };
 
  public:
-  explicit Party(RefCountedPtr<Arena> arena)
-      : sync_(1), arena_(std::move(arena)) {}
   Party(const Party&) = delete;
   Party& operator=(const Party&) = delete;
+
+  static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
+    return RefCountedPtr<Party>(arena->New<Party>(std::move(arena)));
+  }
 
   // Spawn one promise into the party.
   // The promise will be polled until it is resolved, or until the party is shut
@@ -447,6 +449,11 @@ class Party : public Activity, private Wakeable {
   };
 
  protected:
+  friend class Arena;
+
+  // Derived types should be constructed upon `arena`.
+  explicit Party(RefCountedPtr<Arena> arena)
+      : sync_(1), arena_(std::move(arena)) {}
   ~Party() override;
 
   // Main run loop. Must be locked.
