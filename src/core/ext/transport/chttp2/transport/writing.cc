@@ -676,7 +676,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       num_stream_bytes = t->outbuf.c_slice_buffer()->length - orig_len;
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
       ++s->write_counter;
-      if (s->traced && grpc_endpoint_can_track_err(t->ep)) {
+      if (s->traced && grpc_endpoint_can_track_err(t->ep.get())) {
         grpc_core::CopyContextFn copy_context_fn =
             grpc_core::GrpcHttp2GetCopyContextFn();
         if (copy_context_fn != nullptr &&
