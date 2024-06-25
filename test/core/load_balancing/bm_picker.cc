@@ -41,7 +41,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
     CHECK_OK(parsed_json);
     auto config_parsed =
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
-            std::move(*parsed_json));
+            *parsed_json);
     CHECK_OK(config_parsed);
     config_ = std::move(*config_parsed);
   }
@@ -219,10 +219,10 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
 #define BACKEND_RANGE RangeMultiplier(10)->Range(1, 100000)
 
 #define BENCHMARK_HELPER(name, config)                       \
-  []() -> BenchmarkHelper& {                                 \
+  ([]() -> BenchmarkHelper& {                                \
     static auto* helper = new BenchmarkHelper(name, config); \
     return *helper;                                          \
-  }()
+  }())
 
 #define PICKER_BENCHMARK(name)                                               \
   BENCHMARK_CAPTURE(name, pick_first,                                        \
