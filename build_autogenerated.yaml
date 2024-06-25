@@ -787,6 +787,7 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/event_engine/secure_endpoint.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
@@ -928,6 +929,7 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
@@ -1644,6 +1646,7 @@ libs:
   - src/core/handshaker/http_connect/http_connect_handshaker.cc
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/event_engine/secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -1745,6 +1748,8 @@ libs:
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
@@ -2326,6 +2331,7 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/event_engine/secure_endpoint.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.h
@@ -2465,6 +2471,7 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
@@ -2800,6 +2807,7 @@ libs:
   - src/core/handshaker/http_connect/http_connect_handshaker.cc
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/event_engine/secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -2899,6 +2907,8 @@ libs:
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
@@ -4428,6 +4438,7 @@ libs:
   - src/core/handshaker/handshaker_registry.h
   - src/core/handshaker/proxy_mapper.h
   - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/handshaker/security/event_engine/secure_endpoint.h
   - src/core/handshaker/security/secure_endpoint.h
   - src/core/handshaker/security/security_handshaker.h
   - src/core/lib/address_utils/parse_address.h
@@ -4564,6 +4575,7 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
@@ -4778,6 +4790,7 @@ libs:
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/handshaker/security/event_engine/secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -4874,6 +4887,8 @@ libs:
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
@@ -5050,6 +5065,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -6951,6 +6967,7 @@ targets:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
@@ -7230,6 +7247,8 @@ targets:
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
@@ -12674,6 +12693,7 @@ targets:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine_shims/closure.h
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
@@ -12954,6 +12974,8 @@ targets:
   - src/core/lib/iomgr/ev_posix.cc
   - src/core/lib/iomgr/event_engine_shims/closure.cc
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc

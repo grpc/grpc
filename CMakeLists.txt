@@ -2262,6 +2262,7 @@ add_library(grpc
   src/core/handshaker/http_connect/http_connect_handshaker.cc
   src/core/handshaker/http_connect/http_proxy_mapper.cc
   src/core/handshaker/proxy_mapper_registry.cc
+  src/core/handshaker/security/event_engine/secure_endpoint.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -2363,6 +2364,8 @@ add_library(grpc
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
@@ -3053,6 +3056,7 @@ add_library(grpc_unsecure
   src/core/handshaker/http_connect/http_connect_handshaker.cc
   src/core/handshaker/http_connect/http_proxy_mapper.cc
   src/core/handshaker/proxy_mapper_registry.cc
+  src/core/handshaker/security/event_engine/secure_endpoint.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
   src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -3152,6 +3156,8 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
@@ -5180,6 +5186,7 @@ add_library(grpc_authorization_provider
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
+  src/core/handshaker/security/event_engine/secure_endpoint.cc
   src/core/handshaker/security/secure_endpoint.cc
   src/core/handshaker/security/security_handshaker.cc
   src/core/lib/address_utils/parse_address.cc
@@ -5276,6 +5283,8 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
@@ -5493,6 +5502,7 @@ target_link_libraries(grpc_authorization_provider
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
+  absl::bind_front
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -9235,6 +9245,8 @@ add_executable(call_utils_test
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
@@ -18705,6 +18717,8 @@ add_executable(interception_chain_test
   src/core/lib/iomgr/ev_posix.cc
   src/core/lib/iomgr/event_engine_shims/closure.cc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc
+  src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc

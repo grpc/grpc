@@ -1852,6 +1852,8 @@ src/core/handshaker/http_connect/http_proxy_mapper.h \
 src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
+src/core/handshaker/security/event_engine/secure_endpoint.cc \
+src/core/handshaker/security/event_engine/secure_endpoint.h \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
 src/core/handshaker/security/security_handshaker.cc \
@@ -2136,6 +2138,9 @@ src/core/lib/iomgr/event_engine_shims/closure.cc \
 src/core/lib/iomgr/event_engine_shims/closure.h \
 src/core/lib/iomgr/event_engine_shims/endpoint.cc \
 src/core/lib/iomgr/event_engine_shims/endpoint.h \
+src/core/lib/iomgr/event_engine_shims/endpoint_pair.h \
+src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc \
+src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc \
 src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
 src/core/lib/iomgr/event_engine_shims/tcp_client.h \
 src/core/lib/iomgr/exec_ctx.cc \

@@ -209,6 +209,12 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
     return MutableSlice(grpc_slice_sub_no_ref(TakeCSlice(), pos, pos + n));
   }
 
+  // Split this slice, returning a new slice containing (split:end] and
+  // leaving this slice with [begin:split).
+  MutableSlice TakeFirst(size_t n) {
+    return MutableSlice(NoCheck{}, grpc_slice_split_head(c_slice_ptr(), n));
+  }
+
   // Iterator access to the underlying bytes
   uint8_t* begin() { return mutable_data(); }
   uint8_t* end() { return mutable_data() + size(); }
@@ -216,6 +222,11 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
 
   // Array access
   uint8_t& operator[](size_t i) { return mutable_data()[i]; }
+
+ private:
+  struct NoCheck {};
+  MutableSlice(NoCheck, const grpc_slice& slice)
+      : slice_detail::BaseSlice(slice) {}
 };
 
 class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice

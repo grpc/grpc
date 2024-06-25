@@ -435,6 +435,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/handshaker/http_connect/http_connect_handshaker.cc \
     src/core/handshaker/http_connect/http_proxy_mapper.cc \
     src/core/handshaker/proxy_mapper_registry.cc \
+    src/core/handshaker/security/event_engine/secure_endpoint.cc \
     src/core/handshaker/security/secure_endpoint.cc \
     src/core/handshaker/security/security_handshaker.cc \
     src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
@@ -555,6 +556,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/event_engine_shims/closure.cc \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
+    src/core/lib/iomgr/event_engine_shims/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/event_engine_shims/endpoint_pair_windows.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
@@ -1508,6 +1511,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/endpoint_info)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/http_connect)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/security)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/security/event_engine)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/handshaker/tcp_connect)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/address_utils)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
