@@ -20,6 +20,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 
 #include <grpc/support/log.h>
@@ -262,7 +263,7 @@ class ValueOrFailure {
   friend void AbslStringify(Sink& sink, const ValueOrFailure& value) {
     if (value.ok()) {
       sink.Append("Success(");
-      sink.Append(absl::StrCat(value));
+      sink.Append(absl::StrCat(*value));
       sink.Append(")");
     } else {
       sink.Append("Failure");

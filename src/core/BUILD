@@ -504,6 +504,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log:check",
         "absl/strings:str_format",
+        "absl/types:optional",
     ],
     language = "c++",
     public_hdrs = [
@@ -522,6 +523,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/types:optional",
     ],
     language = "c++",
@@ -1299,6 +1301,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
         "absl/status:statusor",
@@ -1341,6 +1344,7 @@ grpc_cc_library(
         "handshaker/endpoint_info/endpoint_info_handshaker.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/status",
     ],
     language = "c++",
@@ -3454,6 +3458,7 @@ grpc_cc_library(
     hdrs = ["load_balancing/lb_policy.h"],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:inlined_vector",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3520,6 +3525,21 @@ grpc_cc_library(
         "//:gpr",
         "//:orphanable",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_metadata",
+    srcs = ["client_channel/lb_metadata.cc"],
+    hdrs = ["client_channel/lb_metadata.h"],
+    external_deps = [
+        "absl/log:log",
+        "absl/strings",
+        "absl/types:optional",
+    ],
+    deps = [
+        "lb_policy",
+        "metadata_batch",
     ],
 )
 
@@ -5007,6 +5027,7 @@ grpc_cc_library(
         "slice_refcount",
         "status_helper",
         "time",
+        "upb_utils",
         "uuid_v4",
         "validation_errors",
         "//:backoff",
@@ -5037,14 +5058,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "upb_utils",
     hdrs = [
-        "xds/grpc/upb_utils.h",
+        "util/upb_utils.h",
     ],
     external_deps = [
         "absl/strings",
         "@com_google_protobuf//upb:base",
     ],
     language = "c++",
-    deps = ["//:gpr_platform"],
 )
 
 grpc_cc_library(
