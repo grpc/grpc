@@ -66,13 +66,13 @@ class HijackedCall final {
 
 // A delegating UnstartedCallDestination for use as a hijacking filter.
 //
-// This class proveds the final StartCall method, and delegates to the
+// This class provides the final StartCall method, and delegates to the
 // InterceptCall() method for the actual interception. It has the same semantics
 // as StartCall, but affords the implementation the ability to prepare the
 // UnstartedCallHandler appropriately.
 //
 // Implementations may look at the unprocessed initial metadata
-// and decide to do one of two things:
+// and decide to do one of three things:
 //
 // 1. It can hijack the call. Returns a HijackedCall object that can
 //    be used to start new calls with the same metadata.
@@ -81,6 +81,12 @@ class HijackedCall final {
 //
 // 3. It can pass the call through to the next interceptor by calling
 //    `PassThrough`.
+//
+// Upon the StartCall call the UnstartedCallHandler will be from the last
+// *Interceptor* in the call chain (without having been processed by any
+// intervening filters) -- note that this is commonly not useful (not enough
+// guarantees), and so it's usually better to Hijack and examine the metadata.
+
 class Interceptor : public UnstartedCallDestination {
  public:
   void StartCall(UnstartedCallHandler unstarted_call_handler) final {
@@ -99,7 +105,7 @@ class Interceptor : public UnstartedCallDestination {
     return Map(call_handler.PullClientInitialMetadata(),
                [call_handler, destination = wrapped_destination_](
                    ValueOrFailure<ClientMetadataHandle> metadata) mutable
-               -> ValueOrFailure<HijackedCall> {
+                   -> ValueOrFailure<HijackedCall> {
                  if (!metadata.ok()) return Failure{};
                  return HijackedCall(std::move(metadata.value()),
                                      std::move(destination),

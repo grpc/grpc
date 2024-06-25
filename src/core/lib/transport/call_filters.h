@@ -36,6 +36,7 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_final_info.h"
+#include "src/core/lib/transport/call_state.h"
 #include "src/core/lib/transport/message.h"
 #include "src/core/lib/transport/metadata.h"
 
@@ -369,7 +370,7 @@ struct AddOpImpl<FilterType, T, const NoInterceptor*, which> {
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&)>
+          void (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  void (FilterType::Call::*)(typename T::element_type&), impl> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
@@ -390,8 +391,8 @@ struct AddOpImpl<FilterType, T,
 
 // void $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          void (FilterType::Call::*impl)(typename T::element_type&,
-                                         FilterType*)>
+          void (FilterType::Call::* impl)(typename T::element_type&,
+                                          FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     void (FilterType::Call::*)(typename T::element_type&, FilterType*), impl> {
@@ -414,7 +415,7 @@ struct AddOpImpl<
 
 // $VALUE_HANDLE $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          T (FilterType::Call::*impl)(T, FilterType*)>
+          T (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
   static void Add(FilterType* channel_data, size_t call_offset, Layout<T>& to) {
     to.Add(
@@ -437,7 +438,7 @@ struct AddOpImpl<FilterType, T, T (FilterType::Call::*)(T, FilterType*), impl> {
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&),
                  impl> {
@@ -463,7 +464,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T,
@@ -490,8 +491,8 @@ struct AddOpImpl<
 
 // absl::Status $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(typename T::element_type&,
-                                                 FilterType*)>
+          absl::Status (FilterType::Call::* impl)(typename T::element_type&,
+                                                  FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(typename T::element_type&,
                                                     FilterType*),
@@ -519,7 +520,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::Status $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          absl::Status (FilterType::Call::*impl)(
+          absl::Status (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::Status (FilterType::Call::*)(
@@ -548,7 +549,7 @@ struct AddOpImpl<FilterType, T,
 
 // absl::StatusOr<$VALUE_HANDLE> $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T,
-          absl::StatusOr<T> (FilterType::Call::*impl)(T, FilterType*)>
+          absl::StatusOr<T> (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  absl::StatusOr<T> (FilterType::Call::*)(T, FilterType*),
                  impl> {
@@ -575,7 +576,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -603,7 +604,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -631,7 +632,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -660,7 +661,7 @@ struct AddOpImpl<FilterType, T,
 
 // ServerMetadataHandle $INTERCEPTOR_NAME(const $VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T,
-          ServerMetadataHandle (FilterType::Call::*impl)(
+          ServerMetadataHandle (FilterType::Call::* impl)(
               const typename T::element_type&, FilterType*)>
 struct AddOpImpl<FilterType, T,
                  ServerMetadataHandle (FilterType::Call::*)(
@@ -689,7 +690,7 @@ struct AddOpImpl<FilterType, T,
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&)>
+          R (FilterType::Call::* impl)(typename T::element_type&)>
 struct AddOpImpl<
     FilterType, T, R (FilterType::Call::*)(typename T::element_type&), impl,
     absl::enable_if_t<std::is_same<absl::Status, PromiseResult<R>>::value>> {
@@ -739,7 +740,7 @@ struct AddOpImpl<
 
 // PROMISE_RETURNING(absl::Status) $INTERCEPTOR_NAME($VALUE_TYPE&, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(typename T::element_type&, FilterType*)>
+          R (FilterType::Call::* impl)(typename T::element_type&, FilterType*)>
 struct AddOpImpl<
     FilterType, T,
     R (FilterType::Call::*)(typename T::element_type&, FilterType*), impl,
@@ -794,7 +795,7 @@ struct AddOpImpl<
 // PROMISE_RETURNING(absl::StatusOr<$VALUE_HANDLE>)
 // $INTERCEPTOR_NAME($VALUE_HANDLE, FilterType*)
 template <typename FilterType, typename T, typename R,
-          R (FilterType::Call::*impl)(T, FilterType*)>
+          R (FilterType::Call::* impl)(T, FilterType*)>
 struct AddOpImpl<FilterType, T, R (FilterType::Call::*)(T, FilterType*), impl,
                  absl::enable_if_t<std::is_same<absl::StatusOr<T>,
                                                 PromiseResult<R>>::value>> {
@@ -1029,7 +1030,7 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1043,8 +1044,8 @@ struct StackData {
 
   template <typename FilterType>
   void AddFinalizer(FilterType* channel_data, size_t call_offset,
-                    void (FilterType::Call::*p)(const grpc_call_final_info*,
-                                                FilterType*)) {
+                    void (FilterType::Call::* p)(const grpc_call_final_info*,
+                                                 FilterType*)) {
     DCHECK(p == &FilterType::Call::OnFinalize);
     finalizers.push_back(Finalizer{
         channel_data,
@@ -1113,244 +1114,6 @@ class OperationExecutor {
   void* promise_data_ = nullptr;
   const Operator<T>* ops_;
   const Operator<T>* end_ops_;
-};
-
-class CallState {
- public:
-  CallState();
-  // Start the call: allows pulls to proceed
-  void Start();
-  // PUSH: client -> server
-  void BeginPushClientToServerMessage();
-  Poll<StatusFlag> PollPushClientToServerMessage();
-  void ClientToServerHalfClose();
-  // PULL: client -> server
-  void BeginPullClientInitialMetadata();
-  void FinishPullClientInitialMetadata();
-  Poll<ValueOrFailure<bool>> PollPullClientToServerMessageAvailable();
-  void FinishPullClientToServerMessage();
-  // PUSH: server -> client
-  StatusFlag PushServerInitialMetadata();
-  void BeginPushServerToClientMessage();
-  Poll<StatusFlag> PollPushServerToClientMessage();
-  bool PushServerTrailingMetadata(bool cancel);
-  // PULL: server -> client
-  Poll<bool> PollPullServerInitialMetadataAvailable();
-  void FinishPullServerInitialMetadata();
-  Poll<ValueOrFailure<bool>> PollPullServerToClientMessageAvailable();
-  void FinishPullServerToClientMessage();
-  Poll<Empty> PollServerTrailingMetadataAvailable();
-  void FinishPullServerTrailingMetadata();
-  Poll<bool> PollWasCancelled();
-  // Debug
-  std::string DebugString() const;
-
-  friend std::ostream& operator<<(std::ostream& out,
-                                  const CallState& call_state) {
-    return out << call_state.DebugString();
-  }
-
- private:
-  enum class ClientToServerPullState : uint16_t {
-    // Ready to read: client initial metadata is there, but not yet processed
-    kBegin,
-    // Processing client initial metadata
-    kProcessingClientInitialMetadata,
-    // Main call loop: not reading
-    kIdle,
-    // Main call loop: reading but no message available
-    kReading,
-    // Main call loop: processing one message
-    kProcessingClientToServerMessage,
-    // Processing complete
-    kTerminated,
-  };
-  static const char* ClientToServerPullStateString(
-      ClientToServerPullState state) {
-    switch (state) {
-      case ClientToServerPullState::kBegin:
-        return "Begin";
-      case ClientToServerPullState::kProcessingClientInitialMetadata:
-        return "ProcessingClientInitialMetadata";
-      case ClientToServerPullState::kIdle:
-        return "Idle";
-      case ClientToServerPullState::kReading:
-        return "Reading";
-      case ClientToServerPullState::kProcessingClientToServerMessage:
-        return "ProcessingClientToServerMessage";
-      case ClientToServerPullState::kTerminated:
-        return "Terminated";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ClientToServerPullState state) {
-    out.Append(ClientToServerPullStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ClientToServerPullState state) {
-    return out << ClientToServerPullStateString(state);
-  }
-  enum class ClientToServerPushState : uint16_t {
-    kIdle,
-    kPushedMessage,
-    kPushedHalfClose,
-    kPushedMessageAndHalfClosed,
-    kFinished,
-  };
-  static const char* ClientToServerPushStateString(
-      ClientToServerPushState state) {
-    switch (state) {
-      case ClientToServerPushState::kIdle:
-        return "Idle";
-      case ClientToServerPushState::kPushedMessage:
-        return "PushedMessage";
-      case ClientToServerPushState::kPushedHalfClose:
-        return "PushedHalfClose";
-      case ClientToServerPushState::kPushedMessageAndHalfClosed:
-        return "PushedMessageAndHalfClosed";
-      case ClientToServerPushState::kFinished:
-        return "Finished";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ClientToServerPushState state) {
-    out.Append(ClientToServerPushStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ClientToServerPushState state) {
-    return out << ClientToServerPushStateString(state);
-  }
-  enum class ServerToClientPullState : uint16_t {
-    // Not yet started: cannot read
-    kUnstarted,
-    kUnstartedReading,
-    kStarted,
-    kStartedReading,
-    // Processing server initial metadata
-    kProcessingServerInitialMetadata,
-    kProcessingServerInitialMetadataReading,
-    // Main call loop: not reading
-    kIdle,
-    // Main call loop: reading but no message available
-    kReading,
-    // Main call loop: processing one message
-    kProcessingServerToClientMessage,
-    // Processing server trailing metadata
-    kProcessingServerTrailingMetadata,
-    kTerminated,
-  };
-  static const char* ServerToClientPullStateString(
-      ServerToClientPullState state) {
-    switch (state) {
-      case ServerToClientPullState::kUnstarted:
-        return "Unstarted";
-      case ServerToClientPullState::kUnstartedReading:
-        return "UnstartedReading";
-      case ServerToClientPullState::kStarted:
-        return "Started";
-      case ServerToClientPullState::kStartedReading:
-        return "StartedReading";
-      case ServerToClientPullState::kProcessingServerInitialMetadata:
-        return "ProcessingServerInitialMetadata";
-      case ServerToClientPullState::kProcessingServerInitialMetadataReading:
-        return "ProcessingServerInitialMetadataReading";
-      case ServerToClientPullState::kIdle:
-        return "Idle";
-      case ServerToClientPullState::kReading:
-        return "Reading";
-      case ServerToClientPullState::kProcessingServerToClientMessage:
-        return "ProcessingServerToClientMessage";
-      case ServerToClientPullState::kProcessingServerTrailingMetadata:
-        return "ProcessingServerTrailingMetadata";
-      case ServerToClientPullState::kTerminated:
-        return "Terminated";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerToClientPullState state) {
-    out.Append(ServerToClientPullStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerToClientPullState state) {
-    return out << ServerToClientPullStateString(state);
-  }
-  enum class ServerToClientPushState : uint16_t {
-    kStart,
-    kPushedServerInitialMetadata,
-    kPushedServerInitialMetadataAndPushedMessage,
-    kTrailersOnly,
-    kIdle,
-    kPushedMessage,
-    kFinished,
-  };
-  static const char* ServerToClientPushStateString(
-      ServerToClientPushState state) {
-    switch (state) {
-      case ServerToClientPushState::kStart:
-        return "Start";
-      case ServerToClientPushState::kPushedServerInitialMetadata:
-        return "PushedServerInitialMetadata";
-      case ServerToClientPushState::
-          kPushedServerInitialMetadataAndPushedMessage:
-        return "PushedServerInitialMetadataAndPushedMessage";
-      case ServerToClientPushState::kTrailersOnly:
-        return "TrailersOnly";
-      case ServerToClientPushState::kIdle:
-        return "Idle";
-      case ServerToClientPushState::kPushedMessage:
-        return "PushedMessage";
-      case ServerToClientPushState::kFinished:
-        return "Finished";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerToClientPushState state) {
-    out.Append(ServerToClientPushStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerToClientPushState state) {
-    return out << ServerToClientPushStateString(state);
-  }
-  enum class ServerTrailingMetadataState : uint16_t {
-    kNotPushed,
-    kPushed,
-    kPushedCancel,
-    kPulled,
-    kPulledCancel,
-  };
-  static const char* ServerTrailingMetadataStateString(
-      ServerTrailingMetadataState state) {
-    switch (state) {
-      case ServerTrailingMetadataState::kNotPushed:
-        return "NotPushed";
-      case ServerTrailingMetadataState::kPushed:
-        return "Pushed";
-      case ServerTrailingMetadataState::kPushedCancel:
-        return "PushedCancel";
-      case ServerTrailingMetadataState::kPulled:
-        return "Pulled";
-      case ServerTrailingMetadataState::kPulledCancel:
-        return "PulledCancel";
-    }
-  }
-  template <typename Sink>
-  friend void AbslStringify(Sink& out, ServerTrailingMetadataState state) {
-    out.Append(ServerTrailingMetadataStateString(state));
-  }
-  friend std::ostream& operator<<(std::ostream& out,
-                                  ServerTrailingMetadataState state) {
-    return out << ServerTrailingMetadataStateString(state);
-  }
-  ClientToServerPullState client_to_server_pull_state_ : 3;
-  ClientToServerPushState client_to_server_push_state_ : 3;
-  ServerToClientPullState server_to_client_pull_state_ : 4;
-  ServerToClientPushState server_to_client_push_state_ : 3;
-  ServerTrailingMetadataState server_trailing_metadata_state_ : 3;
-  IntraActivityWaiter client_to_server_pull_waiter_;
-  IntraActivityWaiter server_to_client_pull_waiter_;
-  IntraActivityWaiter client_to_server_push_waiter_;
-  IntraActivityWaiter server_to_client_push_waiter_;
-  IntraActivityWaiter server_trailing_metadata_waiter_;
 };
 
 template <typename Fn>
@@ -1533,10 +1296,10 @@ class CallFilters {
   }
 
  private:
-  template <
-      typename Output, typename Input, Input(CallFilters::*input_location),
-      filters_detail::Layout<Input>(filters_detail::StackData::*layout),
-      void (filters_detail::CallState::*on_done)(), typename StackIterator>
+  template <typename Output, typename Input,
+            Input(CallFilters::* input_location),
+            filters_detail::Layout<Input>(filters_detail::StackData::* layout),
+            void (CallState::* on_done)(), typename StackIterator>
   class Executor {
    public:
     Executor(CallFilters* filters, StackIterator stack_begin,
@@ -1596,7 +1359,7 @@ class CallFilters {
     return Executor<ClientMetadataHandle, ClientMetadataHandle,
                     &CallFilters::push_client_initial_metadata_,
                     &filters_detail::StackData::client_initial_metadata,
-                    &filters_detail::CallState::FinishPullClientInitialMetadata,
+                    &CallState::FinishPullClientInitialMetadata,
                     StacksVector::const_iterator>(this, stacks_.cbegin(),
                                                   stacks_.cend());
   }
@@ -1623,8 +1386,7 @@ class CallFilters {
                         ServerMetadataHandle,
                         &CallFilters::push_server_initial_metadata_,
                         &filters_detail::StackData::server_initial_metadata,
-                        &filters_detail::CallState::
-                            FinishPullServerInitialMetadata,
+                        &CallState::FinishPullServerInitialMetadata,
                         StacksVector::const_reverse_iterator>(
                         this, stacks_.crbegin(), stacks_.crend()),
                     [](ValueOrFailure<absl::optional<ServerMetadataHandle>> r) {
@@ -1663,7 +1425,7 @@ class CallFilters {
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_client_to_server_message_,
                     &filters_detail::StackData::client_to_server_messages,
-                    &filters_detail::CallState::FinishPullClientToServerMessage,
+                    &CallState::FinishPullClientToServerMessage,
                     StacksVector::const_iterator>(this, stacks_.cbegin(),
                                                   stacks_.cend());
               },
@@ -1694,7 +1456,7 @@ class CallFilters {
                     absl::optional<MessageHandle>, MessageHandle,
                     &CallFilters::push_server_to_client_message_,
                     &filters_detail::StackData::server_to_client_messages,
-                    &filters_detail::CallState::FinishPullServerToClientMessage,
+                    &CallState::FinishPullServerToClientMessage,
                     StacksVector::const_reverse_iterator>(
                     this, stacks_.crbegin(), stacks_.crend());
               },
@@ -1755,7 +1517,7 @@ class CallFilters {
 
   StacksVector stacks_;
 
-  filters_detail::CallState call_state_;
+  CallState call_state_;
 
   void* call_data_;
   ClientMetadataHandle push_client_initial_metadata_;
