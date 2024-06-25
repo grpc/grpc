@@ -274,7 +274,7 @@ grpc_cc_benchmark(
     ],
     deps = [
         "//:config",
-        "//src/core:lb_policy",
         "//:grpc",
+        "//src/core:lb_policy",
     ],
 )
