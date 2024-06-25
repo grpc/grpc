@@ -101,7 +101,6 @@ DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
         "./src/core/lib/event_engine/posix_engine/timer_manager.cc",
         "./src/core/lib/event_engine/windows/windows_endpoint.cc",
         "./src/core/lib/event_engine/windows/windows_engine.cc",
-        "./src/core/lib/experiments/config.cc",
         "./src/core/lib/gprpp/time.h",
         "./src/core/lib/gprpp/work_serializer.cc",
         "./src/core/lib/iomgr/call_combiner.cc",
