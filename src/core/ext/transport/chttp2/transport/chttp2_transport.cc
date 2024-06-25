@@ -925,11 +925,11 @@ static const char* write_state_name(grpc_chttp2_write_state st) {
 
 static void set_write_state(grpc_chttp2_transport* t,
                             grpc_chttp2_write_state st, const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(
-      (LOG(INFO) << "W:" << t << " " << (t->is_client ? "CLIENT" : "SERVER")
-                 << " [" << t->peer_string.as_string_view() << "] state "
-                 << write_state_name(t->write_state) << " -> "
-                 << write_state_name(st) << " [" << reason << "]";));
+  GRPC_TRACE_LOG(http, INFO)
+      << "W:" << t << " " << (t->is_client ? "CLIENT" : "SERVER") << " ["
+      << t->peer_string.as_string_view() << "] state "
+      << write_state_name(t->write_state) << " -> " << write_state_name(st)
+      << " [" << reason << "]";
   t->write_state = st;
   // If the state is being reset back to idle, it means a write was just
   // finished. Make sure all the run_after_write closures are scheduled.
@@ -1019,11 +1019,10 @@ static void write_action_begin_locked(
       // We had paused reading, because we had many induced frames (SETTINGS
       // ACK, PINGS ACK and RST_STREAMS) pending in t->qbuf. Now that we have
       // been able to flush qbuf, we can resume reading.
-      GRPC_CHTTP2_IF_TRACING((
-          LOG(INFO)
+      GRPC_TRACE_LOG(http, INFO)
           << "transport " << t.get()
           << " : Resuming reading after being paused due to too many unwritten "
-             "SETTINGS ACK, PINGS ACK and RST_STREAM frames"));
+             "SETTINGS ACK, PINGS ACK and RST_STREAM frames";
       t->reading_paused_on_pending_induced_frames = false;
       continue_read_action_locked(std::move(t));
     }
@@ -1150,9 +1149,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
           static_cast<intptr_t>(goaway_error)),
       grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
 
-  GRPC_CHTTP2_IF_TRACING((LOG(INFO) << "transport " << t
-                                    << " got goaway with last stream id "
-                                    << last_stream_id));
+  GRPC_TRACE_LOG(http, INFO)
+      << "transport " << t << " got goaway with last stream id "
+      << last_stream_id;
   // We want to log this irrespective of whether http tracing is enabled if we
   // received a GOAWAY with a non NO_ERROR code.
   if (goaway_error != GRPC_HTTP2_NO_ERROR) {
@@ -1220,10 +1219,10 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
          t->stream_map.size() < t->settings.peer().max_concurrent_streams() &&
          grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
     // safe since we can't (legally) be parsing this stream yet
-    GRPC_CHTTP2_IF_TRACING((
-        LOG(INFO) << "HTTP:" << (t->is_client ? "CLI" : "SVR") << ": Transport "
-                  << t << " allocating new grpc_chttp2_stream " << s
-                  << " to id " << t->next_stream_id));
+    GRPC_TRACE_LOG(http, INFO)
+        << "HTTP:" << (t->is_client ? "CLI" : "SVR") << ": Transport " << t
+        << " allocating new grpc_chttp2_stream " << s << " to id "
+        << t->next_stream_id;
 
     CHECK_EQ(s->id, 0u);
     s->id = t->next_stream_id;
@@ -1630,8 +1629,8 @@ void grpc_chttp2_transport::PerformStreamOp(
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
-  GRPC_CHTTP2_IF_TRACING((
-      LOG(INFO) << t << " CANCEL PINGS: " << grpc_core::StatusToString(error)));
+  GRPC_TRACE_LOG(http, INFO)
+      << t << " CANCEL PINGS: " << grpc_core::StatusToString(error);
   // callback remaining pings: they're not allowed to call into the transport,
   //   and maybe they hold resources that need to be freed
   t->ping_callbacks.CancelAll(t->event_engine.get());
@@ -1817,22 +1816,21 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
       return;
     }
     if (t_->destroying || !t_->closed_with_error.ok()) {
-      GRPC_CHTTP2_IF_TRACING(
-          (LOG(INFO) << "transport:" << t_.get() << " "
-                     << (t_->is_client ? "CLIENT" : "SERVER")
-                     << " peer:" << t_->peer_string.as_string_view()
-                     << " Transport already shutting down. "
-                        "Graceful GOAWAY abandoned.";));
+      GRPC_TRACE_LOG(http, INFO) << "transport:" << t_.get() << " "
+                                 << (t_->is_client ? "CLIENT" : "SERVER")
+                                 << " peer:" << t_->peer_string.as_string_view()
+                                 << " Transport already shutting down. "
+                                    "Graceful GOAWAY abandoned.";
       return;
     }
     // Ping completed. Send final goaway.
-    GRPC_CHTTP2_IF_TRACING(
-        (LOG(INFO) << "transport:" << t_.get() << " "
-                   << (t_->is_client ? "CLIENT" : "SERVER")
-                   << " peer:" << std::string(t_->peer_string.as_string_view())
-                   << " Graceful shutdown: Ping received. "
-                      "Sending final GOAWAY with stream_id:"
-                   << t_->last_new_stream_id;));
+    GRPC_TRACE_LOG(http, INFO)
+        << "transport:" << t_.get() << " "
+        << (t_->is_client ? "CLIENT" : "SERVER")
+        << " peer:" << std::string(t_->peer_string.as_string_view())
+        << " Graceful shutdown: Ping received. "
+           "Sending final GOAWAY with stream_id:"
+        << t_->last_new_stream_id;
     t_->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
     grpc_chttp2_goaway_append(t_->last_new_stream_id, 0, grpc_empty_slice(),
                               &t_->qbuf);
@@ -2710,10 +2708,10 @@ static void read_action_parse_loop_locked(
   if (keep_reading) {
     if (t->num_pending_induced_frames >= DEFAULT_MAX_PENDING_INDUCED_FRAMES) {
       t->reading_paused_on_pending_induced_frames = true;
-      GRPC_CHTTP2_IF_TRACING((LOG(INFO)
-                              << "transport " << t.get()
-                              << " : Pausing reading due to too many unwritten "
-                                 "SETTINGS ACK and RST_STREAM frames"));
+      GRPC_TRACE_LOG(http, INFO)
+          << "transport " << t.get()
+          << " : Pausing reading due to too many unwritten "
+             "SETTINGS ACK and RST_STREAM frames";
     } else {
       continue_read_action_locked(std::move(t));
     }
@@ -2992,9 +2990,9 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
                                    const absl::Status& status,
                                    const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(
-      (LOG(INFO) << "transport " << t << " set connectivity_state=" << state
-                 << "; status=" << status.ToString() << "; reason=" << reason));
+  GRPC_TRACE_LOG(http, INFO)
+      << "transport " << t << " set connectivity_state=" << state
+      << "; status=" << status.ToString() << "; reason=" << reason;
   t->state_tracker.SetState(state, status, reason);
 }
 
