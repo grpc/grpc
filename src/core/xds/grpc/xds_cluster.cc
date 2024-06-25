@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -53,7 +54,6 @@
 #include "upb/text/encode.h"
 
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/core_configuration.h"
@@ -66,7 +66,7 @@
 #include "src/core/lib/matchers/matchers.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
 #include "src/core/xds/xds_client/xds_client.h"
@@ -760,7 +760,7 @@ void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(cluster), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] Cluster: %s", context.client, buf);
+    VLOG(2) << "[xds_client " << context.client << "] Cluster: " << buf;
   }
 }
 
@@ -785,15 +785,14 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
   auto cds_resource = CdsResourceParse(context, resource);
   if (!cds_resource.ok()) {
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
-      gpr_log(GPR_ERROR, "[xds_client %p] invalid Cluster %s: %s",
-              context.client, result.name->c_str(),
-              cds_resource.status().ToString().c_str());
+      LOG(ERROR) << "[xds_client " << context.client << "] invalid Cluster "
+                 << *result.name << ": " << cds_resource.status();
     }
     result.resource = cds_resource.status();
   } else {
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
-      gpr_log(GPR_INFO, "[xds_client %p] parsed Cluster %s: %s", context.client,
-              result.name->c_str(), (*cds_resource)->ToString().c_str());
+      LOG(INFO) << "[xds_client " << context.client << "] parsed Cluster "
+                << *result.name << ": " << (*cds_resource)->ToString();
     }
     result.resource = std::move(*cds_resource);
   }

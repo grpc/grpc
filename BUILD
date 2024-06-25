@@ -1685,7 +1685,6 @@ grpc_cc_library(
         "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
-        "//src/core:event_engine_trace",
         "//src/core:event_log",
         "//src/core:examine_stack",
         "//src/core:experiments",
@@ -2117,6 +2116,7 @@ grpc_cc_library(
         "//src/core:time",
         "//src/core:transport_fwd",
         "//src/core:try_seq",
+        "//src/core:unique_type_name",
         "//src/core:useful",
     ],
 )
@@ -2285,6 +2285,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/log:log",
         "absl/status",
@@ -2309,6 +2310,7 @@ grpc_cc_library(
         "grpc_trace",
         "handshaker",
         "iomgr",
+        "orphanable",
         "promise",
         "ref_counted_ptr",
         "resource_quota_api",
@@ -3128,6 +3130,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "debug_location",
+    external_deps = ["absl/strings"],
     language = "c++",
     public_hdrs = ["//src/core:lib/gprpp/debug_location.h"],
     visibility = ["@grpc:debug_location"],
@@ -3191,9 +3194,11 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/container:inlined_vector",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/log:log",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings:str_format",
     ],
     language = "c++",
@@ -3210,6 +3215,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "iomgr",
+        "orphanable",
         "ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:closure",
@@ -3817,6 +3823,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:json",
         "//src/core:latch",
+        "//src/core:lb_metadata",
         "//src/core:lb_policy",
         "//src/core:lb_policy_registry",
         "//src/core:loop",

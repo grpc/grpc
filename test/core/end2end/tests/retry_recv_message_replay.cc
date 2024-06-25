@@ -32,6 +32,7 @@
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/gprpp/time.h"
+#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -118,7 +119,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstSendOpFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailFirstSendOpFilter"),
 };
 
 // Tests the fix for a bug found in real-world code where recv_message

@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,14 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM fedora:38
+require 'spec_helper'
+require 'logger'
 
-RUN yum clean all && yum update -y && yum install -y python3 python3-pip
-RUN python3 -m pip install virtualenv
+describe GRPC do
+  describe '.logger=' do
+    it 'sets logger' do
+      noop_logger = GRPC::DefaultLogger::NoopLogger.new
+      GRPC.logger = noop_logger
+      expect(GRPC.logger).to be(noop_logger)
 
-RUN yum groupinstall -y "Development Tools"
-RUN yum install -y redhat-rpm-config
-RUN yum install -y gcc-c++
-RUN yum install -y python3-devel
-
-RUN yum install -y findutils
+      custom_logger = Logger.new(STDOUT)
+      GRPC.logger = custom_logger
+      expect(GRPC.logger).to be(custom_logger)
+    end
+  end
+end

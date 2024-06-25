@@ -14,6 +14,19 @@
 
 # GRPC contains the General RPC module.
 module GRPC
+  def self.logger=(logger_obj)
+    # Need a free variable here to keep value of logger_obj for logger closure
+    @logger = logger_obj
+
+    extend(
+      Module.new do
+        def logger
+          @logger
+        end
+      end
+    )
+  end
+
   # DefaultLogger is a module included in GRPC if no other logging is set up for
   # it.  See ../spec/spec_helpers an example of where other logging is added.
   module DefaultLogger
