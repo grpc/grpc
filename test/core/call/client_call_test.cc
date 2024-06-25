@@ -215,7 +215,9 @@ CLIENT_CALL_TEST(SendInitialMetadataAndReceiveStatusAfterTimeout) {
   ExecCtx::Get()->InvalidateNow();
   auto now = Timestamp::Now();
   EXPECT_GE(now - start, Duration::Seconds(1)) << GRPC_DUMP_ARGS(now, start);
-  EXPECT_LE(now - start, Duration::Seconds(5)) << GRPC_DUMP_ARGS(now, start);
+  EXPECT_LE(now - start,
+            g_yodel_fuzzing ? Duration::Minutes(10) : Duration::Seconds(5))
+      << GRPC_DUMP_ARGS(now, start);
   WaitForAllPendingWork();
 }
 
