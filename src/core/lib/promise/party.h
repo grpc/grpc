@@ -211,6 +211,44 @@ class PartySyncUsingAtomics {
     return ((state & kLocked) == 0);
   }
 
+  template <typename F>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION GRPC_MUST_USE_RESULT bool
+  AddParticipantAndRef(F store) {
+    uint64_t state = state_.load(std::memory_order_acquire);
+    uint64_t allocated;
+    size_t slot;
+
+    // Find slots for each new participant, ordering them from lowest available
+    // slot upwards to ensure the same poll ordering as presentation ordering to
+    // this function.
+    WakeupMask wakeup_mask;
+    do {
+      wakeup_mask = 0;
+      allocated = (state & kAllocatedMask) >> kAllocatedShift;
+      auto new_mask = LowestOneBit(~allocated);
+      wakeup_mask |= new_mask;
+      allocated |= new_mask;
+      slot = CountTrailingZeros(new_mask);
+      // Try to allocate this slot and take a ref (atomically).
+      // Ref needs to be taken because once we store the participant it could be
+      // spuriously woken up and unref the party.
+    } while (!state_.compare_exchange_weak(
+        state, (state | (allocated << kAllocatedShift)) + kOneRef,
+        std::memory_order_acq_rel, std::memory_order_acquire));
+    LogStateChange("AddParticipantsAndRef", state,
+                   (state | (allocated << kAllocatedShift)) + kOneRef);
+
+    store(slot);
+
+    // Now we need to wake up the party.
+    state = state_.fetch_or(wakeup_mask | kLocked, std::memory_order_release);
+    LogStateChange("AddParticipantsAndRef:Wakeup", state,
+                   state | wakeup_mask | kLocked);
+
+    // If the party was already locked, we're done.
+    return ((state & kLocked) == 0);
+  }
+
   // Schedule a wakeup for the given participant.
   // Returns true if the caller should run the party.
   GRPC_MUST_USE_RESULT bool ScheduleWakeup(WakeupMask mask);
@@ -592,6 +630,22 @@ class Party : public Activity, private Wakeable {
 
   // Add a participant (backs Spawn, after type erasure to ParticipantFactory).
   void AddParticipants(Participant** participant, size_t count);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void AddParticipant(
+      Participant* participant) {
+    bool run_party =
+        sync_.AddParticipantAndRef([this, participant](size_t slot) {
+          if (GRPC_TRACE_FLAG_ENABLED(party_state)) {
+            gpr_log(GPR_INFO,
+                    "Party %p                 AddParticipant: %s @ %" PRIdPTR
+                    " [participant=%p]",
+                    &sync_, std::string(participant->name()).c_str(), slot,
+                    participant);
+          }
+          participants_[slot].store(participant, std::memory_order_release);
+        });
+    if (run_party) RunLocked();
+    Unref();
+  }
   bool RunOneParticipant(int i);
 
   virtual grpc_event_engine::experimental::EventEngine* event_engine()
@@ -633,8 +687,8 @@ void Party::BulkSpawner::Spawn(absl::string_view name, Factory promise_factory,
 template <typename Factory, typename OnComplete>
 void Party::Spawn(absl::string_view name, Factory promise_factory,
                   OnComplete on_complete) {
-  BulkSpawner(this).Spawn(name, std::move(promise_factory),
-                          std::move(on_complete));
+  AddParticipant(new ParticipantImpl<Factory, OnComplete>(
+      name, std::move(promise_factory), std::move(on_complete)));
 }
 
 template <typename Factory>
@@ -642,7 +696,7 @@ auto Party::SpawnWaitable(absl::string_view name, Factory promise_factory) {
   auto participant = MakeRefCounted<PromiseParticipantImpl<Factory>>(
       name, std::move(promise_factory));
   Participant* p = participant->Ref().release();
-  AddParticipants(&p, 1);
+  AddParticipant(p);
   return [participant = std::move(participant)]() mutable {
     return participant->PollCompletion();
   };
