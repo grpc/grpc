@@ -583,6 +583,7 @@ grpc_cc_library(
         "poll",
         "promise_factory",
         "ref_counted",
+        "useful",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",

@@ -66,42 +66,71 @@ bool GetBit(T i, size_t n) {
 }
 
 namespace useful_detail {
-inline constexpr uint32_t HexdigitBitcount(uint32_t x) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t HexdigitBitcount(
+    uint32_t x) {
   return (x - ((x >> 1) & 0x77777777) - ((x >> 2) & 0x33333333) -
           ((x >> 3) & 0x11111111));
 }
 }  // namespace useful_detail
 
-inline constexpr uint32_t BitCount(uint32_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    uint32_t i) {
   return (((useful_detail::HexdigitBitcount(i) +
             (useful_detail::HexdigitBitcount(i) >> 4)) &
            0x0f0f0f0f) %
           255);
 }
 
-inline constexpr uint32_t BitCount(uint64_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    uint64_t i) {
   return BitCount(static_cast<uint32_t>(i)) +
          BitCount(static_cast<uint32_t>(i >> 32));
 }
 
-inline constexpr uint32_t BitCount(uint16_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    uint16_t i) {
   return BitCount(static_cast<uint32_t>(i));
 }
-inline constexpr uint32_t BitCount(uint8_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    uint8_t i) {
   return BitCount(static_cast<uint32_t>(i));
 }
-inline constexpr uint32_t BitCount(int64_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    int64_t i) {
   return BitCount(static_cast<uint64_t>(i));
 }
-inline constexpr uint32_t BitCount(int32_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    int32_t i) {
   return BitCount(static_cast<uint32_t>(i));
 }
-inline constexpr uint32_t BitCount(int16_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    int16_t i) {
   return BitCount(static_cast<uint16_t>(i));
 }
-inline constexpr uint32_t BitCount(int8_t i) {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t BitCount(
+    int8_t i) {
   return BitCount(static_cast<uint8_t>(i));
 }
+
+#if GRPC_HAS_BUILTIN(__builtin_ctz)
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint32_t i) {
+  return __builtin_ctz(i);
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint64_t i) {
+  return __builtin_ctzll(i);
+}
+#else
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint32_t i) {
+  return BitCount((i & -i) - 1);
+}
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline constexpr uint32_t
+CountTrailingZeros(uint64_t i) {
+  return BitCount((i & -i) - 1);
+}
+#endif
 
 // This function uses operator< to implement a qsort-style comparison, whereby:
 // if a is smaller than b, a number smaller than 0 is returned.
@@ -175,6 +204,23 @@ inline uint32_t RoundUpToPowerOf2(uint32_t v) {
   v |= v >> 16;
   v++;
   return v;
+}
+
+// Return a value with only the lowest bit left on.
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint8_t LowestOneBit(uint8_t x) {
+  return x & -x;
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint16_t LowestOneBit(uint16_t x) {
+  return x & -x;
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint32_t LowestOneBit(uint32_t x) {
+  return x & -x;
+}
+
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline uint64_t LowestOneBit(uint64_t x) {
+  return x & -x;
 }
 
 }  // namespace grpc_core
