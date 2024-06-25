@@ -317,6 +317,7 @@ const NoInterceptor TestFilter1::Call::OnServerToClientMessage;
 const NoInterceptor TestFilter1::Call::OnFinalize;
 
 TEST(ChannelInitTest, CanCreateFilterWithCall) {
+  grpc::testing::TestGrpcScope g;
   ChannelInit::Builder b;
   b.RegisterFilter<TestFilter1>(GRPC_CLIENT_CHANNEL);
   auto init = b.Build();
