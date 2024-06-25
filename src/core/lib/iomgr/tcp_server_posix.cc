@@ -438,8 +438,7 @@ static void on_read(void* arg, grpc_error_handle err) {
                       &(addr.len)) < 0) {
         auto listener_addr_uri = grpc_sockaddr_to_uri(&sp->addr);
         LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
-                   << ". Dropping the connection, and continuing "
-                   << "to listen on "
+                   << ". Dropping the connection, and continuing to listen on "
                    << (listener_addr_uri.ok() ? *listener_addr_uri
                                               : "<unknown>")
                    << ":" << sp->port;
@@ -543,11 +542,13 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
   if (*out_port > 0) {
     if (!v6_err.ok()) {
       LOG(INFO) << "Failed to add :: listener, "
-                << "the environment may not support IPv6: " << v6_err;
+                << "the environment may not support IPv6: "
+                << grpc_core::StatusToString(v6_err);
     }
     if (!v4_err.ok()) {
       LOG(INFO) << "Failed to add 0.0.0.0 listener, "
-                << "the environment may not support IPv4: " << v4_err;
+                << "the environment may not support IPv4: "
+                << grpc_core::StatusToString(v4_err);
     }
     return absl::OkStatus();
   } else {

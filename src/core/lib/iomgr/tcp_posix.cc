@@ -854,7 +854,7 @@ static void tcp_trace_read(grpc_tcp* tcp, grpc_error_handle error)
     LOG(INFO) << "TCP:" << tcp << " call_cb " << cb << " " << cb->cb << ":"
               << cb->cb_arg;
     size_t i;
-    LOG(INFO) << "READ " << tcp << " (peer=" << tcp->peer_string.c_str()
+    LOG(INFO) << "READ " << tcp << " (peer=" << tcp->peer_string
               << ") error=" << grpc_core::StatusToString(error);
     if (ABSL_VLOG_IS_ON(2)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
@@ -1128,7 +1128,8 @@ static void maybe_make_read_slices(grpc_tcp* tcp)
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-    LOG(INFO) << "TCP:" << tcp << " got_read: " << error;
+    LOG(INFO) << "TCP:" << tcp
+              << " got_read: " << grpc_core::StatusToString(error);
   }
   tcp->read_mu.Lock();
   grpc_error_handle tcp_read_error;
@@ -1842,8 +1843,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
-      LOG(INFO) << "WRITE " << tcp << " (peer=" << tcp->peer_string.c_str()
-                << ")";
+      LOG(INFO) << "WRITE " << tcp << " (peer=" << tcp->peer_string << ")";
       if (ABSL_VLOG_IS_ON(2)) {
         char* data =
             grpc_dump_slice(buf->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
