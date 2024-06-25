@@ -47,7 +47,7 @@ void RegisterOpenCensusPlugin() {
         builder->channel_init()
             ->RegisterFilter(GRPC_CLIENT_CHANNEL,
                              &grpc::internal::OpenCensusClientFilter::kFilter)
-            .Before({&grpc_core::ClientLoggingFilter::kFilter});
+            .Before<grpc_core::ClientLoggingFilter>();
       });
 
   // Access measures to ensure they are initialized. Otherwise, creating a view
