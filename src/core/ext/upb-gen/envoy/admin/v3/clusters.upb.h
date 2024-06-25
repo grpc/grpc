@@ -307,15 +307,15 @@ UPB_INLINE upb_StringView envoy_admin_v3_ClusterStatus_eds_service_name(const en
 
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_name(envoy_admin_v3_ClusterStatus *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_added_via_api(envoy_admin_v3_ClusterStatus *msg, bool value) {
   const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_success_rate_ejection_threshold(envoy_admin_v3_ClusterStatus *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_admin_v3_ClusterStatus_mutable_success_rate_ejection_threshold(envoy_admin_v3_ClusterStatus* msg, upb_Arena* arena) {
   struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_admin_v3_ClusterStatus_success_rate_ejection_threshold(msg);
@@ -357,7 +357,7 @@ UPB_INLINE struct envoy_admin_v3_HostStatus* envoy_admin_v3_ClusterStatus_add_ho
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_local_origin_success_rate_ejection_threshold(envoy_admin_v3_ClusterStatus *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {5, UPB_SIZE(20, 48), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_admin_v3_ClusterStatus_mutable_local_origin_success_rate_ejection_threshold(envoy_admin_v3_ClusterStatus* msg, upb_Arena* arena) {
   struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_admin_v3_ClusterStatus_local_origin_success_rate_ejection_threshold(msg);
@@ -369,7 +369,7 @@ UPB_INLINE struct envoy_type_v3_Percent* envoy_admin_v3_ClusterStatus_mutable_lo
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_circuit_breakers(envoy_admin_v3_ClusterStatus *msg, struct envoy_config_cluster_v3_CircuitBreakers* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(24, 56), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_cluster_v3_CircuitBreakers* envoy_admin_v3_ClusterStatus_mutable_circuit_breakers(envoy_admin_v3_ClusterStatus* msg, upb_Arena* arena) {
   struct envoy_config_cluster_v3_CircuitBreakers* sub = (struct envoy_config_cluster_v3_CircuitBreakers*)envoy_admin_v3_ClusterStatus_circuit_breakers(msg);
@@ -381,11 +381,11 @@ UPB_INLINE struct envoy_config_cluster_v3_CircuitBreakers* envoy_admin_v3_Cluste
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_observability_name(envoy_admin_v3_ClusterStatus *msg, upb_StringView value) {
   const upb_MiniTableField field = {7, UPB_SIZE(36, 64), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_ClusterStatus_set_eds_service_name(envoy_admin_v3_ClusterStatus *msg, upb_StringView value) {
   const upb_MiniTableField field = {8, UPB_SIZE(44, 80), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.admin.v3.HostStatus */
@@ -575,7 +575,7 @@ UPB_INLINE bool envoy_admin_v3_HostStatus_has_locality(const envoy_admin_v3_Host
 
 UPB_INLINE void envoy_admin_v3_HostStatus_set_address(envoy_admin_v3_HostStatus *msg, struct envoy_config_core_v3_Address* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Address* envoy_admin_v3_HostStatus_mutable_address(envoy_admin_v3_HostStatus* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Address* sub = (struct envoy_config_core_v3_Address*)envoy_admin_v3_HostStatus_address(msg);
@@ -617,7 +617,7 @@ UPB_INLINE struct envoy_admin_v3_SimpleMetric* envoy_admin_v3_HostStatus_add_sta
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_set_health_status(envoy_admin_v3_HostStatus *msg, envoy_admin_v3_HostHealthStatus* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 40), 65, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_HostHealthStatus* envoy_admin_v3_HostStatus_mutable_health_status(envoy_admin_v3_HostStatus* msg, upb_Arena* arena) {
   struct envoy_admin_v3_HostHealthStatus* sub = (struct envoy_admin_v3_HostHealthStatus*)envoy_admin_v3_HostStatus_health_status(msg);
@@ -629,7 +629,7 @@ UPB_INLINE struct envoy_admin_v3_HostHealthStatus* envoy_admin_v3_HostStatus_mut
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_set_success_rate(envoy_admin_v3_HostStatus *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(24, 48), 66, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_admin_v3_HostStatus_mutable_success_rate(envoy_admin_v3_HostStatus* msg, upb_Arena* arena) {
   struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_admin_v3_HostStatus_success_rate(msg);
@@ -641,19 +641,19 @@ UPB_INLINE struct envoy_type_v3_Percent* envoy_admin_v3_HostStatus_mutable_succe
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_set_weight(envoy_admin_v3_HostStatus *msg, uint32_t value) {
   const upb_MiniTableField field = {5, UPB_SIZE(28, 12), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_set_hostname(envoy_admin_v3_HostStatus *msg, upb_StringView value) {
   const upb_MiniTableField field = {6, UPB_SIZE(44, 56), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_set_priority(envoy_admin_v3_HostStatus *msg, uint32_t value) {
   const upb_MiniTableField field = {7, UPB_SIZE(32, 16), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_set_local_origin_success_rate(envoy_admin_v3_HostStatus *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {8, UPB_SIZE(36, 72), 67, 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_admin_v3_HostStatus_mutable_local_origin_success_rate(envoy_admin_v3_HostStatus* msg, upb_Arena* arena) {
   struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_admin_v3_HostStatus_local_origin_success_rate(msg);
@@ -665,7 +665,7 @@ UPB_INLINE struct envoy_type_v3_Percent* envoy_admin_v3_HostStatus_mutable_local
 }
 UPB_INLINE void envoy_admin_v3_HostStatus_set_locality(envoy_admin_v3_HostStatus *msg, struct envoy_config_core_v3_Locality* value) {
   const upb_MiniTableField field = {9, UPB_SIZE(40, 80), 68, 5, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Locality* envoy_admin_v3_HostStatus_mutable_locality(envoy_admin_v3_HostStatus* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Locality* sub = (struct envoy_config_core_v3_Locality*)envoy_admin_v3_HostStatus_locality(msg);
@@ -811,35 +811,35 @@ UPB_INLINE bool envoy_admin_v3_HostHealthStatus_active_hc_timeout(const envoy_ad
 
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_failed_active_health_check(envoy_admin_v3_HostHealthStatus *msg, bool value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_failed_outlier_check(envoy_admin_v3_HostHealthStatus *msg, bool value) {
   const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_eds_health_status(envoy_admin_v3_HostHealthStatus *msg, int32_t value) {
   const upb_MiniTableField field = {3, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_failed_active_degraded_check(envoy_admin_v3_HostHealthStatus *msg, bool value) {
   const upb_MiniTableField field = {4, 16, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_pending_dynamic_removal(envoy_admin_v3_HostHealthStatus *msg, bool value) {
   const upb_MiniTableField field = {5, 17, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_pending_active_hc(envoy_admin_v3_HostHealthStatus *msg, bool value) {
   const upb_MiniTableField field = {6, 18, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_excluded_via_immediate_hc_fail(envoy_admin_v3_HostHealthStatus *msg, bool value) {
   const upb_MiniTableField field = {7, 19, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_HostHealthStatus_set_active_hc_timeout(envoy_admin_v3_HostHealthStatus *msg, bool value) {
   const upb_MiniTableField field = {8, 20, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

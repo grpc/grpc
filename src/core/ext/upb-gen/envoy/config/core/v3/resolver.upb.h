@@ -92,11 +92,11 @@ UPB_INLINE bool envoy_config_core_v3_DnsResolverOptions_no_default_search_domain
 
 UPB_INLINE void envoy_config_core_v3_DnsResolverOptions_set_use_tcp_for_dns_lookups(envoy_config_core_v3_DnsResolverOptions *msg, bool value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_core_v3_DnsResolverOptions_set_no_default_search_domain(envoy_config_core_v3_DnsResolverOptions *msg, bool value) {
   const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* envoy.config.core.v3.DnsResolutionConfig */
@@ -216,7 +216,7 @@ UPB_INLINE struct envoy_config_core_v3_Address* envoy_config_core_v3_DnsResoluti
 }
 UPB_INLINE void envoy_config_core_v3_DnsResolutionConfig_set_dns_resolver_options(envoy_config_core_v3_DnsResolutionConfig *msg, envoy_config_core_v3_DnsResolverOptions* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 64, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_DnsResolverOptions* envoy_config_core_v3_DnsResolutionConfig_mutable_dns_resolver_options(envoy_config_core_v3_DnsResolutionConfig* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_DnsResolverOptions* sub = (struct envoy_config_core_v3_DnsResolverOptions*)envoy_config_core_v3_DnsResolutionConfig_dns_resolver_options(msg);

@@ -26,6 +26,9 @@ const upb_MiniTable grpc__gcp__RpcProtocolVersions_msg_init = {
   &grpc_gcp_RpcProtocolVersions_submsgs[0],
   &grpc_gcp_RpcProtocolVersions__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.RpcProtocolVersions",
+#endif
 };
 
 static const upb_MiniTableField grpc_gcp_RpcProtocolVersions_Version__fields[2] = {
@@ -37,6 +40,9 @@ const upb_MiniTable grpc__gcp__RpcProtocolVersions__Version_msg_init = {
   NULL,
   &grpc_gcp_RpcProtocolVersions_Version__fields[0],
   16, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.RpcProtocolVersions.Version",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psv4_1bt},

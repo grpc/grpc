@@ -102,7 +102,7 @@ UPB_INLINE upb_StringView xds_type_matcher_v3_RegexMatcher_regex(const xds_type_
 
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_set_google_re2(xds_type_matcher_v3_RegexMatcher *msg, xds_type_matcher_v3_RegexMatcher_GoogleRE2* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_mutable_google_re2(xds_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena) {
   struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* sub = (struct xds_type_matcher_v3_RegexMatcher_GoogleRE2*)xds_type_matcher_v3_RegexMatcher_google_re2(msg);
@@ -114,7 +114,7 @@ UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v
 }
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_set_regex(xds_type_matcher_v3_RegexMatcher *msg, upb_StringView value) {
   const upb_MiniTableField field = {2, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 /* xds.type.matcher.v3.RegexMatcher.GoogleRE2 */

@@ -193,15 +193,15 @@ UPB_INLINE bool envoy_admin_v3_ServerInfo_has_node(const envoy_admin_v3_ServerIn
 
 UPB_INLINE void envoy_admin_v3_ServerInfo_set_version(envoy_admin_v3_ServerInfo *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, UPB_SIZE(32, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_set_state(envoy_admin_v3_ServerInfo *msg, int32_t value) {
   const upb_MiniTableField field = {2, 12, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_set_uptime_current_epoch(envoy_admin_v3_ServerInfo *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(16, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_ServerInfo_mutable_uptime_current_epoch(envoy_admin_v3_ServerInfo* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_admin_v3_ServerInfo_uptime_current_epoch(msg);
@@ -213,7 +213,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_ServerInfo_mutable_up
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_set_uptime_all_epochs(envoy_admin_v3_ServerInfo *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {4, UPB_SIZE(20, 40), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_ServerInfo_mutable_uptime_all_epochs(envoy_admin_v3_ServerInfo* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_admin_v3_ServerInfo_uptime_all_epochs(msg);
@@ -225,11 +225,11 @@ UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_ServerInfo_mutable_up
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_set_hot_restart_version(envoy_admin_v3_ServerInfo *msg, upb_StringView value) {
   const upb_MiniTableField field = {5, UPB_SIZE(40, 48), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_set_command_line_options(envoy_admin_v3_ServerInfo *msg, envoy_admin_v3_CommandLineOptions* value) {
   const upb_MiniTableField field = {6, UPB_SIZE(24, 64), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_admin_v3_CommandLineOptions* envoy_admin_v3_ServerInfo_mutable_command_line_options(envoy_admin_v3_ServerInfo* msg, upb_Arena* arena) {
   struct envoy_admin_v3_CommandLineOptions* sub = (struct envoy_admin_v3_CommandLineOptions*)envoy_admin_v3_ServerInfo_command_line_options(msg);
@@ -241,7 +241,7 @@ UPB_INLINE struct envoy_admin_v3_CommandLineOptions* envoy_admin_v3_ServerInfo_m
 }
 UPB_INLINE void envoy_admin_v3_ServerInfo_set_node(envoy_admin_v3_ServerInfo *msg, struct envoy_config_core_v3_Node* value) {
   const upb_MiniTableField field = {7, UPB_SIZE(28, 72), 67, 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_Node* envoy_admin_v3_ServerInfo_mutable_node(envoy_admin_v3_ServerInfo* msg, upb_Arena* arena) {
   struct envoy_config_core_v3_Node* sub = (struct envoy_config_core_v3_Node*)envoy_admin_v3_ServerInfo_node(msg);
@@ -751,63 +751,63 @@ UPB_INLINE upb_Array* _envoy_admin_v3_CommandLineOptions_stats_tag_mutable_upb_a
 
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_base_id(envoy_admin_v3_CommandLineOptions *msg, uint64_t value) {
   const upb_MiniTableField field = {1, UPB_SIZE(80, 64), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_concurrency(envoy_admin_v3_CommandLineOptions *msg, uint32_t value) {
   const upb_MiniTableField field = {2, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_config_path(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {3, UPB_SIZE(88, 72), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_config_yaml(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {4, UPB_SIZE(96, 88), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_allow_unknown_static_fields(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {5, 16, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_admin_address_path(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {6, 104, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_local_address_ip_version(envoy_admin_v3_CommandLineOptions *msg, int32_t value) {
   const upb_MiniTableField field = {7, 20, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_log_level(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {8, UPB_SIZE(112, 120), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_component_log_level(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {9, UPB_SIZE(120, 136), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_log_format(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {10, UPB_SIZE(128, 152), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_log_path(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {11, UPB_SIZE(136, 168), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_service_cluster(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {13, UPB_SIZE(144, 184), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_service_node(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {14, UPB_SIZE(152, 200), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_service_zone(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {15, UPB_SIZE(160, 216), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_file_flush_interval(envoy_admin_v3_CommandLineOptions *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {16, UPB_SIZE(24, 232), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_CommandLineOptions_mutable_file_flush_interval(envoy_admin_v3_CommandLineOptions* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_admin_v3_CommandLineOptions_file_flush_interval(msg);
@@ -819,7 +819,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_CommandLineOptions_mu
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_drain_time(envoy_admin_v3_CommandLineOptions *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {17, UPB_SIZE(28, 240), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_CommandLineOptions_mutable_drain_time(envoy_admin_v3_CommandLineOptions* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_admin_v3_CommandLineOptions_drain_time(msg);
@@ -831,7 +831,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_CommandLineOptions_mu
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_parent_shutdown_time(envoy_admin_v3_CommandLineOptions *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {18, UPB_SIZE(32, 248), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_CommandLineOptions_mutable_parent_shutdown_time(envoy_admin_v3_CommandLineOptions* msg, upb_Arena* arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_admin_v3_CommandLineOptions_parent_shutdown_time(msg);
@@ -843,31 +843,31 @@ UPB_INLINE struct google_protobuf_Duration* envoy_admin_v3_CommandLineOptions_mu
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_mode(envoy_admin_v3_CommandLineOptions *msg, int32_t value) {
   const upb_MiniTableField field = {19, UPB_SIZE(36, 24), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_disable_hot_restart(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {22, UPB_SIZE(40, 28), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_enable_mutex_tracing(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {23, UPB_SIZE(41, 29), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_restart_epoch(envoy_admin_v3_CommandLineOptions *msg, uint32_t value) {
   const upb_MiniTableField field = {24, UPB_SIZE(44, 32), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_cpuset_threads(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {25, UPB_SIZE(48, 36), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_reject_unknown_dynamic_fields(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {26, UPB_SIZE(49, 37), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_log_format_escaped(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {27, UPB_SIZE(50, 38), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* envoy_admin_v3_CommandLineOptions_mutable_disabled_extensions(envoy_admin_v3_CommandLineOptions* msg, size_t* size) {
   upb_MiniTableField field = {28, UPB_SIZE(52, 256), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -899,35 +899,35 @@ UPB_INLINE bool envoy_admin_v3_CommandLineOptions_add_disabled_extensions(envoy_
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_ignore_unknown_dynamic_fields(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {30, UPB_SIZE(56, 39), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_use_dynamic_base_id(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {31, UPB_SIZE(57, 40), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_base_id_path(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {32, UPB_SIZE(168, 264), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_drain_strategy(envoy_admin_v3_CommandLineOptions *msg, int32_t value) {
   const upb_MiniTableField field = {33, UPB_SIZE(60, 44), 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_enable_fine_grain_logging(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {34, UPB_SIZE(64, 48), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_socket_path(envoy_admin_v3_CommandLineOptions *msg, upb_StringView value) {
   const upb_MiniTableField field = {35, UPB_SIZE(176, 280), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_socket_mode(envoy_admin_v3_CommandLineOptions *msg, uint32_t value) {
   const upb_MiniTableField field = {36, UPB_SIZE(68, 52), 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_admin_v3_CommandLineOptions_set_enable_core_dump(envoy_admin_v3_CommandLineOptions *msg, bool value) {
   const upb_MiniTableField field = {37, UPB_SIZE(72, 56), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE upb_StringView* envoy_admin_v3_CommandLineOptions_mutable_stats_tag(envoy_admin_v3_CommandLineOptions* msg, size_t* size) {
   upb_MiniTableField field = {38, UPB_SIZE(76, 296), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

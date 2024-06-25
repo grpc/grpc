@@ -27,6 +27,9 @@ const upb_MiniTable envoy__admin__v3__Certificates_msg_init = {
   &envoy_admin_v3_Certificates_submsgs[0],
   &envoy_admin_v3_Certificates__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.Certificates",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max64b},
@@ -47,6 +50,9 @@ const upb_MiniTable envoy__admin__v3__Certificate_msg_init = {
   &envoy_admin_v3_Certificate_submsgs[0],
   &envoy_admin_v3_Certificate__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.Certificate",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max128b},
@@ -76,6 +82,9 @@ const upb_MiniTable envoy__admin__v3__CertificateDetails_msg_init = {
   &envoy_admin_v3_CertificateDetails_submsgs[0],
   &envoy_admin_v3_CertificateDetails__fields[0],
   UPB_SIZE(56, 88), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.CertificateDetails",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -102,6 +111,9 @@ const upb_MiniTable envoy__admin__v3__CertificateDetails__OcspDetails_msg_init =
   &envoy_admin_v3_CertificateDetails_OcspDetails_submsgs[0],
   &envoy_admin_v3_CertificateDetails_OcspDetails__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.CertificateDetails.OcspDetails",
+#endif
 };
 
 static const upb_MiniTableField envoy_admin_v3_SubjectAlternateName__fields[3] = {
@@ -114,6 +126,9 @@ const upb_MiniTable envoy__admin__v3__SubjectAlternateName_msg_init = {
   NULL,
   &envoy_admin_v3_SubjectAlternateName__fields[0],
   UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.SubjectAlternateName",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},

@@ -32,6 +32,9 @@ const upb_MiniTable envoy__admin__v3__Clusters_msg_init = {
   &envoy_admin_v3_Clusters_submsgs[0],
   &envoy_admin_v3_Clusters__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.Clusters",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_prm_1bt_max128b},
@@ -60,6 +63,9 @@ const upb_MiniTable envoy__admin__v3__ClusterStatus_msg_init = {
   &envoy_admin_v3_ClusterStatus_submsgs[0],
   &envoy_admin_v3_ClusterStatus__fields[0],
   UPB_SIZE(56, 96), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.ClusterStatus",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -105,6 +111,9 @@ const upb_MiniTable envoy__admin__v3__HostStatus_msg_init = {
   &envoy_admin_v3_HostStatus_submsgs[0],
   &envoy_admin_v3_HostStatus__fields[0],
   UPB_SIZE(56, 88), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.HostStatus",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -132,6 +141,9 @@ const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init = {
   NULL,
   &envoy_admin_v3_HostHealthStatus__fields[0],
   24, 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.admin.v3.HostHealthStatus",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000008, &upb_psb1_1bt},

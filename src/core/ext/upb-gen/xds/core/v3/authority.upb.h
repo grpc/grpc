@@ -77,7 +77,7 @@ UPB_INLINE upb_StringView xds_core_v3_Authority_name(const xds_core_v3_Authority
 
 UPB_INLINE void xds_core_v3_Authority_set_name(xds_core_v3_Authority *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 #ifdef __cplusplus

@@ -90,11 +90,11 @@ UPB_INLINE bool xds_annotations_v3_FieldSecurityAnnotation_configure_for_untrust
 
 UPB_INLINE void xds_annotations_v3_FieldSecurityAnnotation_set_configure_for_untrusted_downstream(xds_annotations_v3_FieldSecurityAnnotation *msg, bool value) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_annotations_v3_FieldSecurityAnnotation_set_configure_for_untrusted_upstream(xds_annotations_v3_FieldSecurityAnnotation *msg, bool value) {
   const upb_MiniTableField field = {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
 UPB_INLINE bool xds_annotations_v3_has_security(const struct google_protobuf_FieldOptions* msg) {
@@ -118,8 +118,17 @@ UPB_INLINE void xds_annotations_v3_set_security(struct google_protobuf_FieldOpti
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
                  &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
-  bool ok = _upb_Message_SetExtensionField((upb_Message*)msg, ext, &val, arena);
+  bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
+}
+UPB_INLINE struct xds_annotations_v3_FieldSecurityAnnotation* xds_annotations_v3_mutable_security(struct google_protobuf_FieldOptions* msg,
+                                    upb_Arena* arena) {
+  struct xds_annotations_v3_FieldSecurityAnnotation* sub = (struct xds_annotations_v3_FieldSecurityAnnotation*)xds_annotations_v3_security(msg);
+  if (sub == NULL) {
+    sub = (struct xds_annotations_v3_FieldSecurityAnnotation*)_upb_Message_New(&xds__annotations__v3__FieldSecurityAnnotation_msg_init, arena);
+    if (sub) xds_annotations_v3_set_security(msg, sub, arena);
+  }
+  return sub;
 }
 #ifdef __cplusplus
 }  /* extern "C" */

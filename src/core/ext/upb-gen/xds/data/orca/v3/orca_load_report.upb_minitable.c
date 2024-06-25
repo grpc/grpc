@@ -35,6 +35,9 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport_msg_init = {
   &xds_data_orca_v3_OrcaLoadReport_submsgs[0],
   &xds_data_orca_v3_OrcaLoadReport__fields[0],
   UPB_SIZE(72, 80), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.data.orca.v3.OrcaLoadReport",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f000009, &upb_psf8_1bt},
@@ -64,6 +67,9 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_in
   NULL,
   &xds_data_orca_v3_OrcaLoadReport_RequestCostEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.data.orca.v3.OrcaLoadReport.RequestCostEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -81,6 +87,9 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_in
   NULL,
   &xds_data_orca_v3_OrcaLoadReport_UtilizationEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.data.orca.v3.OrcaLoadReport.UtilizationEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -98,6 +107,9 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_i
   NULL,
   &xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "xds.data.orca.v3.OrcaLoadReport.NamedMetricsEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

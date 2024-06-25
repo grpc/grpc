@@ -40,6 +40,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService_msg_init = {
   &envoy_config_core_v3_GrpcService_submsgs[0],
   &envoy_config_core_v3_GrpcService__fields[0],
   UPB_SIZE(32, 40), 4, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0020000c0100000a, &upb_pom_1bt_max64b},
@@ -66,6 +69,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__EnvoyGrpc_msg_init = {
   &envoy_config_core_v3_GrpcService_EnvoyGrpc_submsgs[0],
   &envoy_config_core_v3_GrpcService_EnvoyGrpc__fields[0],
   UPB_SIZE(32, 56), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.EnvoyGrpc",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -97,6 +103,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc_msg_init = 
   &envoy_config_core_v3_GrpcService_GoogleGrpc_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc__fields[0],
   UPB_SIZE(56, 104), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -125,12 +134,18 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__SslCredent
   &envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_SslCredentials__fields[0],
   UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.SslCredentials",
+#endif
 };
 
 const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__GoogleLocalCredentials_msg_init = {
   NULL,
   NULL,
   8, 0, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.GoogleLocalCredentials",
+#endif
 };
 
 static const upb_MiniTableSub envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_submsgs[3] = {
@@ -149,6 +164,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCre
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials__fields[0],
   UPB_SIZE(16, 24), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelCredentials",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pom_1bt_max64b},
@@ -179,6 +197,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials__fields[0],
   UPB_SIZE(24, 32), 7, kUpb_ExtMode_NonExtendable, 7, UPB_FASTTABLE_MASK(56), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},
@@ -200,6 +221,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.ServiceAccountJWTAccessCredentials",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -217,6 +241,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.GoogleIAMCredentials",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -238,6 +265,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.MetadataCredentialsFromPlugin",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},
@@ -262,6 +292,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__CallCreden
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService__fields[0],
   UPB_SIZE(80, 152), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.StsService",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000800003f00000a, &upb_pss_1bt},
@@ -294,6 +327,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArg
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs__fields[0],
   16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs",
+#endif
 };
 
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[2] = {
@@ -305,6 +341,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArg
   NULL,
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.Value",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000080100000a, &upb_pos_1bt},
@@ -326,6 +365,9 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArg
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_submsgs[0],
   &envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry__fields[0],
   48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.ArgsEntry",
+#endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x001000003f00000a, &upb_pss_1bt},

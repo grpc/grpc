@@ -94,11 +94,11 @@ UPB_INLINE bool xds_core_v3_TypedExtensionConfig_has_typed_config(const xds_core
 
 UPB_INLINE void xds_core_v3_TypedExtensionConfig_set_name(xds_core_v3_TypedExtensionConfig *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void xds_core_v3_TypedExtensionConfig_set_typed_config(xds_core_v3_TypedExtensionConfig *msg, struct google_protobuf_Any* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  _upb_Message_SetNonExtensionField((upb_Message *)msg, &field, &value);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Any* xds_core_v3_TypedExtensionConfig_mutable_typed_config(xds_core_v3_TypedExtensionConfig* msg, upb_Arena* arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)xds_core_v3_TypedExtensionConfig_typed_config(msg);

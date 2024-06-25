@@ -21,7 +21,7 @@ py_library(
     imports = ["../"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "@com_google_protobuf//:protobuf_python",
         requirement("googleapis-common-protos"),
+        "@com_google_protobuf//:protobuf_python",
     ],
 )
