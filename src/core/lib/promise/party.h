@@ -373,7 +373,8 @@ class Party : public Activity, private Wakeable {
   Party& operator=(const Party&) = delete;
 
   static RefCountedPtr<Party> Make(RefCountedPtr<Arena> arena) {
-    return RefCountedPtr<Party>(arena->New<Party>(std::move(arena)));
+    auto* arena_ptr = arena.get();
+    return RefCountedPtr<Party>(arena_ptr->New<Party>(std::move(arena)));
   }
 
   // Spawn one promise into the party.

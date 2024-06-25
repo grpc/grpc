@@ -177,7 +177,7 @@ void LegacyMaxAgeFilter::PostInit() {
 
   // Start the max age timer
   if (max_connection_age_ != Duration::Infinity()) {
-    auto arena = SimpleArenaAllocator()->MakeArena();
+    auto arena = SimpleArenaAllocator(0)->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
         channel_stack->EventEngine());
     max_age_activity_.Set(MakeActivity(
@@ -230,7 +230,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+          -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {

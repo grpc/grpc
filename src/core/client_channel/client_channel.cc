@@ -1259,7 +1259,7 @@ void ClientChannel::StartIdleTimer() {
                     }
                   });
   });
-  auto arena = SimpleArenaAllocator()->MakeArena();
+  auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine());
   idle_activity_.Set(MakeActivity(
