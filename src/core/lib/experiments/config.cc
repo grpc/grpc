@@ -24,12 +24,12 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/config/config_vars.h"
@@ -137,8 +137,7 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
     // If not found log an error, but don't take any other action.
     // Allows us an easy path to disabling experiments.
     if (!found) {
-      gpr_log(GPR_ERROR, "Unknown experiment: %s",
-              std::string(experiment).c_str());
+      LOG(ERROR) << "Unknown experiment: " << experiment;
     }
   }
   for (size_t i = 0; i < kNumExperiments; i++) {
@@ -227,19 +226,20 @@ void PrintExperimentsList() {
   }
   if (experiment_status.empty()) {
     if (!defaulted_on_experiments.empty()) {
-      gpr_log(GPR_INFO, "gRPC experiments enabled: %s",
-              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
+      LOG(INFO) << "gRPC experiments enabled: "
+                << absl::StrJoin(defaulted_on_experiments, ", ");
     }
   } else {
     if (defaulted_on_experiments.empty()) {
-      gpr_log(GPR_INFO, "gRPC experiments: %s",
-              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
-                  .c_str());
+      LOG(INFO) << "gRPC experiments: "
+                << absl::StrJoin(experiment_status, ", ",
+                                 absl::PairFormatter(":"));
     } else {
-      gpr_log(GPR_INFO, "gRPC experiments: %s; default-enabled: %s",
-              absl::StrJoin(experiment_status, ", ", absl::PairFormatter(":"))
-                  .c_str(),
-              absl::StrJoin(defaulted_on_experiments, ", ").c_str());
+      LOG(INFO) << "gRPC experiments: "
+                << absl::StrJoin(experiment_status, ", ",
+                                 absl::PairFormatter(":"))
+                << "; default-enabled: "
+                << absl::StrJoin(defaulted_on_experiments, ", ");
     }
   }
 }
@@ -256,8 +256,8 @@ void ForceEnableExperiment(absl::string_view experiment, bool enable) {
     }
     return;
   }
-  gpr_log(GPR_INFO, "gRPC EXPERIMENT %s not found to force %s",
-          std::string(experiment).c_str(), enable ? "enable" : "disable");
+  LOG(INFO) << "gRPC EXPERIMENT " << experiment << " not found to force "
+            << (enable ? "enable" : "disable");
 }
 
 void RegisterExperimentConstraintsValidator(

@@ -119,7 +119,7 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailFirstCallFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailFirstCallFilter"),
 };
 
 // Tests failure on a send op batch:

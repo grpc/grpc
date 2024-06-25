@@ -54,6 +54,10 @@ call_refcount:
   debug_only: true
   default: false
   description: Refcount on call.
+call_state:
+  debug_only: true
+  default: false
+  description: Traces transitions through the call spine state machine.
 cares_address_sorting:
   default: false
   description: Operations of the c-ares based DNS resolver's address sorter.

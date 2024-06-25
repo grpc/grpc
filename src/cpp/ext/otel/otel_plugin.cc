@@ -30,7 +30,6 @@
 #include "opentelemetry/nostd/unique_ptr.h"
 #include "opentelemetry/nostd/variant.h"
 
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/version_info.h>
@@ -611,14 +610,14 @@ OpenTelemetryPluginImpl::IsEnabledForServer(
 std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>
 OpenTelemetryPluginImpl::GetChannelScopeConfig(
     const OpenTelemetryPluginBuilder::ChannelScope& scope) const {
-  GPR_ASSERT(channel_scope_filter_ == nullptr || channel_scope_filter_(scope));
+  CHECK(channel_scope_filter_ == nullptr || channel_scope_filter_(scope));
   return std::make_shared<ClientScopeConfig>(this, scope);
 }
 
 std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig>
 OpenTelemetryPluginImpl::GetServerScopeConfig(
     const grpc_core::ChannelArgs& args) const {
-  GPR_ASSERT(server_selector_ == nullptr || server_selector_(args));
+  CHECK(server_selector_ == nullptr || server_selector_(args));
   return std::make_shared<ServerScopeConfig>(this, args);
 }
 

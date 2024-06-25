@@ -126,7 +126,7 @@ class End2EndResourceQuotaUnaryTest : public ::testing::Test {
     Status status;
     auto stub = EchoTestService::NewStub(
         CreateChannel(server_address_, grpc::InsecureChannelCredentials()));
-    ctx.set_wait_for_ready(true);
+    ctx.set_wait_for_ready(false);
     EchoClientUnaryReactor reactor(&ctx, stub.get(), payload_, &status);
     reactor.Await();
   }

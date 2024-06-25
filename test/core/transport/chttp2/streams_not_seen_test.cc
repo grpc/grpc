@@ -215,7 +215,7 @@ grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
     // connected channel filter must be the last one.
     // Channel init code falls back to lexical ordering of filters if there are
     // otherwise no dependencies, so we leverage that.
-    "zzzzzz_trailing-metadata-recording-filter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_trailing-metadata-recording-filter"),
 };
 bool TrailingMetadataRecordingFilter::trailing_metadata_available_;
 absl::optional<GrpcStreamNetworkState::ValueType>

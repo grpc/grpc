@@ -108,6 +108,7 @@ ClientCall::ClientCall(
     RefCountedPtr<Arena> arena,
     RefCountedPtr<UnstartedCallDestination> destination)
     : Call(false, deadline, std::move(arena), event_engine),
+      DualRefCounted("ClientCall"),
       cq_(cq),
       call_destination_(std::move(destination)),
       compression_options_(compression_options) {
@@ -153,6 +154,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          ResetDeadline();
           return;
         }
         break;
@@ -168,6 +170,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
         if (call_state_.compare_exchange_strong(cur_state, kCancelled,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          ResetDeadline();
           auto* unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
           while (unordered_start != nullptr) {
             auto next = unordered_start->next;
@@ -228,13 +231,15 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
   auto call = MakeCallPair(std::move(send_initial_metadata_), event_engine(),
                            arena()->Ref());
   started_call_initiator_ = std::move(call.initiator);
-  call_destination_->StartCall(std::move(call.handler));
   while (true) {
+    GRPC_TRACE_LOG(call, INFO)
+        << DebugTag() << "StartCall " << GRPC_DUMP_ARGS(cur_state);
     switch (cur_state) {
       case kUnstarted:
         if (call_state_.compare_exchange_strong(cur_state, kStarted,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          call_destination_->StartCall(std::move(call.handler));
           return;
         }
         break;
@@ -246,6 +251,7 @@ void ClientCall::StartCall(const grpc_op& send_initial_metadata_op) {
         if (call_state_.compare_exchange_strong(cur_state, kStarted,
                                                 std::memory_order_acq_rel,
                                                 std::memory_order_acquire)) {
+          call_destination_->StartCall(std::move(call.handler));
           auto unordered_start = reinterpret_cast<UnorderedStart*>(cur_state);
           while (unordered_start->next != nullptr) {
             unordered_start->start_pending_batch();
@@ -338,6 +344,8 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
           [this, out_status, out_status_details, out_error_string,
            out_trailing_metadata](
               ServerMetadataHandle server_trailing_metadata) {
+            saw_trailing_metadata_.store(true, std::memory_order_relaxed);
+            ResetDeadline();
             GRPC_TRACE_LOG(call, INFO)
                 << DebugTag() << "RecvStatusOnClient "
                 << server_trailing_metadata->DebugString();

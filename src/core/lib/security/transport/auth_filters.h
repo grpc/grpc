@@ -43,6 +43,8 @@ class ClientAuthFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "client-auth-filter"; }
+
   ClientAuthFilter(
       RefCountedPtr<grpc_channel_security_connector> security_connector,
       RefCountedPtr<grpc_auth_context> auth_context);
@@ -95,6 +97,8 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
 
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "server-auth"; }
 
   ServerAuthFilter(RefCountedPtr<grpc_server_credentials> server_credentials,
                    RefCountedPtr<grpc_auth_context> auth_context);

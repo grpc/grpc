@@ -172,7 +172,7 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
     grpc_channel_stack_no_post_init,
     Destroy,
     grpc_channel_next_get_info,
-    "FailSendOpsFilter",
+    GRPC_UNIQUE_TYPE_NAME_HERE("FailSendOpsFilter"),
 };
 
 void RegisterFilter() {

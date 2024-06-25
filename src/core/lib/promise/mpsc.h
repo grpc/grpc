@@ -18,6 +18,8 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -48,6 +50,9 @@ class Center : public RefCounted<Center<T>> {
   // Construct the center with a maximum queue size.
   explicit Center(size_t max_queued) : max_queued_(max_queued) {}
 
+  static constexpr const uint64_t kClosedBatch =
+      std::numeric_limits<uint64_t>::max();
+
   // Poll for new items.
   // - Returns true if new items were obtained, in which case they are contained
   //   in dest in the order they were added. Wakes up all pending senders since
@@ -67,45 +72,39 @@ class Center : public RefCounted<Center<T>> {
     }
     dest.swap(queue_);
     queue_.clear();
+    if (batch_ != kClosedBatch) ++batch_;
     auto wakeups = send_wakers_.TakeWakeupSet();
     lock.Release();
     wakeups.Wakeup();
     return true;
   }
 
-  // Poll to send one item.
-  // Returns pending if no send slot was available.
-  // Returns true if the item was sent.
-  // Returns false if the receiver has been closed.
-  Poll<bool> PollSend(T& t) {
+  // Returns the batch number that the item was sent in, or kClosedBatch if the
+  // pipe is closed.
+  uint64_t Send(T t) {
     ReleasableMutexLock lock(&mu_);
-    if (receiver_closed_) return Poll<bool>(false);
-    if (queue_.size() < max_queued_) {
-      queue_.push_back(std::move(t));
-      auto receive_waker = std::move(receive_waker_);
-      lock.Release();
-      receive_waker.Wakeup();
-      return Poll<bool>(true);
-    }
-    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
-    return Pending{};
-  }
-
-  bool ImmediateSend(T t) {
-    ReleasableMutexLock lock(&mu_);
-    if (receiver_closed_) return false;
+    if (batch_ == kClosedBatch) return kClosedBatch;
     queue_.push_back(std::move(t));
     auto receive_waker = std::move(receive_waker_);
+    const uint64_t batch = queue_.size() <= max_queued_ ? batch_ : batch_ + 1;
     lock.Release();
     receive_waker.Wakeup();
-    return true;
+    return batch;
+  }
+
+  // Poll until a particular batch number is received.
+  Poll<Empty> PollReceiveBatch(uint64_t batch) {
+    ReleasableMutexLock lock(&mu_);
+    if (batch_ >= batch) return Empty{};
+    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
+    return Pending{};
   }
 
   // Mark that the receiver is closed.
   void ReceiverClosed() {
     ReleasableMutexLock lock(&mu_);
-    if (receiver_closed_) return;
-    receiver_closed_ = true;
+    if (batch_ == kClosedBatch) return;
+    batch_ = kClosedBatch;
     auto wakeups = send_wakers_.TakeWakeupSet();
     lock.Release();
     wakeups.Wakeup();
@@ -115,7 +114,9 @@ class Center : public RefCounted<Center<T>> {
   Mutex mu_;
   const size_t max_queued_;
   std::vector<T> queue_ ABSL_GUARDED_BY(mu_);
-  bool receiver_closed_ ABSL_GUARDED_BY(mu_) = false;
+  // Every time we give queue_ to the receiver, we increment batch_.
+  // When the receiver is closed we set batch_ to kClosedBatch.
+  uint64_t batch_ ABSL_GUARDED_BY(mu_) = 1;
   Waker receive_waker_ ABSL_GUARDED_BY(mu_);
   WaitSet send_wakers_ ABSL_GUARDED_BY(mu_);
 };
@@ -138,14 +139,23 @@ class MpscSender {
   // Resolves to true if sent, false if the receiver was closed (and the value
   // will never be successfully sent).
   auto Send(T t) {
-    return [center = center_, t = std::move(t)]() mutable -> Poll<bool> {
+    return [center = center_, t = std::move(t),
+            batch = uint64_t(0)]() mutable -> Poll<bool> {
       if (center == nullptr) return false;
-      return center->PollSend(t);
+      if (batch == 0) {
+        batch = center->Send(std::move(t));
+        CHECK_NE(batch, 0u);
+        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return false;
+      }
+      auto p = center->PollReceiveBatch(batch);
+      if (p.pending()) return Pending{};
+      return true;
     };
   }
 
   bool UnbufferedImmediateSend(T t) {
-    return center_->ImmediateSend(std::move(t));
+    return center_->Send(std::move(t)) !=
+           mpscpipe_detail::Center<T>::kClosedBatch;
   }
 
  private:

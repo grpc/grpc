@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -43,7 +44,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/json.h>
-#include <grpc/support/log.h>
 #include <grpc/support/metrics.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
@@ -283,10 +283,10 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
           }
         }
       } else {
-        gpr_log(GPR_ERROR,
-                "client_channel=%p: Illegal keepalive throttling value %s",
-                subchannel_wrapper_->client_channel_.get(),
-                std::string(keepalive_throttling.value()).c_str());
+        LOG(ERROR) << "client_channel="
+                   << subchannel_wrapper_->client_channel_.get()
+                   << ": Illegal keepalive throttling value "
+                   << std::string(keepalive_throttling.value());
       }
     }
     // Propagate status only in state TF.
@@ -453,10 +453,10 @@ class ClientChannel::ClientChannelControlHelper
       const char* extra = client_channel_->disconnect_error_.ok()
                               ? ""
                               : " (ignoring -- channel shutting down)";
-      gpr_log(GPR_INFO,
-              "client_channel=%p: update: state=%s status=(%s) picker=%p%s",
-              client_channel_.get(), ConnectivityStateName(state),
-              status.ToString().c_str(), picker.get(), extra);
+      LOG(INFO) << "client_channel=" << client_channel_.get()
+                << ": update: state=" << ConnectivityStateName(state)
+                << " status=(" << status << ") picker=" << picker.get()
+                << extra;
     }
     // Do update only if not shutting down.
     if (client_channel_->disconnect_error_.ok()) {
@@ -625,6 +625,7 @@ ClientChannel::ClientChannel(
       work_serializer_(std::make_shared<WorkSerializer>(event_engine_)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
+  CHECK(event_engine_.get() != nullptr);
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << this << ": creating client_channel";
   // Set initial keepalive time.
@@ -907,15 +908,13 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
               .LoadBalancingPolicyExists(*policy_name, &requires_config) ||
          requires_config)) {
       if (requires_config) {
-        gpr_log(GPR_ERROR,
-                "LB policy: %s passed through channel_args must not "
-                "require a config. Using pick_first instead.",
-                std::string(*policy_name).c_str());
+        LOG(ERROR) << "LB policy: " << *policy_name
+                   << " passed through channel_args must not "
+                      "require a config. Using pick_first instead.";
       } else {
-        gpr_log(GPR_ERROR,
-                "LB policy: %s passed through channel_args does not exist. "
-                "Using pick_first instead.",
-                std::string(*policy_name).c_str());
+        LOG(ERROR) << "LB policy: " << *policy_name
+                   << " passed through channel_args does not exist. "
+                      "Using pick_first instead.";
       }
       policy_name = "pick_first";
     }
@@ -1195,14 +1194,17 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   }
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_CLIENT_CHANNEL, builder);
-  // TODO(roth): add filters returned by config selector
-  // Create call destination.
+  // Add filters returned by the config selector (e.g., xDS HTTP filters).
+  config_selector->AddFilters(builder);
+  // TODO(roth, ctiller): When we implement the retry interceptor, that
+  // needs to be added *after* the filters added by the config selector.
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
     Crash("call v3 stack does not yet support retries");
   }
+  // Create call destination.
   auto top_of_stack_call_destination = builder.Build(call_destination_);
   // Send result to data plane.
   if (!top_of_stack_call_destination.ok()) {

@@ -36,7 +36,6 @@
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/event_engine/trace.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -190,9 +189,8 @@ struct WindowsEventEngine::TimerClosure final : public EventEngine::Closure {
   EventEngine::TaskHandle handle;
 
   void Run() override {
-    GRPC_EVENT_ENGINE_TRACE(
-        "WindowsEventEngine:%p executing callback:%s", engine,
-        HandleToString<EventEngine::TaskHandle>(handle).c_str());
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "WindowsEventEngine:" << engine << " executing callback:" << handle;
     {
       grpc_core::MutexLock lock(&engine->task_mu_);
       engine->known_handles_.erase(handle);
@@ -214,7 +212,7 @@ WindowsEventEngine::WindowsEventEngine()
 }
 
 WindowsEventEngine::~WindowsEventEngine() {
-  GRPC_EVENT_ENGINE_TRACE("~WindowsEventEngine::%p", this);
+  GRPC_TRACE_LOG(event_engine, INFO) << "~WindowsEventEngine::" << this;
   {
     task_mu_.Lock();
     if (!known_handles_.empty()) {
@@ -253,9 +251,8 @@ WindowsEventEngine::~WindowsEventEngine() {
 bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&task_mu_);
   if (!known_handles_.contains(handle)) return false;
-  GRPC_EVENT_ENGINE_TRACE(
-      "WindowsEventEngine::%p cancelling %s", this,
-      HandleToString<EventEngine::TaskHandle>(handle).c_str());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "WindowsEventEngine::" << this << " cancelling " << handle;
   auto* cd = reinterpret_cast<TimerClosure*>(handle.keys[0]);
   bool r = timer_manager_.TimerCancel(&cd->timer);
   known_handles_.erase(handle);
@@ -292,9 +289,8 @@ EventEngine::TaskHandle WindowsEventEngine::RunAfterInternal(
   grpc_core::MutexLock lock(&task_mu_);
   known_handles_.insert(handle);
   cd->handle = handle;
-  GRPC_EVENT_ENGINE_TRACE(
-      "WindowsEventEngine:%p scheduling callback:%s", this,
-      HandleToString<EventEngine::TaskHandle>(handle).c_str());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "WindowsEventEngine:" << this << " scheduling callback:" << handle;
   timer_manager_.TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
@@ -326,21 +322,24 @@ void WindowsEventEngine::WindowsDNSResolver::LookupTXT(
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 WindowsEventEngine::GetDNSResolver(
     EventEngine::DNSResolver::ResolverOptions const& options) {
+  if (ShouldUseAresDnsResolver()) {
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
-  auto ares_resolver = AresResolver::CreateAresResolver(
-      options.dns_server,
-      std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
-      shared_from_this());
-  if (!ares_resolver.ok()) {
-    return ares_resolver.status();
+    GRPC_TRACE_LOG(event_engine_dns, INFO)
+        << "WindowsEventEngine::" << this << " creating AresResolver";
+    auto ares_resolver = AresResolver::CreateAresResolver(
+        options.dns_server,
+        std::make_unique<GrpcPolledFdFactoryWindows>(poller()),
+        shared_from_this());
+    if (!ares_resolver.ok()) {
+      return ares_resolver.status();
+    }
+    return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
+        std::move(*ares_resolver));
+#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   }
-  return std::make_unique<WindowsEventEngine::WindowsDNSResolver>(
-      std::move(*ares_resolver));
-#else   // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
   GRPC_TRACE_LOG(event_engine_dns, INFO)
       << "WindowsEventEngine::" << this << " creating NativeWindowsDNSResolver";
   return std::make_unique<NativeWindowsDNSResolver>(shared_from_this());
-#endif  // GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 }
 
 bool WindowsEventEngine::IsWorkerThread() { grpc_core::Crash("unimplemented"); }
@@ -360,8 +359,8 @@ void WindowsEventEngine::OnConnectCompleted(
           known_connection_handles_.erase(state->connection_handle());
     }
     if (erased_handles != 1 || !Cancel(state->timer_handle())) {
-      GRPC_EVENT_ENGINE_TRACE(
-          "%s", "Not accepting connection since the deadline timer has fired");
+      GRPC_TRACE_LOG(event_engine, INFO)
+          << "Not accepting connection since the deadline timer has fired";
       return;
     }
     // Release refs held by the deadline timer.
@@ -413,8 +412,8 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     });
     return EventEngine::ConnectionHandle::kInvalid;
   }
-  GRPC_EVENT_ENGINE_TRACE("EventEngine::%p connecting to %s", this,
-                          uri->c_str());
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::" << this << " connecting to " << *uri;
   // Use dualstack sockets where available.
   ResolvedAddress address = addr;
   ResolvedAddress addr6_v4mapped;
@@ -540,17 +539,16 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
 
 bool WindowsEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
   if (handle == EventEngine::ConnectionHandle::kInvalid) {
-    GRPC_EVENT_ENGINE_TRACE("%s",
-                            "Attempted to cancel an invalid connection handle");
+    GRPC_TRACE_LOG(event_engine, INFO)
+        << "Attempted to cancel an invalid connection handle";
     return false;
   }
   // Erase the connection handle, which may be unknown
   {
     grpc_core::MutexLock lock(&connection_mu_);
     if (known_connection_handles_.erase(handle) != 1) {
-      GRPC_EVENT_ENGINE_TRACE(
-          "Unknown connection handle: %s",
-          HandleToString<EventEngine::ConnectionHandle>(handle).c_str());
+      GRPC_TRACE_LOG(event_engine, INFO)
+          << "Unknown connection handle: " << handle;
       return false;
     }
   }
@@ -581,10 +579,8 @@ bool WindowsEventEngine::CancelConnectInternalStateLocked(
     ConnectionState* connection_state) {
   connection_state->socket()->Shutdown(DEBUG_LOCATION, "CancelConnect");
   // Release the connection_state shared_ptr owned by the connected callback.
-  GRPC_EVENT_ENGINE_TRACE("Successfully cancelled connection %s",
-                          HandleToString<EventEngine::ConnectionHandle>(
-                              connection_state->connection_handle())
-                              .c_str());
+  GRPC_TRACE_LOG(event_engine, INFO) << "Successfully cancelled connection "
+                                     << connection_state->connection_handle();
   return true;
 }
 

@@ -88,6 +88,7 @@ _INTERESTING = {
 _SCENARIOS = {
     "default": [],
     "minstack": ["--scenario_config=minstack"],
+    "chaotic_good": ["--scenario_config=chaotic_good"],
 }
 
 _BENCHMARKS = {

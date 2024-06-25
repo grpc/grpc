@@ -58,6 +58,8 @@ class ServiceConfigChannelArgFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "service_config_channel_arg"; }
+
   static absl::StatusOr<std::unique_ptr<ServiceConfigChannelArgFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args) {
     return std::make_unique<ServiceConfigChannelArgFilter>(args);
@@ -119,8 +121,7 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
 
 const grpc_channel_filter ServiceConfigChannelArgFilter::kFilter =
     MakePromiseBasedFilter<ServiceConfigChannelArgFilter,
-                           FilterEndpoint::kClient>(
-        "service_config_channel_arg");
+                           FilterEndpoint::kClient>();
 
 }  // namespace
 

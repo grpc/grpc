@@ -181,9 +181,9 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
     char* name_slice_str = grpc_slice_to_c_string(name_slice);
     char* error_message_str = NULL;
     VALUE error_message_ruby_str = Qnil;
-    GPR_ASSERT(gpr_asprintf(&error_message_str,
-                            "Invalid compression algorithm name: %s",
-                            name_slice_str) != -1);
+    GRPC_RUBY_ASSERT(gpr_asprintf(&error_message_str,
+                                  "Invalid compression algorithm name: %s",
+                                  name_slice_str) != -1);
     gpr_free(name_slice_str);
     error_message_ruby_str =
         rb_str_new(error_message_str, strlen(error_message_str));

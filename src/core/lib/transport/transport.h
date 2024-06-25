@@ -508,6 +508,8 @@ class Transport : public InternallyRefCounted<Transport> {
   struct RawPointerChannelArgTag {};
   static absl::string_view ChannelArgName() { return GRPC_ARG_TRANSPORT; }
 
+  using InternallyRefCounted<Transport>::InternallyRefCounted;
+
   // Though internally ref counted transports expose their "Ref" method to
   // create a RefCountedPtr to themselves. The OrphanablePtr owner is the
   // singleton decision maker on whether the transport should be destroyed or
@@ -601,6 +603,7 @@ class FilterStackTransport : public Transport {
 
 class ClientTransport : public Transport {
  public:
+  using Transport::Transport;
   virtual void StartCall(CallHandler call_handler) = 0;
 
  protected:
@@ -609,6 +612,7 @@ class ClientTransport : public Transport {
 
 class ServerTransport : public Transport {
  public:
+  using Transport::Transport;
   // Called once slightly after transport setup to register the accept function.
   virtual void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> unstarted_call_handler) = 0;

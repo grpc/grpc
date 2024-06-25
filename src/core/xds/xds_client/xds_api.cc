@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "envoy/config/core/v3/base.upb.h"
@@ -43,12 +44,11 @@
 #include "upb/text/encode.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
 #include "src/core/util/json/json.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/xds_client/xds_client.h"
 
 // IWYU pragma: no_include "upb/msg_internal.h"
@@ -136,8 +136,8 @@ void MaybeLogDiscoveryRequest(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] constructed ADS request: %s",
-            context.client, buf);
+    VLOG(2) << "[xds_client " << context.client
+            << "] constructed ADS request: " << buf;
   }
 }
 
@@ -268,8 +268,8 @@ void MaybeLogDiscoveryResponse(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] received response: %s", context.client,
-            buf);
+    VLOG(2) << "[xds_client " << context.client
+            << "] received response: " << buf;
   }
 }
 
@@ -356,8 +356,8 @@ void MaybeLogLrsRequest(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(request), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] constructed LRS request: %s",
-            context.client, buf);
+    VLOG(2) << "[xds_client " << context.client
+            << "] constructed LRS request: " << buf;
   }
 }
 
@@ -517,8 +517,8 @@ void MaybeLogLrsResponse(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(response), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] received LRS response: %s",
-            context.client, buf);
+    VLOG(2) << "[xds_client " << context.client
+            << "] received LRS response: " << buf;
   }
 }
 

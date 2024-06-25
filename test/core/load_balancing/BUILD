@@ -18,6 +18,7 @@ load(
     "grpc_cc_test",
     "grpc_package",
 )
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/load_balancing")
 
@@ -194,21 +195,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "static_stride_scheduler_benchmark",
     srcs = ["static_stride_scheduler_benchmark.cc"],
     external_deps = [
         "absl/algorithm:container",
         "absl/log:check",
-        "benchmark",
-    ],
-    language = "C++",
-    tags = [
-        "no_mac",
-        "no_windows",
     ],
     uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//src/core:no_destruct",
         "//src/core:static_stride_scheduler",

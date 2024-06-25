@@ -39,6 +39,8 @@ class ClientAuthorityFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "authority"; }
+
   static absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args);
 

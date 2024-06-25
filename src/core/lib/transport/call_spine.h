@@ -106,17 +106,8 @@ class CallSpine final : public Party {
     return call_filters().PullClientInitialMetadata();
   }
 
-  auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
-    bool has_md = md.has_value();
-    return If(
-        has_md,
-        [this, md = std::move(md)]() mutable {
-          return call_filters().PushServerInitialMetadata(std::move(*md));
-        },
-        [this]() {
-          call_filters().NoServerInitialMetadata();
-          return Immediate<StatusFlag>(Success{});
-        });
+  StatusFlag PushServerInitialMetadata(ServerMetadataHandle md) {
+    return call_filters().PushServerInitialMetadata(std::move(md));
   }
 
   auto WasCancelled() { return call_filters().WasCancelled(); }
@@ -139,7 +130,9 @@ class CallSpine final : public Party {
     using ResultType = typename P::Result;
     return Map(std::move(promise), [this](ResultType r) {
       if (!IsStatusOk(r)) {
-        PushServerTrailingMetadata(StatusCast<ServerMetadataHandle>(r));
+        auto md = StatusCast<ServerMetadataHandle>(r);
+        md->Set(GrpcCallWasCancelled(), true);
+        PushServerTrailingMetadata(std::move(md));
       }
       return r;
     });
@@ -297,6 +290,7 @@ class CallInitiator {
   }
 
   Arena* arena() { return spine_->arena(); }
+  Party* party() { return spine_.get(); }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
     return spine_->event_engine();
@@ -315,7 +309,7 @@ class CallHandler {
     return spine_->PullClientInitialMetadata();
   }
 
-  auto PushServerInitialMetadata(absl::optional<ServerMetadataHandle> md) {
+  auto PushServerInitialMetadata(ServerMetadataHandle md) {
     return spine_->PushServerInitialMetadata(std::move(md));
   }
 
@@ -361,6 +355,7 @@ class CallHandler {
   }
 
   Arena* arena() { return spine_->arena(); }
+  Party* party() { return spine_.get(); }
 
   grpc_event_engine::experimental::EventEngine* event_engine() const {
     return spine_->event_engine();
@@ -450,7 +445,13 @@ auto OutgoingMessages(CallHalf h) {
 
 // Forward a call from `call_handler` to `call_initiator` (with initial metadata
 // `client_initial_metadata`)
-void ForwardCall(CallHandler call_handler, CallInitiator call_initiator);
+// `on_server_trailing_metadata_from_initiator` is a callback that will be
+// called with the server trailing metadata received by the initiator, and can
+// be used to mutate that metadata if desired.
+void ForwardCall(
+    CallHandler call_handler, CallInitiator call_initiator,
+    absl::AnyInvocable<void(ServerMetadata&)>
+        on_server_trailing_metadata_from_initiator = [](ServerMetadata&) {});
 
 }  // namespace grpc_core
 

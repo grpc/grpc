@@ -70,8 +70,8 @@ TEST(XdsChannelStackModifierTest, ChannelArgsCompare) {
   grpc_shutdown();
 }
 
-constexpr char kTestFilter1[] = "test_filter_1";
-constexpr char kTestFilter2[] = "test_filter_2";
+const UniqueTypeName kTestFilter1 = GRPC_UNIQUE_TYPE_NAME_HERE("test_filter_1");
+const UniqueTypeName kTestFilter2 = GRPC_UNIQUE_TYPE_NAME_HERE("test_filter_2");
 
 namespace {
 class FakeTransport final : public Transport {
@@ -117,11 +117,12 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
   }
   std::vector<std::string> filters;
   for (const auto& entry : *builder.mutable_stack()) {
-    filters.push_back(entry->name);
+    filters.push_back(std::string(entry->name.name()));
   }
   filters.resize(3);
-  EXPECT_EQ(filters,
-            std::vector<std::string>({"server", kTestFilter1, kTestFilter2}));
+  EXPECT_EQ(filters, std::vector<std::string>(
+                         {"server", std::string(kTestFilter1.name()),
+                          std::string(kTestFilter2.name())}));
   grpc_shutdown();
 }
 

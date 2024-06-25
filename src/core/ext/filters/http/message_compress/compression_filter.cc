@@ -66,12 +66,12 @@ const grpc_channel_filter ClientCompressionFilter::kFilter =
     MakePromiseBasedFilter<ClientCompressionFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("compression");
+                               kFilterExaminesOutboundMessages>();
 const grpc_channel_filter ServerCompressionFilter::kFilter =
     MakePromiseBasedFilter<ServerCompressionFilter, FilterEndpoint::kServer,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("compression");
+                               kFilterExaminesOutboundMessages>();
 
 absl::StatusOr<std::unique_ptr<ClientCompressionFilter>>
 ClientCompressionFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {

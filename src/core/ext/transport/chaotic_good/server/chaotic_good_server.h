@@ -104,7 +104,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
       static auto DataEndpointWriteSettingsFrame(
           RefCountedPtr<HandshakingState> self);
 
-      static void OnHandshakeDone(void* arg, grpc_error_handle error);
+      void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
       Timestamp GetConnectionDeadline();
       const RefCountedPtr<ActiveConnection> connection_;
       const RefCountedPtr<HandshakeManager> handshake_mgr_;

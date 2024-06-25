@@ -23,6 +23,9 @@ project(RouteGuide C CXX)
 
 include(../cmake/common.cmake)
 
+# Find absl package
+find_package(absl CONFIG REQUIRED)
+
 # Proto file
 get_filename_component(rg_proto "../../protos/route_guide.proto" ABSOLUTE)
 get_filename_component(rg_proto_path "${rg_proto}" PATH)
@@ -52,6 +55,7 @@ add_library(rg_grpc_proto
   ${rg_proto_srcs}
   ${rg_proto_hdrs})
 target_link_libraries(rg_grpc_proto
+  absl::absl_log
   ${_REFLECTION}
   ${_GRPC_GRPCPP}
   ${_PROTOBUF_LIBPROTOBUF})
@@ -74,6 +78,10 @@ foreach(_target
   target_link_libraries(${_target}
     rg_grpc_proto
     route_guide_helper
+    absl::flags_parse
+    absl::absl_log
+    absl::log_initialize
+    absl::log_globals
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})

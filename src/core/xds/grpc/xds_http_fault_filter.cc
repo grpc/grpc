@@ -214,6 +214,10 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
   return GenerateFilterConfig(context, std::move(extension), errors);
 }
 
+void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
+  builder.Add<FaultInjectionFilter>();
+}
+
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
   return &FaultInjectionFilter::kFilter;
 }

@@ -224,6 +224,10 @@ class PartySyncUsingAtomics {
     return iteration_.load(std::memory_order_relaxed);
   }
 
+  bool has_participants() const {
+    return (state_.load(std::memory_order_relaxed) & kAllocatedMask) != 0;
+  }
+
  private:
   bool UnreffedLast();
 

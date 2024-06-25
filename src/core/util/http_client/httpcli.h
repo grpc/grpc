@@ -186,7 +186,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void DoRead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     Ref().release();  // ref held by pending read
-    grpc_endpoint_read(ep_, &incoming_, &on_read_, /*urgent=*/true,
+    grpc_endpoint_read(ep_.get(), &incoming_, &on_read_, /*urgent=*/true,
                        /*min_progress_size=*/1);
   }
 
@@ -221,7 +221,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
   void StartWrite() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  static void OnHandshakeDone(void* arg, grpc_error_handle error);
+  void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
 
   void DoHandshake(const grpc_resolved_address* addr)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -240,7 +240,7 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   grpc_closure continue_on_read_after_schedule_on_exec_ctx_;
   grpc_closure done_write_;
   grpc_closure continue_done_write_after_schedule_on_exec_ctx_;
-  grpc_endpoint* ep_ = nullptr;
+  OrphanablePtr<grpc_endpoint> ep_;
   grpc_closure* on_done_;
   ResourceQuotaRefPtr resource_quota_;
   grpc_polling_entity* pollent_;
@@ -248,7 +248,6 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
   const absl::optional<std::function<void()>> test_only_generate_response_;
   Mutex mu_;
   RefCountedPtr<HandshakeManager> handshake_mgr_ ABSL_GUARDED_BY(mu_);
-  bool own_endpoint_ ABSL_GUARDED_BY(mu_) = true;
   bool cancelled_ ABSL_GUARDED_BY(mu_) = false;
   grpc_http_parser parser_ ABSL_GUARDED_BY(mu_);
   std::vector<grpc_resolved_address> addresses_ ABSL_GUARDED_BY(mu_);

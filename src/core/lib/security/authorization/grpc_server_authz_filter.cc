@@ -114,7 +114,6 @@ absl::Status GrpcServerAuthzFilter::Call::OnClientInitialMetadata(
 }
 
 const grpc_channel_filter GrpcServerAuthzFilter::kFilter =
-    MakePromiseBasedFilter<GrpcServerAuthzFilter, FilterEndpoint::kServer>(
-        "grpc-server-authz");
+    MakePromiseBasedFilter<GrpcServerAuthzFilter, FilterEndpoint::kServer>();
 
 }  // namespace grpc_core

@@ -82,10 +82,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
-  void Orphan() override {
-    AbortWithError();
-    Unref();
-  }
+  void Orphan() override;
 
   void StartCall(CallHandler call_handler) override;
   void AbortWithError();
@@ -99,7 +96,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   uint32_t MakeStream(CallHandler call_handler);
   absl::optional<CallHandler> LookupStream(uint32_t stream_id);
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);
-  auto OnTransportActivityDone();
+  auto OnTransportActivityDone(absl::string_view what);
   auto TransportWriteLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   auto TransportReadLoop(RefCountedPtr<ChaoticGoodTransport> transport);
   // Push one frame into a call

@@ -363,8 +363,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   if (run_inproc) {
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
-  // Log everything from the driver
-  gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
 
   // ClientContext allocations (all are destroyed at scope exit)
   list<ClientContext> contexts;

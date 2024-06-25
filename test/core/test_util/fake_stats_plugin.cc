@@ -24,6 +24,8 @@ class FakeStatsClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "fake_stats_client"; }
+
   explicit FakeStatsClientFilter(
       FakeClientCallTracerFactory* fake_client_call_tracer_factory);
 
@@ -38,8 +40,7 @@ class FakeStatsClientFilter : public ChannelFilter {
 };
 
 const grpc_channel_filter FakeStatsClientFilter::kFilter =
-    MakePromiseBasedFilter<FakeStatsClientFilter, FilterEndpoint::kClient>(
-        "fake_stats_client");
+    MakePromiseBasedFilter<FakeStatsClientFilter, FilterEndpoint::kClient>();
 
 absl::StatusOr<std::unique_ptr<FakeStatsClientFilter>>
 FakeStatsClientFilter::Create(const ChannelArgs& args,

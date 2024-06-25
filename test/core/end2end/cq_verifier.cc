@@ -49,6 +49,7 @@
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/match.h"
 #include "src/core/lib/surface/event_string.h"
+#include "test/core/test_util/build.h"
 #include "test/core/test_util/test_config.h"
 
 // a set of metadata we expect to find on an event

@@ -55,6 +55,10 @@ class ServerConfigSelectorFilter final
       RefCountedPtr<ServerConfigSelectorProvider>
           server_config_selector_provider);
 
+  static absl::string_view TypeName() {
+    return "server_config_selector_filter";
+  }
+
   ServerConfigSelectorFilter(const ServerConfigSelectorFilter&) = delete;
   ServerConfigSelectorFilter& operator=(const ServerConfigSelectorFilter&) =
       delete;
@@ -164,7 +168,7 @@ const NoInterceptor ServerConfigSelectorFilter::Call::OnFinalize;
 }  // namespace
 
 const grpc_channel_filter kServerConfigSelectorFilter =
-    MakePromiseBasedFilter<ServerConfigSelectorFilter, FilterEndpoint::kServer>(
-        "server_config_selector_filter");
+    MakePromiseBasedFilter<ServerConfigSelectorFilter,
+                           FilterEndpoint::kServer>();
 
 }  // namespace grpc_core

@@ -83,6 +83,7 @@
 #define FEATURE_MASK_DO_NOT_FUZZ (1 << 13)
 // Exclude this fixture from experiment runs
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 14)
+#define FEATURE_MASK_IS_CALL_V3 (1 << 15)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -677,9 +678,9 @@ class CoreEnd2endTestRegistry {
 #define SKIP_IF_FUZZING() \
   if (g_is_fuzzing_core_e2e_tests) GTEST_SKIP() << "Skipping test for fuzzing"
 
-#define SKIP_IF_CHAOTIC_GOOD()                                   \
-  if (absl::StrContains(GetParam()->name, "ChaoticGood")) {      \
-    GTEST_SKIP() << "Disabled for initial chaotic good testing"; \
+#define SKIP_IF_V3()                                        \
+  if (GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) { \
+    GTEST_SKIP() << "Disabled for initial v3 testing";      \
   }
 
 #define CORE_END2END_TEST(suite, name)                                       \

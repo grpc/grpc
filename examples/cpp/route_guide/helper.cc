@@ -23,36 +23,30 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+
 #ifdef BAZEL_BUILD
 #include "examples/protos/route_guide.grpc.pb.h"
 #else
 #include "route_guide.grpc.pb.h"
 #endif
 
+#ifdef BAZEL_BUILD
+ABSL_FLAG(std::string, db_path, "examples/cpp/route_guide/route_guide_db.json",
+          "Path to db file");
+#else
+ABSL_FLAG(std::string, db_path, "route_guide_db.json", "Path to db file");
+#endif
+
 namespace routeguide {
 
 std::string GetDbFileContent(int argc, char** argv) {
-  std::string db_path;
-  std::string arg_str("--db_path");
-  if (argc > 1) {
-    std::string argv_1 = argv[1];
-    size_t start_position = argv_1.find(arg_str);
-    if (start_position != std::string::npos) {
-      start_position += arg_str.size();
-      if (argv_1[start_position] == ' ' || argv_1[start_position] == '=') {
-        db_path = argv_1.substr(start_position + 1);
-      }
-    }
-  } else {
-#ifdef BAZEL_BUILD
-    db_path = "cpp/route_guide/route_guide_db.json";
-#else
-    db_path = "route_guide_db.json";
-#endif
-  }
+  std::string db_path = absl::GetFlag(FLAGS_db_path);
   std::ifstream db_file(db_path);
   if (!db_file.is_open()) {
-    std::cout << "Failed to open " << db_path << std::endl;
+    LOG(ERROR) << "Failed to open " << db_path;
     abort();
   }
   std::stringstream db;
@@ -152,13 +146,12 @@ void ParseDb(const std::string& db, std::vector<Feature>* feature_list) {
   while (!parser.Finished()) {
     feature_list->push_back(Feature());
     if (!parser.TryParseOne(&feature_list->back())) {
-      std::cout << "Error parsing the db file";
+      LOG(ERROR) << "Error parsing the db file";
       feature_list->clear();
       break;
     }
   }
-  std::cout << "DB parsed, loaded " << feature_list->size() << " features."
-            << std::endl;
+  LOG(INFO) << "DB parsed, loaded " << feature_list->size() << " features.";
 }
 
 }  // namespace routeguide

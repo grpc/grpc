@@ -208,7 +208,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error);
 static void proxy_connection_failed(proxy_connection* conn,
                                     failure_type failure, const char* prefix,
                                     grpc_error_handle error) {
-  gpr_log(GPR_INFO, "%s: %s", prefix, grpc_core::StatusToString(error).c_str());
+  LOG(INFO) << prefix << ": " << grpc_core::StatusToString(error);
   // Decide whether we should shut down the client and server.
   bool shutdown_client = false;
   bool shutdown_server = false;

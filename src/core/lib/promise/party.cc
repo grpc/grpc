@@ -178,6 +178,7 @@ Party::Participant::~Participant() {
 Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
+  if (!sync_.has_participants()) return;
   ScopedActivity activity(this);
   for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (auto* p =

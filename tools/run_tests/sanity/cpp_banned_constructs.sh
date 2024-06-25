@@ -47,3 +47,13 @@ grep -EIrn \
     '^#include (<pthread.h>)' \
     test | \
     diff - /dev/null
+
+#
+# Prevent the use of CHECK that shouldn't be used in this folder.
+# ABSL_CHECK should be used instead
+#
+
+grep -EIrn \
+    '\s(CHECK_EQ\(|CHECK_GE\(|CHECK_GT\(|CHECK_LE\(|CHECK_LT\(|CHECK_NE\(|CHECK_OK\(|CHECK_STRCASEEQ\(|CHECK_STRCASENE\(|CHECK_STREQ\(|CHECK_STRNE\(|DCHECK_EQ\(|DCHECK_GE\(|DCHECK_GT\(|DCHECK_LE\(|DCHECK_LT\(|DCHECK_NE\(|DCHECK_OK\(|DCHECK_STRCASEEQ\(|DCHECK_STRCASENE\(|DCHECK_STREQ\(|DCHECK_STRNE\(|QCHECK_EQ\(|QCHECK_GE\(|QCHECK_GT\(|QCHECK_LE\(|QCHECK_LT\(|QCHECK_NE\(|QCHECK_OK\(|QCHECK_STRCASEEQ\(|QCHECK_STRCASENE\(|QCHECK_STREQ\(|QCHECK_STRNE\()' \
+    include | \
+    diff - /dev/null

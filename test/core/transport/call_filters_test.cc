@@ -59,6 +59,11 @@ class MockActivity : public Activity, public Wakeable {
   std::unique_ptr<ScopedActivity> scoped_activity_;
 };
 
+#define EXPECT_WAKEUP(activity, statement)                                 \
+  EXPECT_CALL((activity), WakeupRequested()).Times(::testing::AtLeast(1)); \
+  statement;                                                               \
+  Mock::VerifyAndClearExpectations(&(activity));
+
 }  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -67,17 +72,16 @@ class MockActivity : public Activity, public Wakeable {
 namespace filters_detail {
 
 TEST(LayoutTest, Empty) {
-  Layout<FallibleOperator<ClientMetadataHandle>> l;
+  Layout<ClientMetadataHandle> l;
   ASSERT_EQ(l.ops.size(), 0u);
   EXPECT_EQ(l.promise_size, 0u);
   EXPECT_EQ(l.promise_alignment, 0u);
 }
 
 TEST(LayoutTest, Add) {
-  Layout<FallibleOperator<ClientMetadataHandle>> l;
+  Layout<ClientMetadataHandle> l;
   l.Add(1, 4,
-        FallibleOperator<ClientMetadataHandle>{&l, 120, nullptr, nullptr,
-                                               nullptr});
+        Operator<ClientMetadataHandle>{&l, 120, nullptr, nullptr, nullptr});
   ASSERT_EQ(l.ops.size(), 1u);
   EXPECT_EQ(l.promise_size, 1u);
   EXPECT_EQ(l.promise_alignment, 4u);
@@ -867,7 +871,7 @@ TEST(StackDataTest, InstantServerToClientMessagesReturningVoid) {
   EXPECT_EQ(r.value().ok->flags(), 1u);
 }
 
-TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
+TEST(StackDataTest, ServerTrailingMetadataReturningVoid) {
   struct Filter1 {
     struct Call {
       void OnServerTrailingMetadata(ServerMetadata& md) {
@@ -883,27 +887,20 @@ TEST(StackDataTest, InstantServerTrailingMetadataReturningVoid) {
   d.AddServerTrailingMetadataOp(&f1, call_offset);
   ASSERT_EQ(d.filter_constructor.size(), 0u);
   ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
-  // Instant => no poll/early destroy
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
-  // Check promise init
+  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
+  EXPECT_EQ(d.server_trailing_metadata[0].call_offset, call_offset);
+  EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
+  // Check operation
   auto arena = SimpleArenaAllocator()->MakeArena();
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
-  auto r = d.server_trailing_metadata.ops[0].promise_init(
-      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
-      std::move(md));
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
-            "hello");
+  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
+      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
+  EXPECT_EQ(r->get_pointer(HttpPathMetadata())->as_string_view(), "hello");
 }
 
-TEST(StackDataTest,
-     InstantServerTrailingMetadataReturningVoidTakingChannelPtr) {
+TEST(StackDataTest, ServerTrailingMetadataReturningVoidTakingChannelPtr) {
   struct Filter1 {
     struct Call {
       void OnServerTrailingMetadata(ServerMetadata& md, Filter1* p) {
@@ -921,23 +918,17 @@ TEST(StackDataTest,
   d.AddServerTrailingMetadataOp(&f1, call_offset);
   ASSERT_EQ(d.filter_constructor.size(), 0u);
   ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 1u);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].call_offset, call_offset);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].channel_data, &f1);
-  // Instant => no poll/early destroy
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].poll, nullptr);
-  EXPECT_EQ(d.server_trailing_metadata.ops[0].early_destroy, nullptr);
-  // Check promise init
+  ASSERT_EQ(d.server_trailing_metadata.size(), 1u);
+  EXPECT_EQ(d.server_trailing_metadata[0].call_offset, call_offset);
+  EXPECT_EQ(d.server_trailing_metadata[0].channel_data, &f1);
+  // Check operation
   auto arena = SimpleArenaAllocator()->MakeArena();
   auto md = Arena::MakePooled<ServerMetadata>();
   EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
   char call_data;
-  auto r = d.server_trailing_metadata.ops[0].promise_init(
-      nullptr, &call_data, d.server_trailing_metadata.ops[0].channel_data,
-      std::move(md));
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
-            "hello");
+  auto r = d.server_trailing_metadata[0].server_trailing_metadata(
+      &call_data, d.server_trailing_metadata[0].channel_data, std::move(md));
+  EXPECT_EQ(r->get_pointer(HttpPathMetadata())->as_string_view(), "hello");
   EXPECT_THAT(f1.v, ::testing::ElementsAre(42));
 }
 
@@ -959,13 +950,13 @@ TEST(StackBuilderTest, AddOnServerTrailingMetadata) {
       [x = std::make_unique<int>(42)](ServerMetadata&) { EXPECT_EQ(*x, 42); });
   auto stack = b.Build();
   const auto& data = CallFilters::StackTestSpouse().StackDataFrom(*stack);
-  ASSERT_EQ(data.server_trailing_metadata.ops.size(), 1u);
+  ASSERT_EQ(data.server_trailing_metadata.size(), 1u);
   ASSERT_EQ(data.client_initial_metadata.ops.size(), 0u);
   ASSERT_EQ(data.client_to_server_messages.ops.size(), 0u);
   ASSERT_EQ(data.server_to_client_messages.ops.size(), 0u);
   ASSERT_EQ(data.server_initial_metadata.ops.size(), 0u);
-  EXPECT_EQ(data.server_trailing_metadata.ops[0].call_offset, 0);
-  EXPECT_NE(data.server_trailing_metadata.ops[0].channel_data, nullptr);
+  EXPECT_EQ(data.server_trailing_metadata[0].call_offset, 0);
+  EXPECT_NE(data.server_trailing_metadata[0].channel_data, nullptr);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1114,187 +1105,6 @@ TEST(OperationExecutorTest, PromiseTwo) {
 }  // namespace filters_detail
 
 ///////////////////////////////////////////////////////////////////////////////
-// InfallibleOperationExecutor
-
-namespace filters_detail {
-
-TEST(InfallibleOperationExecutor, NoOp) {
-  OperationExecutor<ServerMetadataHandle> pipe;
-  EXPECT_FALSE(pipe.IsRunning());
-}
-
-TEST(InfallibleOperationExecutor, InstantTwo) {
-  class Filter1 {
-   public:
-    class Call {
-     public:
-      void OnServerTrailingMetadata(ClientMetadata& md) {
-        if (md.get_pointer(HttpPathMetadata()) != nullptr) {
-          md.Set(HttpPathMetadata(), Slice::FromStaticString("world"));
-        } else {
-          md.Set(HttpPathMetadata(), Slice::FromStaticString("hello"));
-        }
-      }
-    };
-  };
-  StackData d;
-  Filter1 f1;
-  Filter1 f2;
-  const size_t call_offset1 = d.AddFilter(&f1);
-  const size_t call_offset2 = d.AddFilter(&f2);
-  d.AddServerTrailingMetadataOp(&f1, call_offset1);
-  d.AddServerTrailingMetadataOp(&f2, call_offset2);
-  ASSERT_EQ(d.filter_constructor.size(), 0u);
-  ASSERT_EQ(d.filter_destructor.size(), 0u);
-  ASSERT_EQ(d.server_trailing_metadata.ops.size(), 2u);
-  void* call_data = gpr_malloc_aligned(d.call_data_size, d.call_data_alignment);
-  InfallibleOperationExecutor<ServerMetadataHandle> transformer;
-  auto arena = SimpleArenaAllocator()->MakeArena();
-  promise_detail::Context<Arena> ctx(arena.get());
-  auto md = Arena::MakePooled<ServerMetadata>();
-  EXPECT_EQ(md->get_pointer(HttpPathMetadata()), nullptr);
-  auto r =
-      transformer.Start(&d.server_trailing_metadata, std::move(md), call_data);
-  EXPECT_TRUE(r.ready());
-  EXPECT_EQ(r.value()->get_pointer(HttpPathMetadata())->as_string_view(),
-            "world");
-  gpr_free_aligned(call_data);
-}
-
-}  // namespace filters_detail
-
-///////////////////////////////////////////////////////////////////////////////
-// PipeState
-
-namespace filters_detail {
-
-TEST(PipeStateTest, NoOp) { PipeState(); }
-
-TEST(PipeStateTest, OnePull) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  // initially: not started, should only see pending from pulls
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  // start it, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.Start();
-  Mock::VerifyAndClearExpectations(&activity);
-  // should still see pending! nothing's been pushed
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  // begin a push, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.BeginPush();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  // push should be pending though!
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // ack the pull, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.AckPull();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
-  ps.DropPush();
-  ps.DropPull();
-  EXPECT_FALSE(ps.holds_error());
-}
-
-TEST(PipeStateTest, StartThenPull) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  ps.Start();
-  // pull is pending! nothing's been pushed
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  // begin a push, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.BeginPush();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now we should see a value on the pull poll
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  // push should be pending though!
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // ack the pull, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.AckPull();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
-  ps.DropPush();
-  ps.DropPull();
-  EXPECT_FALSE(ps.holds_error());
-}
-
-TEST(PipeStateTest, PushFirst) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  // start immediately, and push immediately
-  ps.Start();
-  ps.BeginPush();
-  // push should be pending
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // pull should immediately see a value
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  // push should still be pending though!
-  EXPECT_THAT(ps.PollPush(), IsPending());
-  // ack the pull, should see a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  ps.AckPull();
-  Mock::VerifyAndClearExpectations(&activity);
-  // now the push is complete
-  EXPECT_THAT(ps.PollPush(), IsReady(Success()));
-  ps.DropPush();
-  ps.DropPull();
-  EXPECT_FALSE(ps.holds_error());
-}
-
-TEST(PipeStateTest, DropPushing) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  ps.BeginPush();
-  ps.DropPush();
-  EXPECT_TRUE(ps.holds_error());
-  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
-  ps.BeginPush();
-  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
-  ps.DropPush();
-}
-
-TEST(PipeStateTest, DropPulling) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  EXPECT_THAT(ps.PollPull(), IsPending());
-  ps.DropPull();
-  EXPECT_TRUE(ps.holds_error());
-  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
-  ps.DropPull();
-  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
-}
-
-TEST(PipeStateTest, DropProcessing) {
-  PipeState ps;
-  StrictMock<MockActivity> activity;
-  activity.Activate();
-  ps.Start();
-  ps.BeginPush();
-  EXPECT_THAT(ps.PollPull(), IsReady(true));
-  ps.DropPull();
-  EXPECT_TRUE(ps.holds_error());
-  EXPECT_THAT(ps.PollPull(), IsReady(Failure()));
-  EXPECT_THAT(ps.PollPush(), IsReady(Failure()));
-}
-
-}  // namespace filters_detail
-
-///////////////////////////////////////////////////////////////////////////////
 // CallFilters
 
 TEST(CallFiltersTest, CanBuildStack) {
@@ -1369,31 +1179,24 @@ TEST(CallFiltersTest, UnaryCall) {
   EXPECT_THAT(push_client_to_server_message(), IsPending());
   auto pull_client_to_server_message = filters.PullClientToServerMessage();
   // Pull client to server message, expect a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  EXPECT_THAT(pull_client_to_server_message(), IsReady());
-  Mock::VerifyAndClearExpectations(&activity);
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_client_to_server_message(), IsReady()));
   // Push should be done
   EXPECT_THAT(push_client_to_server_message(), IsReady(Success{}));
   // Push server initial metadata
-  auto push_server_initial_metadata =
-      filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
-  EXPECT_THAT(push_server_initial_metadata(), IsPending());
+  filters.PushServerInitialMetadata(Arena::MakePooled<ServerMetadata>());
   auto pull_server_initial_metadata = filters.PullServerInitialMetadata();
-  // Pull server initial metadata, expect a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
+  // Pull server initial metadata
   EXPECT_THAT(pull_server_initial_metadata(), IsReady());
   Mock::VerifyAndClearExpectations(&activity);
-  // Push should be done
-  EXPECT_THAT(push_server_initial_metadata(), IsReady(Success{}));
   // Push server to client message
   auto push_server_to_client_message = filters.PushServerToClientMessage(
       Arena::MakePooled<Message>(SliceBuffer(), 0));
   EXPECT_THAT(push_server_to_client_message(), IsPending());
   auto pull_server_to_client_message = filters.PullServerToClientMessage();
   // Pull server to client message, expect a wakeup
-  EXPECT_CALL(activity, WakeupRequested());
-  EXPECT_THAT(pull_server_to_client_message(), IsReady());
-  Mock::VerifyAndClearExpectations(&activity);
+  EXPECT_WAKEUP(activity,
+                EXPECT_THAT(pull_server_to_client_message(), IsReady()));
   // Push should be done
   EXPECT_THAT(push_server_to_client_message(), IsReady(Success{}));
   // Push server trailing metadata
@@ -1417,5 +1220,6 @@ TEST(CallFiltersTest, UnaryCall) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_tracer_init();
   return RUN_ALL_TESTS();
 }

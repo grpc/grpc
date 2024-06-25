@@ -69,8 +69,7 @@ UniqueTypeName XdsOverrideHostAttribute::TypeName() {
 
 const grpc_channel_filter StatefulSessionFilter::kFilter =
     MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata>(
-        "stateful_session_filter");
+                           kFilterExaminesServerInitialMetadata>();
 
 absl::StatusOr<std::unique_ptr<StatefulSessionFilter>>
 StatefulSessionFilter::Create(const ChannelArgs&,

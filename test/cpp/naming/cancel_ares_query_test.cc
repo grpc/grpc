@@ -42,6 +42,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/gprpp/crash.h"
+#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gprpp/work_serializer.h"
@@ -118,6 +119,10 @@ void ArgsInit(ArgsStruct* args) {
 void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
+  grpc_core::Notification notification;
+  args->lock->Run([&notification]() { notification.Notify(); }, DEBUG_LOCATION);
+  args->lock.reset();
+  notification.WaitForNotification();
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;

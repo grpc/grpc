@@ -25,10 +25,12 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel.h"
+#include "src/core/client_channel/direct_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/telemetry/stats.h"
@@ -86,8 +88,15 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     return LegacyChannel::Create(std::move(target), std::move(args),
                                  channel_stack_type);
   }
-  CHECK_EQ(channel_stack_type, GRPC_CLIENT_CHANNEL);
-  return ClientChannel::Create(std::move(target), std::move(args));
+  switch (channel_stack_type) {
+    case GRPC_CLIENT_CHANNEL:
+      return ClientChannel::Create(std::move(target), std::move(args));
+    case GRPC_CLIENT_DIRECT_CHANNEL:
+      return DirectChannel::Create(std::move(target), args);
+    default:
+      Crash(absl::StrCat("Invalid channel stack type for ChannelCreate: ",
+                         grpc_channel_stack_type_string(channel_stack_type)));
+  }
 }
 
 }  // namespace grpc_core

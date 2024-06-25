@@ -104,6 +104,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     service.RequestEcho(&senv->ctx, &senv->recv_request, &senv->response_writer,
                         fixture->cq(), fixture->cq(), tag(slot));
   }
+  stub.reset();
   fixture.reset();
   server_env[0]->~ServerEnv();
   server_env[1]->~ServerEnv();

@@ -1659,7 +1659,7 @@ template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 absl::enable_if_t<std::is_base_of<ChannelFilter, F>::value &&
                       !std::is_base_of<ImplementChannelFilterTag, F>::value,
                   grpc_channel_filter>
-MakePromiseBasedFilter(const char* name) {
+MakePromiseBasedFilter() {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 
   return grpc_channel_filter{
@@ -1690,14 +1690,14 @@ MakePromiseBasedFilter(const char* name) {
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name
-      name,
+      UniqueTypeNameFor<F>(),
   };
 }
 
 template <typename F, FilterEndpoint kEndpoint, uint8_t kFlags = 0>
 absl::enable_if_t<std::is_base_of<ImplementChannelFilterTag, F>::value,
                   grpc_channel_filter>
-MakePromiseBasedFilter(const char* name) {
+MakePromiseBasedFilter() {
   using CallData = promise_filter_detail::CallData<kEndpoint>;
 
   return grpc_channel_filter{
@@ -1728,7 +1728,7 @@ MakePromiseBasedFilter(const char* name) {
       // get_channel_info
       promise_filter_detail::ChannelFilterMethods::GetChannelInfo,
       // name
-      name,
+      UniqueTypeNameFor<F>(),
   };
 }
 

@@ -71,7 +71,7 @@ jobs:
           python-version: 3.8
       - name: Install Python Packages
         run: |
-          pip install pyyaml mako virtualenv
+          pip install pyyaml mako virtualenv absl-py
           sudo apt-get update
           sudo apt-get install python3-dev
       - name: Check out repository code

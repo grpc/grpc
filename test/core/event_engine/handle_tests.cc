@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <memory>
 
+#include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -44,6 +45,11 @@ TYPED_TEST(TaskHandleTest, Validity) {
   ASSERT_NE(t, TypeParam::kInvalid);
   ASSERT_NE(TypeParam::kInvalid, t);
   ASSERT_EQ(TypeParam::kInvalid, TypeParam::kInvalid);
+}
+
+TYPED_TEST(TaskHandleTest, AbslStringify) {
+  TypeParam t{42, 43};
+  ASSERT_EQ(absl::StrCat(t), "{000000000000002a,000000000000002b}");
 }
 
 int main(int argc, char** argv) {

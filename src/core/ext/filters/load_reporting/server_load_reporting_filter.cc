@@ -247,8 +247,8 @@ void ServerLoadReportingFilter::Call::OnFinalize(
 }
 
 const grpc_channel_filter ServerLoadReportingFilter::kFilter =
-    MakePromiseBasedFilter<ServerLoadReportingFilter, FilterEndpoint::kServer>(
-        "server_load_reporting");
+    MakePromiseBasedFilter<ServerLoadReportingFilter,
+                           FilterEndpoint::kServer>();
 
 // TODO(juanlishen): We should register the filter during grpc initialization
 // time once OpenCensus is compatible with our build system. For now, we force

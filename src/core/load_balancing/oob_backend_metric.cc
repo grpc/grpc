@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
@@ -34,7 +35,6 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -147,7 +147,7 @@ class OrcaProducer::OrcaStreamEventHandler final
     if (status == GRPC_STATUS_UNIMPLEMENTED) {
       static const char kErrorMessage[] =
           "Orca stream returned UNIMPLEMENTED; disabling";
-      gpr_log(GPR_ERROR, kErrorMessage);
+      LOG(ERROR) << kErrorMessage;
       auto* channelz_node = producer_->subchannel_->channelz_node();
       if (channelz_node != nullptr) {
         channelz_node->AddTraceEvent(
@@ -275,8 +275,8 @@ void OrcaProducer::MaybeStartStreamLocked() {
 void OrcaProducer::NotifyWatchers(
     const BackendMetricData& backend_metric_data) {
   if (GRPC_TRACE_FLAG_ENABLED(orca_client)) {
-    gpr_log(GPR_INFO, "OrcaProducer %p: reporting backend metrics to watchers",
-            this);
+    LOG(INFO) << "OrcaProducer " << this
+              << ": reporting backend metrics to watchers";
   }
   MutexLock lock(&mu_);
   for (OrcaWatcher* watcher : watchers_) {

@@ -47,6 +47,8 @@ class LameClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "lame-client"; }
+
   explicit LameClientFilter(absl::Status error);
 
   static absl::StatusOr<std::unique_ptr<LameClientFilter>> Create(

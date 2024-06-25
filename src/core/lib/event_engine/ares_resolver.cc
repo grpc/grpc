@@ -65,6 +65,7 @@
 
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/time_util.h"
@@ -787,5 +788,51 @@ void (*event_engine_grpc_ares_test_only_inject_config)(ares_channel* channel) =
     noop_inject_channel_config;
 
 bool g_event_engine_grpc_ares_test_only_force_tcp = false;
+
+bool ShouldUseAresDnsResolver() {
+#if defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) || \
+    defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  auto resolver_env = grpc_core::ConfigVars::Get().DnsResolver();
+  return resolver_env.empty() || absl::EqualsIgnoreCase(resolver_env, "ares");
+#else   // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) ||
+        // defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+  return false;
+#endif  // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) ||
+        // defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
+}
+
+absl::Status AresInit() {
+  if (ShouldUseAresDnsResolver()) {
+    address_sorting_init();
+    // ares_library_init and ares_library_cleanup are currently no-op except
+    // under Windows. Calling them may cause race conditions when other parts of
+    // the binary calls these functions concurrently.
+#ifdef GPR_WINDOWS
+    int status = ares_library_init(ARES_LIB_INIT_ALL);
+    if (status != ARES_SUCCESS) {
+      return GRPC_ERROR_CREATE(
+          absl::StrCat("ares_library_init failed: ", ares_strerror(status)));
+    }
+#endif  // GPR_WINDOWS
+  }
+  return absl::OkStatus();
+}
+void AresShutdown() {
+  if (ShouldUseAresDnsResolver()) {
+    address_sorting_shutdown();
+    // ares_library_init and ares_library_cleanup are currently no-op except
+    // under Windows. Calling them may cause race conditions when other parts of
+    // the binary calls these functions concurrently.
+#ifdef GPR_WINDOWS
+    ares_library_cleanup();
+#endif  // GPR_WINDOWS
+  }
+}
+
+#else  // GRPC_ARES == 1
+
+bool ShouldUseAresDnsResolver() { return false; }
+absl::Status AresInit() { return absl::OkStatus(); }
+void AresShutdown() {}
 
 #endif  // GRPC_ARES == 1

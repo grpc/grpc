@@ -29,10 +29,10 @@
 #include <iostream>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/strings/substitute.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/strerror.h"
@@ -61,8 +61,8 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
     // if we reach here, an error has occurred
-    gpr_log(GPR_ERROR, "execv '%s' failed: %s", exec_args[0],
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "execv '" << exec_args[0]
+               << "' failed: " << grpc_core::StrError(errno);
     _exit(1);
   } else {
     r = grpc_core::Zalloc<gpr_subprocess>();
@@ -104,8 +104,8 @@ gpr_subprocess* gpr_subprocess_create_with_envp(int argc, const char** argv,
     envp_args[envc] = nullptr;
     execve(exec_args[0], exec_args, envp_args);
     // if we reach here, an error has occurred
-    gpr_log(GPR_ERROR, "execvpe '%s' failed: %s", exec_args[0],
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "execvpe '" << exec_args[0]
+               << "' failed: " << grpc_core::StrError(errno);
     _exit(1);
   } else {
     r = grpc_core::Zalloc<gpr_subprocess>();
@@ -234,8 +234,8 @@ retry:
     if (errno == EINTR) {
       goto retry;
     }
-    gpr_log(GPR_ERROR, "waitpid failed for pid %d: %s", p->pid,
-            grpc_core::StrError(errno).c_str());
+    LOG(ERROR) << "waitpid failed for pid " << p->pid << ": "
+               << grpc_core::StrError(errno);
     return -1;
   }
   p->joined = true;

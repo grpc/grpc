@@ -43,8 +43,7 @@ RUN echo "source $PYTHON_ENV/bin/activate" >> ~/.bashrc
 # use pinned version of pip to avoid sudden breakages
 # TODO(#36814): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
-RUN /bin/bash -c "source $PYTHON_ENV/bin/activate &&   python3 -m pip install --upgrade pip==19.3.1 &&   python3 -m pip install six==1.16.0 &&   python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0"
-
+RUN /bin/bash -c "source $PYTHON_ENV/bin/activate &&   python3 -m pip install --upgrade pip==19.3.1 &&   python3 -m pip install six==1.16.0"
 
 # Install Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)

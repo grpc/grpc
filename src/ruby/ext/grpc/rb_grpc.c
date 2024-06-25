@@ -248,12 +248,12 @@ static pid_t g_init_pid;
 static long g_init_tid;
 
 static bool grpc_ruby_initial_pid(void) {
-  GPR_ASSERT(g_init_pid != 0);
+  GRPC_RUBY_ASSERT(g_init_pid != 0);
   return g_init_pid == getpid();
 }
 
 static bool grpc_ruby_initial_thread(void) {
-  GPR_ASSERT(g_init_tid != 0);
+  GRPC_RUBY_ASSERT(g_init_tid != 0);
   return sys_gettid() == g_init_tid;
 }
 
@@ -263,8 +263,8 @@ static void grpc_ruby_reset_init_state(void) {
 }
 
 static void grpc_ruby_basic_init(void) {
-  GPR_ASSERT(g_init_pid == 0);
-  GPR_ASSERT(g_init_tid == 0);
+  GRPC_RUBY_ASSERT(g_init_pid == 0);
+  GRPC_RUBY_ASSERT(g_init_tid == 0);
   grpc_ruby_reset_init_state();
   // TODO(apolcyn): ideally, we should share logic with C-core
   // for determining whether or not fork support is enabled, rather

@@ -243,7 +243,11 @@ class RouteGuideClient {
         StartRead(&server_note_);
         StartCall();
       }
-      void OnWriteDone(bool /*ok*/) override { NextWrite(); }
+      void OnWriteDone(bool ok) override {
+        if (ok) {
+          NextWrite();
+        }
+      }
       void OnReadDone(bool ok) override {
         if (ok) {
           std::cout << "Got message " << server_note_.message() << " at "

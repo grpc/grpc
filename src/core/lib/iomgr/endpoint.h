@@ -101,6 +101,8 @@ bool grpc_endpoint_can_track_err(grpc_endpoint* ep);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable* vtable;
+
+  void Orphan() { grpc_endpoint_destroy(this); }
 };
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H

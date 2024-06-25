@@ -117,8 +117,7 @@ absl::optional<std::string> MaybeSerializeBackendMetrics(
 }  // namespace
 
 const grpc_channel_filter BackendMetricFilter::kFilter =
-    MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>(
-        "backend_metric");
+    MakePromiseBasedFilter<BackendMetricFilter, FilterEndpoint::kServer>();
 
 absl::StatusOr<std::unique_ptr<BackendMetricFilter>>
 BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {

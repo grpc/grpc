@@ -95,6 +95,7 @@ class FullstackFixture : public BaseFixture {
   }
 
   ~FullstackFixture() override {
+    channel_.reset();
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
     cq_->Shutdown();
     void* tag;
@@ -180,7 +181,9 @@ class EndpointPairFixture : public BaseFixture {
           grpc_core::Server::FromC(server_->c_server());
       grpc_core::ChannelArgs server_args = core_server->channel_args();
       server_transport_ = grpc_create_chttp2_transport(
-          server_args, endpoints.server, false /* is_client */);
+          server_args,
+          grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.server),
+          /*is_client=*/false);
       for (grpc_pollset* pollset : core_server->pollsets()) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
@@ -206,8 +209,9 @@ class EndpointPairFixture : public BaseFixture {
                      .channel_args_preconditioning()
                      .PreconditionChannelArgs(&tmp_args);
       }
-      client_transport_ =
-          grpc_create_chttp2_transport(c_args, endpoints.client, true);
+      client_transport_ = grpc_create_chttp2_transport(
+          c_args, grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.client),
+          /*is_client=*/true);
       CHECK(client_transport_);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,

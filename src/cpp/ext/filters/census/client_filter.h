@@ -38,6 +38,8 @@ class OpenCensusClientFilter : public grpc_core::ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "opencensus_client"; }
+
   static absl::StatusOr<std::unique_ptr<OpenCensusClientFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/);
 

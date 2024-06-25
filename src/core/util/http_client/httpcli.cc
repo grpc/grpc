@@ -35,6 +35,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -192,9 +193,7 @@ HttpRequest::HttpRequest(
 HttpRequest::~HttpRequest() {
   grpc_channel_args_destroy(channel_args_);
   grpc_http_parser_destroy(&parser_);
-  if (own_endpoint_ && ep_ != nullptr) {
-    grpc_endpoint_destroy(ep_);
-  }
+  ep_.reset();
   CSliceUnref(request_text_);
   grpc_iomgr_unregister_object(&iomgr_obj_);
   grpc_slice_buffer_destroy(&incoming_);
@@ -231,10 +230,7 @@ void HttpRequest::Orphan() {
       handshake_mgr_->Shutdown(
           GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     }
-    if (own_endpoint_ && ep_ != nullptr) {
-      grpc_endpoint_destroy(ep_);
-      ep_ = nullptr;
-    }
+    ep_.reset();
   }
   Unref();
 }
@@ -288,36 +284,30 @@ void HttpRequest::StartWrite() {
   CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_, &outgoing_, &done_write_, nullptr,
+  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, nullptr,
                       /*max_frame_size=*/INT_MAX);
 }
 
-void HttpRequest::OnHandshakeDone(void* arg, grpc_error_handle error) {
-  auto* args = static_cast<HandshakerArgs*>(arg);
-  RefCountedPtr<HttpRequest> req(static_cast<HttpRequest*>(args->user_data));
+void HttpRequest::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (g_test_only_on_handshake_done_intercept != nullptr) {
     // Run this testing intercept before the lock so that it has a chance to
     // do things like calling Orphan on the request
-    g_test_only_on_handshake_done_intercept(req.get());
+    g_test_only_on_handshake_done_intercept(this);
   }
-  MutexLock lock(&req->mu_);
-  req->own_endpoint_ = true;
-  if (!error.ok()) {
-    req->handshake_mgr_.reset();
-    req->NextAddress(error);
+  MutexLock lock(&mu_);
+  if (!result.ok()) {
+    handshake_mgr_.reset();
+    NextAddress(result.status());
     return;
   }
-  // Handshake completed, so we own fields in args
-  grpc_slice_buffer_destroy(args->read_buffer);
-  gpr_free(args->read_buffer);
-  req->ep_ = args->endpoint;
-  req->handshake_mgr_.reset();
-  if (req->cancelled_) {
-    req->NextAddress(
-        GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
+  // Handshake completed, so get the endpoint.
+  ep_ = std::move((*result)->endpoint);
+  handshake_mgr_.reset();
+  if (cancelled_) {
+    NextAddress(GRPC_ERROR_CREATE("HTTP request cancelled during handshake"));
     return;
   }
-  req->StartWrite();
+  StartWrite();
 }
 
 void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
@@ -343,13 +333,11 @@ void HttpRequest::DoHandshake(const grpc_resolved_address* addr) {
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, args, pollset_set_, handshake_mgr_.get());
-  Ref().release();  // ref held by pending handshake
-  grpc_endpoint* ep = ep_;
-  ep_ = nullptr;
-  own_endpoint_ = false;
-  handshake_mgr_->DoHandshake(ep, args, deadline_,
-                              /*acceptor=*/nullptr, OnHandshakeDone,
-                              /*user_data=*/this);
+  handshake_mgr_->DoHandshake(
+      nullptr, args, deadline_, /*acceptor=*/nullptr,
+      [self = Ref()](absl::StatusOr<HandshakerArgs*> result) {
+        self->OnHandshakeDone(std::move(result));
+      });
 }
 
 void HttpRequest::NextAddress(grpc_error_handle error) {

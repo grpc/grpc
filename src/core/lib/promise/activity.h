@@ -32,8 +32,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/lib/gprpp/dump_args.h"
 #include "src/core/lib/gprpp/no_destruct.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -662,7 +664,11 @@ ActivityPtr MakeActivity(Factory promise_factory,
 }
 
 inline Pending IntraActivityWaiter::pending() {
-  wakeups_ |= GetContext<Activity>()->CurrentParticipant();
+  const auto new_wakeups = GetContext<Activity>()->CurrentParticipant();
+  GRPC_TRACE_LOG(promise_primitives, INFO)
+      << "IntraActivityWaiter::pending: "
+      << GRPC_DUMP_ARGS(this, new_wakeups, wakeups_);
+  wakeups_ |= new_wakeups;
   return Pending();
 }
 

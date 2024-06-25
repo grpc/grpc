@@ -35,6 +35,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/gprpp/validation_errors.h"
+#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -96,6 +97,8 @@ class XdsHttpFilterImpl {
       ValidationErrors* errors) const = 0;
 
   // C-core channel filter implementation.
+  virtual void AddFilter(InterceptionChainBuilder& builder) const = 0;
+  // TODO(roth): Remove this once the legacy filter stack goes away.
   virtual const grpc_channel_filter* channel_filter() const = 0;
 
   // Modifies channel args that may affect service config parsing (not
@@ -135,6 +138,7 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
   absl::optional<FilterConfig> GenerateFilterConfigOverride(
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
+  void AddFilter(InterceptionChainBuilder& /*builder*/) const override {}
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& /*hcm_filter_config*/,

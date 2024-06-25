@@ -50,7 +50,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/xds_client/xds_client.h"
@@ -562,6 +562,10 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
     rbac_json = ParseHttpRbacToJson(context, rbac, errors);
   }
   return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
+}
+
+void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
+  builder.Add<RbacFilter>();
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {

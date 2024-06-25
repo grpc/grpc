@@ -89,6 +89,8 @@ class ServerMessageSizeFilter final
  public:
   static const grpc_channel_filter kFilter;
 
+  static absl::string_view TypeName() { return "message_size"; }
+
   static absl::StatusOr<std::unique_ptr<ServerMessageSizeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
@@ -116,6 +118,8 @@ class ClientMessageSizeFilter final
     : public ImplementChannelFilter<ClientMessageSizeFilter> {
  public:
   static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() { return "message_size"; }
 
   static absl::StatusOr<std::unique_ptr<ClientMessageSizeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);

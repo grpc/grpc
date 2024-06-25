@@ -417,7 +417,7 @@ const grpc_channel_filter ClientLoggingFilter::kFilter =
     MakePromiseBasedFilter<ClientLoggingFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("logging");
+                               kFilterExaminesOutboundMessages>();
 
 absl::StatusOr<std::unique_ptr<ServerLoggingFilter>>
 ServerLoggingFilter::Create(const ChannelArgs& /*args*/,
@@ -483,7 +483,7 @@ const grpc_channel_filter ServerLoggingFilter::kFilter =
     MakePromiseBasedFilter<ServerLoggingFilter, FilterEndpoint::kServer,
                            kFilterExaminesServerInitialMetadata |
                                kFilterExaminesInboundMessages |
-                               kFilterExaminesOutboundMessages>("logging");
+                               kFilterExaminesOutboundMessages>();
 
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;

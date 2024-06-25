@@ -112,6 +112,7 @@ grpc_cc_test(
     tags = [
         "cpp_end2end_test",
         "no_test_ios",
+        "thready_tsan",
     ],
     deps = [
         "//:gpr",

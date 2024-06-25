@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -55,7 +56,6 @@
 #include "upb/text/encode.h"
 
 #include <grpc/status.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/status_util.h"
@@ -70,7 +70,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/string.h"
-#include "src/core/xds/grpc/upb_utils.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_http_filters.h"
@@ -705,8 +705,7 @@ XdsRouteConfigResource::RetryPolicy RetryPolicyParse(
       retry_policy.retry_on.Add(GRPC_STATUS_UNAVAILABLE);
     } else {
       if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
-        gpr_log(GPR_INFO, "Unsupported retry_on policy %s.",
-                std::string(code).c_str());
+        LOG(INFO) << "Unsupported retry_on policy " << code;
       }
     }
   }
@@ -1149,8 +1148,8 @@ void MaybeLogRouteConfiguration(
     char buf[10240];
     upb_TextEncode(reinterpret_cast<const upb_Message*>(route_config), msg_type,
                    nullptr, 0, buf, sizeof(buf));
-    gpr_log(GPR_DEBUG, "[xds_client %p] RouteConfiguration: %s", context.client,
-            buf);
+    VLOG(2) << "[xds_client " << context.client
+            << "] RouteConfiguration: " << buf;
   }
 }
 
@@ -1179,15 +1178,16 @@ XdsResourceType::DecodeResult XdsRouteConfigResourceType::Decode(
         errors.status(absl::StatusCode::kInvalidArgument,
                       "errors validating RouteConfiguration resource");
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
-      gpr_log(GPR_ERROR, "[xds_client %p] invalid RouteConfiguration %s: %s",
-              context.client, result.name->c_str(), status.ToString().c_str());
+      LOG(ERROR) << "[xds_client " << context.client
+                 << "] invalid RouteConfiguration " << *result.name << ": "
+                 << status;
     }
     result.resource = std::move(status);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
-      gpr_log(GPR_INFO, "[xds_client %p] parsed RouteConfiguration %s: %s",
-              context.client, result.name->c_str(),
-              rds_update->ToString().c_str());
+      LOG(INFO) << "[xds_client " << context.client
+                << "] parsed RouteConfiguration " << *result.name << ": "
+                << rds_update->ToString();
     }
     result.resource = std::move(rds_update);
   }
