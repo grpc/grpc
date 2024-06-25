@@ -98,11 +98,11 @@ MATCHER_P2(PointeeMatchesWithTimeout, inner_matcher, ctx,
 
 // Context for the matcher PointeeMatchesWithTimeout. See above.
 struct PointeeMatchesWithTimeoutCtx {
-  PointeeMatchesWithTimeoutCtx(CondVar& condvar, absl::Mutex& mu,
+  PointeeMatchesWithTimeoutCtx(CondVar& condvar, Mutex& mu,
                                absl::Duration timeout = absl::Seconds(3))
       : condvar(condvar), mu(mu), timeout(timeout) {}
   CondVar& condvar;
-  absl::Mutex& mu;
+  Mutex& mu;
   absl::Duration timeout = absl::Seconds(3);
 };
 
