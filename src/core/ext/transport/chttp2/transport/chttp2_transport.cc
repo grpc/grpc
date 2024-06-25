@@ -53,7 +53,6 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
@@ -928,10 +927,11 @@ static const char* write_state_name(grpc_chttp2_write_state st) {
 static void set_write_state(grpc_chttp2_transport* t,
                             grpc_chttp2_write_state st, const char* reason) {
   GRPC_CHTTP2_IF_TRACING(
-      gpr_log(GPR_INFO, "W:%p %s [%s] state %s -> %s [%s]", t,
-              t->is_client ? "CLIENT" : "SERVER",
-              std::string(t->peer_string.as_string_view()).c_str(),
-              write_state_name(t->write_state), write_state_name(st), reason));
+      LOG(INFO) << "W:" << t << " " << (t->is_client ? "CLIENT" : "SERVER")
+                << " [" << t->peer_string.as_string_view() << "] state "
+                << write_state_name(t->write_state) << " -> "
+                << write_state_name(st) << " [" << reason << "]";
+  );
   t->write_state = st;
   // If the state is being reset back to idle, it means a write was just
   // finished. Make sure all the run_after_write closures are scheduled.
